@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 
 import diskCacheV111.util.CacheException;
@@ -84,9 +85,10 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      * Enable access with this mover.
      * @param completionHandler to be called when mover finishes.
      * @return handle to cancel mover if needed
+     * @throws InterruptedIOException if mover was cancelled
      * @throws DiskErrorCacheException
      */
-    public Cancellable enable(final CompletionHandler<Void,Void> completionHandler) throws DiskErrorCacheException {
+    public Cancellable enable(final CompletionHandler<Void,Void> completionHandler) throws DiskErrorCacheException, InterruptedIOException {
 
         open();
         _completionHandler = completionHandler;
