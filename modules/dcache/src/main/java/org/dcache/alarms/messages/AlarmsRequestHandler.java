@@ -59,8 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.messages;
 
-import java.util.ArrayList;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
@@ -91,9 +91,15 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
                 Long after = message.getAfter();
                 Long before = message.getBefore();
                 String type = message.getType();
-                AlarmDAOFilter filter
-                                = AlarmJDOUtils.getFilter(after, before, type);
-                message.setAlarms(new ArrayList<>(access.get(filter)));
+                Long offset = message.getOffset();
+                Long limit = message.getLimit();
+                AlarmDAOFilter filter = AlarmJDOUtils.getFilter(after, before, type);
+                message.setAlarms(access.get(filter)
+                                        .stream()
+                                        .sorted()
+                                        .skip(offset == null ? 0 : offset)
+                                        .limit(limit == null ? Long.MAX_VALUE : limit)
+                                        .collect(Collectors.toList()));
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);

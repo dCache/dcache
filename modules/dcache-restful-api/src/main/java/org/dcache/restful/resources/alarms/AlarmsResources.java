@@ -106,6 +106,8 @@ public final class AlarmsResources {
      *
      * <p>The Alarms endpoint returns a (filtered) list of alarms.</p>
      *
+     * @param offset specifying the index at which to begin.
+     * @param limit  maximum number of alarms to include.
      * @param after  Return no alarms before this datestamp.
      * @param before Return no alarms after this datestamp.
      * @param type   Return only alarms of this type.
@@ -115,7 +117,9 @@ public final class AlarmsResources {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<LogEntry> getAlarms(@QueryParam("after") Long after,
+    public List<LogEntry> getAlarms(@QueryParam("offset") Long offset,
+                                    @QueryParam("limit") Long limit,
+                                    @QueryParam("after") Long after,
                                     @QueryParam("before") Long before,
                                     @QueryParam("type") String type) {
         if (!HttpServletRequests.isAdmin(request)) {
@@ -125,9 +129,8 @@ public final class AlarmsResources {
 
         try {
             return ServletContextHandlerAttributes.getAlarmsInfoService(ctx)
-                                                  .get(after,
-                                                       before,
-                                                       type);
+                                                  .get(offset, limit,
+                                                       after, before, type);
         } catch (IllegalArgumentException | CacheException e) {
             throw new BadRequestException(e);
         } catch (Exception e) {

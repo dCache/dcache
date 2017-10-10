@@ -82,10 +82,10 @@ import org.dcache.vehicles.alarms.AlarmsUpdateMessage;
 
 /**
  * <p>Service layer responsible for querying the alarm service.</p>
- * <p>
+ *
  * <p>Provides several admin commands for diagnostics, as well as
  * implementing the fetch, update and delete methods.</p>
- * <p>
+ *
  * <p>All synchronization is done on the object reference rather
  * than the main map and snapshot cache, in order to
  * allow the cache to be rebuilt.</p>
@@ -129,10 +129,15 @@ public final class AlarmsInfoServiceImpl extends
                                         + "default is all.")
         String type;
 
+        @Option(name = "offset",
+                        usage = "List alarms starting at this index of the result; "
+                                        + "default is 0.")
+        Long offset = 0L;
+
         @Option(name = "limit",
                         usage = "List at most this number of alarms; "
                                         + "default is all.")
-        Integer limit = Integer.MAX_VALUE;
+        Long limit = Long.MAX_VALUE;
 
         @Override
         public String call() throws Exception {
@@ -149,7 +154,8 @@ public final class AlarmsInfoServiceImpl extends
                 beforeInMs = date.getTime();
             }
 
-            List<LogEntry> snapshot = get(afterInMs, beforeInMs, type);
+            List<LogEntry> snapshot = get(offset, limit,
+                                          afterInMs, beforeInMs, type);
 
             StringBuilder builder = new StringBuilder();
             snapshot.stream()
@@ -177,9 +183,12 @@ public final class AlarmsInfoServiceImpl extends
     }
 
     @Override
-    public List<LogEntry> get(Long after, Long before, String type)
+    public List<LogEntry> get(Long offset, Long limit,
+                              Long after, Long before, String type)
                     throws CacheException, InterruptedException {
         AlarmsRequestMessage message = new AlarmsRequestMessage();
+        message.setOffset(offset);
+        message.setLimit(limit);
         message.setAfter(after);
         message.setBefore(before);
         message.setType(type);
