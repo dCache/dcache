@@ -180,6 +180,7 @@
       <property name="pnfsHandler" ref="pnfs"/>
       <property name="billingStub" ref="billing-stub"/>
       <property name="hsmSet" ref="hsmset"/>
+      <property name="allocator" ref="allocator" />
   </bean>
 
   <bean id="hsmset" class="org.dcache.pool.nearline.HsmSet">

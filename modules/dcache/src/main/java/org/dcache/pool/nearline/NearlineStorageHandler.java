@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -92,6 +92,7 @@ import org.dcache.pool.nearline.spi.NearlineRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
+import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -138,6 +139,11 @@ public class NearlineStorageHandler
     private long flushTimeout = TimeUnit.HOURS.toMillis(4);
     private long removeTimeout = TimeUnit.HOURS.toMillis(4);
     private ScheduledFuture<?> timeoutFuture;
+
+    /**
+     * Allocator used to use when space allocation is required.
+     */
+    private Allocator allocator;
 
     private CellAddressCore cellAddress;
 
@@ -187,6 +193,11 @@ public class NearlineStorageHandler
     public void setHsmSet(HsmSet hsmSet)
     {
         this.hsmSet = checkNotNull(hsmSet);
+    }
+
+    @Required
+    public void setAllocator(Allocator allocator) {
+        this.allocator = allocator;
     }
 
     @PostConstruct
@@ -1071,7 +1082,7 @@ public class NearlineStorageHandler
             if (allocationFuture == null) {
                 allocationFuture = register(executor.submit(
                         () -> {
-                            descriptor.allocate(descriptor.getFileAttributes().getSize());
+                            allocator.allocate(descriptor.getFileAttributes().getSize());
                             return null;
                         }
                 ));
