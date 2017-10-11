@@ -59,31 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.restores;
 
-import com.google.common.base.Throwables;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import dmg.util.command.Command;
+import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
-import org.dcache.restful.providers.restores.RestoresList;
+import org.dcache.restful.util.admin.SnapshotDataAccess;
 import org.dcache.restful.util.restores.RestoreCollector;
-import org.dcache.restful.util.transfers.TransferCollector;
 import org.dcache.services.collector.CellDataCollectingService;
 
 /**
@@ -114,66 +106,23 @@ public final class RestoresInfoServiceImpl extends
     }
 
     /**
-     * <p>Map of transfer information extracted using
-     * the {@link TransferCollector}.</p>
+     * <p>Data store providing snapshots.</p>
      */
-    private final Map<String, RestoreInfo> restores = new TreeMap<>();
-
-    /**
-     * <p>Cached snapshots of the transfers.</p>
-     */
-    private Cache<UUID, List<RestoreInfo>> snapshots;
-
-    /**
-     * <p>Cache settings</p>
-     */
-    private long maxCacheSize = 1000;
+    private final SnapshotDataAccess<String, RestoreInfo>
+                    access = new SnapshotDataAccess<>();
 
     @Override
-    public RestoresList get(UUID token, Integer offset, Integer limit,
-                            PnfsId pnfsid) {
-        if (offset == null) {
-            offset = 0;
-        }
-
-        if (limit == null) {
-            limit = Integer.MAX_VALUE;
-        }
-
-        if (token == null) {
-            token = storeSnapshot();
-        }
-
-        RestoresList result = new RestoresList();
-        result.setItems(getSnapshot(token, offset, limit, pnfsid));
-        result.setCurrentToken(token);
-        result.setCurrentOffset(offset);
-
-        int size = result.getItems().size();
-
-        if (size < limit) {
-            size = -1;
-        }
-
-        result.setNextOffset(size);
-        return result;
-    }
-
-    public void setMaxCacheSize(long maxCacheSize) {
-        this.maxCacheSize = maxCacheSize;
-    }
-
-    @Override
-    protected synchronized void configure() {
-        Map<UUID, List<RestoreInfo>> current = snapshots == null ?
-                        Collections.EMPTY_MAP : snapshots.asMap();
-
-        snapshots = CacheBuilder.newBuilder()
-                                .maximumSize(maxCacheSize)
-                                .expireAfterAccess(timeout, TimeUnit.MINUTES)
-                                .build();
-
-        snapshots.putAll(current);
+    public SnapshotList<RestoreInfo> get(UUID token,
+                                         Integer offset,
+                                         Integer limit,
+                                         PnfsId pnfsid)
+                    throws InvocationTargetException,
+                    IllegalAccessException,
+                    NoSuchMethodException {
+        Method getPnfsid = RestoreInfo.class.getMethod("getPnfsId");
+        Method[] methods = pnfsid == null? null : new Method[]{getPnfsid};
+        Object[] values = pnfsid == null? null : new Object[]{pnfsid};
+        return access.getSnapshot(token, offset, limit, methods, values);
     }
 
     @Override
@@ -203,69 +152,6 @@ public final class RestoresInfoServiceImpl extends
                         t == null ? "" : t.toString());
         }
 
-        synchronized (this) {
-            for (Iterator<String> k = restores.keySet().iterator(); k.hasNext(); ) {
-                String key = k.next();
-                if (!newInfo.containsKey(key)) {
-                    k.remove();
-                }
-            }
-            restores.putAll(newInfo);
-        }
-
-        if (thrownDuringExecution != null) {
-            Throwables.throwIfUnchecked(thrownDuringExecution);
-        }
-    }
-
-    private synchronized RestoreInfo get(String key) {
-        return restores.get(key);
-    }
-
-    private synchronized List<RestoreInfo> getSnapshot(UUID token,
-                                                       int offset,
-                                                       int limit,
-                                                       PnfsId pnfsId) {
-        if (!snapshots.asMap().containsKey(token)) {
-            return Collections.emptyList();
-        }
-
-        List<RestoreInfo> filtered = new ArrayList<>();
-        List<RestoreInfo> actual = snapshots.getIfPresent(token);
-
-        int end = actual.size();
-
-        String id = pnfsId == null ? null : pnfsId.toString();
-
-        for (int i = offset; i < end && filtered.size() < limit; ++i) {
-            RestoreInfo info = actual.get(i);
-
-            if (id != null && !info.getPnfsId().equals(id)) {
-                continue;
-            }
-
-            /*
-             *  The staging request may actually have been removed.
-             *  Indicate this by setting state.
-             *  Do not remove from snapshot because the indexing needs to
-             *  remain unaltered.
-             */
-            if (!restores.containsKey(info.getKey())) {
-                info.setStatus("Staging Completed.");
-            }
-
-            filtered.add(info);
-        }
-
-        return filtered;
-    }
-
-    private synchronized UUID storeSnapshot() {
-        List<RestoreInfo> values = restores.values()
-                                           .stream()
-                                           .collect(Collectors.toList());
-        UUID uuid = UUID.randomUUID();
-        snapshots.put(uuid, values);
-        return uuid;
+        access.refresh(newInfo);
     }
 }

@@ -59,43 +59,32 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.transfers;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TransferInfo;
-import org.dcache.restful.providers.transfers.TransferList;
+import org.dcache.restful.providers.SnapshotList;
 
 /**
  * <p>Internal API for calling the transfer service.</p>
  */
 public interface TransferInfoService {
     /**
-     * <p>Return the transfer metadata objects.  If no token is provided,
-     *    a snapshot of the most recent data should be returned; otherwise,
-     *    a snapshot corresponding to the token should be returned.</p>
+     * <p>Return the metadata objects.</p>
      *
-     * @param token  specifying which snapshot to use (can be <code>null</code>).
+     * @param token  specifying the current snapshot held by caller
+     *               (can be <code>null</code>).
      * @param offset specifying the index in the snapshot at which to begin.
-     * @param limit  maximum number of transfers to include.
-     * @param pnfsid include in the list only the transfers involving this pnfsid.
-     * @return {@link TransferList} containing list of {@link TransferInfo} beans.
+     * @param limit  maximum number of elements to include.
+     * @param pnfsId to use as filter.
+     * @return {@link SnapshotList<TransferInfo>} containing list of beans.
      */
-    TransferList get(UUID token, Integer offset, Integer limit, PnfsId pnfsid);
-
-    /**
-     * <p>For a given transfer specified by its canonical path URL
-     * ({cellName}-{serialId}), return the full metadata.</p>
-     *
-     * <p>It is understood that this will return the most recent information.
-     * If the transfer has completed and is no longer referenced, the
-     *    appropriate CacheException should be thrown.</p>
-     *
-     * @param info template object to be populated. Object must contain valid
-     *             values for the fields identifying the transfer (the path,
-     *             as specified above).
-     * @return the populated {@link TransferInfo} bean.
-     * @throws CacheException if transfer is not found.
-     */
-    TransferInfo populate(TransferInfo info) throws CacheException;
+    SnapshotList<TransferInfo> get(UUID token,
+                                   Integer offset,
+                                   Integer limit,
+                                   PnfsId pnfsId)
+                    throws InvocationTargetException,
+                           IllegalAccessException,
+                           NoSuchMethodException;
 }
