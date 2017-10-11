@@ -120,7 +120,6 @@
 
   <bean id="transfer-info-service" class="org.dcache.restful.services.transfers.TransferInfoServiceImpl">
       <description>Caches and serves information on active transfers.</description>
-      <property name="maxCacheSize" value="${frontend.service.transfers.maxCacheSize}"/>
       <property name="timeout" value="${frontend.service.transfers.timeout}"/>
       <property name="timeoutUnit" value="${frontend.service.transfers.timeout.unit}"/>
       <property name="collector" ref="transfer-collector"/>
@@ -242,7 +241,6 @@
 
   <bean id="restore-info-service" class="org.dcache.restful.services.restores.RestoresInfoServiceImpl">
     <description>Caches and serves information on staging requests.</description>
-    <property name="maxCacheSize" value="${frontend.service.restores.maxCacheSize}"/>
     <property name="timeout" value="${frontend.service.restores.timeout}"/>
     <property name="timeoutUnit" value="${frontend.service.restores.timeout.unit}"/>
     <property name="collector" ref="restores-collector"/>

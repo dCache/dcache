@@ -60,20 +60,20 @@ documents or software obtained from this server.
 package org.dcache.restful.resources.restores;
 
 import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
-import org.dcache.restful.providers.restores.RestoresList;
+import org.dcache.restful.providers.SnapshotList;
+import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
-import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 
 /**
@@ -86,17 +86,20 @@ public final class RestoreResources {
     @Context
     ServletContext ctx;
 
-    @Context
-    HttpServletRequest request;
-
     /**
      * <p>Restores.</p>
      *
      * <p>The Restores endpoint returns current staging operations.</p>
      *
-     * @param token Use the snapshot corresponding to this UUID.
-     *              A <code>null</code> value indicates a request for
-     *              refreshed (i.e., current) restores.
+     * @param token Use the snapshot corresponding to this UUID.  The contract
+     *              with the service is that if the parameter value is null, the
+     *              snapshot will be used, regardless of whether offset and limit
+     *              are still valid.  Initial/refresh calls should always be
+     *              without a token.  Subsequent calls should send back the
+     *              current token; in the case that it no longer corresponds to
+     *              the current list, the service will return a null token and
+     *              an empty list, and the client will need to recall the method
+     *              without a token (refresh).
      * @param offset Return restores beginning at this index.
      * @param limit Return at most this number of items.
      * @param pnfsid Return only restores for this file.
@@ -105,17 +108,22 @@ public final class RestoreResources {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public RestoresList getRestores(@QueryParam("token") UUID token,
-                                    @QueryParam("offset") Integer offset,
-                                    @QueryParam("limit") Integer limit,
-                                    @QueryParam("pnfsid") PnfsId pnfsid) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Restores service only accessible to admin users.");
-        }
-
+    public SnapshotList<RestoreInfo> getRestores(@QueryParam("token") UUID token,
+                                                 @QueryParam("offset") Integer offset,
+                                                 @QueryParam("limit") Integer limit,
+                                                 @QueryParam("pnfsid") PnfsId pnfsid) {
         RestoresInfoService service
                         = ServletContextHandlerAttributes.getRestoresInfoService(ctx);
-        return service.get(token, offset, limit, pnfsid);
+        try {
+            return service.get(token, offset, limit, pnfsid);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new InternalServerErrorException(e);
+        } catch (NoSuchMethodException e) {
+            /*
+             * This should not happen unless the API has changed, in which
+             * case there is either a bug or a class loader issue.
+             */
+            throw new RuntimeException(e);
+        }
     }
 }

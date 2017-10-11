@@ -61,18 +61,18 @@ package org.dcache.restful.resources.transfers;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TransferInfo;
-import org.dcache.restful.providers.transfers.TransferList;
+import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 
@@ -83,39 +83,8 @@ import org.dcache.restful.util.ServletContextHandlerAttributes;
  */
 @Path("/transfers")
 public final class TransferResources {
-
-    /**
-     * <p>Contains the reference to the {@link TransferInfoService} implementation.</p>
-     */
     @Context
     ServletContext ctx;
-
-    /**
-     * <p>Transfer Metadata.</p>
-     * <p>The Transfers endpoint, when given a subpath, returns the metadata
-     *      for the user-initiated (not pool-to-pool) transfer operation.
-     *      The most recent data is returned if avalailable.</p>
-     *
-     * @param door The door instance initiating the transfer.
-     * @param seq The sequence number of the transfer (for the given door).
-     * @return object representing requested Transfer information.
-     * @throws CacheException if transfer entry not found.
-     */
-    @GET
-    @Path("/{door : .*}-{seq : .*}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public TransferInfo getTransferInfo(@PathParam("door") String door,
-                                        @PathParam("seq") Long seq)
-                    throws CacheException {
-        TransferInfo transferInfo = new TransferInfo();
-        transferInfo.setCellName(door);
-        transferInfo.setSerialId(seq);
-
-        TransferInfoService service
-                        = ServletContextHandlerAttributes.getTransferInfoService(ctx);
-
-        return service.populate(transferInfo);
-    }
 
     /**
      * <p>Transfers.</p>
@@ -123,9 +92,15 @@ public final class TransferResources {
      * (not pool-to-pool) transfer operations that are currently
      * queued or running.</p>
      *
-     * @param token Use the snapshot corresponding to this UUID.
-     *              A <code>null</code> value indicates a request for
-     *              refreshed (i.e., current) transfers.
+     * @param token Use the snapshot corresponding to this UUID.  The contract
+     *              with the service is that if the parameter value is null, the
+     *              snapshot will be used, regardless of whether offset and limit
+     *              are still valid.  Initial/refresh calls should always be
+     *              without a token.  Subsequent calls should send back the
+     *              current token; in the case that it no longer corresponds to
+     *              the current list, the service will return a null token and
+     *              an empty list, and the client will need to recall the method
+     *              without a token (refresh).
      * @param offset Return transfers beginning at this index.
      * @param limit Return at most this number of items.
      * @param pnfsid Return only transfers for this file.
@@ -134,13 +109,22 @@ public final class TransferResources {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public TransferList getTransfers(@QueryParam("token") UUID token,
-                                     @QueryParam("offset") Integer offset,
-                                     @QueryParam("limit") Integer limit,
-                                     @QueryParam("pnfsid") PnfsId pnfsid) {
+    public SnapshotList<TransferInfo> getTransfers(@QueryParam("token") UUID token,
+                                                   @QueryParam("offset") Integer offset,
+                                                   @QueryParam("limit") Integer limit,
+                                                   @QueryParam("pnfsid") PnfsId pnfsid) {
         TransferInfoService service
                         = ServletContextHandlerAttributes.getTransferInfoService(ctx);
-
-        return service.get(token, offset, limit, pnfsid);
+        try {
+            return service.get(token, offset, limit, pnfsid);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new InternalServerErrorException(e);
+        } catch (NoSuchMethodException e) {
+            /*
+             * This should not happen unless the API has changed, in which
+             * case there is either a bug or a class loader issue.
+             */
+            throw new RuntimeException(e);
+        }
     }
 }
