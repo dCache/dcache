@@ -317,7 +317,6 @@ public class ModeE extends Mode
                     return;
                 }
 
-                _monitor.preallocate(_position + _count);
             }
 
             /* Receive data.

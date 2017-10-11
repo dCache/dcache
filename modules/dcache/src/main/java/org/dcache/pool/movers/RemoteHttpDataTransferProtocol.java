@@ -42,7 +42,6 @@ import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
 
 import org.dcache.auth.OpenIdCredentialRefreshable;
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -185,7 +184,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     @Override
     public void runIO(FileAttributes attributes, RepositoryChannel channel,
-            ProtocolInfo genericInfo, Allocator allocator, Set<? extends OpenOption> access)
+            ProtocolInfo genericInfo, Set<? extends OpenOption> access)
             throws CacheException, IOException, InterruptedException
     {
         _log.debug("info={}, attributes={},  access={}", genericInfo,

@@ -40,16 +40,13 @@ import java.nio.file.StandardOpenOption;
 public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverChannelMover<P, M>> extends AbstractMover<P, M>
 {
     private volatile MoverChannel<P> _wrappedChannel;
-    private final MoverChannel.AllocatorMode _allocatorMode;
 
     public MoverChannelMover(ReplicaDescriptor handle, PoolIoFileMessage message,
                              CellPath pathToDoor,
                              TransferService<M> transferService,
-                             MoverChannel.AllocatorMode allocatorMode,
                              ChecksumModule checksumModule)
     {
         super(handle, message, pathToDoor, transferService, checksumModule);
-        _allocatorMode = allocatorMode;
     }
 
     @Override

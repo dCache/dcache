@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -41,7 +41,6 @@ import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.MoverProtocolMover;
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.CDCExecutorServiceDecorator;
@@ -58,7 +57,6 @@ public abstract class AbstractMoverProtocolTransferService
                             new ThreadFactoryBuilder().setNameFormat(getClass().getSimpleName() + "-transfer-service-%d").build()));
     private ChecksumModule _checksumModule;
     private PostTransferService _postTransferService;
-    private Allocator _allocator;
 
     @Required
     public void setChecksumModule(ChecksumModule checksumModule)
@@ -70,11 +68,6 @@ public abstract class AbstractMoverProtocolTransferService
     public void setPostTransferService(PostTransferService postTransferService)
     {
         _postTransferService = postTransferService;
-    }
-
-    @Required
-    public void setAllocator(Allocator allocator) {
-        _allocator = allocator;
     }
 
     @Override
@@ -165,8 +158,7 @@ public abstract class AbstractMoverProtocolTransferService
 
         private void runMover(RepositoryChannel fileIoChannel) throws Exception
         {
-            _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(),
-                    _allocator, _mover.getIoMode());
+            _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
         }
 
         private synchronized void setThread() throws InterruptedException {
