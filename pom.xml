@@ -70,7 +70,7 @@
         <version.jetty>9.4.6.v20170531</version.jetty>
         <version.wicket>7.6.0</version.wicket>
         <version.xrootd4j>3.2.2</version.xrootd4j>
-        <version.jersey>2.24</version.jersey>
+        <version.jersey>2.26</version.jersey>
         <version.dcache-view>1.3.1</version.dcache-view>
         <version.netty>4.1.10.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
@@ -486,11 +486,6 @@
             </dependency>
 
             <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
-                <version>2.0.1</version>
-            </dependency>
-            <dependency>
                 <groupId>org.glassfish.jersey.containers</groupId>
                 <artifactId>jersey-container-servlet</artifactId>
                 <version>${version.jersey}</version>
@@ -503,6 +498,11 @@
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-json-jackson</artifactId>
+                <version>${version.jersey}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
                 <version>${version.jersey}</version>
             </dependency>
             <dependency>
