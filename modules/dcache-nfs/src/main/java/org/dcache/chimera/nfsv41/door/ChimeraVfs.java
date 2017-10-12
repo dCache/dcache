@@ -53,6 +53,7 @@ import org.dcache.chimera.DirectoryStreamHelper;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileState;
+import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.FsInode_CONST;
@@ -644,6 +645,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
      */
     private byte[] inodeToBytes(FsInode inode) {
         return inode.getIdentifier();
+    }
+
+    public Inode inodeFromPnfsId(PnfsId id) throws ChimeraFsException  {
+        return toInode(_fs.id2inode(id.getId(), FileSystemProvider.StatCacheOption.NO_STAT));
     }
 
     /**

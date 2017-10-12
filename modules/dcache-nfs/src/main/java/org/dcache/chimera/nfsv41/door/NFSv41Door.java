@@ -124,6 +124,7 @@ import org.dcache.nfs.v4.xdr.length4;
 import org.dcache.nfs.v4.xdr.offset4;
 import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.vfs.Inode;
+import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
 import org.dcache.util.FireAndForgetTask;
@@ -135,6 +136,7 @@ import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.OncRpcSvcBuilder;
@@ -431,6 +433,22 @@ public class NFSv41Door extends AbstractCellComponent implements
         if(transfer != null) {
             transfer.redirect(device);
         }
+    }
+
+    /*
+     * Pool wants to update attributes
+     */
+    public PnfsSetFileAttributes messageArrived(PnfsSetFileAttributes message) throws IOException {
+
+        PnfsId pnfsid = message.getPnfsId();
+        if (message.getFileAttributes().isDefined(FileAttribute.SIZE)) {
+            long size = message.getFileAttributes().getSize();
+            Stat stat = new Stat();
+            stat.setSize(size);
+            Inode inode = _chimeraVfs.inodeFromPnfsId(pnfsid);
+            _vfs.setattr(inode, stat);
+        }
+        return message;
     }
 
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {

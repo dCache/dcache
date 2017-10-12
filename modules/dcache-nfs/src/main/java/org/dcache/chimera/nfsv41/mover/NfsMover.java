@@ -24,12 +24,14 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellPath;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.dcache.cells.CellStub;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.v4.NFS4State;
@@ -37,11 +39,14 @@ import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.StateOwner;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.status.NfsIoException;
+import org.dcache.nfs.v4.xdr.verifier4;
+import org.dcache.nfs.status.DelayException;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 
 public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
@@ -49,16 +54,16 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private NFSv41Session _session;
     private final NFSv4MoverHandler _nfsIO;
     private final NFS4State _state;
-    private final PnfsHandler _namespace;
+    private final CellStub _door;
     private volatile CompletionHandler<Void, Void> _completionHandler;
 
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-            NfsTransferService nfsTransferService, PnfsHandler pnfsHandler, ChecksumModule checksumModule) {
+            NfsTransferService nfsTransferService, CellStub door, ChecksumModule checksumModule) {
         super(handle, message, pathToDoor, nfsTransferService, checksumModule);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
         _state = new MoverState(null, new stateid4(legacyStateid.other, legacyStateid.seqid.value));
-        _namespace = pnfsHandler;
+        _door = door;
     }
 
     public stateid4 getStateId() {
@@ -153,11 +158,14 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     }
 
     public void commitFileSize(long size) throws ChimeraNFSException {
+        FileAttributes attributes = new FileAttributes();
+        attributes.setSize(size);
+        attributes.setPnfsId(getFileAttributes().getPnfsId());
+        PnfsSetFileAttributes sfa = new PnfsSetFileAttributes(getFileAttributes().getPnfsId(), attributes);
         try {
-            _namespace.setFileAttributes(getFileAttributes().getPnfsId(),
-                    FileAttributes.ofSize(size));
-        } catch (CacheException e) {
-            throw new NfsIoException("Failed to update file size in the namespace", e);
+            _door.send(new CellPath(getPathToDoor().getDestinationAddress()), sfa).get(3, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new DelayException();
         }
     }
 

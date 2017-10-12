@@ -336,7 +336,6 @@
       <description>NFSv4.1 transfer service</description>
       <property name="enableGss" value="${pool.mover.nfs.rpcsec_gss}" />
       <property name="postTransferService" ref="post-transfer-service"/>
-      <property name="pnfsHandler" ref="pnfs"/>
       <property name="doorStub" ref="doorStub"/>
       <property name="checksumModule" ref="csm"/>
       <property name="minTcpPort" value="${pool.mover.nfs.port.min}"/>

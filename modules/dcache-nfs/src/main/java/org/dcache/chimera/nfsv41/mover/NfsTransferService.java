@@ -26,7 +26,6 @@ import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
@@ -72,7 +71,6 @@ public class NfsTransferService
     private PostTransferService _postTransferService;
     private final long _bootVerifier = System.currentTimeMillis();
     private boolean _sortMultipathList;
-    private PnfsHandler _pnfsHandler;
     private ChecksumModule _checksumModule;
     private int _minTcpPort;
     private int _maxTcpPort;
@@ -160,11 +158,6 @@ public class NfsTransferService
     }
 
     @Required
-    public void setPnfsHandler(PnfsHandler pnfsHandler) {
-        _pnfsHandler = pnfsHandler;
-    }
-
-    @Required
     public void setDoorStub(CellStub cellStub) {
         _door = cellStub;
     }
@@ -205,7 +198,7 @@ public class NfsTransferService
     @Override
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
     {
-        return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler, _checksumModule);
+        return new NfsMover(handle, message, pathToDoor, this, _door, _checksumModule);
     }
 
     @Override
