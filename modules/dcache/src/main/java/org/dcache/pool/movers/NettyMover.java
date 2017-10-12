@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -43,7 +43,7 @@ public class NettyMover<P extends ProtocolInfo> extends MoverChannelMover<P, Net
                       UUID uuid,
                       ChecksumModule checksumModule)
     {
-        super(handle, message, pathToDoor, transferService, MoverChannel.AllocatorMode.HARD, checksumModule);
+        super(handle, message, pathToDoor, transferService, checksumModule);
         this.uuid = uuid;
     }
 

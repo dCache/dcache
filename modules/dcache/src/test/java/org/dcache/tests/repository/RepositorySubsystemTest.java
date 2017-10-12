@@ -63,6 +63,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static org.dcache.pool.repository.ReplicaState.*;
+import org.dcache.util.ByteUnit;
 import static org.junit.Assert.*;
 
 public class RepositorySubsystemTest
@@ -104,6 +105,8 @@ public class RepositorySubsystemTest
     private Path metaDir;
     private Path dataDir;
 
+    private long repoSize = ByteUnit.MiB.toBytes(512); // allocator chunks 50MB. Make some room for allocation
+
     private BlockingQueue<StateChangeEvent> stateChangeEvents =
         new LinkedBlockingQueue<>();
 
@@ -142,7 +145,6 @@ public class RepositorySubsystemTest
                                                sticky,
                                                EnumSet.noneOf(OpenFlags.class));
                 try {
-                    handle.allocate(attributes.getSize());
                     createFile(handle, attributes.getSize());
                     handle.commit();
                 } finally {
@@ -204,7 +206,7 @@ public class RepositorySubsystemTest
         repository.setSynchronousNotification(true);
         repository.addListener(this);
         repository.setSpaceSweeperPolicy(sweeper);
-        repository.setMaxDiskSpace(new DiskSpace(5120));
+        repository.setMaxDiskSpace(new DiskSpace(repoSize));
         repository.addFaultListener(event -> System.err.println(event.getMessage() + ": " + event.getCause()));
     }
 
@@ -416,7 +418,7 @@ public class RepositorySubsystemTest
         repository.init();
         assertSpaceRecord(0, 0, 0, 0);
         repository.load();
-        assertSpaceRecord(5120, 2048, 1024, 1024);
+        assertSpaceRecord(repoSize, repoSize - 2048 - 1024, 1024, 1024);
     }
 
     @Test
@@ -492,7 +494,6 @@ public class RepositorySubsystemTest
                 ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED, stickyRecords,
                         EnumSet.noneOf(OpenFlags.class));
                 try {
-                    handle.allocate(attributes5.getSize());
                     createFile(handle, attributes5.getSize());
                     handle.commit();
                 }catch( IOException e) {
@@ -754,8 +755,7 @@ public class RepositorySubsystemTest
 
     /* Helper method for creating a fourth entry in the repository.
      */
-    private void createEntry4(final long overallocation,
-                              final boolean failSetAttributes,
+    private void createEntry4(final boolean failSetAttributes,
                               final boolean cancel,
                               final ReplicaState transferState,
                               final ReplicaState finalState)
@@ -814,7 +814,6 @@ public class RepositorySubsystemTest
                     repository.createEntry(attributes4, transferState,
                                            finalState, stickyRecords, EnumSet.noneOf(OpenFlags.class));
                 try {
-                    handle.allocate(size4 + overallocation);
                     assertStep("No clear after this point", 2);
                     createFile(handle, size4);
                     if (!cancel) {
@@ -841,9 +840,11 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        createEntry4(0, false, false, FROM_CLIENT, PRECIOUS);
+        SpaceRecord r = repository.getSpaceRecord();
+        createEntry4(false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
-        assertSpaceRecord(5120, 1024, 2048, 1024);
+
+        assertSpaceRecord(repoSize, r.getFreeSpace() - size4, r.getPreciousSpace() + size4, 1024);
     }
 
     @Test(expected=CacheException.class)
@@ -853,86 +854,15 @@ public class RepositorySubsystemTest
         repository.init();
         repository.load();
         stateChangeEvents.clear();
-
+        SpaceRecord r = repository.getSpaceRecord();
         try {
-            createEntry4(100, true, false, FROM_CLIENT, PRECIOUS);
+            createEntry4(true, false, FROM_CLIENT, PRECIOUS);
         } finally {
             assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
-            assertSpaceRecord(5120, 1024, 1024, 1024);
+            assertSpaceRecord(repoSize, r.getFreeSpace() - size4, r.getPreciousSpace(), r.getRemovableSpace());
         }
         // TODO: Check notification
     }
-
-    @Test
-    public void testCreateEntryUnderallocation()
-        throws Throwable
-    {
-        repository.init();
-        repository.load();
-        stateChangeEvents.clear();
-
-        createEntry4(-100, false, false, FROM_CLIENT, PRECIOUS);
-        assertCanOpen(id4, size4, PRECIOUS);
-        assertSpaceRecord(5120, 1024, 2048, 1024);
-        // TODO: Check notification
-    }
-
-    @Test
-    public void testCreateEntryOverallocation()
-        throws Throwable
-    {
-        repository.init();
-        repository.load();
-        stateChangeEvents.clear();
-
-        createEntry4(100, false, false, FROM_CLIENT, PRECIOUS);
-        assertCanOpen(id4, size4, PRECIOUS);
-        assertSpaceRecord(5120, 1024, 2048, 1024);
-        // TODO: Check notification
-    }
-
-    @Test
-    public void testCreateEntryOverallocationFail()
-        throws Throwable
-    {
-        repository.init();
-        repository.load();
-        stateChangeEvents.clear();
-
-        createEntry4(100, false, true, FROM_CLIENT, PRECIOUS);
-        assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
-        assertSpaceRecord(5120, 1024, 1024, 1024);
-        // TODO: Check notification
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testCreateEntryNegativeAllocation()
-        throws Throwable
-    {
-        repository.init();
-        repository.load();
-        stateChangeEvents.clear();
-
-        ReplicaDescriptor handle =
-            repository.createEntry(attributes4, FROM_CLIENT, PRECIOUS, null, EnumSet.noneOf(OpenFlags.class));
-        handle.allocate(-1);
-    }
-
-    @Test
-    public void testCreateEntryOutOfSpace()
-        throws Throwable
-    {
-        repository.init();
-        repository.load();
-        stateChangeEvents.clear();
-
-        repository.setMaxDiskSpace(new DiskSpace(3072));
-        createEntry4(0, false, false, FROM_CLIENT, PRECIOUS);
-        assertCanOpen(id4, size4, PRECIOUS);
-        assertSpaceRecord(3072, 0, 2048, 0);
-        // TODO: Check notification
-    }
-
 
     // See http://rt.dcache.org/Ticket/Display.html?id=7337
     @Ignore("Time-critical test; may fail under extreme load")
@@ -978,11 +908,15 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        assertSpaceRecord(5120, 2048, 1024, 1024);
+        SpaceRecord r = repository.getSpaceRecord();
+
         repository.setState(id1, CACHED);
-        assertSpaceRecord(5120, 2048, 0, 2048);
+        assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace() - size1, r.getRemovableSpace() + size1);
+
+        r = repository.getSpaceRecord();
+
         repository.setState(id1, CACHED);
-        assertSpaceRecord(5120, 2048, 0, 2048);
+        assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace(), r.getRemovableSpace());
     }
 
     @Test
@@ -994,12 +928,13 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        assertSpaceRecord(5120, 2048, 1024, 1024);
+        SpaceRecord r = repository.getSpaceRecord();
+
         repository.setState(id2, PRECIOUS);
-        assertSpaceRecord(5120, 2048, 2048, 0);
+        assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace() + size2, r.getRemovableSpace() - size2);
+
+        r = repository.getSpaceRecord();
         repository.setState(id2, PRECIOUS);
-        assertSpaceRecord(5120, 2048, 2048, 0);
+        assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace(), r.getRemovableSpace());
     }
 }
-
-

@@ -78,7 +78,6 @@ import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
 import static org.dcache.pool.repository.ReplicaState.REMOVED;
 import static org.dcache.util.ByteUnit.GiB;
 
-
 /**
  * Implementation of Repository interface.
  *
@@ -621,7 +620,7 @@ public class ReplicaRepository
                 r.setState(transferState);
                 return new WriteHandleImpl(
                         this, _allocator, _pnfs, entry, fileAttributes,
-                        targetState, stickyRecords);
+                        targetState, stickyRecords, flags.contains(OpenFlags.NONBLOCK));
             });
         } catch (DuplicateEntryException e) {
             /* Somebody got the idea that we don't have the file, so we make

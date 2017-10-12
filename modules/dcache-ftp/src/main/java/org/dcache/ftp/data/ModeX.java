@@ -456,7 +456,6 @@ public class ModeX extends Mode
                     break;
                 }
 
-                _monitor.preallocate(_position + _count);
                 _state = ReceiverState.READ_DATA;
 
             case READ_DATA:

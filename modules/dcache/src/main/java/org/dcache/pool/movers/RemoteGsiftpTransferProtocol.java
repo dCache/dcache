@@ -100,7 +100,6 @@ import org.dcache.ftp.client.Buffer;
 import org.dcache.ftp.client.exception.ClientException;
 import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
@@ -173,7 +172,6 @@ public class RemoteGsiftpTransferProtocol
     public void runIO(FileAttributes fileAttributes,
                       RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
-                      Allocator allocator,
                       Set<? extends OpenOption> access)
             throws CacheException, IOException,
             ServerException, ClientException, KeyStoreException, URISyntaxException
@@ -196,7 +194,7 @@ public class RemoteGsiftpTransferProtocol
 
         if (access.contains(StandardOpenOption.WRITE)) {
             _remoteChecksum = discoverRemoteChecksum(remoteGsiftpProtocolInfo);
-            gridFTPRead(remoteGsiftpProtocolInfo, allocator);
+            gridFTPRead(remoteGsiftpProtocolInfo);
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo);
         }
@@ -231,18 +229,12 @@ public class RemoteGsiftpTransferProtocol
         return System.currentTimeMillis() - _starttime;
     }
 
-    public void gridFTPRead(RemoteGsiftpTransferProtocolInfo protocolInfo,
-                            Allocator allocator)
+    public void gridFTPRead(RemoteGsiftpTransferProtocolInfo protocolInfo)
         throws CacheException
     {
         try {
             URI src_url = new URI(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
-            long size = _client.getSize(src_url.getPath());
-            _log.debug(" received a file size info: {} allocating space on the pool", size );
-            _log.debug("ALLOC: {} : {}", _pnfsId, size );
-            allocator.allocate(size);
-            _log.debug(" allocated space {}", size);
             DiskDataSourceSink sink =
                 new DiskDataSourceSink(protocolInfo.getBufferSize(),
                                        false);

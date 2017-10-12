@@ -22,7 +22,11 @@ public interface Repository
         /* Do not update the file last access time when the file is
          * read.
          */
-        NOATIME
+        NOATIME,
+        /**
+         * Do not block on space allocation.
+         */
+        NONBLOCK,
     }
 
     /**
