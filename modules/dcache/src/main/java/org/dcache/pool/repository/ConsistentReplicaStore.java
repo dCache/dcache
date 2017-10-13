@@ -193,9 +193,9 @@ public class ConsistentReplicaStore
 
             /* Verify checksum. Will fail if there is a mismatch.
              */
-            Iterable<Checksum> expectedChecksums = attributesInNameSpace.getChecksumsIfPresent().or(Collections.emptySet());
+            Set<Checksum> expectedChecksums = attributesInNameSpace.getChecksumsIfPresent().or(Collections.emptySet());
             Iterable<Checksum> actualChecksums;
-            if (_checksumModule != null &&
+            if (!expectedChecksums.isEmpty() && _checksumModule != null &&
                     (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_WRITE) ||
                             _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER) ||
                             _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_RESTORE))) {
