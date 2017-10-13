@@ -128,8 +128,14 @@ class WriteHandleImpl implements ReplicaDescriptor
             throw new IllegalStateException("Handle is closed");
         }
 
-        return new AllocatorAwareRepositoryChannel(_entry.openChannel(OPEN_OPTIONS),
-                _allocator,  _useHardAllocator);
+        RepositoryChannel channel = new AllocatorAwareRepositoryChannel(_entry.openChannel(OPEN_OPTIONS), _allocator, _useHardAllocator);
+        // adjust file size to the falue from namespace
+        if (_fileAttributes.isDefined(SIZE)) {
+            channel.truncate(_fileAttributes.getSize());
+            // undefine size to avoid truncate on second open
+            _fileAttributes.undefine(SIZE);
+        }
+        return channel;
     }
 
     private void registerFileAttributesInNameSpace()
@@ -138,7 +144,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         FileAttributes attributesToUpdate = FileAttributes.ofLocation(_repository.getPoolName());
         if (_fileAttributes.isDefined(CHECKSUM)) {
                 /* PnfsManager detects conflicting checksums and will fail the update. */
-            attributesToUpdate.setChecksums(_fileAttributes.getChecksums());
+   //         attributesToUpdate.setChecksums(_fileAttributes.getChecksums());
         }
         if (_initialState == ReplicaState.FROM_CLIENT) {
             attributesToUpdate.setAccessLatency(_fileAttributes.getAccessLatency());
