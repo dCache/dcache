@@ -77,8 +77,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import org.dcache.alarms.LogEntry;
@@ -190,14 +192,18 @@ public final class AlarmsResources {
         }
 
         try {
-            LogEntry entry = new ObjectMapper().readValue(requestPayload,
-                                                          LogEntry.class);
+            LogEntry[] entries = new ObjectMapper().readValue(requestPayload,
+                                                              LogEntry[].class);
             AlarmsInfoService service =
                             ServletContextHandlerAttributes.getAlarmsInfoService(ctx);
+
+            List<LogEntry> list = Arrays.stream(entries)
+                                        .collect(Collectors.toList());
+
             if (delete) {
-                service.delete(entry);
+                service.delete(list);
             } else {
-                service.update(entry);
+                service.update(list);
             }
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);

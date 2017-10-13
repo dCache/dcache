@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao.impl;
 
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,7 +120,6 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
             tx.begin();
             Collection<LogEntry> result = AlarmJDOUtils.execute(readManager,
                                                                 filter);
-
             logger.debug("got collection {}", result);
             Collection<LogEntry> detached = readManager.detachCopyAll(result);
             logger.debug("got detatched collection {}", detached);
@@ -243,9 +243,23 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
             return 0;
         }
 
-        Transaction tx = deleteManager.currentTransaction();
-        AlarmDAOFilter filter = AlarmJDOUtils.getIdFilter(selected);
-        return doRemove(tx, filter, deleteManager);
+        /**
+         * Too many deletes in a single transaction will
+         * cause errors, even StackOverflow exceptions.
+         * Break up into smaller batches.
+         */
+        long[] total = new long[]{0L};
+
+        try {
+            Iterables.partition(selected, 100).forEach((partition) -> {
+                AlarmDAOFilter filter = AlarmJDOUtils.getIdFilter(partition);
+                total[0] += doRemove(filter, deleteManager);
+            });
+        } finally {
+            deleteManager.close();
+        }
+
+        return total[0];
     }
 
     @Override
@@ -310,6 +324,25 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
             return 0;
         }
 
+        /**
+         * Too many object updates in a single transaction will
+         * cause errors, even StackOverflow exceptions.
+         * Break up into smaller batches.
+         */
+        long[] total = new long[]{0L};
+
+        try {
+            Iterables.partition(selected, 100).forEach((partition) -> {
+                total[0] += update(partition, updateManager);
+            });
+        } finally {
+            updateManager.close();
+        }
+
+        return total[0];
+    }
+
+    private long update(Collection<LogEntry> selected, PersistenceManager updateManager) {
         Transaction tx = updateManager.currentTransaction();
         AlarmDAOFilter filter = AlarmJDOUtils.getIdFilter(selected);
 
@@ -340,17 +373,13 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
             logJDOException("update", filter, t);
             return 0;
         } finally {
-            try {
-                AlarmJDOUtils.rollbackIfActive(tx);
-            } finally {
-                updateManager.close();
-            }
+            AlarmJDOUtils.rollbackIfActive(tx);
         }
     }
 
-    private long doRemove(Transaction tx,
-                          AlarmDAOFilter filter,
+    private long doRemove(AlarmDAOFilter filter,
                           PersistenceManager deleteManager) {
+        Transaction tx = deleteManager.currentTransaction();
         try {
             tx.begin();
             long removed = AlarmJDOUtils.delete(deleteManager, filter);
@@ -361,11 +390,7 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
             logJDOException("remove", filter, t);
             return 0;
         } finally {
-            try {
-                AlarmJDOUtils.rollbackIfActive(tx);
-            } finally {
-                deleteManager.close();
-            }
+            AlarmJDOUtils.rollbackIfActive(tx);
         }
     }
 
@@ -395,10 +420,9 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
     private long remove(Long threshold) throws Exception {
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         try {
-            Transaction tx = deleteManager.currentTransaction();
-            AlarmDAOFilter filter = AlarmJDOUtils.getDeleteBeforeFilter(
-                            threshold);
-            return doRemove(tx, filter, deleteManager);
+            AlarmDAOFilter filter
+                            = AlarmJDOUtils.getDeleteBeforeFilter(threshold);
+            return doRemove(filter, deleteManager);
         } finally {
             deleteManager.close();
         }

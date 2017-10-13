@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.alarms;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -73,8 +72,8 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.LogEntry;
-import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.restful.util.alarms.AlarmsCollector;
+import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.vehicles.alarms.AlarmMappingRequestMessage;
 import org.dcache.vehicles.alarms.AlarmsDeleteMessage;
 import org.dcache.vehicles.alarms.AlarmsRequestMessage;
@@ -173,11 +172,9 @@ public final class AlarmsInfoServiceImpl extends
     private Map<String, String> priorityMap = Collections.EMPTY_MAP;
 
     @Override
-    public void delete(LogEntry entry)
+    public void delete(List<LogEntry> entries)
                     throws CacheException, InterruptedException {
         AlarmsDeleteMessage message = new AlarmsDeleteMessage();
-        List<LogEntry> entries = new ArrayList<>();
-        entries.add(entry);
         message.setToDelete(entries);
         collector.sendRequestToAlarmService(message);
     }
@@ -201,11 +198,9 @@ public final class AlarmsInfoServiceImpl extends
         return priorityMap;
     }
 
-    public void update(LogEntry entry)
+    public void update(List<LogEntry> entries)
                     throws CacheException, InterruptedException {
         AlarmsUpdateMessage message = new AlarmsUpdateMessage();
-        List<LogEntry> entries = new ArrayList<>();
-        entries.add(entry);
         message.setToUpdate(entries);
         collector.sendRequestToAlarmService(message);
     }

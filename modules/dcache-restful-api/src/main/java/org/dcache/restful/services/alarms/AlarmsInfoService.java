@@ -94,19 +94,19 @@ public interface AlarmsInfoService {
     Map<String, String> getMap();
 
     /**
-     * <p>Delete the alarm from the underlying storage.</p>
+     * <p>Delete the alarms from the underlying storage.</p>
      *
-     * @param entry to delete.
+     * @param entries to delete.
      * @throws CacheException if the indicated alarm does not exist
      */
-    void delete(LogEntry entry) throws CacheException, InterruptedException;
+    void delete(List<LogEntry> entries) throws CacheException, InterruptedException;
 
     /**
      * <p>The service will only mutate the 'closed' and 'notes' fields.</p>
      *
-     * @param entry to update.
+     * @param entries to update.
      * @throws CacheException if the indicated alarm does not exist or if
      *                        update fails.
      */
-    void update(LogEntry entry) throws CacheException, InterruptedException;
+    void update(List<LogEntry> entries) throws CacheException, InterruptedException;
 }
