@@ -54,6 +54,7 @@ import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Abstract base class for movers.
@@ -275,7 +276,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
             throw new InterruptedIOException("mover interrupted while opening file: " + Exceptions.messageOrClassName(e));
         } catch (IOException e) {
             throw new DiskErrorCacheException(
-                    "File could not be opened; please check the file system: " + e.getMessage(), e);
+                    "File could not be opened; please check the file system: "
+                    + messageOrClassName(e), e);
         }
         return channel;
     }

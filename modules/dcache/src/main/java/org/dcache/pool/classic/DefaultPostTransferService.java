@@ -46,6 +46,8 @@ import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 public class DefaultPostTransferService extends AbstractCellComponent implements PostTransferService
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPostTransferService.class);
@@ -120,7 +122,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             } catch (IOException e) {
                 LOGGER.warn("Transfer failed in post-processing: {}", e.toString());
                 mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                        "Transfer failed in post-processing: " + e.getMessage());
+                                        "Transfer failed in post-processing: " + messageOrClassName(e));
                 completionHandler.failed(e, null);
             } catch (RuntimeException e) {
                 LOGGER.error(
