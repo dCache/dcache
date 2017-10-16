@@ -29,6 +29,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.util.CacheExceptionFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -443,10 +444,20 @@ public class CellStub
      */
     public void notify(Serializable message)
     {
-        if (_destination == null) {
-            throw new IllegalStateException("Destination must be specified");
-        }
+        checkState(_destination != null, "Destination must be specified");
         notify(_destination, message);
+    }
+
+    /**
+     * Sends {@literal message} to the predefined destination specifying a
+     * timeout.  This is used primarily to support legacy cell code that has
+     * explicit asynchronous message handling; newer code should use the
+     * ListenableFuture from the equivalent send method.
+     */
+    public void notify(Serializable message, long timeout)
+    {
+        checkState(_destination != null, "Destination must be specified");
+        notify(_destination, message, timeout);
     }
 
     /**
@@ -454,8 +465,23 @@ public class CellStub
      */
     public void notify(CellPath destination, Serializable message)
     {
+        notify(destination, message, Long.MAX_VALUE);
+    }
+
+    /**
+     * Sends {@literal message} to {@literal destination} specifying a
+     * timeout.  This is used primarily to support legacy cell code that has
+     * explicit asynchronous message handling; newer code should use the
+     * ListenableFuture from the equivalent send method.
+     */
+    public void notify(CellPath destination, Serializable message, long timeout)
+    {
         _rateLimiter.acquire();
-        _endpoint.sendMessage(new CellMessage(destination, message));
+        CellMessage envelope = new CellMessage(destination, message);
+        if (timeout < Long.MAX_VALUE) {
+            envelope.setTtl(timeout);
+        }
+        _endpoint.sendMessage(envelope);
     }
 
     @Override
