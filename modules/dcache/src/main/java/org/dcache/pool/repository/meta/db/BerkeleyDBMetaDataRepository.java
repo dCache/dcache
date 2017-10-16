@@ -28,6 +28,7 @@ import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 
 import static java.util.Arrays.asList;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * BerkeleyDB based MetaDataRepository implementation.
@@ -99,7 +100,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
         } catch (OperationFailureException e) {
             throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + messageOrClassName(e), e);
         }
     }
 
@@ -123,7 +124,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
         } catch (NoSuchFileException | FileNotFoundException e) {
             return null;
         } catch (IOException e) {
-            throw new CacheException("Failed to read " + id + ": " + e.getMessage(), e);
+            throw new CacheException("Failed to read " + id + ": " + messageOrClassName(e), e);
         }
     }
 
@@ -147,7 +148,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
             return new CacheRepositoryEntryImpl(this, id);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
-                    "Failed to create new entry " + id + ": " + e.getMessage(), e);
+                    "Failed to create new entry " + id + ": " + messageOrClassName(e), e);
         }
     }
 
@@ -158,7 +159,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
         try {
             _fileStore.remove(id);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to delete " + id);
+            throw new DiskErrorCacheException("Failed to delete " + id + ": " + messageOrClassName(e), e);
         }
         try {
             views.getStorageInfoMap().remove(id.toString());

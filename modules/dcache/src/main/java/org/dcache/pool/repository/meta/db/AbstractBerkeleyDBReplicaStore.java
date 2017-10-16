@@ -47,6 +47,8 @@ import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.ConfigurationMapFactoryBean;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 /**
  * Base class for BerkeleyDB backed ReplicaStore implementations.
  *
@@ -161,7 +163,7 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
 
             return true;
         } catch (IOException e) {
-            LOGGER.error("Failed to touch {}: {}", tmp, e.getMessage());
+            LOGGER.error("Failed to touch {}: {}", tmp, messageOrClassName(e));
             return false;
         }
     }
