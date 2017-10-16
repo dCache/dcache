@@ -36,7 +36,6 @@ public class ObjectMapperProvider implements ContextResolver<ObjectMapper>
     {
         return new ObjectMapper()
                 .configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false)
-                .configure(SerializationFeature.WRAP_ROOT_VALUE, true)
                 .configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
