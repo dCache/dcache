@@ -8,10 +8,10 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>dcache-restful-api</artifactId>
+    <artifactId>dcache-frontend</artifactId>
     <packaging>jar</packaging>
 
-    <name>dCache RESTful API</name>
+    <name>dCache frontend</name>
 
     <dependencies>
         <dependency>

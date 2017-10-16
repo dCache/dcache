@@ -174,7 +174,7 @@
     </dependency>
       <dependency>
           <groupId>org.dcache</groupId>
-          <artifactId>dcache-restful-api</artifactId>
+          <artifactId>dcache-frontend</artifactId>
           <version>${project.version}</version>
       </dependency>
     <dependency>

@@ -44,11 +44,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.dcache</groupId>
-      <artifactId>dcache-restful-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
         <groupId>io.milton</groupId>
         <artifactId>milton-server-ce</artifactId>
     </dependency>

@@ -101,7 +101,7 @@ exec env verify-${frontend.authn.connector}.exe
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${frontend.cell.name} \
-   "classpath:org/dcache/webdav/frontend.xml \
+   "classpath:org/dcache/frontend/frontend.xml \
     -consume=${frontend.cell.consume} \
     -subscribe=${frontend.cell.subscribe} \
     -profiles=macaroons-${frontend.enable.macaroons} \
