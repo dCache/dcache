@@ -33,6 +33,7 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Wrapper for a ReplicaStore which encapsulates the logic for
@@ -155,7 +156,7 @@ public class ConsistentReplicaStore
 
                 entry = rebuildEntry(entry);
             } catch (IOException e) {
-                throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage(), e);
+                throw new DiskErrorCacheException("I/O error in healer: " + messageOrClassName(e), e);
             } catch (FileNotFoundCacheException e) {
                 _replicaStore.remove(id);
                 _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
