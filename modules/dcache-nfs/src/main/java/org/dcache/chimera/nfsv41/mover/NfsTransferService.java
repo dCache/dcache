@@ -38,7 +38,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFSv41Session;
-import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
@@ -47,7 +46,6 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.util.Bytes;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.IoStrategy;
@@ -68,7 +66,7 @@ public class NfsTransferService
     private CellStub _door;
     private PostTransferService _postTransferService;
     private final long _bootVerifier = System.currentTimeMillis();
-    private final verifier4 _bootVerifierBytes = toVerifier(_bootVerifier);
+    private final verifier4 _bootVerifierBytes = verifier4.valueOf(_bootVerifier);
     private boolean _sortMultipathList;
     private PnfsHandler _pnfsHandler;
     private ChecksumModule _checksumModule;
@@ -323,12 +321,5 @@ public class NfsTransferService
 
     public verifier4 getBootVerifier() {
         return _bootVerifierBytes;
-    }
-
-    private static verifier4 toVerifier(long v) {
-        verifier4 verifier = new verifier4();
-        verifier.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
-        Bytes.putLong(verifier.value, 0, v);
-        return verifier;
     }
 }
