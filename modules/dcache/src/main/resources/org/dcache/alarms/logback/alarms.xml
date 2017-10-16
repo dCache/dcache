@@ -56,7 +56,7 @@
         <property name="access" ref="alarmStore"/>
         <property name="map" ref="priorityMap"/>
         <property name="executor">
-            <bean class="org.dcache.util.BoundedCachedExecutor">
+            <bean class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdown">
                 <constructor-arg value="${alarms.limits.message-threads}"/>
             </bean>
         </property>
