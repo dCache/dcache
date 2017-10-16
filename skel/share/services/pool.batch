@@ -72,7 +72,6 @@ define context PoolDefaults endDefine
    set report remove on
    set breakeven 0.7
    set duplicate request none
-   set p2p separated
 
    flush set max active 1000
    flush set interval 60
