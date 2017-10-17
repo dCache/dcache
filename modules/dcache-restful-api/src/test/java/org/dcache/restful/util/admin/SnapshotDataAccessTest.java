@@ -57,71 +57,47 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.transfers;
+package org.dcache.restful.util.admin;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TransferInfo;
 import diskCacheV111.util.UserInfo;
 import org.dcache.auth.FQAN;
-import org.dcache.restful.providers.transfers.TransferList;
-import org.dcache.restful.util.transfers.TransferCollector;
+import org.dcache.restful.providers.SnapshotList;
 
 import static org.dcache.restful.util.transfers.TransferCollectionUtils.transferKey;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
-public class TransferInfoServiceTest {
-    static final Logger LOGGER = LoggerFactory.getLogger(
-                    TransferInfoServiceTest.class);
+public final class SnapshotDataAccessTest {
+    static final String DATAFILE = "transfers.json";
 
-    static final Random RANDOM = new Random(System.currentTimeMillis());
+    static final int[] TO_REMOVE = { 113, 234, 397, 401 };
 
-    static final String DATAFILE = "org/dcache/restful/services/transfers/transfers.txt";
-
-    static final PnfsId TESTID = new PnfsId("0000E387208AEB3746038A4B66CC6B528C52");
-
-    static final int TESTIDCOUNT = 456;
-
-    class TestTransferCollector extends TransferCollector {
+    class TestTransferCollector {
         Map<String, TransferInfo> map;
 
-        @Override
-        public Map<String, TransferInfo> collectData()
-                        throws InterruptedException {
-            return ImmutableMap.copyOf(map);
-        }
-
-        @Override
-        public void initialize(Long timeout, TimeUnit timeUnit) {
+        public void initialize() {
             JsonParser parser = new JsonParser();
-            InputStream input = getClass()
-                            .getClassLoader()
-                            .getResourceAsStream(DATAFILE);
+            InputStream input = SnapshotDataAccessTest.class
+                                .getResourceAsStream(DATAFILE);
             Reader reader = new InputStreamReader(input);
             Object obj = parser.parse(reader);
 
@@ -186,31 +162,16 @@ public class TransferInfoServiceTest {
                 userInfo.setUid(getLong(jsonTransfer.get("uid"), null));
                 userInfo.setGid(getLong(jsonTransfer.get("gid"), null));
                 userInfo.setPrimaryFqan(new FQAN(getString(
-                                                jsonTransfer.get(
-                                                                "primaryFqan"),
-                                                "")));
+                                jsonTransfer.get(
+                                                "primaryFqan"),
+                                "")));
 
                 transferInfo.setUserInfo(userInfo);
 
                 map.put(transferKey(transferInfo.getCellName(),
                                     transferInfo.getSerialId()),
-                                    transferInfo);
-                allTransfers = map.size();
+                        transferInfo);
             });
-        }
-
-        @Override
-        public void shutdown() {
-            map.clear();
-        }
-
-        void removeRandom(int count) {
-            for (int i = 0; i < count; ++i) {
-                int currentSize = map.size();
-                int index = Math.abs(RANDOM.nextInt() % currentSize);
-                String key = new ArrayList<>(map.keySet()).get(index);
-                map.remove(key);
-            }
         }
 
         private Long getLong(JsonElement element, Long defaultValue) {
@@ -228,102 +189,206 @@ public class TransferInfoServiceTest {
         }
     }
 
-    private TransferInfoServiceImpl                             service;
-    private TestTransferCollector                               collector;
-    private int                                                 allTransfers;
+    private SnapshotDataAccess<String, TransferInfo> snapshotDataAccess;
+    private TestTransferCollector                    collector;
+    private SnapshotList<TransferInfo>               snapshotList;
+    private List<TransferInfo>                       currentList;
+    private UUID                                     currentToken;
+    private Integer                                  offset;
+    private Integer                                  limit;
+    private Method[]                                 methods;
+    private Object[]                                 values;
+    private TransferInfo                             elementAtIndex;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         collector = new TestTransferCollector();
-        service = new TransferInfoServiceImpl() {
-            public void run() {
-                synchronized (this) {
-                    try {
-                        update(this.collector.collectData());
-                        notify();
-                    } catch (InterruptedException e) {
-                    }
-                }
-            }
-        };
-        service.setTimeout(100);
-        service.setTimeoutUnit(TimeUnit.MILLISECONDS);
-        service.setMaxCacheSize(2);
-        service.setCollector(collector);
-        service.configure();
-        collector.initialize(100L, TimeUnit.MILLISECONDS);
-        service.run();
-    }
-
-    @After
-    public void shutDown() {
-        service.beforeStop();
+        collector.initialize();
+        snapshotDataAccess = new SnapshotDataAccess<>();
+        snapshotDataAccess.refresh(collector.map);
+        setCurrentList();
+        currentToken = null;
+        offset = null;
+        limit = null;
+        methods = null;
+        values = null;
     }
 
     @Test
-    public void testClientRefresh() {
-        TransferList list = service.get(null, null, null, null);
-        int terminated = Math.min(799, allTransfers);
-        doUpdate(terminated);
-        list = service.get(list.getCurrentToken(), null, null, null);
-        assertEquals(allTransfers, list.getItems().size());
-        list = service.get(null, null, null, null);
-        assertEquals(allTransfers - terminated, list.getItems().size());
+    public void shouldReturnEntriesOnlyMatchingPnfsid() throws Exception {
+        whenMethodIsSetToPnfsid();
+        whenValueIsSetTo("0000E387208AEB3746038A4B66CC6B528C52");
+        whenAccessIsRead();
+        assertThatEachElementHasPnfsid("0000E387208AEB3746038A4B66CC6B528C52");
+        assertThatNextOffSetIs(-1);
     }
 
     @Test
-    public void testGetAll() {
-        TransferList result = service.get(null, null, null, null);
-        assertEquals(allTransfers, result.getItems().size());
+    public void shouldReturnNewTokenWithCurrentListWhenSnaphotIsExpiredButRequestHasNoToken()
+                    throws Exception {
+        whenOffsetIsSetTo(100);
+        whenLimitIsSetTo(100);
+        whenAccessIsRead();
+        whenElementIsSavedAtIndex(13);
+        whenListChanges();
+        whenAccessIsRefreshed();
+        whenAccessIsRead();
+        assertThatReturnedTokenIsNotNull();
+        assertThatSizeOfReturnedListIs(100);
+        assertThatCurrentOffSetIs(100);
+        assertThatNextOffSetIs(200);
+        assertThatElementHasChangedAtIndex(13);
     }
 
     @Test
-    public void testGetWithID() {
-        TransferList result = service.get(null, null, null, TESTID);
-        assertEquals(TESTIDCOUNT, result.getItems().size());
+    public void shouldReturnNoTokenWithEmptyListWhenSnaphotIsExpired()
+                    throws Exception {
+        whenOffsetIsSetTo(100);
+        whenLimitIsSetTo(100);
+        whenAccessIsRead();
+        whenTokenIsSaved();
+        whenAccessIsRefreshed();
+        whenAccessIsRead();
+        assertThatReturnedTokenIsNull();
+        assertThatSizeOfReturnedListIs(0);
+        assertThatCurrentOffSetIs(0);
+        assertThatNextOffSetIs(-1);
     }
 
     @Test
-    public void testPagingSimulation() {
-        Set<String> keys = new HashSet<>();
+    public void shouldReturnPartialListOfEntriesOnlyMatchingPnfsid()
+                    throws Exception {
+        whenMethodIsSetToPnfsid();
+        whenOffsetIsSetTo(100);
+        whenLimitIsSetTo(10);
+        whenValueIsSetTo("0000E387208AEB3746038A4B66CC6B528C52");
+        whenAccessIsRead();
+        assertThatEachElementHasPnfsid("0000E387208AEB3746038A4B66CC6B528C52");
+        assertThatSizeOfReturnedListIs(10);
+        assertThatNextOffSetIs(110);
+    }
 
-        UUID token = null;
-        int lastCount = 0;
+    @Test
+    public void shouldReturnSecondPageOfResults() throws Exception {
+        whenOffsetIsSetTo(100);
+        whenLimitIsSetTo(100);
+        whenAccessIsRead();
+        assertThatFirstElementIsElement(100);
+        assertThatSizeOfReturnedListIs(100);
+        assertThatNextOffSetIs(200);
+    }
 
-        for (int i = 0; i < allTransfers; i += 100) {
-            TransferList next = service.get(token, i, 100, null);
-            lastCount += next.getItems().size();
-            for (TransferInfo info : next.getItems()) {
-                String key = transferKey(info.getCellName(),
-                                         info.getSerialId());
-                assertFalse(keys.contains(key));
-                keys.add(key);
-            }
-            assertEquals("offset = " + i, lastCount, keys.size());
-            token = next.getCurrentToken();
+    @Test
+    public void shouldReturnShortPageAndNegativeOffsetWhenLastPageIsRequested()
+                    throws Exception {
+        whenOffsetIsSetTo(1800);
+        whenLimitIsSetTo(100);
+        whenAccessIsRead();
+        assertThatSizeOfReturnedListIs(23);
+        assertThatNextOffSetIs(-1);
+    }
+
+    private void assertThatCurrentOffSetIs(int i) {
+        assertEquals("Returned current offset of snapshot incorrect",
+                     i, snapshotList.getCurrentOffset());
+    }
+
+    private void assertThatEachElementHasPnfsid(String s) {
+        for (TransferInfo info : snapshotList.getItems()) {
+            assertEquals("PnfsIds did not match!", s, info.getPnfsId());
         }
-
-        assertEquals("final", allTransfers, keys.size());
     }
 
-    @Test
-    public void testPopulate() throws CacheException {
-        TransferList list = service.get(null, 0, 1, null);
-        TransferInfo info = list.getItems().get(0);
-        TransferInfo query = new TransferInfo();
-        query.setCellName(info.getCellName());
-        query.setSerialId(info.getSerialId());
-        TransferInfo populated = service.populate(query);
-        LOGGER.debug(info.toFormattedString());
-        LOGGER.debug(populated.toFormattedString());
-        assertEquals(info.toFormattedString(), populated.toFormattedString());
+    private void assertThatElementHasChangedAtIndex(int i) {
+        assertNotEquals("Element at index " + i + " is the same!",
+                        elementId(elementAtIndex),
+                        elementId(snapshotList.getItems().get(i)));
     }
 
-    private void doUpdate(int remove) {
-        collector.removeRandom(remove);
-        try {
-            service.update(collector.collectData());
-        } catch (InterruptedException e) {
+    private void assertThatFirstElementIsElement(int i) {
+        assertEquals("First returned snapshot element is not correct",
+                     elementId(currentList.get(i)),
+                     elementId(snapshotList.getItems().get(0)));
+    }
+
+    private void assertThatNextOffSetIs(int i) {
+        assertEquals("Returned next offset of snapshot incorrect",
+                     i, snapshotList.getNextOffset());
+    }
+
+    private void assertThatSizeOfReturnedListIs(int i) {
+        assertEquals("Size of snapshot list is not correct",
+                     i,
+                     snapshotList.getItems().size());
+    }
+
+    private void assertThatReturnedTokenIsNotNull() {
+        assertNotNull("Token returned was null!",
+                      snapshotList.getCurrentToken());
+    }
+
+    private void assertThatReturnedTokenIsNull() {
+        assertNull("Token returned was not null!",
+                      snapshotList.getCurrentToken());
+    }
+
+    private void setCurrentList()
+                    throws InvocationTargetException, IllegalAccessException {
+        currentList = snapshotDataAccess.getSnapshot(null,
+                                                     null,
+                                                     null,
+                                                     null,
+                                                     null).getItems();
+    }
+
+    private void whenAccessIsRead() throws Exception {
+        snapshotList = snapshotDataAccess.getSnapshot(currentToken,
+                                                      offset,
+                                                      limit,
+                                                      methods,
+                                                      values);
+    }
+
+    private void whenAccessIsRefreshed()
+                    throws InvocationTargetException, IllegalAccessException {
+        snapshotDataAccess.refresh(collector.map);
+        setCurrentList();
+    }
+
+    private void whenElementIsSavedAtIndex(int i) {
+        elementAtIndex = snapshotList.getItems().get(i);
+    }
+
+    private void whenLimitIsSetTo(int i) {
+        limit = i;
+    }
+
+    private void whenListChanges() {
+        List<String> keys = new ArrayList<>(collector.map.keySet());
+        for (int i = 0; i < TO_REMOVE.length; ++i) {
+            String key = keys.get(TO_REMOVE[i]);
+            collector.map.remove(key);
         }
+    }
+
+    private void whenMethodIsSetToPnfsid() throws Exception {
+        methods = new Method[] { TransferInfo.class.getMethod("getPnfsId",
+                                                              null) };
+    }
+
+    private void whenOffsetIsSetTo(int i) {
+        offset = i;
+    }
+
+    private void whenTokenIsSaved() {
+        currentToken = snapshotList.getCurrentToken();
+    }
+
+    private void whenValueIsSetTo(Object value) {
+        values = new Object[] { value };
+    }
+
+    private String elementId(TransferInfo info) {
+        return info.getCellName() + info.getDomainName() + info.getSerialId();
     }
 }

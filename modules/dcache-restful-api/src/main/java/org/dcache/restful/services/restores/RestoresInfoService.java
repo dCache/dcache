@@ -59,26 +59,32 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.restores;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
+import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
-import org.dcache.restful.providers.restores.RestoresList;
 
 /**
  * <p>Internal API for calling the pool manager for restore requests.</p>
  */
 public interface RestoresInfoService {
     /**
-     * <p>Return the restores metadata objects.  If no token is provided,
-     *    a snapshot of the most recent data should be returned; otherwise,
-     *    a snapshot corresponding to the token should be returned.</p>
+     * <p>Return the metadata objects.</p>
      *
-     * @param token  specifying which snapshot to use (can be <code>null</code>).
+     * @param token  specifying the current snapshot held by caller
+     *               (can be <code>null</code>).
      * @param offset specifying the index in the snapshot at which to begin.
-     * @param limit  maximum number of restores to include.
-     * @param pnfsid include in the list only the restores involving this pnfsid.
-     * @return {@link RestoresList} containing list of {@link RestoreInfo} beans.
+     * @param limit  maximum number of elements to include.
+     * @param pnfsId to use as filter.
+     * @return {@link SnapshotList<RestoreInfo>} containing list of beans.
      */
-    RestoresList get(UUID token, Integer offset, Integer limit, PnfsId pnfsid);
+    SnapshotList<RestoreInfo> get(UUID token,
+                                  Integer offset,
+                                  Integer limit,
+                                  PnfsId pnfsId)
+                    throws InvocationTargetException,
+                           IllegalAccessException,
+                           NoSuchMethodException;
 }

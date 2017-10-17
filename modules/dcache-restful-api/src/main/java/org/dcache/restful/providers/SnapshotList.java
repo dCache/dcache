@@ -67,11 +67,11 @@ import java.util.UUID;
 
 /**
  * <p>JSON wrapper for returning list of serializable
- *    objects.  The wrapper supports requests based on
- *    token identifiers of snapshots, with an offset and limit into
- *    the underlying snapshot.</p>
+ * objects.  The wrapper supports requests based on
+ * token identifiers of snapshots, with an offset and limit into
+ * the underlying snapshot.</p>
  */
-public abstract class SnapshotList<T extends Serializable>
+public class SnapshotList<T extends Serializable>
                 implements Serializable {
     /**
      * <p>The returned data.</p>
@@ -98,6 +98,11 @@ public abstract class SnapshotList<T extends Serializable>
      */
     private UUID currentToken;
 
+    /**
+     * <p>Timestamp in milliseconds of last update.</p>
+     */
+    private long timeOfCreation = 0L;
+
     public int getCurrentOffset() {
         return currentOffset;
     }
@@ -106,12 +111,16 @@ public abstract class SnapshotList<T extends Serializable>
         return currentToken;
     }
 
-    public int getNextOffset() {
-        return nextOffset;
-    }
-
     public List<T> getItems() {
         return items;
+    }
+
+    public long getTimeOfCreation() {
+        return timeOfCreation;
+    }
+
+    public int getNextOffset() {
+        return nextOffset;
     }
 
     public void setCurrentOffset(int currentOffset) {
@@ -122,11 +131,15 @@ public abstract class SnapshotList<T extends Serializable>
         this.currentToken = currentToken;
     }
 
-    public void setNextOffset(int nextOffset) {
-        this.nextOffset = nextOffset;
-    }
-
     public void setItems(List<T> items) {
         this.items = items;
+    }
+
+    public void setTimeOfCreation(long timeOfCreation) {
+        this.timeOfCreation = timeOfCreation;
+    }
+
+    public void setNextOffset(int nextOffset) {
+        this.nextOffset = nextOffset;
     }
 }

@@ -59,40 +59,26 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.transfers;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TransferInfo;
 import diskCacheV111.util.TransferInfo.MoverState;
-import diskCacheV111.util.UserInfo;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-import org.dcache.auth.FQAN;
-import org.dcache.restful.providers.transfers.TransferList;
-import org.dcache.services.collector.CellDataCollectingService;
+import org.dcache.restful.providers.SnapshotList;
+import org.dcache.restful.util.admin.SnapshotDataAccess;
 import org.dcache.restful.util.transfers.TransferCollector;
 import org.dcache.restful.util.transfers.TransferFilter;
-
-import static org.dcache.restful.util.transfers.TransferCollectionUtils.transferKey;
+import org.dcache.services.collector.CellDataCollectingService;
 
 /**
  * <p>Service layer responsible for collecting information from
@@ -225,7 +211,8 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
         Integer limit = Integer.MAX_VALUE;
 
         @Override
-        public String call() throws ParseException {
+        public String call() throws ParseException, InvocationTargetException,
+                        IllegalAccessException, NoSuchMethodException {
             TransferFilter filter = new TransferFilter();
             Date date = getDate(after);
             if (date != null) {
@@ -252,7 +239,8 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                 filter.setState(state.name());
             }
 
-            TransferList result = get(null, 0, limit, null);
+            SnapshotList<TransferInfo> result
+                            = get(null, 0, limit, null);
             List<TransferInfo> snapshot = result.getItems();
 
             StringBuilder builder = new StringBuilder();
@@ -261,11 +249,6 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                     .forEach((r) -> builder.append(r.toFormattedString())
                                            .append("\n"));
 
-            /*
-             *  Since this call refreshes each time,
-             *  immediately invalidate the snapshot.
-             */
-            snapshots.invalidate(result.getCurrentToken());
 
             builder.insert(0, "TOTAL TRANSFERS : "
                             + filter.getTotalMatched() + "\n\n");
@@ -288,187 +271,27 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
     }
 
     /**
-     * <p>Map of transfer information extracted using
-     * the {@link TransferCollector}.</p>
+     * <p>Data store providing snapshots.</p>
      */
-    private final Map<String, TransferInfo> transfers = new TreeMap<>();
-
-    /**
-     * <p>Cached snapshots of the transfers.</p>
-     */
-    private Cache<UUID, List<TransferInfo>> snapshots;
-
-    /**
-     * <p>Cache settings</p>
-     */
-    private long maxCacheSize = 1000;
+    private final SnapshotDataAccess<String, TransferInfo>
+                                        access = new SnapshotDataAccess<>();
 
     @Override
-    public TransferList get(UUID token,
-                            Integer offset,
-                            Integer limit,
-                            PnfsId pnfsid) {
-        if (offset == null) {
-            offset = 0;
-        }
-
-        if (limit == null) {
-            limit = Integer.MAX_VALUE;
-        }
-
-        if (token == null) {
-            token = storeSnapshot();
-        }
-
-        TransferList result = new TransferList();
-        result.setItems(getSnapshot(token, offset, limit, pnfsid));
-        result.setCurrentToken(token);
-        result.setCurrentOffset(offset);
-
-        int size = result.getItems().size();
-
-        if (size < limit) {
-            size = -1;
-        }
-
-        result.setNextOffset(size);
-        return result;
+    public SnapshotList<TransferInfo> get(UUID token,
+                                          Integer offset,
+                                          Integer limit,
+                                          PnfsId pnfsid)
+                    throws InvocationTargetException,
+                           IllegalAccessException,
+                           NoSuchMethodException {
+        Method getPnfsid = TransferInfo.class.getMethod("getPnfsId");
+        Method[] methods = pnfsid == null? null : new Method[]{getPnfsid};
+        Object[] values = pnfsid == null? null : new Object[]{pnfsid};
+        return access.getSnapshot(token, offset, limit, methods, values);
     }
 
     @Override
-    public TransferInfo populate(TransferInfo info) throws CacheException {
-        Preconditions.checkNotNull(info,
-                                   "Cannot populate a "
-                                                   + "null TransferInfo object.");
-
-        String key = transferKey(info.getCellName(), info.getSerialId());
-        TransferInfo stored = get(key);
-
-        if (stored == null) {
-            throw new CacheException("Transfer not found for " + key);
-        }
-
-        info.setDomainName(stored.getDomainName());
-        info.setProtocol(stored.getProtocol());
-        info.setProcess(stored.getProcess());
-        info.setPnfsId(stored.getPnfsId());
-        info.setPool(stored.getPool());
-        info.setReplyHost(stored.getReplyHost());
-        info.setSessionStatus(stored.getSessionStatus());
-        info.setMoverStatus(stored.getMoverStatus());
-        info.setWaitingSince(stored.getWaitingSince());
-        info.setMoverId(stored.getMoverId());
-        info.setMoverSubmit(stored.getMoverSubmit());
-        info.setTransferTime(stored.getTransferTime());
-        info.setBytesTransferred(stored.getBytesTransferred());
-        info.setMoverStart(stored.getMoverStart());
-
-        UserInfo storedUserInfo = stored.getUserInfo();
-        if (storedUserInfo != null) {
-            UserInfo userInfo = info.getUserInfo();
-            if (userInfo == null) {
-                userInfo = new UserInfo();
-            }
-            String uid = storedUserInfo.getUid();
-            if (Strings.emptyToNull(uid) != null) {
-                userInfo.setUid(Long.parseLong(uid));
-            }
-            String gid = storedUserInfo.getGid();
-            if (Strings.emptyToNull(gid) != null) {
-                userInfo.setGid(Long.parseLong(gid));
-            }
-            FQAN fqan = storedUserInfo.getPrimaryFqan();
-            if (fqan != null) {
-                userInfo.setPrimaryFqan(new FQAN(fqan.toString()));
-            }
-            info.setUserInfo(userInfo);
-        }
-
-        return info;
-    }
-
-    public void setMaxCacheSize(long maxCacheSize) {
-        this.maxCacheSize = maxCacheSize;
-    }
-
-    @Override
-    protected synchronized void configure() {
-        Map<UUID, List<TransferInfo>> current = snapshots == null ?
-                        Collections.EMPTY_MAP : snapshots.asMap();
-
-        snapshots = CacheBuilder.newBuilder()
-                                .maximumSize(maxCacheSize)
-                                .expireAfterAccess(timeout, TimeUnit.MINUTES)
-                                .build();
-
-        snapshots.putAll(current);
-    }
-
-    @VisibleForTesting
-    @Override
-    protected synchronized void update(Map<String, TransferInfo> data) {
-        for (Iterator<String> k = transfers.keySet().iterator(); k.hasNext(); ) {
-            String key = k.next();
-            if (!data.containsKey(key)) {
-                k.remove();
-            }
-        }
-
-        transfers.putAll(data);
-    }
-
-    private synchronized TransferInfo get(String key) {
-        return transfers.get(key);
-    }
-
-    private synchronized List<TransferInfo> getSnapshot(UUID token,
-                                                        int offset,
-                                                        int limit,
-                                                        PnfsId pnfsId) {
-        if (!snapshots.asMap().containsKey(token)) {
-            return Collections.emptyList();
-        }
-
-        List<TransferInfo> filtered = new ArrayList<>();
-        List<TransferInfo> actual = snapshots.getIfPresent(token);
-
-        int end = actual.size();
-
-        String id = pnfsId == null ? null : pnfsId.toString();
-
-        for (int i = offset; i < end && filtered.size() < limit; ++i) {
-            TransferInfo info = actual.get(i);
-
-            if (id != null && !info.getPnfsId().equals(id)) {
-                continue;
-            }
-
-            /*
-             *  The transfer may actually have been removed.
-             *  Indicate this by setting state.
-             *  Do not remove from snapshot because the indexing needs to
-             *  remain unaltered.
-             */
-            if (!transfers.containsKey(transferKey(info.getCellName(),
-                                                   info.getSerialId()))) {
-                info.setMoverStatus(MoverState.DONE.name());
-                info.setSessionStatus("Transfer Completed.");
-                info.setMoverId(null);
-                info.setProcess(null);
-            }
-
-            filtered.add(info);
-        }
-
-        return filtered;
-    }
-
-    private synchronized UUID storeSnapshot() {
-        List<TransferInfo> values = transfers.values()
-                                             .stream()
-                                             .collect(Collectors.toList());
-        UUID uuid = UUID.randomUUID();
-        snapshots.put(uuid, values);
-        return uuid;
+    protected void update(Map<String, TransferInfo> newInfo) {
+        access.refresh(newInfo);
     }
 }
