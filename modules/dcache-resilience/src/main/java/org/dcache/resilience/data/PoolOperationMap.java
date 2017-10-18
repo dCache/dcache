@@ -83,6 +83,7 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.resilience.data.PoolOperation.NextAction;
 import org.dcache.resilience.data.PoolOperation.State;
+import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.CheckpointUtils;
 import org.dcache.resilience.util.ExceptionMessage;
@@ -488,7 +489,12 @@ public class PoolOperationMap extends RunnableModule {
                          *  true overrides considerations of whether
                          *  the pool has already been scanned because
                          *  it is down, or has been excluded.
+                         *
+                         *  Since this is an admin command, we force the
+                         *  check on partitions as well.
                          */
+                        operation.unit = ScanSummary.ALL_UNITS;
+
                         if (doScan(poolInfoMap.getPoolState(pool), true)) {
                             reply.append("\t").append(pool).append("\n");
                         }
@@ -910,6 +916,10 @@ public class PoolOperationMap extends RunnableModule {
                     i.remove();
                     operation.forceScan = true;
                     operation.state = State.WAITING;
+                    /*
+                     *  This is a periodic scan, so check for repartitioning.
+                     */
+                    operation.unit = ScanSummary.ALL_UNITS;
                     waiting.put(pool, operation);
                 } else {
                     /**
