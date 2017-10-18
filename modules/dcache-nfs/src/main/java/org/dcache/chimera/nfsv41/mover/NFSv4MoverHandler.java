@@ -9,12 +9,9 @@ import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.file.StandardOpenOption;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import diskCacheV111.util.PnfsId;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.NFSServerV41;
@@ -45,7 +43,6 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfsace4;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.vfs.DirectoryEntry;
 import org.dcache.nfs.vfs.FsStat;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
@@ -205,12 +202,6 @@ public class NFSv4MoverHandler {
     private final Map<stateid4, NfsMover> _activeIO = new ConcurrentHashMap<>();
     private final NFSv4OperationFactory _operationFactory = new EDSNFSv4OperationFactory();
 
-    /**
-     * for The nfs commit operation comes without a stateid. We need a different way to
-     * wind corresponding mover. The assumption, is that nor now we have only one writer and,
-     * as a result, pnfsid will point only to a single mover.
-     */
-    private final Map<PnfsId, NfsMover> _activeWrites = new ConcurrentHashMap<>();
     private final NFSServerV41 _embededDS;
     private final EmbeddedV3 _v3;
 
@@ -274,9 +265,6 @@ public class NFSv4MoverHandler {
     public void add(NfsMover mover) {
         _log.debug("registering new mover {}", mover);
         _activeIO.put(mover.getStateId(), mover );
-        if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
-            _activeWrites.put(mover.getFileAttributes().getPnfsId(), mover);
-        }
     }
 
     /**
@@ -287,9 +275,6 @@ public class NFSv4MoverHandler {
     public void remove(NfsMover mover) {
         _log.debug("un-removing io handler for stateid {}", mover);
         _activeIO.remove(mover.getStateId());
-        if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
-            _activeWrites.remove(mover.getFileAttributes().getPnfsId());
-        }
     }
 
     private class EDSNFSv4OperationFactory implements NFSv4OperationFactory {
@@ -299,7 +284,7 @@ public class NFSv4MoverHandler {
 
             switch (op.argop) {
                 case nfs_opnum4.OP_COMMIT:
-                    return new EDSOperationCOMMIT(op, _activeWrites);
+                    return new EDSOperationCOMMIT(op, NFSv4MoverHandler.this);
                 case nfs_opnum4.OP_GETATTR:
                     return new OperationGETATTR(op);
                 case nfs_opnum4.OP_PUTFH:
@@ -349,6 +334,19 @@ public class NFSv4MoverHandler {
                     .orElse(null);
         }
         return mover;
+    }
+
+    /**
+     * Find a mover for a corresponding nfs handle.
+     * @param fh file handle
+     * @return a mover for a given nfs file handle
+     * @throws ChimeraNFSException
+     */
+    NfsMover getPnfsIdByHandle(byte[] fh) throws BadHandleException {
+        return _activeIO.values().stream()
+                .filter(m -> Arrays.equals(fh, m.getNfsFilehandle()))
+                .findAny()
+                .orElseThrow(() -> new BadHandleException("No mover for found for given file handle"));
     }
 
     /**

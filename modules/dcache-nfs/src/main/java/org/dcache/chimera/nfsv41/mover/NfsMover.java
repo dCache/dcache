@@ -31,11 +31,13 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.StateOwner;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.verifier4;
+import org.dcache.nfs.status.NfsIoException;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.movers.MoverChannel;
@@ -154,9 +156,13 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         }
     }
 
-    public void commitFileSize(long size) throws CacheException {
-        _namespace.setFileAttributes(getFileAttributes().getPnfsId(),
-                FileAttributes.ofSize(size));
+    public void commitFileSize(long size) throws ChimeraNFSException {
+        try {
+            _namespace.setFileAttributes(getFileAttributes().getPnfsId(),
+                    FileAttributes.ofSize(size));
+        } catch (CacheException e) {
+            throw new NfsIoException("Failed to update file size in the namespace", e);
+        }
     }
 
     public verifier4 getBootVerifier() {
