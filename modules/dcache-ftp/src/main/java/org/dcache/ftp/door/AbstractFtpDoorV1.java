@@ -320,6 +320,41 @@ public abstract class AbstractFtpDoorV1
     protected Executor _executor;
     private IdentityResolverFactory _identityResolverFactory;
     private IdentityResolver _identityResolver;
+    private EnumSet<WorkAround> _activeWorkarounds = EnumSet.noneOf(WorkAround.class);
+
+    private enum WorkAround
+    {
+        /* If globus-url-copy is organising a third-party copy then it will
+         * issue a QUIT command to the destination endpoint before
+         * disconnecting.  For the source endpoint and all second-party copies
+         * no QUIT command is issued; it simply closes the control channel's
+         * TCP connection.
+         *
+         * The support in globus-url-copy support for QUIT is broken: it does
+         * not wait for dCache's response, but closes the TCP connection
+         * (almost) immediately after issuing the command.  Therefore, when
+         * dCache sends the QUIT command response, the client always sends a
+         * RST packet in response.
+         *
+         * There is a race condition between dCache receiving the FIN packet
+         * and receiving the RST packet (from dCache sending the QUIT command
+         * response).
+         *
+         * If dCache receives the FIN before the RST then the connection is in
+         * CLOSE_WAIT when receiving the RST packet and the connection moves to
+         * CLOSED without any issue.
+         *
+         * If the RST is received first then the connection is in state
+         * ESTABLISHED when receiving the RST packet, which causes any
+         * subsequent read to trigger an IOException.
+         *
+         * As a work-around, we suppress any output from the QUIT command and
+         * close our end of the TCP connection once any pending transfers have
+         * completed.
+         */
+        NO_REPLY_ON_QUIT
+    }
+
 
     /**
      * Simple class to allow easy accumulation of space usage.
@@ -1680,6 +1715,7 @@ public abstract class AbstractFtpDoorV1
         pw.println("  Last Command  : " + _lastCommand);
         pw.println(" Command Count  : " + _commandCounter);
         pw.println("     I/O Queue  : " + _settings.getIoQueueName());
+        pw.println("  Work-arounds  : " + _activeWorkarounds);
         Transfer transfer = _transfer;
         if (transfer instanceof FtpTransfer) {
             ((FtpTransfer)transfer).getInfo(pw);
@@ -3022,6 +3058,11 @@ public abstract class AbstractFtpDoorV1
         //     argument.  In future, we may want to record client-supplied
         //     identifiers in billing. (See doTaskid)
 
+        switch (Strings.nullToEmpty(items.get("appname"))) {
+        case "globus-url-copy":
+            _activeWorkarounds.add(WorkAround.NO_REPLY_ON_QUIT);
+            break;
+        }
         reply("250 OK");
     }
 
@@ -3912,7 +3953,10 @@ public abstract class AbstractFtpDoorV1
     public void ftp_quit(String arg)
         throws CommandExitException
     {
-        reply("221 Goodbye");
+
+        if (!_activeWorkarounds.contains(WorkAround.NO_REPLY_ON_QUIT)) {
+            reply("221 Goodbye");
+        }
 
         /* From RFC 959:
          *
