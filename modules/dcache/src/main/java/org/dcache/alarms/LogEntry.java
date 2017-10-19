@@ -104,9 +104,6 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
 
     @Override
     public int compareTo(LogEntry o) {
-        if (o == null) {
-            return -1;
-        }
         return ComparisonChain.start()
                               .compare(lastUpdate, o.lastUpdate)
                               .compare(firstArrived, o.firstArrived)
