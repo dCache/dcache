@@ -67,6 +67,8 @@ import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
  *    namespace access.</p>
  */
 public final class ScanSummary {
+    public static final Integer ALL_UNITS = -1;
+
     private final String          pool;
     private final MessageType     type;
     private final SelectionAction action;
