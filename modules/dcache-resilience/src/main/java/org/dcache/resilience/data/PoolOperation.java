@@ -101,7 +101,8 @@ public final class PoolOperation {
     long                    lastUpdate;
     long                    lastScan;
     Integer                 group;         // Only set when the psuAction != NONE
-    Integer                 unit;          // Only set when the psuAction == MODIFY
+    Integer                 unit;          // Set when unit has changed, or scan
+                                           // is periodic or initiated by command
     State                   state;
     SelectionAction         psuAction;
     PoolStatusForResilience lastStatus;

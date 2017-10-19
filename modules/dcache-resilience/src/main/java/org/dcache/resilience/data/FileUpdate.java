@@ -329,9 +329,10 @@ public final class FileUpdate {
         /*
          * Files may be in need of migration even if the correct number
          * exist.  Force the file operation into the table if the
-         * storage unit matches the modified one.
+         * storage unit matches the modified one, or if this is a periodic
+         * or admin initiated scan.
          */
-        if (unitIndex.equals(storageUnit)) {
+        if (storageUnit == ScanSummary.ALL_UNITS || unitIndex.equals(storageUnit)) {
             /*
              * The maximum number of steps required to redistribute all files
              * would be (required - 1) removes + (required - 1) copies.
@@ -373,8 +374,7 @@ public final class FileUpdate {
 
         /**
          * Multiple copies per update are set only when the file is a new
-         * entry in the namespace, or when the scan of the pool is periodic or
-         * forced by an admin command. A pool status change or clear cache
+         * entry in the namespace. A pool status change or clear cache
          * location message will trigger only a single migration or single
          * remove.
          */
