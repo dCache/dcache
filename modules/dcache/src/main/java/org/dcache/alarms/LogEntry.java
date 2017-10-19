@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.alarms;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ComparisonChain;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -103,8 +104,11 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
 
     @Override
     public int compareTo(LogEntry o) {
-        Preconditions.checkNotNull(o, "alarm entry parameter was null");
-        return key.compareTo(o.key);
+        return ComparisonChain.start()
+                              .compare(lastUpdate, o.lastUpdate)
+                              .compare(firstArrived, o.firstArrived)
+                              .compare(key, o.key)
+                              .result();
     }
 
     @Override
