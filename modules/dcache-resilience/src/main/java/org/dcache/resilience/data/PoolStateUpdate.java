@@ -76,7 +76,7 @@ import org.dcache.resilience.data.PoolOperation.SelectionAction;
  * @see PoolInfoMap#getPoolState(String, Integer, Integer, String)
  * @see PoolInformation#updateState(PoolStateUpdate)
  * @see PoolOperationMap#update(PoolStateUpdate)
- * @see PoolOperationMap#scan(PoolStateUpdate)
+ * @see PoolOperationMap#scan(PoolStateUpdate, boolean)
  * @see PoolOperationHandler#handlePoolStatusChange(PoolStateUpdate)
  * @see ResilienceMessageHandler#handleInternalMessage(PoolStateUpdate)
  */
