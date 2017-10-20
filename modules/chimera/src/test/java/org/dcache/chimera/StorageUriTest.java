@@ -116,113 +116,101 @@ public class StorageUriTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testStorageUriAppendByRoot() {
-        runTestAsRoot(new PrivilegedAction() {
-            @Override
-            public Void run() {
+        runTestAsRoot(() -> {
+            try {
+                write(HSMLOC1, true);
+
+                Exception e = null;
+
                 try {
-                    write(HSMLOC1, true);
-
-                    Exception e = null;
-
-                    try {
-                        write(HSMLOC2, true);
-                    } catch (PermissionDeniedChimeraFsException permissionDenied) {
-                        e = permissionDenied;
-                    }
-
-                    assertNull(e);
-
-                    String appended = HSMLOC1 + HSMLOC2;
-
-                    byte[] buffer = new byte[128];
-                    int len = readFrom0(buffer, 128);
-                    assertThat(len, is(appended.length()));
-                    assertEquals(appended, new String(buffer, 0, len));
-
-                    return null;
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    write(HSMLOC2, true);
+                } catch (PermissionDeniedChimeraFsException permissionDenied) {
+                    e = permissionDenied;
                 }
+
+                assertNull(e);
+
+                String appended = HSMLOC1 + HSMLOC2;
+
+                byte[] buffer = new byte[128];
+                int len = readFrom0(buffer, 128);
+                assertThat(len, is(appended.length()));
+                assertEquals(appended, new String(buffer, 0, len));
+
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         });
     }
 
     @Test
     public void testStorageUriAppendDenied() {
-        runTestAsNonRootUser(new PrivilegedAction() {
-            @Override
-            public Void run() {
+        runTestAsNonRootUser(() -> {
+            try {
+                write(HSMLOC1, true);
+
+                Exception e = null;
+
                 try {
-                    write(HSMLOC1, true);
-
-                    Exception e = null;
-
-                    try {
-                        write(HSMLOC2, true);
-                    } catch (PermissionDeniedChimeraFsException permissionDenied) {
-                        e = permissionDenied;
-                    }
-
-                    assertNotNull(e);
-                    return null;
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    write(HSMLOC2, true);
+                } catch (PermissionDeniedChimeraFsException permissionDenied) {
+                    e = permissionDenied;
                 }
+
+                assertNotNull(e);
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         });
     }
 
     @Test
     public void testStorageUriOverwriteByRoot() {
-        runTestAsRoot(new PrivilegedAction() {
-            @Override
-            public Void run() {
+        runTestAsRoot(() -> {
+            try {
+                write(HSMLOC1, false);
+
+                Exception e = null;
+
                 try {
-                    write(HSMLOC1, false);
-
-                    Exception e = null;
-
-                    try {
-                        write(HSMLOC2, false);
-                    } catch (PermissionDeniedChimeraFsException permissionDenied) {
-                        e = permissionDenied;
-                    }
-
-                    assertNull(e);
-                    byte[] buffer = new byte[128];
-                    int len = readFrom0(buffer, 128);
-                    assertThat(len, is(HSMLOC2.length()));
-                    assertEquals(HSMLOC2, new String(buffer, 0, len));
-
-                    return null;
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    write(HSMLOC2, false);
+                } catch (PermissionDeniedChimeraFsException permissionDenied) {
+                    e = permissionDenied;
                 }
+
+                assertNull(e);
+                byte[] buffer = new byte[128];
+                int len = readFrom0(buffer, 128);
+                assertThat(len, is(HSMLOC2.length()));
+                assertEquals(HSMLOC2, new String(buffer, 0, len));
+
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         });
     }
 
     @Test
     public void testStorageUriOverwriteDenied() {
-        runTestAsNonRootUser(new PrivilegedAction() {
-            @Override
-            public Void run() {
+        runTestAsNonRootUser(() -> {
+            try {
+                write(HSMLOC1, false);
+
+                Exception e = null;
+
                 try {
-                    write(HSMLOC1, false);
-
-                    Exception e = null;
-
-                    try {
-                        write(HSMLOC2, false);
-                    } catch (Exception permissionDenied) {
-                        e = permissionDenied;
-                    }
-
-                    assertNotNull(e);
-                    return null;
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    write(HSMLOC2, false);
+                } catch (Exception permissionDenied) {
+                    e = permissionDenied;
                 }
+
+                assertNotNull(e);
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         });
     }
