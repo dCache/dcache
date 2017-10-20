@@ -277,6 +277,12 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
 
     @Override
     public void beforeStop() {
+        /*
+         * Make sure scheduled execution is interrupted.  This will
+         * prevent another pass of the collector, and thus potentially
+         * more cell messages from being sent.
+         */
+        interrupt();
         collector.shutdown();
     }
 
