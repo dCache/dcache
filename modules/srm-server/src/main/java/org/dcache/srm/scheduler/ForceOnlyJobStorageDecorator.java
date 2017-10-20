@@ -1,6 +1,7 @@
 package org.dcache.srm.scheduler;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -46,7 +47,7 @@ public class ForceOnlyJobStorageDecorator<J extends Job> implements JobStorage<J
     }
 
     @Override
-    public void saveJob(J job, boolean force) throws DataAccessException {
+    public void saveJob(J job, boolean force) throws TransactionException {
         if (force) {
             jobStorage.saveJob(job, force);
         }

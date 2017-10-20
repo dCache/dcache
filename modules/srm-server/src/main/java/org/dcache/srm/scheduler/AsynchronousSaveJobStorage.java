@@ -3,6 +3,7 @@ package org.dcache.srm.scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -64,6 +65,7 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
         return storage.getJobs(scheduler, state);
     }
 
+    @Override
     public void saveJob(final J job, final boolean force)
     {
         UpdateState existingState;
@@ -89,7 +91,7 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
                                 UpdateState state = states.put(job.getId(), UpdateState.PROCESSING);
                                 try {
                                     storage.saveJob(job, state == UpdateState.QUEUED_FORCED);
-                                } catch (DataAccessException e) {
+                                } catch (TransactionException e) {
                                     LOGGER.error("SQL statement failed: {}", e.getMessage());
                                 } catch (Throwable e) {
                                     Thread.currentThread().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
