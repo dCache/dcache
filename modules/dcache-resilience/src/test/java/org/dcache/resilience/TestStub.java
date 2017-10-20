@@ -82,8 +82,6 @@ final class TestStub extends CellStub {
     private TestMessageProcessor processor;
     private TestNotifyProcessor notifyProcessor;
 
-    Callable callable;
-
     public TestStub() {
         super();
         setCellEndpoint(new CellEndpoint() {
@@ -133,14 +131,10 @@ final class TestStub extends CellStub {
     @Override
     public <T extends Message> ListenableFuture<T> send(final T message, CellEndpoint.SendFlag... flags) {
         ListenableFutureTask<T> future;
-        callable = new Callable<T>() {
-            @Override
-            public T call() throws Exception {
-                processor.processMessage(message);
-                return message;
-            }
-        };
-        future = ListenableFutureTask.create(callable);
+        future = ListenableFutureTask.create(() -> {
+                    processor.processMessage(message);
+                    return message;
+                });
         future.run();
         return future;
     }
