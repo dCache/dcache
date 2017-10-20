@@ -103,7 +103,7 @@ public final class CellInfoCollector extends
                               GetAllDomainsReply.class).get();
         } catch (ExecutionException e) {
             LOGGER.error("Could not contact Routing Manager: {}, {}.",
-                         e.getMessage(), e.getCause());
+                         e.getMessage(), String.valueOf(e.getCause()));
             return Collections.EMPTY_MAP;
         }
 
