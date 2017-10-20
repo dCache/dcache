@@ -72,14 +72,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
 
     private <T> Iterable<String> literal(T[] values)
     {
-        return transform(asList(values), new Function<T, String>()
-        {
-            @Override
-            public String apply(T s)
-            {
-                return literal(s.toString());
-            }
-        });
+        return transform(asList(values), (s) -> literal(s.toString()));
     }
 
     protected String valuespec(String valuespec)
