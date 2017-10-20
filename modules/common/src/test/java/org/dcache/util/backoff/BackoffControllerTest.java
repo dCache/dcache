@@ -174,13 +174,7 @@ public class BackoffControllerTest
         };
 
         try {
-            status = controller.call(new Callable<IBackoffAlgorithm.Status>() {
-                @Override
-                public Status call()
-                {
-                    return targetReplies.removeFirst();
-                }
-            });
+            status = controller.call(() -> targetReplies.removeFirst());
         } catch (Exception e) {
             Throwables.propagate(e);
         }
@@ -217,19 +211,7 @@ public class BackoffControllerTest
 
         IBackoffAlgorithmFactory build()
         {
-            return new IBackoffAlgorithmFactory() {
-                @Override
-                public IBackoffAlgorithm getAlgorithm()
-                {
-                    return new IBackoffAlgorithm() {
-                        @Override
-                        public long getWaitDuration()
-                        {
-                            return delays.remove(0);
-                        }
-                    };
-                }
-            };
+            return () -> () -> delays.remove(0);
         }
     }
 }

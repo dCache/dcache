@@ -32,7 +32,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -364,40 +367,31 @@ public abstract class NetworkUtils {
         public List<InetAddress> get()
         {
             try {
+                /*
+                 * Get IP addresses from all interfaces. As InetAddress objects returned by
+                 * NetworkInterface contain interface names, deerialization of them will
+                 * trigger interface re-discovery. Re-create InetAddress objects with address
+                 * information only.
+                 */
                 return Lists.newArrayList(
-
-                        /*
-                         * Get IP addresses from all interfaces. As InetAddress objects returned by
-                         * etworkInterface contain interface names, deerialization of them will
-                         * trigger interface re-discovery. Re-create InetAddress objects with address
-                         * information only.
-                         */
                         transform(
                                 concat(transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
-                                        new Function<NetworkInterface, Iterator<InetAddress>>() {
-                                    @Override
-                                    public Iterator<InetAddress> apply(NetworkInterface i) {
-                                        try {
-                                            if (i.isUp()) {
-                                                return forEnumeration(i.getInetAddresses());
-                                            }
-                                        } catch (SocketException ignored) {
-                                        }
-                                        return Collections.emptyIterator();
+                                            (i) -> {
+                                                try {
+                                                    if (i.isUp()) {
+                                                        return forEnumeration(i.getInetAddresses());
+                                                    }
+                                                } catch (SocketException ignored) {
+                                                }
+                                                return Collections.emptyIterator();
+                                            })),
+                                (InetAddress input) -> {
+                                    try {
+                                        return InetAddress.getByAddress(input.getAddress());
+                                    } catch (UnknownHostException e) {
+                                        throw new RuntimeException("Failed to create new instance of InetAddress", e);
                                     }
-                                })),
-                                new Function<InetAddress, InetAddress>() {
-                                    @Override
-                                    public InetAddress apply(InetAddress input) {
-                                        try {
-                                            return InetAddress.getByAddress(input.getAddress());
-                                        }catch(UnknownHostException e) {
-                                            // must never happen
-                                            throw new RuntimeException("Failed to create new instance of InetAddress", e);
-                                        }
-                                    }
-                            })
-                );
+                                }));
             } catch (SocketException e) {
                 logger.error("Failed to resolve local network addresses: {}", e.toString());
                 return Collections.emptyList();

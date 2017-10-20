@@ -102,17 +102,14 @@ public class AtomicCounterTest
     {
         ExecutorService executor = Executors.newCachedThreadPool();
         try {
-            executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            latch.await();
-                            counter.increment();
-                        } catch (InterruptedException e) {
-                            fail("Test was interrupted");
-                        }
-                    }
-                });
+            executor.execute(() -> {
+                try {
+                    latch.await();
+                    counter.increment();
+                } catch (InterruptedException e) {
+                    fail("Test was interrupted");
+                }
+            });
             assertTrue(counter.awaitChangeUntil(0, new Date(System.currentTimeMillis() + 200)));
         } finally {
             executor.shutdownNow();
