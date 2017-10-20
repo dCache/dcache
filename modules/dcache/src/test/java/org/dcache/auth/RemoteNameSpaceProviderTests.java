@@ -348,13 +348,8 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedWhenGetCacheLocationForFileWithOneLocation()
             throws Exception
     {
-        givenSuccessfulResponse(new Modifier<PnfsGetCacheLocationsMessage>(){
-            @Override
-            public void modify(PnfsGetCacheLocationsMessage reply)
-            {
-                reply.setCacheLocations(Collections.singletonList("pool-1"));
-            }
-        });
+        givenSuccessfulResponse((Modifier<PnfsGetCacheLocationsMessage>)
+                (r) -> r.setCacheLocations(Collections.singletonList("pool-1")));
 
         List<String> locations = _namespace.getCacheLocation(ROOT, A_PNFSID);
 
@@ -374,13 +369,8 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedWhenGetCacheLocationForFileWithTwoLocations()
             throws Exception
     {
-        givenSuccessfulResponse(new Modifier<PnfsGetCacheLocationsMessage>(){
-            @Override
-            public void modify(PnfsGetCacheLocationsMessage reply)
-            {
-                reply.setCacheLocations(Lists.newArrayList("pool-1", "pool-2"));
-            }
-        });
+        givenSuccessfulResponse((Modifier<PnfsGetCacheLocationsMessage>)
+                (r) -> r.setCacheLocations(Lists.newArrayList("pool-1", "pool-2")));
 
         List<String> locations = _namespace.getCacheLocation(ROOT, A_PNFSID);
 
@@ -400,13 +390,8 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedWhenGetFileAttributesForExistingEntry()
             throws Exception
     {
-        givenSuccessfulResponse(new Modifier<PnfsGetFileAttributes>(){
-            @Override
-            public void modify(PnfsGetFileAttributes reply)
-            {
-                reply.setFileAttributes(attributes().size(1234L).type(REGULAR).build());
-            }
-        });
+        givenSuccessfulResponse((Modifier<PnfsGetFileAttributes>)
+                (r) -> r.setFileAttributes(attributes().size(1234L).type(REGULAR).build()));
 
 
         FileAttributes attributes =
@@ -439,13 +424,8 @@ public class RemoteNameSpaceProviderTests
     @Test
     public void shouldSucceedForGetParentOfExistingEntry() throws Exception
     {
-        givenSuccessfulResponse(new Modifier<PnfsGetParentMessage>(){
-            @Override
-            public void modify(PnfsGetParentMessage reply)
-            {
-                reply.setParent(ANOTHER_PNFSID);
-            }
-        });
+        givenSuccessfulResponse((Modifier<PnfsGetParentMessage>)
+                (r) -> r.setParent(ANOTHER_PNFSID));
 
         PnfsId parent = _namespace.getParentOf(ROOT, A_PNFSID);
 
@@ -533,13 +513,8 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedForPathToPnfsidWithKnownPathAndResolvingSymlinks()
             throws Exception
     {
-        givenSuccessfulResponse(new Modifier<PnfsMapPathMessage>(){
-            @Override
-            public void modify(PnfsMapPathMessage message)
-            {
-                message.setPnfsId(A_PNFSID);
-            }
-        });
+        givenSuccessfulResponse((Modifier<PnfsMapPathMessage>)
+                (m) -> m.setPnfsId(A_PNFSID));
 
         PnfsId id = _namespace.pathToPnfsid(ROOT, "/path/to/entry", true);
 
@@ -559,13 +534,8 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedForPathToPnfsidWithKnownPathAndNotResolvingSymlinks()
             throws Exception
     {
-        givenSuccessfulResponse(new Modifier<PnfsMapPathMessage>(){
-            @Override
-            public void modify(PnfsMapPathMessage message)
-            {
-                message.setPnfsId(A_PNFSID);
-            }
-        });
+        givenSuccessfulResponse((Modifier<PnfsMapPathMessage>)
+                (m) -> m.setPnfsId(A_PNFSID));
 
         PnfsId id = _namespace.pathToPnfsid(ROOT, "/path/to/entry", false);
 
@@ -595,13 +565,8 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedForPnfsidToPathWithKnownPnfsId()
             throws Exception
     {
-        givenSuccessfulResponse(new Modifier<PnfsMapPathMessage>(){
-            @Override
-            public void modify(PnfsMapPathMessage message)
-            {
-                message.setGlobalPath("/path/to/entry");
-            }
-        });
+        givenSuccessfulResponse((Modifier<PnfsMapPathMessage>)
+                (m) -> m.setGlobalPath("/path/to/entry"));
 
         String path = _namespace.pnfsidToPath(ROOT, A_PNFSID);
 
@@ -712,19 +677,16 @@ public class RemoteNameSpaceProviderTests
     {
         try {
 
-          doAnswer(new Answer() {
-              @Override
-              public Object answer(InvocationOnMock invocation) {
-                    CellMessage request =
-                            (CellMessage) invocation.getArguments() [0];
+            doAnswer((Answer) (i) -> {
+                        CellMessage request = (CellMessage) i.getArguments() [0];
 
-                    List<PnfsListDirectoryMessage> replies =
-                            buildMessages(request, answers);
+                        List<PnfsListDirectoryMessage> replies =
+                                buildMessages(request, answers);
 
-                    backgroundDeliverMessages(replies);
+                        backgroundDeliverMessages(replies);
 
-                    return null;
-              }}).when(_endpoint).sendMessage(any(CellMessage.class));
+                        return null;
+                    }).when(_endpoint).sendMessage(any(CellMessage.class));
 
         } catch (SerializationException e) {
             throw new RuntimeException(e);
@@ -753,14 +715,10 @@ public class RemoteNameSpaceProviderTests
     private static CellMessage buildListReply(CellMessage request,
             final Collection<DirectoryEntry> entries, final boolean isLast, final int cnt)
     {
-        return buildReply(request, new Modifier<PnfsListDirectoryMessage>(){
-            @Override
-            public void modify(PnfsListDirectoryMessage reply)
-            {
-                reply.setEntries(entries);
-                if (isLast) {
-                    reply.setSucceeded(cnt);
-                }
+        return buildReply(request, (Modifier<PnfsListDirectoryMessage>) (r) -> {
+            r.setEntries(entries);
+            if (isLast) {
+                r.setSucceeded(cnt);
             }
         }, SUCCESSFUL);
     }
@@ -772,9 +730,7 @@ public class RemoteNameSpaceProviderTests
             @Override
             public void run()
             {
-                for(PnfsListDirectoryMessage message : messages) {
-                    _listHandler.messageArrived(message);
-                }
+                messages.forEach((m) -> _listHandler.messageArrived(m));
             }
         }.start();
     }
@@ -807,27 +763,18 @@ public class RemoteNameSpaceProviderTests
      */
     private void givenFailureResponse(final int errorcode)
     {
-        givenResponse(new Modifier(){
-            @Override
-            public void modify(PnfsMessage message)
-            {
-                message.setFailed(errorcode, messageFor(errorcode));
-            }
-        });
+        givenResponse((m) ->  m.setFailed(errorcode, messageFor(errorcode)));
     }
 
     private void givenResponse(final Modifier... modifiers)
     {
-        willAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
-            {
-                CellMessage request = (CellMessage) invocation.getArguments()[0];
-                CellMessageAnswerable callback = (CellMessageAnswerable) invocation.getArguments()[1];
-                callback.answerArrived(request, buildReply(request, modifiers));
-                return null;
-            }
-        }).given(_endpoint).sendMessage(any(CellMessage.class), any(CellMessageAnswerable.class), any(Executor.class), anyLong());
+        willAnswer((Answer) (i) -> {
+                    CellMessage request = (CellMessage) i.getArguments() [0];
+                    CellMessageAnswerable callback =
+                            (CellMessageAnswerable) i.getArguments() [1];
+                    callback.answerArrived(request, buildReply(request, modifiers));
+                    return null;
+                }).given(_endpoint).sendMessage(any(CellMessage.class), any(CellMessageAnswerable.class), any(Executor.class), anyLong());
     }
 
 
