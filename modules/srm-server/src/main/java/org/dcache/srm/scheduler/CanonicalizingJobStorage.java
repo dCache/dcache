@@ -2,6 +2,7 @@ package org.dcache.srm.scheduler;
 
 import com.google.common.collect.MapMaker;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -97,7 +98,7 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public void saveJob(J job, boolean force) throws DataAccessException
+    public void saveJob(J job, boolean force) throws TransactionException
     {
         Job other = map.putIfAbsent(job.getId(), job);
         if (other != null && other != job) {
