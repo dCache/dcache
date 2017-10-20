@@ -1378,14 +1378,11 @@ public abstract class AbstractFtpDoorV1
          */
         TIMESTAMP_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-        visitFtpCommands(new CommandMethodVisitor() {
-            @Override
-            public void acceptCommand(Method method, String command) {
-                _methodDict.put(command, method);
-                Help help = method.getAnnotation(Help.class);
-                if (help != null) {
-                    _helpDict.put(command, help);
-                }
+        visitFtpCommands((Method method, String command) -> {
+            _methodDict.put(command, method);
+            Help help = method.getAnnotation(Help.class);
+            if (help != null) {
+                _helpDict.put(command, help);
             }
         });
     }

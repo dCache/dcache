@@ -72,13 +72,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         this.gssFlavor = gssFlavor;
         this.dssContextFactory = dssContextFactory;
 
-        visitFtpCommands(new CommandMethodVisitor() {
-            @Override
-            public void acceptCommand(Method method, String command) {
-                Plaintext plaintext = method.getAnnotation(Plaintext.class);
-                if (plaintext != null) {
-                    _plaintextCommands.add(command);
-                }
+        visitFtpCommands((m, cmd) -> {
+            if (m.getAnnotation(Plaintext.class) != null) {
+                _plaintextCommands.add(cmd);
             }
         });
     }
