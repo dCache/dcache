@@ -25,10 +25,6 @@
   */
 
   * html .page_margins {
-    /* Fallback if JavaScript is disabled */
     width: auto;
-
-    /* JS-Expression for min-/max-width simulation */
-    width: expression((document.documentElement && document.documentElement.clientHeight) ? ((document.documentElement.clientWidth < 740) ? "740px" : ((document.documentElement.clientWidth > (90 * 16 * (parseInt(this.parentNode.currentStyle.fontSize) / 100))) ? "90em" : "auto" )) : ((document.body.clientWidth < 740) ? "740px" : ((document.body.clientWidth > (90 * 16 * (parseInt(this.parentNode.currentStyle.fontSize) / 100))) ? "90em" : "auto" )));
   }
 }
