@@ -50,8 +50,6 @@ import dmg.util.command.Command;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.db.AlarmEnabledDataSource;
-import org.dcache.services.hsmcleaner.PoolInformationBase;
-import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Option;

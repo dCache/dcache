@@ -1,4 +1,4 @@
-package org.dcache.services.hsmcleaner;
+package org.dcache.chimera.namespace;
 
 import java.util.ArrayList;
 import java.util.Collection;

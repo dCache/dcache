@@ -1,4 +1,4 @@
-package org.dcache.services.hsmcleaner;
+package org.dcache.chimera.namespace;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
