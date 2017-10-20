@@ -112,13 +112,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
     private static ImmutableList<String> buildProtocolPreference(FileTransferAgent agent)
     {
         Ordering<Map.Entry<String,Integer>> order = Ordering.natural().
-                onResultOf(new Function<Map.Entry<String,Integer>, Integer>(){
-                    @Override
-                    public Integer apply(Map.Entry<String,Integer> input)
-                    {
-                        return input.getValue();
-                    }
-                }).reverse();
+                onResultOf((Map.Entry<String,Integer> input) -> input.getValue()).reverse();
 
         ImmutableList.Builder<String> builder = ImmutableList.builder();
 
@@ -330,13 +324,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
         private void start()
         {
-            _srmExecutor.execute(new FailOnBugTask(new Runnable(){
-                @Override
-                public void run()
-                {
-                    prepareToPut();
-                }
-            }));
+            _srmExecutor.execute(new FailOnBugTask(() -> prepareToPut()));
         }
 
         private void prepareToPut()
@@ -394,13 +382,8 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     setDescription("waiting to request status update.");
                     Integer waitTime = file.getEstimatedWaitTime();
                     int delay = waitTime == null ? 1 : max(min(waitTime, 60), 1);
-                    _srmExecutor.schedule(new FailOnBugTask(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            statusOfPrepareToPut();
-                        }
-                    }), delay, TimeUnit.SECONDS);
+                    _srmExecutor.schedule(new FailOnBugTask(() -> statusOfPrepareToPut()),
+                            delay, TimeUnit.SECONDS);
                 } else {
                     checkSuccess(file.getStatus(), TStatusCode.SRM_SPACE_AVAILABLE);
                     initiateTransfer(file.getTransferURL());
@@ -443,13 +426,8 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
                     Integer waitTime = file.getEstimatedWaitTime();
                     int delay = waitTime == null ? 1 : Math.max(Math.min(waitTime, 60), 1);
-                    _srmExecutor.schedule(new FailOnBugTask(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            statusOfPrepareToPut();
-                        }
-                    }), delay, TimeUnit.SECONDS);
+                    _srmExecutor.schedule(new FailOnBugTask(() -> statusOfPrepareToPut()),
+                            delay, TimeUnit.SECONDS);
                 } else {
                     checkSuccess(file.getStatus(), TStatusCode.SRM_SPACE_AVAILABLE);
                     initiateTransfer(file.getTransferURL());
@@ -570,13 +548,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
         private void start()
         {
-            _srmExecutor.execute(new FailOnBugTask(new Runnable(){
-                @Override
-                public void run()
-                {
-                    prepareToGet();
-                }
-            }));
+            _srmExecutor.execute(new FailOnBugTask(() -> prepareToGet()));
         }
 
         private void prepareToGet()
@@ -618,13 +590,8 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     setDescription("waiting to request status update.");
                     Integer waitTime = file.getEstimatedWaitTime();
                     int delay = waitTime == null ? 1 : max(min(waitTime, 60), 1);
-                    _srmExecutor.schedule(new FailOnBugTask(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            statusOfPrepareToGet();
-                        }
-                    }), delay, TimeUnit.SECONDS);
+                    _srmExecutor.schedule(new FailOnBugTask(() -> statusOfPrepareToGet()),
+                            delay, TimeUnit.SECONDS);
                 } else {
                     checkSuccess(file.getStatus(), TStatusCode.SRM_FILE_PINNED);
                     initiateTransfer(file.getTransferURL());
@@ -687,13 +654,8 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
                     Integer waitTime = file.getEstimatedWaitTime();
                     int delay = waitTime == null ? 1 : Math.max(Math.min(waitTime, 60), 1);
-                    _srmExecutor.schedule(new FailOnBugTask(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            statusOfPrepareToGet();
-                        }
-                    }), delay, TimeUnit.SECONDS);
+                    _srmExecutor.schedule(new FailOnBugTask(() -> statusOfPrepareToGet()),
+                            delay, TimeUnit.SECONDS);
                 } else {
                     checkSuccess(file.getStatus(), TStatusCode.SRM_FILE_PINNED);
                     initiateTransfer(file.getTransferURL());

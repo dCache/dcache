@@ -355,41 +355,37 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
 
         protected void start()
         {
-            _executor.submit(new Runnable(){
-                @Override
-                public void run()
-                {
+            _executor.submit(() -> {
+                try {
+                    _status = "Connecting to FTP server.";
+                    _client = buildClient();
+
+                    doTransfer();
+
+                    _status = "Succeeded.";
+                    succeeded();
+                } catch (IOException e) {
+                    Throwable cause = Throwables.getRootCause(e);
+                    _status = "Transfer failed: " + cause.getMessage();
+                    failed(cause);
+                } catch (ServerException e) {
+                    Throwable cause = Throwables.getRootCause(e);
+                    _status = "Transfer failed (server exception): " + cause.getMessage();
+                    failed(cause);
+                } catch (ClientException e) {
+                    Throwable cause = Throwables.getRootCause(e);
+                    _status = "Transfer failed (client exception): " + cause.getMessage();
+                    failed(cause);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                    Throwable cause = Throwables.getRootCause(e);
+                    _status = "Failed due to bug: " + cause;
+                    failed(cause);
+                } finally {
                     try {
-                        _status = "Connecting to FTP server.";
-                        _client = buildClient();
-
-                        doTransfer();
-
-                        _status = "Succeeded.";
-                        succeeded();
-                    } catch (IOException e) {
-                        Throwable cause = Throwables.getRootCause(e);
-                        _status = "Transfer failed: " + cause.getMessage();
-                        failed(cause);
-                    } catch (ServerException e) {
-                        Throwable cause = Throwables.getRootCause(e);
-                        _status = "Transfer failed (server exception): " + cause.getMessage();
-                        failed(cause);
-                    } catch (ClientException e) {
-                        Throwable cause = Throwables.getRootCause(e);
-                        _status = "Transfer failed (client exception): " + cause.getMessage();
-                        failed(cause);
-                    } catch (RuntimeException e) {
-                        e.printStackTrace();
-                        Throwable cause = Throwables.getRootCause(e);
-                        _status = "Failed due to bug: " + cause;
-                        failed(cause);
-                    } finally {
-                        try {
-                            _client.close();
-                        } catch (IOException|ServerException e) {
-                            //FIXME: we ignore errors sent back when saying BYE.
-                        }
+                        _client.close();
+                    } catch (IOException|ServerException e) {
+                        //FIXME: we ignore errors sent back when saying BYE.
                     }
                 }
             });
