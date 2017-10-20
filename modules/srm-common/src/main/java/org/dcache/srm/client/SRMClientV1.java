@@ -290,98 +290,46 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             final String[] dests, final long[] sizes, final boolean[] wantPerm,
             final String[] protocols)
     {
-        return retryCall("put", new Operation<diskCacheV111.srm.RequestStatus>(){
-                    @Override
-                    public diskCacheV111.srm.RequestStatus call() throws RemoteException
-                    {
-                        org.dcache.srm.client.axis.RequestStatus rs =
-                                axis_isrm.put(sources, dests, sizes, wantPerm, protocols);
-                        return ConvertUtil.axisRS2RS(rs);
-                    }
-                }, new Supplier<diskCacheV111.srm.RequestStatus>() {
-                    @Override
-                    public diskCacheV111.srm.RequestStatus get()
-                    {
-                        return null;
-                    }
-                });
+        return retryCall("put", () -> {
+                    org.dcache.srm.client.axis.RequestStatus rs =
+                            axis_isrm.put(sources, dests, sizes, wantPerm, protocols);
+                    return ConvertUtil.axisRS2RS(rs);
+                }, () -> null);
     }
 
     @Override
     public diskCacheV111.srm.RequestStatus get(final String[] surls,
             final String[] protocols)
     {
-        return retryCall("get", new Operation<diskCacheV111.srm.RequestStatus>(){
-                    @Override
-                    public diskCacheV111.srm.RequestStatus call() throws RemoteException
-                    {
-                        org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.get(surls,protocols);
-                        return ConvertUtil.axisRS2RS(rs);
-                    }
-                }, new Supplier<diskCacheV111.srm.RequestStatus>() {
-                    @Override
-                    public diskCacheV111.srm.RequestStatus get()
-                    {
-                        return null;
-                    }
-                });
+        return retryCall("get", () -> {
+                    org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.get(surls,protocols);
+                    return ConvertUtil.axisRS2RS(rs);
+                }, () -> null);
     }
 
     @Override
     public diskCacheV111.srm.RequestStatus copy(final String[] srcSURLS,
             final String[] destSURLS, final boolean[] wantPerm)
     {
-        return retryCall("copy", new Operation<diskCacheV111.srm.RequestStatus>(){
-                    @Override
-                    public diskCacheV111.srm.RequestStatus call() throws RemoteException
-                    {
-                        org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.copy(srcSURLS,destSURLS,wantPerm);
-                        return ConvertUtil.axisRS2RS(rs);
-                    }
-                }, new Supplier<diskCacheV111.srm.RequestStatus>() {
-                    @Override
-                    public diskCacheV111.srm.RequestStatus get()
-                    {
-                        return null;
-                    }
-                });
+        return retryCall("copy", () -> {
+                    org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.copy(srcSURLS,destSURLS,wantPerm);
+                    return ConvertUtil.axisRS2RS(rs);
+                }, () -> null);
     }
 
     @Override
     public diskCacheV111.srm.RequestStatus getRequestStatus(final int requestId)
     {
-        return retryCall("getRequestStatus", new Operation<diskCacheV111.srm.RequestStatus>(){
-                    @Override
-                    public diskCacheV111.srm.RequestStatus call() throws RemoteException
-                    {
-                        org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.getRequestStatus(requestId);
-                        return ConvertUtil.axisRS2RS(rs);
-                    }
-                }, new Supplier<diskCacheV111.srm.RequestStatus>() {
-                    @Override
-                    public diskCacheV111.srm.RequestStatus get()
-                    {
-                        return null;
-                    }
-                });
+        return retryCall("getRequestStatus", () -> {
+                    org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.getRequestStatus(requestId);
+                    return ConvertUtil.axisRS2RS(rs);
+                }, () -> null);
     }
 
     @Override
     public boolean ping()
     {
-        return retryCall("ping", new Operation<Boolean>(){
-                    @Override
-                    public Boolean call() throws RemoteException
-                    {
-                        return axis_isrm.ping();
-                    }
-                }, new Supplier<Boolean>() {
-                    @Override
-                    public Boolean get()
-                    {
-                        return false;
-                    }
-                });
+        return retryCall("ping", () -> axis_isrm.ping(), () -> false);
     }
 
     @Override
@@ -416,20 +364,10 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     @Override
     public diskCacheV111.srm.FileMetaData[] getFileMetaData(final String[] SURLS )
     {
-        return retryCall("getFileMetaData", new Operation<diskCacheV111.srm.FileMetaData[]>(){
-                    @Override
-                    public FileMetaData[] call() throws RemoteException
-                    {
-                        org.dcache.srm.client.axis.FileMetaData[] fmd = axis_isrm.getFileMetaData(SURLS);
-                        return ConvertUtil.axisFMDs2FMDs(fmd);
-                    }
-                }, new Supplier<diskCacheV111.srm.FileMetaData[]>() {
-                    @Override
-                    public FileMetaData[] get()
-                    {
-                        return null;
-                    }
-                });
+        return retryCall("getFileMetaData", () -> {
+                    org.dcache.srm.client.axis.FileMetaData[] fmd = axis_isrm.getFileMetaData(SURLS);
+                    return ConvertUtil.axisFMDs2FMDs(fmd);
+                }, () -> null);
     }
 
     @Override
@@ -468,18 +406,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     @Override
     public String[] getProtocols()
     {
-        return retryCall("getProtocols", new Operation<String[]>(){
-                    @Override
-                    public String[] call() throws RemoteException, InterruptedException
-                    {
-                        return axis_isrm.getProtocols();
-                    }
-                }, new Supplier<String[]>(){
-                    @Override
-                    public String[] get()
-                    {
-                        return new String[]{};
-                    }
-                });
+        return retryCall("getProtocols", () -> axis_isrm.getProtocols(),
+                () -> new String[]{});
     }
 }
