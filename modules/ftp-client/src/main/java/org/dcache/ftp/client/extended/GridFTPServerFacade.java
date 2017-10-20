@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -114,18 +114,13 @@ public class GridFTPServerFacade extends FTPServerFacade
     private void closeOutgoingSockets() throws ClientException
     {
 
-        SocketOperator op = new SocketOperator()
-        {
-            @Override
-            public void operate(SocketBox sb) throws Exception
-            {
-                if (((ManagedSocketBox) sb).isReusable()) {
-                    Socket s = sb.getSocket();
-                    if (s != null) {
-                        // write the closing Eblock and close the socket
-                        EBlockImageDCWriter.close(
-                                new DataOutputStream(s.getOutputStream()));
-                    }
+        SocketOperator op = (sb) -> {
+            if (((ManagedSocketBox) sb).isReusable()) {
+                Socket s = sb.getSocket();
+                if (s != null) {
+                    // write the closing Eblock and close the socket
+                    EBlockImageDCWriter.close(
+                            new DataOutputStream(s.getOutputStream()));
                 }
             }
         };
@@ -280,7 +275,7 @@ public class GridFTPServerFacade extends FTPServerFacade
             } else if (
                     session.serverMode != GridFTPSession.SERVER_EPAS
                     && session.serverMode != GridFTPSession.SERVER_PASSIVE) {
-                // 
+                //
                 // EBLOCK, local server not passive
                 //
                 exceptionToControlChannel(
@@ -405,7 +400,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
             } else if (session.serverMode == GridFTPSession.SERVER_EACT) {
 
-                // 
+                //
                 // EBLOCK, striping
                 //
 
