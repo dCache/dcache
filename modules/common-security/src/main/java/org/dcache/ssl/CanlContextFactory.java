@@ -122,14 +122,7 @@ public class CanlContextFactory implements SslContextFactory
         private Path certificatePath = FileSystems.getDefault().getPath("/etc/grid-security/hostcert.pem");
         private long credentialUpdateInterval = 1;
         private TimeUnit credentialUpdateIntervalUnit = TimeUnit.MINUTES;
-        private Supplier<AutoCloseable> loggingContextSupplier = new Supplier<AutoCloseable>()
-        {
-            @Override
-            public AutoCloseable get()
-            {
-                return NOOP;
-            }
-        };
+        private Supplier<AutoCloseable> loggingContextSupplier = () -> NOOP;
         private long validationCacheLifetime = 300000;
 
         private Builder()
@@ -262,18 +255,13 @@ public class CanlContextFactory implements SslContextFactory
                     }
                 }
             });
-            v.addValidationListener(new ValidationErrorListener()
-            {
-                @Override
-                public boolean onValidationError(ValidationError error)
-                {
-                    if (VALIDATION_ERRORS_TO_LOG.contains(error.getErrorCategory())) {
-                        X509Certificate[] chain = error.getChain();
-                        String subject = (chain != null && chain.length > 0) ? chain[0].getSubjectX500Principal().getName() : "";
-                        LOGGER.warn("The peer's certificate with DN {} was rejected: {}", subject, error);
-                    }
-                    return false;
+            v.addValidationListener((ValidationError error) -> {
+                if (VALIDATION_ERRORS_TO_LOG.contains(error.getErrorCategory())) {
+                    X509Certificate[] chain = error.getChain();
+                    String subject = (chain != null && chain.length > 0) ? chain[0].getSubjectX500Principal().getName() : "";
+                    LOGGER.warn("The peer's certificate with DN {} was rejected: {}", subject, error);
                 }
+                return false;
             });
             return new CanlContextFactory(new SSLTrustManager(v));
         }
@@ -282,15 +270,8 @@ public class CanlContextFactory implements SslContextFactory
         {
             final CanlContextFactory factory = build();
             Callable<SSLContext> newContext =
-                    new Callable<SSLContext>()
-                    {
-                        @Override
-                        public SSLContext call() throws GeneralSecurityException, IOException
-                        {
-                            return factory.getContext(
-                                    new PEMCredential(keyPath.toString(), certificatePath.toString(), null));
-                        }
-                    };
+                    () -> factory.getContext(
+                            new PEMCredential(keyPath.toString(), certificatePath.toString(), null));
             return  memoizeWithExpiration(memoizeFromFiles(newContext, keyPath, certificatePath),
                                           credentialUpdateInterval, credentialUpdateIntervalUnit);
         }

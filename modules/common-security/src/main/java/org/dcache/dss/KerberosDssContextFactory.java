@@ -77,14 +77,7 @@ public class KerberosDssContextFactory implements DssContextFactory
                                                   GSSCredential.DEFAULT_LIFETIME,
                                                   krb5Mechanism,
                                                   GSSCredential.ACCEPT_ONLY);
-            peer = peerName.transform(new Function<String, GSSName>()
-            {
-                @Override
-                public GSSName apply(String name)
-                {
-                    return KerberosDssContextFactory.this.createName(name);
-                }
-            });
+            peer = peerName.transform((name) -> KerberosDssContextFactory.this.createName(name));
         } catch (WrappedGssException e) {
             throw e.getCause();
         }

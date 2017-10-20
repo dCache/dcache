@@ -81,14 +81,7 @@ public class KeyPairCache
                                     Integer keySize, KeyPair previous)
                             {
                                 ListenableFutureTask<KeyPair> task =
-                                        ListenableFutureTask.create(new Callable<KeyPair>()
-                                        {
-                                            @Override
-                                            public KeyPair call() throws NoSuchAlgorithmException, NoSuchProviderException
-                                            {
-                                                return generate(keySize);
-                                            }
-                                        });
+                                        ListenableFutureTask.create(() -> generate(keySize));
                                 _executor.execute(task);
                                 return task;
                             }
