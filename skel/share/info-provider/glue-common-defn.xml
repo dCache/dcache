@@ -62,7 +62,7 @@
     </map>
 
     <map name="cleaner-class-to-namespace-impl">
-      <sub match="org.dcache.chimera.namespace.ChimeraCleaner"
+      <sub match="org.dcache.chimera.namespace.DiskCleaner"
            replace-with="Chimera" />
       <sub match="diskCacheV111.cells.CleanerV2"
            replace-with="PNFS" />

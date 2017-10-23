@@ -34,10 +34,10 @@ import org.dcache.util.Args;
  * HSM, at most one request is send at a time. The class defines an
  * upper limit on the size of a request.
  */
-public class RequestTracker implements CellMessageReceiver
+public class HsmCleaner implements CellMessageReceiver
 {
     private static final Logger _log =
-        LoggerFactory.getLogger(RequestTracker.class);
+        LoggerFactory.getLogger(HsmCleaner.class);
 
     /**
      * Utility class to keep track of timeouts.

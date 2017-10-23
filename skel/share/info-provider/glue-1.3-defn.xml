@@ -1038,7 +1038,7 @@
           <lookup default="UNDEFINEDVALUE"
                   path="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='&info-provider.service.poolmanager;']/d:version/d:metric[@name='release'][1]"/>
         </map> (ns=<map name="cleaner-class-to-namespace-impl">
-          <lookup path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='org.dcache.chimera.namespace.ChimeraCleaner']">
+          <lookup path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='org.dcache.chimera.namespace.DiskCleaner']">
             <lookup default="UNDEFINEDVALUE"
                     path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='diskCacheV111.cells.CleanerV2']"/>
           </lookup>

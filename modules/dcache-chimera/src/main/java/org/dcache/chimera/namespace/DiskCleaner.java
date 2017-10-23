@@ -68,10 +68,10 @@ import static java.util.stream.Collectors.toList;
  * @since 1.8
  */
 
-public class ChimeraCleaner extends AbstractCell implements Runnable
+public class DiskCleaner extends AbstractCell implements Runnable
 {
     private static final Logger _log =
-        LoggerFactory.getLogger(ChimeraCleaner.class);
+        LoggerFactory.getLogger(DiskCleaner.class);
 
     @Option(
         name="refresh",
@@ -170,7 +170,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private final ConcurrentHashMap<String, Long> _poolsBlackList =
         new ConcurrentHashMap<>();
 
-    private RequestTracker _requests;
+    private HsmCleaner _requests;
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _cleanerTask;
     private PoolInformationBase _pools = new PoolInformationBase();
@@ -179,7 +179,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private CellStub _notificationStub;
     private CellStub _poolStub;
 
-    public ChimeraCleaner(String cellName, String args)
+    public DiskCleaner(String cellName, String args)
     {
         super(cellName, args);
     }
@@ -206,7 +206,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                getArgs().getOpt("chimera.db.user"), getArgs().getOpt("chimera.db.password"));
 
         if (_hsmCleanerEnabled) {
-            _requests = new RequestTracker();
+            _requests = new HsmCleaner();
             _requests.setMaxFilesPerRequest(_hsmCleanerRequest);
             _requests.setTimeout(_hsmTimeoutUnit.toMillis(_hsmTimeout));
             _requests.setPoolStub(new CellStub(this));
@@ -248,7 +248,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         config.setMaximumPoolSize(10);
 
         _dataSource = new AlarmEnabledDataSource(jdbcUrl,
-                                                 ChimeraCleaner.class.getSimpleName(),
+                                                 DiskCleaner.class.getSimpleName(),
                                                  new HikariDataSource(config));
         _db = new JdbcTemplate(_dataSource);
 
