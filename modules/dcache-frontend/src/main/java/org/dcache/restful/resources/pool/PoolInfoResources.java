@@ -134,7 +134,7 @@ public final class PoolInfoResources {
         /*
          *  Allow pools and pool groups to be listed without privileges.
          */
-        return service.listPools();
+        return service.listGroups();
     }
 
     /**
