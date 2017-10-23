@@ -69,6 +69,7 @@ import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 
 import javax.annotation.Nonnull;
 
@@ -214,7 +215,7 @@ public abstract class Job  {
             boolean isFinalState = this.getState().isFinal();
             getJobStorage().saveJob(this, isFinalState || force);
             savedInFinalState = isFinalState;
-        } catch (DataAccessException e) {
+        } catch (TransactionException e) {
             // if saving fails we do not want to fail the request
             logger.error("Failed to save SQL request to database: {}", e.toString());
         } catch (RuntimeException e) {
