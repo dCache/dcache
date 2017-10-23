@@ -72,6 +72,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Connection;
@@ -234,7 +235,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
 
     @Override
-    public void saveJob(final Job job, boolean force) throws DataAccessException
+    public void saveJob(final Job job, boolean force) throws TransactionException
     {
         List<Job.JobHistory> savedHistory =
                 transactionTemplate.execute(status -> jdbcTemplate.execute((Connection con) -> {

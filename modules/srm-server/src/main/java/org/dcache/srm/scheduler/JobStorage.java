@@ -73,6 +73,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -96,10 +97,10 @@ public interface JobStorage<J extends Job> {
      * @param job Job to save
      * @param force if this is false and monitoring jdbc login
      *         disabled, this operation will be ignored
-     * @throws SQLException
+     * @throws TransactionException if there was a problem
      */
     void saveJob(J job, boolean force)
-            throws DataAccessException;
+            throws TransactionException;
 
     Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException;
     Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException;
