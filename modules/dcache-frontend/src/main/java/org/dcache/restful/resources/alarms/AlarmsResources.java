@@ -59,8 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.alarms;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -71,21 +72,22 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.POST;
+import javax.ws.rs.PATCH;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import java.util.Arrays;
+import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
-
 import org.dcache.alarms.LogEntry;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.util.HttpServletRequests;
@@ -100,11 +102,21 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Component
 @Path("/alarms")
 public final class AlarmsResources {
+    private static final Response NOT_IMPLEMENTED
+                    = Response.status(Status.NOT_IMPLEMENTED).build();
+
     @Context
     private HttpServletRequest request;
 
     @Inject
     private AlarmsInfoService service;
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public String info() {
+        throw new InternalServerErrorException("Method not yet implemented.",
+                                               NOT_IMPLEMENTED);
+    }
 
     /**
      * <p>Alarms.</p>
@@ -121,7 +133,9 @@ public final class AlarmsResources {
      *         offset information.
      */
     @GET
+    @Path("logentries") // collection of all LogEntry.
     @Produces(MediaType.APPLICATION_JSON)
+
     public List<LogEntry> getAlarms(@QueryParam("offset") Long offset,
                                     @QueryParam("limit") Long limit,
                                     @QueryParam("after") Long after,
@@ -134,11 +148,139 @@ public final class AlarmsResources {
 
         try {
             return service.get(offset, limit, after, before, type);
-        } catch (IllegalArgumentException | CacheException e) {
+        } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
-        } catch (Exception e) {
+        } catch (CacheException | InterruptedException e) {
             throw new InternalServerErrorException(e);
         }
+    }
+
+    /**
+     * <p>Batch request to update or delete the indicated alarms.</p>
+     *
+     * @param requestPayload containing the list of partial log entry objects;
+     *                       for delete, all that is necessary is the key;
+     *                       for close, the key and closed value.
+     */
+    @PATCH
+    @Path("logentries") // collection of all LogEntry.
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response bulkUpdateOrDelete(String requestPayload) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Alarm service only accessible to admin users.");
+        }
+
+        JSONObject reqPayload = new JSONObject(requestPayload);
+        String action = reqPayload.getString("action");
+        JSONArray items  = reqPayload.getJSONArray("items");
+        int numberOfItems = items.length();
+        List<LogEntry> list = new ArrayList<>();
+
+        try {
+            switch (action) {
+                case "delete":
+                    for (int i = 0; i < numberOfItems; ++i) {
+                        LogEntry entry = new LogEntry();
+                        entry.setKey(items.getString(i));
+                        list.add(entry);
+                    }
+                    service.delete(list);
+                    break;
+                case "update":
+                    for (int i = 0; i < numberOfItems; ++i) {
+                        JSONObject object = items.getJSONObject(i);
+                        LogEntry entry = new LogEntry();
+                        entry.setKey(object.getString("key"));
+                        entry.setClosed(object.getBoolean("closed"));
+                        list.add(entry);
+                    }
+                    service.update(list);
+                    break;
+                default:
+                    String message = "Bulk action '" + action + "' not understood;"
+                                    + " must be either 'delete' or 'update'.";
+                    throw new BadRequestException(message);
+            }
+        } catch (JSONException | IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        } catch (CacheException | InterruptedException e) {
+            throw new InternalServerErrorException(e);
+        }
+
+        return successfulResponse(Response.Status.OK);
+    }
+
+    /**
+     * <p>Request for a single alarm.</p>
+     */
+    @GET
+    @Path("/logentries/{key : .*}") // the specific LogEntry with the given key
+    @Produces(MediaType.APPLICATION_JSON)
+    public LogEntry getLogEntry(@PathParam("key") String key) {
+        throw new InternalServerErrorException("Method not yet implemented.",
+                                               NOT_IMPLEMENTED);
+    }
+
+    /**
+     * <p>Request to close or open the indicated alarm.</p>
+     *
+     * @param key of the alarm to delete.
+     */
+    @PATCH
+    @Path("/logentries/{key : .*}") // the specific LogEntry with the given key
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateAlarmEntry(@PathParam("key") String key,
+                                     String requestPayload) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Alarm service only accessible to admin users.");
+        }
+
+        JSONObject reqPayload = new JSONObject(requestPayload);
+
+        try {
+            LogEntry entry = new LogEntry();
+            entry.setKey(key);
+            entry.setClosed(reqPayload.getBoolean("closed"));
+            service.update(Collections.singletonList(entry));
+        } catch (JSONException | IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        } catch (CacheException | InterruptedException e) {
+            throw new InternalServerErrorException(e);
+        }
+
+        return successfulResponse(Response.Status.OK);
+    }
+
+    /**
+     * <p>Request to delete the indicated alarm from the service's store.</p>
+     *
+     * @param key of the alarm to delete.
+     */
+    @DELETE
+    @Path("/logentries/{key : .*}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteAlarmEntry(@PathParam("key") String key) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Alarm service only accessible to admin users.");
+        }
+
+        try {
+            LogEntry entry = new LogEntry();
+            entry.setKey(key);
+            service.delete(Collections.singletonList(entry));
+        } catch (JSONException | IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        } catch (CacheException | InterruptedException e) {
+            throw new InternalServerErrorException(e);
+        }
+
+        return successfulResponse(Response.Status.OK);
     }
 
     /**
@@ -147,9 +289,9 @@ public final class AlarmsResources {
      * @return requested priority map
      */
     @GET
-    @Path("/map")
+    @Path("/priorities")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getAlarmsMap() {
+    public Map<String, String> getPriorities() {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Alarm service only accessible to admin users.");
@@ -159,56 +301,42 @@ public final class AlarmsResources {
     }
 
     /**
-     * <p>Request to delete the indicated alarm from the service's store.</p>
+     * <p>Request for current mapping of an alarm type to its priority.</p>
      *
-     * @param requestPayload containing the object to delete.
+     * @return requested priority map
      */
-    @DELETE
-    @Consumes({MediaType.APPLICATION_JSON})
+    @GET
+    @Path("/priorities/{type: .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAlarmEntry(String requestPayload) throws
-                    CacheException {
-        return updateOrDelete(requestPayload, true);
-    }
-
-    /**
-     * <p>Request to update the indicated alarm.</p>
-     *
-     * @param requestPayload containing the object with updated fields.
-     */
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response updateAlarmEntry(String requestPayload) throws
-                    CacheException {
-        return updateOrDelete(requestPayload, false);
-    }
-
-    private Response updateOrDelete(String requestPayload, boolean delete)
-                throws CacheException {
+    public String getPriority(@PathParam("type") String type) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Alarm service only accessible to admin users.");
         }
 
-        try {
-            LogEntry[] entries = new ObjectMapper().readValue(requestPayload,
-                                                              LogEntry[].class);
-            List<LogEntry> list = Arrays.stream(entries)
-                                        .collect(Collectors.toList());
-
-            if (delete) {
-                service.delete(list);
-            } else {
-                service.update(list);
-            }
-        } catch (JSONException | IllegalArgumentException e) {
-            throw new BadRequestException(e);
-        } catch (Exception e) {
-            throw new InternalServerErrorException(e);
-        }
-
-        return successfulResponse(Response.Status.OK);
+        return service.getMap().get(type);
     }
 
+    /**
+     * <p>Change the priority of the given alarm type.</p>
+     *
+     * @param priority new priority to assign.
+     */
+    @PUT
+    @Path("/priorities/{type : .*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updatePriority(@PathParam("type") String type,
+                                   @QueryParam("priority") String priority) {
+        return NOT_IMPLEMENTED;
+    }
+
+    /**
+     * <p>Reset the priority of the given alarm to the default.</p>
+     */
+    @DELETE
+    @Path("/priorities/{type : .*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response resetDefaultPriority(@PathParam("type") String type) {
+        return NOT_IMPLEMENTED;
+    }
 }
