@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet id="1" author="behrmann">
+    <changeSet id="1.1" author="behrmann">
         <preConditions onFail="MARK_RAN" onFailMessage="Not creating lost+found as it already exists (this is not an error)">
             <sqlCheck expectedResult="0">
                 SELECT count(*) FROM t_inodes WHERE ipnfsid='000000000000000000000000000000000001'
@@ -17,7 +17,7 @@
         <insert tableName="t_inodes">
             <column name="ipnfsid" value="000000000000000000000000000000000001"/>
             <column name="itype" valueNumeric="16384"/>
-            <column name="imode" valueNumeric="700"/>
+            <column name="imode" valueNumeric="448"/> <!-- 0700 -->
             <column name="inlink" valueNumeric="2"/>
             <column name="iuid" valueNumeric="0"/>
             <column name="igid" valueNumeric="0"/>
