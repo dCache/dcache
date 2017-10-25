@@ -169,7 +169,7 @@ public class CellInfoServiceImpl extends
                 Arrays.sort(currentKnownCells);
             }
         } catch (IllegalStateException e) {
-            LOGGER.warn("Processing cycle has overlapped; you may wish to "
+            LOGGER.info("Processing cycle has overlapped; you may wish to "
                                         + "increase the interval between "
                                         + "collections, which is currently "
                                         + "set to {} {}.",
