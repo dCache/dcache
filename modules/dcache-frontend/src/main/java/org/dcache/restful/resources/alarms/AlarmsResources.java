@@ -120,17 +120,22 @@ public final class AlarmsResources {
 
     /**
      * <p>Alarms.</p>
-     *
+     * <p>
      * <p>The Alarms endpoint returns a (filtered) list of alarms.</p>
      *
-     * @param offset specifying the index at which to begin.
-     * @param limit  maximum number of alarms to include.
-     * @param after  Return no alarms before this datestamp.
-     * @param before Return no alarms after this datestamp.
-     * @param type   Return only alarms of this type.
-     *
-     * @return object containing list of transfers, along with token and
-     *         offset information.
+     * @param offset        specifying the index at which to begin.
+     * @param limit         maximum number of alarms to include.
+     * @param after         Return no alarms before this datestamp.
+     * @param before        Return no alarms after this datestamp.
+     * @param includeClosed If false, no alarms which are closed
+     * @param severity      Filter on severity
+     * @param type          Filter on type
+     * @param host          Filter on host
+     * @param domain        Filter on domain
+     * @param service       Filter on service
+     * @param info          Filter on info
+     * @param sort          List of fields on which to sort
+     * @return              List of LogEntry objects.
      */
     @GET
     @Path("logentries") // collection of all LogEntry.
@@ -140,14 +145,32 @@ public final class AlarmsResources {
                                     @QueryParam("limit") Long limit,
                                     @QueryParam("after") Long after,
                                     @QueryParam("before") Long before,
-                                    @QueryParam("type") String type) {
+                                    @QueryParam("includeClosed") Boolean includeClosed,
+                                    @QueryParam("severity") String severity,
+                                    @QueryParam("type") String type,
+                                    @QueryParam("host") String host,
+                                    @QueryParam("domain") String domain,
+                                    @QueryParam("service") String service,
+                                    @QueryParam("info") String info,
+                                    @QueryParam("sort") String sort) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Alarm service only accessible to admin users.");
         }
 
         try {
-            return service.get(offset, limit, after, before, type);
+            return this.service.get(offset,
+                                    limit,
+                                    after,
+                                    before,
+                                    includeClosed,
+                                    severity,
+                                    type,
+                                    host,
+                                    domain,
+                                    service,
+                                    info,
+                                    sort);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException e) {

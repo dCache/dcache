@@ -85,4 +85,16 @@ public enum AlarmPriority {
                     };
 
     public abstract int getLevel();
+
+    public static AlarmPriority get(int level) {
+        switch (level) {
+            case 3: return CRITICAL;
+            case 2: return HIGH;
+            case 1: return MODERATE;
+            case 0: return LOW;
+            default:
+                throw new IllegalArgumentException("unrecognized Alarm Priority level: "
+                                                                   + level);
+        }
+    }
 }

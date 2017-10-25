@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.alarms;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -66,6 +67,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import dmg.util.command.Command;
@@ -74,6 +76,7 @@ import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.LogEntry;
 import org.dcache.restful.util.alarms.AlarmsCollector;
 import org.dcache.services.collector.CellDataCollectingService;
+import org.dcache.util.FieldSort;
 import org.dcache.vehicles.alarms.AlarmMappingRequestMessage;
 import org.dcache.vehicles.alarms.AlarmsDeleteMessage;
 import org.dcache.vehicles.alarms.AlarmsRequestMessage;
@@ -153,8 +156,18 @@ public final class AlarmsInfoServiceImpl extends
                 beforeInMs = date.getTime();
             }
 
-            List<LogEntry> snapshot = get(offset, limit,
-                                          afterInMs, beforeInMs, type);
+            List<LogEntry> snapshot = get(offset,
+                                          limit,
+                                          afterInMs,
+                                          beforeInMs,
+                                          null,
+                                          type,
+                                          null,
+                                          null,
+                                          null,
+                                          null,
+                                          null,
+                                          null);
 
             StringBuilder builder = new StringBuilder();
             snapshot.stream()
@@ -180,15 +193,36 @@ public final class AlarmsInfoServiceImpl extends
     }
 
     @Override
-    public List<LogEntry> get(Long offset, Long limit,
-                              Long after, Long before, String type)
+    public List<LogEntry> get(Long offset,
+                              Long limit,
+                              Long after,
+                              Long before,
+                              Boolean includeClosed,
+                              String severity,
+                              String type,
+                              String host,
+                              String domain,
+                              String service,
+                              String info,
+                              String sort)
                     throws CacheException, InterruptedException {
         AlarmsRequestMessage message = new AlarmsRequestMessage();
         message.setOffset(offset);
         message.setLimit(limit);
         message.setAfter(after);
         message.setBefore(before);
+        message.setIncludeClosed(includeClosed);
+        message.setSeverity(severity);
         message.setType(type);
+        message.setHost(host);
+        message.setDomain(domain);
+        message.setService(service);
+        message.setInfo(info);
+        if (sort != null) {
+            message.setSort(Arrays.stream(sort.split(","))
+                                  .map(FieldSort::new)
+                                  .collect(Collectors.toList()));
+        }
         message = collector.sendRequestToAlarmService(message);
         return message.getAlarms();
     }

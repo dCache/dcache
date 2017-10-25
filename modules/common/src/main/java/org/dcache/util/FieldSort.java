@@ -57,135 +57,84 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.vehicles.alarms;
+package org.dcache.util;
 
+import java.io.Serializable;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
-
-import diskCacheV111.vehicles.Message;
-import org.dcache.alarms.LogEntry;
-import org.dcache.util.FieldSort;
+import java.util.function.Function;
 
 /**
- * <p>Request for list of alarms filtered by date range and/or type.</p>
+ * <p>Simple abstraction to indicate the name of field to sort
+ * and the direction.</p>
+ *
+ * <p>Constructor supports convention of indicating the sort order by
+ *    prefixing '-' to the name in case of reverse.</p>
  */
-public class AlarmsRequestMessage extends Message {
-    private Long            limit;
-    private Long            offset;
-    private Long            before;
-    private Long            after;
-    private String          type;
-    private Boolean         includeClosed;
-    private String          severity;
-    private String          host;
-    private String          domain;
-    private String          service;
-    private String          info;
-    private List<FieldSort> sort;
+public class FieldSort implements Serializable {
+    private static final long serialVersionUID = -9054869224739638232L;
+    private String name;
+    private boolean reverse;
 
-    private List<LogEntry>  alarms;
-
-    public Long getAfter() {
-        return after;
+    public FieldSort() {
     }
 
-    public List<LogEntry> getAlarms() {
-        return alarms;
+    public FieldSort(String name, boolean reverse) {
+        this.name = name;
+        this.reverse = reverse;
     }
 
-    public Long getBefore() {
-        return before;
+    public FieldSort(String signPrefixedName) {
+        if (signPrefixedName.startsWith("-")) {
+            reverse = true;
+            name = signPrefixedName.substring(1);
+        } else {
+            reverse = false;
+            name = signPrefixedName;
+        }
     }
 
-    public String getDomain() {
-        return domain;
+    public String getName() {
+        return name;
     }
 
-    public String getHost() {
-        return host;
+    public boolean isReverse() {
+        return reverse;
     }
 
-    public Boolean getIncludeClosed() {
-        return includeClosed;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getInfo() {
-        return info;
+    public void setReverse(boolean reverse) {
+        this.reverse = reverse;
     }
 
-    public Long getLimit() {
-        return limit;
+    /**
+     * <p>Utility which composes a chained comparator
+     *      based on an implementation specific Function for getting
+     *      the next comparator from a list of FieldSort.</p>
+     * @param sort the list of sorting specifications.
+     * @param next the function responsible for the comparator based on the field name.
+     * @param <T> object to be compared.
+     * @return comparator chain respecting the order of the field and direction list.
+     */
+    public static <T extends Comparable<T>> Comparator<T>
+        getSorter(List<FieldSort> sort, Function<FieldSort, Comparator<T>> next) {
+        Comparator<T> comparator;
+
+        if (sort == null || sort.isEmpty()) {
+            comparator = Comparator.naturalOrder();
+        } else {
+            Iterator<FieldSort> it = sort.iterator();
+            comparator = next.apply(it.next());
+            while (it.hasNext()) {
+                comparator = comparator.thenComparing(next.apply(it.next()));
+            }
+        }
+
+        return comparator;
     }
 
-    public Long getOffset() {
-        return offset;
-    }
-
-    public String getService() {
-        return service;
-    }
-
-    public String getSeverity() {
-        return severity;
-    }
-
-    public List<FieldSort> getSort() {
-        return sort;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setAfter(Long after) {
-        this.after = after;
-    }
-
-    public void setAlarms(List<LogEntry> alarms) {
-        this.alarms = alarms;
-
-    }
-
-    public void setBefore(Long before) {
-        this.before = before;
-    }
-
-    public void setDomain(String domain) {
-        this.domain = domain;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    public void setIncludeClosed(Boolean includeClosed) {
-        this.includeClosed = includeClosed;
-    }
-
-    public void setInfo(String info) {
-        this.info = info;
-    }
-
-    public void setLimit(Long limit) {
-        this.limit = limit;
-    }
-
-    public void setOffset(Long offset) {
-        this.offset = offset;
-    }
-
-    public void setService(String service) {
-        this.service = service;
-    }
-
-    public void setSeverity(String severity) {
-        this.severity = severity;
-    }
-
-    public void setSort(List<FieldSort> sort) {
-        this.sort = sort;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
 }

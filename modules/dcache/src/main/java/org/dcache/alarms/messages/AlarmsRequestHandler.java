@@ -59,18 +59,25 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.messages;
 
+import com.google.common.base.Strings;
+
+import java.util.Comparator;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
+import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.cells.MessageReply;
+import org.dcache.util.FieldSort;
 import org.dcache.vehicles.alarms.AlarmMappingRequestMessage;
 import org.dcache.vehicles.alarms.AlarmsDeleteMessage;
 import org.dcache.vehicles.alarms.AlarmsRequestMessage;
@@ -81,6 +88,83 @@ import org.dcache.vehicles.alarms.AlarmsUpdateMessage;
  * map, which gives available alarm types mapped to their priority.</p>
  */
 public class AlarmsRequestHandler implements CellMessageReceiver {
+    private static Function<FieldSort, Comparator<LogEntry>> nextComparator() {
+        return (sort) -> {
+            Comparator<LogEntry> comparator;
+
+            switch (sort.getName()) {
+                case "severity":
+                    comparator = Comparator.comparing(LogEntry::getSeverity);
+                    break;
+                case "first":
+                    comparator = Comparator.comparing(LogEntry::getFirstArrived);
+                    break;
+                case "last":
+                    comparator = Comparator.comparing(LogEntry::getLastUpdate);
+                    break;
+                case "type":
+                    comparator = Comparator.comparing(LogEntry::getType);
+                    break;
+                case "received":
+                    comparator = Comparator.comparing(LogEntry::getReceived);
+                    break;
+                case "host":
+                    comparator = Comparator.comparing(LogEntry::getHost);
+                    break;
+                case "domain":
+                    comparator = Comparator.comparing(LogEntry::getDomain);
+                    break;
+                case "service":
+                    comparator = Comparator.comparing(LogEntry::getService);
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                                    "sort field " + sort.getName()
+                                                    + " not supported.");
+            }
+
+            if (sort.isReverse()) {
+                return comparator.reversed();
+            }
+
+            return comparator;
+        };
+    }
+
+    private static Predicate<LogEntry> getFilter(final AlarmsRequestMessage message) {
+        final Boolean include = message.getIncludeClosed();
+        final String severity = message.getSeverity();
+        final String type = message.getType();
+        final String host = message.getHost();
+        final String domain = message.getDomain();
+        final String service = message.getService();
+        final String info = message.getInfo();
+
+        Predicate<LogEntry> matchesInclude =
+                        (entry) -> include == null || include || !entry.isClosed();
+        Predicate<LogEntry> matchesSeverity =
+                        (entry) -> severity == null || AlarmPriority.get(entry.getSeverity()).name()
+                                                                    .contains(severity);
+        Predicate<LogEntry> matchesType =
+                        (entry) -> type == null || Strings.nullToEmpty(entry.getHost())
+                                                          .contains(type);
+        Predicate<LogEntry> matchesHost =
+                        (entry) -> host == null || Strings.nullToEmpty(entry.getHost())
+                                                          .contains(host);
+        Predicate<LogEntry> matchesDomain =
+                        (entry) -> domain == null || Strings.nullToEmpty(entry.getDomain())
+                                                            .contains(domain);
+        Predicate<LogEntry> matchesService =
+                        (entry) -> service == null || Strings.nullToEmpty(entry.getService())
+                                                             .contains(service);
+        Predicate<LogEntry> matchesInfo =
+                        (entry) -> info == null || Strings.nullToEmpty(entry.getInfo())
+                                                          .contains(info);
+        return matchesInclude.and(matchesSeverity).and(matchesType)
+                             .and(matchesHost).and(matchesDomain)
+                             .and(matchesService).and(matchesInfo);
+    }
+
     private AlarmPriorityMap map;
     private LogEntryDAO      access;
     private Executor         executor;
@@ -91,16 +175,25 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
             try {
                 Long after = message.getAfter();
                 Long before = message.getBefore();
-                String type = message.getType();
                 Long offset = message.getOffset();
                 Long limit = message.getLimit();
-                AlarmDAOFilter filter = AlarmJDOUtils.getFilter(after, before, type);
-                message.setAlarms(access.get(filter)
+                Comparator<LogEntry> sorter = FieldSort.getSorter(message.getSort(),
+                                                                  nextComparator());
+                /*
+                 * 'type' on the db filter denotes exact match, so we do not
+                 * use it here.
+                 */
+                AlarmDAOFilter daofilter
+                                = AlarmJDOUtils.getFilter(after, before, null);
+                Predicate<LogEntry> filter = getFilter(message);
+                message.setAlarms(access.get(daofilter)
                                         .stream()
-                                        .sorted()
-                                        .skip(offset == null ? 0 : offset)
-                                        .limit(limit == null ? Long.MAX_VALUE : limit)
                                         .map(this::setSeverity)
+                                        .filter(filter)
+                                        .sorted(sorter)
+                                        .skip(offset == null ? 0 : offset)
+                                        .limit(limit == null ? Long.MAX_VALUE :
+                                                               limit)
                                         .collect(Collectors.toList()));
                 reply.reply(message);
             } catch (Exception e) {

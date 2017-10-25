@@ -74,19 +74,35 @@ public interface AlarmsInfoService {
      *
      * <p>This method should fetch the list synchronously
      * and throw an exception if it fails.</p>
-     * @param offset into result list
-     * @param limit max entries to return
-     * @param after  no alarms before this datestamp
-     * @param before no alarms after this datestamp
-     * @param type   only alarms of this type
-     * @return list of {@link LogEntry} beans.
+     *
+     * @param offset        specifying the index at which to begin.
+     * @param limit         maximum number of alarms to include.
+     * @param after         Return no alarms before this datestamp.
+     * @param before        Return no alarms after this datestamp.
+     * @param includeClosed If false, no alarms which are closed
+     * @param severity      Filter on severity
+     * @param type          Filter on type
+     * @param host          Filter on host
+     * @param domain        Filter on domain
+     * @param service       Filter on service
+     * @param info          Filter on info
+     * @param sort          List of fields on which to sort
+     * @return              List of LogEntry objects.
      * @throws CacheException if the fetch operation fails.
      */
     List<LogEntry> get(Long offset,
                        Long limit,
                        Long after,
                        Long before,
-                       String type) throws CacheException, InterruptedException;
+                       Boolean includeClosed,
+                       String severity,
+                       String type,
+                       String host,
+                       String domain,
+                       String service,
+                       String info,
+                       String sort)
+            throws CacheException, InterruptedException;
 
     /**
      * @return the current mapping of alarm types to alarms priority level.
