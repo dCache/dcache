@@ -72,14 +72,9 @@ import diskCacheV111.pools.PoolV2Mode;
 public class PoolModeUpdate implements Serializable {
     private static final long serialVersionUID = 4199793636351366103L;
 
-    private String  pool;
     private boolean strict;
     private boolean rdonly;
     private boolean resilience;
-
-    public String getPool() {
-        return pool;
-    }
 
     public boolean isRdonly() {
         return rdonly;
@@ -101,10 +96,6 @@ public class PoolModeUpdate implements Serializable {
         }
 
         return PoolV2Mode.ENABLED;
-    }
-
-    public void setPool(String pool) {
-        this.pool = pool;
     }
 
     public void setRdonly(boolean rdonly) {
