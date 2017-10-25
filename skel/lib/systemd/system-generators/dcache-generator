@@ -4,6 +4,10 @@ set -e
 
 @DCACHE_LOAD_CONFIG@
 
+
+wantdir="$1/dcache.service.wants"
+mkdir "$wantdir"
+
 for domain in $(getProperty dcache.domains); do
     RESTART_DELAY="$(getProperty dcache.restart.delay "$domain")"
     USER="$(getProperty dcache.user "$domain")"
@@ -16,6 +20,9 @@ for domain in $(getProperty dcache.domains); do
 	[Unit]
 	Description=dCache $domain domain
 	After=network.target zookeeper.service
+	PartOf=dcache.service
+	ReloadPropagatedFrom=dcache.service
+	Before=dcache.service
 
 	[Service]
 	Type=simple
@@ -35,4 +42,6 @@ for domain in $(getProperty dcache.domains); do
 	[Install]
 	WantedBy=default.target
 	EOF
+
+    ln -s "$1/dcache@$domain.service" "$wantdir/dcache@$domain.service"
 done
