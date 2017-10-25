@@ -59,8 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.pool;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
 import org.springframework.stereotype.Component;
@@ -70,11 +68,12 @@ import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.POST;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -82,7 +81,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -91,14 +89,11 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
-
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-
 import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
-import org.dcache.restful.providers.pool.PoolKillMover;
 import org.dcache.restful.providers.pool.PoolModeUpdate;
 import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.util.HttpServletRequests;
@@ -344,35 +339,24 @@ public final class PoolInfoResources {
 
     /**
      * <p>Request to update the indicated pool to either enabled or disabled.</p>
-     *
-     * @param requestPayload containing the object with updated fields.
      */
-    @POST
-    @Path("movers")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @DELETE
+    @Path("{pool : .*}/mover/{id : [0-9]*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response killMovers(String requestPayload) throws
-                    CacheException {
+    public Response killMovers(@PathParam("pool") String pool,
+                               @PathParam("id") int id ) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Pool command only accessible to admin users.");
         }
 
         try {
-            PoolKillMover update = new ObjectMapper().readValue(requestPayload,
-                                                                PoolKillMover.class);
-            String pool = update.getPool();
-            Message message;
-            Integer moverId = update.getMoverId();
-            if (moverId != null) {
-                message = new PoolMoverKillMessage(pool, moverId,
-                                                   update.getReason());
-                poolStub.sendAndWait(new CellPath(pool), message);
-            }
-        } catch (JSONException | IllegalArgumentException | JsonParseException
-                        | JsonMappingException e) {
+            poolStub.sendAndWait(new CellPath(pool),
+                                 new PoolMoverKillMessage(pool, id,
+                                    "Killed by user."));
+        } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
-        } catch (IOException | InterruptedException | NoRouteToCellException e) {
+        } catch (InterruptedException | NoRouteToCellException | CacheException e) {
             throw new InternalServerErrorException(e);
         }
 
@@ -382,14 +366,14 @@ public final class PoolInfoResources {
     /**
      * <p>Request to update the indicated pool to either enabled or disabled.</p>
      *
-     * @param requestPayload containing the object with updated fields.
+     * @param requestPayload containing the mode specification.
      */
-    @POST
-    @Path("mode")
+    @PATCH
+    @Path("{pool : .*}/mode")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateMode(String requestPayload) throws
-                    CacheException {
+    public Response updateMode(@PathParam("pool") String pool,
+                               String requestPayload) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Pool command only accessible to admin users.");
@@ -399,15 +383,13 @@ public final class PoolInfoResources {
             PoolModeUpdate update
                             = new ObjectMapper().readValue(requestPayload,
                                                            PoolModeUpdate.class);
-            String pool = update.getPool();
             PoolV2Mode mode = new PoolV2Mode(update.mode());
             mode.setResilienceEnabled(update.isResilience());
             Message message = new PoolModifyModeMessage(pool, mode);
             poolStub.sendAndWait(new CellPath(pool), message);
-        } catch (JSONException | IllegalArgumentException | JsonParseException
-                        | JsonMappingException e) {
+        } catch (JSONException | IllegalArgumentException | IOException e) {
             throw new BadRequestException(e);
-        } catch (IOException | InterruptedException | NoRouteToCellException e) {
+        } catch (InterruptedException | NoRouteToCellException | CacheException e) {
             throw new InternalServerErrorException(e);
         }
 
