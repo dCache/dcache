@@ -46,19 +46,8 @@ public class ActiveTransfersBean extends TransferInfo {
     public ActiveTransfersBean() {
     }
 
-    public String getVomsGroup() {
-        return userInfo.getPrimaryVOMSGroup();
-    }
-
-    public String getGid() {
-        return userInfo.getGid();
-    }
-
     public Key getKey() {
         return new Key(domainName, cellName, serialId);
     }
 
-    public String getUid() {
-        return userInfo.getUid();
-    }
 }

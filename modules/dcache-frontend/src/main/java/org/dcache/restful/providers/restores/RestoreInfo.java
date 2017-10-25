@@ -67,7 +67,7 @@ import diskCacheV111.vehicles.RestoreHandlerInfo;
 /**
  * <p>Restore/stage request metadata.</p>
  */
-public class RestoreInfo implements Serializable {
+public class RestoreInfo implements Comparable<RestoreInfo>, Serializable {
     private String key;
     private PnfsId pnfsId;
     private String  path;
@@ -96,6 +96,11 @@ public class RestoreInfo implements Serializable {
         status = info.getStatus();
         error = info.getErrorCode();
         errorMessage = info.getErrorMessage();
+    }
+
+    @Override
+    public int compareTo(RestoreInfo o) {
+        return key.compareTo(o.key);
     }
 
     public Integer getClients() {

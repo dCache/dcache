@@ -59,17 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.transfers;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import com.google.common.base.Strings;
+
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
-import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TransferInfo;
 import diskCacheV111.util.TransferInfo.MoverState;
 import dmg.util.command.Command;
@@ -79,6 +83,7 @@ import org.dcache.restful.util.admin.SnapshotDataAccess;
 import org.dcache.restful.util.transfers.TransferCollector;
 import org.dcache.restful.util.transfers.TransferFilter;
 import org.dcache.services.collector.CellDataCollectingService;
+import org.dcache.util.FieldSort;
 
 /**
  * <p>Service layer responsible for collecting information from
@@ -211,8 +216,7 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
         Integer limit = Integer.MAX_VALUE;
 
         @Override
-        public String call() throws ParseException, InvocationTargetException,
-                        IllegalAccessException, NoSuchMethodException {
+        public String call() throws ParseException, CacheException {
             TransferFilter filter = new TransferFilter();
             Date date = getDate(after);
             if (date != null) {
@@ -240,7 +244,20 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
             }
 
             SnapshotList<TransferInfo> result
-                            = get(null, 0, limit, null);
+                            = get(null,
+                                  0,
+                                  limit,
+                                  null,
+                                  null,
+                                  null,
+                                  null,
+                                  null,
+                                  null,
+                                  null,
+                                  null,
+                                  null,
+                                  null,
+                                  null);
             List<TransferInfo> snapshot = result.getItems();
 
             StringBuilder builder = new StringBuilder();
@@ -270,6 +287,105 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
     class TransfersRefreshCommand extends RefreshCommand {
     }
 
+    private static Function<FieldSort, Comparator<TransferInfo>> nextComparator() {
+        return (sort) -> {
+            Comparator<TransferInfo> comparator;
+
+            switch (sort.getName()) {
+                case "state":
+                    comparator = Comparator.comparing(TransferInfo::getMoverStatus);
+                    break;
+                case "door":
+                    comparator = Comparator.comparing(TransferInfo::getCellName);
+                    break;
+                case "domain":
+                    comparator = Comparator.comparing(TransferInfo::getDomainName);
+                    break;
+                case "prot":
+                    comparator = Comparator.comparing(TransferInfo::getProtocol);
+                    break;
+                case "uid":
+                    comparator = Comparator.comparing(TransferInfo::getUid);
+                    break;
+                case "gid":
+                    comparator = Comparator.comparing(TransferInfo::getGid);
+                    break;
+                case "vomsgroup":
+                    comparator = Comparator.comparing(TransferInfo::getVomsGroup);
+                    break;
+                case "pnfsid":
+                    comparator = Comparator.comparing(TransferInfo::getPnfsId);
+                    break;
+                case "pool":
+                    comparator = Comparator.comparing(TransferInfo::getPool);
+                    break;
+                case "client":
+                    comparator = Comparator.comparing(TransferInfo::getReplyHost);
+                    break;
+                case "waiting":
+                    comparator = Comparator.comparing(TransferInfo::getWaitingSince);
+                    break;
+                case "size":
+                    comparator = Comparator.comparing(TransferInfo::getBytesTransferred);
+                    break;
+                case "mbsec":
+                    comparator = Comparator.comparing(TransferInfo::getTransferRate);
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                                    "sort field " + sort.getName()
+                                                    + " not supported.");
+            }
+
+            if (sort.isReverse()) {
+                return comparator.reversed();
+            }
+
+            return comparator;
+        };
+    }
+
+    private static Predicate<TransferInfo> getFilter(String state, String door,
+                                                     String domain, String protocol,
+                                                     String uid, String gid,
+                                                     String vomsgroup, String pnfsid,
+                                                     String pool, String client) {
+        Predicate<TransferInfo> matchesState =
+                        (info) -> state == null || Strings.nullToEmpty(info.getMoverStatus())
+                                                          .contains(state);
+        Predicate<TransferInfo> matchesDoor =
+                        (info) -> door == null || Strings.nullToEmpty(info.getCellName())
+                                                          .contains(door);
+        Predicate<TransferInfo> matchesDomain =
+                        (info) -> domain == null || Strings.nullToEmpty(info.getDomainName())
+                                                          .contains(domain);
+        Predicate<TransferInfo> matchesProtocol =
+                        (info) -> protocol == null || Strings.nullToEmpty(info.getProtocol())
+                                                          .contains(protocol);
+        Predicate<TransferInfo> matchesUid =
+                        (info) -> uid == null || Strings.nullToEmpty(info.getUid())
+                                                          .contains(uid);
+        Predicate<TransferInfo> matchesGid =
+                        (info) -> gid == null || Strings.nullToEmpty(info.getGid())
+                                                          .contains(gid);
+        Predicate<TransferInfo> matchesVomsGroup =
+                        (info) -> vomsgroup == null || Strings.nullToEmpty(info.getVomsGroup())
+                                                          .contains(vomsgroup);
+        Predicate<TransferInfo> matchesPnfsid =
+                        (info) -> pnfsid == null || Strings.nullToEmpty(info.getPnfsId())
+                                                          .contains(pnfsid);
+        Predicate<TransferInfo> matchesPool =
+                        (info) -> pool == null || Strings.nullToEmpty(info.getPool())
+                                                          .contains(pool);
+        Predicate<TransferInfo> matchesClient =
+                        (info) -> client == null || Strings.nullToEmpty(info.getReplyHost())
+                                                          .contains(client);
+
+        return matchesState.and(matchesDoor).and(matchesDomain).and(matchesProtocol)
+                           .and(matchesUid).and(matchesGid).and(matchesVomsGroup)
+                           .and(matchesPnfsid).and(matchesPool).and(matchesClient);
+    }
+
     /**
      * <p>Data store providing snapshots.</p>
      */
@@ -280,14 +396,29 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
     public SnapshotList<TransferInfo> get(UUID token,
                                           Integer offset,
                                           Integer limit,
-                                          PnfsId pnfsid)
-                    throws InvocationTargetException,
-                           IllegalAccessException,
-                           NoSuchMethodException {
-        Method getPnfsid = TransferInfo.class.getMethod("getPnfsId");
-        Method[] methods = pnfsid == null? null : new Method[]{getPnfsid};
-        Object[] values = pnfsid == null? null : new Object[]{pnfsid};
-        return access.getSnapshot(token, offset, limit, methods, values);
+                                          String state,
+                                          String door,
+                                          String domain,
+                                          String protocol,
+                                          String uid,
+                                          String gid,
+                                          String vomsgroup,
+                                          String pnfsid,
+                                          String pool,
+                                          String client,
+                                          String sort) throws CacheException {
+        Predicate<TransferInfo> filter = getFilter(state, door, domain, protocol,
+                                                   uid, gid, vomsgroup,
+                                                   pnfsid, pool, client);
+        List<FieldSort> fields = null;
+        if (sort != null) {
+            fields = Arrays.stream(sort.split(","))
+                           .map(FieldSort::new)
+                           .collect(Collectors.toList());
+        }
+        Comparator<TransferInfo> sorter
+                        = FieldSort.getSorter(fields, nextComparator());
+        return access.getSnapshot(token, offset, limit, filter, sorter);
     }
 
     @Override

@@ -68,12 +68,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
-import diskCacheV111.util.PnfsId;
-
+import diskCacheV111.util.CacheException;
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
@@ -103,9 +100,13 @@ public final class RestoreResources {
      *              the current list, the service will return a null token and
      *              an empty list, and the client will need to recall the method
      *              without a token (refresh).
-     * @param offset Return restores beginning at this index.
-     * @param limit Return at most this number of items.
-     * @param pnfsid Return only restores for this file.
+     * @param offset    Return items beginning at this index.
+     * @param limit     Return at most this number of items.
+     * @param pnfsid    Filter on pnfsid.
+     * @param subnet    Filter on subnet.
+     * @param pool      Filter on pool.
+     * @param status    Filter on status.
+     * @param sort      comma-delimited orderd list of fields to sort on.
      * @return object containing list of restores, along with token and
      *          offset information.
      */
@@ -114,17 +115,22 @@ public final class RestoreResources {
     public SnapshotList<RestoreInfo> getRestores(@QueryParam("token") UUID token,
                                                  @QueryParam("offset") Integer offset,
                                                  @QueryParam("limit") Integer limit,
-                                                 @QueryParam("pnfsid") PnfsId pnfsid) {
+                                                 @QueryParam("pnfsid") String pnfsid,
+                                                 @QueryParam("subnet") String subnet,
+                                                 @QueryParam("pool") String pool,
+                                                 @QueryParam("status") String status,
+                                                 @QueryParam("sort") String sort) {
         try {
-            return service.get(token, offset, limit, pnfsid);
-        } catch (InvocationTargetException | IllegalAccessException e) {
+            return service.get(token,
+                               offset,
+                               limit,
+                               pnfsid,
+                               subnet,
+                               pool,
+                               status,
+                               sort);
+        } catch (CacheException e) {
             throw new InternalServerErrorException(e);
-        } catch (NoSuchMethodException e) {
-            /*
-             * This should not happen unless the API has changed, in which
-             * case there is either a bug or a class loader issue.
-             */
-            throw new RuntimeException(e);
         }
     }
 }

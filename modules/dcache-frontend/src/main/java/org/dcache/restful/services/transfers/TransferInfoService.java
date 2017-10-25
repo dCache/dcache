@@ -59,10 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.transfers;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
-import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TransferInfo;
 import org.dcache.restful.providers.SnapshotList;
 
@@ -73,18 +72,44 @@ public interface TransferInfoService {
     /**
      * <p>Return the metadata objects.</p>
      *
-     * @param token  specifying the current snapshot held by caller
-     *               (can be <code>null</code>).
-     * @param offset specifying the index in the snapshot at which to begin.
-     * @param limit  maximum number of elements to include.
-     * @param pnfsId to use as filter.
+     * @param token     Use the snapshot corresponding to this UUID.  The contract
+     *                  with the service is that if the parameter value is null, the
+     *                  snapshot will be used, regardless of whether offset and limit
+     *                  are still valid.  Initial/refresh calls should always be
+     *                  without a token.  Subsequent calls should send back the
+     *                  current token; in the case that it no longer corresponds to
+     *                  the current list, the service will return a null token and
+     *                  an empty list, and the client will need to recall the method
+     *                  without a token (refresh).
+     * @param offset    Return transfers beginning at this index.
+     * @param limit     Return at most this number of items.
+     * @param state     Filter on state.
+     * @param door      Filter on door.
+     * @param domain    Filter on domain.
+     * @param protocol  Filter on protocol.
+     * @param uid       Filter on uid.
+     * @param gid       Filter on gid.
+     * @param vomsgroup Filter on vomsgroup.
+     * @param protocol  Filter on protocol.
+     * @param pnfsid    Filter on pnfsid.
+     * @param pool      Filter on pool.
+     * @param pool      Filter on client.
+     * @param sort      comma-delimited orderd list of fields to sort on.
+     *                  offset information.
      * @return {@link SnapshotList<TransferInfo>} containing list of beans.
      */
     SnapshotList<TransferInfo> get(UUID token,
                                    Integer offset,
                                    Integer limit,
-                                   PnfsId pnfsId)
-                    throws InvocationTargetException,
-                           IllegalAccessException,
-                           NoSuchMethodException;
+                                   String state,
+                                   String door,
+                                   String domain,
+                                   String protocol,
+                                   String uid,
+                                   String gid,
+                                   String vomsgroup,
+                                   String pnfsid,
+                                   String pool,
+                                   String client,
+                                   String sort) throws CacheException;
 }

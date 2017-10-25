@@ -62,6 +62,7 @@ package diskCacheV111.util;
 import javax.security.auth.Subject;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.util.TimeUtils.DurationParser;
@@ -73,7 +74,7 @@ import static org.dcache.util.ByteUnit.BYTES;
  * <p>
  * <p>Extended in both dCache and webadmin modules.</p>
  */
-public class TransferInfo implements Serializable {
+public class TransferInfo implements Comparable<TransferInfo>, Serializable {
     private static final long serialVersionUID = 7303353263666911507L;
 
     private static final String FORMAT    = "(%s %s %s)(prot %s)"
@@ -123,6 +124,14 @@ public class TransferInfo implements Serializable {
     protected Long     moverStart;
     protected Subject  subject;
     protected UserInfo userInfo;
+
+    @Override
+    public int compareTo(TransferInfo o) {
+        return Comparator.comparing(TransferInfo::getCellName)
+                         .thenComparing(TransferInfo::getDomainName)
+                         .thenComparing(TransferInfo::getSerialId)
+                         .compare(this, o);
+    }
 
     public Long getBytesTransferred() {
         return bytesTransferred;
@@ -203,6 +212,18 @@ public class TransferInfo implements Serializable {
 
     public UserInfo getUserInfo() {
         return userInfo;
+    }
+
+    public String getUid() {
+        return userInfo == null ? null : userInfo.getUid();
+    }
+
+    public String getGid() {
+        return userInfo == null ? null : userInfo.getGid();
+    }
+
+    public String getVomsGroup() {
+        return userInfo == null ? null : userInfo.getPrimaryVOMSGroup();
     }
 
     public long getWaitingSince() {

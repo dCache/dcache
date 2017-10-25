@@ -59,11 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.admin;
 
-import com.google.common.base.Preconditions;
-
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -73,6 +69,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.dcache.restful.providers.SnapshotList;
@@ -89,62 +86,6 @@ import org.dcache.restful.providers.SnapshotList;
  *    Access is protected by read-write synchronization.</p>
  */
 public final class SnapshotDataAccess<K, V extends Serializable> {
-    /**
-     * <p>Simple limit-offset filtering.</p>
-     */
-    private static <V extends Serializable> List<V> filter(List<V> list,
-                                                           int offset,
-                                                           int limit) {
-        return list.stream()
-                   .skip(offset)
-                   .limit(limit)
-                   .collect(Collectors.toList());
-    }
-
-    /**
-     * <p>Limit-offset filtering with an arbitrary chain of method return
-     *      value checks.</p>
-     */
-    private static <V extends Serializable> List<V> filter(List<V> list,
-                                                           int offset,
-                                                           int limit,
-                                                           Method[] methods,
-                                                           Object[] values)
-                    throws InvocationTargetException, IllegalAccessException {
-        Preconditions.checkNotNull(methods,
-                                   "filter called with "
-                                                   + "null method parameter");
-        Preconditions.checkNotNull(values,
-                                   "filter called with "
-                                                   + "null values parameter");
-        Preconditions.checkArgument(methods.length == values.length,
-                                    "filter called with unequal "
-                                                    + "method and value arrays.");
-        List<V> filtered = new ArrayList<>();
-        int end = list.size();
-
-        for (int i = offset; i < end && filtered.size() < limit; ++i) {
-            V info = list.get(i);
-            if (!matchesAll(info, methods, values)) {
-                continue;
-            }
-            filtered.add(info);
-        }
-        return filtered;
-    }
-
-    private static <V extends Serializable> boolean matchesAll(V data,
-                                                               Method[] methods,
-                                                               Object[] values)
-                    throws InvocationTargetException, IllegalAccessException {
-        for (int k = 0; k < methods.length; ++k) {
-            if (!methods[k].invoke(data).equals(values[k])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private final ReentrantReadWriteLock lock     = new ReentrantReadWriteLock(true);
     private final ReadLock               readLock = lock.readLock();
     private final WriteLock              writeLock = lock.writeLock();
@@ -174,9 +115,8 @@ public final class SnapshotDataAccess<K, V extends Serializable> {
     public SnapshotList<V> getSnapshot(UUID token,
                                        Integer offset,
                                        Integer limit,
-                                       Method[] methods,
-                                       Object[] values)
-                    throws InvocationTargetException, IllegalAccessException {
+                                       Predicate<V> filter,
+                                       Comparator<V> sorter) {
         if (offset == null) {
             offset = 0;
         }
@@ -197,10 +137,13 @@ public final class SnapshotDataAccess<K, V extends Serializable> {
             if (isInvalidToken) {
                 items = Collections.EMPTY_LIST;
                 offset = 0;
-            } else if (methods == null) {
-                items = filter(snapshot, offset, limit);
             } else {
-                items = filter(snapshot, offset, limit, methods, values);
+                items = snapshot.stream()
+                                .filter(filter)
+                                .sorted(sorter)
+                                .skip(offset)
+                                .limit(limit)
+                                .collect(Collectors.toList());;
             }
         } finally {
             readLock.unlock();

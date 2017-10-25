@@ -59,17 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.restores;
 
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import dmg.util.command.Command;
 import org.dcache.restful.providers.SnapshotList;
@@ -77,6 +81,7 @@ import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.util.admin.SnapshotDataAccess;
 import org.dcache.restful.util.restores.RestoreCollector;
 import org.dcache.services.collector.CellDataCollectingService;
+import org.dcache.util.FieldSort;
 
 /**
  * <p>Service layer responsible for collecting information from
@@ -105,6 +110,68 @@ public final class RestoresInfoServiceImpl extends
     class RestoresRefreshCommand extends RefreshCommand {
     }
 
+    private static Function<FieldSort, Comparator<RestoreInfo>> nextComparator() {
+        return (sort) -> {
+            Comparator<RestoreInfo> comparator;
+
+            switch (sort.getName()) {
+                case "pnfsid":
+                    comparator = Comparator.comparing(RestoreInfo::getPnfsId);
+                    break;
+                case "subnet":
+                    comparator = Comparator.comparing(RestoreInfo::getSubnet);
+                    break;
+                case "pool":
+                    comparator = Comparator.comparing(
+                                    RestoreInfo::getPoolCandidate);
+                    break;
+                case "status":
+                    comparator = Comparator.comparing(RestoreInfo::getStatus);
+                    break;
+                case "started":
+                    comparator = Comparator.comparing(RestoreInfo::getStarted);
+                    break;
+                case "clients":
+                    comparator = Comparator.comparing(RestoreInfo::getClients);
+                    break;
+                case "retries":
+                    comparator = Comparator.comparing(RestoreInfo::getRetries);
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                                    "sort field " + sort.getName()
+                                                    + " not supported.");
+            }
+
+            if (sort.isReverse()) {
+                return comparator.reversed();
+            }
+
+            return comparator;
+        };
+    }
+
+    private static Predicate<RestoreInfo> getFilter(String pnfsid,
+                                                    String subnet,
+                                                    String pool,
+                                                    String status) {
+        Predicate<RestoreInfo> matchesPnfsid =
+                        (info) -> pnfsid == null || Strings.nullToEmpty
+                                        (String.valueOf(info.getPnfsId()))
+                                               .contains(pnfsid);
+        Predicate<RestoreInfo> matchesSubnet =
+                        (info) ->  subnet == null || Strings.nullToEmpty(info.getSubnet())
+                                                            .contains(subnet);
+        Predicate<RestoreInfo> matchesPool =
+                        (info) -> pool == null || Strings.nullToEmpty(info.getPoolCandidate())
+                                                         .contains(pool);
+        Predicate<RestoreInfo> matchesStatus =
+                        (info) -> status == null || Strings.nullToEmpty(info.getStatus())
+                                                           .contains(status);
+        return matchesPnfsid.and(matchesSubnet).and(matchesPool).and(matchesStatus);
+    }
+
+
     /**
      * <p>Data store providing snapshots.</p>
      */
@@ -115,14 +182,22 @@ public final class RestoresInfoServiceImpl extends
     public SnapshotList<RestoreInfo> get(UUID token,
                                          Integer offset,
                                          Integer limit,
-                                         PnfsId pnfsid)
-                    throws InvocationTargetException,
-                    IllegalAccessException,
-                    NoSuchMethodException {
-        Method getPnfsid = RestoreInfo.class.getMethod("getPnfsId");
-        Method[] methods = pnfsid == null? null : new Method[]{getPnfsid};
-        Object[] values = pnfsid == null? null : new Object[]{pnfsid};
-        return access.getSnapshot(token, offset, limit, methods, values);
+                                         String pnfsid,
+                                         String subnet,
+                                         String pool,
+                                         String status,
+                                         String sort)
+                    throws CacheException {
+        Predicate<RestoreInfo> filter = getFilter(pnfsid, subnet, pool, status);
+        List<FieldSort> fields = null;
+        if (sort != null) {
+            fields= Arrays.stream(sort.split(","))
+                          .map(FieldSort::new)
+                          .collect(Collectors.toList());
+        }
+        Comparator<RestoreInfo> sorter
+                        = FieldSort.getSorter(fields, nextComparator());
+        return access.getSnapshot(token, offset, limit, filter, sorter);
     }
 
     @Override

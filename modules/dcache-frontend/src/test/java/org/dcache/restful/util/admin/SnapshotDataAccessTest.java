@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.admin;
 
+import com.google.common.base.Strings;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -71,12 +72,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import diskCacheV111.util.TransferInfo;
 import diskCacheV111.util.UserInfo;
@@ -196,8 +198,8 @@ public final class SnapshotDataAccessTest {
     private UUID                                     currentToken;
     private Integer                                  offset;
     private Integer                                  limit;
-    private Method[]                                 methods;
-    private Object[]                                 values;
+    private Predicate<TransferInfo>                  filter;
+    private Comparator<TransferInfo>                 sorter;
     private TransferInfo                             elementAtIndex;
 
     @Before
@@ -206,18 +208,18 @@ public final class SnapshotDataAccessTest {
         collector.initialize();
         snapshotDataAccess = new SnapshotDataAccess<>();
         snapshotDataAccess.refresh(collector.map);
+        filter = (t) -> true;
+        sorter = Comparator.naturalOrder();
         setCurrentList();
         currentToken = null;
         offset = null;
         limit = null;
-        methods = null;
-        values = null;
+
     }
 
     @Test
     public void shouldReturnEntriesOnlyMatchingPnfsid() throws Exception {
-        whenMethodIsSetToPnfsid();
-        whenValueIsSetTo("0000E387208AEB3746038A4B66CC6B528C52");
+        whenFilterIsSetToPnfsid("0000E387208AEB3746038A4B66CC6B528C52");
         whenAccessIsRead();
         assertThatEachElementHasPnfsid("0000E387208AEB3746038A4B66CC6B528C52");
         assertThatNextOffSetIs(-1);
@@ -258,10 +260,9 @@ public final class SnapshotDataAccessTest {
     @Test
     public void shouldReturnPartialListOfEntriesOnlyMatchingPnfsid()
                     throws Exception {
-        whenMethodIsSetToPnfsid();
+        whenFilterIsSetToPnfsid("0000E387208AEB3746038A4B66CC6B528C52");
         whenOffsetIsSetTo(100);
         whenLimitIsSetTo(10);
-        whenValueIsSetTo("0000E387208AEB3746038A4B66CC6B528C52");
         whenAccessIsRead();
         assertThatEachElementHasPnfsid("0000E387208AEB3746038A4B66CC6B528C52");
         assertThatSizeOfReturnedListIs(10);
@@ -337,16 +338,17 @@ public final class SnapshotDataAccessTest {
         currentList = snapshotDataAccess.getSnapshot(null,
                                                      null,
                                                      null,
-                                                     null,
-                                                     null).getItems();
+                                                        filter ,
+                                                        sorter)
+                                                        .getItems();
     }
 
     private void whenAccessIsRead() throws Exception {
         snapshotList = snapshotDataAccess.getSnapshot(currentToken,
                                                       offset,
                                                       limit,
-                                                      methods,
-                                                      values);
+                                                      filter,
+                                                      sorter);
     }
 
     private void whenAccessIsRefreshed()
@@ -371,9 +373,8 @@ public final class SnapshotDataAccessTest {
         }
     }
 
-    private void whenMethodIsSetToPnfsid() throws Exception {
-        methods = new Method[] { TransferInfo.class.getMethod("getPnfsId",
-                                                              null) };
+    private void whenFilterIsSetToPnfsid(final String pnfsid) throws Exception {
+         filter = (t) -> Strings.nullToEmpty(t.getPnfsId()).contains(pnfsid);
     }
 
     private void whenOffsetIsSetTo(int i) {
@@ -382,10 +383,6 @@ public final class SnapshotDataAccessTest {
 
     private void whenTokenIsSaved() {
         currentToken = snapshotList.getCurrentToken();
-    }
-
-    private void whenValueIsSetTo(Object value) {
-        values = new Object[] { value };
     }
 
     private String elementId(TransferInfo info) {
