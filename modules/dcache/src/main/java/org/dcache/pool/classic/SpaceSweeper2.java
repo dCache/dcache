@@ -218,25 +218,24 @@ public class SpaceSweeper2
     public class sweeperFreeCommand implements Callable<String>
     {
         @Argument(usage = "Specify amount of space in bytes.")
-        String bytesToFree;
+        long bytesToFree;
 
         @Override
         public String call()
         {
-            final long toFree = Long.parseLong(bytesToFree);
             new Thread("sweeper-free") {
                 @Override
                 public void run()
                 {
                     try {
-                        long bytes = reclaim(toFree);
-                        _log.info("'sweeper free {}' reclaimed {} bytes.", toFree, bytes);
+                        long bytes = reclaim(bytesToFree);
+                        _log.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
                     } catch (InterruptedException e) {
                     }
                 }
             }.start();
 
-            return String.format("Reclaiming %d bytes", toFree);
+            return String.format("Reclaiming %d bytes", bytesToFree);
         }
     }
 
