@@ -26,7 +26,6 @@ for domain in $(getProperty dcache.domains); do
 	ProtectSystem=full
 	ProtectHome=true
 	NoNewPrivileges=true
-	StandardOutput=journal
 	SyslogIdentifier=dcache@$domain
 	Environment="CLASSPATH=$CLASSPATH" "LD_LIBRARY_PATH=$JAVA_LIBRARY_PATH"
 	$( [ -z "$USER" ] || echo "User=$USER" )
