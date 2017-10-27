@@ -127,7 +127,6 @@ public final class PoolHistoriesRequestProcessor extends
         Map<String, PoolInfoWrapper> values = new HashMap<>();
 
         File[] files = storageDir.listFiles(filter);
-        Set<String> validKeys = service.validKeys();
 
         PoolInfoWrapper info;
         String key;
@@ -143,12 +142,7 @@ public final class PoolHistoriesRequestProcessor extends
                     key = key.substring(0, key.lastIndexOf("."));
                 }
 
-                /*
-                 *  Do not reload data for pools or groups which have been removed.
-                 */
-                if (validKeys.contains(key)) {
-                    values.put(key, info);
-                }
+                values.put(key, info);
             } catch (IOException e) {
                 LOGGER.warn("There was a problem deserializing json file {}: "
                                             + "{}, {}",
