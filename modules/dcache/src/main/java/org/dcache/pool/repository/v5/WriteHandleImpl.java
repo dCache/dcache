@@ -34,7 +34,9 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.dcache.namespace.FileAttribute.*;
+import org.dcache.pool.repository.ForwardingRepositoryChannel;
 
 class WriteHandleImpl implements ReplicaDescriptor
 {
@@ -92,6 +94,9 @@ class WriteHandleImpl implements ReplicaDescriptor
      */
     private final boolean _useHardAllocator;
 
+    private RepositoryChannel _channel;
+    private final AtomicInteger _refCount;
+
     WriteHandleImpl(ReplicaRepository repository,
                     Allocator allocator,
                     PnfsHandler pnfs,
@@ -111,6 +116,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         _stickyRecords = checkNotNull(stickyRecords);
         _useHardAllocator = useHardAllocator;
         _state = HandleState.OPEN;
+        _refCount = new AtomicInteger(0);
 
         checkState(_initialState != ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
         checkState(_initialState == ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(SIZE));
@@ -128,14 +134,33 @@ class WriteHandleImpl implements ReplicaDescriptor
             throw new IllegalStateException("Handle is closed");
         }
 
-        RepositoryChannel channel = new AllocatorAwareRepositoryChannel(_entry.openChannel(OPEN_OPTIONS), _allocator, _useHardAllocator);
-        // adjust file size to the falue from namespace
-        if (_fileAttributes.isDefined(SIZE)) {
-            channel.truncate(_fileAttributes.getSize());
-            // undefine size to avoid truncate on second open
-            _fileAttributes.undefine(SIZE);
+        if (_refCount.get() == 0) {
+            _channel = new AllocatorAwareRepositoryChannel(_entry.openChannel(OPEN_OPTIONS), _allocator, _useHardAllocator);
+            // adjust file size to a value provided by the door
+            if (_fileAttributes.isDefined(SIZE)) {
+                _channel.truncate(_fileAttributes.getSize());
+            }
         }
-        return channel;
+        _refCount.incrementAndGet();
+
+        return new ForwardingRepositoryChannel() {
+
+            @Override
+            protected RepositoryChannel delegate() {
+                return _channel;
+            }
+
+            @Override
+            public void close() throws IOException {
+                synchronized(WriteHandleImpl.this) {
+                    int c = _refCount.decrementAndGet();
+                    if (c == 0) {
+                        super.close();
+                    }
+                }
+            }
+
+        };
     }
 
     private void registerFileAttributesInNameSpace()
