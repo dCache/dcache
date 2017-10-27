@@ -1,12 +1,12 @@
 package org.dcache.chimera.namespace;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -236,6 +236,6 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 return Optional.of(line);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 }

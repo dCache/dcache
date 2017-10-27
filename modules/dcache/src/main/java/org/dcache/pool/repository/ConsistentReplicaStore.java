@@ -192,7 +192,7 @@ public class ConsistentReplicaStore
 
             /* Verify checksum. Will fail if there is a mismatch.
              */
-            Set<Checksum> namespaceChecksums = attributesInNameSpace.getChecksumsIfPresent().or(Collections.emptySet());
+            Set<Checksum> namespaceChecksums = attributesInNameSpace.getChecksumsIfPresent().orElse(Collections.emptySet());
             Set<Checksum> additionalChecksums = _checksumModule == null
                     ? Collections.emptySet()
                     : _checksumModule.verifyBrokenFile(entry, namespaceChecksums);

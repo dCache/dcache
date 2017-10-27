@@ -304,9 +304,9 @@ public class ChimeraNameSpaceProvider
 
             ExtendedInode inode;
             try {
-                int uid = assignAttributes.getOwnerIfPresent().or(() -> defaultUid(subject, parent));
-                int gid = assignAttributes.getGroupIfPresent().or(() -> defaultGid(subject, parent));
-                int mode = assignAttributes.getModeIfPresent().or(parent.statCache().getMode() & UMASK_FILE);
+                int uid = assignAttributes.getOwnerIfPresent().orElseGet(() -> defaultUid(subject, parent));
+                int gid = assignAttributes.getGroupIfPresent().orElseGet(() -> defaultGid(subject, parent));
+                int mode = assignAttributes.getModeIfPresent().orElse(parent.statCache().getMode() & UMASK_FILE);
                 assignAttributes.undefine(OWNER, OWNER_GROUP, MODE);
 
                 inode = parent.create(newEntryFile.getName(), uid, gid, mode);
@@ -357,9 +357,9 @@ public class ChimeraNameSpaceProvider
 
             ExtendedInode inode;
             try {
-                int uid = attributes.getOwnerIfPresent().or(() -> defaultUid(subject, parent));
-                int gid = attributes.getGroupIfPresent().or(() -> defaultGid(subject, parent));
-                int mode = attributes.getModeIfPresent().or(parent.statCache().getMode() & UMASK_DIR);
+                int uid = attributes.getOwnerIfPresent().orElseGet(() -> defaultUid(subject, parent));
+                int gid = attributes.getGroupIfPresent().orElseGet(() -> defaultGid(subject, parent));
+                int mode = attributes.getModeIfPresent().orElse(parent.statCache().getMode() & UMASK_DIR);
                 attributes.undefine(OWNER, OWNER_GROUP, MODE);
 
                 inode = mkdir(subject, parent, newEntryFile.getName(), uid, gid,
@@ -409,9 +409,9 @@ public class ChimeraNameSpaceProvider
 
             FsInode inode;
             try {
-                int uid = assignAttributes.getOwnerIfPresent().or(() -> defaultUid(subject, parent));
-                int gid = assignAttributes.getGroupIfPresent().or(() -> defaultGid(subject, parent));
-                int mode = assignAttributes.getModeIfPresent().or(SYMLINK_MODE);
+                int uid = assignAttributes.getOwnerIfPresent().orElseGet(() -> defaultUid(subject, parent));
+                int gid = assignAttributes.getGroupIfPresent().orElseGet(() -> defaultGid(subject, parent));
+                int mode = assignAttributes.getModeIfPresent().orElse(SYMLINK_MODE);
                 assignAttributes.undefine(OWNER, OWNER_GROUP, MODE);
 
                 inode = _fs.createLink(parent, newEntryFile.getName(), uid, gid,

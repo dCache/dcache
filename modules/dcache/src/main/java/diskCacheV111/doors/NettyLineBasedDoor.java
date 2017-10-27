@@ -19,7 +19,6 @@
 
 package diskCacheV111.doors;
 
-import com.google.common.base.Optional;
 import com.google.common.cache.LoadingCache;
 import com.google.common.net.InetAddresses;
 import io.netty.channel.Channel;
@@ -45,6 +44,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 

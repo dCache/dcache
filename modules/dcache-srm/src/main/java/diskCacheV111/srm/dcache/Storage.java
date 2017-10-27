@@ -68,7 +68,6 @@ package diskCacheV111.srm.dcache;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -113,6 +112,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -1146,7 +1146,7 @@ public final class Storage
             infoMsg.setTransaction(CDC.getSession());
             infoMsg.setPnfsId(msg.getFileAttributes().getPnfsId());
             infoMsg.setResult(0, "");
-            infoMsg.setFileSize(msg.getFileAttributes().getSizeIfPresent().or(0L));
+            infoMsg.setFileSize(msg.getFileAttributes().getSizeIfPresent().orElse(0L));
             infoMsg.setStorageInfo(msg.getFileAttributes().getStorageInfo());
             Origin origin = Subjects.getOrigin(subject);
             if (origin != null) {

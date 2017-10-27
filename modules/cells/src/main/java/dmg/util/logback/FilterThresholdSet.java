@@ -1,7 +1,6 @@
 package dmg.util.logback;
 
 import ch.qos.logback.classic.Level;
-import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -18,6 +17,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -65,7 +65,7 @@ public class FilterThresholdSet
                         try {
                             Map<String,Level> map = _effectiveMaps.get(logger.getName());
                             return map.isEmpty()
-                                   ? Optional.<Level>absent()
+                                   ? Optional.empty()
                                    : Optional.of(Collections.min(map.values(), LEVEL_ORDER));
                         } catch (ExecutionException e) {
                             Throwables.throwIfUnchecked(e.getCause());
@@ -259,7 +259,7 @@ public class FilterThresholdSet
     public Level getThreshold(Logger logger)
     {
         try {
-            return _effectiveLevels.get(logger).orNull();
+            return _effectiveLevels.get(logger).orElse(null);
         } catch (ExecutionException e) {
             Throwables.throwIfUnchecked(e.getCause());
             throw new RuntimeException(e.getCause());

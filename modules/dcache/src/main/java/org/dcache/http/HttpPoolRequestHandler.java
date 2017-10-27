@@ -553,7 +553,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private static String buildDigest(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file)
     {
         FileAttributes attributes = file.getFileAttributes();
-        return attributes.getChecksumsIfPresent().transform(TO_RFC3230).or("");
+        return attributes.getChecksumsIfPresent().map(TO_RFC3230::apply).orElse("");
     }
 
     private static class HttpGetResponse extends DefaultHttpResponse

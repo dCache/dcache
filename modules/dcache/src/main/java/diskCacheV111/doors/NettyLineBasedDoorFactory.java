@@ -19,7 +19,6 @@
 
 package diskCacheV111.doors;
 
-import com.google.common.base.Optional;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -30,6 +29,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;

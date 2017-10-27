@@ -18,10 +18,10 @@
  */
 package diskCacheV111.doors;
 
-import com.google.common.base.Optional;
 import com.google.common.cache.LoadingCache;
 
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.services.space.Space;

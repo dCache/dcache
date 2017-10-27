@@ -18,7 +18,6 @@
 package org.dcache.dss;
 
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSContext;
@@ -30,6 +29,7 @@ import org.ietf.jgss.Oid;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 
 import org.dcache.util.Args;
 
@@ -77,7 +77,7 @@ public class KerberosDssContextFactory implements DssContextFactory
                                                   GSSCredential.DEFAULT_LIFETIME,
                                                   krb5Mechanism,
                                                   GSSCredential.ACCEPT_ONLY);
-            peer = peerName.transform((name) -> KerberosDssContextFactory.this.createName(name));
+            peer = peerName.map(KerberosDssContextFactory.this::createName);
         } catch (WrappedGssException e) {
             throw e.getCause();
         }
@@ -90,7 +90,7 @@ public class KerberosDssContextFactory implements DssContextFactory
 
     public KerberosDssContextFactory(Args args) throws GSSException
     {
-        this(args.argv(0), Optional.<String>absent());
+        this(args.argv(0), Optional.empty());
     }
 
     public KerberosDssContextFactory(String principal, String peerName) throws GSSException
@@ -103,7 +103,7 @@ public class KerberosDssContextFactory implements DssContextFactory
             throws IOException
     {
         try {
-            GSSContext context = peer.transform(createInitialContext).or(createAcceptingContext);
+            GSSContext context = peer.map(createInitialContext::apply).orElseGet(createAcceptingContext::get);
             ChannelBinding cb = new ChannelBinding(remoteSocketAddress.getAddress(), localSocketAddress.getAddress(), null);
             context.setChannelBinding(cb);
             return new KerberosDssContext(context);

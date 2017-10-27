@@ -17,7 +17,6 @@
  */
 package org.dcache.pool.classic;
 
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -30,6 +29,7 @@ import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -90,11 +90,11 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             try {
                 try {
                     if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
-                        handle.addChecksums(Optional.fromNullable(mover.getExpectedChecksums())
-                                                    .or(Collections.emptySet()));
+                        handle.addChecksums(Optional.ofNullable(mover.getExpectedChecksums())
+                                                    .orElse(Collections.emptySet()));
                         _checksumModule.enforcePostTransferPolicy(handle,
-                                                                  Optional.fromNullable(mover.getActualChecksums())
-                                                                          .or(Collections.emptySet()));
+                                                                  Optional.ofNullable(mover.getActualChecksums())
+                                                                          .orElse(Collections.emptySet()));
                     }
                     handle.commit();
                 } finally {

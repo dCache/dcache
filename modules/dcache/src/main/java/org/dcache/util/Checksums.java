@@ -119,16 +119,14 @@ public class Checksums
      */
     public static Optional<String> digestHeader(@Nullable String wantDigest, FileAttributes attributes)
     {
-        Optional<Set<Checksum>> knownChecksums = Optional.ofNullable(attributes.getChecksumsIfPresent().orNull());
-
-        Optional<ChecksumType> selected = knownChecksums
+        Optional<ChecksumType> selected = attributes.getChecksumsIfPresent()
                 .filter(s -> !s.isEmpty())
                 .map(s -> s.stream()
                         .map(Checksum::getType)
                         .collect(Collectors.toCollection(() -> EnumSet.noneOf(ChecksumType.class))))
                 .flatMap(t -> Checksums.parseWantDigest(wantDigest, t));
 
-        return knownChecksums
+        return attributes.getChecksumsIfPresent()
                 .filter(s -> selected.isPresent())
                 .flatMap(s -> s.stream()
                         .filter(c -> c.getType() == selected.get())

@@ -1033,7 +1033,7 @@ public class PnfsManagerV3
         FileAttributes attributes =
                 _nameSpaceProvider.getFileAttributes(subject, pnfsId,
                         EnumSet.of(FileAttribute.CHECKSUM));
-        return attributes.getChecksumsIfPresent().or(Collections.emptySet());
+        return attributes.getChecksumsIfPresent().orElse(Collections.emptySet());
     }
 
     private void setChecksum(PnfsSetChecksumMessage msg){
@@ -1270,8 +1270,8 @@ public class PnfsManagerV3
                 if (info.getKey("path") == null) {
                     info.setKey("path", path);
                 }
-                info.setKey("uid", Integer.toString(assign.getOwnerIfPresent().or(-1)));
-                info.setKey("gid", Integer.toString(assign.getGroupIfPresent().or(-1)));
+                info.setKey("uid", Integer.toString(assign.getOwnerIfPresent().orElse(-1)));
+                info.setKey("gid", Integer.toString(assign.getGroupIfPresent().orElse(-1)));
 
                 pnfsMessage.setPnfsId(attrs.getPnfsId());
                 break;

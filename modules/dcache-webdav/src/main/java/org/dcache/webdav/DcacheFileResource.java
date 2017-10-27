@@ -150,7 +150,7 @@ public class DcacheFileResource
     @Override
     public Long getContentLength()
     {
-        return _attributes.getSizeIfPresent().orNull();
+        return _attributes.getSizeIfPresent().orElse(null);
     }
 
     public static HttpProtocolInfo.Disposition dispositionFor(String action)
@@ -222,7 +222,7 @@ public class DcacheFileResource
     {
         switch(localPart) {
         case PROPERTY_CHECKSUMS:
-            return _attributes.getChecksumsIfPresent().transform(TO_RFC3230).orNull();
+            return _attributes.getChecksumsIfPresent().map(TO_RFC3230::apply).orElse(null);
         }
 
         throw new RuntimeException("unknown dCache property " + localPart);
@@ -232,9 +232,9 @@ public class DcacheFileResource
     {
         switch(localPart) {
         case PROPERTY_ACCESS_LATENCY:
-            return _attributes.getAccessLatencyIfPresent().orNull();
+            return _attributes.getAccessLatencyIfPresent().orElse(null);
         case PROPERTY_RETENTION_POLICY:
-            return _attributes.getRetentionPolicyIfPresent().orNull();
+            return _attributes.getRetentionPolicyIfPresent().orElse(null);
         case PROPERTY_FILE_LOCALITY:
             String clientIP = ServletRequest.getRequest().getRemoteAddr();
             return _factory.calculateLocality(_attributes, clientIP).name();

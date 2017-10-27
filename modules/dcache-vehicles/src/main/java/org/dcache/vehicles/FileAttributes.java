@@ -1,8 +1,6 @@
 package org.dcache.vehicles;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
@@ -16,6 +14,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
@@ -572,8 +571,7 @@ public class FileAttributes implements Serializable {
     @Nonnull
     private <T> Optional<T> toOptional(FileAttribute attribute, T value)
     {
-        return isDefined(attribute) ? Optional.of(value) :
-                Optional.absent();
+        return isDefined(attribute) ? Optional.of(value) : Optional.empty();
     }
 
     private void readObject(ObjectInputStream stream)

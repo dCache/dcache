@@ -101,8 +101,8 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                 hash.put(st.nextToken().intern(), st.nextToken());
             }
         }
-        String sg = getFirstLine(group).transform(String::intern).or("none");
-        String ff = getFirstLine(family).transform(String::intern).or("none");
+        String sg = getFirstLine(group).map(String::intern).orElse("none");
+        String ff = getFirstLine(family).map(String::intern).orElse("none");
         EnstoreStorageInfo info = new EnstoreStorageInfo(sg,ff);
         info.addKeys(hash);
         return info;

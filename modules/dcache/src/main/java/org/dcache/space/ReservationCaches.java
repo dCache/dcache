@@ -65,7 +65,6 @@ COPYRIGHT STATUS:
  */
 package org.dcache.space;
 
-import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -85,6 +84,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
@@ -249,7 +249,7 @@ public class ReservationCaches
                                 {
                                     Space space =
                                             spaceManager.sendAndWait(new GetSpaceMetaData(token)).getSpaces()[0];
-                                    return Optional.fromNullable(space);
+                                    return Optional.ofNullable(space);
                                 }
 
                                 @Override
@@ -263,7 +263,7 @@ public class ReservationCaches
                                                 @Override
                                                 public void success(GetSpaceMetaData message)
                                                 {
-                                                    future.set(Optional.fromNullable(message.getSpaces()[0]));
+                                                    future.set(Optional.ofNullable(message.getSpaces()[0]));
                                                 }
 
                                                 @Override

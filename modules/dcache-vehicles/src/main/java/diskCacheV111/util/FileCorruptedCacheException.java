@@ -17,9 +17,8 @@
  */
 package diskCacheV111.util;
 
-import com.google.common.base.Optional;
-
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import org.dcache.util.Checksum;
@@ -43,19 +42,19 @@ public class FileCorruptedCacheException extends CacheException
     public FileCorruptedCacheException(String message)
     {
         super(FILE_CORRUPTED, message);
-        _expectedChecksums = Optional.absent();
-        _actualChecksums = Optional.absent();
-        _expectedSize = Optional.absent();
-        _actualSize = Optional.absent();
+        _expectedChecksums = Optional.empty();
+        _actualChecksums = Optional.empty();
+        _expectedSize = Optional.empty();
+        _actualSize = Optional.empty();
     }
 
     public FileCorruptedCacheException(String message, Throwable cause)
     {
         super(FILE_CORRUPTED, message, cause);
-        _expectedChecksums = Optional.absent();
-        _actualChecksums = Optional.absent();
-        _expectedSize = Optional.absent();
-        _actualSize = Optional.absent();
+        _expectedChecksums = Optional.empty();
+        _actualChecksums = Optional.empty();
+        _expectedSize = Optional.empty();
+        _actualSize = Optional.empty();
     }
 
     public FileCorruptedCacheException(Checksum expectedChecksum, Checksum actualChecksum)
@@ -68,15 +67,15 @@ public class FileCorruptedCacheException extends CacheException
         super(FILE_CORRUPTED, "Checksum mismatch (expected=" + expectedChecksums + ", actual=" + actualChecksums + ')');
         _expectedChecksums = Optional.of(expectedChecksums);
         _actualChecksums = Optional.of(actualChecksums);
-        _expectedSize = Optional.absent();
-        _actualSize = Optional.absent();
+        _expectedSize = Optional.empty();
+        _actualSize = Optional.empty();
     }
 
     public FileCorruptedCacheException(long expectedSize, long actualSize)
     {
         super(FILE_CORRUPTED, "File size mismatch (expected=" + expectedSize + ", actual=" + actualSize + ')');
-        _expectedChecksums = Optional.absent();
-        _actualChecksums = Optional.absent();
+        _expectedChecksums = Optional.empty();
+        _actualChecksums = Optional.empty();
         _expectedSize = Optional.of(expectedSize);
         _actualSize = Optional.of(actualSize);
     }

@@ -18,7 +18,6 @@
 package org.dcache.chimera.namespace;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -29,6 +28,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
@@ -136,10 +136,10 @@ public class ExtendedInode extends FsInode
     public ExtendedInode getParent()
     {
         if (parent == null) {
-            FsInode actualParent = super.getParent();
-            parent = Optional.fromNullable(actualParent != null ? new ExtendedInode(getFs(), actualParent) : null);
+            parent = Optional.ofNullable(super.getParent())
+                    .map(p -> new ExtendedInode(getFs(), p));
         }
-        return parent.orNull();
+        return parent.orElse(null);
     }
 
     public PnfsId getPnfsId() throws ChimeraFsException

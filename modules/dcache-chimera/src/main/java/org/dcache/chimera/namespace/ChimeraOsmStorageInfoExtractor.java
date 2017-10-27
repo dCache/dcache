@@ -95,7 +95,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         }
 
         ImmutableList<String> sGroup = dirInode.getTag("sGroup");
-        String group = getFirstLine(sGroup).transform(String::intern).orNull();
+        String group = getFirstLine(sGroup).map(String::intern).orElse(null);
         OSMStorageInfo info = new OSMStorageInfo(store, group);
         info.addKeys(hash);
         return info;

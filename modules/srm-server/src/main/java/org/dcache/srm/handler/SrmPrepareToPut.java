@@ -1,12 +1,12 @@
 package org.dcache.srm.handler;
 
-import com.google.common.base.Optional;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Optional;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -20,11 +20,9 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.util.Tools;
-import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
 import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
-import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TFileStorageType;
 import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TPutFileRequest;
@@ -94,7 +92,7 @@ public class SrmPrepareToPut
     {
         checkFileStorageType(request, TFileStorageType.PERMANENT);
         String[] protocols = getProtocols();
-        String clientHost = getClientHost(request).or(this.clientHost);
+        String clientHost = getClientHost(request).orElse(this.clientHost);
         String spaceToken = request.getTargetSpaceToken();
         TRetentionPolicy retentionPolicy = null;
         TAccessLatency accessLatency = null;
@@ -222,7 +220,7 @@ public class SrmPrepareToPut
                 return Optional.of(clientNetworks[0]);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     private static void checkFileStorageType(SrmPrepareToPutRequest request, TFileStorageType expectedStorageType)

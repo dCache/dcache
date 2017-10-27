@@ -67,7 +67,6 @@ COPYRIGHT STATUS:
 package org.dcache.ftp.door;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -124,6 +123,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Timer;
@@ -3530,7 +3530,7 @@ public abstract class AbstractFtpDoorV1
         try {
             FileAttributes attributes =
                 _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIZE));
-            filelength = attributes.getSizeIfPresent().or(0L);
+            filelength = attributes.getSizeIfPresent().orElse(0L);
         } catch (PermissionDeniedCacheException e) {
             throw new FTPCommandException(550, "Permission denied");
         } catch (CacheException e) {
@@ -4484,7 +4484,7 @@ public abstract class AbstractFtpDoorV1
                         mode,
                         _userName,
                         _userName,
-                        attr.getSizeIfPresent().or(0L),
+                        attr.getSizeIfPresent().orElse(0L),
                         modified,
                         entry.getName());
             _out.append("\r\n");

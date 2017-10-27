@@ -1307,7 +1307,7 @@ public class DCapDoorInterpreterV3
                 new DoorRequestInfoMessage(DCapDoorInterpreterV3.this._cellAddress, "remove");
             infoRemove.setSubject(_subject);
             infoRemove.setPnfsId(attributes.getPnfsId());
-            infoRemove.setFileSize(attributes.getSizeIfPresent().or(0L));
+            infoRemove.setFileSize(attributes.getSizeIfPresent().orElse(0L));
             infoRemove.setBillingPath(path);
             infoRemove.setClient(_clientAddress.getHostAddress());
 

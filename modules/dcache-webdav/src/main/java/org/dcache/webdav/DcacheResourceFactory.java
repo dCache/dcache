@@ -176,7 +176,7 @@ public class DcacheResourceFactory
     /**
      * Cache of the current status of space reservations.
      */
-    private LoadingCache<String,com.google.common.base.Optional<Space>> _spaceLookupCache;
+    private LoadingCache<String,Optional<Space>> _spaceLookupCache;
     private LoadingCache<FsPath,Optional<String>> _writeTokenCache;
 
     private ListDirectoryHandler _list;
@@ -224,7 +224,7 @@ public class DcacheResourceFactory
     }
 
     @Required
-    public void setSpaceLookupCache(LoadingCache<String,com.google.common.base.Optional<Space>> cache)
+    public void setSpaceLookupCache(LoadingCache<String,Optional<Space>> cache)
     {
         _spaceLookupCache = cache;
     }
@@ -988,7 +988,7 @@ public class DcacheResourceFactory
                                   name,
                                   attr.getFileType() == DIR,
                                   mtime,
-                                  attr.getSizeIfPresent().transform(SizeWrapper::new).orNull(),
+                                  attr.getSizeIfPresent().map(SizeWrapper::new).orElse(null),
                                   isUploading,
                                   new FileLocalityWrapper(locality));
                     }
@@ -1019,7 +1019,7 @@ public class DcacheResourceFactory
         infoRemove.setSubject(subject);
         infoRemove.setBillingPath(path.toString());
         infoRemove.setPnfsId(attributes.getPnfsId());
-        infoRemove.setFileSize(attributes.getSizeIfPresent().or(0L));
+        infoRemove.setFileSize(attributes.getSizeIfPresent().orElse(0L));
         infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
         _billingStub.notify(infoRemove);
     }
@@ -1323,7 +1323,7 @@ public class DcacheResourceFactory
     private Optional<Space> lookupSpaceById(String id)
     {
         try {
-            return Optional.ofNullable(_spaceLookupCache.get(id).orNull());
+            return _spaceLookupCache.get(id);
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
             Throwables.throwIfUnchecked(t);

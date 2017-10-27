@@ -1,11 +1,11 @@
 package org.dcache.srm.handler;
 
-import com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.AbstractStorageElement;
@@ -20,10 +20,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.util.Tools;
-import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmBringOnlineRequest;
 import org.dcache.srm.v2_2.SrmBringOnlineResponse;
-import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TGetFileRequest;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
@@ -81,7 +79,7 @@ public class SrmBringOnline
             throws SRMInvalidRequestException, SRMInternalErrorException, SRMNotSupportedException
     {
         String[] protocols = getProtocols(request);
-        String clientHost = getClientNetwork(request).or(this.clientHost);
+        String clientHost = getClientNetwork(request).orElse(this.clientHost);
         TGetFileRequest[] fileRequests = getFileRequests(request);
         URI[] surls = getSurls(fileRequests);
         long requestTime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(), configuration.getBringOnlineLifetime());
@@ -173,7 +171,7 @@ public class SrmBringOnline
                 return Optional.of(clientNetworks[0]);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     public static final SrmBringOnlineResponse getFailedResponse(String error)

@@ -17,10 +17,10 @@
  */
 package org.dcache.ftp.door;
 
-import com.google.common.base.Optional;
 import com.google.common.cache.LoadingCache;
 
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.LineBasedInterpreter;

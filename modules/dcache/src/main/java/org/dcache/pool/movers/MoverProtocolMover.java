@@ -17,11 +17,6 @@
  */
 package org.dcache.pool.movers;
 
-import com.google.common.base.Optional;
-
-import javax.annotation.Nonnull;
-
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
