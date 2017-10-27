@@ -184,6 +184,11 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             info.setKey("path", path.get());
         }
 
+        Optional<String> wormFlag = getFirstLine(dirInode.getTag("worm"));
+        if (wormFlag.isPresent()) {
+            info.setIsWorm(!"false".equalsIgnoreCase(wormFlag.get()));
+        }
+
         return info;
     }
 
