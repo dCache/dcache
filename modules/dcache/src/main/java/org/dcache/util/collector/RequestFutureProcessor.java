@@ -65,9 +65,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -88,7 +88,7 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
 
     protected final Map<String, ListenableFutureWrapper<D>> futureMap = new HashMap<>();
 
-    protected final Map<String, T> next = Collections.synchronizedMap(new HashMap<>());
+    protected final Map<String, T> next = new ConcurrentHashMap<>();
 
     protected Executor executor;
 
