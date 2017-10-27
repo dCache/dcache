@@ -570,8 +570,7 @@ public class PoolV4
         if (cause != null) {
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
                                                       _poolName),
-                         message,
-                         cause);
+                         "{}: {}", message, cause.toString());
         } else {
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
                                                       _poolName),
