@@ -1,4 +1,4 @@
-$template DCACHE_LOGS,"/var/log/%programname%.log"
+$template DCACHE_LOGS,"/var/log/dcache/%programname:F,64:2%.log"
 
 if $programname startswith 'dcache@' then ?DCACHE_LOGS
 & stop
