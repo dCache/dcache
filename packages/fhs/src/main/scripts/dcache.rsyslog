@@ -1,5 +1,7 @@
-$template DCACHE_LOGS,"/var/log/%programname%.log"
+template(name="dCache" type="string" string="/var/log/dcache/%programname:F,64:2%.log")
 
-if $programname startswith 'dcache@' then ?DCACHE_LOGS
-& stop
-
+if $programname startswith 'dcache@' then
+{
+	action(type="omfile" dynaFile="dCache")
+	stop
+}
