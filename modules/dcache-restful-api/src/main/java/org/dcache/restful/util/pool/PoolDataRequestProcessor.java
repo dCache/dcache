@@ -62,6 +62,7 @@ package org.dcache.restful.util.pool;
 import org.springframework.beans.factory.annotation.Required;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.json.CellData;
 import org.dcache.pool.json.PoolData;
@@ -130,12 +131,12 @@ public final class PoolDataRequestProcessor
 
         try {
             handler.addHistoricalData(info);
-        } catch (NoRouteToCellException | InterruptedException e) {
-            LOGGER.debug("Could not add historical data for {}: {}/ {}.",
-                     key, e.getMessage(), e.getCause());
+        } catch (NoRouteToCellException | InterruptedException | TimeoutCacheException e) {
+            LOGGER.debug("Could not add historical data for {}: {}.",
+                     key, e.getMessage());
         } catch (CacheException e) {
-            LOGGER.error("Could not add historical data for {}: {}/ {}.",
-                         key, e.getMessage(), e.getCause());
+            LOGGER.error("Could not add historical data for {}: {}.",
+                         key, e.getMessage());
         }
 
         return info;

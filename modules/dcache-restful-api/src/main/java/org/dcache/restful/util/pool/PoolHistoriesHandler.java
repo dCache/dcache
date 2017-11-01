@@ -71,6 +71,7 @@ import java.util.Set;
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.json.SweeperData;
@@ -207,12 +208,12 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
 
         try {
             addHistoricalData(group);
-        } catch (NoRouteToCellException | InterruptedException e) {
-            LOGGER.debug("Could not add historical data for {}: {}/ {}.",
-                         group, e.getMessage(), e.getCause());
+        } catch (NoRouteToCellException | InterruptedException | TimeoutCacheException e) {
+            LOGGER.debug("Could not add historical data for {}: {}.",
+                         group, e.getMessage());
         } catch (CacheException e) {
-            LOGGER.error("Could not add historical data for {}: {}/ {}.",
-                         group, e.getMessage(), e.getCause());
+            LOGGER.error("Could not add historical data for {}: {}.",
+                         group, e.getMessage());
         }
     }
 }

@@ -473,7 +473,7 @@ public class PoolInfoServiceImpl extends
         try {
             processor.process(data);
         } catch (IllegalStateException e) {
-            LOGGER.warn("Processing cycle for precessor has overlapped; you may wish to "
+            LOGGER.info("Processing cycle for processor has overlapped; you may wish to "
                                         + "increase the interval between pool "
                                         + "info collections, which is currently "
                                         + "set to {} {}.",
