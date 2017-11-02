@@ -456,7 +456,6 @@
     <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolGroupInfoResources" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolInfoResources" scope="request"/>
-    <bean class="org.dcache.restful.resources.pool.PoolManagerResources" scope="request"/>
     <bean class="org.dcache.restful.resources.restores.RestoreResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.SelectionResources" scope="request"/>
     <bean class="org.dcache.restful.resources.transfers.TransferResources" scope="request"/>
