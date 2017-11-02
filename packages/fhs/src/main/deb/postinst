@@ -34,18 +34,18 @@ Please fix this and reinstall this package." >&2
     chown dcache:dcache /var/spool/dcache/star
 
     # protect directories that only dCache should access
-    chmod 700 /var/lib/dcache/alarms
-    chmod 700 /var/lib/dcache/cell-info
-    chmod 700 /var/lib/dcache/credentials
-    chmod 700 /var/lib/dcache/httpd
-    chmod 700 /var/lib/dcache/plots
-    chmod 700 /var/lib/dcache/resilience
-    chmod 700 /var/lib/dcache/statistics
+    chmod -f 700 /var/lib/dcache/alarms
+    chmod -f 700 /var/lib/dcache/cell-info
+    chmod -f 700 /var/lib/dcache/credentials
+    chmod -f 700 /var/lib/dcache/httpd
+    chmod -f 700 /var/lib/dcache/plots
+    chmod -f 700 /var/lib/dcache/resilience
+    chmod -f 700 /var/lib/dcache/statistics
 
     # allow somewhat more relaxed permissions elsewhere
-    chmod 750 /var/lib/dcache/billing
-    chmod 770 /var/lib/dcache/star
-    chmod 755 /var/spool/dcache/star
+    chmod -f 750 /var/lib/dcache/billing
+    chmod -f 770 /var/lib/dcache/star
+    chmod -f 755 /var/spool/dcache/star
 
     # generate admin door ssh2 server key
     if [ ! -f /etc/dcache/admin/ssh_host_rsa_key ]; then
