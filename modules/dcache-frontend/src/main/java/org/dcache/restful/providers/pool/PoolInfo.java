@@ -63,45 +63,27 @@ import java.io.Serializable;
 
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import org.dcache.pool.json.PoolData;
-import org.dcache.pool.movers.json.MoverData;
-import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.util.histograms.Histogram;
 
 /**
  * <p>Container for all metadata requests pertaining to a pool.</p>
- * <p>
+ *
  * <p>Some of the fields may be <code>null</code>, depending on the
  * type of request this is used to respond to.</p>
- * <p>
+ *
  * <p>Part of the RESTful API.</p>
  */
 public class PoolInfo implements Serializable {
     private static final long serialVersionUID = 5758816176471906326L;
+
     private PoolData                 poolData;
     private CacheRepositoryEntryInfo pnfsidInfo;
     private String                   repositoryListing;
     private Histogram[]              queueStat;
     private Histogram[]              fileStat;
-    private MoverData[]              movers;
-    private MoverData[]              p2ps;
-    private NearlineData[]           flush;
-    private NearlineData[]           stage;
-    private NearlineData[]           remove;
 
     public Histogram[] getFileStat() {
         return fileStat;
-    }
-
-    public NearlineData[] getFlush() {
-        return flush;
-    }
-
-    public MoverData[] getMovers() {
-        return movers;
-    }
-
-    public MoverData[] getP2ps() {
-        return p2ps;
     }
 
     public CacheRepositoryEntryInfo getPnfsidInfo() {
@@ -116,32 +98,12 @@ public class PoolInfo implements Serializable {
         return queueStat;
     }
 
-    public NearlineData[] getRemove() {
-        return remove;
-    }
-
     public String getRepositoryListing() {
         return repositoryListing;
     }
 
-    public NearlineData[] getStage() {
-        return stage;
-    }
-
     public void setFileStat(Histogram[] fileStat) {
         this.fileStat = fileStat;
-    }
-
-    public void setFlush(NearlineData[] flush) {
-        this.flush = flush;
-    }
-
-    public void setMovers(MoverData[] movers) {
-        this.movers = movers;
-    }
-
-    public void setP2ps(MoverData[] p2ps) {
-        this.p2ps = p2ps;
     }
 
     public void setPnfsidInfo(
@@ -157,15 +119,7 @@ public class PoolInfo implements Serializable {
         this.queueStat = queueStat;
     }
 
-    public void setRemove(NearlineData[] remove) {
-        this.remove = remove;
-    }
-
     public void setRepositoryListing(String repositoryListing) {
         this.repositoryListing = repositoryListing;
-    }
-
-    public void setStage(NearlineData[] stage) {
-        this.stage = stage;
     }
 }

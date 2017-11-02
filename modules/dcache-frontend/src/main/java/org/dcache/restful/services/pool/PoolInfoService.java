@@ -59,7 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.pool;
 
+import java.util.List;
+
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+
+import dmg.cells.nucleus.NoRouteToCellException;
+
+import org.dcache.pool.movers.json.MoverData;
+import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.services.history.pools.PoolListingService;
@@ -115,12 +123,11 @@ public interface PoolInfoService extends PoolListingService {
     /**
      * <p>Request for a list of all the FLUSH/STORE processes on the pool.</p>
      *
-     * <p>Two arrays are returned, one for active, the other for queued.</p>
-     *
      * @param name of the pool
-     * @param info data should be added to this instance
+     * @return list of flushes/stores, both active and queued.
      */
-    void getFlush(String name, PoolInfo info);
+    List<NearlineData> getFlush(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException;
 
     /**
      * <p>Request cell info for all pools in the named group.</p>
@@ -150,23 +157,21 @@ public interface PoolInfoService extends PoolListingService {
     /**
      * <p>Request for a list of all the MOVER processes on the pool.</p>
      *
-     * <p>Two arrays are returned, one for active, the other for queued.</p>
-     *
      * @param name of the pool
-     * @param info data should be added to this instance
+     * @return list of movers, both active and queued.
      */
-    void getMovers(String name, PoolInfo info);
+    List<MoverData> getMovers(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException;
 
     /**
      * <p>Request for a list of all the P2P processes on the pool.</p>
      *
-     * <p>Four arrays are returned, one for active, the other for queued,
-     * for both p2p source/server and p2p client/mover.</p>
-     *
      * @param name of the pool
-     * @param info data should be added to this instance
+     * @return list of movers, both active and queued,
+     *          for both p2p source/server and p2p client/mover.
      */
-    void getP2p(String name, PoolInfo info);
+    List<MoverData> getP2p(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException;
 
     /**
      * <p>Request for histogram data concerning queues.</p>
@@ -195,20 +200,20 @@ public interface PoolInfoService extends PoolListingService {
     /**
      * <p>Request for a list of all the REMOVE processes on the pool.</p>
      *
-     * <p>Two arrays are returned, one for active, the other for queued.</p>
+     * <p>Two arrays are returned, </p>
      *
      * @param name of the pool
-     * @param info data should be added to this instance
+     * @return list of removes, both active and queued.
      */
-    void getRemove(String name, PoolInfo info);
+    List<NearlineData> getRemove(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException;
 
     /**
      * <p>Request for a list of all the STAGE/RESTORE processes on the pool.</p>
-     * <p>
-     * <p>Two arrays are returned, one for active, the other for queued.</p>
      *
      * @param name of the pool
-     * @param info data should be added to this instance
+     * @return list of stages/restores, both active and queued.
      */
-    void getStage(String name, PoolInfo info);
+    List<NearlineData> getStage(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException;
 }

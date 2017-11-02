@@ -81,7 +81,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,6 +91,7 @@ import org.dcache.alarms.LogEntry;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 
+import static org.dcache.restful.providers.ErrorResponseProvider.NOT_IMPLEMENTED;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
 /**
@@ -102,9 +102,6 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Component
 @Path("/alarms")
 public final class AlarmsResources {
-    private static final Response NOT_IMPLEMENTED
-                    = Response.status(Status.NOT_IMPLEMENTED).build();
-
     @Context
     private HttpServletRequest request;
 

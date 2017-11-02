@@ -17,16 +17,14 @@
  */
 package org.dcache.restful.providers;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-
 import org.json.JSONObject;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-
+import javax.ws.rs.ext.ExceptionMapper;
 import java.util.Collections;
 
 /**
@@ -36,6 +34,9 @@ import java.util.Collections;
  */
 public class ErrorResponseProvider implements ExceptionMapper<Exception>
 {
+    public static final Response NOT_IMPLEMENTED
+                    = Response.status(Status.NOT_IMPLEMENTED).build();
+
     @Override
     public Response toResponse(Exception e)
     {

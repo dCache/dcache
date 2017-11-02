@@ -73,9 +73,13 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Command;
+
 import org.dcache.cells.json.CellData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
@@ -89,8 +93,8 @@ import org.dcache.restful.util.admin.ReadWriteData;
 import org.dcache.restful.util.pool.PoolDataRequestProcessor;
 import org.dcache.restful.util.pool.PoolDiagnosticInfoCollector;
 import org.dcache.services.collector.CellDataCollectingService;
-import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.collector.ListenableFutureWrapper;
+import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.histograms.Histogram;
 import org.dcache.util.histograms.HistogramModel;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
@@ -124,6 +128,21 @@ public class PoolInfoServiceImpl extends
         public String call() {
             processor.cancel();
             return super.call();
+        }
+    }
+
+    private static RuntimeException handleExecutionException(ExecutionException e)
+                    throws CacheException, NoRouteToCellException {
+        Throwable thrownDuringExecution = e.getCause();
+        if (thrownDuringExecution instanceof NoRouteToCellException) {
+            throw (NoRouteToCellException) thrownDuringExecution;
+        } else if (thrownDuringExecution instanceof CacheException) {
+            throw (CacheException) thrownDuringExecution;
+        } else if (thrownDuringExecution instanceof RuntimeException) {
+            return (RuntimeException) thrownDuringExecution;
+        } else {
+            return new RuntimeException("Unexpected exception.",
+                                       thrownDuringExecution);
         }
     }
 
@@ -238,19 +257,16 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public void getFlush(String name, PoolInfo info) {
+    public List<NearlineData> getFlush(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException {
         PoolFlushListingMessage message = new PoolFlushListingMessage();
         message.setLimit(maxPoolActivityListSize);
         ListenableFutureWrapper<PoolFlushListingMessage> wrapper
                         = collector.sendRequestToPool(name, message);
         try {
-            message = wrapper.getFuture().get();
-            info.setFlush(message.getData().toArray(new NearlineData[0]));
-        } catch (InterruptedException e) {
-            LOGGER.trace("get flush listings interrupted.");
+            return wrapper.getFuture().get().getData();
         } catch (ExecutionException e) {
-            LOGGER.error("Problem retrieving flush listings for {}: {}, cause: {}.",
-                         name, e.getMessage(), e.getCause());
+            throw handleExecutionException(e);
         }
     }
 
@@ -303,19 +319,16 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public void getMovers(String name, PoolInfo info) {
+    public List<MoverData> getMovers(String name) throws InterruptedException,
+                     NoRouteToCellException, CacheException {
         PoolMoverListingMessage message = new PoolMoverListingMessage();
         message.setLimit(maxPoolActivityListSize);
         ListenableFutureWrapper<PoolMoverListingMessage> wrapper
                         = collector.sendRequestToPool(name, message);
         try {
-            message = wrapper.getFuture().get();
-            info.setMovers(message.getData().toArray(new MoverData[0]));
-        } catch (InterruptedException e) {
-            LOGGER.trace("get mover listings interrupted.");
+            return wrapper.getFuture().get().getData();
         } catch (ExecutionException e) {
-            LOGGER.error("Problem retrieving mover listings for {}: {}, cause: {}.",
-                         name, e.getMessage(), e.getCause());
+            throw handleExecutionException(e);
         }
     }
 
@@ -323,19 +336,16 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public void getP2p(String name, PoolInfo info) {
+    public List<MoverData> getP2p(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException {
         PoolP2PListingMessage message = new PoolP2PListingMessage();
         message.setLimit(maxPoolActivityListSize);
         ListenableFutureWrapper<PoolP2PListingMessage> wrapper
                         = collector.sendRequestToPool(name, message);
         try {
-            message = wrapper.getFuture().get();
-            info.setP2ps(message.getData().toArray(new MoverData[0]));
-        } catch (InterruptedException e) {
-            LOGGER.trace("get P2p listings interrupted.");
+            return wrapper.getFuture().get().getData();
         } catch (ExecutionException e) {
-            LOGGER.error("Problem retrieving P2p listings for {}: {}, cause: {}.",
-                         name, e.getMessage(), e.getCause());
+            throw handleExecutionException(e);
         }
     }
 
@@ -387,19 +397,16 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public void getRemove(String name, PoolInfo info) {
+    public List<NearlineData> getRemove(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException {
         PoolRemoveListingMessage message = new PoolRemoveListingMessage();
         message.setLimit(maxPoolActivityListSize);
         ListenableFutureWrapper<PoolRemoveListingMessage> wrapper
                         = collector.sendRequestToPool(name, message);
         try {
-            message = wrapper.getFuture().get();
-            info.setRemove(message.getData().toArray(new NearlineData[0]));
-        } catch (InterruptedException e) {
-            LOGGER.trace("get remove listings interrupted.");
+            return wrapper.getFuture().get().getData();
         } catch (ExecutionException e) {
-            LOGGER.error("Problem retrieving remove listings for {}: {}, cause: {}.",
-                         name, e.getMessage(), e.getCause());
+            throw handleExecutionException(e);
         }
     }
 
@@ -411,19 +418,16 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public void getStage(String name, PoolInfo info) {
+    public List<NearlineData> getStage(String name) throws InterruptedException,
+                    NoRouteToCellException, CacheException {
         PoolStageListingMessage message = new PoolStageListingMessage();
         message.setLimit(maxPoolActivityListSize);
         ListenableFutureWrapper<PoolStageListingMessage> wrapper
                         = collector.sendRequestToPool(name, message);
         try {
-            message = wrapper.getFuture().get();
-            info.setStage(message.getData().toArray(new NearlineData[0]));
-        } catch (InterruptedException e) {
-            LOGGER.trace("get stage listings interrupted.");
+            return wrapper.getFuture().get().getData();
         } catch (ExecutionException e) {
-            LOGGER.error("Problem retrieving stage listings for {}: {}, cause: {}.",
-                         name, e.getMessage(), e.getCause());
+            throw handleExecutionException(e);
         }
     }
 

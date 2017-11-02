@@ -69,7 +69,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -81,23 +80,34 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
+
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.cells.CellStub;
-import org.dcache.restful.providers.pool.PoolGroupInfo;
+import org.dcache.pool.movers.json.MoverData;
+import org.dcache.pool.nearline.json.NearlineData;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.restful.providers.pool.PoolModeUpdate;
+import org.dcache.restful.providers.selection.Pool;
 import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 
+import static org.dcache.restful.providers.ErrorResponseProvider.NOT_IMPLEMENTED;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
 /**
@@ -108,6 +118,12 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Component
 @Path("/pools")
 public final class PoolInfoResources {
+    private static final String TYPE_ERROR =
+                    "type specification %s not supported; please indicate all "
+                                    + "door-initiated movers by an undefined "
+                                    + "type parameter, or p2p movers using "
+                                    + "'p2p-client,p2p-server'";
+
     @Context
     private HttpServletRequest request;
 
@@ -115,233 +131,166 @@ public final class PoolInfoResources {
     private PoolInfoService service;
 
     @Inject
+    private PoolMonitor poolMonitor;
+
+    @Inject
     @Named("pool-stub")
     private CellStub poolStub;
 
-    /**
-     * @return a list of pool group names
-     * @throws CacheException
-     */
     @GET
-    @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
-    public String[] getGroups() throws CacheException {
-        /*
-         *  Allow pools and pool groups to be listed without privileges.
-         */
-        return service.listGroups();
+    public List<Pool> getPools() throws CacheException {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Pool info only accessible to admin users.");
+        }
+
+        PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
+
+        return psu.getPools().values()
+                  .stream()
+                  .map((p) -> new Pool(p.getName(), psu))
+                  .collect(Collectors.toList());
     }
 
-    /**
-     * <p>Request for data aggregated by pool group.</p>
-     *
-     * @param groupName   of pool group; 'ALL'/'all' is reserved to mean all pools
-     * @param isFilestat  if true, include file lifetime histograms
-     * @param isQueuestat if true, include queue histograms
-     * @return the object populated with lists of the requested histograms
-     * @throws CacheException
-     */
     @GET
-    @Path("/groups/{name : .*}")
+    @Path("/{pool}")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getPoolGroupInfo(@PathParam("name") String groupName,
-                                          @DefaultValue("false")
-                                          @QueryParam("cellinfo") boolean isCellInfo,
-                                          @DefaultValue("false")
-                                          @QueryParam("queueinfo") boolean isQueueInfo,
-                                          @DefaultValue("false")
-                                          @QueryParam("spaceinfo") boolean isSpaceInfo,
-                                          @DefaultValue("false")
-                                          @QueryParam("filestat") boolean isFilestat,
-                                          @DefaultValue("false")
-                                          @QueryParam("queuestat") boolean isQueuestat)
-                    throws CacheException {
-        /*
-         *  Allow access to aggregated data to be seen without privileges
-         */
-        PoolGroupInfo info = new PoolGroupInfo();
-
-        /*
-         *  Allow histograms to be seen without privileges
-         */
-        if (isFilestat) {
-            service.getFileStat(groupName, info);
+    public Pool getPool(@PathParam("pool") String pool) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Pool info only accessible to admin users.");
         }
 
-        if (isQueuestat) {
-            service.getQueueStat(groupName, info);
-        }
-
-        boolean isAdmin = HttpServletRequests.isAdmin(request);
-
-        if (isCellInfo) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Cell Info accessible to admin users.");
-            }
-            service.getGroupCellInfos(groupName, info);
-        }
-
-        if (isQueueInfo) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Cell Info accessible to admin users.");
-            }
-            service.getGroupQueueInfos(groupName, info);
-        }
-
-        if (isSpaceInfo) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Cell Info accessible to admin users.");
-            }
-            service.getGroupSpaceInfos(groupName, info);
-        }
-
-        return info;
+        return new Pool(pool, poolMonitor.getPoolSelectionUnit());
     }
 
-    /**
-     * <p>Main request for pool info.  The returned object is populated
-     * according to the parameter options.</p>
-     *
-     * @param poolName    the pool in question
-     * @param pnfsid      if not <code>null</code>, include repository info for
-     *                    this file
-     * @param isInfo      if true, include extended (diagnostic) cell info
-     * @param isFilestat  if true, include file lifetime histograms
-     * @param isQueuestat if true, include queue histograms
-     * @param isMovers    if true, include list of movers (excluding p2ps)
-     * @param isP2ps      if true, include list of server and client p2ps
-     * @param isFlush     if true, include list of store/flush requests
-     * @param isStage     if true, include list of restore/stage requests
-     * @param isRemove    if true, include list of remove requests
-     * @return the info object populated with the requested data
-     * @throws CacheException
-     */
     @GET
-    @Path("{name : .*}")
+    @Path("/{pool}/usage")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolInfo getPoolInfo(
-                    @PathParam("name") String poolName,
-                    @QueryParam("pnfsid") PnfsId pnfsid,
-                    @DefaultValue("false")
-                    @QueryParam("info") boolean isInfo,
-                    @DefaultValue("false")
-                    @QueryParam("filestat") boolean isFilestat,
-                    @DefaultValue("false")
-                    @QueryParam("queuestat") boolean isQueuestat,
-                    @DefaultValue("false")
-                    @QueryParam("movers") boolean isMovers,
-                    @DefaultValue("false")
-                    @QueryParam("p2ps") boolean isP2ps,
-                    @DefaultValue("false")
-                    @QueryParam("flush") boolean isFlush,
-                    @DefaultValue("false")
-                    @QueryParam("stage") boolean isStage,
-                    @DefaultValue("false")
-                    @QueryParam("remove") boolean isRemove)
-                    throws CacheException {
+    public PoolInfo getPoolUsage(@PathParam("pool") String pool) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Pool info only accessible to admin users.");
+        }
+
         PoolInfo info = new PoolInfo();
 
-        /*
-         *  Allow histograms to be seen without privileges
-         */
-        if (isFilestat) {
-            service.getFileStat(poolName, info);
-        }
-
-        if (isQueuestat) {
-            service.getQueueStat(poolName, info);
-        }
-
-        boolean isAdmin = HttpServletRequests.isAdmin(request);
-
-        if (isInfo) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Pool info only accessible to admin users.");
-            }
-            service.getDiagnosticInfo(poolName, info);
-        }
-
-        if (pnfsid != null) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Repository info only accessible to admin users.");
-            }
-            service.getCacheInfo(poolName, pnfsid, info);
-        }
-
-        if (isMovers) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Mover info only accessible to admin users.");
-            }
-            service.getMovers(poolName, info);
-        }
-
-        if (isP2ps) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "P2P info only accessible to admin users.");
-            }
-            service.getP2p(poolName, info);
-        }
-
-        if (isFlush) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Flush info only accessible to admin users.");
-            }
-            service.getFlush(poolName, info);
-        }
-
-        if (isStage) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Stage info only accessible to admin users.");
-            }
-            service.getStage(poolName, info);
-        }
-
-        if (isRemove) {
-            if (!isAdmin) {
-                throw new ForbiddenException(
-                                "Remove info only accessible to admin users.");
-            }
-            service.getRemove(poolName, info);
-        }
+        service.getDiagnosticInfo(pool, info);
 
         return info;
     }
 
-    /**
-     * <p>Get a list of current pools.</p>
-     *
-     * @param group limit the list to this pool group
-     * @return names of pools in system, or in the specified group, if specified
-     * @throws CacheException
-     */
     @GET
+    @Path("/{pool}/{pnfsid}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String[] getPools(@QueryParam("group") String group)
-                    throws CacheException {
-        /*
-         *  Allow pools and pool groups to be listed without privileges.
-         */
-        if (group == null) {
-            return service.listPools();
+    public PoolInfo getRepositoryInfoForFile(@PathParam("pool") String pool,
+                                             @PathParam("pnfsid") PnfsId pnfsid) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Repository info for file only accessible to admin users.");
         }
 
-        return service.listPools(group);
+        PoolInfo info = new PoolInfo();
+
+        service.getCacheInfo(pool, pnfsid, info);
+
+        return info;
     }
 
-    /**
-     * <p>Request to update the indicated pool to either enabled or disabled.</p>
-     */
+    @GET
+    @Path("/{pool}/histograms/queues")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PoolInfo getQueueHistograms(@PathParam("pool") String group) {
+        PoolInfo info = new PoolInfo();
+
+        service.getQueueStat(group, info);
+
+        return info;
+    }
+
+    @GET
+    @Path("/{pool}/histograms/files")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PoolInfo getFilesHistograms(@PathParam("pool") String group) {
+        PoolInfo info = new PoolInfo();
+
+        service.getFileStat(group, info);
+
+        return info;
+    }
+
+    @GET
+    @Path("/{pool}/movers")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<MoverData> getMovers(@PathParam("pool") String pool,
+                                     @QueryParam("type") String typeList) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Mover info only accessible to admin users.");
+        }
+
+        String[] type = typeList.split(",");
+
+        try {
+            if (type.length == 0) {
+                return service.getMovers(pool);
+            } else if (type.length == 2) {
+                if ((type[0].equals("p2p-client")
+                                && type[1].equals("p2p-server"))
+                                || (type[1].equals("p2p-client")
+                                && type[0].equals("p2p-server"))) {
+                    return service.getP2p(pool);
+                }
+
+            }
+        } catch (InterruptedException | NoRouteToCellException | CacheException e) {
+            throw new InternalServerErrorException(e);
+        }
+
+        String error = String.format(TYPE_ERROR, typeList);
+
+        throw new InternalServerErrorException(error, NOT_IMPLEMENTED);
+    }
+
+    @GET
+    @Path("/{pool}/nearline/queues")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<NearlineData> getNearlineQueues(@PathParam("pool") String pool,
+                                                @QueryParam("type") String typeList) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Flush info only accessible to admin users.");
+        }
+
+        List<NearlineData> list = new ArrayList<>();
+
+        try {
+            String[] types = typeList.split(",");
+            for (String type: types) {
+                switch (type) {
+                    case "flush":
+                        list.addAll(service.getFlush(pool));
+                        break;
+                    case "stage":
+                        list.addAll(service.getStage(pool));
+                        break;
+                    case "remove":
+                        list.addAll(service.getRemove(pool));
+                        break;
+                    default:
+                        throw new BadRequestException("unrecognized queue type: "
+                                                                      + type);
+                }
+            }
+            return list;
+        } catch (InterruptedException | NoRouteToCellException | CacheException e) {
+            throw new InternalServerErrorException(e);
+        }
+    }
+
     @DELETE
-    @Path("{pool : .*}/mover/{id : [0-9]*}")
+    @Path("/{pool}/movers/{id : [0-9]+}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response killMovers(@PathParam("pool") String pool,
                                @PathParam("id") int id ) {
@@ -363,13 +312,8 @@ public final class PoolInfoResources {
         return successfulResponse(Response.Status.OK);
     }
 
-    /**
-     * <p>Request to update the indicated pool to either enabled or disabled.</p>
-     *
-     * @param requestPayload containing the mode specification.
-     */
     @PATCH
-    @Path("{pool : .*}/mode")
+    @Path("/{pool}/usage/mode")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateMode(@PathParam("pool") String pool,

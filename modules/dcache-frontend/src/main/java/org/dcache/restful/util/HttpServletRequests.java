@@ -18,7 +18,6 @@
  */
 package org.dcache.restful.util;
 
-
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 

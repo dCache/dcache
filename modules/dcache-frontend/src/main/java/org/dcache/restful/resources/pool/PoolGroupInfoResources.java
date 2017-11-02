@@ -57,154 +57,163 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.resources.selection;
+package org.dcache.restful.resources.pool;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.JSONException;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.cells.CellStub;
+
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.restful.providers.selection.Link;
-import org.dcache.restful.providers.selection.Match;
-import org.dcache.restful.providers.selection.Partition;
-import org.dcache.restful.providers.selection.PreferenceResult;
-import org.dcache.restful.providers.selection.Unit;
-import org.dcache.restful.providers.selection.UnitGroup;
+import org.dcache.restful.providers.pool.PoolGroupInfo;
+import org.dcache.restful.providers.selection.PoolGroup;
+import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 
 /**
- * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
- * order to deliver pool selection and partition information.</p>
+ * <p>RESTful API to the {@link PoolInfoService} service.</p>
  *
  * @version v1.0
  */
 @Component
-@Path("/selection")
-public final class SelectionResources {
+@Path("/poolgroups")
+public final class PoolGroupInfoResources {
     @Context
     private HttpServletRequest request;
 
     @Inject
-    private PoolMonitor poolMonitor;
+    private PoolInfoService service;
 
     @Inject
-    @Named("pool-manager-stub")
-    private CellStub poolManager;
+    private PoolMonitor poolMonitor;
 
     @GET
-    @Path("/links")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Link> getLink() throws CacheException {
+    public List<PoolGroup> getPoolGroups() {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
-                            "Link info only accessible to admin users.");
-        }
-
-        return poolMonitor.getPoolSelectionUnit().getLinks().values()
-                          .stream()
-                          .map(Link::new)
-                          .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/partitions")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Partition> getPartitions() throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Partition info only accessible to admin users.");
-        }
-
-        return poolMonitor.getPartitionManager().getPartitions().entrySet()
-                                                .stream()
-                                                .map(Partition::new)
-                                                .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/unitgroups")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<UnitGroup> getUnitGroups() throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Unit group info only accessible to admin users.");
+                            "Pool group info only accessible to admin users.");
         }
 
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
-        return poolMonitor.getPoolSelectionUnit().getUnitGroups().values()
-                          .stream()
-                          .map((g) -> new UnitGroup(g, psu))
-                          .collect(Collectors.toList());
+        return psu.getPoolGroups().values()
+                  .stream()
+                  .map((g) -> new PoolGroup(g.getName(), psu))
+                  .collect(Collectors.toList());
     }
 
     @GET
-    @Path("/units")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Unit> getUnits() throws CacheException {
+    @Path("/{group}")
+    public PoolGroup getPoolGroup(@PathParam("group") String group) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
-                            "Unit info only accessible to admin users.");
+                            "Pool group info only accessible to admin users.");
         }
 
-        return poolMonitor.getPoolSelectionUnit().getSelectionUnits().values()
-                          .stream()
-                          .map(Unit::new)
-                          .collect(Collectors.toList());
+        return new PoolGroup(group, poolMonitor.getPoolSelectionUnit());
     }
 
-    @POST
-    @Path("/match")
-    @Consumes(MediaType.APPLICATION_JSON)
+    /**
+     * <p>Get a list of current pools.</p>
+     *
+     * @param group limit the list to this pool group
+     * @return names of pools in system, or in the specified group, if specified
+     */
+    @GET
+    @Path("/{group}/pools")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<PreferenceResult> match(String requestPayload)
-                    throws CacheException {
+    public String[] getPoolsOfGroup(@PathParam("group") String group) {
+        /*
+         *  Allow pools to be listed without privileges.
+         */
+        if (group == null) {
+            return service.listPools();
+        }
+
+        return service.listPools(group);
+    }
+
+    @GET
+    @Path("/{group}/usage")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PoolGroupInfo getGroupUsage(@PathParam("group") String group) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
-                            "Match info only accessible to admin users.");
+                            "Pool group info only accessible to admin users.");
         }
 
-        try {
-            Match match = new ObjectMapper().readValue(requestPayload,
-                                                       Match.class);
-            PoolPreferenceLevel[] poolPreferenceLevels =
-                            poolManager.sendAndWait(match.toPoolManagerCommand(),
-                                                    PoolPreferenceLevel[].class);
+        PoolGroupInfo info = new PoolGroupInfo();
 
-            List<PreferenceResult> results = new ArrayList<>();
+        service.getGroupCellInfos(group, info);
 
-            for (PoolPreferenceLevel level: poolPreferenceLevels) {
-                results.add(new PreferenceResult(level));
-            }
+        return info;
+    }
 
-            return results;
-        } catch (JSONException | IllegalArgumentException e) {
-            throw new BadRequestException(e);
-        } catch (IOException | CacheException | InterruptedException | NoRouteToCellException e) {
-            throw new InternalServerErrorException(e);
+    @GET
+    @Path("/{group}/queues")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PoolGroupInfo getQueueInfo(@PathParam("group") String group) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Pool group info only accessible to admin users.");
         }
+
+        PoolGroupInfo info = new PoolGroupInfo();
+
+        service.getGroupQueueInfos(group, info);
+
+        return info;
+    }
+
+    @GET
+    @Path("/{group}/space")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PoolGroupInfo getSpaceInfo(@PathParam("group") String group) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Pool group info only accessible to admin users.");
+        }
+
+        PoolGroupInfo info = new PoolGroupInfo();
+
+        service.getGroupSpaceInfos(group, info);
+
+        return info;
+    }
+
+    @GET
+    @Path("/{group}/histograms/queues")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PoolGroupInfo getQueueHistograms(@PathParam("group") String group) {
+        PoolGroupInfo info = new PoolGroupInfo();
+
+        service.getQueueStat(group, info);
+
+        return info;
+    }
+
+    @GET
+    @Path("/{group}/histograms/files")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PoolGroupInfo getFilesHistograms(@PathParam("group") String group) {
+        PoolGroupInfo info = new PoolGroupInfo();
+
+        service.getFileStat(group, info);
+
+        return info;
     }
 }
