@@ -11,9 +11,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.channels.AsynchronousCloseException;
-import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
@@ -233,7 +231,7 @@ public class ProtocolConnectionPool implements Runnable {
                     }
                 }
             }
-        } catch (AsynchronousCloseException e) {
+        } catch (ClosedChannelException e) {
             // Ignore thread stopped by interrupting or by closing the channel
         } catch (IOException e) {
             _logSocketIO.error("Accept loop", e);
