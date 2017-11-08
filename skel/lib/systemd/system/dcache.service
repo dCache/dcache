@@ -1,0 +1,14 @@
+#systemd service for managing all dCache domains on the system. This service is
+#actually a systemd target, but as targets cannot be reloaded a service is used.
+
+[Unit]
+Description=dCache
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+ExecReload=/bin/true
+RemainAfterExit=on
+
+[Install]
+WantedBy=default.target
