@@ -6,17 +6,19 @@ import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.config.keys.KeyUtils;
-import org.apache.sshd.common.keyprovider.AbstractFileKeyPairProvider;
+import org.apache.sshd.common.keyprovider.KeyPairProvider;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
-import org.apache.sshd.common.util.SecurityUtils;
+import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
+
 import org.dcache.util.Glob;
 import org.dcache.util.Subnet;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -29,6 +31,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -55,8 +59,6 @@ import org.dcache.auth.Subjects;
 import org.dcache.util.Files;
 import org.dcache.util.NetLoggerBuilder;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * This class starts the ssh server. It is however not started in the
  * constructor, but in afterStart() to avoid race conditions. The class starts
@@ -78,7 +80,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
     private final SshServer _server;
     // UniversalSpringCell injected parameters
-    private List<File> _hostKeys;
+    private Path _hostKey;
     private File _authorizedKeyList;
     private String _host;
     private int _port;
@@ -125,8 +127,9 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         return _adminGroupId;
     }
 
-    public void setHostKeys(String[] keys) {
-        _hostKeys = Stream.of(keys).map(File::new).collect(toList());
+    public void setHostKeys(String key) throws IOException {
+        Files.checkFile(key);
+        _hostKey = Paths.get(key);
     }
 
     public File getAuthorizedKeyList() {
@@ -184,16 +187,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     private void configureKeyFiles() {
-        try {
-            for (File key : _hostKeys) {
-                Files.checkFile(key);
-            }
-            AbstractFileKeyPairProvider fKeyPairProvider = SecurityUtils.createFileKeyPairProvider();
-            fKeyPairProvider.setFiles(_hostKeys);
-            _server.setKeyPairProvider(fKeyPairProvider);
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        KeyPairProvider keyPair = SecurityUtils.createGeneratorHostKeyProvider(_hostKey);
+        _server.setKeyPairProvider(keyPair);
     }
 
     private void startServer() {
