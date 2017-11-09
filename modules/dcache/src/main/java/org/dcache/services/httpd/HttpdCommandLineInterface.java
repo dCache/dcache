@@ -74,7 +74,7 @@ public class HttpdCommandLineInterface
             + "   file               <fullFilePath> <arguments> <...>\n"
             + "   class              <fullClassName> <...>\n"
             + "   context            [options] <context> or  <contextNameStart>*\n"
-            + "                       options : -overwrite=<alias> -onError=<alias>\n"
+            + "                       options : -overwrite=<alias> -onError=<alias> -status=<HTTP status code>\n"
             + "   webapp             <warPath> <...> \n"
             + "   redirect           <forward-to-context>\n"
             + "   predefined alias : <home>    =  default for http://host:port/ \n"
@@ -123,7 +123,10 @@ public class HttpdCommandLineInterface
             entry.setStatusMessage(alias + " -> " + aliasType.getType() + "(" + specific + ")");
             break;
         case CONTEXT:
-            handler = (Handler) beanFactory.initializeBean(new ContextHandler(specific), alias);
+            Handler rawHandler = args.hasOption("status")
+                    ? new ContextHandler(specific, args.getIntOption("status"))
+                    : new ContextHandler(specific);
+            handler = (Handler) beanFactory.initializeBean(rawHandler, alias);
             entry = new AliasEntry(alias, aliasType, handler, specific);
             entry.setOnError(args.getOpt("onError"));
             entry.setOverwrite(args.getOpt("overwrite"));
