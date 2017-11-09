@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+#  Script to invoke XSLT program that transforms the output from
+#  dCache's info service into WLCG Storage Descriptor JSON file.
+#
+#  This file is intended to be run from cron, generating
+#  storage-descriptor output that is written into dCache using an NFS
+#  mount.
+
+#  Temporary XML file containing dCache's current configuration.
+buildEntitiesFile() # in $1 entity file, $2 catalogue file.
+{
+    DCACHE_LOG=error bootLoader -q compile -xml > "$1"
+
+    cat > "$2" <<EOF
+<?xml version="1.0"?>
+<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN"
+                         "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <public publicId="-//dCache//ENTITIES dCache Properties//EN"
+            uri="file://$1"/>
+</catalog>
+EOF
+}
+
+# Load libraries
+@DCACHE_LOAD_CONFIG@
+. "$(getProperty dcache.paths.share.lib)/utils.sh"
+
+xslt="$(getProperty storage-descriptor.xslt.path)"
+output="$(getProperty storage-descriptor.output.path)"
+host="$(getProperty storage-descriptor.http.host)"
+port="$(getProperty storage-descriptor.http.port)"
+
+entities=$(mktemp)
+catalog=$(mktemp)
+trap "rm -f $entities $catalog" EXIT
+buildEntitiesFile "$entities" "$catalog"
+
+export XML_CATALOG_FILES="$catalog"
+curl -sS "http://${host}:${port}/info" | \
+    xsltproc --xinclude "$xslt" - > "$output"
+echo "JSON available at $output"
