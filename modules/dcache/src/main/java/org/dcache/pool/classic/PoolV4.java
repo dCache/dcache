@@ -832,7 +832,7 @@ public class PoolV4
             LOGGER.error(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            LOGGER.error("Possible bug found: " + e.getMessage(), e);
+            LOGGER.error("Please report the following stack-trace to <support@dcache.org>", e);
             message.setFailed(CacheException.DEFAULT_ERROR_CODE,
                               "Failed to enqueue mover: " + e.getMessage());
         }
