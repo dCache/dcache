@@ -107,7 +107,8 @@
     </bean>
 
     <beans profile="hsmcleaner-true">
-        <bean id="hsm-cleaner" class="org.dcache.chimera.namespace.HsmCleaner" parent="abstractCleaner" init-method="init">
+        <bean id="hsm-cleaner" class="org.dcache.chimera.namespace.HsmCleaner" parent="abstractCleaner"
+                    init-method="init" destroy-method="shutdown">
             <description>Hsm Cleaner romoves files from HSM</description>
             <!-- check-->
             <property name="maxFilesPerRequest" value="${cleaner.limits.hsm-batch-size}"/>
