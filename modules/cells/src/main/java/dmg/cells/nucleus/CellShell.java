@@ -1351,6 +1351,9 @@ public class CellShell extends CommandInterpreter
                InstantiationException, IllegalAccessException, InvocationTargetException,
                ClassCastException, CommandException, InterruptedException
        {
+           checkCommand(_nucleus.getCellInfo(cellName) == null,
+                   "Cell %s already exists.", cellName);
+
            Constructor<? extends CellAdapter> constructor =
                    Class.forName(className).asSubclass(CellAdapter.class).getConstructor(String.class, String.class);
            try {
