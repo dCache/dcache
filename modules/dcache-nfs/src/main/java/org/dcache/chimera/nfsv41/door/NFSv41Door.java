@@ -937,10 +937,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    private static class NfsTransfer extends RedirectedTransfer<PoolDS> {
+    private class NfsTransfer extends RedirectedTransfer<PoolDS> {
 
         private final Inode _nfsInode;
         private final NFS4State _stateid;
+        private final NFS4State _openStateid;
         private ListenableFuture<Void> _redirectFuture;
         private AtomicReference<ChimeraNFSException> _errorHolder = new AtomicReference<>();
         private final NFS4Client _client;
@@ -954,6 +955,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             // layout, or a transfer in dCache language, must have a unique stateid
             _stateid = client.createState(openStateId.getStateOwner(), openStateId);
+            _openStateid = openStateId;
             _client = client;
             _ioMode = ioMode;
         }
@@ -1084,6 +1086,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         public synchronized void shutdownMover() throws NfsIoException, DelayException {
 
             if (!hasMover()) {
+                // the mover clean-up will not be called, thus we have to clean manually
+                _ioMessages.remove(_openStateid.stateid());
                 return;
             }
 
