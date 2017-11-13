@@ -601,12 +601,12 @@ public class NFSv41Door extends AbstractCellComponent implements
                 if (transfer == null) {
 
                     int shareAccess = context.getStateHandler().getFileTracker().getShareAccess(client, nfsInode,
-                        openStateId.stateid());
+                            openStateId.stateid());
 
                     // always start a read-write mover if file is opened for write
-                   boolean isWrite = (shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) != 0;
+                    boolean isWrite = (shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) != 0;
 
-                    transfer = new NfsTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                    transfer = new NfsTransfer(client, openStateId, nfsInode,
                             context.getRpcCall().getCredential().getSubject(), isWrite);
 
                     transfer.setProtocolInfo(protocolInfo);
@@ -624,22 +624,10 @@ public class NFSv41Door extends AbstractCellComponent implements
                      * open-state disposed on CLOSE.
                      */
                     final NfsTransfer t = transfer;
-                    openStateId.addDisposeListener(state -> {
-                        /*
-                         * Cleanup transfer when state invalidated.
-                         */
-                        t.shutdownMover();
-                        if (t.isWrite()) {
-                            /* write request keep in the message map to
-                             * avoid re-creates and trigger errors.
-                             */
-                            _ioMessages.remove(openStateId.stateid());
-                        }
-                    });
-
+                    // Cleanup transfer when state invalidated.
+                    openStateId.addDisposeListener(s -> t.shutdownMover());
                     _ioMessages.put(openStateId.stateid(), transfer);
                 }
-
                 layoutStateId = transfer.getStateid();
 
                 PoolDS ds = transfer.getPoolDataServer(NFS_REQUEST_BLOCKING);
@@ -967,9 +955,9 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final NFS4Client _client;
         private final boolean _isWrite;
 
-        NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId, Inode nfsInode, Subject ioSubject, boolean isWrite)
+        NfsTransfer(NFS4Client client, NFS4State openStateId, Inode nfsInode, Subject ioSubject, boolean isWrite)
                 throws ChimeraNFSException {
-            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  FsPath.ROOT);
+            super(_pnfsHandler, Subjects.ROOT, Restrictions.none(), ioSubject,  FsPath.ROOT);
 
             _nfsInode = nfsInode;
 
