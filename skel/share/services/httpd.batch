@@ -165,7 +165,7 @@ exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 define context ${httpd.cell.name}Setup endDefine
    set alias webadmin webapp ${httpd.container.webapps.dir}/webadmin.war
    set alias <home> redirect webadmin
-   set alias <default> context missing.html
+   set alias <default> context missing.html -status=404
    set alias old file ${httpd.static-content.index} -onError=default
    set alias offline context offline.html
    set alias context context *

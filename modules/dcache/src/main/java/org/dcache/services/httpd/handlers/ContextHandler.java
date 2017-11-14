@@ -28,9 +28,15 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
 {
     private final String specificName;
     private Map<String, Object> context;
+    private final int status;
 
     public ContextHandler(String specificName) {
+        this(specificName, HttpServletResponse.SC_OK);
+    }
+
+    public ContextHandler(String specificName, int status) {
         this.specificName = specificName;
+        this.status = status;
     }
 
     @Override
@@ -65,6 +71,7 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
             }
             String html = String.valueOf(value);
 
+            response.setStatus(status);
             proxy.getPrintWriter().println(html);
             proxy.getPrintWriter().flush();
             baseRequest.setHandled(true);
