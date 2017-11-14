@@ -12,6 +12,7 @@ import io.milton.http.Response;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.http.exceptions.NotFoundException;
+import io.milton.http.quota.StorageChecker;
 import io.milton.http.values.ValueAndType;
 import io.milton.http.webdav.PropFindResponse;
 import io.milton.http.webdav.PropFindResponse.NameAndError;
@@ -73,6 +74,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         .put(SC_UNAUTHORIZED, "UNAUTHORIZED")
         .put(SC_METHOD_NOT_ALLOWED, "METHOD NOT ALLOWED")
         .put(SC_NOT_FOUND, "FILE NOT FOUND")
+        .put(SC_INSUFFICIENT_STORAGE, "INSUFFICIENT STORAGE")
         .build();
 
     private AuthenticationService _authenticationService;
@@ -191,6 +193,12 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     public void respondForbidden(Resource resource, Response response, Request request)
     {
         errorResponse(request, response, SC_FORBIDDEN);
+    }
+
+    @Override
+    public void respondInsufficientStorage(Request request, Response response, StorageChecker.StorageErrorReason storageErrorReason)
+    {
+        errorResponse(request, response, SC_INSUFFICIENT_STORAGE);
     }
 
     private void errorResponse(Request request, Response response, Response.Status status)
