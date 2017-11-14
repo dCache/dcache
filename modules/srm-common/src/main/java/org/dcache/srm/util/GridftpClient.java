@@ -880,7 +880,6 @@ public class GridftpClient
 
             Exception e = getThrowable();
             if (e != null) {
-                logger.error(" transfer exception",e);
                 if (e instanceof ClientException) {
                     throw (ClientException)e;
                 } else if (e instanceof ServerException) {
@@ -937,7 +936,6 @@ public class GridftpClient
                     }
                 }
             } catch (IOException | ClientException | ServerException e) {
-                logger.error(e.toString());
                 _throwable = e;
             } finally {
                 done();
