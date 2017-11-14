@@ -258,7 +258,6 @@ public class RemoteGsiftpTransferProtocol
                 _client.close();
             }
         } catch (Exception e) {
-            _log.error(e.toString());
             throw new CacheException(e.toString());
         }
     }
@@ -294,7 +293,6 @@ public class RemoteGsiftpTransferProtocol
                 _client.close();
             }
         } catch (Exception e) {
-            _log.error(e.toString());
             throw new CacheException(e.toString());
         }
     }
