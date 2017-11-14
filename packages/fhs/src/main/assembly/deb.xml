@@ -8,8 +8,8 @@
             <filtered>true</filtered>
         </fileSet>
         <fileSet>
-            <directory>${filtered-skel}/lib/systemd/system-generators</directory>
-            <outputDirectory>lib/systemd/system-generators</outputDirectory>
+            <directory>${filtered-skel}/lib/systemd</directory>
+            <outputDirectory>lib/systemd</outputDirectory>
             <excludes>
                 <exclude>**/.empty-dir</exclude>
             </excludes>
