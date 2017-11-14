@@ -572,7 +572,7 @@ public class UserAdminShell
         String user;
 
         @Override
-        public String call() throws AclException, InterruptedException
+        public String call() throws AclException, InterruptedException, CommandException
         {
             String oldUser = _user;
             try {
@@ -589,14 +589,14 @@ public class UserAdminShell
                 checkCdPermission(name);
                 _currentPosition = resolve(name);
                 _completer = null;
-            } catch (AclException | InterruptedException | RuntimeException e) {
+            } catch (AclException | InterruptedException | RuntimeException | CommandException e) {
                 _user = oldUser;
                 throw e;
             }
             return "";
         }
 
-        private Position resolve(String cell) throws InterruptedException
+        private Position resolve(String cell) throws InterruptedException, CommandException
         {
             CellPath path = new CellPath(cell);
             try {
@@ -630,7 +630,7 @@ public class UserAdminShell
                 }
             } catch (ExecutionException e) {
                 if (e.getCause() instanceof NoRouteToCellException) {
-                    throw new IllegalArgumentException("Cell does not exist.");
+                    throw new CommandException(1, "Cell does not exist.");
                 }
                 // Some other failure, but apparently the cell exists
                 _log.info("Cell probe failed: {}", e.getCause().toString());
