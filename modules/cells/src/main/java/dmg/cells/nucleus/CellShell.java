@@ -1027,8 +1027,12 @@ public class CellShell extends CommandInterpreter
        @Override
        public String call() throws ClassNotFoundException, NoSuchMethodException,
                InstantiationException, IllegalAccessException, InvocationTargetException,
-               ClassCastException, CommandThrowableException, InterruptedException
+               ClassCastException, CommandThrowableException, InterruptedException, CommandException
        {
+           if (_nucleus.getCellInfo(cellName) != null) {
+               throw new CommandException("Cell " + cellName +" already exists.");
+           }
+
            Constructor<? extends CellAdapter> constructor =
                    Class.forName(className).asSubclass(CellAdapter.class).getConstructor(String.class, String.class);
            try {
