@@ -45,6 +45,7 @@ import dmg.util.CellCron;
 
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
+import org.dcache.util.Exceptions;
 
 import static java.util.Arrays.asList;
 
@@ -463,8 +464,8 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                     resetBillingStatistics();
                 }
             } catch(Exception ee) {
-                _log.warn("Exception in full run for : "+path, ee);
-                //noinspection ResultOfMethodCallIgnored
+                _log.warn("Failed to create file {}: {}", path,
+                        Exceptions.messageOrClassName(ee));
                 path.delete();
             }
 
