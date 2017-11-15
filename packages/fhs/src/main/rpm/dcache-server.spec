@@ -41,11 +41,17 @@ fi
 
 /sbin/service dcache-server stop >/dev/null 2>&1
 
-# Make sure the administrative user exists
+# Make sure the system user and group exist, and that
+# the user is a member of the group.
 getent group dcache >/dev/null || groupadd -r dcache
-getent passwd dcache >/dev/null || \
+
+if getent passwd dcache >/dev/null; then
+    getent group dcache|grep -q '^[^:]*:[^:]*:[^:]*:[^:]*dcache\(,\|$\)' || \
+            usermod -a -G dcache dcache
+else
     useradd -r -g dcache -d /var/lib/dcache -s /bin/bash \
     -c "dCache administrator" dcache
+fi
 
 # check validity of dcache user and group
 if [ "`id -u dcache`" -eq 0 ]; then
