@@ -172,11 +172,12 @@ def build_id(group, media, now):
 
 
 def query_chimera(query):
-    db_name = properties.get('chimera.db.name')
-    db_host = properties.get('chimera.db.host')
-    db_user = properties.get('chimera.db.user')
-    db_pw = properties.get('chimera.db.password')
-    conn = psycopg2.connect(database=db_name, user=db_user, host=db_host, password=db_pw)
+    db_name = properties.get('star.db.name')
+    db_host = properties.get('star.db.host')
+    db_user = properties.get('star.db.user')
+    db_pw = properties.get('star.db.password')
+    db_port = properties.get('star.db.port')
+    conn = psycopg2.connect(database=db_name, user=db_user, host=db_host, password=db_pw, port=db_port)
     try:
        cur = conn.cursor()
        try:
