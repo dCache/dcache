@@ -10,8 +10,11 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.WORM;
 
 public class PoolIoFileMessage extends PoolMessage {
 
@@ -36,7 +39,7 @@ public class PoolIoFileMessage extends PoolMessage {
         super(pool);
 
         checkNotNull(fileAttributes);
-        checkArgument(fileAttributes.isDefined(EnumSet.of(STORAGEINFO, PNFSID)));
+        checkArgument(fileAttributes.isDefined(EnumSet.of(STORAGEINFO, PNFSID, WORM)));
 
         _fileAttributes = fileAttributes;
         _protocolInfo = protocolInfo;

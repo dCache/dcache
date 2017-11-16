@@ -380,7 +380,12 @@ public class FsSqlDriver {
         stat.setGeneration(rs.getLong("igeneration"));
         int rp = rs.getInt("iretention_policy");
         if (!rs.wasNull()) {
-            stat.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp));
+            // mask out worm flag
+            stat.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp & 2));
+            boolean isWormSet = (rp & 8) == 8;
+            if (isWormSet) {
+                stat.setWorm( (rp & 4) != 4 );
+            }
         }
         int al = rs.getInt("iaccess_latency");
         if (!rs.wasNull()) {

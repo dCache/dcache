@@ -51,7 +51,8 @@ public class Stat {
         BLK_SIZE,
         ACCESS_LATENCY,
         RETENTION_POLICY,
-        STATE
+        STATE,
+        WORM
     }
 
     /**
@@ -71,6 +72,7 @@ public class Stat {
     private long _generation; //
     private int _accessLatency;
     private int _retentionPolicy;
+    private boolean _worm;
 
     /*
      * Opposite to classic Unix, all times in milliseconds
@@ -121,6 +123,7 @@ public class Stat {
         _ctime = stat._ctime;
         _crtime = stat._crtime;
         _state = stat._state;
+        _worm = stat._worm;
     }
 
     public int getDev() {
@@ -300,6 +303,16 @@ public class Stat {
     public void setState(FileState state) {
         define(StatAttributes.STATE);
         _state = state;
+    }
+
+    public boolean getWorm() {
+        guard(StatAttributes.WORM);
+        return _worm;
+    }
+
+    public void setWorm(boolean worm) {
+        define(StatAttributes.WORM);
+        _worm = worm;
     }
 
     @Override

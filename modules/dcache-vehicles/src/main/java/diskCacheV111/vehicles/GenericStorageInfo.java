@@ -48,12 +48,6 @@ public class GenericStorageInfo
     @Deprecated
     private String _bitfileId;
 
-    /*
-     * To mimic classic dcache behavior all files by default WORM, unless explicitly
-     * set to not be the case.
-     */
-    private boolean _isWorm = true;
-
     public GenericStorageInfo() {
     }
 
@@ -217,16 +211,6 @@ public class GenericStorageInfo
     }
 
     @Override
-    public boolean isWorm() {
-        return _isWorm;
-    }
-
-    @Override
-    public void setIsWorm(boolean isWorm) {
-        _isWorm = isWorm;
-    }
-
-    @Override
     public String toString() {
         String sc = getStorageClass();
         String cc = getCacheClass();
@@ -234,8 +218,7 @@ public class GenericStorageInfo
         AccessLatency ac = getLegacyAccessLatency();
         RetentionPolicy rp = getLegacyRetentionPolicy();
         StringBuilder sb = new StringBuilder();
-        sb.append("isWorm=").append(isWorm())
-                .append(";size=").append(getLegacySize())
+        sb.append(";size=").append(getLegacySize())
                 .append(";new=").append(isCreatedOnly())
                 .append(";stored=").append(isStored())
                 .append(";sClass=").append(sc == null ? "-" : sc)

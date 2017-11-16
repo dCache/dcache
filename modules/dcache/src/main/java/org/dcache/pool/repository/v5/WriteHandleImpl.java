@@ -167,9 +167,9 @@ class WriteHandleImpl implements ReplicaDescriptor
             throws CacheException
     {
         FileAttributes attributesToUpdate = FileAttributes.ofLocation(_repository.getPoolName());
-        if (_fileAttributes.isDefined(CHECKSUM)) {
-                /* PnfsManager detects conflicting checksums and will fail the update. */
-   //         attributesToUpdate.setChecksums(_fileAttributes.getChecksums());
+        if (_fileAttributes.getWorm() && _fileAttributes.isDefined(CHECKSUM)) {
+            /* PnfsManager detects conflicting checksums and will fail the update. */
+            attributesToUpdate.setChecksums(_fileAttributes.getChecksums());
         }
         if (_initialState == ReplicaState.FROM_CLIENT) {
             attributesToUpdate.setAccessLatency(_fileAttributes.getAccessLatency());
@@ -182,20 +182,17 @@ class WriteHandleImpl implements ReplicaDescriptor
         _pnfs.setFileAttributes(_entry.getPnfsId(), attributesToUpdate);
     }
 
-    private void verifyFileSize(long length) throws CacheException
-    {
-        if (2<3) return;
+    private void verifyAndSetFileSize(long length) throws CacheException {
 
-        if (!_fileAttributes.getStorageInfo().isCreatedOnly()) {
-            // by-pass file size check in case of update
-            return;
+        if (_fileAttributes.getWorm()) {
+            if ((_initialState != ReplicaState.FROM_CLIENT
+                    || (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0))
+                    && _fileAttributes.getSize() != length) {
+                _log.error("Broken transfer: {}", _fileAttributes);
+                throw new FileCorruptedCacheException(_fileAttributes.getSize(), length);
+            }
         }
-
-        if ((_initialState != ReplicaState.FROM_CLIENT ||
-             (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0)) &&
-                _fileAttributes.getSize() != length) {
-            throw new FileCorruptedCacheException(_fileAttributes.getSize(), length);
-        }
+        _fileAttributes.setSize(length);
     }
 
     @Override
@@ -210,9 +207,7 @@ class WriteHandleImpl implements ReplicaDescriptor
             _entry.setLastAccessTime((_atime == null) ? System.currentTimeMillis() : _atime);
 
             long length = _entry.getReplicaSize();
-            verifyFileSize(length);
-            _fileAttributes.setSize(length);
-
+            verifyAndSetFileSize(length);
             registerFileAttributesInNameSpace();
 
             _entry.update(r -> {

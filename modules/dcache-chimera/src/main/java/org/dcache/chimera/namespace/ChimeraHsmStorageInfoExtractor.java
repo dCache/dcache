@@ -133,6 +133,38 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         }
     }
 
+    @Override
+    public boolean getWorm(ExtendedInode inode) throws CacheException
+    {
+        try {
+            if (!inode.exists()) {
+                throw new FileNotFoundCacheException(inode.toString() + " does not exists");
+            }
+
+            ExtendedInode dirInode;
+            if (inode.isDirectory()) {
+                dirInode = inode;
+            } else {
+                if (inode.statCache().isDefined(Stat.StatAttributes.WORM)) {
+                    return inode.statCache().getWorm();
+                }
+                dirInode = inode.getParent();
+            }
+
+            Optional<String> wormFlag = getFirstLine(dirInode.getTag("worm"));
+            if (wormFlag.isPresent()) {
+                return !"false".equalsIgnoreCase(wormFlag.get());
+            }
+
+            // all files are WORM, if nothing else is specified
+            return true;
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException(e.getMessage(), e);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to obtain RetentionPolicy: " + e.getMessage(), e);
+        }
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -182,11 +214,6 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         Optional<String> path = getFirstLine(dirInode.getTag("Path"));
         if (path.isPresent() ) {
             info.setKey("path", path.get());
-        }
-
-        Optional<String> wormFlag = getFirstLine(dirInode.getTag("worm"));
-        if (wormFlag.isPresent()) {
-            info.setIsWorm(!"false".equalsIgnoreCase(wormFlag.get()));
         }
 
         return info;

@@ -34,6 +34,14 @@ public interface ChimeraStorageInfoExtractable {
     RetentionPolicy getRetentionPolicy(ExtendedInode inode) throws CacheException;
 
     /**
+     * Returns the Write-Once-Read-Many flag on an inode.
+     * @param inode
+     * @return the WORM flag on an inode.
+     * @throws CacheException WORM flag could not be read.
+     */
+    boolean getWorm(ExtendedInode inode) throws CacheException;
+
+    /**
      * Returns the StorageInfo of an inode.
      *
      * @param inode An inode

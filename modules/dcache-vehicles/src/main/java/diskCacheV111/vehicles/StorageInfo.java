@@ -161,19 +161,6 @@ public interface StorageInfo
     boolean isSetBitFileId();
     void isSetBitFileId(boolean isSet);
 
-    /**
-     * Returns true iff file has write-once-read-may policy.
-     * @return true iff file has write-once-read-may policy.
-     */
-    boolean isWorm();
-
-    /**
-     * Set file's write-once-read-may policy.
-     *
-     * @param isWorm
-     */
-    void setWorm(boolean isWorm);
-
     StorageInfo clone();
 
     @Override

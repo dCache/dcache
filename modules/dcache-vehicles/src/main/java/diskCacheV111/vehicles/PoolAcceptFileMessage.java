@@ -9,6 +9,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.WORM;
 
 public class PoolAcceptFileMessage extends PoolIoFileMessage
 {
@@ -33,7 +34,7 @@ public class PoolAcceptFileMessage extends PoolIoFileMessage
     {
         super(pool, protocolInfo, fileAttributes, assumption);
         checkArgument(fileAttributes.isDefined(
-                EnumSet.of(ACCESS_LATENCY, RETENTION_POLICY)));
+                EnumSet.of(ACCESS_LATENCY, RETENTION_POLICY, WORM)));
         _preallocated = preallocated;
     }
 

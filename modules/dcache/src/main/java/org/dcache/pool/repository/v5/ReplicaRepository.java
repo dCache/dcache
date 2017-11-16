@@ -32,7 +32,6 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
@@ -73,6 +72,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.WORM;
 import static org.dcache.pool.repository.ReplicaState.NEW;
 import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
 import static org.dcache.pool.repository.ReplicaState.REMOVED;
@@ -584,7 +584,7 @@ public class ReplicaRepository
                                    Set<? extends OpenOption> flags)
         throws CacheException
     {
-        if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO))) {
+        if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO, WORM))) {
             throw new IllegalArgumentException("PNFSID and STORAGEINFO are required, only got " + fileAttributes.getDefinedAttributes());
         }
         if (stickyRecords == null) {
@@ -614,9 +614,21 @@ public class ReplicaRepository
 
             LOGGER.info("Creating new entry for {}", id);
 
-            ReplicaRecord entry = fileAttributes.getStorageInfo().isCreatedOnly()
-                    ? _store.create(id, flags) : _store.get(id);
+            if (!fileAttributes.getStorageInfo().isCreatedOnly() && fileAttributes.getWorm()) {
+                throw new IllegalStateException("Existing non-WORM files can be accessed for write");
+            }
 
+            ReplicaRecord entry0;
+            try {
+                entry0 = _store.create(id, flags);
+            } catch (DuplicateEntryException e) {
+                if (fileAttributes.getWorm()) {
+                    throw new FileInCacheException("Entry already exists: " + id);
+                }
+                entry0 = _store.get(id);
+            }
+
+            final ReplicaRecord entry = entry0;
             return entry.update(r -> {
                 r.setFileAttributes(fileAttributes);
                 r.setState(transferState);
@@ -624,17 +636,7 @@ public class ReplicaRepository
                         this, _allocator, _pnfs, entry, fileAttributes,
                         targetState, stickyRecords, flags.contains(OpenFlags.NONBLOCK_SPACE_ALLOCATION));
             });
-        } catch (DuplicateEntryException e) {
 
-            ReplicaRecord entry = _store.get(id);
-
-            return entry.update(r -> {
-                r.setFileAttributes(fileAttributes);
-                r.setState(transferState);
-                return new WriteHandleImpl(
-                        this, _allocator, _pnfs, entry, fileAttributes,
-                        targetState, stickyRecords, flags.contains(OpenFlags.NONBLOCK_SPACE_ALLOCATION));
-            });
         } finally {
             _stateLock.readLock().unlock();
         }

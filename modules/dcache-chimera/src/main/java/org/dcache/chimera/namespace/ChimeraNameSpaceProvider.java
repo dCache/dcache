@@ -958,6 +958,9 @@ public class ChimeraNameSpaceProvider
                 stat = inode.statCache();
                 attributes.setNlink(stat.getNlink());
                 break;
+            case WORM:
+                attributes.setWorm(_extractor.getWorm(inode));
+                break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
             }

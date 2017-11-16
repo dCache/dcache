@@ -178,6 +178,8 @@ public class FileAttributes implements Serializable {
      */
     private String _cacheClass;
 
+    private boolean _worm;
+
     /** Throws IllegalStateException if attribute is not defined. */
     private void guard(FileAttribute attribute)
         throws IllegalStateException
@@ -530,6 +532,23 @@ public class FileAttributes implements Serializable {
         return _nlink;
     }
 
+    public void setWorm(boolean isWorm)
+    {
+        define(WORM);
+        _worm = isWorm;
+    }
+
+    public boolean getWorm()
+    {
+        guard(WORM);
+        return _worm;
+    }
+
+//    public Optional<Boolean> getWormIfPresent()
+//    {
+//        return toOptional(WORM, _worm);
+//    }
+
     /**
      * Remove the {@link FileType} corresponding to the file.  The FileType
      * must be specified before this method is called.  Subsequent getFileType
@@ -570,6 +589,7 @@ public class FileAttributes implements Serializable {
                 .add("storageClass", _storageClass)
                 .add("cacheClass", _cacheClass)
                 .add("hsm", _hsm)
+                .add("worm", _worm)
                 .omitNullValues()
                 .toString();
     }

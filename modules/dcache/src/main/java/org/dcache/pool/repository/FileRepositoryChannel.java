@@ -3,6 +3,7 @@ package org.dcache.pool.repository;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -21,6 +22,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
 
     private final FileChannel _fileChannel;
     private final Path _path;
+    private final RandomAccessFile _raf;
 
     /*
      * Cached value of files size. If value is -1, then we have to get file size
@@ -44,7 +46,8 @@ public class FileRepositoryChannel implements RepositoryChannel {
      */
     public FileRepositoryChannel(Path path, Set<? extends OpenOption> openOptions) throws FileNotFoundException, IOException {
         _path = path;
-        _fileChannel = FileChannel.open(path, openOptions, NO_ATTRIBUTES);
+        _raf = new RandomAccessFile(path.toFile(), openOptions.contains(StandardOpenOption.WRITE) ? "rw" : "r");
+        _fileChannel = _raf.getChannel();
         _fileSize = !openOptions.contains(StandardOpenOption.WRITE) ? _fileChannel.size() : -1;
     }
 
@@ -71,7 +74,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
 
     @Override
     public RepositoryChannel truncate(long size) throws IOException {
-        _fileChannel.truncate(size);
+        _raf.setLength(size);
         return this;
     }
 

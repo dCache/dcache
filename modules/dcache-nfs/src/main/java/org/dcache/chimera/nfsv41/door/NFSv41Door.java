@@ -978,11 +978,13 @@ public class NFSv41Door extends AbstractCellComponent implements
                 status = "idle";
             }
 
-            return String.format("    %s : %s : %s %s@%s, OS=%s, cl=[%s], status=[%s]",
+            return String.format("    %s : %s : %s (%s) %s@%s, OS=%s, cl=[%s], status=[%s]",
                     DateTimeFormatter.ISO_OFFSET_DATE_TIME
                             .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(getCreationTime()), timeZone)),
                     getPnfsId(),
-                    isWrite() ? "WRITE" : "READ",
+                    isWrite() ? "WRITE" + _isWrite : "READ" + _isWrite,
+                    getFileAttributes().isDefined(FileAttribute.WORM) ?
+                            getFileAttributes().getWorm() ? "WORM" : "MUTABLE" : "XXX",
                     getMoverId(),
                     getPool(),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
@@ -1009,6 +1011,17 @@ public class NFSv41Door extends AbstractCellComponent implements
                 readNameSpaceEntry(_isWrite);
 
                 FileAttributes attr = getFileAttributes();
+                if (_isWrite && attr.getWorm()
+                        && !attr.getStorageInfo().isCreatedOnly() ) {
+                    // throw IO exception to break client's re-try loop
+                    throw new NfsIoException("Can't update WORM file");
+                }
+
+                if (attr.getStorageInfo().isCreatedOnly() && attr.getSizeIfPresent().isPresent()) {
+                    // we can't read non existing file. start write mover to fix it.
+                    setWrite(true);
+                }
+
                 if (!isWrite() && attr.getLocations().isEmpty()
                         && !attr.getStorageInfo().isStored()) {
                     throw new NfsIoException("lost file " + getPnfsId());

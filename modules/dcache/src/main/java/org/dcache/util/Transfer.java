@@ -814,7 +814,7 @@ public class Transfer implements Comparable<Transfer>
 
     private ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite, long timeout)
     {
-        Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
+        Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE, WORM);
         attr.addAll(_additionalAttributes);
         attr.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
         Set<AccessMask> mask;

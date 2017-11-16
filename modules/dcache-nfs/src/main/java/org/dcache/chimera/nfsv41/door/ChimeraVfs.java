@@ -27,7 +27,9 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellAddressCore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +116,8 @@ import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_MODIFY;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
 
 import static org.dcache.namespace.FileAttribute.*;
+import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.status.ServerFaultException;
 
 /**
  * Interface to a virtual file system.
@@ -508,8 +512,23 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         return accessmask;
     }
 
-    private boolean shouldRejectUpdates(FsInode fsInode) throws ChimeraFsException {
-        return false;
+    private boolean shouldRejectUpdates(FsInode fsInode) throws ChimeraNFSException {
+
+        if (fsInode.type() != FsInodeType.INODE) {
+            return false;
+        }
+
+        try {
+
+            if (fsInode.statCache().getState() == FileState.CREATED) {
+                return false;
+            }
+
+            PnfsId pnfsId = new PnfsId(fsInode.getId());
+            return _pnfsHandler.getFileAttributes(pnfsId, EnumSet.of(WORM)).getWorm();
+        } catch (ChimeraFsException | CacheException e) {
+            throw new ServerFaultException("Failed to check files WORM flag", e);
+        }
     }
 
     @Override

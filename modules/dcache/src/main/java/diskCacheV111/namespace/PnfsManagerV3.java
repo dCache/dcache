@@ -619,7 +619,7 @@ public class PnfsManagerV3
 
             FileAttributes fileAttributes = _nameSpaceProvider
                         .getFileAttributes(ROOT, pnfsId, EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE,
-                                CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME));
+                                CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, WORM));
 
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
             switch (fileAttributes.getFileType()) {
@@ -642,6 +642,7 @@ public class PnfsManagerV3
             sb.append("[c=").append(formatter.format(fileAttributes.getCreationTime()));
             sb.append(";m=").append(formatter.format(fileAttributes.getModificationTime()));
             sb.append(";a=").append(formatter.format(fileAttributes.getAccessTime())).append("]");
+            sb.append(";w=").append(fileAttributes.getWorm());
             sb.append("\n");
             return sb.toString();
         }

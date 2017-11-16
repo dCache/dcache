@@ -39,5 +39,11 @@ public enum FileAttribute {
      * Initial location of a file.
      * @since 4.2
      */
-    INITIAL_LOCATION
+    INITIAL_LOCATION,
+
+    /**
+     * Write-Once-Read-Many flag attribute
+     * @since 4.2
+     */
+    WORM
 }
