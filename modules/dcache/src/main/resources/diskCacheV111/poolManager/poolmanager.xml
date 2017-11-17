@@ -83,6 +83,17 @@
       <property name="destination" value="${poolmanager.pool-monitor.topic}"/>
   </bean>
 
+  <bean id="rc-restores-topic" class="org.dcache.cells.CellStub">
+    <description>Periodic notifications of restore request listings published to this topic.</description>
+    <property name="destination" value="${poolmanager.restore-requests.topic}"/>
+  </bean>
+
+  <bean id="rc-notify-scheduler" class="java.util.concurrent.ScheduledThreadPoolExecutor"
+        destroy-method="shutdownNow">
+    <description>Used to execute periodic notification of restore request listing.</description>
+    <constructor-arg value="1"/>
+  </bean>
+
   <bean id="rc-pool" class="org.dcache.util.CDCExecutorServiceDecorator"
           destroy-method="shutdownNow">
       <constructor-arg>
@@ -102,6 +113,15 @@
     <property name="hitInfoMessages" value="${poolmanager.enable.cache-hit-message}"/>
     <property name="billing" ref="billing-stub"/>
     <property name="poolStub" ref="pool-stub"/>
+  </bean>
+
+  <bean id="rc-request-notifier" class="diskCacheV111.poolManager.RestoreRequestsNotifier">
+    <description>Publishes restore request listings to the request topic.</description>
+    <property name="executorService" ref="rc-notify-scheduler"/>
+    <property name="requestContainer" ref="rc"/>
+    <property name="restoreRequests" ref="rc-restores-topic"/>
+    <property name="timeout" value="${poolmanager.request-notifier.timeout}"/>
+    <property name="timeoutUnit" value="${poolmanager.request-notifier.timeout.unit}"/>
   </bean>
 
   <bean id="rebalance" class="org.dcache.poolmanager.Rebalancer">

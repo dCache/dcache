@@ -59,19 +59,19 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.restores;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
+
+import dmg.util.command.Command;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
-import dmg.util.command.Command;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.util.admin.SnapshotDataAccess;
@@ -83,26 +83,26 @@ import org.dcache.services.collector.CellDataCollectingService;
  * the pool manager on current staging requests and caching it.</p>
  *
  * <p>All synchronization is done on the object reference rather
- *      than the main map and snapshot cache, in order to
- *      allow the cache to be rebuilt.
+ *    than the main map and snapshot cache, in order to
+ *    allow the cache to be rebuilt.
  * </p>
  */
 public final class RestoresInfoServiceImpl extends
-                CellDataCollectingService<ListenableFuture<RestoreHandlerInfo[]>,
-                                RestoreCollector>
+                CellDataCollectingService<List<RestoreHandlerInfo>,
+                                                RestoreCollector>
                 implements RestoresInfoService {
     @Command(name = "restores set timeout",
                     hint = "Set the timeout interval between refreshes",
                     description = "Changes the interval between "
-                                    + "collections of restore queue information.")
-    class RestoresSetTimeoutCommand extends SetTimeoutCommand {
+                                    + "collections of restore queue information.") class RestoresSetTimeoutCommand
+                    extends SetTimeoutCommand {
     }
 
     @Command(name = "restores refresh",
                     hint = "Query for current tape restore queue info",
                     description = "Interrupts current wait to run query "
-                                    + "immediately.")
-    class RestoresRefreshCommand extends RefreshCommand {
+                                    + "immediately.") class RestoresRefreshCommand
+                    extends RefreshCommand {
     }
 
     /**
@@ -120,35 +120,25 @@ public final class RestoresInfoServiceImpl extends
                     IllegalAccessException,
                     NoSuchMethodException {
         Method getPnfsid = RestoreInfo.class.getMethod("getPnfsId");
-        Method[] methods = pnfsid == null? null : new Method[]{getPnfsid};
-        Object[] values = pnfsid == null? null : new Object[]{pnfsid};
+        Method[] methods = pnfsid == null ? null : new Method[] { getPnfsid };
+        Object[] values = pnfsid == null ? null : new Object[] { pnfsid };
         return access.getSnapshot(token, offset, limit, methods, values);
     }
 
     @Override
-    protected void update(ListenableFuture<RestoreHandlerInfo[]> future) {
+    protected void update(List<RestoreHandlerInfo> refreshed) {
         Map<String, RestoreInfo> newInfo = new HashMap<>();
-        Throwable thrownDuringExecution = null;
 
         try {
-            RestoreHandlerInfo[] refreshed = future.get();
             for (RestoreHandlerInfo restore : refreshed) {
                 RestoreInfo info = new RestoreInfo(restore);
                 collector.setPath(info);
                 newInfo.put(info.getKey(), info);
             }
-        } catch (InterruptedException e) {
-            LOGGER.trace("Update was interrupted.");
         } catch (CacheException e) {
             Throwable t = e.getCause();
             LOGGER.warn("Update could not complete: {}, {}.",
                         e.getMessage(),
-                        t == null ? "" : t.toString());
-        } catch (ExecutionException e) {
-            thrownDuringExecution = e.getCause();
-            Throwable t = thrownDuringExecution.getCause();
-            LOGGER.warn("Update could not complete: {}, {}.",
-                        thrownDuringExecution.getMessage(),
                         t == null ? "" : t.toString());
         }
 

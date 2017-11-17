@@ -57,58 +57,81 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.restores;
+package diskCacheV111.poolManager;
 
 import org.springframework.beans.factory.annotation.Required;
-import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.poolManager.RestoreRequestsReceiver;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.vehicles.RestoreHandlerInfo;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellLifeCycleAware;
 
-import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
-import org.dcache.restful.providers.restores.RestoreInfo;
-import org.dcache.util.collector.CellMessagingCollector;
+import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
+import org.dcache.util.FireAndForgetTask;
 
 /**
- * <p>Thin wrapper around cell messaging to pool manager pnfs manager endpoints.</p>
+ * <p>Periodically publishes a list of the restore requests for this
+ *  given PoolManager/RequestContainer on the restore requests topic.</p>
  */
-public class RestoreCollector extends
-                CellMessagingCollector<List<RestoreHandlerInfo>> {
-    private RestoreRequestsReceiver receiver;
-    private CellStub    pnfsStub;
-    private PnfsHandler pnfsHandler;
+public final class RestoreRequestsNotifier implements Runnable,
+                CellLifeCycleAware, CellIdentityAware {
+    private long     timeout     = 1;
+    private TimeUnit timeoutUnit = TimeUnit.MINUTES;
 
-    /**
-     * @return merged list of restore metadata.
-     */
+    private RequestContainerV5       requestContainer;
+    private ScheduledExecutorService executorService;
+    private CellStub                 restoreRequests;
+    private CellAddressCore          address;
+
     @Override
-    public List<RestoreHandlerInfo> collectData() {
-        return receiver.getAllRequests();
+    public void afterStart() {
+        executorService.schedule(new FireAndForgetTask(this),
+                                 timeout,
+                                 timeoutUnit);
     }
 
     @Override
-    public void initialize(Long timeout, TimeUnit timeUnit) {
-        pnfsHandler = new PnfsHandler(pnfsStub);
-        pnfsHandler.setSubject(Subjects.ROOT);
-        receiver.initialize();
-        super.initialize(timeout, timeUnit);
+    public void run() {
+        PoolManagerGetRestoreHandlerInfo message
+                        = new PoolManagerGetRestoreHandlerInfo(address);
+        message.setResult(requestContainer.getRestoreHandlerInfo());
+        restoreRequests.notify(message);
+        executorService.schedule(new FireAndForgetTask(this),
+                                 timeout,
+                                 timeoutUnit);
     }
 
-    public void setPath(RestoreInfo info) throws CacheException {
-        info.setPath(pnfsHandler.getPathByPnfsId(info.getPnfsId()).toString());
+    @Override
+    public void setCellAddress(CellAddressCore address) {
+        this.address = address;
     }
 
     @Required
-    public void setPnfsStub(CellStub pnfsStub) {
-        this.pnfsStub = pnfsStub;
+    public void setExecutorService(
+                    ScheduledExecutorService executorService) {
+        this.executorService = executorService;
     }
 
     @Required
-    public void setReceiver(RestoreRequestsReceiver receiver) {
-        this.receiver = receiver;
+    public void setRequestContainer(
+                    RequestContainerV5 requestContainer) {
+        this.requestContainer = requestContainer;
+    }
+
+    @Required
+    public void setRestoreRequests(CellStub restoreRequests) {
+        this.restoreRequests = restoreRequests;
+    }
+
+    @Required
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
+    }
+
+    @Required
+    public void setTimeoutUnit(TimeUnit timeoutUnit) {
+        this.timeoutUnit = timeoutUnit;
     }
 }
