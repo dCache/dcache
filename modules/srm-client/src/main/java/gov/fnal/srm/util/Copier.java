@@ -96,6 +96,7 @@ import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
 import org.dcache.ftp.client.vanilla.Reply;
 import org.dcache.srm.Logger;
 import org.dcache.srm.util.GridftpClient;
+import org.dcache.util.Exceptions;
 import org.dcache.util.PortRange;
 
 import static org.dcache.util.ByteUnit.KiB;
@@ -294,8 +295,7 @@ public class Copier implements Runnable {
                             say("execution of "+nextJob+" completed");
                             break;
                         } catch(Exception e) {
-                            esay("copy failed with the error");
-                            esay(e);
+                            esay("copy failed: " + Exceptions.messageOrClassName(e));
                             throwIfPermanent(e);
                             if(i < retry_num) {
                                 i++;
