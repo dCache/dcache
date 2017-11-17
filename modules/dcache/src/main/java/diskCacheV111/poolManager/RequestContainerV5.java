@@ -7,7 +7,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -27,6 +26,18 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellSetupProvider;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.UOID;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
@@ -51,18 +62,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
-
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellSetupProvider;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.UOID;
 
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
@@ -614,14 +613,17 @@ public class RequestContainerV5
     }
 
     public PoolManagerGetRestoreHandlerInfo messageArrived(PoolManagerGetRestoreHandlerInfo msg) {
-        List<RestoreHandlerInfo> requests;
-        Map<String, PoolRequestHandler> handlerHash = _handlerHash;
-        synchronized (handlerHash) {
-            requests = handlerHash.values().stream().filter(Objects::nonNull).map(
-                    PoolRequestHandler::getRestoreHandlerInfo).collect(toList());
-        }
-        msg.setResult(requests);
+        msg.setResult(getRestoreHandlerInfo());
         return msg;
+    }
+
+    public List<RestoreHandlerInfo> getRestoreHandlerInfo() {
+        List<RestoreHandlerInfo> requests;
+        synchronized (_handlerHash) {
+            requests = _handlerHash.values().stream().filter(Objects::nonNull).map(
+                            PoolRequestHandler::getRestoreHandlerInfo).collect(toList());
+        }
+        return requests;
     }
 
     public static final String hh_xrc_ls = " # lists pending requests (binary)" ;

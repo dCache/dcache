@@ -238,7 +238,12 @@
   <bean id="restores-collector" class="org.dcache.restful.util.restores.RestoreCollector">
     <description>Collects staging request info from from pool manager.</description>
     <property name="pnfsStub" ref="pnfs-stub"/>
-    <property name="poolManagerPath" value="${frontend.service.poolmanager}"/>
+    <property name="receiver">
+      <bean class="diskCacheV111.poolManager.RestoreRequestsReceiver">
+        <property name="lifetime" value="${frontend.restore-requests.lifetime}"/>
+        <property name="lifetimeUnit" value="${frontend.restore-requests.lifetime.unit}"/>
+      </bean>
+    </property>
   </bean>
 
   <bean id="restore-info-service" class="org.dcache.restful.services.restores.RestoresInfoServiceImpl">

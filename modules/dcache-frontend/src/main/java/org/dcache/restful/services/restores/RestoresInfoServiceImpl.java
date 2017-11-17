@@ -60,22 +60,21 @@ documents or software obtained from this server.
 package org.dcache.restful.services.restores;
 
 import com.google.common.base.Strings;
-import com.google.common.util.concurrent.ListenableFuture;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import dmg.util.command.Command;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
-import dmg.util.command.Command;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.util.admin.SnapshotDataAccess;
@@ -93,7 +92,7 @@ import org.dcache.util.FieldSort;
  * </p>
  */
 public final class RestoresInfoServiceImpl extends
-                CellDataCollectingService<ListenableFuture<RestoreHandlerInfo[]>,
+                CellDataCollectingService<List<RestoreHandlerInfo>,
                                 RestoreCollector>
                 implements RestoresInfoService {
     @Command(name = "restores set timeout",
@@ -201,29 +200,19 @@ public final class RestoresInfoServiceImpl extends
     }
 
     @Override
-    protected void update(ListenableFuture<RestoreHandlerInfo[]> future) {
+    protected void update(List<RestoreHandlerInfo> refreshed) {
         Map<String, RestoreInfo> newInfo = new HashMap<>();
-        Throwable thrownDuringExecution = null;
 
         try {
-            RestoreHandlerInfo[] refreshed = future.get();
             for (RestoreHandlerInfo restore : refreshed) {
                 RestoreInfo info = new RestoreInfo(restore);
                 collector.setPath(info);
                 newInfo.put(info.getKey(), info);
             }
-        } catch (InterruptedException e) {
-            LOGGER.trace("Update was interrupted.");
         } catch (CacheException e) {
             Throwable t = e.getCause();
             LOGGER.warn("Update could not complete: {}, {}.",
                         e.getMessage(),
-                        t == null ? "" : t.toString());
-        } catch (ExecutionException e) {
-            thrownDuringExecution = e.getCause();
-            Throwable t = thrownDuringExecution.getCause();
-            LOGGER.warn("Update could not complete: {}, {}.",
-                        thrownDuringExecution.getMessage(),
                         t == null ? "" : t.toString());
         }
 
