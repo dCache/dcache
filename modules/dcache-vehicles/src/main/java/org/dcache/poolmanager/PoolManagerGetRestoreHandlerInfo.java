@@ -20,20 +20,27 @@ package org.dcache.poolmanager;
 
 import java.util.List;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 import diskCacheV111.vehicles.PoolManagerMessage;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 
 /**
  * Request information about current request container tasks.
  */
-public class PoolManagerGetRestoreHandlerInfo extends PoolManagerMessage
-{
+public class PoolManagerGetRestoreHandlerInfo extends PoolManagerMessage {
     private static final long serialVersionUID = 765552672615264580L;
 
+    private String poolManagerKey;
     private List<RestoreHandlerInfo> result;
 
     public PoolManagerGetRestoreHandlerInfo()
     {
+    }
+
+    public PoolManagerGetRestoreHandlerInfo(CellAddressCore address)
+    {
+        poolManagerKey = address.getCellName() + "@" + address.getCellDomainName();
     }
 
     public PoolManagerGetRestoreHandlerInfo(List<RestoreHandlerInfo> result)
@@ -41,13 +48,23 @@ public class PoolManagerGetRestoreHandlerInfo extends PoolManagerMessage
         this.result = result;
     }
 
-    public void setResult(List<RestoreHandlerInfo> result)
+    public String getPoolManagerKey()
     {
-        this.result = result;
+        return poolManagerKey;
     }
 
     public List<RestoreHandlerInfo> getResult()
     {
         return result;
+    }
+
+    public void setPoolManagerKey(String poolManagerKey)
+    {
+        this.poolManagerKey = poolManagerKey;
+    }
+
+    public void setResult(List<RestoreHandlerInfo> result)
+    {
+        this.result = result;
     }
 }

@@ -16,6 +16,9 @@ check -strong poolmanager.pool-monitor.topic
 check -strong poolmanager.pool-monitor.update-period
 check -strong poolmanager.pool-monitor.update-period.unit
 check -strong poolmanager.pool-monitor.max-updates-per-second
+check -strong poolmanager.restore-requests.topic
+check -strong poolmanager.request-notifier.timeout
+check -strong poolmanager.request-notifier.timeout.unit
 check poolmanager.setup.file
 check poolmanager.setup.zookeeper
 

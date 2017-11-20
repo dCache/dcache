@@ -1,9 +1,7 @@
 package diskCacheV111.poolManager;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
@@ -16,6 +14,23 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DomainContextAware;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.AgingHash;
+import dmg.util.HttpException;
+import dmg.util.HttpRequest;
+import dmg.util.HttpResponseEngine;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HTMLWriter;
@@ -25,20 +40,6 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
-
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellMessageSender;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.DomainContextAware;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.AgingHash;
-import dmg.util.HttpException;
-import dmg.util.HttpRequest;
-import dmg.util.HttpResponseEngine;
 
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -52,7 +53,8 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpPoolMgrEngineV3 implements
-        HttpResponseEngine, Runnable, CellInfoProvider, CellMessageSender, DomainContextAware,
+        HttpResponseEngine, Runnable, CellInfoProvider, CellMessageSender,
+                CellMessageReceiver, DomainContextAware,
         CellCommandListener, CellLifeCycleAware
 {
     private static final String PARAMETER_DCACHE = "dcache";
@@ -80,9 +82,10 @@ public class HttpPoolMgrEngineV3 implements
 
     private PoolManagerHandlerSubscriber _pm;
 
+    private RestoreRequestsReceiver _receiver;
+
     private final AgingHash   _pnfsPathMap     = new AgingHash(500);
     private final AgingHash _fileAttributesMap = new AgingHash(500);
-    private final boolean     _takeAll         = true;
     private static final ThreadLocal<SimpleDateFormat> _formatter =
             new ThreadLocal<SimpleDateFormat>()
             {
@@ -108,6 +111,7 @@ public class HttpPoolMgrEngineV3 implements
 
     public HttpPoolMgrEngineV3(String[] argsString)
     {
+        _receiver = new RestoreRequestsReceiver();
         Args arguments = new Args(argsString);
         _poolManagerAddress = arguments.getOption("poolmanager");
         _pnfsManagerAddress = arguments.getOption("pnfsmanager");
@@ -123,6 +127,10 @@ public class HttpPoolMgrEngineV3 implements
             } else if (argsString[i].startsWith("details=")) {
                 _log.info("Details for lazy restore : {}", argsString[i]);
                 decodeDetails(argsString[i]);
+            } else if (argsString[i].equals("cacheLifetime")) {
+                _receiver.setLifetime(Integer.parseInt(argsString[i]));
+            } else if (argsString[i].equals("cacheLifetimeUnit")) {
+                _receiver.setLifetimeUnit(TimeUnit.valueOf(argsString[i].toUpperCase()));
             } else if (argsString[i].startsWith("css=")) {
                 decodeCss(argsString[i].substring(4));
             }
@@ -153,6 +161,7 @@ public class HttpPoolMgrEngineV3 implements
     {
         _pm.start();
         _pm.afterStart();
+        _receiver.initialize();
         _restoreCollector.start();
     }
 
@@ -166,6 +175,10 @@ public class HttpPoolMgrEngineV3 implements
             _log.warn("Interrupted while waiting for restore-collector to terminate");
         }
         _pm.beforeStop();
+    }
+
+    public void messageArrived(PoolManagerGetRestoreHandlerInfo message) {
+        _receiver.messageArrived(message);
     }
 
     private void decodeCss(String cssDetails)
@@ -240,73 +253,69 @@ public class HttpPoolMgrEngineV3 implements
     private void runRestoreCollector()
         throws NoRouteToCellException, InterruptedException
     {
-        List<RestoreHandlerInfo> infos;
-        try {
-            ListenableFuture<PoolManagerGetRestoreHandlerInfo> future =
-                    _pm.sendAsync(_endpoint, new PoolManagerGetRestoreHandlerInfo(), _poolManager.getTimeoutInMillis());
-            infos = CellStub.getMessage(future).getResult();
-        } catch (CacheException | NoRouteToCellException e) {
-            _log.warn("runRestoreCollector : failure reply from PoolManager : {}", e.getMessage());
-            return;
-        }
+        List<RestoreHandlerInfo> infos = _receiver.getAllRequests();
 
         List<Object[]> agedList = new ArrayList<>();
-        long      cut      = System.currentTimeMillis() - (1000L * 60L * 2L);
         for (RestoreHandlerInfo info : infos) {
-            if (_takeAll || (info.getStartTime() < cut)) {
-                try {
-                    Object[] a = new Object[3];
-                    a[0] = info;
-                    String  name   = info.getName();
-                    String  pnfsId = name.substring(0,name.indexOf('@'));
-                    //
-                    // collect the pathes
-                    //
-                    String  path   = (String)_pnfsPathMap.get(pnfsId);
-                    if (path == null) {
-                        path = getPathByPnfsId(pnfsId);
-                    }
-                    if (path == null) {
-                        a[1] = pnfsId;
-                    } else {
-                        _pnfsPathMap.put(pnfsId, a[1] = path);
-                    }
-                    //
-                    // collect the storage infos
-                    //
-                    if (_addStorageInfo) {
-                        FileAttributes fileAttributes = (FileAttributes) _fileAttributesMap.get(pnfsId);
-                        if (fileAttributes == null) {
-                            fileAttributes = getFileAttributesByPnfsId(pnfsId);
-                        }
-                        if (fileAttributes != null) {
-                            StorageInfo storageInfo = fileAttributes.getStorageInfo();
-                            if (_addHsmInfo) {
-                                StorageInfo si = getHsmInfoByStorageInfo(pnfsId,storageInfo);
-                                if (si != null) {
-                                    storageInfo = si;
-                                    fileAttributes.setStorageInfo(si);
-                                }
-                            }
-                            if (_siDetails != null) { // allows to select items
-                                if (fileAttributes.isDefined(FileAttribute.SIZE)) {
-                                    storageInfo.setKey("size", String.valueOf(fileAttributes.getSize()));
-                                }
-                                storageInfo.setKey("new", String.valueOf(storageInfo.isCreatedOnly()));
-                                storageInfo.setKey("stored", String.valueOf(storageInfo.isStored()));
-                                storageInfo.setKey("sClass",fileAttributes.getStorageClass());
-                                storageInfo.setKey("cClass",fileAttributes.getCacheClass());
-                                storageInfo.setKey("hsm",fileAttributes.getHsm());
-                            }
-                            _fileAttributesMap.put(pnfsId, a[2] = storageInfo);
-                        }
-
-                    }
-
-                    agedList.add(a);
-                } catch (Exception e) {
-                    _log.warn(e.toString(), e);
+            try {
+                Object[] a = new Object[3];
+                a[0] = info;
+                String name = info.getName();
+                String pnfsId = name.substring(0, name.indexOf('@'));
+                //
+                // collect the paths
+                //
+                String path = (String) _pnfsPathMap.get(pnfsId);
+                if (path == null) {
+                    path = getPathByPnfsId(pnfsId);
                 }
+                if (path == null) {
+                    a[1] = pnfsId;
+                } else {
+                    _pnfsPathMap.put(pnfsId, a[1] = path);
+                }
+                //
+                // collect the storage infos
+                //
+                if (_addStorageInfo) {
+                    FileAttributes fileAttributes = (FileAttributes) _fileAttributesMap.get(
+                                    pnfsId);
+                    if (fileAttributes == null) {
+                        fileAttributes = getFileAttributesByPnfsId(pnfsId);
+                    }
+                    if (fileAttributes != null) {
+                        StorageInfo storageInfo = fileAttributes.getStorageInfo();
+                        if (_addHsmInfo) {
+                            StorageInfo si = getHsmInfoByStorageInfo(pnfsId,
+                                                                     storageInfo);
+                            if (si != null) {
+                                storageInfo = si;
+                                fileAttributes.setStorageInfo(si);
+                            }
+                        }
+                        if (_siDetails != null) { // allows to select items
+                            if (fileAttributes.isDefined(FileAttribute.SIZE)) {
+                                storageInfo.setKey("size",
+                                                   String.valueOf(fileAttributes.getSize()));
+                            }
+                            storageInfo.setKey("new",
+                                               String.valueOf(storageInfo.isCreatedOnly()));
+                            storageInfo.setKey("stored",
+                                               String.valueOf(storageInfo.isStored()));
+                            storageInfo.setKey("sClass",
+                                               fileAttributes.getStorageClass());
+                            storageInfo.setKey("cClass",
+                                               fileAttributes.getCacheClass());
+                            storageInfo.setKey("hsm", fileAttributes.getHsm());
+                        }
+                        _fileAttributesMap.put(pnfsId, a[2] = storageInfo);
+                    }
+
+                }
+
+                agedList.add(a);
+            } catch (Exception e) {
+                _log.warn(e.toString(), e);
             }
         }
         _lazyRestoreList = agedList;
@@ -794,30 +803,27 @@ public class HttpPoolMgrEngineV3 implements
         html.addHeader("/styles/restoreHandler.css",
                        "dCache Dataset Restore Monitor");
 
-        try {
-            RestoreHandlerInfo[] list = _poolManager.sendAndWait("xrc ls", RestoreHandlerInfo[].class);
-            Arrays.sort(list, new OurComparator(sorting));
+        RestoreHandlerInfo[] list = _lazyRestoreList.stream()
+                                                    .map(o -> o[0])
+                                                    .collect(Collectors.toList())
+                                                    .toArray(new RestoreHandlerInfo[0]);
+        Arrays.sort(list, new OurComparator(sorting));
 
-            html.beginTable("sortable",
-                            "pnfs",      "PnfsId",
-                            "subnet",    "Subnet",
-                            "candidate", "PoolCandidate",
-                            "started",   "Started",
-                            "clients",   "Clients",
-                            "retries",   "Retries",
-                            "status",    "Status");
+        html.beginTable("sortable",
+                        "pnfs", "PnfsId",
+                        "subnet", "Subnet",
+                        "candidate", "PoolCandidate",
+                        "started", "Started",
+                        "clients", "Clients",
+                        "retries", "Retries",
+                        "status", "Status");
 
-            for (RestoreHandlerInfo info : list) {
-                if ((grep == null) || grepOk(grep, info)) {
-                    showRestoreInfo(html, info);
-                }
+        for (RestoreHandlerInfo info : list) {
+            if ((grep == null) || grepOk(grep, info)) {
+                showRestoreInfo(html, info);
             }
-            html.endTable();
-        } catch (TimeoutCacheException e) {
-            showTimeout(html);
-        } catch (InterruptedException | CacheException | NoRouteToCellException e) {
-            showProblem(html, e.getMessage());
         }
+        html.endTable();
 
         html.addFooter(getClass().getName());
     }

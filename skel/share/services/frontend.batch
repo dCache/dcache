@@ -66,6 +66,9 @@ check -strong frontend.limits.queue-length
 check -strong frontend.limits.graceful-shutdown
 check -strong frontend.limits.graceful-shutdown.unit
 check -strong frontend.loginbroker.request-topic
+check -strong frontend.restore-requests.topic
+check -strong frontend.restore-requests.lifetime
+check -strong frontend.restore-requests.lifetime.unit
 check -strong frontend.dcache-view.dir
 
 check -strong frontend.static!dcache-view.endpoints.webapi

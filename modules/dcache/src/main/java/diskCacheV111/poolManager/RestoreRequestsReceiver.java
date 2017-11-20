@@ -57,58 +57,76 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.restores;
+package diskCacheV111.poolManager;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.springframework.beans.factory.annotation.Required;
+
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.RestoreRequestsReceiver;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
-
-import org.dcache.auth.Subjects;
-import org.dcache.cells.CellStub;
-import org.dcache.restful.providers.restores.RestoreInfo;
-import org.dcache.util.collector.CellMessagingCollector;
+import dmg.cells.nucleus.CellMessageReceiver;
+import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
 
 /**
- * <p>Thin wrapper around cell messaging to pool manager pnfs manager endpoints.</p>
+ * <p>Front-end plug-in for receiving notifications of request listings
+ * from the request container.</p>
  */
-public class RestoreCollector extends
-                CellMessagingCollector<List<RestoreHandlerInfo>> {
-    private RestoreRequestsReceiver receiver;
-    private CellStub    pnfsStub;
-    private PnfsHandler pnfsHandler;
+public class RestoreRequestsReceiver implements CellMessageReceiver {
+
+    private Cache<String, List<RestoreHandlerInfo>> restores;
+    private long     lifetime     = 1;
+    private TimeUnit lifetimeUnit = TimeUnit.HOURS;
+
+    public void initialize() {
+        restores = CacheBuilder.newBuilder()
+                               .expireAfterWrite(lifetime, lifetimeUnit)
+                               .build();
+    }
 
     /**
-     * @return merged list of restore metadata.
+     * @return merged list of all requests.  It is assumed these are
+     * partitioned (non-intersecting).
      */
-    @Override
-    public List<RestoreHandlerInfo> collectData() {
-        return receiver.getAllRequests();
+    public List<RestoreHandlerInfo> getAllRequests() {
+        return restores.asMap().values()
+                       .stream()
+                       .flatMap(list -> list.stream())
+                       .collect(Collectors.toList());
     }
 
-    @Override
-    public void initialize(Long timeout, TimeUnit timeUnit) {
-        pnfsHandler = new PnfsHandler(pnfsStub);
-        pnfsHandler.setSubject(Subjects.ROOT);
-        receiver.initialize();
-        super.initialize(timeout, timeUnit);
+    /**
+     * @return currently registered keys.
+     */
+    public Set<String> getPoolManagers() {
+        synchronized (restores) {
+            return restores.asMap().keySet();
+        }
     }
 
-    public void setPath(RestoreInfo info) throws CacheException {
-        info.setPath(pnfsHandler.getPathByPnfsId(info.getPnfsId()).toString());
+    /**
+     * @param poolManager address.
+     * @return list of all requests.
+     */
+    public List<RestoreHandlerInfo> getRequests(String poolManager) {
+        return restores.getIfPresent(poolManager);
+    }
+
+    public void messageArrived(PoolManagerGetRestoreHandlerInfo message) {
+        restores.put(message.getPoolManagerKey(), message.getResult());
     }
 
     @Required
-    public void setPnfsStub(CellStub pnfsStub) {
-        this.pnfsStub = pnfsStub;
+    public void setLifetime(long lifetime) {
+        this.lifetime = lifetime;
     }
 
     @Required
-    public void setReceiver(RestoreRequestsReceiver receiver) {
-        this.receiver = receiver;
+    public void setLifetimeUnit(TimeUnit lifetimeUnit) {
+        this.lifetimeUnit = lifetimeUnit;
     }
 }

@@ -41,10 +41,16 @@
 
     <bean id="delegator" class="org.dcache.services.httpd.handlers.HandlerDelegator"/>
 
+    <bean id="restores-request-receiver" class="diskCacheV111.poolManager.RestoreRequestsReceiver">
+        <property name="lifetime" value="${httpd.service.restore-requests.lifetime}"/>
+        <property name="lifetimeUnit" value="${httpd.service.restore-requests.lifetime.unit}"/>
+    </bean>
+
     <bean id="webapp-handler" class="org.dcache.services.httpd.handlers.WebAppHandler" scope="prototype">
         <property name="defaultsDescriptor" value="${httpd.container.default-webapp}"/>
         <property name="extractWAR" value="false"/>
         <property name="poolMonitor" ref="pool-monitor"/>
+        <property name="receiver" ref="restores-request-receiver"/>
     </bean>
 
     <bean id="jetty" class="org.dcache.services.httpd.Server">

@@ -18,6 +18,7 @@
     <context:annotation-config/>
 
     <jee:jndi-lookup id="PoolMonitor" jndi-name="java:comp/env/poolMonitor"/>
+    <jee:jndi-lookup id="RestoresRequestReceiver" jndi-name="java:comp/env/restoresRequestReceiver"/>
 
     <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
         <property name="timeout" value="${httpd.service.pool.timeout}"/>
@@ -201,10 +202,10 @@
                     init-method="initialize">
                     <property name="cellStub" ref="RestoreHandlerCollectorCellStub"/>
                     <property name="name" value="RestoreHandler Collector"/>
-                    <property name="poolManagerName" value="${httpd.service.poolmanager}"/>
                     <property name="sleepInterval" value="${httpd.service.restorehandler-collector.period}"/>
                     <property name="sleepIntervalUnit" value="${httpd.service.restorehandler-collector.period.unit}"/>
                     <property name="algorithmFactory" ref="ExponentialBackoff"/>
+                    <property name="receiver" ref="RestoresRequestReceiver"/>
                 </bean>
             </list>
         </constructor-arg>

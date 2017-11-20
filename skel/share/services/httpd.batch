@@ -34,6 +34,7 @@ check -strong httpd.service.spacemanager
 check httpd.loginbroker.update-topic
 check httpd.loginbroker.request-topic
 check httpd.pool-monitor-topic
+check httpd.restore-requests.topic
 check -strong httpd.limits.idle-time
 check -strong httpd.limits.idle-time.unit
 check -strong httpd.limits.threads
@@ -178,7 +179,9 @@ define context ${httpd.cell.name}Setup endDefine
    set alias cellInfo  context cellInfoTable.html  -onError=offline
    set alias usageInfo context poolUsageTable.html -onError=offline
    set alias queueInfo context poolQueueTable.html -onError=offline
-   set alias poolInfo class diskCacheV111.poolManager.HttpPoolMgrEngineV3 -- -poolmanager=${httpd.service.poolmanager} -pnfsmanager=${httpd.service.pnfsmanager}
+   set alias poolInfo class diskCacheV111.poolManager.HttpPoolMgrEngineV3 -- -poolmanager=${httpd.service.poolmanager} \
+        -pnfsmanager=${httpd.service.pnfsmanager} -cacheLifetime=${httpd.service.restore-requests.lifetime} \
+        -cacheLifetimeUnit=${httpd.service.restore-requests.lifetime.unit}
    set alias billing class diskCacheV111.cells.HttpBillingEngine -- -billing=${httpd.service.billing}
    set alias flushManager class diskCacheV111.hsmControl.flush.HttpHsmFlushMgrEngineV1 mgr=hfc css=default
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true

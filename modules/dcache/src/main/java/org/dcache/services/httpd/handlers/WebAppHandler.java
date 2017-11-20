@@ -20,12 +20,14 @@ package org.dcache.services.httpd.handlers;
 import org.eclipse.jetty.plus.jndi.EnvEntry;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
+import javax.naming.NamingException;
 import java.util.Map;
 import java.util.Properties;
-import javax.naming.NamingException;
 
+import diskCacheV111.poolManager.RestoreRequestsReceiver;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.EnvironmentAware;
@@ -38,6 +40,7 @@ public class WebAppHandler extends WebAppContext
     public static final String JNDI_ARGS = "jndiArgs";
     public static final String POOL_MONITOR = "poolMonitor";
     public static final String BEAN_FACTORY = "beanFactory";
+    public static final String REQUEST_RECEIVER = "restoresRequestReceiver";
 
     private static final String[] CONFIGURATION_CLASSES = {
             "org.eclipse.jetty.webapp.WebInfConfiguration",
@@ -55,6 +58,7 @@ public class WebAppHandler extends WebAppContext
     private Map<String, Object> environment;
     private CellEndpoint endpoint;
     private RemotePoolMonitor remotePoolMonitor;
+    private RestoreRequestsReceiver receiver;
 
     public WebAppHandler()
     {
@@ -73,8 +77,14 @@ public class WebAppHandler extends WebAppContext
         this.endpoint = endpoint;
     }
 
+    @Required
     public void setPoolMonitor(RemotePoolMonitor remotePoolMonitor) {
         this.remotePoolMonitor = remotePoolMonitor;
+    }
+
+    @Required
+    public void setReceiver(RestoreRequestsReceiver receiver) {
+        this.receiver = receiver;
     }
 
     @Override
@@ -92,6 +102,7 @@ public class WebAppHandler extends WebAppContext
         new EnvEntry(this, CELL_ENDPOINT, endpoint, true);
         new EnvEntry(this, POOL_MONITOR, remotePoolMonitor, true);
         new EnvEntry(this, BEAN_FACTORY, beanFactory, true);
+        new EnvEntry(this, REQUEST_RECEIVER, receiver, true);
 
         Properties properties = new Properties();
         for (Map.Entry<String, Object> entry : environment.entrySet()) {
