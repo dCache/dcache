@@ -59,9 +59,17 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
+import com.google.common.collect.ComparisonChain;
+
 /**
  * <p>Consolidated view information from storage info.</p>
  */
-public final class StorageRecord extends RecordEntry {
-
+public final class StorageRecord extends RecordEntry implements Comparable<StorageRecord> {
+    public int compareTo(StorageRecord entry) {
+        return ComparisonChain.start()
+                              .compare(datestamp, entry.datestamp)
+                              .compare(type, entry.type)
+                              .compare(cellname, entry.cellname)
+                              .result();
+    }
 }

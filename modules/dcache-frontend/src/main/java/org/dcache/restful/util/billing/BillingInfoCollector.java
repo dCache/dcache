@@ -73,7 +73,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.util.collector.CellMessagingCollector;
 import org.dcache.vehicles.billing.BillingDataRequestMessage;
-import org.dcache.vehicles.billing.BillingRecordRequestMessage;
+import org.dcache.vehicles.billing.RecordRequestMessage;
 
 /**
  * <p>Handles the message-passing to the actual billing service.</p>
@@ -158,26 +158,10 @@ public class BillingInfoCollector
      * @param message to request records for a given file.
      * @return message with the data added.
      */
-    public BillingRecordRequestMessage sendRecordRequest(
-                    BillingRecordRequestMessage message) {
-        try {
-            return stub.sendAndWait(billingPath, message);
-        } catch (CacheException e) {
-            message.setFailed(e.getRc(), e.getMessage());
-            return message;
-        } catch (InterruptedException e) {
-            message.setFailed(CacheException.DEFAULT_ERROR_CODE,
-                              "Operation interrupted.");
-            return message;
-        } catch (NoRouteToCellException e) {
-            message.setFailed(CacheException.SERVICE_UNAVAILABLE,
-                              "Could not send message, no route to cell.");
-            return message;
-        } catch (IllegalStateException e) {
-            message.setFailed(CacheException.SERVICE_UNAVAILABLE,
-                              "Could not send message.");
-            return message;
-        }
+    public <M extends RecordRequestMessage> M sendRecordRequest(M message)
+                    throws InterruptedException, CacheException,
+                    NoRouteToCellException {
+        return stub.sendAndWait(billingPath, message);
     }
 
     public void setBillingPath(CellPath billingPath) {

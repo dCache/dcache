@@ -69,14 +69,14 @@ public abstract class RecordEntry implements Serializable {
 
     private static final long serialVersionUID = 2136965649327543618L;
 
-    private String type;
-    private Date datestamp;
-    private String cellname;
-    private Long connectiontime;
-    private Long queuedtime;
-    private Integer errorcode;
-    private String errormessage;
-    private String pnfsid;
+    protected String type;
+    protected Date datestamp;
+    protected String cellname;
+    protected Long connectiontime;
+    protected Long queuedtime;
+    protected Integer errorcode;
+    protected String errormessage;
+    protected String pnfsid;
 
     public String getCellName() {
         return cellname;

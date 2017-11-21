@@ -68,19 +68,12 @@ import java.util.List;
 
 import org.dcache.restful.providers.billing.BillingDataGrid;
 import org.dcache.restful.providers.billing.BillingDataGridEntry;
-import org.dcache.restful.providers.billing.BillingRecords;
-import org.dcache.restful.providers.billing.DoorTransferRecord;
-import org.dcache.restful.providers.billing.HSMTransferRecord;
-import org.dcache.restful.providers.billing.P2PTransferRecord;
-import org.dcache.services.billing.db.data.StorageRecord;
-import org.dcache.services.billing.db.data.TransferRecord;
 import org.dcache.util.histograms.TimeFrame;
 import org.dcache.util.histograms.TimeFrame.BinType;
 import org.dcache.util.histograms.TimeFrame.Type;
 import org.dcache.vehicles.billing.BillingDataRequestMessage;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
-import org.dcache.vehicles.billing.BillingRecordRequestMessage;
 
 /**
  * <p>Provides methods for generating and transforming messages to be
@@ -290,52 +283,6 @@ public final class BillingInfoCollectionUtils {
         return new BillingDataGridEntry(message.getType(),
                                         message.getDataType(),
                                         message.getTimeFrame()).toString();
-    }
-
-    public static BillingRecords transform(
-                    BillingRecordRequestMessage message) {
-        BillingRecords records = new BillingRecords();
-
-        records.setStores(new ArrayList<HSMTransferRecord>());
-        records.setRestores(new ArrayList<HSMTransferRecord>());
-        records.setReads(new ArrayList<DoorTransferRecord>());
-        records.setWrites(new ArrayList<DoorTransferRecord>());
-        records.setP2ps(new ArrayList<P2PTransferRecord>());
-        records.setPnfsid(String.valueOf(message.getPnfsId()));
-
-        /*
-         *  These type names are built into the database views:
-         *  READ, WRITE, P2P; STORE, RESTORE.
-         */
-
-        for (TransferRecord record : message.getTransferRecords()) {
-            switch (record.getType().toUpperCase()) {
-                case "P2P":
-                    records.getP2ps().add(new P2PTransferRecord(record));
-                    break;
-                case "READ":
-                    records.getReads().add(new DoorTransferRecord(record));
-                    break;
-                case "WRITE":
-                    records.getWrites().add(new DoorTransferRecord(record));
-                default:
-                    break;
-            }
-        }
-
-        for (StorageRecord record : message.getStorageRecords()) {
-            switch (record.getType().toUpperCase()) {
-                case "STORE":
-                    records.getStores().add(new HSMTransferRecord(record));
-                    break;
-                case "RESTORE":
-                    records.getRestores().add(new HSMTransferRecord(record));
-                default:
-                    break;
-            }
-        }
-
-        return records;
     }
 
     private static BillingDataGridEntry transform(

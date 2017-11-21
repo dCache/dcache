@@ -59,64 +59,64 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.billing;
 
-import java.util.Collection;
+import com.google.common.base.Strings;
 import java.util.Date;
+import java.util.function.Predicate;
 
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
-import org.dcache.services.billing.db.data.StorageRecord;
+
 import org.dcache.services.billing.db.data.TransferRecord;
 
 /**
- * <p>Requests consolidated billing and storage records for
- * a given pnfsId.</p>
+ * <p>Requests read, write or p2p records for a given pnfsId.</p>
  */
-public final class BillingRecordRequestMessage extends Message {
-    private Collection<TransferRecord> transferRecords;
-    private Collection<StorageRecord>  storageRecords;
-    private PnfsId                     pnfsId;
-    private Date                       before;
-    private Date                       after;
+public final class TransferRecordRequestMessage
+                extends RecordRequestMessage<TransferRecord> {
+    private static final long serialVersionUID = 2933007122109458801L;
 
-    public Date getAfter() {
-        return after;
+    private final String door;       // initiator for read and write
+    private final String clientPool; // initiator for p2p
+    private final String pool;       // server for p2p, target pool for read and write
+    private final String clientHost;
+
+    public TransferRecordRequestMessage(PnfsId pnfsId,
+                                        Date before,
+                                        Date after,
+                                        Type type,
+                                        String door,
+                                        String clientPool,
+                                        String pool,
+                                        String clientHost,
+                                        int limit,
+                                        int offset,
+                                        String sort) {
+        super(pnfsId, before, after, type, limit, offset, sort);
+        this.door = door;
+        this.clientPool = clientPool;
+        this.pool = pool;
+        this.clientHost = clientHost;
     }
 
-    public Date getBefore() {
-        return before;
-    }
-
-    public PnfsId getPnfsId() {
-        return pnfsId;
-    }
-
-    public Collection<StorageRecord> getStorageRecords() {
-        return storageRecords;
-    }
-
-    public Collection<TransferRecord> getTransferRecords() {
-        return transferRecords;
-    }
-
-    public void setAfter(Date after) {
-        this.after = after;
-    }
-
-    public void setBefore(Date before) {
-        this.before = before;
-    }
-
-    public void setPnfsId(PnfsId pnfsId) {
-        this.pnfsId = pnfsId;
-    }
-
-    public void setStorageRecords(
-                    Collection<StorageRecord> storageRecords) {
-        this.storageRecords = storageRecords;
-    }
-
-    public void setTransferRecords(
-                    Collection<TransferRecord> transferRecords) {
-        this.transferRecords = transferRecords;
+    @Override
+    public Predicate<TransferRecord> filter() {
+        Predicate<TransferRecord> matchesDoor =
+                        (record) -> door == null
+                                        || Strings.nullToEmpty(record.getInitiator())
+                                                  .contains(door);
+        Predicate<TransferRecord> matchesTarget =
+                        (record) -> clientPool == null
+                                        || Strings.nullToEmpty(record.getInitiator())
+                                                  .contains(clientPool);
+        Predicate<TransferRecord> matchesServer =
+                        (record) -> pool == null
+                                        || Strings.nullToEmpty(record.getCellName())
+                                                  .contains(pool);
+        Predicate<TransferRecord> matchesClient =
+                        (record) -> clientHost == null
+                                        || Strings.nullToEmpty(record.getClient())
+                                                  .contains(clientHost);
+        return matchesDoor.and(matchesServer)
+                          .and(matchesTarget)
+                          .and(matchesClient);
     }
 }

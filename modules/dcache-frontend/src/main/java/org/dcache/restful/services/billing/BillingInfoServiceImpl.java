@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.billing;
 
-import java.io.Serializable;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +68,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Argument;
@@ -82,7 +82,7 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.billing.BillingDataGrid;
 import org.dcache.restful.providers.billing.BillingDataGridEntry;
-import org.dcache.restful.providers.billing.BillingRecords;
+import org.dcache.restful.providers.billing.BillingTransferRecord;
 import org.dcache.restful.providers.billing.DoorTransferRecord;
 import org.dcache.restful.providers.billing.HSMTransferRecord;
 import org.dcache.restful.providers.billing.P2PTransferRecord;
@@ -93,7 +93,10 @@ import org.dcache.util.histograms.Histogram;
 import org.dcache.util.histograms.HistogramModel;
 import org.dcache.util.histograms.TimeFrame;
 import org.dcache.vehicles.billing.BillingDataRequestMessage;
-import org.dcache.vehicles.billing.BillingRecordRequestMessage;
+import org.dcache.vehicles.billing.RecordRequestMessage;
+import org.dcache.vehicles.billing.RecordRequestMessage.Type;
+import org.dcache.vehicles.billing.StorageRecordRequestMessage;
+import org.dcache.vehicles.billing.TransferRecordRequestMessage;
 
 /**
  * <p>Supports the REST calls for billing records and billing time series data.</p>
@@ -113,7 +116,7 @@ public class BillingInfoServiceImpl
         @Argument(required = true,
                         usage = "The pnfsid of the file for which to "
                                         + "list the billing records.")
-        String pnfsid;
+        PnfsId pnfsid;
 
         @Option(name = "before",
                         valueSpec = DATETIME_FORMAT,
@@ -127,50 +130,59 @@ public class BillingInfoServiceImpl
                                         + "was after this date-time.")
         String after;
 
-        @Override
-        public String call() {
-            StringBuilder builder = new StringBuilder();
+        @Option(name ="type",
+                        valueSpec = "READ|WRITE|P2P|STORE|RESTORE",
+                        usage = "List only records of this type (default: READ).")
+        RecordRequestMessage.Type type = Type.READ;
 
-            try {
-                BillingRecords records = getRecords(new PnfsId(pnfsid),
-                                                               before,
-                                                               after);
-                processRecords(records, builder);
-            } catch (CacheException e) {
-                builder.append(e).append("\n");
+        @Override
+        public String call() throws CacheException, ParseException,
+                        InterruptedException, NoRouteToCellException {
+            StringBuilder builder = new StringBuilder();
+            builder.append(pnfsid).append("\n");
+            PagedList<? extends BillingTransferRecord> list = null;
+            switch (type) {
+                case READ:
+                    list = getReads(pnfsid, before, after,
+                                    null, 0, null,
+                                    null, null, null);
+                    builder.append("\nREADS ").append(list.total).append("\n");
+                    list.contents.stream().forEach(
+                                    (r) -> builder.append(r.toDisplayString()));
+                    break;
+                case WRITE:
+                    list = getWrites(pnfsid, before, after,
+                                     null, 0, null,
+                                     null, null, null);
+                    builder.append("\nWRITES ").append(list.total).append("\n");
+                    list.contents.stream().forEach(
+                                    (r) -> builder.append(r.toDisplayString()));
+                    break;
+                case P2P:
+                    list = getP2ps(pnfsid, before, after,
+                                   null, 0, null,
+                                   null, null, null);
+                    builder.append("\nP2PS ").append(list.total).append("\n");
+                    list.contents.stream().forEach(
+                                    (r) -> builder.append(r.toDisplayString()));
+                    break;
+                case STORE:
+                    list = getStores(pnfsid, before, after,
+                                     null, 0, null,null);
+                    builder.append("\nSTORES ").append(list.total).append("\n");
+                    list.contents.stream().forEach(
+                                    (r) -> builder.append(r.toDisplayString()));
+                    break;
+                case RESTORE:
+                    list = getRestores(pnfsid, before, after,
+                                       null, 0, null,null);
+                    builder.append("\nRESTORES ").append(list.total).append("\n");
+                    list.contents.stream().forEach(
+                                    (r) -> builder.append(r.toDisplayString()));
+                    break;
             }
 
             return builder.toString();
-        }
-
-        private void processRecords(BillingRecords records,
-                                    StringBuilder builder) {
-            builder.append(records.getPnfsid()).append("\n");
-            if (!records.getReads().isEmpty()) {
-                builder.append("\nREADS\n");
-                records.getReads().stream().forEach(
-                                (r) -> builder.append(r.toDisplayString()));
-            }
-            if (!records.getWrites().isEmpty()) {
-                builder.append("\nWRITES\n");
-                records.getWrites().stream().forEach(
-                                (r) -> builder.append(r.toDisplayString()));
-            }
-            if (!records.getP2ps().isEmpty()) {
-                builder.append("\nP2PS\n");
-                records.getP2ps().stream().forEach(
-                                (r) -> builder.append(r.toDisplayString()));
-            }
-            if (!records.getStores().isEmpty()) {
-                builder.append("\nSTORES\n");
-                records.getStores().stream().forEach(
-                                (r) -> builder.append(r.toDisplayString()));
-            }
-            if (!records.getRestores().isEmpty()) {
-                builder.append("\nRESTORES\n");
-                records.getRestores().stream().forEach(
-                                (r) -> builder.append(r.toDisplayString()));
-            }
         }
     }
 
@@ -262,13 +274,23 @@ public class BillingInfoServiceImpl
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
-        // Partial reimplementation to be able to break up the
-        // patch into smaller patches; does not yet do the filtering, sorting,
-        // limit or offset; this will be changed by a subsequent patch
-        // TODO REMOVE
-        BillingRecords records = getRecords(pnfsid, before, after);
-        List<P2PTransferRecord> list = records.getP2ps();
-        return new PagedList<>(list, list.size());
+        TransferRecordRequestMessage message
+                        = new TransferRecordRequestMessage(pnfsid,
+                                                           getDate(before),
+                                                           getDate(after),
+                                                           Type.P2P,
+                                                           null,
+                                                           clientPool,
+                                                           serverPool,
+                                                           client,
+                                                           limit,
+                                                           offset,
+                                                           sort);
+        message = collector.sendRecordRequest(message);
+        List<P2PTransferRecord> records = message.getRecords()
+                                                 .stream().map(P2PTransferRecord::new)
+                                                 .collect(Collectors.toList());
+        return new PagedList<P2PTransferRecord>(records, message.getTotal());
     }
 
     @Override
@@ -280,16 +302,10 @@ public class BillingInfoServiceImpl
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
-        // Partial reimplementation to be able to break up the
-        // patch into smaller patches; does not yet do the filtering, sorting,
-        // limit or offset; this will be changed by a subsequent patch
-        // TODO REMOVE
-        BillingRecords records = getRecords(pnfsid, before, after);
-        List<DoorTransferRecord> list = records.getReads();
-        return new PagedList<>(list, list.size());
+        return getDoorTransfers(Type.READ, pnfsid, before, after,
+                                limit, offset, door, pool, client, sort);
     }
-
-    @Override
+                                                              @Override
     public PagedList<HSMTransferRecord> getRestores(PnfsId pnfsid,
                                                     String before, String after,
                                                     Integer limit, int offset,
@@ -297,13 +313,8 @@ public class BillingInfoServiceImpl
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
-        // Partial reimplementation to be able to break up the
-        // patch into smaller patches; does not yet do the filtering, sorting,
-        // limit or offset; this will be changed by a subsequent patch
-        // TODO REMOVE
-        BillingRecords records = getRecords(pnfsid, before, after);
-        List<HSMTransferRecord> list = records.getRestores();
-        return new PagedList<>(list, list.size());
+        return getNearlineTransfers(Type.RESTORE, pnfsid, before, after,
+                                    limit, offset, pool, sort);
     }
 
     @Override
@@ -314,13 +325,8 @@ public class BillingInfoServiceImpl
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
-        // Partial reimplementation to be able to break up the
-        // patch into smaller patches; does not yet do the filtering, sorting,
-        // limit or offset; this will be changed by a subsequent patch
-        // TODO REMOVE
-        BillingRecords records = getRecords(pnfsid, before, after);
-        List<HSMTransferRecord> list = records.getStores();
-        return new PagedList<>(list, list.size());
+        return getNearlineTransfers(Type.STORE, pnfsid, before, after,
+                                    limit, offset, pool, sort);
     }
 
     @Override
@@ -332,13 +338,8 @@ public class BillingInfoServiceImpl
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
-        // Partial reimplementation to be able to break up the
-        // patch into smaller patches; does not yet do the filtering, sorting,
-        // limit or offset; this will be changed by a subsequent patch
-        // TODO REMOVE
-        BillingRecords records = getRecords(pnfsid, before, after);
-        List<DoorTransferRecord> list = records.getWrites();
-        return new PagedList<>(list, list.size());
+        return getDoorTransfers(Type.WRITE, pnfsid, before, after,
+                                limit, offset, door, pool, client, sort);
     }
 
     @Override
@@ -358,33 +359,6 @@ public class BillingInfoServiceImpl
         }
     }
 
-    private BillingRecords getRecords(PnfsId pnfsId, String before, String after)
-                    throws
-                    CacheException {
-        BillingRecordRequestMessage msg = new BillingRecordRequestMessage();
-        msg.setPnfsId(pnfsId);
-
-        try {
-            msg.setBefore(getDate(before));
-            msg.setAfter(getDate(after));
-        } catch (ParseException e) {
-            throw new CacheException("could not parse datetime format", e);
-        }
-
-        msg = collector.sendRecordRequest(msg);
-
-        Serializable error = msg.getErrorObject();
-
-        if (error != null) {
-            if (error instanceof CacheException) {
-                throw (CacheException) error;
-            }
-            throw new CacheException(String.valueOf(error));
-        }
-
-        return BillingInfoCollectionUtils.transform(msg);
-    }
-
     @Override
     protected void update(Map<String, Future<BillingDataRequestMessage>> data) {
         Map<String, Future<BillingDataRequestMessage>> futures = null;
@@ -396,6 +370,65 @@ public class BillingInfoServiceImpl
          * insertion into map does not need synchronization.
          */
         waitForRequests(futures);
+    }
+
+    private PagedList<DoorTransferRecord> getDoorTransfers(Type type,
+                                                           PnfsId pnfsid,
+                                                           String before,
+                                                           String after,
+                                                           Integer limit,
+                                                           int offset,
+                                                           String door,
+                                                           String pool,
+                                                           String client,
+                                                           String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException {
+        TransferRecordRequestMessage message
+                        = new TransferRecordRequestMessage(pnfsid,
+                                                           getDate(before),
+                                                           getDate(after),
+                                                           type,
+                                                           door,
+                                                           null,
+                                                           pool,
+                                                           client,
+                                                           limit,
+                                                           offset,
+                                                           sort);
+        message = collector.sendRecordRequest(message);
+        List<DoorTransferRecord> list = message.getRecords()
+                                               .stream().map(DoorTransferRecord::new)
+                                               .collect(Collectors.toList());
+        return new PagedList<>(list, list.size());
+    }
+
+    private PagedList<HSMTransferRecord> getNearlineTransfers(Type type,
+                                                              PnfsId pnfsid,
+                                                              String before,
+                                                              String after,
+                                                              Integer limit,
+                                                              int offset,
+                                                              String pool,
+                                                              String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException {
+        StorageRecordRequestMessage message
+                        = new StorageRecordRequestMessage(pnfsid,
+                                                          getDate(before),
+                                                          getDate(after),
+                                                          type,
+                                                          pool,
+                                                          limit,
+                                                          offset,
+                                                          sort);
+        message = collector.sendRecordRequest(message);
+        List<HSMTransferRecord> list = message.getRecords()
+                                              .stream().map(HSMTransferRecord::new)
+                                              .collect(Collectors.toList());
+        return new PagedList<>(list, list.size());
     }
 
     private void updateCache(BillingDataRequestMessage message) {

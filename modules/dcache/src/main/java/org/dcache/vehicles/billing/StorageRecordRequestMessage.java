@@ -57,84 +57,41 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.db.data;
+package org.dcache.vehicles.billing;
 
-import com.google.common.collect.ComparisonChain;
+import com.google.common.base.Strings;
+import java.util.Date;
+import java.util.function.Predicate;
+
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.services.billing.db.data.StorageRecord;
 
 /**
- * <p>Consolidated view information from billing and door info.</p>
+ * <p>Requests store/flush or restore/stage records for a given pnfsId.</p>
  */
-public final class TransferRecord extends RecordEntry implements Comparable<TransferRecord>{
-    private String  initiator;
-    private String  client;
-    private Long    transfersize;
-    private Integer mappeduid;
-    private Integer mappedgid;
-    private String  fqan;
-    private String  owner;
+public final class StorageRecordRequestMessage
+                extends RecordRequestMessage<StorageRecord> {
+    private static final long serialVersionUID = 2916996557348049159L;
 
-    public int compareTo(TransferRecord entry) {
-        return ComparisonChain.start()
-                              .compare(datestamp, entry.datestamp)
-                              .compare(type, entry.type)
-                              .compare(cellname, entry.cellname)
-                              .compare(initiator, entry.initiator)
-                              .result();
+    private final String pool;
+
+    public StorageRecordRequestMessage(PnfsId pnfsId,
+                                       Date before,
+                                       Date after,
+                                       Type type,
+                                       String pool,
+                                       int limit,
+                                       int offset,
+                                       String sort) {
+        super(pnfsId, before, after, type, limit, offset, sort);
+        this.pool = pool;
     }
 
-    public String getClient() {
-        return client;
-    }
-
-    public String getFqan() {
-        return fqan;
-    }
-
-    public String getInitiator() {
-        return initiator;
-    }
-
-    public Integer getMappedgid() {
-        return mappedgid;
-    }
-
-    public Integer getMappedUid() {
-        return mappeduid;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public Long getTransferSize() {
-        return transfersize;
-    }
-
-    public void setClient(String client) {
-        this.client = client;
-    }
-
-    public void setFqan(String fqan) {
-        this.fqan = fqan;
-    }
-
-    public void setInitiator(String initiator) {
-        this.initiator = initiator;
-    }
-
-    public void setMappedGid(Integer mappedgid) {
-        this.mappedgid = mappedgid;
-    }
-
-    public void setMappedUid(Integer mappeduid) {
-        this.mappeduid = mappeduid;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
-    public void setTransferSize(Long transfersize) {
-        this.transfersize = transfersize;
+    @Override
+    public Predicate<StorageRecord> filter() {
+        return (record) -> pool == null
+                        || Strings.nullToEmpty(record.getCellName())
+                                  .contains(pool);
     }
 }

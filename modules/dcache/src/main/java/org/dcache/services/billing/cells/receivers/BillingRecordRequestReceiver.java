@@ -120,27 +120,132 @@ package org.dcache.services.billing.cells.receivers;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import dmg.cells.nucleus.CellMessageReceiver;
 
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellMessageReceiver;
+
 import org.dcache.services.billing.db.IBillingInfoAccess;
+import org.dcache.services.billing.db.data.RecordEntry;
 import org.dcache.services.billing.db.data.StorageRecord;
 import org.dcache.services.billing.db.data.TransferRecord;
-import org.dcache.vehicles.billing.BillingRecordRequestMessage;
+import org.dcache.util.FieldSort;
+import org.dcache.vehicles.billing.RecordRequestMessage;
+import org.dcache.vehicles.billing.StorageRecordRequestMessage;
+import org.dcache.vehicles.billing.TransferRecordRequestMessage;
 
 /**
  * <p>Serves up record data for a given file.  An optional date range
  *    can be used to limit the search.</p>
  */
 public final class BillingRecordRequestReceiver implements CellMessageReceiver {
+    private static <R extends RecordEntry>
+            Function<FieldSort, Comparator<R>> nextComparator(Class<R> clzz) {
+        if (clzz.isAssignableFrom(TransferRecord.class)) {
+            return (sort) -> {
+                Comparator<TransferRecord> comparator;
+                switch (sort.getName()) {
+                    case "date":
+                        comparator = Comparator.comparing(TransferRecord::getDateStamp);
+                        break;
+                    case "pool":
+                        comparator = Comparator.comparing(TransferRecord::getCellName);
+                        break;
+                    case "door":
+                        comparator = Comparator.comparing(TransferRecord::getInitiator);
+                        break;
+                    case "serverPool":
+                        comparator = Comparator.comparing(TransferRecord::getCellName);
+                        break;
+                    case "clientPool":
+                        comparator = Comparator.comparing(TransferRecord::getInitiator);
+                        break;
+                    case "client":
+                        comparator = Comparator.comparing(TransferRecord::getClient);
+                        break;
+                    case "connected":
+                        comparator = Comparator.comparing(TransferRecord::getConnectionTime);
+                        break;
+                    case "queued":
+                        comparator = Comparator.comparing(TransferRecord::getQueuedTime);
+                        break;
+                    case "trasferred":
+                        comparator = Comparator.comparing(TransferRecord::getTransferSize);
+                        break;
+                    case "error":
+                        comparator = Comparator.comparing(TransferRecord::getErrorMessage);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(
+                                        "sort field " + sort.getName()
+                                                        + " not supported.");
+                }
+
+                if (sort.isReverse()) {
+                    return (Comparator<R>)comparator.reversed();
+                }
+
+                return (Comparator<R>)comparator;
+            };
+        } else if (clzz.isAssignableFrom(StorageRecord.class)) {
+            return (sort) -> {
+                Comparator<StorageRecord> comparator;
+                switch (sort.getName()) {
+                    case "date":
+                        comparator = Comparator.comparing(StorageRecord::getDateStamp);
+                        break;
+                    case "pool":
+                        comparator = Comparator.comparing(StorageRecord::getCellName);
+                        break;
+                    case "connected":
+                        comparator = Comparator.comparing(StorageRecord::getConnectionTime);
+                        break;
+                    case "queued":
+                        comparator = Comparator.comparing(StorageRecord::getQueuedTime);
+                        break;
+                    case "error":
+                        comparator = Comparator.comparing(StorageRecord::getErrorMessage);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(
+                                        "sort field " + sort.getName()
+                                                        + " not supported.");
+                }
+
+                if (sort.isReverse()) {
+                    return (Comparator<R>)comparator.reversed();
+                }
+
+                return (Comparator<R>) comparator;
+            };
+        }
+
+        throw new IllegalArgumentException(
+                        "record entry class " + clzz + " not supported.");
+    }
+
     private IBillingInfoAccess access;
 
-    /**
-     * <p>Synchronous.  Returns data specified by a histogram request.</p>
-     */
-    public BillingRecordRequestMessage messageArrived(BillingRecordRequestMessage request) {
-        request.clearReply();
+    public TransferRecordRequestMessage messageArrived(
+                    TransferRecordRequestMessage request) {
+        return process(request, TransferRecord.class);
+    }
+
+    public StorageRecordRequestMessage messageArrived(
+                    StorageRecordRequestMessage request) {
+        return process(request, StorageRecord.class);
+    }
+
+    public void setAccess(IBillingInfoAccess access) {
+        this.access = access;
+    }
+
+    private <R extends RecordEntry & Comparable<R>, M extends RecordRequestMessage<R>>
+            M process(M request, Class<R> clzz) {
 
         if (access == null) {
             request.setFailed(-1,
@@ -149,54 +254,45 @@ public final class BillingRecordRequestReceiver implements CellMessageReceiver {
             return request;
         }
 
-        PnfsId pnfsId = request.getPnfsId();
+        PnfsId pnfsid = request.getPnfsId();
 
-        if (pnfsId == null) {
+        if (pnfsid == null) {
             request.setFailed(-1,
                               "PnfsId must be provided.");
             return request;
         }
 
-        StringBuilder filter = new StringBuilder();
+        request.clearReply();
+
+        StringBuilder query = new StringBuilder();
         StringBuilder params = new StringBuilder();
-        Collection<Object> values = new ArrayList<>();
+        List<Object> values = new ArrayList<>();
 
-        filter.append("pnfsid == pnfsid1");
-        params.append("java.lang.String pnfsid1");
-        values.add(pnfsId.toString());
+        request.buildDAOQuery(query, params, values);
 
-        Date before = request.getBefore();
+        Collection<R> result = access.get(clzz,
+                                          query.toString(),
+                                          params.toString(),
+                                          values.toArray());
 
-        if (before != null) {
-            filter.append(" && datestamp <= before");
-            params.append(", java.util.Date before");
-            values.add(before);
-        }
+        Comparator<R> sorter = FieldSort.getSorter(request.sortList(),
+                                                   nextComparator(clzz));
+        List<R> records = result.stream()
+                                .filter(request.filter())
+                                .sorted(sorter)
+                                .collect(Collectors.toList());
 
-        Date after = request.getAfter();
+        request.setTotal(records.size());
 
-        if (after != null) {
-            filter.append(" && datestamp >= after");
-            params.append(", java.util.Date after");
-            values.add(after);
-        }
-
-        request.setTransferRecords(access.get(TransferRecord.class,
-                   filter.toString(),
-                   params.toString(),
-                   values.toArray()));
-
-        request.setStorageRecords(access.get(StorageRecord.class,
-                                              filter.toString(),
-                                              params.toString(),
-                                              values.toArray()));
+        int offset = request.getOffset();
+        int limit = request.getLimit();
+        request.setRecords(records.stream()
+                                  .skip(offset)
+                                  .limit(limit)
+                                  .collect(Collectors.toList()));
 
         request.setSucceeded();
 
         return request;
-    }
-
-    public void setAccess(IBillingInfoAccess access) {
-        this.access = access;
     }
 }
