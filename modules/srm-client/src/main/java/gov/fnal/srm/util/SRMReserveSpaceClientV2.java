@@ -93,6 +93,7 @@ import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfString;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
@@ -103,6 +104,7 @@ import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TAccessPattern;
 import org.dcache.srm.v2_2.TConnectionType;
+import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -191,6 +193,10 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                     tp.setArrayOfTransferProtocols(new ArrayOfString(configuration.getProtocols()));
                 }
                 request.setTransferParameters(tp);
+            }
+            if (configuration.getLinkgroup() != null) {
+                TExtraInfo linkgroupSelector = new TExtraInfo("linkgroup", configuration.getLinkgroup());
+                request.setStorageSystemInfo(new ArrayOfTExtraInfo(new TExtraInfo[]{linkgroupSelector}));
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);

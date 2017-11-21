@@ -1634,6 +1634,25 @@ public class Configuration extends ConnectionConfiguration {
         this.cksm_value = value;
     }
 
+    @Option(
+            name = "linkgroup",
+            description = "the name of the linkgroup from which space will be "
+                    + "reserved.  This value is honoured by dCache v3.2 or "
+                    + "newer; older dCache instances and non-dCache SRM "
+                    + "instances will ignore this value.",
+            required = false,
+            log = true
+    )
+    private String linkgroup;
+
+    public String getLinkgroup() {
+        return linkgroup;
+    }
+
+    public void setLinkgroup(String value) {
+        linkgroup = value;
+    }
+
     private String arrayOfRequestTokens[];
 
     @Option(
@@ -1940,7 +1959,8 @@ public class Configuration extends ConnectionConfiguration {
                     "connection_type",
                     "desired_size",
                     "guaranteed_size",
-            "lifetime")+
+                    "lifetime",
+                    "linkgroup")+
             printMandatoryOptions("retention_policy","guaranteed_size");
             return
             "\nUsage: srm-reserve-space [command line options]  srmUrl\n\n"+
