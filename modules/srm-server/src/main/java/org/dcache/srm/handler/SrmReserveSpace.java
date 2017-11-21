@@ -4,6 +4,12 @@ import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -16,6 +22,7 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.SrmReserveSpaceRequest;
 import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -83,6 +90,9 @@ public class SrmReserveSpace
         String userSpaceTokenDescription = request.getUserSpaceTokenDescription();
         long lifetime = getDesiredLifetimeOfReservedSpace(request, configuration.getDefaultSpaceLifetime());
         long requestLifetime = getRequestLifetime(lifetime);
+        Map<String,String> extraInfo = request.getStorageSystemInfo() == null
+                ? Collections.emptyMap()
+                : asMap(request.getStorageSystemInfo().getExtraInfoArray());
         try {
             ReserveSpaceRequest reserveRequest =
                     new ReserveSpaceRequest(
@@ -94,7 +104,8 @@ public class SrmReserveSpace
                             retentionPolicy,
                             accessLatency,
                             userSpaceTokenDescription,
-                            client_host);
+                            client_host,
+                            extraInfo);
             reserveRequest.applyJdc();
             srm.schedule(reserveRequest);
             return reserveRequest.getSrmReserveSpaceResponse();
@@ -104,6 +115,16 @@ public class SrmReserveSpace
             LOGGER.error("Failed to schedule srmReserveSpace: {}", e);
             throw new SRMException("Failed to schedule operation");
         }
+    }
+
+    private Map<String,String> asMap(TExtraInfo[] extraInfo)
+    {
+        if (extraInfo == null || extraInfo.length == 0) {
+            return Collections.emptyMap();
+        }
+
+        return Arrays.stream(extraInfo)
+                .collect(Collectors.toMap(TExtraInfo::getKey, TExtraInfo::getValue));
     }
 
     private static long getRequestLifetime(long lifetime)

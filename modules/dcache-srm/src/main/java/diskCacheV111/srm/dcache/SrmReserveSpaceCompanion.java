@@ -142,6 +142,7 @@ public final class SrmReserveSpaceCompanion
             String retentionPolicyString,
             String accessLatencyString,
             String description,
+            String linkgroup,
             SrmReserveSpaceCallback callback,
             CellStub spaceManagerStub,
             Executor executor)
@@ -173,6 +174,7 @@ public final class SrmReserveSpaceCompanion
 
         Reserve reserve =
                 new Reserve(
+                        linkgroup,
                         sizeInBytes,
                         retentionPolicy,
                         accessLatency,

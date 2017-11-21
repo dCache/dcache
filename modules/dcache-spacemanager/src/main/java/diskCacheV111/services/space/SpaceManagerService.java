@@ -706,6 +706,7 @@ public final class SpaceManagerService
             throws DataAccessException, SpaceException
     {
         Space space = reserveSpace(reserve.getSubject(),
+                                   reserve.getLinkgroupName(),
                                    reserve.getSizeInBytes(),
                                    reserve.getAccessLatency(),
                                    reserve.getRetentionPolicy(),
@@ -855,6 +856,7 @@ public final class SpaceManagerService
     }
 
     private Space reserveSpace(Subject subject,
+                               String linkgroupName,
                                long sizeInBytes,
                                AccessLatency latency,
                                RetentionPolicy policy,
@@ -862,8 +864,39 @@ public final class SpaceManagerService
                                String description)
             throws DataAccessException, SpaceException
     {
-        LOGGER.trace("reserveSpace(subject={}, sz={}, latency={}, policy={}, lifetime={}, description={})",
-                     subject.getPrincipals(), sizeInBytes, latency, policy, lifetime, description);
+        LOGGER.trace("reserveSpace(subject={}, linkgroup={}, sz={}, latency={}, policy={}, lifetime={}, description={})",
+                     subject.getPrincipals(), linkgroupName, sizeInBytes, latency, policy, lifetime, description);
+
+        if (linkgroupName != null) {
+            LinkGroup linkgroup;
+            try {
+                linkgroup = db.getLinkGroupByName(linkgroupName);
+            } catch (EmptyResultDataAccessException e) {
+                throw new NoFreeSpaceException("No such linkgroup: " + linkgroupName);
+            }
+            VOInfo voInfo = authorizationPolicy.checkReservePermission(subject, linkgroup);
+            if (!linkgroup.isAllowed(latency)) {
+                throw new NoFreeSpaceException("linkgroup " + linkgroupName + " does not support AccessLatency " + latency);
+            }
+            if (!linkgroup.isAllowed(policy)) {
+                throw new NoFreeSpaceException("linkgroup " + linkgroupName + " does not support RetentionPolicy " + policy);
+            }
+            if (linkgroup.getAvailableSpace() < sizeInBytes) {
+                throw new NoFreeSpaceException("linkgroup " + linkgroupName + " does not have sufficient capacity to reserver " + sizeInBytes + " bytes");
+            }
+            return db.insertSpace(voInfo.getVoGroup(),
+                      voInfo.getVoRole(),
+                      policy,
+                      latency,
+                      linkgroup.getId(),
+                      sizeInBytes,
+                      lifetime,
+                      description,
+                      SpaceState.RESERVED,
+                      0,
+                      0);
+        }
+
         List<LinkGroup> linkGroups =
                 db.get(db.linkGroups()
                                .allowsAccessLatency(latency)

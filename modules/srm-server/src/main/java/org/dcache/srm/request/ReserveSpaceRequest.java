@@ -76,6 +76,7 @@ import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMInvalidRequestException;
@@ -113,6 +114,7 @@ public final class ReserveSpaceRequest extends Request {
     private long sizeInBytes ;
     private final TRetentionPolicy retentionPolicy;
     private final TAccessLatency accessLatency;
+    private final Map<String,String> extraInfo;
     private String spaceToken;
     private long spaceReservationLifetime;
 
@@ -127,13 +129,15 @@ public final class ReserveSpaceRequest extends Request {
             TRetentionPolicy retentionPolicy,
             TAccessLatency accessLatency,
             String description,
-            String clienthost) {
+            String clienthost,
+            Map<String,String> extraInfo) {
         super(user, max_update_period, lifetime, description, clienthost);
 
         this.sizeInBytes = sizeInBytes ;
         this.retentionPolicy = retentionPolicy;
         this.accessLatency = accessLatency;
         this.spaceReservationLifetime = spaceReservationLifetime;
+        this.extraInfo = extraInfo;
     }
 
     /** this constructor is used for restoring the previously
@@ -161,6 +165,7 @@ public final class ReserveSpaceRequest extends Request {
             String accessLatency,
             String description,
             String clienthost,
+            Map<String,String> extraInfo,
             String statusCodeString) {
                 super(id,
                       nextJobId,
@@ -184,6 +189,7 @@ public final class ReserveSpaceRequest extends Request {
         this.retentionPolicy = retentionPolicy == null?null: TRetentionPolicy.fromString(retentionPolicy);
         this.accessLatency = accessLatency == null ?null :TAccessLatency.fromString(accessLatency);
         this.spaceReservationLifetime = spaceReservationLifetime;
+        this.extraInfo = extraInfo;
 
         logger.debug("restored");
     }
@@ -250,6 +256,7 @@ public final class ReserveSpaceRequest extends Request {
                     retentionPolicy == null ? null : retentionPolicy.getValue(),
                     accessLatency == null ? null : accessLatency.getValue(),
                     getDescription(),
+                    extraInfo,
                     callbacks);
         }
     }
@@ -465,6 +472,10 @@ public final class ReserveSpaceRequest extends Request {
 
     public TAccessLatency getAccessLatency() {
         return accessLatency;
+    }
+
+    public Map<String,String> getExtraInfo() {
+        return extraInfo;
     }
 
     public String getSpaceToken() {

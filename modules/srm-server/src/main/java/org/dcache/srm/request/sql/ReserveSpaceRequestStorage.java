@@ -6,18 +6,29 @@
 
 package org.dcache.srm.request.sql;
 
+import com.google.common.base.Splitter;
+import com.google.common.escape.Escaper;
+import com.google.common.net.PercentEscaper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.request.Job;
-import org.dcache.srm.request.Request;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.util.Configuration;
 
@@ -26,6 +37,8 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSpaceRequest> {
+    private static final Logger LOG = LoggerFactory.getLogger(ReserveSpaceRequestStorage.class);
+
     public static final String TABLE_NAME ="reservespacerequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
@@ -61,10 +74,13 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     "RESERVATIONLIFETIME, "+
     "SPACETOKEN, "+
     "RETENTIONPOLICY, "+
-    "ACCESSLATENCY ) " +
+    "ACCESSLATENCY, " +
+    "EXTRAINFO ) "+
     "VALUES (?,?,?,?,?,?,?,?,?,?,?," +//Job
                 "?,?,?,?,?,?,?," +//Request
-                "?,?,?)";
+                "?,?,?,?)";
+
+    private final Escaper extraInfoEscaper = new PercentEscaper("./\\;:'#~@[]{}-_+ ", false);
 
 
     @Override
@@ -101,7 +117,8 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                     rsr.getSpaceReservationLifetime(),
                                     rsr.getSpaceToken(),
                                     retentionPolicyValue,
-                                    accessLatencyValue);
+                                    accessLatencyValue,
+                                    encodeExtraInfo(rsr.getExtraInfo()));
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -116,7 +133,8 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                 " RESERVATIONLIFETIME=?, "+
                 " SPACETOKEN=?, "+
                 " RETENTIONPOLICY=?,"+
-                " ACCESSLATENCY=?" +
+                " ACCESSLATENCY=?," +
+                " EXTRAINFO=?" +
                 " WHERE ID=?";
     @Override
     public PreparedStatement getUpdateStatement(Connection connection,
@@ -153,7 +171,42 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                     rsr.getSpaceToken(),
                                     retentionPolicyValue,
                                     accessLatencyValue,
+                                    encodeExtraInfo(rsr.getExtraInfo()),
                                     rsr.getId());
+    }
+
+    private String encodeExtraInfo(Map<String,String> extraInfo)
+    {
+        if (extraInfo == null || extraInfo.isEmpty()) {
+            return null;
+        }
+
+        return extraInfo.entrySet().stream()
+                .map(e -> extraInfoEscaper.escape(e.getKey()) + '=' + extraInfoEscaper.escape(e.getValue()))
+                .collect(Collectors.joining(","));
+    }
+
+    private Map<String,String> decodeExtraInfo(String value)
+    {
+        if (value == null || value.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String,String> items = new HashMap<>();
+        for (String item : Splitter.on(',').split(value)) {
+            List<String> elements = Splitter.on('=').limit(2).splitToList(item);
+            if (elements.size() == 2) {
+                try {
+                    items.put(URLDecoder.decode(elements.get(0), "UTF-8"),
+                            URLDecoder.decode(elements.get(1), "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    LOG.error("JVM does not support UTF-8", e);
+                }
+            } else {
+                LOG.error("Skipping malformed extraInfo item: {}", item);
+            }
+        }
+        return items;
     }
 
     /** Creates a new instance of FileRequestStorage */
@@ -195,6 +248,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         String SPACETOKEN = set.getString(next_index++);
         String RETENTIONPOLICY = set.getString(next_index++);
         String ACCESSLATENCY = set.getString(next_index++);
+        Map<String,String> extraInfo = decodeExtraInfo(set.getString(next_index++));
         return new ReserveSpaceRequest(
             ID,
             NEXTJOBID ,
@@ -215,56 +269,13 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                 ACCESSLATENCY,
                 DESCRIPTION,
                 CLIENTHOST,
+                extraInfo,
                 STATUSCODE);
     }
 
     @Override
     public String getTableName() {
         return TABLE_NAME;
-    }
-
-
-    public void getUpdateAssignements(Request request,StringBuffer sb) {
-        if(request == null || !(request instanceof ReserveSpaceRequest)) {
-            throw new IllegalArgumentException("Request is not ReserveSpaceRequest" );
-        }
-        ReserveSpaceRequest r = (ReserveSpaceRequest)request;
-        /*
-         *additional fields:
-                 ","+
-        ","+
-        "CREDENTIALID "+  longType+
-        ","+
-        "SIZEINBYTES "+  longType+
-        ","+
-        "RESERVATIONLIFETIME "+  longType+
-        ","+
-         "SPACETOKEN "+  stringType+
-         ","+
-        "RETENTIONPOLICY "+  stringType+
-        ","+
-        "ACCESSLATENCY "+  stringType+
-        ","+
-        "DESCRIPTION "+  stringType;
-        */
-        sb.append(", SIZEINBYTES = ").append( r.getSizeInBytes());
-        sb.append(", RESERVATIONLIFETIME = ").append( r.getSpaceReservationLifetime());
-        String spaceToken = r.getSpaceToken();
-        if(spaceToken ==null){
-         sb.append(", SPACETOKEN =NULL");
-        } else {
-         sb.append(", SPACETOKEN = \'").append( spaceToken).append('\'');
-        }
-        if(r.getRetentionPolicy() ==null) {
-         sb.append(", RETENTIONPOLICY =NULL");
-        } else {
-         sb.append(", RETENTIONPOLICY = \'").append( r.getRetentionPolicy().getValue()).append('\'');
-        }
-        if(r.getAccessLatency() ==null) {
-         sb.append(", ACCESSLATENCY =NULL");
-        } else {
-         sb.append(", ACCESSLATENCY = \'").append( r.getAccessLatency().getValue()).append('\'');
-        }
     }
 }
 
