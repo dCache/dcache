@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.pool.nearline.json;
 
+import com.google.common.collect.ComparisonChain;
 import java.io.Serializable;
 
 import diskCacheV111.util.PnfsId;
@@ -67,7 +68,7 @@ import diskCacheV111.util.PnfsId;
  * <p>Information derived from the
  * {@link org.dcache.pool.nearline.NearlineStorageHandler}.</p>
  */
-public class NearlineData implements Serializable {
+public class NearlineData implements Comparable<NearlineData>, Serializable {
     private static final long serialVersionUID = -3519944641370737320L;
     private String type;
     private String state;
@@ -79,6 +80,17 @@ public class NearlineData implements Serializable {
     private long   activated;
     private long   running;
     private long   totalElapsed;
+
+    @Override
+    public int compareTo(NearlineData o) {
+        return ComparisonChain.start()
+                              .compare(created, o.created)
+                              .compare(activated, o.activated)
+                              .compare(state, o.state)
+                              .compare(storageClass, o.storageClass)
+                              .compare(pnfsId, o.pnfsId)
+                              .result();
+    }
 
     public long getActivated() {
         return activated;

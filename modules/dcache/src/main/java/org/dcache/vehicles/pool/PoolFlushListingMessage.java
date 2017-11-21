@@ -59,11 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.pool;
 
-import org.dcache.vehicles.PoolNearlineListingMessage;
-
 /**
  * <p>Request for listings corresponding to st ls.</p>
  */
 public final class PoolFlushListingMessage extends PoolNearlineListingMessage {
     private static final long serialVersionUID = 172264031998903006L;
+    public PoolFlushListingMessage(int offset, int limit, String pnfsid,
+                                   String state, String storageClass,
+                                   String sort) {
+        super(offset, limit, pnfsid, state, storageClass, sort);
+    }
 }

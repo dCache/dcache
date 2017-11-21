@@ -28,10 +28,6 @@ import com.google.common.util.concurrent.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -44,6 +40,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -59,18 +56,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.HsmLocationExtractorFactory;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.StorageInfoMessage;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
@@ -82,6 +72,17 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.HsmLocationExtractorFactory;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfoMessage;
 
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -278,34 +279,40 @@ public class NearlineStorageHandler
     /**
      *  <p> In support of front-end information collection.</p>
      */
-    public List<NearlineData> getFlushRequests(int limit) {
-        return Ordering.natural().sortedCopy(getRequests(flushRequests.requests.values(),
-                                                         limit))
-                                 .stream()
-                                 .map(AbstractRequest::toNearlineData)
-                                 .collect(Collectors.toList());
+    public List<NearlineData> getFlushRequests(Predicate<NearlineData> filter,
+                                               Comparator<NearlineData> sorter) {
+        return flushRequests.requests.values()
+                                     .stream()
+                                     .map(AbstractRequest::toNearlineData)
+                                     .filter(filter)
+                                     .sorted(sorter)
+                                     .collect(Collectors.toList());
     }
 
     /**
      *  <p> In support of front-end information collection.</p>
      */
-    public List<NearlineData> getStageRequests(int limit) {
-        return Ordering.natural().sortedCopy(getRequests(stageRequests.requests.values(),
-                                                         limit))
-                                 .stream()
-                                 .map(AbstractRequest::toNearlineData)
-                                 .collect(Collectors.toList());
+    public List<NearlineData> getStageRequests(Predicate<NearlineData> filter,
+                                               Comparator<NearlineData> sorter) {
+        return stageRequests.requests.values()
+                                     .stream()
+                                     .map(AbstractRequest::toNearlineData)
+                                     .filter(filter)
+                                     .sorted(sorter)
+                                     .collect(Collectors.toList());
     }
 
     /**
      *  <p> In support of front-end information collection.</p>
      */
-    public List<NearlineData> getRemoveRequests(int limit) {
-        return Ordering.natural().sortedCopy(getRequests(removeRequests.requests.values(),
-                                                         limit))
-                                 .stream()
-                                 .map(AbstractRequest::toNearlineData)
-                                 .collect(Collectors.toList());
+    public List<NearlineData> getRemoveRequests(Predicate<NearlineData> filter,
+                                                Comparator<NearlineData> sorter) {
+        return removeRequests.requests.values()
+                                      .stream()
+                                      .map(AbstractRequest::toNearlineData)
+                                      .filter(filter)
+                                      .sorted(sorter)
+                                      .collect(Collectors.toList());
     }
 
     /**

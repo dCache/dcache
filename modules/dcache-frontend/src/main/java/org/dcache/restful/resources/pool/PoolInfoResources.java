@@ -62,6 +62,10 @@ package org.dcache.restful.resources.pool;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
 import org.springframework.stereotype.Component;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -82,10 +86,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.pools.PoolV2Mode;
@@ -94,8 +97,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.nearline.json.NearlineData;
@@ -246,7 +248,7 @@ public final class PoolInfoResources {
 
         limit = limit == null ? Integer.MAX_VALUE : limit;
 
-        String[] type = typeList == null ? new String[0] :
+        String[] type = typeList == null ? new String[0]:
                         typeList.split(",");
         PagedList<MoverData> pagedList;
 
@@ -315,7 +317,7 @@ public final class PoolInfoResources {
         int count = 0;
 
         try {
-            String[] types = typeList == null ? new String[0] :
+            String[] types = typeList == null ? new String[0]:
                              typeList.split(",");
             for (String type: types) {
                 switch (type) {

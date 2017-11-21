@@ -60,21 +60,23 @@ documents or software obtained from this server.
 package org.dcache.pool;
 
 import org.springframework.beans.factory.annotation.Required;
-
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.function.Supplier;
-
-import diskCacheV111.pools.json.PoolCostData;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
+import java.util.stream.Collectors;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.Reply;
+
+import diskCacheV111.pools.json.PoolCostData;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
 
 import org.dcache.cells.MessageReply;
 import org.dcache.cells.json.CellData;
@@ -90,9 +92,11 @@ import org.dcache.pool.json.PoolData;
 import org.dcache.pool.migration.json.MigrationData;
 import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.nearline.NearlineStorageHandler;
+import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.pool.p2p.json.P2PData;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.json.RepositoryData;
+import org.dcache.util.FieldSort;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 import org.dcache.vehicles.pool.PoolDataRequestMessage;
 import org.dcache.vehicles.pool.PoolFlushListingMessage;
@@ -112,6 +116,101 @@ import org.dcache.vehicles.pool.PoolStageListingMessage;
  */
 public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 CellInfoAware {
+    private static Function<FieldSort, Comparator<MoverData>> nextMoverComparator() {
+        return (sort) -> {
+            Comparator<MoverData> comparator;
+
+            switch (sort.getName()) {
+                case "pnfsid":
+                    comparator = Comparator.comparing(MoverData::getPnfsId);
+                    break;
+                case "queue":
+                    comparator = Comparator.comparing(MoverData::getQueue);
+                    break;
+                case "state":
+                    comparator = Comparator.comparing(MoverData::getState);
+                    break;
+                case "mode":
+                    comparator = Comparator.comparing(MoverData::getMode);
+                    break;
+                case "door":
+                    comparator = Comparator.comparing(MoverData::getDoor);
+                    break;
+                case "storageClass":
+                    comparator = Comparator.comparing(MoverData::getStorageClass);
+                    break;
+                case "bytes":
+                    comparator = Comparator.comparing(MoverData::getBytes);
+                    break;
+                case "timeInSeconds":
+                    comparator = Comparator.comparing(MoverData::getTimeInSeconds);
+                    break;
+                case "submitTime":
+                    comparator = Comparator.comparing(MoverData::getSubmitTime);
+                    break;
+                case "startTime":
+                    comparator = Comparator.comparing(MoverData::getStartTime);
+                    break;
+                case "lastModified":
+                    comparator = Comparator.comparing(MoverData::getLastModified);
+                    break;
+                case "moverId":
+                    comparator = Comparator.comparing(MoverData::getMoverId);
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                                    "sort field " + sort.getName()
+                                                    + " not supported.");
+            }
+
+            if (sort.isReverse()) {
+                return comparator.reversed();
+            }
+
+            return comparator;
+        };
+    }
+
+    private static Function<FieldSort, Comparator<NearlineData>> nextNearlineComparator() {
+        return (sort) -> {
+            Comparator<NearlineData> comparator;
+
+            switch (sort.getName()) {
+                case "pnfsid":
+                    comparator = Comparator.comparing(NearlineData::getPnfsId);
+                    break;
+                case "state":
+                    comparator = Comparator.comparing(NearlineData::getState);
+                    break;
+                case "class":
+                    comparator = Comparator.comparing(NearlineData::getStorageClass);
+                    break;
+                case "created":
+                    comparator = Comparator.comparing(NearlineData::getCreated);
+                    break;
+                case "activated":
+                    comparator = Comparator.comparing(NearlineData::getActivated);
+                    break;
+                case "totalElapsed":
+                    comparator = Comparator.comparing(NearlineData::getTotalElapsed);
+                    break;
+                case "running":
+                    comparator = Comparator.comparing(NearlineData::getRunning);
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                                    "sort field " + sort.getName()
+                                                    + " not supported.");
+            }
+
+            if (sort.isReverse()) {
+                return comparator.reversed();
+            }
+
+            return comparator;
+        };
+    }
+
     private PoolDataBeanProvider<ChecksumModuleData>    checksumModule;
     private PoolDataBeanProvider<FlushControllerData>   flushController;
     private PoolDataBeanProvider<HSMFlushQManagerData>  hsmFlushQueueManager;
@@ -208,15 +307,25 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
-                List<MoverData> data = new ArrayList<>();
-                queueManager.queues()
-                            .stream()
-                            .filter((q) -> !"p2p".equalsIgnoreCase(q.getName()))
-                            .flatMap((q) -> q.getMoverData(info.getLimit()).stream())
-                            .forEach((d) -> {
-                                data.add(d);
-                            });
-                info.setData(data);
+                Comparator<MoverData> sorter
+                                = FieldSort.getSorter(info.sortList(),
+                                                      nextMoverComparator());
+                List<MoverData> data =
+                                queueManager.queues()
+                                            .stream()
+                                            .filter((q) -> !"p2p".equalsIgnoreCase(
+                                                            q.getName()))
+                                            .flatMap((q) -> q.getMoverData(
+                                                            info.filter(),
+                                                            sorter).stream())
+                                            .collect(Collectors.toList());
+                info.setTotal(data.size());
+                int offset = info.getOffset();
+                int limit = info.getLimit();
+                info.setData(data.stream()
+                                 .skip(offset)
+                                 .limit(limit)
+                                 .collect(Collectors.toList()));
                 reply.reply(info);
             } catch (Exception e) {
                 reply.fail(info, e);
@@ -233,22 +342,41 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
+                Comparator<MoverData> sorter
+                                = FieldSort.getSorter(info.sortList(),
+                                                      nextMoverComparator());
                 List<MoverData> data = new ArrayList<>();
-                int limit = info.getLimit();
-                queueManager.queues()
-                            .stream()
-                            .filter((q) -> "p2p".equalsIgnoreCase(q.getName()))
-                            .flatMap((q) -> q.getMoverData(limit).stream())
-                            .forEach((d) -> {
-                                d.setQueue("CLIENT");
-                                data.add(d);
-                            });
-                queueManager.getPoolToPoolQueue().getMoverData(limit)
-                            .stream()
-                            .forEach((d) -> {
-                                d.setQueue("SERVER");
-                                data.add(d);
-                            });
+
+                if (info.isClient()) {
+                    queueManager.queues()
+                                .stream()
+                                .filter((q) -> "p2p".equalsIgnoreCase(q.getName()))
+                                .flatMap((q) -> q.getMoverData(info.filter(),
+                                                               sorter).stream())
+                                .forEach((d) -> {
+                                    d.setQueue("CLIENT");
+                                    data.add(d);
+                                });
+                }
+
+                if (info.isServer()) {
+                    queueManager.getPoolToPoolQueue()
+                                .getMoverData(info.filter(),
+                                              sorter)
+                                .stream()
+                                .forEach((d) -> {
+                                    d.setQueue("SERVER");
+                                    data.add(d);
+                                });
+                }
+
+                info.setTotal(data.size());
+                int offset = info.getOffset();
+                int limit  = info.getLimit();
+                info.setData(data.stream()
+                                 .skip(offset)
+                                 .limit(limit)
+                                 .collect(Collectors.toList()));
                 info.setData(data);
                 reply.reply(info);
             } catch (Exception e) {
@@ -265,7 +393,19 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
-                info.setData(storageHandler.getFlushRequests(info.getLimit()));
+                Comparator<NearlineData> sorter
+                                = FieldSort.getSorter(info.sortList(),
+                                                      nextNearlineComparator());
+                List<NearlineData> data
+                                = storageHandler.getFlushRequests(info.filter(),
+                                                                  sorter);
+                info.setTotal(data.size());
+                int offset = info.getOffset();
+                int limit  = info.getLimit();
+                info.setData(data.stream()
+                                 .skip(offset)
+                                 .limit(limit)
+                                 .collect(Collectors.toList()));
                 reply.reply(info);
             } catch (Exception e) {
                 reply.fail(info, e);
@@ -281,7 +421,19 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
-                info.setData(storageHandler.getStageRequests(info.getLimit()));
+                Comparator<NearlineData> sorter
+                                = FieldSort.getSorter(info.sortList(),
+                                                      nextNearlineComparator());
+                List<NearlineData> data
+                                = storageHandler.getStageRequests(info.filter(),
+                                                                  sorter);
+                info.setTotal(data.size());
+                int offset = info.getOffset();
+                int limit  = info.getLimit();
+                info.setData(data.stream()
+                                 .skip(offset)
+                                 .limit(limit)
+                                 .collect(Collectors.toList()));
                 reply.reply(info);
             } catch (Exception e) {
                 reply.fail(info, e);
@@ -297,7 +449,19 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
-                info.setData(storageHandler.getRemoveRequests(info.getLimit()));
+                Comparator<NearlineData> sorter
+                                = FieldSort.getSorter(info.sortList(),
+                                                      nextNearlineComparator());
+                List<NearlineData> data
+                                = storageHandler.getRemoveRequests(info.filter(),
+                                                                   sorter);
+                info.setTotal(data.size());
+                int offset = info.getOffset();
+                int limit  = info.getLimit();
+                info.setData(data.stream()
+                                 .skip(offset)
+                                 .limit(limit)
+                                 .collect(Collectors.toList()));
                 reply.reply(info);
             } catch (Exception e) {
                 reply.fail(info, e);

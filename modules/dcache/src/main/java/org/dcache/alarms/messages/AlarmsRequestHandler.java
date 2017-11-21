@@ -146,7 +146,7 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
                         (entry) -> severity == null || AlarmPriority.get(entry.getSeverity()).name()
                                                                     .contains(severity);
         Predicate<LogEntry> matchesType =
-                        (entry) -> type == null || Strings.nullToEmpty(entry.getHost())
+                        (entry) -> type == null || Strings.nullToEmpty(entry.getType())
                                                           .contains(type);
         Predicate<LogEntry> matchesHost =
                         (entry) -> host == null || Strings.nullToEmpty(entry.getHost())

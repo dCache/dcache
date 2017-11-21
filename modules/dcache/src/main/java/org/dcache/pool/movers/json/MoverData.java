@@ -59,18 +59,19 @@ documents or software obtained from this server.
  */
 package org.dcache.pool.movers.json;
 
+import com.google.common.collect.ComparisonChain;
 import java.io.Serializable;
 
 /**
  * <p>Information derived from the
  * {@link org.dcache.pool.classic.MoverRequestScheduler}.</p>
  */
-public class MoverData implements Serializable {
+public class MoverData implements Comparable<MoverData>, Serializable {
     private static final long serialVersionUID = 5130958721608671842L;
-    private String pnfsId;
-    private String queue;
-    private String mode;
-    private String door;
+    private String  pnfsId;
+    private String  queue;
+    private String  mode;
+    private String  door;
     private String  storageClass;
     private String  state;
     private Long    bytes;
@@ -79,6 +80,17 @@ public class MoverData implements Serializable {
     private Long    submitTime;
     private Long    lastModified;
     private Integer moverId;
+
+    @Override
+    public int compareTo(MoverData o) {
+        return ComparisonChain.start()
+                              .compare(startTime, o.startTime)
+                              .compare(lastModified, o.lastModified)
+                              .compare(state, o.state)
+                              .compare(door, o.door)
+                              .compare(pnfsId, o.pnfsId)
+                              .result();
+    }
 
     public Long getBytes() {
         return bytes;

@@ -65,4 +65,26 @@ package org.dcache.vehicles.pool;
  */
 public final class PoolP2PListingMessage extends PoolMoverListingMessage {
     private static final long serialVersionUID = 4186125637867588201L;
+
+    public PoolP2PListingMessage(int offset, int limit, String pnfsid,
+                                 String queue, String state,
+                                 String storageClass, String sort) {
+        super(offset,
+              limit,
+              pnfsid,
+              queue,
+              state,
+              null,
+              null,
+              storageClass,
+              sort);
+    }
+
+    public boolean isClient() {
+        return queue == null || "CLIENT".contains(queue);
+    }
+
+    public boolean isServer() {
+        return queue == null || "SERVER".contains(queue);
+    }
 }

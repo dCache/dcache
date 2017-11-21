@@ -59,33 +59,67 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.pool;
 
-import java.util.List;
+import com.google.common.base.Strings;
+import java.util.function.Predicate;
 
-import diskCacheV111.vehicles.Message;
 import org.dcache.pool.movers.json.MoverData;
 
 /**
  * <p>Request for listings corresponding to mover ls, but excluding the
  * p2p client queue.</p>
  */
-public class PoolMoverListingMessage extends Message {
+public class PoolMoverListingMessage extends
+                PoolActivityListingMessage<MoverData> {
     private static final long serialVersionUID = -3586502361789998143L;
-    private List<MoverData> data;
-    private int limit = Integer.MAX_VALUE;
 
-    public List<MoverData> getData() {
-        return data;
+    protected final String queue;
+    private final String mode;
+    private final String door;
+
+    public PoolMoverListingMessage(int offset,
+                                   int limit,
+                                   String pnfsid,
+                                   String queue,
+                                   String state,
+                                   String mode,
+                                   String door,
+                                   String storageClass,
+                                   String sort) {
+        super(offset, limit, pnfsid, state, storageClass, sort);
+        this.queue = queue;
+        this.mode = mode;
+        this.door = door;
     }
 
-    public int getLimit() {
-        return limit;
-    }
-
-    public void setData(List<MoverData> data) {
-        this.data = data;
-    }
-
-    public void setLimit(int limit) {
-        this.limit = limit;
+    @Override
+    public Predicate<MoverData> filter() {
+        Predicate<MoverData> matchesPnfsid =
+                        (data) -> pnfsid == null
+                                        || Strings.nullToEmpty(data.getPnfsId())
+                                                  .contains(pnfsid);
+        Predicate<MoverData> matchesQueue =
+                        (data) -> queue == null
+                                        || Strings.nullToEmpty(data.getQueue())
+                                                  .contains(queue);
+        Predicate<MoverData> matchesState =
+                        (data) -> state == null
+                                        || Strings.nullToEmpty(data.getState())
+                                                  .contains(state);
+        Predicate<MoverData> matchesMode =
+                        (data) -> mode == null
+                                        || Strings.nullToEmpty(data.getMode())
+                                                  .contains(mode);
+        Predicate<MoverData> matchesDoor =
+                        (data) -> door == null
+                                        || Strings.nullToEmpty(data.getDoor())
+                                                  .contains(door);
+        Predicate<MoverData> matchesClass =
+                        (data) -> storageClass == null
+                                        || Strings.nullToEmpty(
+                                        data.getStorageClass())
+                                                  .contains(storageClass);
+        return matchesPnfsid.and(matchesQueue).and(matchesState)
+                            .and(matchesMode).and(matchesDoor)
+                            .and(matchesClass);
     }
 }

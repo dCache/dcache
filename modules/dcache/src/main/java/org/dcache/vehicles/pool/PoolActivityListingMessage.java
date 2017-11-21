@@ -57,21 +57,49 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.vehicles;
+package org.dcache.vehicles.pool;
 
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import diskCacheV111.vehicles.Message;
-import org.dcache.pool.nearline.json.NearlineData;
+
+import org.dcache.util.FieldSort;
 
 /**
- * <p>Request for listings corresponding to st ls.</p>
+ * <p>Base class for pool activity requests.</p>
  */
-public abstract class PoolNearlineListingMessage extends Message {
-    private List<NearlineData> data;
-    private int limit = Integer.MAX_VALUE;
+public abstract class PoolActivityListingMessage<D extends Comparable<D> & Serializable>
+                extends Message {
+    private static final long serialVersionUID = -6021595324569227526L;
 
-    public List<NearlineData> getData() {
+    protected final String pnfsid;
+    protected final String state;
+    protected final String storageClass;
+
+    private final String sort;
+    private final int    offset;
+    private final int    limit;
+
+    private List<D> data;
+    private int     total;
+
+    protected PoolActivityListingMessage(int offset, int limit, String pnfsid,
+                                         String state, String storageClass,
+                                         String sort) {
+        this.offset = offset;
+        this.limit = limit;
+        this.pnfsid = pnfsid;
+        this.state = state;
+        this.storageClass = storageClass;
+        this.sort = sort;
+    }
+
+    public List<D> getData() {
         return data;
     }
 
@@ -79,11 +107,31 @@ public abstract class PoolNearlineListingMessage extends Message {
         return limit;
     }
 
-    public void setData(List<NearlineData> data) {
+    public int getOffset() {
+        return offset;
+    }
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setData(List<D> data) {
         this.data = data;
     }
 
-    public void setLimit(int limit) {
-        this.limit = limit;
+    public void setTotal(int total) {
+        this.total = total;
     }
+
+    public List<FieldSort> sortList() {
+        if (sort == null) {
+            return Collections.EMPTY_LIST;
+        }
+
+        return Arrays.stream(sort.split(","))
+                     .map(FieldSort::new)
+                     .collect(Collectors.toList());
+    }
+
+    public abstract Predicate<D> filter();
 }

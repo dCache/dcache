@@ -1,12 +1,8 @@
 package org.dcache.pool.classic;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -22,16 +18,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.annotation.Nullable;
+
+import dmg.cells.nucleus.CDC;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CDC;
 
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
@@ -45,11 +44,7 @@ import org.dcache.util.IoPriority;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
-import static org.dcache.pool.classic.IoRequestState.CANCELED;
-import static org.dcache.pool.classic.IoRequestState.DONE;
-import static org.dcache.pool.classic.IoRequestState.NEW;
-import static org.dcache.pool.classic.IoRequestState.QUEUED;
-import static org.dcache.pool.classic.IoRequestState.RUNNING;
+import static org.dcache.pool.classic.IoRequestState.*;
 
 public class MoverRequestScheduler
 {
@@ -323,21 +318,15 @@ public class MoverRequestScheduler
      * This method is necessary because IoJobInfo does not give all
      * the info that the toString on the Mover class does.
      */
-    public List<MoverData> getMoverData(int limit)
+    public List<MoverData> getMoverData(Predicate<MoverData> filter,
+                                        Comparator<MoverData> sorter)
     {
-        List<PrioritizedRequest> requests = new ArrayList<>();
-        int i = 0;
-        for (PrioritizedRequest request: _jobs.values()) {
-            if (i >= limit) {
-                break;
-            }
-            requests.add(request);
-            ++i;
-        }
-        return Ordering.natural().sortedCopy(requests)
-                                 .stream()
-                                 .map(PrioritizedRequest::toMoverData)
-                                 .collect(Collectors.toList());
+        return _jobs.values()
+                    .stream()
+                    .map(PrioritizedRequest::toMoverData)
+                    .filter(filter)
+                    .sorted(sorter)
+                    .collect(Collectors.toList());
     }
 
     /**
