@@ -60,33 +60,43 @@ documents or software obtained from this server.
 package org.dcache.restful.resources.billing;
 
 import org.springframework.stereotype.Component;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-import java.util.ArrayList;
-import java.util.List;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.billing.BillingDataGrid;
 import org.dcache.restful.providers.billing.BillingDataGridEntry;
-import org.dcache.restful.providers.billing.BillingRecords;
+import org.dcache.restful.providers.billing.DoorTransferRecord;
+import org.dcache.restful.providers.billing.HSMTransferRecord;
+import org.dcache.restful.providers.billing.P2PTransferRecord;
 import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.util.histograms.Histogram;
+
+import static org.dcache.restful.providers.PagedList.TOTAL_COUNT_HEADER;
 
 /**
  * <p>RestFul API for providing billing records and histograms.</p>
@@ -100,78 +110,203 @@ public class BillingResources {
     @Inject
     private BillingInfoService service;
 
-    /**
-     * <p>Request records for a given file.</p>
-     * @param pnfsid of the file.
-     * @param before (optional) billing transaction occurred before this date.
-     * @param after (optional) billing transaction occurred after this date.
-     * @return
-     */
+    @Context
+    private HttpServletResponse response;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("records")
-    public BillingRecords getRecords(@QueryParam("pnfsid") PnfsId pnfsid,
-                                     @QueryParam("before") String before,
-                                     @QueryParam("after") String after) {
+    @Path("reads/{pnfsid}")
+    public List<DoorTransferRecord> getReads(@PathParam("pnfsid") PnfsId pnfsid,
+                                             @QueryParam("before") String before,
+                                             @QueryParam("after") String after,
+                                             @QueryParam("limit") Integer limit,
+                                             @DefaultValue("0")
+                                             @QueryParam("offset") Integer offset,
+                                             @QueryParam("pool") String pool,
+                                             @QueryParam("door") String door,
+                                             @QueryParam("client") String client,
+                                             @QueryParam("sort") String sort) {
         try {
             if (!HttpServletRequests.isAdmin(request)) {
                 throw new ForbiddenException("Billing records are only available "
                                                              + "to admin users.");
             }
 
-            return service.getRecords(pnfsid, before, after);
+            limit = limit == null ? Integer.MAX_VALUE: limit;
+
+            PagedList<DoorTransferRecord> result = service.getReads(pnfsid,
+                                                                    before,
+                                                                    after,
+                                                                    limit,
+                                                                    offset,
+                                                                    pool,
+                                                                    door,
+                                                                    client,
+                                                                    sort);
+            response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            return result.contents;
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
-        } catch (CacheException e) {
+        } catch (NoRouteToCellException | InterruptedException | CacheException e) {
             throw new InternalServerErrorException(e);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | ParseException e) {
             throw new BadRequestException(e.getMessage(), e);
         }
     }
 
-    /**
-     * <p>Request the time series data for a particular specification.</p>
-     *
-     * <p>The available types of time series can be obtained by calling
-     *    {@link #getGrid()}.</p>
-     *
-     * <p>The range upper bound is to be determined by the service implementation,
-     *      but will generally coincide with the most recent information.</p>
-     *
-     * @param key string specifying the type of series.  This is the string
-     *            value of a {@link BillingDataGridEntry}.
-     * @return the data (array of doubles).
-     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("histograms")
-    public Histogram getData(@QueryParam("key") String key) {
-        /*
-         *  No admin privileges necessary for billing histogram data.
-         */
+    @Path("writes/{pnfsid}")
+    public List<DoorTransferRecord> getWrites(@PathParam("pnfsid") PnfsId pnfsid,
+                                              @QueryParam("before") String before,
+                                              @QueryParam("after") String after,
+                                              @QueryParam("limit") Integer limit,
+                                              @DefaultValue("0")
+                                              @QueryParam("offset") int offset,
+                                              @QueryParam("pool") String pool,
+                                              @QueryParam("door") String door,
+                                              @QueryParam("client") String client,
+                                              @QueryParam("sort") String sort) {
         try {
-            return service.getHistogram(key);
-        } catch (CacheException e) {
+            if (!HttpServletRequests.isAdmin(request)) {
+                throw new ForbiddenException("Billing records are only available "
+                                                             + "to admin users.");
+            }
+
+            limit = limit == null ? Integer.MAX_VALUE: limit;
+
+            PagedList<DoorTransferRecord> result = service.getWrites(pnfsid,
+                                                                     before,
+                                                                     after,
+                                                                     limit,
+                                                                     offset,
+                                                                     pool,
+                                                                     door,
+                                                                     client,
+                                                                     sort);
+            response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            return result.contents;
+        } catch (FileNotFoundCacheException e) {
+            throw new NotFoundException(e);
+        } catch (NoRouteToCellException | InterruptedException | CacheException e) {
             throw new InternalServerErrorException(e);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException(e);
+        } catch (IllegalArgumentException | ParseException e) {
+            throw new BadRequestException(e.getMessage(), e);
         }
     }
 
-    /**
-     * @return the full "grid" of time series types which are available.
-     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("grid/description")
-    public BillingDataGrid getGrid() {
-        /*
-         *  No admin privileges necessary for billing histogram data.
-         */
+    @Path("p2ps/{pnfsid}")
+    public List<P2PTransferRecord> getP2ps(@PathParam("pnfsid") PnfsId pnfsid,
+                                           @QueryParam("before") String before,
+                                           @QueryParam("after") String after,
+                                           @QueryParam("limit") Integer limit,
+                                           @DefaultValue("0")
+                                           @QueryParam("offset") int offset,
+                                           @QueryParam("serverPool") String serverPool,
+                                           @QueryParam("clientPool") String clientPool,
+                                           @QueryParam("client") String client,
+                                           @QueryParam("sort") String sort) {
         try {
-            return service.getGrid();
-        } catch (CacheException e) {
+            if (!HttpServletRequests.isAdmin(request)) {
+                throw new ForbiddenException("Billing records are only available "
+                                                             + "to admin users.");
+            }
+
+            limit = limit == null ? Integer.MAX_VALUE: limit;
+
+            PagedList<P2PTransferRecord> result = service.getP2ps(pnfsid,
+                                                                  before,
+                                                                  after,
+                                                                  limit,
+                                                                  offset,
+                                                                  serverPool,
+                                                                  clientPool,
+                                                                  client,
+                                                                  sort);
+            response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            return result.contents;
+        } catch (FileNotFoundCacheException e) {
+            throw new NotFoundException(e);
+        } catch (NoRouteToCellException | InterruptedException | CacheException e) {
             throw new InternalServerErrorException(e);
+        } catch (IllegalArgumentException | ParseException e ) {
+            throw new BadRequestException(e.getMessage(), e);
+        }
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("stores/{pnfsid}")
+    public List<HSMTransferRecord> getStores(@PathParam("pnfsid") PnfsId pnfsid,
+                                             @QueryParam("before") String before,
+                                             @QueryParam("after") String after,
+                                             @QueryParam("limit") Integer limit,
+                                             @DefaultValue("0")
+                                             @QueryParam("offset") int offset,
+                                             @QueryParam("pool") String pool,
+                                             @QueryParam("sort") String sort) {
+        try {
+            if (!HttpServletRequests.isAdmin(request)) {
+                throw new ForbiddenException("Billing records are only available "
+                                                             + "to admin users.");
+            }
+
+            limit = limit == null ? Integer.MAX_VALUE: limit;
+
+            PagedList<HSMTransferRecord> result = service.getStores(pnfsid,
+                                                                    before,
+                                                                    after,
+                                                                    limit,
+                                                                    offset,
+                                                                    pool,
+                                                                    sort);
+            response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            return result.contents;
+        } catch (FileNotFoundCacheException e) {
+            throw new NotFoundException(e);
+        } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            throw new InternalServerErrorException(e);
+        } catch (IllegalArgumentException | ParseException e) {
+            throw new BadRequestException(e.getMessage(), e);
+        }
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("restores/{pnfsid}")
+    public List<HSMTransferRecord> getRestores(@PathParam("pnfsid") PnfsId pnfsid,
+                                               @QueryParam("before") String before,
+                                               @QueryParam("after") String after,
+                                               @QueryParam("limit") Integer limit,
+                                               @DefaultValue("0")
+                                               @QueryParam("offset") int offset,
+                                               @QueryParam("pool") String pool,
+                                               @QueryParam("sort") String sort) {
+        try {
+            if (!HttpServletRequests.isAdmin(request)) {
+                throw new ForbiddenException("Billing records are only available "
+                                                             + "to admin users.");
+            }
+
+            limit = limit == null ? Integer.MAX_VALUE: limit;
+
+            PagedList<HSMTransferRecord> result = service.getRestores(pnfsid,
+                                                                      before,
+                                                                      after,
+                                                                      limit,
+                                                                      offset,
+                                                                      pool,
+                                                                      sort);
+            response.addIntHeader(TOTAL_COUNT_HEADER, result.total);
+            return result.contents;
+        } catch (FileNotFoundCacheException e) {
+            throw new NotFoundException(e);
+        } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            throw new InternalServerErrorException(e);
+        } catch (IllegalArgumentException | ParseException e) {
+            throw new BadRequestException(e.getMessage(), e);
         }
     }
 
@@ -180,7 +315,7 @@ public class BillingResources {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("grid/histograms")
+    @Path("histograms")
     public List<Histogram> getGridData() {
         List<Histogram> gridData = new ArrayList<>();
 
@@ -201,5 +336,51 @@ public class BillingResources {
         }
 
         return gridData;
+    }
+
+    /**
+     * <p>Request the time series data for a particular specification.</p>
+     *
+     * <p>The available types of time series can be obtained by calling
+     *    {@link #getGrid()}.</p>
+     *
+     * <p>The range upper bound is to be determined by the service implementation,
+     *      but will generally coincide with the most recent information.</p>
+     *
+     * @param key string specifying the type of series.  This is the string
+     *            value of a {@link BillingDataGridEntry}.
+     * @return the data (array of doubles).
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("histograms/{key}")
+    public Histogram getData(@PathParam("key") String key) {
+        /*
+         *  No admin privileges necessary for billing histogram data.
+         */
+        try {
+            return service.getHistogram(key);
+        } catch (CacheException e) {
+            throw new InternalServerErrorException(e);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException(e);
+        }
+    }
+
+    /**
+     * @return the full "grid" of time series types which are available.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("histograms/grid/description")
+    public BillingDataGrid getGrid() {
+        /*
+         *  No admin privileges necessary for billing histogram data.
+         */
+        try {
+            return service.getGrid();
+        } catch (CacheException e) {
+            throw new InternalServerErrorException(e);
+        }
     }
 }

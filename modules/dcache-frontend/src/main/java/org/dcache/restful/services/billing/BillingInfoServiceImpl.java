@@ -62,6 +62,7 @@ package org.dcache.restful.services.billing;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -69,17 +70,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.billing.BillingDataGrid;
 import org.dcache.restful.providers.billing.BillingDataGridEntry;
 import org.dcache.restful.providers.billing.BillingRecords;
-import org.dcache.services.collector.CellDataCollectingService;
+import org.dcache.restful.providers.billing.DoorTransferRecord;
+import org.dcache.restful.providers.billing.HSMTransferRecord;
+import org.dcache.restful.providers.billing.P2PTransferRecord;
 import org.dcache.restful.util.billing.BillingInfoCollectionUtils;
 import org.dcache.restful.util.billing.BillingInfoCollector;
+import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.util.histograms.Histogram;
 import org.dcache.util.histograms.HistogramModel;
 import org.dcache.util.histograms.TimeFrame;
@@ -124,8 +133,8 @@ public class BillingInfoServiceImpl
 
             try {
                 BillingRecords records = getRecords(new PnfsId(pnfsid),
-                                                    before,
-                                                    after);
+                                                               before,
+                                                               after);
                 processRecords(records, builder);
             } catch (CacheException e) {
                 builder.append(e).append("\n");
@@ -245,7 +254,111 @@ public class BillingInfoServiceImpl
     }
 
     @Override
-    public BillingRecords getRecords(PnfsId pnfsId, String before, String after)
+    public PagedList<P2PTransferRecord> getP2ps(PnfsId pnfsid, String before,
+                                                String after, Integer limit,
+                                                int offset, String serverPool,
+                                                String clientPool,
+                                                String client, String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException {
+        // Partial reimplementation to be able to break up the
+        // patch into smaller patches; does not yet do the filtering, sorting,
+        // limit or offset; this will be changed by a subsequent patch
+        // TODO REMOVE
+        BillingRecords records = getRecords(pnfsid, before, after);
+        List<P2PTransferRecord> list = records.getP2ps();
+        return new PagedList<>(list, list.size());
+    }
+
+    @Override
+    public PagedList<DoorTransferRecord> getReads(PnfsId pnfsid, String before,
+                                                  String after, Integer limit,
+                                                  int offset, String pool,
+                                                  String door, String client,
+                                                  String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException {
+        // Partial reimplementation to be able to break up the
+        // patch into smaller patches; does not yet do the filtering, sorting,
+        // limit or offset; this will be changed by a subsequent patch
+        // TODO REMOVE
+        BillingRecords records = getRecords(pnfsid, before, after);
+        List<DoorTransferRecord> list = records.getReads();
+        return new PagedList<>(list, list.size());
+    }
+
+    @Override
+    public PagedList<HSMTransferRecord> getRestores(PnfsId pnfsid,
+                                                    String before, String after,
+                                                    Integer limit, int offset,
+                                                    String pool, String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException {
+        // Partial reimplementation to be able to break up the
+        // patch into smaller patches; does not yet do the filtering, sorting,
+        // limit or offset; this will be changed by a subsequent patch
+        // TODO REMOVE
+        BillingRecords records = getRecords(pnfsid, before, after);
+        List<HSMTransferRecord> list = records.getRestores();
+        return new PagedList<>(list, list.size());
+    }
+
+    @Override
+    public PagedList<HSMTransferRecord> getStores(PnfsId pnfsid, String before,
+                                                  String after, Integer limit,
+                                                  int offset, String pool,
+                                                  String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException {
+        // Partial reimplementation to be able to break up the
+        // patch into smaller patches; does not yet do the filtering, sorting,
+        // limit or offset; this will be changed by a subsequent patch
+        // TODO REMOVE
+        BillingRecords records = getRecords(pnfsid, before, after);
+        List<HSMTransferRecord> list = records.getStores();
+        return new PagedList<>(list, list.size());
+    }
+
+    @Override
+    public PagedList<DoorTransferRecord> getWrites(PnfsId pnfsid, String before,
+                                                   String after, Integer limit,
+                                                   int offset, String pool,
+                                                   String door, String client,
+                                                   String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException {
+        // Partial reimplementation to be able to break up the
+        // patch into smaller patches; does not yet do the filtering, sorting,
+        // limit or offset; this will be changed by a subsequent patch
+        // TODO REMOVE
+        BillingRecords records = getRecords(pnfsid, before, after);
+        List<DoorTransferRecord> list = records.getWrites();
+        return new PagedList<>(list, list.size());
+    }
+
+    @Override
+    public BillingDataGrid getGrid() throws CacheException {
+        return BillingInfoCollectionUtils.getDataGrid();
+    }
+
+    @Override
+    protected void configure() {
+        /**
+         * insertion into map does not need synchronization.
+         */
+        if (cachedData.isEmpty()) {
+            BillingInfoCollectionUtils.generateMessages()
+                                      .stream()
+                                      .forEach(this::updateCache);
+        }
+    }
+
+    private BillingRecords getRecords(PnfsId pnfsId, String before, String after)
                     throws
                     CacheException {
         BillingRecordRequestMessage msg = new BillingRecordRequestMessage();
@@ -270,23 +383,6 @@ public class BillingInfoServiceImpl
         }
 
         return BillingInfoCollectionUtils.transform(msg);
-    }
-
-    @Override
-    public BillingDataGrid getGrid() throws CacheException {
-        return BillingInfoCollectionUtils.getDataGrid();
-    }
-
-    @Override
-    protected void configure() {
-        /**
-         * insertion into map does not need synchronization.
-         */
-        if (cachedData.isEmpty()) {
-            BillingInfoCollectionUtils.generateMessages()
-                                      .stream()
-                                      .forEach(this::updateCache);
-        }
     }
 
     @Override

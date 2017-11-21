@@ -59,46 +59,180 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.billing;
 
+import java.text.ParseException;
+
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
+
+import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.billing.BillingDataGrid;
-import org.dcache.restful.providers.billing.BillingRecords;
+import org.dcache.restful.providers.billing.DoorTransferRecord;
+import org.dcache.restful.providers.billing.HSMTransferRecord;
+import org.dcache.restful.providers.billing.P2PTransferRecord;
 import org.dcache.util.histograms.Histogram;
 
 /**
  * <p>Defines the internal API for service providing collected/extracted
- *      billing data.</p>
+ * billing data.</p>
  */
 public interface BillingInfoService {
-    /**
-     * <p>Request for histogram data relating to a
-     *      particular data specification.</p>
-     *
-     * <p>The range upper bound is determined by the service implementation,
-     *      but will generally coincide with the most recent information.</p>
-     *
-     * @param key referencing the time series data.
-     * @return the corresponding Histogram.  Note that this histogram
-     *          is generic (i.e., simply the JSON wrapper).
-     */
-    Histogram getHistogram(String key) throws CacheException;
-
-    /**
-     * <p>Request for billing records relating to a given file.</p>
-     *
-     * @param pnfsId of the file
-     * @param before optional upper bound on date of record
-     * @param after optional lower bound on date of record
-     * @return object encapsulating the various lists of records according to
-     *          transfer type (STORE, RESTORE, WRITE, READ, P2P)
-     */
-    BillingRecords getRecords(PnfsId pnfsId, String before, String after) throws
-                    CacheException;
-
     /**
      * <p>Request for the layout of the full grid for time series data.</p>
      *
      * @return grid description object.
      */
     BillingDataGrid getGrid() throws CacheException;
+
+    /**
+     * <p>Request for histogram data relating to a
+     * particular data specification.</p>
+     * <p>
+     * <p>The range upper bound is determined by the service implementation,
+     * but will generally coincide with the most recent information.</p>
+     *
+     * @param key referencing the time series data.
+     * @return the corresponding Histogram.  Note that this histogram
+     * is generic (i.e., simply the JSON wrapper).
+     */
+    Histogram getHistogram(String key) throws CacheException;
+
+    /**
+     * * <p>Request for pool-to-pool transfer records relating to a given file.</p>
+     *
+     * @param pnfsid of the file
+     * @param before  optional upper bound on date of record
+     * @param after   optional lower bound on date of record
+     * @param limit   maximum number of records to return
+     * @param offset  index of result to begin at
+     * @param serverPool  filter on pool from which the transfer was served
+     * @param clientPool  filter on pool to which the transfer was made
+     * @param client  filter ip of the initiating connection
+     * @param sort list of fields on which to sort.
+     * @return list of records
+     * @throws FileNotFoundCacheException
+     * @throws CacheException
+     */
+    PagedList<P2PTransferRecord> getP2ps(PnfsId pnfsid,
+                                         String before,
+                                         String after,
+                                         Integer limit,
+                                         int offset,
+                                         String serverPool,
+                                         String clientPool,
+                                         String client,
+                                         String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException;
+
+    /**
+     * * <p>Request for read transfer records relating to a given file.</p>
+     *
+     * @param pnfsid of the file
+     * @param before  optional upper bound on date of record
+     * @param after   optional lower bound on date of record
+     * @param limit   maximum number of records to return
+     * @param offset  index of result to begin at
+     * @param pool  filter on pool to which the transfer was made
+     * @param door  filter on door through which the transfer was made
+     * @param client  filter ip of the initiating connection
+     * @param sort list of fields on which to sort.
+     * @return list of records
+     * @throws FileNotFoundCacheException
+     * @throws CacheException
+     */
+    PagedList<DoorTransferRecord> getReads(PnfsId pnfsid,
+                                           String before,
+                                           String after,
+                                           Integer limit,
+                                           int offset,
+                                           String pool,
+                                           String door,
+                                           String client,
+                                           String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException;
+
+    /**
+     * * <p>Request for restore/stage records relating to a given file.</p>
+     *
+     * @param pnfsid of the file
+     * @param before  optional upper bound on date of record
+     * @param after   optional lower bound on date of record
+     * @param limit   maximum number of records to return
+     * @param offset  index of result to begin at
+     * @param pool  filter on pool to which the restore was made
+     * @param sort list of fields on which to sort.
+     * @return list of records
+     * @throws FileNotFoundCacheException
+     * @throws CacheException
+     */
+    PagedList<HSMTransferRecord> getRestores(PnfsId pnfsid,
+                                             String before,
+                                             String after,
+                                             Integer limit,
+                                             int offset,
+                                             String pool,
+                                             String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException;
+
+    /**
+     * * <p>Request for store/flush records relating to a given file.</p>
+     *
+     * @param pnfsid of the file
+     * @param before  optional upper bound on date of record
+     * @param after   optional lower bound on date of record
+     * @param limit   maximum number of records to return
+     * @param offset  index of result to begin at
+     * @param pool  filter on pool to which the store was made
+     * @param sort list of fields on which to sort.
+     * @return list of records
+     * @throws FileNotFoundCacheException
+     * @throws CacheException
+     */
+    PagedList<HSMTransferRecord> getStores(PnfsId pnfsid,
+                                           String before,
+                                           String after,
+                                           Integer limit,
+                                           int offset,
+                                           String pool,
+                                           String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException;
+
+    /**
+     * * <p>Request for write transfer records relating to a given file.</p>
+     *
+     * @param pnfsid of the file
+     * @param before  optional upper bound on date of record
+     * @param after   optional lower bound on date of record
+     * @param limit   maximum number of records to return
+     * @param offset  index of result to begin at
+     * @param pool  filter on pool to which the transfer was made
+     * @param door  filter on door through which the transfer was made
+     * @param client  filter ip of the initiating connection
+     * @param sort list of fields on which to sort.
+     * @return list of records
+     * @throws FileNotFoundCacheException
+     * @throws CacheException
+     */
+    PagedList<DoorTransferRecord> getWrites(PnfsId pnfsid,
+                                            String before,
+                                            String after,
+                                            Integer limit,
+                                            int offset,
+                                            String pool,
+                                            String door,
+                                            String client,
+                                            String sort)
+                    throws FileNotFoundCacheException, ParseException,
+                    CacheException, NoRouteToCellException,
+                    InterruptedException;
 }

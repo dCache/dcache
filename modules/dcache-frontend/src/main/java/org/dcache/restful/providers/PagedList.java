@@ -57,74 +57,23 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.billing;
+package org.dcache.restful.providers;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
- * <p>Encapsulates the lists of billing records associated with a given file.</p>
+ * <p>For internal use.  Wraps a list which is a subset
+ *    of a total list, usually obtained via limit and offset.
+ *    Reports the actual total.</p>
  */
-public final class BillingRecords implements Serializable {
+public class PagedList<D> {
+    public static final String TOTAL_COUNT_HEADER = "X-Total-Count";
 
-    private String pnfsid;
+    public final List<D> contents;
+    public final int     total;
 
-    private List<DoorTransferRecord> writes;
-
-    private List<DoorTransferRecord> reads;
-
-    private List<HSMTransferRecord> stores;
-
-    private List<HSMTransferRecord> restores;
-
-    private List<P2PTransferRecord> p2ps;
-
-    public List<P2PTransferRecord> getP2ps() {
-        return p2ps;
-    }
-
-    public String getPnfsid() {
-        return pnfsid;
-    }
-
-    public List<DoorTransferRecord> getReads() {
-        return reads;
-    }
-
-    public List<HSMTransferRecord> getRestores() {
-        return restores;
-    }
-
-    public List<HSMTransferRecord> getStores() {
-        return stores;
-    }
-
-    public List<DoorTransferRecord> getWrites() {
-        return writes;
-    }
-
-    public void setP2ps(List<P2PTransferRecord> p2ps) {
-        this.p2ps = p2ps;
-    }
-
-    public void setPnfsid(String pnfsid) {
-        this.pnfsid = pnfsid;
-    }
-
-    public void setReads(List<DoorTransferRecord> reads) {
-        this.reads = reads;
-    }
-
-    public void setRestores(
-                    List<HSMTransferRecord> restores) {
-        this.restores = restores;
-    }
-
-    public void setStores(List<HSMTransferRecord> stores) {
-        this.stores = stores;
-    }
-
-    public void setWrites(List<DoorTransferRecord> writes) {
-        this.writes = writes;
+    public PagedList(List<D> contents, int total) {
+        this.contents = contents;
+        this.total = total;
     }
 }
