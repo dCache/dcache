@@ -2084,12 +2084,14 @@ public final class Storage
             String retentionPolicy,
             String accessLatency,
             String description,
+            Map<String,String> extraInfo,
             SrmReserveSpaceCallback callback) {
         if (_isSpaceManagerEnabled) {
             try {
                 SrmReserveSpaceCompanion.reserveSpace(asDcacheUser(user).getSubject(),
                                                       sizeInBytes, spaceReservationLifetime, retentionPolicy,
-                                                      accessLatency, description, new SrmReserveSpaceCallback()
+                                                      accessLatency, description, extraInfo.get("linkgroup"),
+                                                      new SrmReserveSpaceCallback()
                         {
                             public void failed(String reason)
                             {
