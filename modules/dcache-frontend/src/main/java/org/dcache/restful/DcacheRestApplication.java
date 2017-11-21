@@ -16,7 +16,10 @@ import org.dcache.restful.resources.namespace.FileResources;
 import org.dcache.restful.resources.pool.PoolGroupInfoResources;
 import org.dcache.restful.resources.pool.PoolInfoResources;
 import org.dcache.restful.resources.restores.RestoreResources;
-import org.dcache.restful.resources.selection.SelectionResources;
+import org.dcache.restful.resources.selection.LinkResources;
+import org.dcache.restful.resources.selection.PartitionResources;
+import org.dcache.restful.resources.selection.PoolPreferenceResources;
+import org.dcache.restful.resources.selection.UnitResources;
 import org.dcache.restful.resources.transfers.TransferResources;
 
 /**
@@ -39,7 +42,10 @@ public class DcacheRestApplication extends ResourceConfig
         register(AlarmsResources.class);
         register(PoolInfoResources.class);
         register(PoolGroupInfoResources.class);
-        register(SelectionResources.class);
+        register(LinkResources.class);
+        register(UnitResources.class);
+        register(PartitionResources.class);
+        register(PoolPreferenceResources.class);
 
         //register filters
         register(ResponseHeaderFilter.class);

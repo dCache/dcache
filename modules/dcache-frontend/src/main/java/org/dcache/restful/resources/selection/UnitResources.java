@@ -59,112 +59,45 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.selection;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.JSONException;
 import org.springframework.stereotype.Component;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.cells.CellStub;
+
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.restful.providers.selection.Link;
-import org.dcache.restful.providers.selection.Match;
-import org.dcache.restful.providers.selection.Partition;
-import org.dcache.restful.providers.selection.PreferenceResult;
 import org.dcache.restful.providers.selection.Unit;
 import org.dcache.restful.providers.selection.UnitGroup;
 import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
- * order to deliver pool selection and partition information.</p>
+ * order to deliver unit and unit group information.</p>
  *
  * @version v1.0
  */
 @Component
-@Path("/selection")
-public final class SelectionResources {
+@Path("/units")
+public final class UnitResources {
     @Context
     private HttpServletRequest request;
 
     @Inject
     private PoolMonitor poolMonitor;
 
-    @Inject
-    @Named("pool-manager-stub")
-    private CellStub poolManager;
-
     @GET
-    @Path("/links")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Link> getLink() throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Link info only accessible to admin users.");
-        }
-
-        return poolMonitor.getPoolSelectionUnit().getLinks().values()
-                          .stream()
-                          .map(Link::new)
-                          .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/partitions")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Partition> getPartitions() throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Partition info only accessible to admin users.");
-        }
-
-        return poolMonitor.getPartitionManager().getPartitions().entrySet()
-                                                .stream()
-                                                .map(Partition::new)
-                                                .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/unitgroups")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<UnitGroup> getUnitGroups() throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Unit group info only accessible to admin users.");
-        }
-
-        PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
-
-        return poolMonitor.getPoolSelectionUnit().getUnitGroups().values()
-                          .stream()
-                          .map((g) -> new UnitGroup(g, psu))
-                          .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/units")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<Unit> getUnits() throws CacheException {
+    public List<Unit> getUnits() {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Unit info only accessible to admin users.");
@@ -176,35 +109,20 @@ public final class SelectionResources {
                           .collect(Collectors.toList());
     }
 
-    @POST
-    @Path("/match")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @GET
+    @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<PreferenceResult> match(String requestPayload)
-                    throws CacheException {
+    public List<UnitGroup> getUnitGroups() {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
-                            "Match info only accessible to admin users.");
+                            "Unit group info only accessible to admin users.");
         }
 
-        try {
-            Match match = new ObjectMapper().readValue(requestPayload,
-                                                       Match.class);
-            PoolPreferenceLevel[] poolPreferenceLevels =
-                            poolManager.sendAndWait(match.toPoolManagerCommand(),
-                                                    PoolPreferenceLevel[].class);
+        PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
-            List<PreferenceResult> results = new ArrayList<>();
-
-            for (PoolPreferenceLevel level: poolPreferenceLevels) {
-                results.add(new PreferenceResult(level));
-            }
-
-            return results;
-        } catch (JSONException | IllegalArgumentException e) {
-            throw new BadRequestException(e);
-        } catch (IOException | CacheException | InterruptedException | NoRouteToCellException e) {
-            throw new InternalServerErrorException(e);
-        }
+        return poolMonitor.getPoolSelectionUnit().getUnitGroups().values()
+                          .stream()
+                          .map((g) -> new UnitGroup(g, psu))
+                          .collect(Collectors.toList());
     }
 }
