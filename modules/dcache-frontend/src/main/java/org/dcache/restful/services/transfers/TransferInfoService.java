@@ -70,6 +70,13 @@ import org.dcache.restful.providers.SnapshotList;
  */
 public interface TransferInfoService {
     /**
+     * <p>Set moverState to Canceled on the current snapshot for this mover.</p>
+     * @param pool
+     * @param id
+     */
+    void setCancelled(String pool, int id);
+
+    /**
      * <p>Return the metadata objects.</p>
      *
      * @param token     Use the snapshot corresponding to this UUID.  The contract

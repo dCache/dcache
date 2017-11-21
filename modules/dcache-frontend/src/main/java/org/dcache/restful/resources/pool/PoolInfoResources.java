@@ -107,6 +107,7 @@ import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.restful.providers.pool.PoolModeUpdate;
 import org.dcache.restful.providers.selection.Pool;
 import org.dcache.restful.services.pool.PoolInfoService;
+import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 
 import static org.dcache.restful.providers.ErrorResponseProvider.NOT_IMPLEMENTED;
@@ -135,6 +136,9 @@ public final class PoolInfoResources {
 
     @Inject
     private PoolInfoService service;
+
+    @Inject
+    private TransferInfoService transferInfoService;
 
     @Inject
     private PoolMonitor poolMonitor;
@@ -381,6 +385,7 @@ public final class PoolInfoResources {
             poolStub.sendAndWait(new CellPath(pool),
                                  new PoolMoverKillMessage(pool, id,
                                     "Killed by user."));
+            transferInfoService.setCancelled(pool, id);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (InterruptedException | NoRouteToCellException | CacheException e) {

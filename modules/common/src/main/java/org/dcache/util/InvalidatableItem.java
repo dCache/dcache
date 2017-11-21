@@ -57,92 +57,19 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-import javax.validation.constraints.NotNull;
-
-import org.dcache.util.InvalidatableItem;
+package org.dcache.util;
 
 /**
- * <p>JSON wrapper for returning list of serializable
- * objects.  The wrapper supports requests based on
- * token identifiers of snapshots, with an offset and limit into
- * the underlying snapshot.</p>
+ * <p>For indicating the validity of the temporarily stored item.</p>
  */
-public class SnapshotList<T extends InvalidatableItem & Serializable>
-                implements Serializable {
+public interface InvalidatableItem {
     /**
-     * <p>The returned data.</p>
+     * <p>Marks internal state in such a way as to indicate item is not valid.</p>
      */
-    @NotNull
-    private List<T> items = Collections.EMPTY_LIST;
+    void invalidate();
 
     /**
-     * <p>The original offset requested.  The first element in the
-     * returned list should correspond to this index in the
-     * underlying complete list.</p>
+     * @return whether item is valid or not.
      */
-    private int currentOffset = 0;
-
-    /**
-     * <p>Should be the currentOffset plus the size of the returned list
-     * if the list has more elements; otherwise -1.</p>
-     */
-    private int nextOffset = 0;
-
-    /**
-     * <p>Identifies the snapshot used to service this request.</p>
-     * <p>May be <code>null</code> only if transfers is empty.</p>
-     */
-    private UUID currentToken;
-
-    /**
-     * <p>Timestamp in milliseconds of last update.</p>
-     */
-    private long timeOfCreation = 0L;
-
-    public int getCurrentOffset() {
-        return currentOffset;
-    }
-
-    public UUID getCurrentToken() {
-        return currentToken;
-    }
-
-    public List<T> getItems() {
-        return items;
-    }
-
-    public long getTimeOfCreation() {
-        return timeOfCreation;
-    }
-
-    public int getNextOffset() {
-        return nextOffset;
-    }
-
-    public void setCurrentOffset(int currentOffset) {
-        this.currentOffset = currentOffset;
-    }
-
-    public void setCurrentToken(UUID currentToken) {
-        this.currentToken = currentToken;
-    }
-
-    public void setItems(List<T> items) {
-        this.items = items;
-    }
-
-    public void setTimeOfCreation(long timeOfCreation) {
-        this.timeOfCreation = timeOfCreation;
-    }
-
-    public void setNextOffset(int nextOffset) {
-        this.nextOffset = nextOffset;
-    }
+    boolean isValid();
 }

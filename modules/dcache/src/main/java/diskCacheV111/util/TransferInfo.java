@@ -59,12 +59,14 @@ documents or software obtained from this server.
  */
 package diskCacheV111.util;
 
-import javax.security.auth.Subject;
-
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import javax.security.auth.Subject;
+
+import org.dcache.util.InvalidatableItem;
 import org.dcache.util.TimeUtils.DurationParser;
 
 import static org.dcache.util.ByteUnit.BYTES;
@@ -74,7 +76,7 @@ import static org.dcache.util.ByteUnit.BYTES;
  * <p>
  * <p>Extended in both dCache and webadmin modules.</p>
  */
-public class TransferInfo implements Comparable<TransferInfo>, Serializable {
+public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem, Serializable {
     private static final long serialVersionUID = 7303353263666911507L;
 
     private static final String FORMAT    = "(%s %s %s)(prot %s)"
@@ -124,6 +126,7 @@ public class TransferInfo implements Comparable<TransferInfo>, Serializable {
     protected Long     moverStart;
     protected Subject  subject;
     protected UserInfo userInfo;
+    protected boolean  valid = true;
 
     @Override
     public int compareTo(TransferInfo o) {
@@ -131,6 +134,36 @@ public class TransferInfo implements Comparable<TransferInfo>, Serializable {
                          .thenComparing(TransferInfo::getDomainName)
                          .thenComparing(TransferInfo::getSerialId)
                          .compare(this, o);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof TransferInfo)) {
+            return false;
+        }
+
+        TransferInfo info = (TransferInfo)o;
+
+        return Objects.equals(cellName, info.cellName) &&
+                        Objects.equals(domainName, info.domainName) &&
+                        Objects.equals(serialId, info.serialId) &&
+                        Objects.equals(protocol, info.protocol) &&
+                        Objects.equals(pnfsId, info.pnfsId) &&
+                        Objects.equals(replyHost, info.replyHost);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(cellName,
+                            domainName,
+                            serialId,
+                            protocol,
+                            pnfsId,
+                            replyHost);
     }
 
     public Long getBytesTransferred() {
@@ -232,6 +265,16 @@ public class TransferInfo implements Comparable<TransferInfo>, Serializable {
 
     public String getTimeWaiting() {
         return timeWaiting(System.currentTimeMillis(),true);
+    }
+
+    @Override
+    public void invalidate() {
+        valid = false;
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 
     public void setBytesTransferred(Long bytesTransferred) {

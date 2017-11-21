@@ -73,6 +73,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.dcache.restful.providers.SnapshotList;
+import org.dcache.util.InvalidatableItem;
 
 /**
  * <p>Shared functionality for services which support limit/offset
@@ -82,10 +83,9 @@ import org.dcache.restful.providers.SnapshotList;
  *    of the underlying data.  In essence, refreshes generate a new id for
  *    the data set which is returned to the caller.</p>
  *
- * <p>The data is sorted by comparing the update map keys as strings.
- *    Access is protected by read-write synchronization.</p>
+ * <p>Access is protected by read-write synchronization.</p>
  */
-public final class SnapshotDataAccess<K, V extends Serializable> {
+public final class SnapshotDataAccess<K, V extends InvalidatableItem & Serializable> {
     private final ReentrantReadWriteLock lock     = new ReentrantReadWriteLock(true);
     private final ReadLock               readLock = lock.readLock();
     private final WriteLock              writeLock = lock.writeLock();
@@ -104,6 +104,34 @@ public final class SnapshotDataAccess<K, V extends Serializable> {
      * <p>Last timestamp for update.</p>
      */
     private long lastUpdate = 0L;
+
+    public List<V> getCurrent() {
+        readLock.lock();
+        try {
+            return snapshot.stream().collect(Collectors.toList());
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    /**
+     * <p>Depends on a suitable implementation of equals().</p>
+     *
+     * @param entry to invalidate.
+     */
+    public void invalidate(V entry) {
+        writeLock.lock();
+        try {
+            for (V current: snapshot) {
+                if (current.equals(entry)) {
+                    current.invalidate();
+                    break;
+                }
+            }
+        } finally {
+            writeLock.unlock();
+        }
+    }
 
     /**
      * <p>Checks to see if the client is holding the same snapshot.

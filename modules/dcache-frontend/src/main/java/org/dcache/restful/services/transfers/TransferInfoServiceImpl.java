@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.restful.services.transfers;
 
 import com.google.common.base.Strings;
-
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -73,11 +72,13 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import dmg.util.command.Command;
+import dmg.util.command.Option;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TransferInfo;
 import diskCacheV111.util.TransferInfo.MoverState;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.util.admin.SnapshotDataAccess;
 import org.dcache.restful.util.transfers.TransferCollector;
@@ -393,6 +394,17 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                                         access = new SnapshotDataAccess<>();
 
     @Override
+    public void setCancelled(String pool, int id) {
+        List<TransferInfo> current = access.getCurrent();
+        for (TransferInfo info : current) {
+            if (pool.equals(info.getPool()) && id ==info.getMoverId()) {
+                access.invalidate(info);
+                break;
+            }
+        }
+    }
+
+    @Override
     public SnapshotList<TransferInfo> get(UUID token,
                                           Integer offset,
                                           Integer limit,
@@ -418,7 +430,14 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
         }
         Comparator<TransferInfo> sorter
                         = FieldSort.getSorter(fields, nextComparator());
-        return access.getSnapshot(token, offset, limit, filter, sorter);
+        SnapshotList<TransferInfo> snapshotList =
+                        access.getSnapshot(token, offset, limit, filter, sorter);
+        snapshotList.getItems().stream().forEach((t) -> {
+           if (!t.isValid()) {
+               t.setMoverStatus("CANCELED");
+           }
+        });
+        return snapshotList;
     }
 
     @Override

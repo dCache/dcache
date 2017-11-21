@@ -64,10 +64,12 @@ import java.io.Serializable;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 
+import org.dcache.util.InvalidatableItem;
+
 /**
  * <p>Restore/stage request metadata.</p>
  */
-public class RestoreInfo implements Comparable<RestoreInfo>, Serializable {
+public class RestoreInfo implements Comparable<RestoreInfo>, InvalidatableItem, Serializable {
     private String key;
     private PnfsId pnfsId;
     private String  path;
@@ -79,9 +81,10 @@ public class RestoreInfo implements Comparable<RestoreInfo>, Serializable {
     private String  status;
     private Integer error;
     private String  errorMessage;
+    private boolean valid;
 
     public RestoreInfo() {
-
+        valid = true;
     }
 
     public RestoreInfo(RestoreHandlerInfo info) {
@@ -96,6 +99,7 @@ public class RestoreInfo implements Comparable<RestoreInfo>, Serializable {
         status = info.getStatus();
         error = info.getErrorCode();
         errorMessage = info.getErrorMessage();
+        valid = true;
     }
 
     @Override
@@ -145,6 +149,16 @@ public class RestoreInfo implements Comparable<RestoreInfo>, Serializable {
 
     public String getSubnet() {
         return subnet;
+    }
+
+    @Override
+    public void invalidate() {
+        valid = false;
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 
     public void setClients(Integer clients) {
