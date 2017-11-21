@@ -66,9 +66,11 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -80,7 +82,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,14 +94,13 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
-
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-
 import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.restful.providers.pool.PoolModeUpdate;
 import org.dcache.restful.providers.selection.Pool;
@@ -108,6 +108,7 @@ import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 
 import static org.dcache.restful.providers.ErrorResponseProvider.NOT_IMPLEMENTED;
+import static org.dcache.restful.providers.PagedList.TOTAL_COUNT_HEADER;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
 /**
@@ -126,6 +127,9 @@ public final class PoolInfoResources {
 
     @Context
     private HttpServletRequest request;
+
+    @Context
+    private HttpServletResponse response;
 
     @Inject
     private PoolInfoService service;
@@ -224,25 +228,58 @@ public final class PoolInfoResources {
     @Path("/{pool}/movers")
     @Produces(MediaType.APPLICATION_JSON)
     public List<MoverData> getMovers(@PathParam("pool") String pool,
-                                     @QueryParam("type") String typeList) {
+                                     @QueryParam("type") String typeList,
+                                     @DefaultValue("0")
+                                     @QueryParam("offset") int  offset,
+                                     @QueryParam("limit") Integer limit,
+                                     @QueryParam("pnfsid") String pnfsid,
+                                     @QueryParam("queue") String queue,
+                                     @QueryParam("state") String state,
+                                     @QueryParam("mode") String mode,
+                                     @QueryParam("door") String door,
+                                     @QueryParam("storageClass") String storageClass,
+                                     @QueryParam("sort") String sort) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Mover info only accessible to admin users.");
         }
 
-        String[] type = typeList.split(",");
+        limit = limit == null ? Integer.MAX_VALUE : limit;
+
+        String[] type = typeList == null ? new String[0] :
+                        typeList.split(",");
+        PagedList<MoverData> pagedList;
 
         try {
             if (type.length == 0) {
-                return service.getMovers(pool);
+                pagedList = service.getMovers(pool,
+                                              offset,
+                                              limit,
+                                              pnfsid,
+                                              queue,
+                                              state,
+                                              mode,
+                                              door,
+                                              storageClass,
+                                              sort);
+                response.addIntHeader(TOTAL_COUNT_HEADER, pagedList.total);
+                return pagedList.contents;
             } else if (type.length == 2) {
                 if ((type[0].equals("p2p-client")
                                 && type[1].equals("p2p-server"))
                                 || (type[1].equals("p2p-client")
                                 && type[0].equals("p2p-server"))) {
-                    return service.getP2p(pool);
+                    pagedList = service.getP2p(pool,
+                                          offset,
+                                          limit,
+                                          pnfsid,
+                                          queue,
+                                          state,
+                                          storageClass,
+                                          sort);
+                    response.addIntHeader(TOTAL_COUNT_HEADER, pagedList.total);
+                    return pagedList.contents;
                 }
-
             }
         } catch (InterruptedException | NoRouteToCellException | CacheException e) {
             throw new InternalServerErrorException(e);
@@ -257,32 +294,71 @@ public final class PoolInfoResources {
     @Path("/{pool}/nearline/queues")
     @Produces(MediaType.APPLICATION_JSON)
     public List<NearlineData> getNearlineQueues(@PathParam("pool") String pool,
-                                                @QueryParam("type") String typeList) {
+                                                @QueryParam("type") String typeList,
+                                                @DefaultValue("0")
+                                                @QueryParam("offset") int  offset,
+                                                @QueryParam("limit") Integer limit,
+                                                @QueryParam("pnfsid") String pnfsid,
+                                                @QueryParam("state") String state,
+                                                @QueryParam("storageClass") String storageClass,
+                                                @QueryParam("sort") String sort) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Flush info only accessible to admin users.");
         }
 
+        limit = limit == null ? Integer.MAX_VALUE : limit;
+
         List<NearlineData> list = new ArrayList<>();
 
+        PagedList<NearlineData> pagedList;
+        int count = 0;
+
         try {
-            String[] types = typeList.split(",");
+            String[] types = typeList == null ? new String[0] :
+                             typeList.split(",");
             for (String type: types) {
                 switch (type) {
                     case "flush":
-                        list.addAll(service.getFlush(pool));
+                        pagedList = service.getFlush(pool,
+                                                     offset,
+                                                     limit,
+                                                     pnfsid,
+                                                     state,
+                                                     storageClass,
+                                                     sort);
+                        list.addAll(pagedList.contents);
+                        count += pagedList.total;
                         break;
                     case "stage":
-                        list.addAll(service.getStage(pool));
+                        pagedList = service.getStage(pool,
+                                                     offset,
+                                                     limit,
+                                                     pnfsid,
+                                                     state,
+                                                     storageClass,
+                                                     sort);
+                        list.addAll(pagedList.contents);
+                        count += pagedList.total;
                         break;
                     case "remove":
-                        list.addAll(service.getRemove(pool));
+                        pagedList = service.getRemove(pool,
+                                                      offset,
+                                                      limit,
+                                                      pnfsid,
+                                                      state,
+                                                      storageClass,
+                                                      sort);
+                        list.addAll(pagedList.contents);
+                        count += pagedList.total;
                         break;
                     default:
                         throw new BadRequestException("unrecognized queue type: "
                                                                       + type);
                 }
             }
+
+            response.addIntHeader(TOTAL_COUNT_HEADER, count);
             return list;
         } catch (InterruptedException | NoRouteToCellException | CacheException e) {
             throw new InternalServerErrorException(e);

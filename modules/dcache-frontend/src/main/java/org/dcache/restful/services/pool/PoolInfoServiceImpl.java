@@ -60,13 +60,16 @@ documents or software obtained from this server.
 package org.dcache.restful.services.pool;
 
 import org.springframework.beans.factory.annotation.Required;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.command.Command;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
@@ -76,10 +79,6 @@ import diskCacheV111.pools.json.PoolSpaceData;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.command.Command;
-
 import org.dcache.cells.json.CellData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
@@ -87,6 +86,7 @@ import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.restful.util.admin.ReadWriteData;
@@ -257,14 +257,21 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public List<NearlineData> getFlush(String name) throws InterruptedException,
+    public PagedList<NearlineData> getFlush(String pool,
+                                       int offset,
+                                       int limit,
+                                       String pnfsid,
+                                       String state,
+                                       String storageClass,
+                                       String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException {
         PoolFlushListingMessage message = new PoolFlushListingMessage();
-        message.setLimit(maxPoolActivityListSize);
+        message.setLimit(Math.min(limit, maxPoolActivityListSize));
         ListenableFutureWrapper<PoolFlushListingMessage> wrapper
-                        = collector.sendRequestToPool(name, message);
+                        = collector.sendRequestToPool(pool, message);
         try {
-            return wrapper.getFuture().get().getData();
+            List<NearlineData> data = wrapper.getFuture().get().getData();
+            return new PagedList<>(data, data.size());
         } catch (ExecutionException e) {
             throw handleExecutionException(e);
         }
@@ -319,14 +326,24 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public List<MoverData> getMovers(String name) throws InterruptedException,
+    public PagedList<MoverData> getMovers(String pool,
+                                          int offset,
+                                          int limit,
+                                          String pnfsid,
+                                          String queue,
+                                          String state,
+                                          String mode,
+                                          String door,
+                                          String storageClass,
+                                          String sort) throws InterruptedException,
                      NoRouteToCellException, CacheException {
         PoolMoverListingMessage message = new PoolMoverListingMessage();
-        message.setLimit(maxPoolActivityListSize);
+        message.setLimit(Math.min(limit, maxPoolActivityListSize));
         ListenableFutureWrapper<PoolMoverListingMessage> wrapper
-                        = collector.sendRequestToPool(name, message);
+                        = collector.sendRequestToPool(pool, message);
         try {
-            return wrapper.getFuture().get().getData();
+            List<MoverData> data = wrapper.getFuture().get().getData();
+            return new PagedList<>(data, data.size());
         } catch (ExecutionException e) {
             throw handleExecutionException(e);
         }
@@ -336,14 +353,22 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public List<MoverData> getP2p(String name) throws InterruptedException,
+    public PagedList<MoverData> getP2p(String pool,
+                                  int offset,
+                                  int limit,
+                                  String pnfsid,
+                                  String queue,
+                                  String state,
+                                  String storageClass,
+                                  String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException {
         PoolP2PListingMessage message = new PoolP2PListingMessage();
-        message.setLimit(maxPoolActivityListSize);
+        message.setLimit(Math.min(limit, maxPoolActivityListSize));
         ListenableFutureWrapper<PoolP2PListingMessage> wrapper
-                        = collector.sendRequestToPool(name, message);
+                        = collector.sendRequestToPool(pool, message);
         try {
-            return wrapper.getFuture().get().getData();
+            List<MoverData> data = wrapper.getFuture().get().getData();
+            return new PagedList<>(data, data.size());
         } catch (ExecutionException e) {
             throw handleExecutionException(e);
         }
@@ -397,14 +422,21 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public List<NearlineData> getRemove(String name) throws InterruptedException,
+    public PagedList<NearlineData> getRemove(String pool,
+                                             int offset,
+                                             int limit,
+                                             String pnfsid,
+                                             String state,
+                                             String storageClass,
+                                             String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException {
         PoolRemoveListingMessage message = new PoolRemoveListingMessage();
-        message.setLimit(maxPoolActivityListSize);
+        message.setLimit(Math.min(limit, maxPoolActivityListSize));
         ListenableFutureWrapper<PoolRemoveListingMessage> wrapper
-                        = collector.sendRequestToPool(name, message);
+                        = collector.sendRequestToPool(pool, message);
         try {
-            return wrapper.getFuture().get().getData();
+            List<NearlineData> data = wrapper.getFuture().get().getData();
+            return new PagedList<>(data, data.size());
         } catch (ExecutionException e) {
             throw handleExecutionException(e);
         }
@@ -418,14 +450,21 @@ public class PoolInfoServiceImpl extends
      * <p>Synchronous.  Delivers fresh data.</p>
      */
     @Override
-    public List<NearlineData> getStage(String name) throws InterruptedException,
+    public PagedList<NearlineData> getStage(String pool,
+                                            int offset,
+                                            int limit,
+                                            String pnfsid,
+                                            String state,
+                                            String storageClass,
+                                            String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException {
         PoolStageListingMessage message = new PoolStageListingMessage();
-        message.setLimit(maxPoolActivityListSize);
+        message.setLimit(Math.min(limit, maxPoolActivityListSize));
         ListenableFutureWrapper<PoolStageListingMessage> wrapper
-                        = collector.sendRequestToPool(name, message);
+                        = collector.sendRequestToPool(pool, message);
         try {
-            return wrapper.getFuture().get().getData();
+            List<NearlineData> data = wrapper.getFuture().get().getData();
+            return new PagedList<>(data, data.size());
         } catch (ExecutionException e) {
             throw handleExecutionException(e);
         }

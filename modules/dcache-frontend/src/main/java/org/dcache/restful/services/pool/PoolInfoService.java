@@ -59,15 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.pool;
 
-import java.util.List;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
-import dmg.cells.nucleus.NoRouteToCellException;
-
 import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.nearline.json.NearlineData;
+import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.services.history.pools.PoolListingService;
@@ -123,10 +122,22 @@ public interface PoolInfoService extends PoolListingService {
     /**
      * <p>Request for a list of all the FLUSH/STORE processes on the pool.</p>
      *
-     * @param name of the pool
+     * @param pool      of the pool
+     * @param offset    specifying the index at which to begin
+     * @param limit     maximum number of alarms to include
+     * @param pnfsid    filter
+     * @param state     filter
+     * @param storageClass filter
+     * @param sort      List of fields on which to sort
      * @return list of flushes/stores, both active and queued.
      */
-    List<NearlineData> getFlush(String name) throws InterruptedException,
+    PagedList<NearlineData> getFlush(String pool,
+                                     int offset,
+                                     int limit,
+                                     String pnfsid,
+                                     String state,
+                                     String storageClass,
+                                     String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException;
 
     /**
@@ -157,20 +168,52 @@ public interface PoolInfoService extends PoolListingService {
     /**
      * <p>Request for a list of all the MOVER processes on the pool.</p>
      *
-     * @param name of the pool
+     * @param pool      of the pool
+     * @param offset    specifying the index at which to begin
+     * @param limit     maximum number of alarms to include
+     * @param pnfsid    filter
+     * @param queue     filter
+     * @param state     filter
+     * @param mode      filter
+     * @param door      filter
+     * @param storageClass filter
+     * @param sort      List of fields on which to sort
      * @return list of movers, both active and queued.
      */
-    List<MoverData> getMovers(String name) throws InterruptedException,
+    PagedList<MoverData> getMovers(String pool,
+                                   int offset,
+                                   int limit,
+                                   String pnfsid,
+                                   String queue,
+                                   String state,
+                                   String mode,
+                                   String door,
+                                   String storageClass,
+                                   String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException;
 
     /**
      * <p>Request for a list of all the P2P processes on the pool.</p>
      *
-     * @param name of the pool
+     * @param pool      of the pool
+     * @param offset    specifying the index at which to begin
+     * @param limit     maximum number of alarms to include
+     * @param pnfsid    filter
+     * @param queue     filter
+     * @param state     filter
+     * @param storageClass filter
+     * @param sort      List of fields on which to sort
      * @return list of movers, both active and queued,
      *          for both p2p source/server and p2p client/mover.
      */
-    List<MoverData> getP2p(String name) throws InterruptedException,
+    PagedList<MoverData> getP2p(String pool,
+                                int offset,
+                                int limit,
+                                String pnfsid,
+                                String queue,
+                                String state,
+                                String storageClass,
+                                String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException;
 
     /**
@@ -202,18 +245,42 @@ public interface PoolInfoService extends PoolListingService {
      *
      * <p>Two arrays are returned, </p>
      *
-     * @param name of the pool
+     * @param pool      of the pool
+     * @param offset    specifying the index at which to begin
+     * @param limit     maximum number of alarms to include
+     * @param pnfsid    filter
+     * @param state     filter
+     * @param storageClass  filter
+     * @param sort      List of fields on which to sort
      * @return list of removes, both active and queued.
      */
-    List<NearlineData> getRemove(String name) throws InterruptedException,
+    PagedList<NearlineData> getRemove(String pool,
+                                      int offset,
+                                      int limit,
+                                      String pnfsid,
+                                      String state,
+                                      String storageClass,
+                                      String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException;
 
     /**
      * <p>Request for a list of all the STAGE/RESTORE processes on the pool.</p>
      *
-     * @param name of the pool
+     * @param pool      of the pool
+     * @param offset    specifying the index at which to begin
+     * @param limit     maximum number of alarms to include
+     * @param pnfsid    filter
+     * @param state     filter
+     * @param storageClass  filter
+     * @param sort      List of fields on which to sort
      * @return list of stages/restores, both active and queued.
      */
-    List<NearlineData> getStage(String name) throws InterruptedException,
+    PagedList<NearlineData> getStage(String pool,
+                                     int offset,
+                                     int limit,
+                                     String pnfsid,
+                                     String state,
+                                     String storageClass,
+                                     String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException;
 }
