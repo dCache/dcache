@@ -71,6 +71,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
+import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
@@ -892,54 +893,51 @@ public class PnfsManagerV3
     }
 
     @Command(name = "set log slow threshold",
-             hint = "set the threshold for reporting slow PNFS interactions",
-             description = "Enable reporting of slow PNFS interactions." +
-                           " If the interaction <timeout> is greater than the timeout specified by this command," +
-                           " a warning message is logged.")
+             hint = "configure logging of slow namespace interactions",
+             description = "Enable and configure how slow namespace "
+                     + "interactions are logged.  If an interaction takes "
+                     + "longer to complete than the configured threshold "
+                     + "duration then a warning is logged.")
     public class SetLogLowThresholdCommand implements Callable<String>
     {
-        @Argument(usage = "Time in milliseconds, must be greater than zero.")
-        String timeout;
+        @Argument(usage = "The minimum duration of a namespace interaction, "
+                + "in milliseconds, before a warning is logged.  The value "
+                + "must be greater than zero.")
+        int timeout;
 
         @Override
-        public String call() throws NumberFormatException
+        public String call() throws CommandException
         {
-            int newTimeout;
-            try {
-                newTimeout = Integer.parseInt( timeout);
-            } catch ( NumberFormatException e) {
-                throw new NumberFormatException("Badly formatted number " + timeout);
+            if (timeout <= 0) {
+                throw new CommandException("Timeout must be greater than zero.");
             }
 
-            if( newTimeout <= 0) {
-                return "Timeout must be greater than zero.";
-            }
-
-            _logSlowThreshold = newTimeout;
+            _logSlowThreshold = timeout;
 
             return "";
         }
     }
 
     @Command(name = "get log slow threshold",
-             hint = "return the current threshold for reporting slow PNFS interactions",
-             description = "If the threshold disabled returns" + " \"disabled\" " +"otherwise returns " +
-                           "the set time in ms.")
+             hint = "the current threshold for reporting slow namespace interactions",
+             description = "If this feature is currently disabled, returns "
+                     + "\"disabled\" otherwise returns the duration in "
+                     + "milliseconds.")
     public class GetLogSlowThresholdCommand implements Callable<String>
     {
         @Override
         public String call()
         {
-            if( _logSlowThreshold == THRESHOLD_DISABLED) {
-                return "disabled";
-            }
-            return String.valueOf(_logSlowThreshold) + " ms";
+            return _logSlowThreshold == THRESHOLD_DISABLED
+                    ? "disabled"
+                    : (_logSlowThreshold + " ms");
         }
     }
 
     @Command(name = "set log slow threshold disabled",
-             hint = "disable reporting of slow PNFS interactions",
-             description = "No warning messages are logged.")
+             hint = "disable reporting of slow namespace interactions",
+             description = "Do not log a warning if namespace interactions "
+                     + "are slow.")
     public class SetLogSlowThresfoldDisabledCommand implements Callable<String>
     {
         @Override
