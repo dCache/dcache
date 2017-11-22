@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,6 +70,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 
+@ApiModel("Information about a specific link.")
 public final class Link extends SelectionType {
     private static final long serialVersionUID = 950577255687796590L;
 
@@ -102,22 +106,27 @@ public final class Link extends SelectionType {
                          .collect(Collectors.toList());
     }
 
+    @ApiModelProperty("A list of all poolgroups that this link selects")
     public List<String> getPoolGroups() {
         return poolGroups;
     }
 
+    @ApiModelProperty("A list of all pools that this link selects.  This may not include all pools selected via poolgroups.")
     public List<String> getPools() {
         return pools;
     }
 
+    @ApiModelProperty("The preferences for this link for various operations.")
     public UnitPreferences getPreferences() {
         return preferences;
     }
 
+    @ApiModelProperty("The tag for this link.")
     public String getTag() {
         return tag;
     }
 
+    @ApiModelProperty("The unitgroups for this link.  All unitgroups must be satisfied before the link is available.")
     public List<String> getUnitGroups() {
         return unitGroups;
     }

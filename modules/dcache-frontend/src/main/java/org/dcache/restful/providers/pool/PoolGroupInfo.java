@@ -59,11 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.pool;
 
+import io.swagger.annotations.ApiModel;
+
 import java.io.Serializable;
 import java.util.Map;
 
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
+
 import org.dcache.cells.json.CellData;
 import org.dcache.util.histograms.Histogram;
 
@@ -75,6 +78,7 @@ import org.dcache.util.histograms.Histogram;
  *
  * <p>Part of the RESTful API.</p>
  */
+@ApiModel("Container for all metadata requests pertaining to a pool group")
 public class PoolGroupInfo implements Serializable {
     private static final long serialVersionUID = 9147099707348977674L;
     private Histogram[]               groupQueueStat;

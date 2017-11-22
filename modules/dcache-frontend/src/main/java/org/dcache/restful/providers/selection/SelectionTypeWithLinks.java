@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.List;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -76,6 +78,7 @@ public abstract class SelectionTypeWithLinks extends SelectionType {
         links = extractLinks(psu);
     }
 
+    @ApiModelProperty("The associated links.")
     public List<String> getLinks() {
         return links;
     }

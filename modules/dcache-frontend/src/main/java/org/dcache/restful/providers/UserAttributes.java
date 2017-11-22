@@ -18,6 +18,9 @@
  */
 package org.dcache.restful.providers;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -25,6 +28,8 @@ import java.util.Objects;
  * Class to hold information for a JSON response querying information
  * about a user.
  */
+@ApiModel(value="User information.",
+        description="Description about a specific user.")
 public class UserAttributes
 {
     public enum AuthenticationStatus {ANONYMOUS, AUTHENTICATED};
@@ -57,6 +62,8 @@ public class UserAttributes
 
     private List<String> email;
 
+    @ApiModelProperty(value = "The authentication status of this user.",
+            allowableValues = "ANONYMOUS,AUTHENTICATED")
     public AuthenticationStatus getStatus()
     {
         return status;
@@ -67,6 +74,8 @@ public class UserAttributes
         this.status = Objects.requireNonNull(status);
     }
 
+    @ApiModelProperty(value = "The numerical uid for this user.",
+            allowableValues = "range[0,infinity]")
     public Long getUid()
     {
         return uid;
@@ -77,6 +86,9 @@ public class UserAttributes
         this.uid = uid;
     }
 
+    @ApiModelProperty(value = "The numerical gids for this user, the first "
+                    + "value is the primary gid.",
+            allowableValues = "range[0,infinity]")
     public List<Long> getGids()
     {
         return gids;
@@ -87,6 +99,7 @@ public class UserAttributes
         this.gids = gids;
     }
 
+    @ApiModelProperty(value = "The user's home directory.")
     public String getHomeDirectory()
     {
         return home;
@@ -97,6 +110,7 @@ public class UserAttributes
         home = dir;
     }
 
+    @ApiModelProperty(value = "The user's root directory.")
     public String getRootDirectory()
     {
         return root;
@@ -107,6 +121,7 @@ public class UserAttributes
         root = dir;
     }
 
+    @ApiModelProperty(value = "The username for this user.")
     public String getUsername()
     {
         return username;
@@ -117,6 +132,7 @@ public class UserAttributes
         username = name;
     }
 
+    @ApiModelProperty("The list of roles that the user choose to assert.")
     public List<String> getRoles()
     {
         return roles;
@@ -127,6 +143,8 @@ public class UserAttributes
         this.roles = roles;
     }
 
+    @ApiModelProperty("The list of roles that the user is entitled to "
+            + "assert, but chose not to.")
     public List<String> getUnassertedRoles()
     {
         return unassertedRoles;
@@ -137,6 +155,7 @@ public class UserAttributes
         this.unassertedRoles = roles;
     }
 
+    @ApiModelProperty("The list of email addresses known for this user.")
     public List<String> getEmail()
     {
         return email;

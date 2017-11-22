@@ -59,9 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.pool;
 
+import io.swagger.annotations.ApiModel;
+
 import java.io.Serializable;
 
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
+
 import org.dcache.pool.json.PoolData;
 import org.dcache.util.histograms.Histogram;
 
@@ -73,6 +76,7 @@ import org.dcache.util.histograms.Histogram;
  *
  * <p>Part of the RESTful API.</p>
  */
+@ApiModel("Container for all metadata requests pertaining to a pool.")
 public class PoolInfo implements Serializable {
     private static final long serialVersionUID = 5758816176471906326L;
 

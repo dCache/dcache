@@ -59,7 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.selection;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,6 +93,7 @@ import org.dcache.restful.util.HttpServletRequests;
  * @version v1.0
  */
 @Component
+@Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/links")
 public final class LinkResources {
     @Context
@@ -95,7 +102,12 @@ public final class LinkResources {
     @Inject
     private PoolMonitor poolMonitor;
 
+
     @GET
+    @ApiOperation("Get information about all links.  Requires admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Link info only accessible to admin users."),
+    })
     @Produces(MediaType.APPLICATION_JSON)
     public List<Link> getLinks() {
         if (!HttpServletRequests.isAdmin(request)) {
@@ -110,6 +122,10 @@ public final class LinkResources {
     }
 
     @GET
+    @ApiOperation("Get information about all linkgroups.  Requires admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Link group info only accessible to admin users."),
+    })
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/groups")
     public List<LinkGroup> getLinkGroups() {

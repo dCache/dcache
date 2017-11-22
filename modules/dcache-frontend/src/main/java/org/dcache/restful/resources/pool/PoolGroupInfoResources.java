@@ -59,6 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.pool;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -88,6 +94,7 @@ import org.dcache.restful.util.HttpServletRequests;
  * @version v1.0
  */
 @Component
+@Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/poolgroups")
 public final class PoolGroupInfoResources {
     @Context
@@ -100,6 +107,10 @@ public final class PoolGroupInfoResources {
     private PoolMonitor poolMonitor;
 
     @GET
+    @ApiOperation("Get a list of poolgroups.  Requires admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
+    })
     @Produces(MediaType.APPLICATION_JSON)
     public List<PoolGroup> getPoolGroups() {
         if (!HttpServletRequests.isAdmin(request)) {
@@ -115,10 +126,16 @@ public final class PoolGroupInfoResources {
                   .collect(Collectors.toList());
     }
 
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation("Get information about a poolgroup.  Requires admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
+    })
     @Path("/{group}")
-    public PoolGroup getPoolGroup(@PathParam("group") String group) {
+    public PoolGroup getPoolGroup(@ApiParam("The poolgroup to be described.")
+                                  @PathParam("group") String group) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Pool group info only accessible to admin users.");
@@ -135,11 +152,11 @@ public final class PoolGroupInfoResources {
      */
     @GET
     @Path("/{group}/pools")
+    @ApiOperation("Get a list of pool that are a member of a poolgroup.  If no "
+            + "poolgroup is specified then all pools are listed.")
     @Produces(MediaType.APPLICATION_JSON)
-    public String[] getPoolsOfGroup(@PathParam("group") String group) {
-        /*
-         *  Allow pools to be listed without privileges.
-         */
+    public String[] getPoolsOfGroup(@ApiParam("The poolgroup to be described.")
+                                    @PathParam("group") String group) {
         if (group == null) {
             return service.listPools();
         }
@@ -147,10 +164,17 @@ public final class PoolGroupInfoResources {
         return service.listPools(group);
     }
 
+
     @GET
+    @ApiOperation("Get usage metadata about a specific poolgroup.  Requires "
+            + "admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
+    })
     @Path("/{group}/usage")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getGroupUsage(@PathParam("group") String group) {
+    public PoolGroupInfo getGroupUsage(@ApiParam("The poolgroup to be described.")
+                                       @PathParam("group") String group) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Pool group info only accessible to admin users.");
@@ -163,10 +187,17 @@ public final class PoolGroupInfoResources {
         return info;
     }
 
+
     @GET
+    @ApiOperation("Get group queue information about a specific poolgroup.  "
+            + "Requires admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
+    })
     @Path("/{group}/queues")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getQueueInfo(@PathParam("group") String group) {
+    public PoolGroupInfo getQueueInfo(@ApiParam("The poolgroup to be described.")
+                                      @PathParam("group") String group) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Pool group info only accessible to admin users.");
@@ -179,10 +210,17 @@ public final class PoolGroupInfoResources {
         return info;
     }
 
+
     @GET
+    @ApiOperation("Get space information about a specific poolgroup.  Requires "
+            + "admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
+    })
     @Path("/{group}/space")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getSpaceInfo(@PathParam("group") String group) {
+    public PoolGroupInfo getSpaceInfo(@ApiParam("The poolgroup to be described.")
+                                      @PathParam("group") String group) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Pool group info only accessible to admin users.");
@@ -195,10 +233,14 @@ public final class PoolGroupInfoResources {
         return info;
     }
 
+
     @GET
+    @ApiOperation("Get queue histogram information about a specific poolgroup.  "
+            + "Requires admin role.")
     @Path("/{group}/histograms/queues")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getQueueHistograms(@PathParam("group") String group) {
+    public PoolGroupInfo getQueueHistograms(@ApiParam("The poolgroup to be described.")
+                                            @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getQueueStat(group, info);
@@ -206,10 +248,17 @@ public final class PoolGroupInfoResources {
         return info;
     }
 
+
     @GET
+    @ApiOperation("Get file statistics about a specific poolgroup.  Requires "
+            + "admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
+    })
     @Path("/{group}/histograms/files")
     @Produces(MediaType.APPLICATION_JSON)
-    public PoolGroupInfo getFilesHistograms(@PathParam("group") String group) {
+    public PoolGroupInfo getFilesHistograms(@ApiParam("The poolgroup to be described.")
+                                            @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getFileStat(group, info);

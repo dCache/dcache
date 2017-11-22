@@ -59,6 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.restores;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -68,9 +74,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+
 import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
@@ -81,44 +89,47 @@ import org.dcache.restful.services.restores.RestoresInfoService;
  * @version v1.0
  */
 @Component
+@Api(value = "pools", authorizations = {@Authorization("basicAuth")})
 @Path("/restores")
 public final class RestoreResources {
     @Inject
     private RestoresInfoService service;
 
-    /**
-     * <p>Restores.</p>
-     *
-     * <p>The Restores endpoint returns current staging operations.</p>
-     *
-     * @param token Use the snapshot corresponding to this UUID.  The contract
-     *              with the service is that if the parameter value is null, the
-     *              snapshot will be used, regardless of whether offset and limit
-     *              are still valid.  Initial/refresh calls should always be
-     *              without a token.  Subsequent calls should send back the
-     *              current token; in the case that it no longer corresponds to
-     *              the current list, the service will return a null token and
-     *              an empty list, and the client will need to recall the method
-     *              without a token (refresh).
-     * @param offset    Return items beginning at this index.
-     * @param limit     Return at most this number of items.
-     * @param pnfsid    Filter on pnfsid.
-     * @param subnet    Filter on subnet.
-     * @param pool      Filter on pool.
-     * @param status    Filter on status.
-     * @param sort      comma-delimited orderd list of fields to sort on.
-     * @return object containing list of restores, along with token and
-     *          offset information.
-     */
     @GET
+    @ApiOperation("Obtain a (potentially partial) list of restore operations "
+            + "from some snapshot, along with a token that identifies the snapshot.")
+    @ApiResponses({
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
     @Produces(MediaType.APPLICATION_JSON)
-    public SnapshotList<RestoreInfo> getRestores(@QueryParam("token") UUID token,
+    public SnapshotList<RestoreInfo> getRestores(@ApiParam("Use the snapshot "
+                                                    + "corresponding to this UUID.  The "
+                                                    + "contract with the service is that if the "
+                                                    + "parameter value is null, the snapshot will "
+                                                    + "be used, regardless of whether offset and "
+                                                    + "limit are still valid.  Initial/refresh "
+                                                    + "calls should always be without a token.  "
+                                                    + "Subsequent calls should send back the "
+                                                    + "current token; in the case that it no "
+                                                    + "longer corresponds to the current list, "
+                                                    + "the service will return a null token "
+                                                    + "and an empty list, and the client will "
+                                                    + "need to recall the method without a "
+                                                    + "token (refresh).")
+                                                 @QueryParam("token") UUID token,
+                                                 @ApiParam("The number of restores to skip.")
                                                  @QueryParam("offset") Integer offset,
+                                                 @ApiParam("The maximum number of restores to return.")
                                                  @QueryParam("limit") Integer limit,
+                                                 @ApiParam("Select only restores that affect this PNFS-ID.")
                                                  @QueryParam("pnfsid") String pnfsid,
+                                                 @ApiParam("Select only restores triggered by clients from this subnet.")
                                                  @QueryParam("subnet") String subnet,
+                                                 @ApiParam("Select only restores on this pool.")
                                                  @QueryParam("pool") String pool,
+                                                 @ApiParam("Select only restores with this status.")
                                                  @QueryParam("status") String status,
+                                                 @ApiParam("A comma-seperated list of fields on which to sort the results.")
                                                  @QueryParam("sort") String sort) {
         try {
             return service.get(token,

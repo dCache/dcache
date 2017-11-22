@@ -59,7 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.selection;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,6 +93,7 @@ import org.dcache.restful.util.HttpServletRequests;
  * @version v1.0
  */
 @Component
+@Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/units")
 public final class UnitResources {
     @Context
@@ -96,6 +103,10 @@ public final class UnitResources {
     private PoolMonitor poolMonitor;
 
     @GET
+    @ApiOperation("List all units.  Requires admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Unit info only accessible to admin users."),
+    })
     @Produces(MediaType.APPLICATION_JSON)
     public List<Unit> getUnits() {
         if (!HttpServletRequests.isAdmin(request)) {
@@ -109,7 +120,12 @@ public final class UnitResources {
                           .collect(Collectors.toList());
     }
 
+
     @GET
+    @ApiOperation("List all unitgroups.  Requires admin role.")
+    @ApiResponses({
+        @ApiResponse(code = 403, message = "Unit info only accessible to admin users."),
+    })
     @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
     public List<UnitGroup> getUnitGroups() {

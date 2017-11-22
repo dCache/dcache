@@ -59,9 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.Map;
 import java.util.Map.Entry;
 
+@ApiModel("A pool partition.  A partition encapsulates configuration parameters "
+        + "and pool selection logic.")
 public final class Partition extends SelectionType {
     private static final long serialVersionUID = -6863635493817332787L;
 
@@ -76,6 +81,7 @@ public final class Partition extends SelectionType {
         properties = entry.getValue().getAllProperties();
     }
 
+    @ApiModelProperty("The arguments for this partition.")
     public Map<String, String> getProperties() {
         return properties;
     }

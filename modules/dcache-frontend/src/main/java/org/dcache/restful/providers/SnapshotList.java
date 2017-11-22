@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers;
 
+import io.swagger.annotations.ApiModel;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -74,6 +76,12 @@ import org.dcache.util.InvalidatableItem;
  * token identifiers of snapshots, with an offset and limit into
  * the underlying snapshot.</p>
  */
+@ApiModel(value = "A selection of results from a semi-persistant snapshot.",
+        description = "Each snapshot has a UUID that identifies it.  The "
+                + "request that created the snapshot also accepts the uuid as"
+                + "an argument, allowing successive requests from the same "
+                + "snapshot with different offset and lengths, providing "
+                + "support for paging.")
 public class SnapshotList<T extends InvalidatableItem & Serializable>
                 implements Serializable {
     /**

@@ -59,6 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.alarms;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
+import io.swagger.annotations.Example;
+import io.swagger.annotations.ExampleProperty;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -81,12 +89,14 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import diskCacheV111.util.CacheException;
+
 import org.dcache.alarms.LogEntry;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.util.HttpServletRequests;
@@ -100,6 +110,7 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
  * @version v1.0
  */
 @Component
+@Api(value = "alarms", authorizations = {@Authorization("basicAuth")})
 @Path("/alarms")
 public final class AlarmsResources {
     @Context
@@ -108,6 +119,9 @@ public final class AlarmsResources {
     @Inject
     private AlarmsInfoService service;
 
+
+    @ApiOperation(value = "General information about alarms service.",
+            hidden = true)
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public String info() {
@@ -115,40 +129,39 @@ public final class AlarmsResources {
                                                NOT_IMPLEMENTED);
     }
 
-    /**
-     * <p>Alarms.</p>
-     * <p>
-     * <p>The Alarms endpoint returns a (filtered) list of alarms.</p>
-     *
-     * @param offset        specifying the index at which to begin.
-     * @param limit         maximum number of alarms to include.
-     * @param after         Return no alarms before this datestamp.
-     * @param before        Return no alarms after this datestamp.
-     * @param includeClosed If false, no alarms which are closed
-     * @param severity      Filter on severity
-     * @param type          Filter on type
-     * @param host          Filter on host
-     * @param domain        Filter on domain
-     * @param service       Filter on service
-     * @param info          Filter on info
-     * @param sort          List of fields on which to sort
-     * @return              List of LogEntry objects.
-     */
+
     @GET
+    @ApiOperation("Provides a filtered list of log entries.")
+    @ApiResponses({
+                @ApiResponse(code = 400, message = "Bad request"),
+                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
     @Path("logentries") // collection of all LogEntry.
     @Produces(MediaType.APPLICATION_JSON)
-
-    public List<LogEntry> getAlarms(@QueryParam("offset") Long offset,
+    public List<LogEntry> getAlarms(@ApiParam("Number of entries to skip in directory listing.")
+                                    @QueryParam("offset") Long offset,
+                                    @ApiParam("Limit number of replies in directory listing.")
                                     @QueryParam("limit") Long limit,
+                                    @ApiParam("Return no alarms before this datestamp, in unix-time.")
                                     @QueryParam("after") Long after,
+                                    @ApiParam("Return no alarms after this datestamp, in unix-time.")
                                     @QueryParam("before") Long before,
+                                    @ApiParam("Whether to include closed alarms.")
                                     @QueryParam("includeClosed") Boolean includeClosed,
+                                    @ApiParam("Select log entries with at least this severity.")
                                     @QueryParam("severity") String severity,
+                                    @ApiParam("Select only log entries of this type.")
                                     @QueryParam("type") String type,
+                                    @ApiParam("Select only log entries from this host.")
                                     @QueryParam("host") String host,
+                                    @ApiParam("Select only log entries from this domain.")
                                     @QueryParam("domain") String domain,
+                                    @ApiParam("Select only log entries from this service.")
                                     @QueryParam("service") String service,
+                                    @ApiParam("Select only log entries that match the info.")
                                     @QueryParam("info") String info,
+                                    @ApiParam("A comma-seperated list of fields to sort log entries.")
                                     @QueryParam("sort") String sort) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
@@ -175,18 +188,39 @@ public final class AlarmsResources {
         }
     }
 
-    /**
-     * <p>Batch request to update or delete the indicated alarms.</p>
-     *
-     * @param requestPayload containing the list of partial log entry objects;
-     *                       for delete, all that is necessary is the key;
-     *                       for close, the key and closed value.
-     */
+
     @PATCH
     @Path("logentries") // collection of all LogEntry.
+    @ApiOperation("Batch request to update or delete the indicated alarms.")
+    @ApiResponses({
+                @ApiResponse(code = 400, message = "Bad request"),
+                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response bulkUpdateOrDelete(String requestPayload) {
+    public Response bulkUpdateOrDelete(@ApiParam(value = "a JSON object"
+                                        + "describing the changes.  The \"action\" "
+                                        + "item is a string with either \"update\" "
+                                        + "or \"delete\" as a value.  The "
+                                        + "\"items\" item is a JSON Array. For "
+                                        + "\"delete\" action, this array contains "
+                                        + "strings, each the key of a log entry "
+                                        + "to delete.  For \"update\" action, "
+                                        + "the array contains JSON objects with "
+                                        + "\"key\" item and \"closed\" item.  "
+                                        + "The closed value is a boolean and "
+                                        + "the key value is a String.",
+                                               examples = @Example({
+                                                   @ExampleProperty("{\n"
+                                                           + "    \"action\" : \"update\",\n"
+                                                           + "    \"items\" : [ \n"
+                                                           + "            { \"key\" : \"key-1\", \"closed\" : true },\n"
+                                                           + "            { \"key\" : \"key-2\", \"closed\" : false }\n"
+                                                           + "        ]\n"
+                                                           + "}")
+                                             }))
+                                       String requestPayload) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Alarm service only accessible to admin users.");
@@ -232,27 +266,35 @@ public final class AlarmsResources {
         return successfulResponse(Response.Status.OK);
     }
 
-    /**
-     * <p>Request for a single alarm.</p>
-     */
+
     @GET
-    @Path("/logentries/{key : .*}") // the specific LogEntry with the given key
+    @ApiOperation(value = "Request for a single log entry.", hidden = true)
+    @Path("/logentries/{key}")
     @Produces(MediaType.APPLICATION_JSON)
-    public LogEntry getLogEntry(@PathParam("key") String key) {
+    public LogEntry getLogEntry(@ApiParam("The log entry to provide.")
+                                @PathParam("key") String key) {
         throw new InternalServerErrorException("Method not yet implemented.",
                                                NOT_IMPLEMENTED);
     }
 
-    /**
-     * <p>Request to close or open the indicated alarm.</p>
-     *
-     * @param key of the alarm to delete.
-     */
+
     @PATCH
-    @Path("/logentries/{key : .*}") // the specific LogEntry with the given key
-    @Consumes({MediaType.APPLICATION_JSON})
+    @ApiOperation("Request to open or close the indicated log entry.")
+    @ApiResponses({
+                @ApiResponse(code = 400, message = "Bad request"),
+                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
+    @Path("/logentries/{key}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateAlarmEntry(@PathParam("key") String key,
+    public Response updateAlarmEntry(@ApiParam("The identifier for the specific log entry")
+                                     @PathParam("key") String key,
+                                     @ApiParam(value = "An JSON Object with a 'closed' "
+                                             + "item containing a JSON Boolean value",
+                                             examples = @Example({
+                                                     @ExampleProperty("{\"closed\" : true}")
+                                             }))
                                      String requestPayload) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
@@ -275,16 +317,19 @@ public final class AlarmsResources {
         return successfulResponse(Response.Status.OK);
     }
 
-    /**
-     * <p>Request to delete the indicated alarm from the service's store.</p>
-     *
-     * @param key of the alarm to delete.
-     */
+
     @DELETE
-    @Path("/logentries/{key : .*}")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @ApiOperation("Delete a specific log entry")
+    @ApiResponses({
+                @ApiResponse(code = 400, message = "Bad request"),
+                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
+    @Path("/logentries/{key}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAlarmEntry(@PathParam("key") String key) {
+    public Response deleteAlarmEntry(@ApiParam("The identifier for the specific log entry")
+                                     @PathParam("key") String key) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Alarm service only accessible to admin users.");
@@ -303,12 +348,12 @@ public final class AlarmsResources {
         return successfulResponse(Response.Status.OK);
     }
 
-    /**
-     * <p>Request for current mapping of alarm types to priorities.</p>
-     *
-     * @return requested priority map
-     */
+
     @GET
+    @ApiOperation("Request the current mapping of alarm types to priorities")
+    @ApiResponses({
+                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users.")
+            })
     @Path("/priorities")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getPriorities() {
@@ -320,15 +365,16 @@ public final class AlarmsResources {
         return service.getMap();
     }
 
-    /**
-     * <p>Request for current mapping of an alarm type to its priority.</p>
-     *
-     * @return requested priority map
-     */
+
     @GET
-    @Path("/priorities/{type: .*}")
+    @ApiOperation("Request the current mapping of alarm type to its priorities")
+    @ApiResponses({
+                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users.")
+            })
+    @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getPriority(@PathParam("type") String type) {
+    public String getPriority(@ApiParam("The alarm type")
+                              @PathParam("type") String type) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Alarm service only accessible to admin users.");
@@ -337,26 +383,27 @@ public final class AlarmsResources {
         return service.getMap().get(type);
     }
 
-    /**
-     * <p>Change the priority of the given alarm type.</p>
-     *
-     * @param priority new priority to assign.
-     */
+
     @PUT
-    @Path("/priorities/{type : .*}")
+    @ApiOperation(value="Change the priority of the given alarm type.",
+            hidden=true)
+    @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updatePriority(@PathParam("type") String type,
+    public Response updatePriority(@ApiParam("The alarm type.")
+                                   @PathParam("type") String type,
+                                   @ApiParam("The desired priority.")
                                    @QueryParam("priority") String priority) {
         return NOT_IMPLEMENTED;
     }
 
-    /**
-     * <p>Reset the priority of the given alarm to the default.</p>
-     */
+
     @DELETE
-    @Path("/priorities/{type : .*}")
+    @ApiOperation(value="Reset the priority of the given alarm to the default.",
+            hidden=true)
+    @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response resetDefaultPriority(@PathParam("type") String type) {
+    public Response resetDefaultPriority(@ApiParam("The alarm type.")
+                                         @PathParam("type") String type) {
         return NOT_IMPLEMENTED;
     }
 }

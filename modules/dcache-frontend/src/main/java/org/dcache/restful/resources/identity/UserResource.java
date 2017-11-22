@@ -18,6 +18,9 @@
  */
 package org.dcache.restful.resources.identity;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.security.auth.Subject;
@@ -49,10 +52,14 @@ import static org.dcache.restful.util.HttpServletRequests.getLoginAttributes;
  * operating.
  */
 @Component
+@Api(value = "identity", authorizations = {@Authorization("basicAuth")})
 @Path("/user")
 public class UserResource
 {
     @GET
+    @ApiOperation(value="Provide information about the current user.",
+            notes="An introspection endpoint to allow the client to discover "
+                    + "information about the current user.")
     @Produces(MediaType.APPLICATION_JSON)
     public UserAttributes getUserAttributes(@Context HttpServletRequest request)
     {

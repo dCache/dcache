@@ -59,6 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.transfers;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -68,10 +74,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+
 import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TransferInfo;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 
@@ -81,58 +89,46 @@ import org.dcache.restful.services.transfers.TransferInfoService;
  * @version v1.0
  */
 @Component
+@Api(value = "transfers", authorizations = {@Authorization("basicAuth")})
 @Path("/transfers")
 public final class TransferResources {
     @Inject
     private TransferInfoService service;
 
-    /**
-     * <p>Transfers.</p>
-     * <p>The Transfers endpoint returns user-initiated
-     * (not pool-to-pool) transfer operations that are currently
-     * queued or running.</p>
-     *
-     * @param token     Use the snapshot corresponding to this UUID.  The contract
-     *                  with the service is that if the parameter value is null, the
-     *                  snapshot will be used, regardless of whether offset and limit
-     *                  are still valid.  Initial/refresh calls should always be
-     *                  without a token.  Subsequent calls should send back the
-     *                  current token; in the case that it no longer corresponds to
-     *                  the current list, the service will return a null token and
-     *                  an empty list, and the client will need to recall the method
-     *                  without a token (refresh).
-     * @param offset    Return transfers beginning at this index.
-     * @param limit     Return at most this number of items.
-     * @param state     Filter on state.
-     * @param door      Filter on door.
-     * @param domain    Filter on domain.
-     * @param protocol  Filter on protocol.
-     * @param uid       Filter on uid.
-     * @param gid       Filter on gid.
-     * @param vomsgroup Filter on vomsgroup.
-     * @param protocol  Filter on protocol.
-     * @param pnfsid    Filter on pnfsid.
-     * @param pool      Filter on pool.
-     * @param pool      Filter on client.
-     * @param sort      comma-delimited orderd list of fields to sort on.
-     * @return object containing list of transfers, along with token and
-     *                  offset information.
-     */
     @GET
+    @ApiOperation("Provide a list of all client-initiated transfers that are "
+            + "either queued or currently running.  Internal (pool-to-pool) "
+            + "transfers are excluded. ")
+    @ApiResponses({
+        @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Produces(MediaType.APPLICATION_JSON)
     public SnapshotList<TransferInfo> getTransfers(@QueryParam("token") UUID token,
+                                                   @ApiParam("The number of items to skip.")
                                                    @QueryParam("offset") Integer offset,
+                                                   @ApiParam("The maximum number items to return.")
                                                    @QueryParam("limit") Integer limit,
+                                                   @ApiParam("Select transfers in this state.")
                                                    @QueryParam("state") String state,
+                                                   @ApiParam("Select transfers initiated through this door.")
                                                    @QueryParam("door") String door,
+                                                   @ApiParam("Select transfers initiated through a door in this domain.")
                                                    @QueryParam("domain") String domain,
+                                                   @ApiParam("Select transfers using this protocol.")
                                                    @QueryParam("prot") String protocol,
+                                                   @ApiParam("Select transfers initiated by this user.")
                                                    @QueryParam("uid") String uid,
+                                                   @ApiParam("Select transfers initiated by a member of this group.")
                                                    @QueryParam("gid") String gid,
+                                                   @ApiParam("Select transfers initiated by a member of this vomsgroup.")
                                                    @QueryParam("vomsgroup") String vomsgroup,
+                                                   @ApiParam("Select transfers involving this pnfsid.")
                                                    @QueryParam("pnfsid") String pnfsid,
+                                                   @ApiParam("Select transfers involving this pool.")
                                                    @QueryParam("pool") String pool,
+                                                   @ApiParam("Select transfers involving this client.")
                                                    @QueryParam("client") String client,
+                                                   @ApiParam("A comma-seperated list of fields to sort the responses.")
                                                    @QueryParam("sort") String sort) {
         try {
             return service.get(token,

@@ -59,8 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.selection;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.json.JSONException;
 import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,6 +102,7 @@ import org.dcache.restful.util.HttpServletRequests;
  * @version v1.0
  */
 @Component
+@Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/pool-preferences")
 public final class PoolPreferenceResources {
     @Context
@@ -108,17 +116,30 @@ public final class PoolPreferenceResources {
     private CellStub poolManager;
 
     @GET
+    @ApiOperation("Describe the pools selected by a particular request.")
+    @ApiResponses({
+        @ApiResponse(code = 400, message = "Bad Request"),
+        @ApiResponse(code = 403, message = "Pool preference info only accessible to admin users."),
+        @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Produces(MediaType.APPLICATION_JSON)
-    public List<PreferenceResult> match(@DefaultValue("READ")
+    public List<PreferenceResult> match(@ApiParam(value = "The operation type.",
+                                                allowableValues = "READ,CACHE,WRITE")
+                                        @DefaultValue("READ")
                                         @QueryParam("type") String type,
+                                        @ApiParam("The name of the matching store unit.")
                                         @DefaultValue("*")
                                         @QueryParam("store") String store,
+                                        @ApiParam("The name of the matching dcache unit.")
                                         @DefaultValue("*")
                                         @QueryParam("dcache") String dcache,
                                         @DefaultValue("*")
+                                        @ApiParam("The name of the matching net unit.")
                                         @QueryParam("net") String net,
                                         @DefaultValue("*")
+                                        @ApiParam("The matching protocol unit.")
                                         @QueryParam("protocol") String protocol,
+                                        @ApiParam("The linkgroup unit, or 'none' for a request outside of a linkgroup.")
                                         @DefaultValue("none")
                                         @QueryParam("linkGroup") String linkGroup) {
         if (!HttpServletRequests.isAdmin(request)) {
