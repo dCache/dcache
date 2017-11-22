@@ -312,6 +312,27 @@
                         </bean>
                     </property>
                 </bean>
+                <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                    <description>Provide access to dCache customised swagger-ui</description>
+                    <property name="contextPath" value="/api/v1"/>
+                    <property name="handler">
+                        <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                            <property name="directoriesListed" value="true"/>
+                            <property name="resourceBase" value="${dcache.paths.swagger-ui.html}"/>
+                        </bean>
+                    </property>
+                </bean>
+                <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                    <description>Provide access to standard swagger-ui library</description>
+                    <property name="contextPath" value="/api/libraries/swagger-ui"/>
+                    <property name="allowNullPathInfo" value="true"/>
+                    <property name="handler">
+                        <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                            <property name="directoriesListed" value="true"/>
+                            <property name="resourceBase" value="jar:file:${dcache.paths.swagger-ui.jar}!${dcache.paths.swagger-ui.jar.internal}"/>
+                        </bean>
+                    </property>
+                </bean>
                 <bean class="org.dcache.http.AuthenticationHandler">
                     <property name="handler">
                         <bean class="org.eclipse.jetty.server.handler.HandlerList">

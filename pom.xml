@@ -74,6 +74,7 @@
         <version.dcache-view>1.3.1</version.dcache-view>
         <version.netty>4.1.10.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
+        <version.swagger-ui>3.1.7</version.swagger-ui>
 
         <!-- BouncyCastle seems to change the naming convention of
              their ArtifactId fairly often.  Here is a summary of
