@@ -1,5 +1,7 @@
 package org.dcache.restful;
 
+import io.swagger.jaxrs.listing.ApiListingResource;
+import io.swagger.jaxrs.listing.SwaggerSerializers;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -22,9 +24,6 @@ import org.dcache.restful.resources.selection.PoolPreferenceResources;
 import org.dcache.restful.resources.selection.UnitResources;
 import org.dcache.restful.resources.transfers.TransferResources;
 
-/**
- *
- */
 public class DcacheRestApplication extends ResourceConfig
 {
     public DcacheRestApplication()
@@ -46,6 +45,8 @@ public class DcacheRestApplication extends ResourceConfig
         register(UnitResources.class);
         register(PartitionResources.class);
         register(PoolPreferenceResources.class);
+        register(ApiListingResource.class);
+        register(SwaggerSerializers.class);
 
         //register filters
         register(ResponseHeaderFilter.class);
@@ -60,6 +61,5 @@ public class DcacheRestApplication extends ResourceConfig
          * Uncomment the line below to activate this default built-in functionality
         */
         EncodingFilter.enableFor(this, GZipEncoder.class);
-
     }
 }

@@ -264,11 +264,35 @@
         </property>
     </bean>
 
+    <bean id="jersey-servlet" class="org.eclipse.jetty.servlet.ServletHolder">
+        <constructor-arg name="name" value="rest"/>
+        <constructor-arg name="servlet">
+            <bean class="org.glassfish.jersey.servlet.ServletContainer">
+                <constructor-arg name="resourceConfig">
+                    <bean class="org.dcache.restful.DcacheRestApplication"/>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="swagger-servlet" class="org.eclipse.jetty.servlet.ServletHolder">
+        <constructor-arg name="name" value="Jersey2Config"/>
+        <constructor-arg name="servlet">
+            <bean class="io.swagger.jersey.config.JerseyJaxrsConfig"/>
+        </constructor-arg>
+        <property name="initParameters">
+            <map>
+                <entry key="swagger.api.basepath" value="/api/v1"/>
+            </map>
+        </property>
+    </bean>
+
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
         <description>List of handlers for HTTP requests</description>
         <property name="handlers">
             <list>
                 <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                    <description>Provide access to dcache-view</description>
                     <property name="contextPath" value="/"/>
                     <property name="allowNullPathInfo" value="true"/>
                     <property name="handler">
@@ -280,6 +304,7 @@
                     </property>
                 </bean>
                 <bean class="org.dcache.restful.util.StaticDataHandler">
+                    <description>Provide dCache configuration as JSON or JavaScript</description>
                     <property name="path" value="${frontend.static.path}" />
                     <property name="data">
                         <bean class="org.dcache.util.ConfigurationMapFactoryBean">
@@ -303,16 +328,8 @@
                                             <bean class="org.dcache.restful.util.SpringWebServletHandler">
                                                 <property name="servlets">
                                                     <list>
-                                                        <bean class="org.eclipse.jetty.servlet.ServletHolder">
-                                                            <constructor-arg name="name" value="rest"/>
-                                                            <constructor-arg name="servlet">
-                                                                <bean class="org.glassfish.jersey.servlet.ServletContainer">
-                                                                    <constructor-arg name="resourceConfig">
-                                                                        <bean class="org.dcache.restful.DcacheRestApplication"/>
-                                                                    </constructor-arg>
-                                                                </bean>
-                                                            </constructor-arg>
-                                                        </bean>
+                                                        <ref bean="swagger-servlet"/>
+                                                        <ref bean="jersey-servlet"/>
                                                     </list>
                                                 </property>
                                                 <property name="servletMappings">

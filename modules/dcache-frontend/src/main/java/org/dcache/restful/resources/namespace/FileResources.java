@@ -1,6 +1,7 @@
 package org.dcache.restful.resources.namespace;
 
 import com.google.common.collect.Range;
+import io.swagger.annotations.Api;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -76,6 +77,7 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
  * @version v1.0
  */
 @Component
+@Api("namespace")
 @Path("/namespace")
 public class FileResources {
 
