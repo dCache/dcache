@@ -145,12 +145,14 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
   private implicit def attrToString(attr: javax.naming.directory.Attribute) : String = attr.get.asInstanceOf[String]
 
   def map(principals: java.util.Set[Principal]) {
+    val havePrimaryGid = principals.stream
+        .anyMatch(p => p.isInstanceOf[GidPrincipal] && p.asInstanceOf[GidPrincipal].isPrimaryGroup)
     JSetWrapper(principals).find( p => p.isInstanceOf[UserNamePrincipal] ) match {
       case Some(p) => try {
         val peopleMaps = mapSearchPeopleByName(p).foldLeft(List[Principal]())( (pset, peopleResult) => {
           val userAttr = peopleResult.getAttributes
           new UidPrincipal(userAttr.get(Ldap.UID_NUMBER_ATTRIBUTE)) ::
-            new GidPrincipal(userAttr.get(Ldap.GID_NUMBER_ATTRIBUTE), true) ::
+            new GidPrincipal(userAttr.get(Ldap.GID_NUMBER_ATTRIBUTE), !havePrimaryGid) ::
             pset
         })
         principals.addAll(SeqWrapper(peopleMaps))

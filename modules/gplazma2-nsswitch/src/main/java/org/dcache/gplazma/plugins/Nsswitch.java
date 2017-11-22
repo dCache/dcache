@@ -21,8 +21,8 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
 
-import static com.google.common.collect.Iterables.filter;
 import static java.util.Arrays.asList;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * {@code GPlazmaMappingPlugin} and {@code GPlazmaIdentityPlugin} implementation for
@@ -56,28 +56,26 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
         _libc = libc;
     }
 
-    private __password findPasswordRecord(Set<Principal> principals) {
-        for (UserNamePrincipal principal: filter(principals, UserNamePrincipal.class)) {
-            __password p = _libc.getpwnam(principal.getName());
-            if (p != null) {
-                return p;
-            }
-        }
-        return null;
-    }
-
     @Override
     public void map(Set<Principal> principals) throws AuthenticationException {
-        __password p = findPasswordRecord(principals);
-        if (p != null) {
-            principals.add(new UidPrincipal(p.uid));
-            principals.add(new GidPrincipal(p.gid, true));
-            int[] gids = groupsOf(p);
-            for (int id : gids) {
-                principals.add(new GidPrincipal(id, false));
+
+        __password password = null;
+        boolean havePrimaryGid = false;
+
+        for (Principal p : principals) {
+            if (p instanceof UserNamePrincipal && password == null) {
+                password = _libc.getpwnam(p.getName());
+            } else if (p instanceof GidPrincipal) {
+                havePrimaryGid |= ((GidPrincipal) p).isPrimaryGroup();
             }
-        } else {
-            throw new AuthenticationException("no mapping");
+        }
+
+        checkAuthentication(password != null, "no mapping");
+
+        principals.add(new UidPrincipal(password.uid));
+        principals.add(new GidPrincipal(password.gid, !havePrimaryGid));
+        for (int id : groupsOf(password)) {
+            principals.add(new GidPrincipal(id, false));
         }
     }
 

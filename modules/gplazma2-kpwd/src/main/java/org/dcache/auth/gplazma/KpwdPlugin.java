@@ -176,6 +176,8 @@ public class KpwdPlugin
         KpwdPrincipal kpwd =
             getFirst(filter(principals, KpwdPrincipal.class), null);
 
+        boolean havePrimaryGid = false;
+
         if (kpwd == null) {
             KAuthFile authFile = getAuthFile();
 
@@ -207,6 +209,8 @@ public class KpwdPlugin
                     checkAuthentication(principal == null,
                             errorMessage(principal, p));
                     principal = p;
+                } else if (p instanceof GidPrincipal) {
+                    havePrimaryGid |= ((GidPrincipal) p).isPrimaryGroup();
                 }
             }
 
@@ -227,6 +231,11 @@ public class KpwdPlugin
 
             authRecord.DN = principal.getName();
             kpwd = new KpwdPrincipal(authRecord);
+        } else {
+            havePrimaryGid |= principals.stream()
+                    .filter(GidPrincipal.class::isInstance)
+                    .map(GidPrincipal.class::cast)
+                    .anyMatch(GidPrincipal::isPrimaryGroup);
         }
 
         principals.add(kpwd);
@@ -240,10 +249,9 @@ public class KpwdPlugin
 
         principals.add(new UserNamePrincipal(kpwd.getName()));
         principals.add(new UidPrincipal(kpwd.uid));
-        boolean primary = true;
         for (long gid: kpwd.gids) {
-            principals.add(new GidPrincipal(gid, primary));
-            primary = false;
+            principals.add(new GidPrincipal(gid, !havePrimaryGid));
+            havePrimaryGid = true;
         }
     }
 

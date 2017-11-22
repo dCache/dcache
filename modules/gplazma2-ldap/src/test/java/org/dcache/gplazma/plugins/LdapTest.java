@@ -20,6 +20,7 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.Sets;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -41,8 +42,10 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.gplazma.plugins.Ldap;
 import org.dcache.ldap4testing.EmbeddedServer;
+import org.dcache.util.PrincipalSetMaker;
 
 import static org.dcache.gplazma.plugins.Ldap.*;
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
@@ -54,7 +57,10 @@ public class LdapTest {
     private static final GroupNamePrincipal ACTOR_GROUP_PRINCIPAL = new GroupNamePrincipal("actor");
     private static final GidPrincipal ACTOR_GID_PRINCIPAL = new GidPrincipal(1001, false);
 
+    private static final GidPrincipal OTHER_PRIMARY_GID = new GidPrincipal(2000, true);
+
     private static final GidPrincipal KERMIT_PRIMARY_GID_PRINCIPAL = new GidPrincipal(1000, true);
+    private static final GidPrincipal KERMIT_GID_PRINCIPAL = new GidPrincipal(1000, false);
     private static final UidPrincipal KERMIT_UID_PRINCIPAL = new UidPrincipal(1000);
     private static final UserNamePrincipal KERMIT_PRINCIPAL = new UserNamePrincipal("kermit");
 
@@ -103,6 +109,20 @@ public class LdapTest {
         assertThat("expected USERNAME not found", principals, hasItem(KERMIT_PRINCIPAL));
         assertThat("expected UID not found", principals, hasItem(KERMIT_UID_PRINCIPAL));
         assertThat("expected GID not found", principals, hasItem(KERMIT_PRIMARY_GID_PRINCIPAL));
+        assertThat("expected GID not found", principals, hasItem(ACTOR_GID_PRINCIPAL));
+    }
+
+    @Test
+    public void shouldReturnMatchingUidGidWithExistingPrimaryGid() {
+        Set<Principal> principals = Sets.newHashSet(KERMIT_PRINCIPAL, OTHER_PRIMARY_GID);
+
+        plugin.map(principals);
+
+        assertThat("unexpected number of returned principals", principals, hasSize(5));
+        assertThat("expected USERNAME not found", principals, hasItem(KERMIT_PRINCIPAL));
+        assertThat("expected UID not found", principals, hasItem(KERMIT_UID_PRINCIPAL));
+        assertThat("expected GID not found", principals, hasItem(OTHER_PRIMARY_GID));
+        assertThat("expected GID not found", principals, hasItem(KERMIT_GID_PRINCIPAL));
         assertThat("expected GID not found", principals, hasItem(ACTOR_GID_PRINCIPAL));
     }
 

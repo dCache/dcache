@@ -10,6 +10,7 @@ import java.util.Set;
 import org.dcache.auth.DesiredRole;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 
@@ -53,11 +54,31 @@ public class PrincipalSetMaker
 
     /**
      * Add a username Principal to the set.
-     * @param uid the id to add
+     * @param name the username to add
      */
     public PrincipalSetMaker withUsername(String username)
     {
         _principals.add(new UserNamePrincipal(username));
+        return this;
+    }
+
+    /**
+     * Add a primary groupname Principal to the set.
+     * @param name the name of the group
+     */
+    public PrincipalSetMaker withPrimaryGroupname(String name)
+    {
+        _principals.add(new GroupNamePrincipal(name, true));
+        return this;
+    }
+
+    /**
+     * Add a non-primary groupname Principal to the set.
+     * @param name the name of the group
+     */
+    public PrincipalSetMaker withGroupname(String name)
+    {
+        _principals.add(new GroupNamePrincipal(name));
         return this;
     }
 

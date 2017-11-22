@@ -23,8 +23,10 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.AuthzDbPlugin.PrincipalType;
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
+import org.dcache.util.PrincipalSetMaker;
 
 import static org.dcache.gplazma.plugins.AuthzDbPlugin.PrincipalType.*;
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.junit.Assert.assertEquals;
 
 public class AuthzDbPluginTest
@@ -40,6 +42,13 @@ public class AuthzDbPluginTest
     {
         testFixture =
             new SourceBackedPredicateMap<>(new MemoryLineSource(Resources.readLines(TEST_FIXTURE, Charset.defaultCharset())), new AuthzMapLineParser());
+    }
+
+    public void check(PrincipalSetMaker input,
+                      PrincipalSetMaker output)
+        throws AuthenticationException
+    {
+        check(input.build(), output.build());
     }
 
     public void check(Set<? extends Principal> input,
@@ -150,6 +159,21 @@ public class AuthzDbPluginTest
                               new UserNamePrincipal("behrmann")));
     }
 
+
+    @Test
+    public void testUserNameWithExistingPrimaryGid()
+        throws AuthenticationException
+    {
+        check(aSetOfPrincipals()
+                  .withUsername("behrmann")
+                  .withPrimaryGid(1010),
+              aSetOfPrincipals()
+                  .withUid(1000)
+                  .withPrimaryGid(1010)
+                  .withGid(1000)
+                  .withUsername("behrmann"));
+    }
+
     @Test
     public void testUserNameWithPrimaryGroup()
         throws AuthenticationException
@@ -161,6 +185,23 @@ public class AuthzDbPluginTest
                               new GidPrincipal(1001, true),
                               new UserNamePrincipal("behrmann"),
                               new GroupNamePrincipal("atlas-user", true)));
+    }
+
+    @Test
+    public void testUserNameWithPrimaryGroupAndExistingPrimaryGid()
+        throws AuthenticationException
+    {
+        check(aSetOfPrincipals()
+                      .withUsername("behrmann")
+                      .withPrimaryGroupname("atlas-user")
+                      .withPrimaryGid(1010),
+              aSetOfPrincipals()
+                      .withUid(1000)
+                      .withPrimaryGid(1010)
+                      .withGid(1000)
+                      .withGid(1001)
+                      .withUsername("behrmann")
+                      .withPrimaryGroupname("atlas-user"));
     }
 
     @Test

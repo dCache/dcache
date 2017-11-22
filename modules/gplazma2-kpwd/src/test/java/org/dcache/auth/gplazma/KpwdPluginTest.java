@@ -25,7 +25,9 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.util.PrincipalSetMaker;
 
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -72,6 +74,14 @@ public class KpwdPluginTest
 
         plugin.session(principals, attributes);
         assertEquals(expectedAttributes, attributes);
+    }
+
+    public void check(PrincipalSetMaker input,
+                      PrincipalSetMaker output,
+                      Set<?> expectedAttributes)
+            throws AuthenticationException
+    {
+        check(input.build(), output.build(), expectedAttributes);
     }
 
     public void check(Set<? extends Principal> input,
@@ -381,4 +391,19 @@ public class KpwdPluginTest
               ImmutableSet.of());
     }
 
+    @Test
+    public void testNoPrimaryGidIfPrimaryGidAlreadyExists() throws Exception
+    {
+        check(aSetOfPrincipals()
+                      .withDn(DN_BEHRMANN)
+                      .withPrimaryGid(2010),
+              aSetOfPrincipals()
+                      .withDn(DN_BEHRMANN)
+                      .withUid(1000)
+                      .withPrimaryGid(2010)
+                      .withGid(1000)
+                      .withUsername("behrmann"),
+              ImmutableSet.of(new HomeDirectory("/foo"),
+                              new RootDirectory("/bar")));
+    }
 }

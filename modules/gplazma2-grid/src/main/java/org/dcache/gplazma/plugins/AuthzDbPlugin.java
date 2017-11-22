@@ -167,6 +167,7 @@ public class AuthzDbPlugin
         Long loginGid = null;
         String userName = null;
         String primaryGroup = null;
+        boolean hasPrimaryGid = false;
         for (Principal principal: principals) {
             if (principal instanceof LoginNamePrincipal) {
                 checkAuthentication(loginName == null, "multiple login names");
@@ -188,6 +189,8 @@ public class AuthzDbPlugin
                     primaryGroup = principal.getName();
                 }
                 names.add(principal.getName());
+            } else if (principal instanceof GidPrincipal) {
+                hasPrimaryGid |= ((GidPrincipal) principal).isPrimaryGroup();
             }
         }
 
@@ -228,12 +231,13 @@ public class AuthzDbPlugin
             principals.add(new UserNamePrincipal(user.getUsername()));
         }
 
-        /* Pick a primary GID.
+        /* Pick the first gid.  This is the primary gid provided the user does
+         * not already have a primary gid.
          */
         UserAuthzInformation group =
             getEntity(_gidOrder, null, loginGid, loginName, userName, primaryGroup);
         long primaryGid = group.getGids()[0];
-        principals.add(new GidPrincipal(primaryGid, true));
+        principals.add(new GidPrincipal(primaryGid, !hasPrimaryGid));
 
         /* Add remaining GIDs.
          */

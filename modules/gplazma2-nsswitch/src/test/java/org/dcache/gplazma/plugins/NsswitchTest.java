@@ -26,6 +26,7 @@ import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.gplazma.plugins.Nsswitch.LibC;
 import org.dcache.gplazma.plugins.Nsswitch.__group;
 import org.dcache.gplazma.plugins.Nsswitch.__password;
+import org.dcache.util.PrincipalSetMaker;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
@@ -36,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 
 @RunWith(PowerMockRunner.class)
 @SuppressStaticInitializationFor({"com.sun.jna.Structure"})
@@ -183,6 +185,19 @@ public class NsswitchTest
     }
 
     @Test
+    public void shouldLoginMapForUserWithSingleGroupAndExistingPrimaryGid()
+            throws AuthenticationException
+    {
+        given(aUser().withName("kermit").withUid(100).withGid(200));
+
+        whenLoginMap(aSetOfPrincipals().withUsername("kermit").withPrimaryGid(300));
+
+        assertThat(_loginMapResult, hasItem(uidPrincipal(100)));
+        assertThat(_loginMapResult, hasItem(primaryGidPrincipal(300)));
+        assertThat(_loginMapResult, hasItem(nonPrimaryGidPrincipal(200)));
+    }
+
+    @Test
     public void shouldLoginMapForUserWithMultipleGroups()
             throws AuthenticationException
     {
@@ -193,6 +208,21 @@ public class NsswitchTest
 
         assertThat(_loginMapResult, hasItem(uidPrincipal(100)));
         assertThat(_loginMapResult, hasItem(primaryGidPrincipal(200)));
+        assertThat(_loginMapResult, hasItem(nonPrimaryGidPrincipal(210)));
+        assertThat(_loginMapResult, hasItem(nonPrimaryGidPrincipal(220)));
+    }
+
+    @Test
+    public void shouldLoginMapForUserWithMultipleGroupsAndExistingPrimaryGid()
+            throws AuthenticationException
+    {
+        given(aUser().withName("kermit").withUid(100).withGid(200).withExtraGids(210,220));
+
+        whenLoginMap(aSetOfPrincipals().withUsername("kermit").withPrimaryGid(300));
+
+        assertThat(_loginMapResult, hasItem(uidPrincipal(100)));
+        assertThat(_loginMapResult, hasItem(primaryGidPrincipal(300)));
+        assertThat(_loginMapResult, hasItem(nonPrimaryGidPrincipal(200)));
         assertThat(_loginMapResult, hasItem(nonPrimaryGidPrincipal(210)));
         assertThat(_loginMapResult, hasItem(nonPrimaryGidPrincipal(220)));
     }
@@ -217,6 +247,11 @@ public class NsswitchTest
     private void whenIdentityReverseMap(Principal p) throws NoSuchPrincipalException
     {
         _identityReverseMapResult = _plugin.reverseMap(p);
+    }
+
+    private void whenLoginMap(PrincipalSetMaker maker) throws AuthenticationException
+    {
+        whenLoginMap(maker.build());
     }
 
     private void whenLoginMap(Set<Principal> principals) throws AuthenticationException
