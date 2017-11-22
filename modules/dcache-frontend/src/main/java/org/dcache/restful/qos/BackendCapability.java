@@ -1,13 +1,12 @@
 package org.dcache.restful.qos;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.List;
 
-/**
- * Data describing specific QoS.
- */
+@ApiModel("Information describing the storage system.")
 public class BackendCapability {
-
 
     private String name;
 
@@ -15,7 +14,7 @@ public class BackendCapability {
 
     private QoSMetadata metadata;
 
-
+    @ApiModelProperty("The attributes describing this quality of service.")
     public QoSMetadata getMetadata() {
         return this.metadata;
     }
@@ -25,6 +24,8 @@ public class BackendCapability {
     }
 
 
+    @ApiModelProperty("The list of quality of services to which a transition "
+            + "from this quality of service is supported.")
     public List<String> getTransition() {
         return transition;
     }
@@ -33,6 +34,7 @@ public class BackendCapability {
         this.transition = transitions;
     }
 
+    @ApiModelProperty("The name of this quality of service.")
     public String getName() {
         return name;
     }
@@ -40,6 +42,4 @@ public class BackendCapability {
     public void setName(String name) {
         this.name = name;
     }
-
-
 }

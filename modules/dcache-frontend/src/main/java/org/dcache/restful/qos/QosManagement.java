@@ -1,5 +1,11 @@
 package org.dcache.restful.qos;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
@@ -26,9 +32,8 @@ import org.dcache.restful.util.RequestUser;
 /**
  * RestFul API for querying and manipulating QoS
  */
-
-
 @Component
+@Api(value = "qos", authorizations = {@Authorization("basicAuth")})
 @Path("/qos-management/qos/")
 public class QosManagement {
 
@@ -39,19 +44,21 @@ public class QosManagement {
 
     public static List<String> cdmi_geographic_placement_provided = Arrays.asList("DE");
 
-    /**
-     * Get the list of available QoS for file  and directory objects corresponding to some specific quality of services supported by dCache back-end.
-     * For example, storage requirements such as flexible allocation of disk or tape storage space.
-     *
-     * @param qosValue specific object (file | directory)
-     * @return JSONObject List of available QoS
-     * @throws CacheException
-     */
 
     @GET
-    @Path("{qosValue : .*}")
+    @ApiOperation("List the available quality of services for a specific object "
+            + "type.  Requires authentication.")
+    @ApiResponses({
+                @ApiResponse(code = 401, message = "Unauthorized."),
+                @ApiResponse(code = 403, message = "Forbidden."),
+                @ApiResponse(code = 404, message = "Not found."),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
+    @Path("{type}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getQosList(@PathParam("qosValue") String qosValue) throws CacheException {
+    public String getQosList(@ApiParam(value = "The kind of object to query.",
+                                     allowableValues="file,directory")
+                             @PathParam("type") String qosValue) throws CacheException {
 
         JSONObject json = new JSONObject();
 
@@ -97,21 +104,20 @@ public class QosManagement {
     }
 
 
-    /**
-     * Query data for specified QoS for file objects.
-     * All QoS objects for file objects are specified by "name", "transition" attributes.
-     * If present, the QoS objects should also contain data system metadata values which are described in the following sections.
-     *
-     * @param qosValue specific QoS {disk|tape|disk+tape}
-     * @return BackendCapabilityDisk  detailed description of the QoS
-     * @throws CacheException
-     */
-
-
     @GET
-    @Path("/file/{qosValue : .*}")
+    @ApiOperation("Provide information about a specific file quality of "
+            + "services.  Requires authentication.")
+    @ApiResponses({
+                @ApiResponse(code = 401, message = "Unauthorized"),
+                @ApiResponse(code = 403, message = "Forbidden"),
+                @ApiResponse(code = 404, message = "Not found"),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
+    @Path("/file/{qos}")
     @Produces(MediaType.APPLICATION_JSON)
-    public BackendCapabilityResponse getQueriedQosForFiles(@PathParam("qosValue") String qosValue) throws CacheException {
+    public BackendCapabilityResponse getQueriedQosForFiles(
+            @ApiParam("The file quality of service to query.")
+            @PathParam("qos") String qosValue) throws CacheException {
 
         BackendCapabilityResponse backendCapabilityResponse = new BackendCapabilityResponse();
         BackendCapability backendCapability = new BackendCapability();
@@ -165,19 +171,20 @@ public class QosManagement {
     }
 
 
-    /**
-     * Query data for specified QoS for directory objects.
-     *
-     * @param qosValue specific QoS {disk|tape}
-     * @return BackendCapabilityDisk  detailed description of the QoS
-     * @throws CacheException
-     */
-
-
     @GET
-    @Path("/directory/{qosValue : .*}")
+    @ApiOperation("Provides information about a specific directory quality of "
+            + "services.  Requires authentication.")
+    @ApiResponses({
+                @ApiResponse(code = 401, message = "Unauthorized."),
+                @ApiResponse(code = 403, message = "Forbidden."),
+                @ApiResponse(code = 404, message = "Not found."),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
+    @Path("/directory/{qos}")
     @Produces(MediaType.APPLICATION_JSON)
-    public BackendCapabilityResponse getQueriedQosForDirectories(@PathParam("qosValue") String qosValue) throws CacheException {
+    public BackendCapabilityResponse getQueriedQosForDirectories(
+            @ApiParam("The directory quality of service to query.")
+            @PathParam("qos") String qosValue) throws CacheException {
 
         BackendCapabilityResponse backendCapabilityResponse = new BackendCapabilityResponse();
 
