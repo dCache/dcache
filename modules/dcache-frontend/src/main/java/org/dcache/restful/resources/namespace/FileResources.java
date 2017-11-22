@@ -2,6 +2,13 @@ package org.dcache.restful.resources.namespace;
 
 import com.google.common.collect.Range;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
+import io.swagger.annotations.Example;
+import io.swagger.annotations.ExampleProperty;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -72,10 +79,9 @@ import static diskCacheV111.util.FileLocality.ONLINE_AND_NEARLINE;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
 /**
- * RestFul API to  provide files/folders manipulation operations
- *
- * @version v1.0
+ * RestFul API to  provide files/folders manipulation operations.
  */
+@Api(value = "namespace", authorizations = {@Authorization("basicAuth")})
 @Component
 @Api("namespace")
 @Path("/namespace")
@@ -112,68 +118,35 @@ public class FileResources {
     @Named("pnfs-stub")
     private CellStub pnfsmanager;
 
-    /**
-     * The method offer to list the content of a directory or return metadata of
-     * a specified file or directory.
-     *
-     * @param isList optional boolean parameter, set to false by default.
-     *                 When set to true (e.g. /?children=true) the file attributes(e.g.  file size, locality, creation time... )
-     *                 of the children (files/directories) of
-     *                 the specified directory will be displayed.
-     * @param isLocality optional boolean parameter, set to false by default.
-     *                 When set to true the locality of file (ONLINE/NEARLINE) is displayed as a part of FileAttributes.
-     * @return JsonFileAttributes  Json Object
-     * <p>
-     * <p>
-     * * EXAMPLES
-     * Return all the files in the given directory
-     * @method GET
-     * @Resources URL (default)
-     * http://localhost:2880/api/v1/namespace/urlPath/?children=true&locality=true
-     * @Request Header:
-     * Accept: application/json
-     * Content-Type: application/json
-     * Method:
-     * GET
-     * URL:
-     * http://localhost:2880/api/v1/namespace/replica/?children=true&locality=true
-     * @Response {
-     * "children":
-     * [
-     * {
-     * "fileName": "test000001",
-     * "fileLocality": "ONLINE",
-     * "mtime": 1459959425090,
-     * "fileType": "REGULAR",
-     * "creationTime": 1459959409825,
-     * "size": 378
-     * },
-     * {
-     * "fileName": "test1",
-     * "mtime": 1461000184802,
-     * "fileType": "DIR",
-     * "creationTime": 1461000167903,
-     * "size": 512
-     * }
-     * ],
-     * "mtime": 1461000173723,
-     * "fileType": "DIR",
-     * "creationTime": 1459949700167,
-     * "size": 512
-     * }
-     */
     @GET
-    @Path("{value : .*}")
+    @ApiOperation(value="Find metadata and optionally directory contents.",
+            notes="The method offer the possibility to list the content of a "
+                    + "directory in addition to providing metadata of a "
+                    + "specified file or directory.")
+    @ApiResponses({
+                @ApiResponse(code = 401, message = "Unauthorized"),
+                @ApiResponse(code = 403, message = "Forbidden"),
+                @ApiResponse(code = 404, message = "Not Found"),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
+    @Path("{path : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonFileAttributes getFileAttributes(@PathParam("value") String requestPath,
+    public JsonFileAttributes getFileAttributes(@ApiParam("Path of file or directory.")
+                                                @PathParam("path") String requestPath,
+                                                @ApiParam("Whether to include directory listing.")
                                                 @DefaultValue("false")
                                                 @QueryParam("children") boolean isList,
+                                                @ApiParam("Whether to include file locality information.")
                                                 @DefaultValue("false")
                                                 @QueryParam("locality") boolean isLocality,
+                                                @ApiParam(value="Whether to include replica locations.")
                                                 @QueryParam("locations") boolean isLocations,
+                                                @ApiParam(value="Whether to include quality of service.")
                                                 @DefaultValue("false")
                                                 @QueryParam("qos") boolean isQos,
+                                                @ApiParam("Limit number of replies in directory listing.")
                                                 @QueryParam("limit") String limit,
+                                                @ApiParam("Number of entries to skip in directory listing.")
                                                 @QueryParam("offset") String offset) throws CacheException
     {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
@@ -257,10 +230,50 @@ public class FileResources {
     }
 
     @POST
-    @Path("{value : .*}")
+    @ApiOperation(value="Modify a file or directory.")
+    @Path("{path : .*}")
+    @ApiResponses({
+                @ApiResponse(code = 400, message = "Transition for directories not supported"),
+                @ApiResponse(code = 400, message = "Unsupported QoS transition"),
+                @ApiResponse(code = 400, message = "Unknown target QoS"),
+                @ApiResponse(code = 400, message = "Unknown action"),
+                @ApiResponse(code = 401, message = "Unauthorized"),
+                @ApiResponse(code = 403, message = "Forbidden"),
+                @ApiResponse(code = 404, message = "Not Found"),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response cmrResources(@PathParam("value") String requestPath, String requestPayload)
+    public Response cmrResources(@ApiParam(value="Path of file or directory to be modified.", required=true)
+                                 @PathParam("path") String requestPath,
+                                 @ApiParam(value = "A JSON object that has an 'action' "
+                                             + "item with a String value.\n"
+                                             + "If the 'action' value is 'mkdir' "
+                                             + "then a new directory is created "
+                                             + "with the name taken from the "
+                                             + "value of the JSON object 'name' "
+                                             + "item.  This directory is created "
+                                             + "within the supplied path parameter, "
+                                             + "which must be an existing directory.\n"
+                                             + "If action is 'mv' then the file "
+                                             + "or directory specified by the path "
+                                             + "parameter is moved and/or "
+                                             + "renamed with the value of the JSON "
+                                             + "object 'destination' item describing "
+                                             + "the final location.  If the "
+                                             + "'destination' value is a relative "
+                                             + "path then it is resolved against "
+                                             + "the path parameter value.\n"
+                                             + "If action is 'qos' then the value "
+                                             + "of the JSON object 'target' item "
+                                             + "describes the desired QoS.",
+                                         required = true,
+                                         examples = @Example({
+                                             @ExampleProperty("{\n"
+                                                         + "    \"action\" : \"mv\""
+                                                         + "    \"destination\" : \"../foo\""
+                                                         + "}")}))
+                                 String requestPayload)
     {
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
@@ -356,10 +369,19 @@ public class FileResources {
     }
 
     @DELETE
-    @Path("{value : .*}")
+    @Path("{path : .*}")
+    @ApiOperation(value="delete a file or directory",
+            notes="If a directory is targeted then the directory must already be empty.")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteFileEntry(@PathParam("value") String requestPath) throws CacheException {
-
+    @ApiResponses({
+                @ApiResponse(code = 401, message = "Unauthorized"),
+                @ApiResponse(code = 403, message = "Forbidden"),
+                @ApiResponse(code = 404, message = "Not Found"),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
+    public Response deleteFileEntry(@ApiParam(value="Path of file or directory.", required=true)
+                                    @PathParam("path") String requestPath) throws CacheException
+    {
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 

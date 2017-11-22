@@ -59,6 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.namespace;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -100,6 +106,7 @@ import org.dcache.vehicles.FileAttributes;
  * @version v1.0
  */
 @Component
+@Api(value = "namespace", authorizations = {@Authorization("basicAuth")})
 @Path("/id")
 public class IdResources {
     @Context
@@ -119,16 +126,21 @@ public class IdResources {
     @Named("pnfs-stub")
     private CellStub pnfsmanager;
 
-    /**
-     * <p>Retrieve all the file attributes, plus path, from pnfsid.</p>
-     *
-     * @param value a valid PnfsId
-     * @return all file attributes.
-     */
+
     @GET
-    @Path("{value : .*}")
+    @ApiOperation(value="Discover information about a file from the PNFS-ID.",
+            notes="Retrieve all file attributes plus the file's path from the "
+                    + "given PNFS-ID.")
+    @ApiResponses({
+                @ApiResponse(code = 400, message = "Bad pnsfid"),
+                @ApiResponse(code = 404, message = "Not Found"),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
+    @Path("{pnfsid}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonFileAttributes getAttributes(@PathParam("value") String value) {
+    public JsonFileAttributes getAttributes(@ApiParam("The PNFS-ID of a file or directory")
+                                            @PathParam("pnfsid") String value)
+    {
         Set<FileAttribute> attributeSet = EnumSet.allOf(FileAttribute.class);
         JsonFileAttributes result = new JsonFileAttributes();
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
