@@ -82,6 +82,7 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.util.concurrent.Futures.*;
+import dmg.cells.nucleus.CellEndpoint;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.REGULAR;
 import static org.dcache.util.MathUtils.addWithInfinity;
@@ -1075,7 +1076,7 @@ public class Transfer implements Comparable<Transfer>
         message.setId(_id);
         message.setSubject(_subject);
 
-        ListenableFuture<PoolIoFileMessage> reply = _poolManager.startAsync(pool.getAddress(), message, timeout);
+        ListenableFuture<PoolIoFileMessage> reply = _pool.startAsync(pool.getAddress(), message, timeout);
         setStatusUntil("Pool " + pool + ": Creating mover", reply);
         return CellStub.transformAsync(reply, msg -> {
             setMoverId(msg.getMoverId());
