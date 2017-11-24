@@ -987,10 +987,8 @@ public final class SpaceManagerService
                 return null;
             }
 
-            String hostName = (protocolInfo instanceof IpProtocolInfo)
-                ? ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress().getHostAddress()
-                : null;
-            String protocol = protocolInfo.getProtocol() + '/' + protocolInfo.getMajorVersion();
+            String hostName = hostnameFrom(protocolInfo);
+            String protocol = protocolFrom(protocolInfo);
             throw new NoPoolConfiguredSpaceException("Unable to reserve space: " +
                     "no write link in linkgroups " + linkGroupNames + " for " +
                     "writing a file with [net=" + hostName + ",protocol=" + protocol +
@@ -1012,11 +1010,8 @@ public final class SpaceManagerService
     private String findLinkGroupForWrite(ProtocolInfo protocolInfo, FileAttributes fileAttributes,
                                                Iterable<String> linkGroups)
     {
-        String protocol = protocolInfo.getProtocol() + '/' + protocolInfo.getMajorVersion();
-        String hostName =
-                (protocolInfo instanceof IpProtocolInfo)
-                ? ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress().getHostAddress()
-                : null;
+        String protocol = protocolFrom(protocolInfo);
+        String hostName = hostnameFrom(protocolInfo);
 
         for (String linkGroup : linkGroups) {
             PoolPreferenceLevel[] levels =
@@ -1032,17 +1027,36 @@ public final class SpaceManagerService
         return null;
     }
 
-    private boolean isWriteableOutsideLinkgroup(ProtocolInfo info, FileAttributes attributes)
-            throws NoFreeSpaceException
+    private String hostnameFrom(ProtocolInfo info)
     {
-        String protocol = info.getProtocol() + '/' + info.getMajorVersion();
-        String hostname = (info instanceof IpProtocolInfo)
+        return (info instanceof IpProtocolInfo)
                 ? ((IpProtocolInfo) info).getSocketAddress().getAddress().getHostAddress()
                 : null;
+    }
+
+    private String protocolFrom(ProtocolInfo info)
+    {
+        return info.getProtocol() + '/' + info.getMajorVersion();
+    }
+
+    private String storageFrom(FileAttributes attributes)
+    {
+        return attributes.getStorageClass() + '@' + attributes.getHsm();
+    }
+
+    private boolean isWriteableOutsideLinkgroup(ProtocolInfo info, FileAttributes attributes)
+    {
+        return isWriteableInLinkgroup(info, attributes, null);
+    }
+
+    private boolean isWriteableInLinkgroup(ProtocolInfo info, FileAttributes attributes, String linkGroup)
+    {
+        String protocol = protocolFrom(info);
+        String hostname = hostnameFrom(info);
 
         PoolPreferenceLevel[] levels = poolMonitor.getPoolSelectionUnit().
                 match(PoolSelectionUnit.DirectionType.WRITE, hostname, protocol,
-                        attributes, null);
+                        attributes, linkGroup);
 
         return levels.length != 0;
     }
@@ -1077,6 +1091,7 @@ public final class SpaceManagerService
     {
         LOGGER.trace("selectPool({})", selectWritePool);
         FileAttributes fileAttributes = selectWritePool.getFileAttributes();
+        ProtocolInfo protocolInfo = selectWritePool.getProtocolInfo();
         String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
         Subject subject = selectWritePool.getSubject();
 
@@ -1090,6 +1105,16 @@ public final class SpaceManagerService
             }
             LinkGroup linkGroup = db.getLinkGroup(space.getLinkGroupId());
             String linkGroupName = linkGroup.getName();
+            if (!isWriteableInLinkgroup(protocolInfo, fileAttributes, linkGroupName)) {
+                // FIXME provide better information for the user
+                throw new NoPoolConfiguredSpaceException("Space reservation "
+                        + defaultSpaceToken + " may not be used for this write "
+                        + "request [net=" + hostnameFrom(protocolInfo)
+                        + ",protocol=" + protocolFrom(protocolInfo)
+                        + ",store=" + storageFrom(fileAttributes)
+                        + ",cache=" + nullToEmpty(fileAttributes.getCacheClass())
+                        + ",linkgroup=" + nullToEmpty(linkGroupName) + "]");
+            }
             selectWritePool.setLinkGroup(linkGroupName);
 
             StorageInfo storageInfo = selectWritePool.getStorageInfo();
@@ -1114,16 +1139,15 @@ public final class SpaceManagerService
         } else if (allowUnreservedUploadsToLinkGroups) {
             LOGGER.trace("Upload outside a reservation, identifying appropriate linkgroup");
 
-            LinkGroup linkGroup =
-                    findLinkGroupForWrite(subject, selectWritePool
-                            .getProtocolInfo(), fileAttributes, selectWritePool.getPreallocated());
+            LinkGroup linkGroup = findLinkGroupForWrite(subject, protocolInfo,
+                    fileAttributes, selectWritePool.getPreallocated());
             if (linkGroup != null) {
                 String linkGroupName = linkGroup.getName();
                 selectWritePool.setLinkGroup(linkGroupName);
                 fileAttributes.getStorageInfo().setKey("LinkGroupId", Long.toString(linkGroup.getId()));
                 LOGGER.trace("selectPool: found linkGroup = {}, forwarding message", linkGroupName);
             }
-        } else if (isWriteableOutsideLinkgroup(selectWritePool.getProtocolInfo(), fileAttributes)) {
+        } else if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
             LOGGER.debug("Upload proceeding outside of any linkgroup.");
         } else {
             throw new NoPoolConfiguredSpaceException("No write pools configured outside of a linkgroup.");
