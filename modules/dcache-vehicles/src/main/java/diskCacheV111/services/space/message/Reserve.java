@@ -31,8 +31,10 @@ public class Reserve extends Message{
     private final long lifetime;
     private long expirationTime;
     private final String description;
+    private final String linkgroupName;
 
     public Reserve(
+            String linkgroupName,
             long sizeInBytes,
             RetentionPolicy retentionPolicy,
             AccessLatency accessLatency,
@@ -43,6 +45,7 @@ public class Reserve extends Message{
         this.accessLatency = accessLatency;
         this.retentionPolicy = checkNotNull(retentionPolicy);
         this.description = description;
+        this.linkgroupName = linkgroupName;
         setReplyRequired(true);
     }
 
@@ -81,5 +84,9 @@ public class Reserve extends Message{
 
     public String getDescription() {
         return description;
+    }
+
+    public String getLinkgroupName() {
+        return linkgroupName;
     }
 }

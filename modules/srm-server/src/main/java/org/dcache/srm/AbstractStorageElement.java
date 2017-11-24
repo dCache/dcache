@@ -523,6 +523,7 @@ public interface AbstractStorageElement {
                          String retentionPolicy,
                          String accessLatency,
                          String description,
+                         Map<String,String> extraInfo,
                          SrmReserveSpaceCallback callbacks);
 
     /**

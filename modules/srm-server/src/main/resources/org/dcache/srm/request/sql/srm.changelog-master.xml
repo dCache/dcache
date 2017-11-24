@@ -3,4 +3,5 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
     <include file="org/dcache/srm/request/sql/srm.changelog-2.14.xml"/>
+    <include file="org/dcache/srm/request/sql/srm.changelog-4.0.xml"/>
 </databaseChangeLog>
