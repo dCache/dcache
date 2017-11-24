@@ -10,7 +10,8 @@ import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.http.exceptions.NotFoundException;
-import io.milton.http.http11.Http11ResponseHandler;
+import io.milton.http.quota.StorageChecker;
+import io.milton.http.webdav.WebDavResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public class DcacheStandardFilter implements Filter
     public void process(FilterChain chain, Request request, Response response)
     {
         HttpManager manager = chain.getHttpManager();
-        Http11ResponseHandler responseHandler = manager.getResponseHandler();
+        WebDavResponseHandler responseHandler = (WebDavResponseHandler) manager.getResponseHandler();
 
         try {
             Request.Method method = request.getMethod();
@@ -69,6 +70,8 @@ public class DcacheStandardFilter implements Filter
         } catch (UncheckedBadRequestException e) {
             log.debug("Client supplied bad request parameters: {}", e.getMessage());
             responseHandler.respondBadRequest(e.getResource(), response, request);
+        } catch (InsufficientStorageException e) {
+            responseHandler.respondInsufficientStorage(request, response, StorageChecker.StorageErrorReason.SER_DISK_FULL);
         } catch (ConflictException e) {
             responseHandler.respondConflict(e.getResource(), response, request, e.getMessage());
         } catch (NotAuthorizedException e) {

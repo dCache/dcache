@@ -1,5 +1,6 @@
 package org.dcache.webdav;
 
+import com.google.common.collect.ImmutableSet;
 import io.milton.http.Auth;
 import io.milton.http.HttpManager;
 import io.milton.http.LockInfo;
@@ -34,6 +35,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.Subjects;
@@ -48,6 +50,14 @@ public class DcacheDirectoryResource
     implements PutableResource, GetableResource, DeletableResource,
                MakeCollectionableResource, LockingCollectionResource
 {
+    // FIXME update poolmanager to return the actual CacheException.
+    private static final ImmutableSet<String> FULL_POOL_MESSAGE = ImmutableSet.<String>builder()
+            .add("All pools full")
+            .add("All pools are full")
+            .add("Cost limit exceeded")
+            .add("Fallback cost exceeded")
+            .build();
+
     public DcacheDirectoryResource(DcacheResourceFactory factory,
                                    FsPath path, FileAttributes attributes)
     {
@@ -111,6 +121,12 @@ public class DcacheDirectoryResource
             throw WebDavExceptions.permissionDenied(this);
         } catch (FileExistsCacheException e) {
             throw new ConflictException(this);
+        } catch (MissingResourceCacheException e) {
+            if (FULL_POOL_MESSAGE.contains(e.getMessage())) {
+                throw new InsufficientStorageException(e.getMessage(), e, this);
+            } else {
+                throw new WebDavException(e.getMessage(), e, this);
+            }
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
