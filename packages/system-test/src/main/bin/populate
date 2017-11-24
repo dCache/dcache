@@ -15,15 +15,19 @@ lib="$(getProperty dcache.paths.share.lib)"
 
 cd @TARGET@/dcache
 
+dn() { # $1 - path to X.509 certificate
+    openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+:/:;s:, :/:g'
+}
+
 if [ ! -f etc/dcache.kpwd ]; then
     if [ -f ~/.globus/dcache-systemtest-usercert.pem ]; then
-        DN=$(openssl x509 -in ~/.globus/dcache-systemtest-usercert.pem -subject -noout | sed -e 's/subject= *//')
+        DN=$(dn ~/.globus/dcache-systemtest-usercert.pem)
         bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r / -f / \
             -w read-write -p password -s "$DN" system-test
         bin/dcache kpwd dcmapadd "$DN" system-test
     fi
     if [ -f ~/.globus/usercert.pem ]; then
-        DN=$(openssl x509 -in ~/.globus/usercert.pem -subject -noout | sed -e 's/subject= *//')
+        DN=$(dn ~/.globus/usercert.pem)
         bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r / -f / \
             -w read-write -p password -s "$DN" "$username"
         bin/dcache kpwd dcmapadd "$DN" "$username"
