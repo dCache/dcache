@@ -45,9 +45,11 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.vehicles.FileAttributes;
+
 
 import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
 
@@ -70,6 +72,14 @@ public class DcacheDirectoryResource
     private static final ImmutableSet<QName> QUOTA_PROPERTIES = ImmutableSet.of(QUOTA_AVAILABLE, QUOTA_USED);
 
     private static final PropertyMetaData READONLY_LONG = new PropertyMetaData(READ_ONLY, Long.class);
+
+    // FIXME update poolmanager to return the actual CacheException.
+    private static final ImmutableSet<String> FULL_POOL_MESSAGE = ImmutableSet.<String>builder()
+            .add("All pools full")
+            .add("All pools are full")
+            .add("Cost limit exceeded")
+            .add("Fallback cost exceeded")
+            .build();
 
     public DcacheDirectoryResource(DcacheResourceFactory factory,
                                    FsPath path, FileAttributes attributes)
@@ -135,6 +145,12 @@ public class DcacheDirectoryResource
             throw WebDavExceptions.permissionDenied(this);
         } catch (FileExistsCacheException e) {
             throw new ConflictException(this);
+        } catch (MissingResourceCacheException e) {
+            if (FULL_POOL_MESSAGE.contains(e.getMessage())) {
+                throw new InsufficientStorageException(e.getMessage(), e, this);
+            } else {
+                throw new WebDavException(e.getMessage(), e, this);
+            }
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
