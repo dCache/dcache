@@ -1,7 +1,26 @@
+#Note: The following may work only for dCache logs managed by rsyslog (i.e. not for its access- and event logs, which are managed by logback)!
+
+
+
+
 /var/log/dcache/*.log {
-    compress
-    weekly
-    rotate 52
-    missingok
-    copytruncate
+	create
+	nocopy
+	nocopytruncate
+	missingok
+	
+	#Note: “delaycompress” is important for how the rsyslog-managed logs are rotated.
+	delaycompress
+	
+	postrotate
+		if [ -x /usr/lib/rsyslog/rsyslog-rotate ]; then
+			/usr/lib/rsyslog/rsyslog-rotate
+		else
+			#TODO: Remove this (and the surrounding “if”) once rsyslog versions < 8.27.0-4 are no longer in use (which is still the case in Debian stretch).
+			invoke-rc.d rsyslog rotate > /dev/null
+		fi
+	endscript
+	
+	
+	notifempty
 }
