@@ -5,7 +5,8 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet id="1.1" author="behrmann">
+    <!-- Note that the imode value is wrong (value is read as decimal, not octal).  This is fixed in changeset 26 -->
+    <changeSet id="1" author="behrmann">
         <preConditions onFail="MARK_RAN" onFailMessage="Not creating lost+found as it already exists (this is not an error)">
             <sqlCheck expectedResult="0">
                 SELECT count(*) FROM t_inodes WHERE ipnfsid='000000000000000000000000000000000001'
@@ -17,7 +18,7 @@
         <insert tableName="t_inodes">
             <column name="ipnfsid" value="000000000000000000000000000000000001"/>
             <column name="itype" valueNumeric="16384"/>
-            <column name="imode" valueNumeric="448"/> <!-- 0700 -->
+            <column name="imode" valueNumeric="700"/>
             <column name="inlink" valueNumeric="2"/>
             <column name="iuid" valueNumeric="0"/>
             <column name="igid" valueNumeric="0"/>
@@ -2188,6 +2189,31 @@
             <createIndex indexName="i_t_acl_rs_id" tableName="t_acl" unique="false">
                 <column name="rs_id"/>
             </createIndex>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="26" author="paul">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not updating lost+found permissions as directory is either removed or already fixed (this is not an error)">
+            <sqlCheck expectedResult="1">
+                SELECT count(*) FROM t_inodes WHERE ipnfsid='000000000000000000000000000000000001'
+            </sqlCheck>
+            <sqlCheck expectedResult="700">
+                SELECT imode FROM t_inodes WHERE ipnfsid='000000000000000000000000000000000001'
+            </sqlCheck>
+        </preConditions>
+
+        <comment>Fixing incorrect permissions of lost+found directory</comment>
+
+        <update tableName="t_inodes">
+            <column name="imode" valueNumeric="448"/>
+            <where>ipnfsid='000000000000000000000000000000000001'</where>
+        </update>
+
+        <rollback>
+            <update tableName="t_inodes">
+                <column name="imode" valueNumeric="700"/>
+                <where>ipnfsid='000000000000000000000000000000000001'</where>
+            </update>
         </rollback>
     </changeSet>
 </databaseChangeLog>
