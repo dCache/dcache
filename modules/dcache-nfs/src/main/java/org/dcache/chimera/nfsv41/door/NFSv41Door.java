@@ -150,6 +150,7 @@ import javax.annotation.concurrent.GuardedBy;
 
 import org.dcache.auth.attributes.Restrictions;
 
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 public class NFSv41Door extends AbstractCellComponent implements
@@ -356,6 +357,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         _chimeraVfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
         _chimeraVfs.setPnfsHandler(_pnfsHandler);
         _chimeraVfs.setPoolManagerStub(_poolManagerStub);
+        _chimeraVfs.setPoolStub(_poolStub);
 
         _vfs = new VfsCache(_chimeraVfs, _vfsCacheConfig);
         MountServer ms = new MountServer(_exportFile, _vfs);
@@ -443,10 +445,12 @@ public class NFSv41Door extends AbstractCellComponent implements
         PnfsId pnfsid = message.getPnfsId();
         if (message.getFileAttributes().isDefined(FileAttribute.SIZE)) {
             long size = message.getFileAttributes().getSize();
-            Stat stat = new Stat();
+            org.dcache.chimera.posix.Stat stat = new org.dcache.chimera.posix.Stat();
             stat.setSize(size);
             Inode inode = _chimeraVfs.inodeFromPnfsId(pnfsid);
-            _vfs.setattr(inode, stat);
+            FsInode fsInode =_fileFileSystemProvider.id2inode(pnfsid.getId(), NO_STAT);
+            _fileFileSystemProvider.setInodeAttributes(fsInode, 0, stat);
+            _vfs.invalidateStatCache(inode);
         }
         return message;
     }

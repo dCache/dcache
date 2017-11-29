@@ -27,9 +27,8 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellAddressCore;
+import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,11 +37,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceFlags;
@@ -75,9 +76,7 @@ import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.PermissionDeniedChimeraFsException;
-import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
@@ -117,7 +116,10 @@ import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
 
 import static org.dcache.namespace.FileAttribute.*;
 import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.ServerFaultException;
+import org.dcache.nfs.v4.Stateids;
+import org.dcache.util.Transfer;
 
 /**
  * Interface to a virtual file system.
@@ -137,6 +139,11 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
      * Handle to PoolManager.
      */
     private PoolManagerStub _poolManagerStub;
+
+    /**
+     * Handle to send message to a pool.
+     */
+    private CellStub _poolStub;
 
     /**
      * minimal binary handle size which can be processed.
@@ -383,7 +390,17 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public void setattr(Inode inode, Stat stat) throws IOException {
 	FsInode fsInode = toFsInode(inode);
         try {
+
+
+            if (stat.isDefined(Stat.StatAttribute.SIZE)) {
+                setFileSizeInPool(fsInode.getId(), stat.getSize());
+            }
             fsInode.setStat(toChimeraStat(stat));
+
+        } catch (InterruptedException e) {
+            throw new DelayException("Set file size interrupted", e);
+        } catch (CacheException e) {
+            throw new NfsIoException("Failed to set size", e);
         } catch (InvalidArgumentChimeraException e) {
             throw new InvalException(e.getMessage());
         } catch (IsDirChimeraException e) {
@@ -790,5 +807,49 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
     public void setPoolManagerStub(PoolManagerStub stub) {
         _poolManagerStub = stub;
+    }
+
+    public void setPoolStub(CellStub stub) {
+        _poolStub = stub;
+    }
+
+
+
+
+    private void setFileSizeInPool(String pnfsId, long size) throws CacheException, ChimeraNFSException, InterruptedException {
+
+        Transfer.initSession(false, false);
+        Transfer t = new Transfer(_pnfsHandler, Subjects.ROOT, null, Subject.getSubject(AccessController.getContext()), FsPath.ROOT);
+        t.setPoolStub(_poolStub);
+        t.setPoolManagerStub(_poolManagerStub);
+
+        t.setPnfsId(new PnfsId(pnfsId));
+        t.setProtocolInfo( new NFS4ProtocolInfo(new InetSocketAddress(0),
+                new org.dcache.chimera.nfs.v4.xdr.stateid4(Stateids.ZeroStateId()), // FIXME: try to get setattr stateid
+                null));
+        final AtomicReference<ChimeraNFSException> error = new AtomicReference<>();
+        t.readNameSpaceEntry(true);
+
+        t.getFileAttributes().setSize(size);
+        t.getFileAttributes().getLocations().forEach(l -> {
+            t.setPool(l);
+            t.setPoolAddress(new CellAddressCore(l));
+
+            try {
+                t.startMoverAsync(3000).get();
+                t.killMover(0, "SetSize");
+            } catch (ExecutionException e) {
+                error.set(new DelayException("Failed to set file size", e.getCause()));
+            } catch (InterruptedException e) {
+                error.set(new DelayException("Set file size interrupted", e));
+            }
+        });
+
+        ChimeraNFSException e = error.get();
+        if (e != null) {
+            _log.warn("failed to update file size:", e);
+            throw e;
+        }
+
     }
 }

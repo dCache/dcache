@@ -162,11 +162,11 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         attributes.setSize(size);
         attributes.setPnfsId(getFileAttributes().getPnfsId());
         PnfsSetFileAttributes sfa = new PnfsSetFileAttributes(getFileAttributes().getPnfsId(), attributes);
-        try {
-            _door.send(new CellPath(getPathToDoor().getDestinationAddress()), sfa).get(3, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new DelayException();
-        }
+//        try {
+//            _door.send(new CellPath(getPathToDoor().getDestinationAddress()), sfa).get(3, TimeUnit.SECONDS);
+//        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+//            throw new DelayException();
+//        }
     }
 
     public synchronized boolean hasSession() {
