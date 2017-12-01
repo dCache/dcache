@@ -1,10 +1,12 @@
 package org.dcache.gplazma.plugins;
 
 import org.apache.commons.io.FileUtils;
+
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
+
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.After;
 import org.junit.Before;
@@ -15,6 +17,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
@@ -22,6 +25,10 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import org.dcache.auth.GidPrincipal;
+import org.dcache.util.PrincipalSetMaker;
+
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.assertThat;
@@ -211,6 +218,48 @@ public class GplazmaMultiMapPluginTest {
         );
     }
 
+    @Test
+    public void shouldReturnPrimaryGid() throws Exception
+    {
+        givenConfig("username:paul  gid:1000,true");
+
+        whenMapPluginCalledWith(aSetOfPrincipals().withUsername("paul"));
+
+        assertThat(principals, hasItem(new GidPrincipal(1000, true)));
+    }
+
+    @Test
+    public void shouldReturnExplicitNonprimaryGid() throws Exception
+    {
+        givenConfig("username:paul  gid:1000,false");
+
+        whenMapPluginCalledWith(aSetOfPrincipals().withUsername("paul"));
+
+        assertThat(principals, hasItem(new GidPrincipal(1000, false)));
+    }
+
+    @Test
+    public void shouldReturnImplicitNonprimaryGid() throws Exception
+    {
+        givenConfig("username:paul  gid:1000");
+
+        whenMapPluginCalledWith(aSetOfPrincipals().withUsername("paul"));
+
+        assertThat(principals, hasItem(new GidPrincipal(1000, false)));
+    }
+
+    @Test
+    public void shouldReturnNonprimaryGidWhenPrimaryGidAlreadyPresent() throws Exception
+    {
+        givenConfig("username:paul  gid:1000,true");
+
+        whenMapPluginCalledWith(aSetOfPrincipals()
+                .withUsername("paul")
+                .withPrimaryGid(2000));
+
+        assertThat(principals, hasItem(new GidPrincipal(1000, false)));
+    }
+
     /*------------------------- Helpers ---------------------------*/
 
     private void givenConfig(String map) throws IOException {
@@ -232,6 +281,14 @@ public class GplazmaMultiMapPluginTest {
             throws AuthenticationException
     {
         GplazmaMultiMapPlugin plugin =  new GplazmaMultiMapPlugin(properties);
+        plugin.map(principals);
+    }
+
+    private void whenMapPluginCalledWith(PrincipalSetMaker maker)
+            throws AuthenticationException
+    {
+        GplazmaMultiMapPlugin plugin = new GplazmaMultiMapPlugin(withConfig());
+        principals.addAll(maker.build());
         plugin.map(principals);
     }
 
