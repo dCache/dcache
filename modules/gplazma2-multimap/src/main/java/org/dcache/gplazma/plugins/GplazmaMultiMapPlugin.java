@@ -45,8 +45,8 @@ public class GplazmaMultiMapPlugin implements GPlazmaMappingPlugin
         if (principals.stream().anyMatch(GidPrincipal::isPrimaryGid)
                 && mappedPrincipals.stream().anyMatch(GidPrincipal::isPrimaryGid)) {
             mappedPrincipals = mappedPrincipals.stream()
-                    .map(p -> GidPrincipal.isPrimaryGid(p)
-                            ? new GidPrincipal(((GidPrincipal)p).getGid(), false)
+                    .map(p -> p instanceof GidPrincipal
+                            ? ((GidPrincipal)p).withPrimaryGroup(false)
                             : p)
                     .collect(Collectors.toSet());
         }

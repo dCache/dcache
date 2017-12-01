@@ -1,6 +1,7 @@
 package org.dcache.auth;
 
 import java.io.Serializable;
+import java.security.Principal;
 
 public class GroupNamePrincipal implements GroupPrincipal, Serializable
 {
@@ -21,6 +22,13 @@ public class GroupNamePrincipal implements GroupPrincipal, Serializable
         }
         _name = name;
         _isPrimary = isPrimary;
+    }
+
+    public GroupNamePrincipal withPrimaryGroup(boolean isPrimaryGroup)
+    {
+        return isPrimaryGroup == _isPrimary
+                ? this
+                : new GroupNamePrincipal(_name, isPrimaryGroup);
     }
 
     @Override

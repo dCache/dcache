@@ -40,6 +40,12 @@ public class GidPrincipal implements GroupPrincipal, Serializable
         this(Long.parseLong(gid), isPrimary);
     }
 
+    public GidPrincipal withPrimaryGroup(boolean isPrimaryGroup) {
+        return isPrimaryGroup == _isPrimaryGroup
+                ? this
+                : new GidPrincipal(_gid, isPrimaryGroup);
+    }
+
     @Override
     public boolean isPrimaryGroup() {
         return _isPrimaryGroup;

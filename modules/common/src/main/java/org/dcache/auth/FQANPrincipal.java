@@ -1,6 +1,7 @@
 package org.dcache.auth;
 
 import java.io.Serializable;
+import java.security.Principal;
 
 /**
  * This class represents a fully qualified attribute
@@ -32,6 +33,13 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
         }
         _fqan = fqan;
         _isPrimary = isPrimary;
+    }
+
+    public FQANPrincipal withPrimaryGroup(boolean isPrimaryGroup)
+    {
+        return isPrimaryGroup == _isPrimary
+                ? this
+                : new FQANPrincipal(_fqan, isPrimaryGroup);
     }
 
     @Override

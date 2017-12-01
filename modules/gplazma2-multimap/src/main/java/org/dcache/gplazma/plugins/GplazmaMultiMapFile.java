@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import com.google.common.base.Splitter;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
@@ -30,6 +32,8 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.exceptions.GplazmaParseMapFileException;
 import org.dcache.util.Args;
+
+import static org.dcache.gplazma.plugins.exceptions.GplazmaParseMapFileException.checkFormat;
 
 public class GplazmaMultiMapFile
 {
@@ -127,6 +131,8 @@ public class GplazmaMultiMapFile
                     return new UidPrincipal(principal);
                 case "gid":
                     return createGidPrincipal(principal);
+                case "fqan":
+                    return createFqanPrincipal(principal);
                 default:
                     throw new GplazmaParseMapFileException("Not supported predicate [" + predicate + "]");
             }
@@ -140,18 +146,26 @@ public class GplazmaMultiMapFile
 
     }
 
-    private static Principal createGidPrincipal(String principal) throws GplazmaParseMapFileException
+    private static GidPrincipal createGidPrincipal(String description) throws GplazmaParseMapFileException
     {
-        if (countNumCommas(principal) > 1) {
-                throw new GplazmaParseMapFileException("Illegal Value [" + principal +"] for gid");
-        } else {
-            String[] splits = principal.split(",");
-            if (splits.length == 2) {
-                return new GidPrincipal(splits[0], Boolean.parseBoolean(splits[1]));
-            } else {
-                return new GidPrincipal(principal, false);
-            }
-        }
+        checkFormat(countCommas(description) <= 1, "Illegal Value [%s] for gid", description);
+
+        List<String> parts = Splitter.on(',').splitToList(description);
+        boolean isPrimary = parts.size() == 2 ? Boolean.parseBoolean(parts.get(1)) : false;
+        return new GidPrincipal(parts.get(0), isPrimary);
+    }
+
+    private static FQANPrincipal createFqanPrincipal(String description) throws GplazmaParseMapFileException
+    {
+        checkFormat(countCommas(description) <= 1, "Illegal Value [%s] for FQAN", description);
+
+        List<String> parts = Splitter.on(',').splitToList(description);
+        boolean isPrimary = parts.size() == 2 ? Boolean.parseBoolean(parts.get(1)) : false;
+        return new FQANPrincipal(parts.get(0), isPrimary);
+    }
+
+    private static long countCommas(String principal) {
+        return principal.chars().filter(c -> c == ',').count();
     }
 
     private static List<Principal> parse(CharSequence line) throws GplazmaParseMapFileException
@@ -171,13 +185,22 @@ public class GplazmaMultiMapFile
         return principals;
     }
 
-    private static int countNumCommas(String principal) {
-        return principal.length() - principal.replace(",", "").length();
-    }
-
     public synchronized Set<Principal> getMappedPrincipals(Principal principal)
     {
-        Set<Principal> out = map.get(principal);
+        Principal key;
+
+        // Always match against non-primary values
+        if (principal instanceof GidPrincipal) {
+            key = ((GidPrincipal)principal).withPrimaryGroup(false);
+        } else if (principal instanceof GroupNamePrincipal) {
+            key = ((GroupNamePrincipal)principal).withPrimaryGroup(false);
+        } else if (principal instanceof FQANPrincipal) {
+            key = ((FQANPrincipal)principal).withPrimaryGroup(false);
+        } else {
+            key = principal;
+        }
+
+        Set<Principal> out = map.get(key);
         return (out == null) ? Collections.emptySet(): out;
     }
 }
