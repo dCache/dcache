@@ -208,8 +208,10 @@ public class HsmFlushController
         info.setFlushDelayOnError(_retryDelayOnError);
         info.setFlushInterval(_flushingInterval);
         info.setMaxActive(_maxActive);
-        info.setNextFlush(System.currentTimeMillis() +
-                                          _future.getDelay(TimeUnit.MILLISECONDS));
+        if (_future != null) {
+            info.setNextFlush(System.currentTimeMillis() +
+                                              _future.getDelay(TimeUnit.MILLISECONDS));
+        }
         return info;
     }
 
