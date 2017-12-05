@@ -170,7 +170,7 @@ public class PoolV4
 
     private PnfsHandler _pnfs;
     private StorageClassContainer _storageQueue;
-    private ReplicaRepository _repository;
+    private Repository _repository;
 
     private Account _account;
 
@@ -345,7 +345,7 @@ public class PoolV4
     }
 
     @Required
-    public void setRepository(ReplicaRepository repository)
+    public void setRepository(Repository repository)
     {
         assertNotRunning("Cannot set repository after initialization");
         _repository = repository;
