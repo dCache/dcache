@@ -19,7 +19,6 @@ package org.dcache.pool.classic;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.common.util.concurrent.Uninterruptibles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -44,6 +43,10 @@ import dmg.cells.nucleus.CellInfoProvider;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.statistics.DirectedIoStatistics;
+import org.dcache.pool.statistics.IoStatistics;
+import org.dcache.pool.statistics.IoStatisticsChannel;
+import org.dcache.pool.statistics.SnapshotStatistics;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
@@ -134,6 +137,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     }
 
     public void sendBillingMessage(Mover<?> mover, long fileSize) {
+
         FileAttributes fileAttributes = mover.getFileAttributes();
 
         MoverInfoMessage info = new MoverInfoMessage(getCellAddress(), fileAttributes.getPnfsId());
@@ -150,8 +154,36 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         info.setBillingPath(mover.getBillingPath());
         info.setTransferPath(mover.getTransferPath());
 
-        _billing.notify(info);
+        MoverInfoMessage infoWithStats = mover.getChannel()
+                .flatMap(c -> c.optionallyAs(IoStatisticsChannel.class))
+                .map(c -> c.getStatistics())
+                .map(s -> updateIoStatistics(info, s))
+                .orElse(info);
+
+        _billing.notify(infoWithStats);
     }
+
+    private static MoverInfoMessage updateIoStatistics(MoverInfoMessage info, IoStatistics statistics)
+    {
+        DirectedIoStatistics reads = statistics.reads();
+        DirectedIoStatistics writes = statistics.writes();
+        SnapshotStatistics readStats = reads.statistics();
+        SnapshotStatistics writeStats = writes.statistics();
+
+        if (readStats.requestedBytes().getN() > 0) {
+            info.setMeanReadBandwidth(readStats.instantaneousBandwidth().getMean());
+            info.setReadActive(reads.active());
+            info.setReadIdle(reads.idle());
+        }
+
+        if (writeStats.requestedBytes().getN() > 0) {
+            info.setMeanWriteBandwidth(writeStats.instantaneousBandwidth().getMean());
+            info.setWriteActive(writes.active());
+            info.setWriteIdle(writes.idle());
+        }
+
+        return info;
+     }
 
     public void sendFinished(Mover<?> mover) {
         DoorTransferFinishedMessage finished =

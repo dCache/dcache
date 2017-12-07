@@ -1,7 +1,10 @@
 package org.dcache.pool.repository.v5;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.OpenOption;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -13,6 +16,7 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.pool.statistics.IoStatisticsReplicaRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
@@ -21,6 +25,11 @@ import static com.google.common.collect.Iterables.unmodifiableIterable;
 
 class ReadHandleImpl implements ReplicaDescriptor
 {
+    private static final Set<OpenOption> OPEN_OPTIONS = ImmutableSet.<OpenOption>builder()
+            .addAll(FileStore.O_READ)
+            .add(IoStatisticsReplicaRecord.OpenFlags.ENABLE_IO_STATISTICS)
+            .build();
+
     private final PnfsHandler _pnfs;
     private final ReplicaRecord _entry;
     private FileAttributes _fileAttributes;
@@ -51,7 +60,7 @@ class ReadHandleImpl implements ReplicaDescriptor
 
     @Override
     public RepositoryChannel createChannel() throws IOException {
-        return _entry.openChannel(FileStore.O_READ);
+        return _entry.openChannel(OPEN_OPTIONS);
     }
 
     /**

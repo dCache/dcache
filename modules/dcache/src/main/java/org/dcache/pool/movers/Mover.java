@@ -22,6 +22,7 @@ import javax.security.auth.Subject;
 
 import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
+import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -30,6 +31,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
@@ -114,6 +116,13 @@ public interface Mover<T extends ProtocolInfo>
      * Provides a descriptor for the open repository entry of the file being transferred.
      */
     ReplicaDescriptor getIoHandle();
+
+    /**
+     * Provide the channel used for the transfer.  If no channel has been opened
+     * then the returned value is empty.
+     */
+    Optional<RepositoryChannel> getChannel();
+
 
     /**
      * Get set of options specifying how the file is opened. The READ

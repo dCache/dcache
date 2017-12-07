@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.Optional;
 
 /**
  * A {@link RepositoryChannel| implementation which forwards all its
@@ -125,4 +126,13 @@ public abstract class ForwardingRepositoryChannel implements RepositoryChannel {
         delegate().close();
     }
 
+    @Override
+    public <T> Optional<T> optionallyAs(Class<T> type)
+    {
+        if (type.isAssignableFrom(getClass())) {
+            return Optional.of(type.cast(this));
+        } else {
+            return delegate().optionallyAs(type);
+        }
+    }
 }

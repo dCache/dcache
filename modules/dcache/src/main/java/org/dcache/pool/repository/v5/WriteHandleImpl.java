@@ -1,13 +1,16 @@
 package org.dcache.pool.repository.v5;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.OpenOption;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -24,6 +27,7 @@ import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.statistics.IoStatisticsReplicaRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
@@ -41,6 +45,11 @@ class WriteHandleImpl implements ReplicaDescriptor
 
     private static final Logger _log =
         LoggerFactory.getLogger("logger.org.dcache.repository");
+
+    private static final Set<OpenOption> OPEN_OPTIONS = ImmutableSet.<OpenOption>builder()
+            .addAll(FileStore.O_RW)
+            .add(IoStatisticsReplicaRecord.OpenFlags.ENABLE_IO_STATISTICS)
+            .build();
 
     /**
      * Time that a new CACHED file with no sticky flags will be marked
@@ -119,7 +128,7 @@ class WriteHandleImpl implements ReplicaDescriptor
             throw new IllegalStateException("Handle is closed");
         }
 
-        return new AllocatorAwareRepositoryChannel(_entry.openChannel(FileStore.O_RW),
+        return new AllocatorAwareRepositoryChannel(_entry.openChannel(OPEN_OPTIONS),
                 _allocator,  _useHardAllocator);
     }
 

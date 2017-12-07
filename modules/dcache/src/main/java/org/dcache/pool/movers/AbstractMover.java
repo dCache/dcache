@@ -33,6 +33,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.OpenOption;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -81,6 +82,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     protected volatile String _errorMessage = "";
     private final Set<ChecksumType> _checksumTypes;
     private volatile ChecksumChannel _checksumChannel;
+    private volatile Optional<RepositoryChannel> _channel = Optional.empty();
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
                          TransferService<M> transferService,
@@ -303,7 +305,16 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                     "File could not be opened; please check the file system: "
                     + messageOrClassName(e), e);
         }
+        if (!_channel.isPresent()) {
+            _channel = Optional.of(channel);
+        }
         return channel;
+    }
+
+    @Override
+    public Optional<RepositoryChannel> getChannel()
+    {
+        return _channel;
     }
 
     @Nonnull

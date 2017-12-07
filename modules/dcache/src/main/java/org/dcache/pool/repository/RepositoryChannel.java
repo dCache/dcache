@@ -2,12 +2,14 @@ package org.dcache.pool.repository;
 
 import java.io.IOException;
 import java.io.SyncFailedException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.Optional;
 
 public interface RepositoryChannel
     extends GatheringByteChannel, ScatteringByteChannel, SeekableByteChannel
@@ -188,4 +190,14 @@ public interface RepositoryChannel
      */
     long transferFrom(ReadableByteChannel src, long position, long count)
         throws IOException;
+
+    /**
+     * Provide an optional interface that this channel might implement.  This
+     * allows the caller to interact with additional behaviour.
+     */
+    default <T> Optional<T> optionallyAs(Class<T> type)
+    {
+        T asType = type.isAssignableFrom(getClass()) ? type.cast(this) : null;
+        return Optional.ofNullable(asType);
+    }
 }

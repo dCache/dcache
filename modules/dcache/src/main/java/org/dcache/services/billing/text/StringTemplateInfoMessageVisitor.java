@@ -20,6 +20,10 @@ package org.dcache.services.billing.text;
 
 import org.stringtemplate.v4.ST;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.time.Duration;
 import java.util.Date;
 
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -33,9 +37,19 @@ import diskCacheV111.vehicles.StorageInfoMessage;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import org.dcache.auth.SubjectWrapper;
+import org.dcache.util.ByteUnit;
 
 public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
 {
+    private static final DecimalFormat BANDWIDTH_FORMAT =
+            new DecimalFormat("0.##E0");
+
+    static {
+        DecimalFormatSymbols symbols = BANDWIDTH_FORMAT.getDecimalFormatSymbols();
+        symbols.setNaN("-");
+        BANDWIDTH_FORMAT.setDecimalFormatSymbols(symbols);
+    }
+
     private final ST template;
 
     public StringTemplateInfoMessageVisitor(ST template)
@@ -89,6 +103,37 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         template.add("initiator", message.getInitiator());
         template.add("p2p", message.isP2P());
         template.add("transferPath", message.getTransferPath());
+        template.add("meanReadBandwidth",
+                format(ByteUnit.BYTES.toMiB(message.getMeanReadBandwidth())));
+        template.add("meanWriteBandwidth",
+                format(ByteUnit.BYTES.toMiB(message.getMeanWriteBandwidth())));
+        template.add("readIdle", message.getReadIdle()
+                .map(d -> Long.toString(d.toMillis()))
+                .orElse("-"));
+        template.add("readActive", message.getReadActive()
+                .map(d -> Long.toString(d.toMillis()))
+                .orElse("-"));
+        template.add("writeIdle", message.getWriteIdle()
+                .map(d -> Long.toString(d.toMillis()))
+                .orElse("-"));
+        template.add("writeActive", message.getWriteActive()
+                .map(d -> Long.toString(d.toMillis()))
+                .orElse("-"));
+    }
+
+    // Format value in scientific notation to three significant figures.
+    private String format(double value)
+    {
+        if (value >= 1) {
+            if (value < 10) {
+                return String.format("%.2f", value);
+            } else if (value < 100) {
+                return String.format("%.1f", value);
+            } else if (value < 1000) {
+                return String.format("%.0f", value);
+            }
+        }
+        return BANDWIDTH_FORMAT.format(value);
     }
 
     @Override
