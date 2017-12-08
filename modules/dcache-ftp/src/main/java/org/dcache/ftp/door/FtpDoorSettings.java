@@ -189,6 +189,11 @@ public class FtpDoorSettings
             description = "Root path")
     protected String root;
 
+    @Option(name = "list-format",
+            description = "Output format for the LIST command",
+            defaultValue = "ls-l")
+    protected String listFormat;
+
     public PortRange getPortRange()
     {
         return portRange;
@@ -307,6 +312,11 @@ public class FtpDoorSettings
     public String getRoot()
     {
         return root;
+    }
+
+    public String getListFormat()
+    {
+        return listFormat;
     }
 
     public CellStub createBillingStub(CellEndpoint cellEndpoint)

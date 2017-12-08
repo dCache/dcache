@@ -40,6 +40,7 @@ check -strong ftp.enable.proxy-protocol
 check -strong ftp.enable.overwrite
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
+check -strong ftp.list-format
 check -strong ftp.authz.readonly
 check ftp.authn.hostcert.key
 check ftp.authn.hostcert.cert
@@ -121,5 +122,6 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -cipher-flags=\"${ftp.authn.ciphers}\" \
    -key-cache-lifetime=\"${ftp.authn.gsi.delegation.cache.lifetime}\" \
    -key-cache-lifetime-unit=\"${ftp.authn.gsi.delegation.cache.lifetime.unit}\" \
+   -list-format=\"${ftp.list-format}\" \
    -netmask=\"${ftp.net.allowed-subnets}\" \
    "

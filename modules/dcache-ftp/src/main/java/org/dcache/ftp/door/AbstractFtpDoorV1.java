@@ -160,6 +160,7 @@ import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
@@ -182,6 +183,8 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
+import org.dcache.util.ColumnWriter;
+import org.dcache.util.ColumnWriter.DateStyle;
 
 import static org.dcache.auth.attributes.Activity.*;
 
@@ -3653,10 +3656,14 @@ public abstract class AbstractFtpDoorV1
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
-                DirectoryListPrinter printer =
-                    listLong
-                    ? new LongListPrinter(writer)
-                    : new ShortListPrinter(writer);
+                DirectoryListPrinter printer;
+                if (listLong) {
+                    printer = _settings.getListFormat().equals("legacy")
+                            ? new LegacyListPrinter(writer)
+                            : new LongListPrinter(writer);
+                } else {
+                    printer = new ShortListPrinter(writer);
+                }
 
                 try {
                     total = _listSource.printDirectory(_subject, _authz, printer,
@@ -4413,8 +4420,8 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    /** A long format corresponding to the 'normal' FTP list format. */
-    class LongListPrinter implements DirectoryListPrinter
+    /** The output previously used for FTP LIST command. */
+    class LegacyListPrinter implements DirectoryListPrinter
     {
         private final String _userName;
         private final PrintWriter _out;
@@ -4425,7 +4432,7 @@ public abstract class AbstractFtpDoorV1
                 new PosixPermissionHandler()
             );
 
-        public LongListPrinter(PrintWriter writer)
+        public LegacyListPrinter(PrintWriter writer)
         {
             _out = writer;
             _userName = Subjects.getUserName(_subject);
@@ -4488,6 +4495,93 @@ public abstract class AbstractFtpDoorV1
                         modified,
                         entry.getName());
             _out.append("\r\n");
+        }
+    }
+
+    /** A list printer that provides output as close to 'ls -l' as possible. */
+    class LongListPrinter implements DirectoryListPrinter
+    {
+        private final PrintWriter _out;
+        private final ColumnWriter _columns = new ColumnWriter()
+                    .left("type")
+                    .left("mode")
+                    .space().right("ncount")
+                    .space().left("owner")
+                    .space().left("group")
+                    .space().bytes("size")
+                    .space().date("time", DateStyle.LS)
+                    .space().left("name");
+
+        public LongListPrinter(PrintWriter writer)
+        {
+            _out = writer;
+        }
+
+        @Override
+        public Set<FileAttribute> getRequiredAttributes()
+        {
+            Set<FileAttribute> attributes =
+                EnumSet.of(TYPE, MODIFICATION_TIME, SIZE, MODE, NLINK,
+                        OWNER_GROUP, OWNER, MODIFICATION_TIME);
+            return attributes;
+        }
+
+        private void appendPermissions(StringBuilder sb, int mode)
+        {
+            sb.append((mode & 4) == 4 ? 'r' : '-');
+            sb.append((mode & 2) == 2 ? 'w' : '-');
+            sb.append((mode & 1) == 1 ? 'x' : '-');
+        }
+
+        private String typeFor(FileType type)
+        {
+            switch (type) {
+            case REGULAR:
+                return "-";
+            case DIR:
+                return "d";
+            case LINK:
+                return "l";
+            case SPECIAL:
+                return "s";
+            }
+            return "?";
+        }
+
+        private String permissionsFor(int mode)
+        {
+            StringBuilder sb = new StringBuilder();
+            appendPermissions(sb, mode >> 6 & 7);
+            appendPermissions(sb, mode >> 3 & 7);
+            appendPermissions(sb, mode & 7);
+            return sb.toString();
+        }
+
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
+        {
+            FileAttributes attr = entry.getFileAttributes();
+            _columns.row()
+                    .value("type", typeFor(attr.getFileType()))
+                    .value("mode", permissionsFor(attr.getMode()))
+                    .value("ncount", attr.getNlink())
+                    .value("owner", _identityResolver.uidToName(attr.getOwner())
+                                    .orElseGet(() -> Integer.toString(attr.getOwner())))
+                    .value("group", _identityResolver.gidToName(attr.getGroup())
+                                    .orElseGet(() -> Integer.toString(attr.getGroup())))
+                    .value("size", attr.getSizeIfPresent().orElse(0L))
+                    .value("time", new Date(attr.getModificationTime()))
+                    .value("name", entry.getName());
+        }
+
+        @Override
+        public void close()
+        {
+            String output = _columns.toString("\r\n");
+            _out.print(output);
+            if (!output.isEmpty()) {
+                _out.print("\r\n");
+            }
         }
     }
 

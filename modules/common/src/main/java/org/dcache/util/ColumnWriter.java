@@ -121,6 +121,11 @@ public class ColumnWriter
     @Override
     public String toString()
     {
+        return toString("\n");
+    }
+
+    public String toString(String endOfLine)
+    {
         if (rows.isEmpty()) {
             return "";
         }
@@ -131,10 +136,11 @@ public class ColumnWriter
         try (PrintWriter out = new NoTrailingWhitespacePrintWriter(result)) {
             String header = renderHeader(spaces, widths);
             if (!header.isEmpty()) {
-                out.println(header);
+                out.print(header);
+                out.print(endOfLine);
             }
             for (Row row: rows) {
-                row.render(columns, spaces, widths, out);
+                row.render(columns, spaces, widths, out, endOfLine);
             }
         }
         return result.toString();
@@ -489,7 +495,8 @@ public class ColumnWriter
     {
         int width(Column column);
 
-        void render(List<Column> columns, List<Integer> spaces, List<Integer> widths, PrintWriter out);
+        void render(List<Column> columns, List<Integer> spaces, List<Integer> widths,
+                PrintWriter out, String endOfLine);
     }
 
     public static class TabulatedRow implements Row
@@ -509,7 +516,8 @@ public class ColumnWriter
         }
 
         @Override
-        public void render(List<Column> columns, List<Integer> spaces, List<Integer> widths, PrintWriter out)
+        public void render(List<Column> columns, List<Integer> spaces,
+                List<Integer> widths, PrintWriter out, String endOfLine)
         {
             int size = columns.size();
             for (int i = 0; i < size; i++) {
@@ -520,7 +528,7 @@ public class ColumnWriter
                 Object value = values.get(column.name());
                 column.render(value, widths.get(i), out);
             }
-            out.println();
+            out.print(endOfLine);
         }
     }
 
@@ -540,9 +548,10 @@ public class ColumnWriter
         }
 
         @Override
-        public void render(List<Column> columns, List<Integer> spaces, List<Integer> widths, PrintWriter out)
+        public void render(List<Column> columns, List<Integer> spaces, List<Integer> widths, PrintWriter out, String endOfLine)
         {
-            out.println(value);
+            out.print(value);
+            out.print(endOfLine);
         }
     }
 }

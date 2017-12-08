@@ -25,4 +25,10 @@ public interface DirectoryListPrinter
      */
     void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         throws InterruptedException;
+
+    /**
+     * Called after all entries have been printed.
+     */
+    default void close() {
+    }
 }

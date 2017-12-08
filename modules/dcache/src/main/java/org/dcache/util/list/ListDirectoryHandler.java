@@ -136,6 +136,7 @@ public class ListDirectoryHandler
             FileAttributes dirAttr = handler.getFileAttributes(path.parent().toString(), required);
             printer.print(path.parent(), dirAttr, entry);
         }
+        printer.close();
     }
 
     @Override
@@ -153,6 +154,7 @@ public class ListDirectoryHandler
                 printer.print(path, dirAttr, entry);
                 total++;
             }
+            printer.close();
             return total;
         }
     }
