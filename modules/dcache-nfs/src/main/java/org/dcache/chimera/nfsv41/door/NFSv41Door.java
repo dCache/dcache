@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
@@ -530,12 +531,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
-        FsInode inode = _chimeraVfs.inodeFromBytes(nfsInode.getFileId());
-        PnfsId pnfsId = new PnfsId(inode.getId());
-        Transfer.initSession(false, false);
-        NDC.push(pnfsId.toString());
-        NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {
+
+            FsInode inode = _chimeraVfs.inodeFromBytes(nfsInode.getFileId());
+            PnfsId pnfsId = new PnfsId(inode.getId());
+            Transfer.initSession(false, false);
+            NDC.push(pnfsId.toString());
+            NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
 
             deviceid4 deviceid;
 
@@ -628,7 +630,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
-        } catch (CacheException | TimeoutException | ExecutionException e) {
+        } catch (CacheException | ChimeraFsException | TimeoutException | ExecutionException e) {
             throw asNfsException(e, LayoutTryLaterException.class);
         } catch (InterruptedException e) {
             throw new LayoutTryLaterException(e.getMessage(), e);

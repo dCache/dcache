@@ -1,14 +1,19 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Throwables;
-import diskCacheV111.util.CacheException;
+
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+import diskCacheV111.util.CacheException;
+
+import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.*;
 
 import static diskCacheV111.util.CacheException.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Utility class to convert {@link CacheException} into corresponding
@@ -36,6 +41,8 @@ public class ExceptionUtils {
             return (ChimeraNFSException)t;
         } else if (t instanceof CacheException) {
             return asNfsException((CacheException)t, defaultException);
+        } else if (t instanceof ChimeraFsException) {
+            return asNfsException((ChimeraFsException)t, defaultException);
         } else if (t instanceof ExecutionException ) {
             return asNfsException(t.getCause(), defaultException);
         } else if (t instanceof TimeoutException) {
@@ -68,6 +75,15 @@ public class ExceptionUtils {
             default:
                 return buildNfsException(defaultException, e);
         }
+    }
+
+    public static ChimeraNFSException asNfsException(ChimeraFsException e, Class< ? extends ChimeraNFSException> defaultException) {
+
+        if (e instanceof FileNotFoundHimeraFsException) {
+            return new  NoEntException(e.getMessage(), e);
+        }
+
+        return new NfsIoException(e.getMessage(), e);
     }
 
     private static <T extends ChimeraNFSException> T buildNfsException(Class<T> type, Throwable cause) {
