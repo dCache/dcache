@@ -123,6 +123,7 @@
               </bean>
               <bean class="org.dcache.services.info.gathers.LinkgroupDetailsMsgHandler">
                   <constructor-arg ref="state-update-manager"/>
+                  <property name="showOnlyVoAuthz" value="${info.limits.show-only-vo-authz}"/>
               </bean>
               <bean class="org.dcache.services.info.gathers.SrmSpaceDetailsMsgHandler">
                   <constructor-arg ref="state-update-manager"/>
