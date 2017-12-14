@@ -608,10 +608,10 @@ case "$1" in
                 file="$(printCanonicalPath $file)" || fail 1 "Failed to resolve $file."
 
                 findJavaTool jmap ||
-                fail 1 "Could not find the jmap command, part of the Java 6
-                        JDK. This command is required for producing a heap
-                        dump. Please ensure that either jmap is in the path
-                        or update JAVA_HOME."
+                fail 1 "Could not find the jmap command, which is part of the
+                        Java Development Kit (JDK) package. This command is
+                        required for producing a heap dump. Please ensure that
+                        either jmap is in the path or update JAVA_HOME."
 
                 if [ -f ${file} ]; then
                     fail 1 "${file} already exists. Heap not dumped."
