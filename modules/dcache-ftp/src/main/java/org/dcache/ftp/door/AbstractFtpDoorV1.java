@@ -106,6 +106,7 @@ import java.net.SocketException;
 import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.text.DateFormat;
@@ -159,7 +160,6 @@ import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
@@ -3654,7 +3654,7 @@ public abstract class AbstractFtpDoorV1
             int total;
             try {
                 PrintWriter writer =
-                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
+                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), StandardCharsets.UTF_8));
 
                 DirectoryListPrinter printer;
                 if (listLong) {
