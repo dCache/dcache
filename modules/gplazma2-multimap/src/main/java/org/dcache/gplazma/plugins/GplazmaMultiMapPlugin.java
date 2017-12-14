@@ -3,10 +3,13 @@ package org.dcache.gplazma.plugins;
 import com.google.common.base.Strings;
 
 import org.dcache.gplazma.AuthenticationException;
+
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.dcache.auth.GidPrincipal;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -38,6 +41,16 @@ public class GplazmaMultiMapPlugin implements GPlazmaMappingPlugin
                                                     .collect(Collectors.toSet());
 
         checkAuthentication(!mappedPrincipals.isEmpty(), "no mappable principals");
+
+        if (principals.stream().anyMatch(GidPrincipal::isPrimaryGid)
+                && mappedPrincipals.stream().anyMatch(GidPrincipal::isPrimaryGid)) {
+            mappedPrincipals = mappedPrincipals.stream()
+                    .map(p -> GidPrincipal.isPrimaryGid(p)
+                            ? new GidPrincipal(((GidPrincipal)p).getGid(), false)
+                            : p)
+                    .collect(Collectors.toSet());
+        }
+
         principals.addAll(mappedPrincipals);
     }
 }

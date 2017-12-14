@@ -1,6 +1,7 @@
 package org.dcache.auth;
 
 import java.io.Serializable;
+import java.security.Principal;
 
 /**
  * This Principal represents the GID of a person.  The GID represents a group
@@ -22,6 +23,10 @@ public class GidPrincipal implements GroupPrincipal, Serializable
 
     private final long _gid;
     private final boolean _isPrimaryGroup;
+
+    public static boolean isPrimaryGid(Principal principal) {
+        return principal instanceof GidPrincipal && ((GidPrincipal)principal).isPrimaryGroup();
+    }
 
     public GidPrincipal(long gid, boolean isPrimary) {
         if (gid < 0) {
