@@ -30,9 +30,21 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler
 
     private final StateUpdateManager _sum;
 
+    private boolean _showOnlyVoAuthz;
+
     public LinkgroupDetailsMsgHandler(StateUpdateManager sum)
     {
         _sum = sum;
+    }
+
+    public void setShowOnlyVoAuthz(boolean isLimited)
+    {
+        _showOnlyVoAuthz = isLimited;
+    }
+
+    public boolean isShowOnlyVoAuthz()
+    {
+        return _showOnlyVoAuthz;
     }
 
     @Override
@@ -85,8 +97,11 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler
 
             if (voInfo.length > 0) {
                 for (VOInfo thisVO : voInfo) {
-                    addVoInfo(update, vosPath.newChild(thisVO
-                            .toString()), thisVO, metricLifetime, lgid);
+                    String group = thisVO.getVoGroup();
+                    if (!_showOnlyVoAuthz || group == null || group.startsWith("/")) {
+                        addVoInfo(update, vosPath.newChild(thisVO
+                                .toString()), thisVO, metricLifetime, lgid);
+                    }
                 }
             } else {
                 // Ensure the VOs branch exists.
