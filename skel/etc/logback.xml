@@ -193,6 +193,14 @@
         <level>off</level>
     </threshold>
     <threshold>
+        <!-- With v3.4, ZK logs a stacktrace when the client
+             disconnects unexpectedly.  This is fixed with v3.5 and
+             later.  See
+             https://issues.apache.org/jira/browse/ZOOKEEPER-2809 -->
+        <logger>org.apache.zookeeper.server.NIOServerCnxn</logger>
+        <level>error</level>
+    </threshold>
+    <threshold>
         <!-- ZK currently contains a race-condition that triggers a
              CancelledKeyException on shutdown; if triggered, a
              stack-trace is logged at WARN level. See
