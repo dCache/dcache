@@ -325,6 +325,24 @@
         <groupId>org.mongodb</groupId>
         <artifactId>mongo-java-driver</artifactId>
     </dependency>
+
+      <dependency>
+          <groupId>org.springframework.kafka</groupId>
+          <artifactId>spring-kafka</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.springframework.integration</groupId>
+          <artifactId>spring-integration-kafka</artifactId>
+      </dependency>
+
+      <dependency>
+          <groupId>org.apache.kafka</groupId>
+          <artifactId>kafka_2.12</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.kafka</groupId>
+          <artifactId>kafka-clients</artifactId>
+      </dependency>
   </dependencies>
 
   <build>

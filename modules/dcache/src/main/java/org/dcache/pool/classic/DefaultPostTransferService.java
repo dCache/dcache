@@ -19,9 +19,14 @@ package org.dcache.pool.classic;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.support.ProducerListener;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -32,6 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -66,6 +72,8 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     private ChecksumModule _checksumModule;
     private CellStub _door;
 
+    private Consumer<MoverInfoMessage> _kafkaSender = (s) -> {};
+
     @Required
     public void setBillingStub(CellStub billing) {
         _billing = billing;
@@ -79,6 +87,28 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     @Required
     public void setChecksumModule(ChecksumModule checksumModule) {
         _checksumModule = checksumModule;
+    }
+
+    @Autowired(required = false)
+    private void setKafkaTemplate(KafkaTemplate kafkaTemplate )
+    {
+        kafkaTemplate.setProducerListener(new ProducerListener() {
+            @Override
+            public void onSuccess(String topic, Integer partition, Object key, Object value, RecordMetadata recordMetadata) {
+                LOGGER.info("Sent message.");
+            }
+
+            @Override
+            public void onError(String topic, Integer partition, Object key, Object value, Exception exception) {
+                LOGGER.error("Unable to send message: {}", exception.getMessage());
+            }
+
+            @Override
+            public boolean isInterestedInSuccess() {
+                return false;
+            }
+        });
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     public void init() {
@@ -141,6 +171,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         FileAttributes fileAttributes = mover.getFileAttributes();
 
         MoverInfoMessage info = new MoverInfoMessage(getCellAddress(), fileAttributes.getPnfsId());
+
         info.setSubject(mover.getSubject());
         info.setInitiator(mover.getInitiator());
         info.setFileCreated(mover.getIoMode().contains(StandardOpenOption.WRITE));
@@ -161,7 +192,10 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                 .orElse(info);
 
         _billing.notify(infoWithStats);
+
+        _kafkaSender.accept(infoWithStats);
     }
+
 
     private static MoverInfoMessage updateIoStatistics(MoverInfoMessage info, IoStatistics statistics)
     {

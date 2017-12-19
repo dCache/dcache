@@ -3,12 +3,18 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context
            http://www.springframework.org/schema/context/spring-context.xsd
            http://www.springframework.org/schema/task
-           http://www.springframework.org/schema/task/spring-task.xsd">
+           http://www.springframework.org/schema/task/spring-task.xsd
+           http://www.springframework.org/schema/integration/kafka
+           http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd
+           http://www.springframework.org/schema/integration
+           http://www.springframework.org/schema/integration/spring-integration.xsd">
 
   <context:property-placeholder/>
   <context:annotation-config/>
@@ -337,6 +343,7 @@
       <property name="maxTcpPort" value="${pool.mover.nfs.port.max}"/>
       <property name="tcpPortFile" value="${pool.path}/mover-tcp-port.nfs"/>
       <property name="ioStrategy" value="${pool.mover.nfs.thread-policy}" />
+
   </bean>
 
   <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService"
@@ -426,12 +433,12 @@
       </property>
   </bean>
 
-  <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
-        init-method="init" destroy-method="shutdown" depends-on="rep">
-      <description>Post processing execution service</description>
-      <property name="billingStub" ref="billing-stub"/>
-      <property name="poolName" value="${pool.name}"/>
-      <property name="checksumModule" ref="csm"/>
+  <bean id="post-transfer-service"  class="org.dcache.pool.classic.DefaultPostTransferService"
+          init-method="init" destroy-method="shutdown" depends-on="rep">
+       <description>Post processing execution service</description>
+       <property name="billingStub" ref="billing-stub"/>
+       <property name="poolName" value="${pool.name}"/>
+       <property name="checksumModule" ref="csm"/>
   </bean>
 
   <bean id="transfer-services" class="org.dcache.pool.classic.TransferServices">
@@ -534,4 +541,27 @@
       </bean>
   </beans>
 
+    <beans profile="kafka-true">
+       <bean id="billing-template" class="org.springframework.kafka.core.KafkaTemplate">
+            <constructor-arg>
+                <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+                    <constructor-arg>
+                        <map>
+                            <entry key="bootstrap.servers" value="${pool.kafka.bootstrap-servers}"/>
+                            <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer" />
+                            <entry key="value.serializer" value="org.dcache.notification.BillingMessageSerializer" />
+                            <entry key="client.id" value="${pool.cell.name}@${dcache.domain.name}" />
+                            <!-- TODO  values for max.block.ms and retries are important for Non Blocking (Async) callback.-->
+                            <!-- maximum time producer.send() will block by default set to 60000. Could be changed latter. -->
+                            <entry key="max.block.ms" value="0" />
+                            <!-- The maximum number of times to retry a call before failing it.-->
+                            <entry key="retries" value="0" />
+                        </map>
+                    </constructor-arg>
+                </bean>
+            </constructor-arg>
+            <constructor-arg name="autoFlush" value="false" />
+            <property name="defaultTopic" value="billing"/>
+        </bean>
+    </beans>
 </beans>

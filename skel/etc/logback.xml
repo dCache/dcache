@@ -233,6 +233,13 @@
     </threshold>
 
     <threshold>
+      <!--If broker is not available processDisconnection continuously logs "Connection to node {}
+      could not be established. Broker may not be available." warning. -->
+      <logger>org.apache.kafka.clients.NetworkClient</logger>
+      <level>error</level>
+    </threshold>
+
+    <threshold>
       <appender>stdout</appender>
       <logger>root</logger>
       <level>${dcache.log.level.file}</level>
