@@ -3,14 +3,18 @@ package org.dcache.util;
 import com.google.common.collect.Sets;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
+import javax.security.auth.kerberos.KerberosPrincipal;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
 
 import org.dcache.auth.DesiredRole;
+import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 
@@ -142,6 +146,36 @@ public class PrincipalSetMaker
     public PrincipalSetMaker withDesiredRole(String name)
     {
         _principals.add(new DesiredRole(name));
+        return this;
+    }
+
+    /**
+     * Add an OIDC principal to the set.
+     * @param id the OIDC 'sub' of this user.
+     */
+    public PrincipalSetMaker withOidc(String id)
+    {
+        _principals.add(new OidcSubjectPrincipal(id));
+        return this;
+    }
+
+    /**
+     * Add an Email principal to the set.
+     * @param address The email address to be added.
+     */
+    public PrincipalSetMaker withEmail(String address)
+    {
+        _principals.add(new EmailAddressPrincipal(address));
+        return this;
+    }
+
+    /**
+     * Add a Kerberos principal to the set.
+     * @param kerberos the Principal to be added.
+     */
+    public PrincipalSetMaker withKerberos(String kerberos)
+    {
+        _principals.add(new KerberosPrincipal(kerberos));
         return this;
     }
 

@@ -35,13 +35,6 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
         _isPrimary = isPrimary;
     }
 
-    public FQANPrincipal withPrimaryGroup(boolean isPrimaryGroup)
-    {
-        return isPrimaryGroup == _isPrimary
-                ? this
-                : new FQANPrincipal(_fqan, isPrimaryGroup);
-    }
-
     @Override
     public boolean isPrimaryGroup()
     {

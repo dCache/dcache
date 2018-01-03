@@ -33,5 +33,10 @@
             <artifactId>gplazma2</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.jimfs</groupId>
+            <artifactId>jimfs</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

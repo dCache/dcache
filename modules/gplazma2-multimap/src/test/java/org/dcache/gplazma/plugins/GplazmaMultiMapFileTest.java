@@ -1,24 +1,32 @@
 package org.dcache.gplazma.plugins;
 
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.hamcrest.Matcher;
 import org.junit.After;
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.GroupPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -31,276 +39,313 @@ import static org.hamcrest.Matchers.*;
 
 public class GplazmaMultiMapFileTest {
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
     private GplazmaMultiMapFile mapFile;
-    private Set<Principal> principals;
-    private File config;
+    private Set<Principal> mappedPrincipals;
+    private Path config;
+    private List<String> warnings;
 
-    @After
-    public void tearDown() throws Exception
+    @Before
+    public void setup() throws Exception
     {
-        config.delete();
-        config = null;
+        FileSystem fileSystem = Jimfs.newFileSystem(Configuration.unix());
+        config = fileSystem.getPath("/etc/dcache/multimap.conf");
+        Files.createDirectories(config.getParent());
+        mapFile = new GplazmaMultiMapFile(config);
+        warnings = new ArrayList<>();
+        mapFile.setWarningConsumer(warnings::add);
     }
 
     @Test
     public void shouldFailWhenWrongMapFormatDN() throws Exception {
         givenConfig("dn:kermit@dcache.org    username:kermit");
 
-        whenMapUsername(withDN("\"dn:/C=DE/S=Hamburg/OU=desy.de/CN=Kermit The Frog\""));
+        whenMapping(new GlobusPrincipal("\"dn:/C=DE/S=Hamburg/OU=desy.de/CN=Kermit The Frog\""));
 
-        assertThat(principals, is(empty()));
+        // REVISIT should warn of invalid DN syntax
+        assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
     public void shouldFailWhenWrongMapFormatDN1() throws Exception {
         givenConfig("dn:/C=DE/S=Hamburg/OU=desy.de/CN=Kermit The Frog    username:kermit");
 
-        whenMapUsername(withDN("dn:\"/C=DE/S=Hamburg/OU=desy.de/CN=Kermit The Frog\""));
+        whenMapping(new GlobusPrincipal("dn:/C=DE/S=Hamburg/OU=desy.de/CN=Kermit The Frog"));
 
-        assertThat(principals, is(empty()));
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
     }
 
-    @Test
     public void shouldFailWhenWrongMapFormatKerberos() throws Exception {
         givenConfig("krb:kermit@DESY.DE    username:kermit");
 
-        whenMapUsername(withKerberos("kermit@DESY.DE"));
+        whenMapping(new KerberosPrincipal("kermit@DESY.DE"));
 
-        assertThat(principals, is(empty()));
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
     public void shouldFailWhenWrongMapFormatOidc() throws Exception {
         givenConfig("oid:googleopenidsubject    username:kermit");
 
-        whenMapUsername(withOidcSubject("googleopenidsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleopenidsubject"));
 
-        assertThat(principals, is(empty()));
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
     public void shouldFailWhenWrongMapFormatEmail() throws Exception {
         givenConfig("mail:kermit@dcache.org    username:kermit");
 
-        whenMapUsername(withEmail("kermit@dcache.org"));
+        whenMapping(new EmailAddressPrincipal("kermit@dcache.org"));
 
-        assertThat(principals, is(empty()));
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
     public void shouldFailWhenWrongMapFormatEmail2() throws Exception {
         givenConfig("email:kermit.dcache.org    username:kermit");
 
-        whenMapUsername(withEmail("kermit@dcache.org"));
+        whenMapping(new EmailAddressPrincipal("kermit@dcache.org"));
 
-        assertThat(principals, is(empty()));
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
     public void shouldPassWhenEmailMapped() throws Exception {
         givenConfig("email:kermit@dcache.org    username:kermit");
 
-        whenMapUsername(withEmail("kermit@dcache.org"));
+        whenMapping(new EmailAddressPrincipal("kermit@dcache.org"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUserNamePrincipal("kermit"));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
     }
 
     @Test
     public void shouldPassWhenEmailMapped1() throws Exception {
         givenConfig("\"email:kermit@dcache.org\"    username:kermit");
 
-        whenMapUsername(withEmail("kermit@dcache.org"));
+        whenMapping(new EmailAddressPrincipal("kermit@dcache.org"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUserNamePrincipal("kermit"));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
     }
 
     @Test
     public void shouldPassWhenEmailMapped2() throws Exception {
         givenConfig("\"email:kermit@dcache.org\"    \"username:kermit\"");
 
-        whenMapUsername(withEmail("kermit@dcache.org"));
+        whenMapping(new EmailAddressPrincipal("kermit@dcache.org"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUserNamePrincipal("kermit"));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
     }
 
     @Test
     public void shouldPassWhenDNMapped() throws Exception {
         givenConfig("\"dn:/C=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog\"    username:kermit");
 
-        whenMapUsername(withDN("/C=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog"));
+        whenMapping(new GlobusPrincipal("/C=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUserNamePrincipal("kermit"));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
     }
 
     @Test
     public void shouldPassWhenOidcMapped() throws Exception {
         givenConfig("oidc:googleoidcsubject    username:kermit");
 
-        whenMapUsername(withOidcSubject("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUserNamePrincipal("kermit"));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
     }
 
     @Test
     public void shouldPassWhenOpenIdGroupMapped() throws Exception {
         givenConfig("oidcgrp:Users    group:desy");
 
-        whenMapUsername(withOpenIdGroup("Users"));
+        whenMapping(new OpenIdGroupPrincipal("Users"));
 
-        assertThat(principals, hasItem(new GroupNamePrincipal("desy")));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new GroupNamePrincipal("desy")));
     }
 
     @Test
     public void shouldPassWhenUidMapped() throws Exception {
         givenConfig("oidc:googleoidcsubject    uid:1000");
 
-        whenMapUsername(withOidcSubject("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUidPrincipal("1000"));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
     }
 
     @Test
     public void shouldPassWhenUidPrimaryGidTrueMapped() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,true  uid:1000  ");
 
-        whenMapUsername(withOidcSubject("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUidPrincipal("1000"));
-        assertThat(principals, hasGidPrincipal("1000", true));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("1000", true)));
     }
 
     @Test
     public void shouldPassWhenUidPrimaryGidFalseMapped() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,false  uid:1000  ");
 
-        whenMapUsername(withOidcSubject("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUidPrincipal("1000"));
-        assertThat(principals, hasGidPrincipal("1000", false));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("1000", false)));
     }
 
     @Test
     public void shouldPassWhenUidGidMapped() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000  uid:1000  ");
 
-        whenMapUsername(withOidcSubject("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUidPrincipal("1000"));
-        assertThat(principals, hasGidPrincipal("1000", false));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("1000", false)));
     }
 
     @Test
     public void shouldFailWhenGidFormatWrong() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,,true  uid:1000  ");
 
-        whenMapUsername(withOidcSubject("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
 
-        assertThat(principals, is(empty()));
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
     public void shouldFailWhenGidFormatWrong2() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,true,  uid:1000  ");
 
-        whenMapUsername(withOidcSubject("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
 
-        assertThat(principals, is(empty()));
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
     public void shouldPassWhenUidGidMapped2() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,true  gid:2000 uid:1000  uid:2000");
 
-        whenMapUsername(withOidcSubject("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUidPrincipal("2000"));
-        assertThat(principals, hasUidPrincipal("1000"));
-        assertThat(principals, hasGidPrincipal("2000", false));
-        assertThat(principals, hasGidPrincipal("1000", true));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("2000")));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("2000", false)));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("1000", true)));
     }
 
     @Test
     public void testRefresh() throws Exception {
         givenConfig("  \n");
+        givenConfigHasBeenRead();
+        givenConfig("email:kermit@dcache.org    username:kermit\n");
 
-        whenMapUsername(withEmail("kermit@dcache.org"));
-        assertThat(principals, is(empty()));
+        whenMapping(new EmailAddressPrincipal("kermit@dcache.org"));
 
-        appendConfig("email:kermit@dcache.org    username:kermit\n");
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
+    }
 
-        whenMapUsername(withEmail("kermit@dcache.org"));
-        assertThat(principals, is(empty()));
+    @Test
+    public void shouldMatchNonPrimarySpecificGroupWithPrimaryGroup() throws Exception {
+        givenConfig("group:test gid:1000,false");
 
-        mapFile.ensureUpToDate();
+        whenMapping(new GroupNamePrincipal("test", true));
 
-        whenMapUsername(withEmail("kermit@dcache.org"));
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasUserNamePrincipal("kermit"));
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal(1000, false)));
+    }
+
+    @Test
+    public void shouldMatchNonPrimarySpecificGroupWithNonPrimaryGroup() throws Exception {
+        givenConfig("group:test gid:1000,false");
+
+        whenMapping(new GroupNamePrincipal("test", false));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal(1000, false)));
+    }
+
+    @Test
+    public void shouldMatchNonPrimarySpecificFqanWithPrimaryFqan() throws Exception {
+        givenConfig("fqan:/dcache gid:1000,false");
+
+        whenMapping(new FQANPrincipal("/dcache", true));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal(1000, false)));
+    }
+
+    @Test
+    public void shouldMatchNonPrimarySpecificFqanWithNonPrimaryFqan() throws Exception {
+        givenConfig("fqan:/dcache gid:1000,false");
+
+        whenMapping(new FQANPrincipal("/dcache", false));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal(1000, false)));
+    }
+
+    @Test
+    public void shouldMatchNonPrimarySpecificGidWithPrimaryGid() throws Exception {
+        givenConfig("gid:1000 uid:2000");
+
+        whenMapping(new GidPrincipal(1000, true));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal(2000)));
+    }
+
+    @Test
+    public void shouldMatchNonPrimarySpecificGidWithNonPrimaryGid() throws Exception {
+        givenConfig("gid:1000 uid:2000");
+
+        whenMapping(new GidPrincipal(1000, false));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal(2000)));
     }
 
     /*----------------------- Helpers -----------------------------*/
 
-    private void givenConfig(String mapping) throws IOException, AuthenticationException {
-        config = tempFolder.newFile("multi-mapfile");
-        Files.write(config.toPath(), mapping.getBytes(), StandardOpenOption.APPEND);
-        mapFile = new GplazmaMultiMapFile(config);
-        mapFile.ensureUpToDate();
+    private void givenConfig(String mapping) throws Exception
+    {
+        if (Files.exists(config)) {
+            Thread.sleep(1); // Ensure file's mtime value is different.
+            Files.write(config, mapping.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+            Thread.sleep(100); // sleep is necessary because mtime values are cached.
+        } else {
+            Files.write(config, mapping.getBytes(), StandardOpenOption.CREATE_NEW);
+        }
     }
 
-    private void appendConfig(String mapping) throws InterruptedException, IOException {
-        Files.write(config.toPath(), mapping.getBytes(), StandardOpenOption.APPEND);
-        // Add 1 sec to modified time because not all platforms
-        // support file-modification times to the milli-second
-        config.setLastModified(System.currentTimeMillis()+1000);
+    private void givenConfigHasBeenRead() throws Exception
+    {
+        mapFile.mapping();
     }
 
-    private void whenMapUsername(Principal principal) {
-        principals = mapFile.getMappedPrincipals(principal);
+    private void whenMapping(Principal principal) throws Exception
+    {
+        mappedPrincipals = mapFile.mapping().entrySet().stream()
+                .filter(e -> e.getKey().matches(principal))
+                .map(e -> e.getValue())
+                .findFirst()
+                .orElse(Collections.emptySet());
     }
-
-    private Principal withDN(String s) {
-        return new GlobusPrincipal(s);
-    }
-
-    private Principal withKerberos(String s) {
-        return new KerberosPrincipal(s);
-    }
-
-    private Principal withEmail(String s) {
-        return new EmailAddressPrincipal(s);
-    }
-
-    private Principal withOidcSubject(String s) {
-        return new OidcSubjectPrincipal(s);
-    }
-
-    private Principal withOpenIdGroup(String s) {
-        return new OpenIdGroupPrincipal(s);
-    }
-
-    private Matcher<Iterable<? super UserNamePrincipal>> hasUserNamePrincipal(String username) {
-        return hasItem(new UserNamePrincipal(username));
-    }
-
-    private Matcher<Iterable<? super UidPrincipal>> hasUidPrincipal(String uid) {
-        return hasItem(new UidPrincipal(uid));
-    }
-
-    private Matcher<Iterable<? super GidPrincipal>> hasGidPrincipal(String gid, boolean isPrimary) {
-        return hasItem(new GidPrincipal(gid, isPrimary));
-    }
-
 }

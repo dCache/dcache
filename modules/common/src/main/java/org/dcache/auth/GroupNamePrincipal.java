@@ -24,13 +24,6 @@ public class GroupNamePrincipal implements GroupPrincipal, Serializable
         _isPrimary = isPrimary;
     }
 
-    public GroupNamePrincipal withPrimaryGroup(boolean isPrimaryGroup)
-    {
-        return isPrimaryGroup == _isPrimary
-                ? this
-                : new GroupNamePrincipal(_name, isPrimaryGroup);
-    }
-
     @Override
     public boolean isPrimaryGroup()
     {

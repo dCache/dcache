@@ -2,42 +2,52 @@ package org.dcache.gplazma.plugins;
 
 import com.google.common.base.Strings;
 
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+
 import org.dcache.gplazma.AuthenticationException;
 
 import java.security.Principal;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.dcache.auth.GidPrincipal;
+import org.dcache.gplazma.plugins.GplazmaMultiMapFile.PrincipalMatcher;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 public class GplazmaMultiMapPlugin implements GPlazmaMappingPlugin
 {
-    private GplazmaMultiMapFile mapFile;
+    private final GplazmaMultiMapFile mapFile;
     private static final String GPLAZMA2_MAP_FILE = "gplazma.multimap.file";
 
     public GplazmaMultiMapPlugin(Properties properties)
     {
-        String path = properties.getProperty(GPLAZMA2_MAP_FILE);
-        checkArgument(!Strings.isNullOrEmpty(path), "Undefined property: " + GPLAZMA2_MAP_FILE);
-        mapFile = new GplazmaMultiMapFile(path);
+        this(FileSystems.getDefault(), properties);
     }
 
-    public GplazmaMultiMapPlugin(GplazmaMultiMapFile mapFile)
+    public GplazmaMultiMapPlugin(FileSystem fs, Properties properties)
     {
-        this.mapFile = checkNotNull(mapFile, "Multi-mapfile can't be null");
+        String path = properties.getProperty(GPLAZMA2_MAP_FILE);
+        checkArgument(!Strings.isNullOrEmpty(path), "Undefined property: " + GPLAZMA2_MAP_FILE);
+        mapFile = new GplazmaMultiMapFile(fs.getPath(path));
     }
 
     @Override
     public void map(Set<Principal> principals) throws AuthenticationException
     {
-        mapFile.ensureUpToDate();
+        Map<PrincipalMatcher,Set<Principal>> mapping = mapFile.mapping();
+
         Set<Principal> mappedPrincipals = principals.stream()
-                                                    .flatMap(p -> mapFile.getMappedPrincipals(p).stream())
+                                                    .flatMap(p -> mapping.entrySet().stream()
+                                                                .filter(e -> e.getKey().matches(p))
+                                                                .map(e -> e.getValue().stream())
+                                                                .findFirst()
+                                                                .orElse(Stream.empty()))
                                                     .collect(Collectors.toSet());
 
         checkAuthentication(!mappedPrincipals.isEmpty(), "no mappable principals");

@@ -1,25 +1,19 @@
 package org.dcache.gplazma.plugins;
 
-import org.apache.commons.io.FileUtils;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 
-import org.dcache.auth.EmailAddressPrincipal;
-import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
 
-import javax.security.auth.kerberos.KerberosPrincipal;
-
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Properties;
@@ -30,45 +24,32 @@ import org.dcache.util.PrincipalSetMaker;
 
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 
 
-public class GplazmaMultiMapPluginTest {
-
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
-    private Set<Principal> principals;
-    private Set<Principal> result;
-    private Properties givenConfiguration = new Properties();
-    private final UserNamePrincipal testUser = new UserNamePrincipal("kermit");
-
-    @BeforeClass
-    public static void init() throws Exception
-    {
-    }
+public class GplazmaMultiMapPluginTest
+{
+    private Path config;
+    private GplazmaMultiMapPlugin plugin;
+    private Set<Principal> results;
 
     @Before
-    public void setUp() throws Exception
+    public void setup() throws Exception
     {
-        result = new HashSet<>();
-        result.add(testUser);
-        principals = new HashSet<>();
-    }
+        FileSystem filesystem = Jimfs.newFileSystem(Configuration.unix());
+        config = filesystem.getPath("/etc/dcache/multimap.conf");
+        Files.createDirectories(config.getParent());
 
-    @After
-    public void tearDown() throws Exception
-    {
+        Properties configuration = new Properties();
+        configuration.put("gplazma.multimap.file", config.toString());
+
+        plugin = new GplazmaMultiMapPlugin(filesystem, configuration);
     }
 
     @Test(expected = AuthenticationException.class)
-    public void shouldFailWhenNoMappingUsingMockedMap() throws Exception
+    public void shouldFailWhenFileDoesNotExist() throws Exception
     {
-        whenMapPluginCalledWith(mockedMapFileWithNoMapping(),
-                withOidcPrincipal("googleopenidcsubject"));
+        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub"));
     }
 
     @Test(expected = AuthenticationException.class)
@@ -76,97 +57,46 @@ public class GplazmaMultiMapPluginTest {
     {
         givenConfig("   ");
 
-        whenMapPluginCalledWith(
-                withConfig(),
-                withOidcPrincipal("googleopenidcsubject"));
-    }
-
-    @Test
-    public void shouldMapOidcToUsernameUsingMockedMap() throws Exception
-    {
-        whenMapPluginCalledWith(
-                mockedMapFile(),
-                withOidcPrincipal("googleopenidcsubject"));
-
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasItem(testUser));
+        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub"));
     }
 
     @Test
     public void shouldMapOidcToUsername() throws Exception
     {
-        givenConfig("oidc:googleopenidcsubject    username:kermit");
+        givenConfig("oidc:googleoidcsub  username:kermit");
 
-        whenMapPluginCalledWith(
-                withConfig(),
-                withOidcPrincipal("googleopenidcsubject"));
+        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasItem(testUser));
-    }
-
-    @Test
-    public void shouldMapGlobusToUsernameUsingMockedMap() throws Exception
-    {
-        whenMapPluginCalledWith(
-                mockedMapFile(),
-                withGlobusPrincipal("/O=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog")
-        );
-
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasItem(testUser));
+        assertThat(results, hasItem(new UserNamePrincipal("kermit")));
     }
 
     @Test
     public void shouldMapGlobusToUsername() throws Exception
     {
-        givenConfig("dn:\"/O=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog\"    username:kermit");
+        givenConfig("\"dn:/O=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog\"    username:kermit");
 
-        whenMapPluginCalledWith(
-                withConfig(),
-                withGlobusPrincipal("/O=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog")
-        );
+        whenMapCalledWith(aSetOfPrincipals().withDn("/O=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasItem(testUser));
+        assertThat(results, hasItem(new UserNamePrincipal("kermit")));
     }
 
     @Test(expected = AuthenticationException.class)
     public void shouldFailGlobusToUsernameNotMapping() throws Exception
     {
-        givenConfig("dn:\"/O=ES/O=Madrid/OU=upm.es/CN=Kermit The Frog\"    username:kermit");
+        givenConfig("\"dn:/O=ES/O=Madrid/OU=upm.es/CN=Kermit The Frog\"    username:kermit");
 
-        whenMapPluginCalledWith(
-                withConfig(),
-                withGlobusPrincipal("/O=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog")
-        );
+        whenMapCalledWith(aSetOfPrincipals().withDn("/O=DE/O=Hamburg/OU=desy.de/CN=Kermit The Frog"));
     }
 
-
-    @Test
-    public void shouldMapEmailToUsernameUsingMockedMap() throws Exception
-    {
-        whenMapPluginCalledWith(
-                mockedMapFile(),
-                withEmailPrincipal("kermit.the.frog@email.com")
-        );
-
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasItem(testUser));
-    }
 
     @Test
     public void shouldMapEmailToUsername() throws Exception
     {
         givenConfig("email:kermit.the.frog@email.com    username:kermit");
 
-        whenMapPluginCalledWith(
-                withConfig(),
-                withEmailPrincipal("kermit.the.frog@email.com")
-        );
+        whenMapCalledWith(aSetOfPrincipals().withEmail("kermit.the.frog@email.com"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasItem(testUser));
+        assertThat(results, hasItem(new UserNamePrincipal("kermit")));
     }
 
     @Test(expected = AuthenticationException.class)
@@ -174,22 +104,7 @@ public class GplazmaMultiMapPluginTest {
     {
         givenConfig("kerberos:kermit@DESY.DE    username:kermit");
 
-        whenMapPluginCalledWith(
-                withConfig(),
-                withEmailPrincipal("kermit.the.frog@email.com")
-        );
-    }
-
-    @Test
-    public void shouldMapKerberosToUsernameUsingMockedMap() throws Exception
-    {
-        whenMapPluginCalledWith(
-                mockedMapFile(),
-                withKerberosPrincipal("kermit@DESY.DE")
-        );
-
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasItem(testUser));
+        whenMapCalledWith(aSetOfPrincipals().withEmail("kermit.the.frog@email.com"));
     }
 
     @Test
@@ -197,25 +112,18 @@ public class GplazmaMultiMapPluginTest {
     {
         givenConfig("kerberos:kermit@DESY.DE    username:kermit");
 
-        whenMapPluginCalledWith(
-                withConfig(),
-                withKerberosPrincipal("kermit@DESY.DE")
-        );
+        whenMapCalledWith(aSetOfPrincipals().withKerberos("kermit@DESY.DE"));
 
-        assertThat(principals, is(not(empty())));
-        assertThat(principals, hasItem(testUser));
+        assertThat(results, hasItem(new UserNamePrincipal("kermit")));
     }
 
 
     @Test(expected = AuthenticationException.class)
     public void shouldFailKerberosToUsernameWhenSuppliedOidc() throws Exception
     {
-        givenConfig("oidc:googlesubject    username:kermit");
+        givenConfig("oidc:googleoidcsub    username:kermit");
 
-        whenMapPluginCalledWith(
-                withConfig(),
-                withKerberosPrincipal("kermit@DESY.DE")
-        );
+        whenMapCalledWith(aSetOfPrincipals().withKerberos("kermit@DESY.DE"));
     }
 
     @Test
@@ -223,9 +131,9 @@ public class GplazmaMultiMapPluginTest {
     {
         givenConfig("username:paul  gid:1000,true");
 
-        whenMapPluginCalledWith(aSetOfPrincipals().withUsername("paul"));
+        whenMapCalledWith(aSetOfPrincipals().withUsername("paul"));
 
-        assertThat(principals, hasItem(new GidPrincipal(1000, true)));
+        assertThat(results, hasItem(new GidPrincipal(1000, true)));
     }
 
     @Test
@@ -233,9 +141,9 @@ public class GplazmaMultiMapPluginTest {
     {
         givenConfig("username:paul  gid:1000,false");
 
-        whenMapPluginCalledWith(aSetOfPrincipals().withUsername("paul"));
+        whenMapCalledWith(aSetOfPrincipals().withUsername("paul"));
 
-        assertThat(principals, hasItem(new GidPrincipal(1000, false)));
+        assertThat(results, hasItem(new GidPrincipal(1000, false)));
     }
 
     @Test
@@ -243,9 +151,9 @@ public class GplazmaMultiMapPluginTest {
     {
         givenConfig("username:paul  gid:1000");
 
-        whenMapPluginCalledWith(aSetOfPrincipals().withUsername("paul"));
+        whenMapCalledWith(aSetOfPrincipals().withUsername("paul"));
 
-        assertThat(principals, hasItem(new GidPrincipal(1000, false)));
+        assertThat(results, hasItem(new GidPrincipal(1000, false)));
     }
 
     @Test
@@ -253,81 +161,25 @@ public class GplazmaMultiMapPluginTest {
     {
         givenConfig("username:paul  gid:1000,true");
 
-        whenMapPluginCalledWith(aSetOfPrincipals()
+        whenMapCalledWith(aSetOfPrincipals()
                 .withUsername("paul")
                 .withPrimaryGid(2000));
 
-        assertThat(principals, hasItem(new GidPrincipal(1000, false)));
+        assertThat(results, hasItem(new GidPrincipal(1000, false)));
     }
 
     /*------------------------- Helpers ---------------------------*/
 
-    private void givenConfig(String map) throws IOException {
-        final File multimapper = tempFolder.newFile("multi-mapfile");
-        givenConfiguration.put("gplazma.multimap.file", multimapper.getPath());
-
-        FileUtils.writeStringToFile(multimapper, map);
+    private void givenConfig(String mapping) throws IOException, AuthenticationException
+    {
+        Files.write(config, mapping.getBytes(), StandardOpenOption.CREATE_NEW);
     }
 
-
-    private void whenMapPluginCalledWith(GplazmaMultiMapFile map, Set<Principal> principals)
+    private void whenMapCalledWith(PrincipalSetMaker principals)
             throws AuthenticationException
     {
-        GplazmaMultiMapPlugin plugin =  new GplazmaMultiMapPlugin(map);
-        plugin.map(principals);
-    }
-
-    private void whenMapPluginCalledWith(Properties properties, Set<Principal> principals)
-            throws AuthenticationException
-    {
-        GplazmaMultiMapPlugin plugin =  new GplazmaMultiMapPlugin(properties);
-        plugin.map(principals);
-    }
-
-    private void whenMapPluginCalledWith(PrincipalSetMaker maker)
-            throws AuthenticationException
-    {
-        GplazmaMultiMapPlugin plugin = new GplazmaMultiMapPlugin(withConfig());
-        principals.addAll(maker.build());
-        plugin.map(principals);
-    }
-
-    private GplazmaMultiMapFile mockedMapFileWithNoMapping() throws AuthenticationException {
-        GplazmaMultiMapFile map =  Mockito.mock(GplazmaMultiMapFile.class);
-        doReturn(new HashSet<>()).when(map).getMappedPrincipals(Mockito.any());
-        doNothing().when(map).ensureUpToDate();
-        return map;
-    }
-
-
-    private GplazmaMultiMapFile mockedMapFile() throws AuthenticationException {
-        GplazmaMultiMapFile map =  Mockito.mock(GplazmaMultiMapFile.class);
-        doReturn(result).when(map).getMappedPrincipals(Mockito.any());
-        doNothing().when(map).ensureUpToDate();
-        return map;
-    }
-
-    private Set<Principal> withOidcPrincipal(String oidc) {
-        principals.add(new OidcSubjectPrincipal(oidc));
-        return principals;
-    }
-
-    private Set<Principal> withGlobusPrincipal(String dn) {
-        principals.add(new GlobusPrincipal(dn));
-        return principals;
-    }
-
-    private Set<Principal> withEmailPrincipal(String email) {
-        principals.add(new EmailAddressPrincipal(email));
-        return principals;
-    }
-
-    private Set<Principal> withKerberosPrincipal(String kerberos) {
-        principals.add(new KerberosPrincipal(kerberos));
-        return principals;
-    }
-
-    private Properties withConfig() {
-        return givenConfiguration;
+        results = new HashSet<>();
+        results.addAll(principals.build());
+        plugin.map(results);
     }
 }
