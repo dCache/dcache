@@ -83,7 +83,6 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
  */
 @Api(value = "namespace", authorizations = {@Authorization("basicAuth")})
 @Component
-@Api("namespace")
 @Path("/namespace")
 public class FileResources {
 
