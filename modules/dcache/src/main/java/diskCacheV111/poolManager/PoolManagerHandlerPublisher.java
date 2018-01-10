@@ -22,6 +22,7 @@ import ch.qos.logback.core.util.CloseUtil;
 import com.google.common.collect.Sets;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
@@ -45,7 +46,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.zookeeper.PathChildrenCache;
 
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.poolmanager.PoolMgrGetHandler;
