@@ -93,6 +93,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
+/usr/sbin/dcache-storage-descriptor
 /usr/sbin/dcache-info-provider
 /usr/sbin/dcache-billing-indexer
 /usr/sbin/dcache-wait-for-cells
