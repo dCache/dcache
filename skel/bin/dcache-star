@@ -278,7 +278,7 @@ def main():
         write_records(now)
         update_last_update(now)
     except Exception as e:
-        sys.stderr.write("dcache-star: Problem detected: %s" % e.message)
+        sys.stderr.write("dcache-star: Problem detected: %s" % e)
         sys.exit(1)
 
 
