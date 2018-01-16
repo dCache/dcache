@@ -18,10 +18,10 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -30,8 +30,8 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -732,110 +732,23 @@ public class PoolSelectionUnitV2
                     sortedSet.add(link);
                 }
             }
-            int pref = -1;
-            List<List<Link>> listList = new ArrayList<>();
-            List<Link> current = null;
 
-            switch (type) {
-
-                case READ:
-                    for (Link link : sortedSet) {
-                        if (link.getReadPref() < 1) {
-                            continue;
-                        }
-                        if (link.getReadPref() != pref) {
-                            listList.add(current = new ArrayList<>());
-                            pref = link.getReadPref();
-                        }
-                        current.add(link);
-                    }
-                    break;
-                case CACHE:
-                    for (Link link : sortedSet) {
-                        if (link.getCachePref() < 1) {
-                            continue;
-                        }
-                        if (link.getCachePref() != pref) {
-                            listList.add(current = new ArrayList<>());
-                            pref = link.getCachePref();
-                        }
-                        current.add(link);
-                    }
-                    break;
-                case P2P:
-                    for (Link link : sortedSet) {
-                        int tmpPref = link.getP2pPref() < 0 ? link.getReadPref()
-                                        : link.getP2pPref();
-                        if (tmpPref < 1) {
-                            continue;
-                        }
-                        if (tmpPref != pref) {
-                            listList.add(current = new ArrayList<>());
-                            pref = tmpPref;
-                        }
-                        current.add(link);
-                    }
-                    break;
-                case WRITE:
-                    for (Link link : sortedSet) {
-                        if (link.getWritePref() < 1) {
-                            continue;
-                        }
-                        if (link.getWritePref() != pref) {
-                            listList.add(current = new ArrayList<>());
-                            pref = link.getWritePref();
-                        }
-                        current.add(link);
-                    }
-            }
-            List<Link>[] x = listList.toArray(new List[listList.size()]);
-            result = new PoolPreferenceLevel[x.length];
-            //
-            // resolve the links to the pools
-            //
-            for (int i = 0; i < x.length; i++) {
-
-                List<Link> linkList = x[i];
-                List<String> resultList = new ArrayList<>();
-                String tag = null;
-
-                for (Link link : linkList) {
-                    //
-                    // get the link if available
-                    //
-                    if ((tag == null) && (link.getTag() != null)) {
-                        tag = link.getTag();
-                    }
-
-                    for (PoolCore poolCore : link._poolList.values()) {
-                        if (poolCore instanceof Pool) {
-                            Pool pool = (Pool) poolCore;
-                            _log.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
-                            if (((type == DirectionType.READ && pool.canRead())
-                                            || (type == DirectionType.CACHE && pool.canReadFromTape()
-                                            && poolCanStageFile(pool, fileAttributes))
-                                            || (type == DirectionType.WRITE && pool.canWrite())
-                                            || (type == DirectionType.P2P && pool.canWriteForP2P()))
-                                            && (_allPoolsActive || pool.isActive())) {
-                                resultList.add(pool.getName());
-                            }
-                        } else {
-                            for (Pool pool : ((PGroup)poolCore)._poolList.values()) {
-                                _log.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
-                                if (((type == DirectionType.READ && pool.canRead())
-                                                || (type == DirectionType.CACHE && pool.canReadFromTape()
-                                                && poolCanStageFile(pool, fileAttributes))
-                                                || (type == DirectionType.WRITE && pool.canWrite())
-                                                || (type == DirectionType.P2P && pool.canWriteForP2P()))
-                                                && (_allPoolsActive || pool.isActive())) {
-                                    resultList.add(pool.getName());
-                                }
-                            }
-                        }
-                    }
-                }
-                result[i] = new PoolPreferenceLevel(resultList, tag);
-            }
+            result = sortedSet.stream()
+                    .filter(type.getPreferenceFilter())
+                    .collect(Collectors.groupingBy(type::getPreference,
+                            Collectors.toCollection(ArrayList::new)))
+            .entrySet().stream()
+                    .sorted(Comparator.comparingInt(Map.Entry::getKey))
+                    .map(Map.Entry::getValue)
+                    .map(l -> l.stream().flatMap(
+                            lp -> lp.getPools()
+                                    .stream())
+                                    .filter(type.getPoolFilter())
+                            .map(SelectionEntity::getName)
+                            .collect(Collectors.toList())
+                    )
+                    .map( lk -> new PoolPreferenceLevel(lk, null)) // FIXME: tag is lost
+                    .toArray(PoolPreferenceLevel[]::new);
 
         } finally {
             runlock();

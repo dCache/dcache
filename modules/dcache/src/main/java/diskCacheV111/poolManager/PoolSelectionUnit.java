@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import diskCacheV111.pools.PoolV2Mode;
 
@@ -25,11 +26,86 @@ public interface PoolSelectionUnit  {
      * </pre>
      */
     enum DirectionType {
-        READ,
-        WRITE,
-        CACHE,
-        P2P,
-        ANY,
+        READ {
+            @Override
+            Predicate<Link> getPreferenceFilter() {
+                return (l) -> l.getReadPref() > 0;
+            }
+
+            @Override
+            int getPreference(Link l) {
+                return l.getReadPref();
+            }
+
+            @Override
+            Predicate<SelectionPool> getPoolFilter() {
+                return (p) -> p.canRead();
+            }
+        },
+        WRITE {
+            @Override
+            Predicate<Link> getPreferenceFilter() {
+                return (l) -> l.getWritePref() > 0;
+            }
+            @Override
+            int getPreference(Link l) {
+                return l.getWritePref();
+            }
+            @Override
+            Predicate<SelectionPool> getPoolFilter() {
+                return (p) -> p.canWrite();
+            }
+
+        },
+        CACHE {
+            @Override
+            Predicate<Link> getPreferenceFilter() {
+                return (l) -> l.getCachePref() > 0;
+            }
+            @Override
+            int getPreference(Link l) {
+                return l.getCachePref();
+            }
+            @Override
+            Predicate<SelectionPool> getPoolFilter() {
+                return (p) -> p.canReadFromTape();
+            }
+
+        },
+        P2P {
+            @Override
+            Predicate<Link> getPreferenceFilter() {
+                return (l) ->   l.getP2pPref() > 0 || l.getReadPref() > 0;
+            }
+            @Override
+            int getPreference(Link l) {
+                return l.getP2pPref() < 0 ? l.getReadPref() : l.getP2pPref();
+            }
+            @Override
+            Predicate<SelectionPool> getPoolFilter() {
+                return (p) -> p.canReadForP2P();
+            }
+
+        },
+        ANY {
+            @Override
+            Predicate<Link> getPreferenceFilter() {
+                return (l) -> true;
+            }
+            @Override
+            int getPreference(Link l) {
+                return Integer.MAX_VALUE;
+            }
+            @Override
+            Predicate<SelectionPool> getPoolFilter() {
+                return (p) -> true;
+            }
+
+        };
+
+        abstract Predicate<Link> getPreferenceFilter();
+        abstract int getPreference(Link l);
+        abstract Predicate<SelectionPool> getPoolFilter();
     }
     interface SelectionEntity {
 
