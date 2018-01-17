@@ -155,11 +155,6 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap();
 
-    /*
-     * reserved device for IO through MDS (for pnfs dot files)
-     */
-    private static final deviceid4 MDS_ID = PoolDeviceMap.deviceidOf(0);
-
     private final Map<stateid4, NfsTransfer> _ioMessages = new ConcurrentHashMap<>();
 
     /**
@@ -422,11 +417,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
-        /* in case of MDS access we return the same interface which client already connected to */
-        if (deviceId.equals(MDS_ID)) {
-            return layoutDriver.getDeviceAddress(context.getRpcCall().getTransport().getLocalSocketAddress());
-        }
-
         PoolDS ds = _poolDeviceMap.getByDeviceId(deviceId);
         if( ds == null) {
             return null;
@@ -484,72 +474,71 @@ public class NFSv41Door extends AbstractCellComponent implements
                     /*
                      * all non regular files ( AKA pnfs dot files ) provided by door itself.
                      */
-                    deviceid = MDS_ID;
-                } else {
+                    throw new LayoutUnavailableException("special DOT file");
+                }
 
-                    final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
-                    final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
-                                new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
-                                nfsInode.toNfsHandle()
-                            );
+                final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
+                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
+                            new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
+                            nfsInode.toNfsHandle()
+                        );
 
-                    NfsTransfer transfer = _ioMessages.get(stateid);
-                    if (transfer == null) {
-                        transfer = new NfsTransfer(_pnfsHandler, nfsInode,
-                                context.getRpcCall().getCredential().getSubject());
+                NfsTransfer transfer = _ioMessages.get(stateid);
+                if (transfer == null) {
+                    transfer = new NfsTransfer(_pnfsHandler, nfsInode,
+                            context.getRpcCall().getCredential().getSubject());
 
-                        transfer.setProtocolInfo(protocolInfo);
-                        transfer.setCellAddress(getCellAddress());
-                        transfer.setBillingStub(_billingStub);
-                        transfer.setPoolStub(_poolStub);
-                        transfer.setPoolManagerStub(_poolManagerStub);
-                        transfer.setPnfsId(pnfsId);
-                        transfer.setClientAddress(remote);
-                        transfer.setIoQueue(_ioQueue);
-
-                        /*
-                         * Bind transfer to open-state.
-                         * Cleanup transfer when state invalidated
-                         */
-                        nfsState.addDisposeListener((NFS4State state) -> {
-                            Transfer t = _ioMessages.remove(stateid);
-                            if (t != null) {
-                                t.killMover(0, "killed by door: disposed of LAYOUTGET state");
-                            }
-                        });
-
-                         _ioMessages.put(stateid, transfer);
-                    }
-
-                    if (!transfer.getFileAttributes().isDefined(FileAttribute.LOCATIONS)) {
-                        // REVISIT: ideally we want location update only, if other attributes are available
-                        transfer.readNameSpaceEntry(ioMode != layoutiomode4.LAYOUTIOMODE4_READ);
-                    }
+                    transfer.setProtocolInfo(protocolInfo);
+                    transfer.setCellAddress(getCellAddress());
+                    transfer.setBillingStub(_billingStub);
+                    transfer.setPoolStub(_poolStub);
+                    transfer.setPoolManagerStub(_poolManagerStub);
+                    transfer.setPnfsId(pnfsId);
+                    transfer.setClientAddress(remote);
+                    transfer.setIoQueue(_ioQueue);
 
                     /*
-                     * If file is on a tape only, tell the client right away
-                     * that it will take some time.
+                     * Bind transfer to open-state.
+                     * Cleanup transfer when state invalidated
                      */
-                    FileAttributes attr = transfer.getFileAttributes();
-                    if ((ioMode == layoutiomode4.LAYOUTIOMODE4_READ) && attr.getLocations().isEmpty()) {
-
-                        if (attr.getStorageInfo().isStored()) {
-                            transfer.setOnlineFilesOnly(false);
-                            transfer.selectPoolAsync(TimeUnit.SECONDS.toMillis(90));
-
-                            // clear file location to enforce re-fetcing from the namespace
-                            // REVISIT: ideally we want to subscribe for location update on this file
-                            transfer.getFileAttributes().undefine(FileAttribute.LOCATIONS);
-
-                            throw new LayoutTryLaterException("Triggering stage for " + inode.getId());
+                    nfsState.addDisposeListener((NFS4State state) -> {
+                        Transfer t = _ioMessages.remove(stateid);
+                        if (t != null) {
+                            t.killMover(0, "killed by door: disposed of LAYOUTGET state");
                         }
+                    });
 
-                        throw new NfsIoException("lost file " + inode.getId());
+                     _ioMessages.put(stateid, transfer);
+                }
+
+                if (!transfer.getFileAttributes().isDefined(FileAttribute.LOCATIONS)) {
+                    // REVISIT: ideally we want location update only, if other attributes are available
+                    transfer.readNameSpaceEntry(ioMode != layoutiomode4.LAYOUTIOMODE4_READ);
+                }
+
+                /*
+                 * If file is on a tape only, tell the client right away
+                 * that it will take some time.
+                 */
+                FileAttributes attr = transfer.getFileAttributes();
+                if ((ioMode == layoutiomode4.LAYOUTIOMODE4_READ) && attr.getLocations().isEmpty()) {
+
+                    if (attr.getStorageInfo().isStored()) {
+                        transfer.setOnlineFilesOnly(false);
+                        transfer.selectPoolAsync(TimeUnit.SECONDS.toMillis(90));
+
+                        // clear file location to enforce re-fetcing from the namespace
+                        // REVISIT: ideally we want to subscribe for location update on this file
+                        transfer.getFileAttributes().undefine(FileAttribute.LOCATIONS);
+
+                        throw new LayoutTryLaterException("Triggering stage for " + inode.getId());
                     }
 
-                    PoolDS ds = transfer.getPoolDataServer(NFS_REQUEST_BLOCKING);
-                    deviceid = ds.getDeviceId();
+                    throw new NfsIoException("lost file " + inode.getId());
                 }
+
+                PoolDS ds = transfer.getPoolDataServer(NFS_REQUEST_BLOCKING);
+                deviceid = ds.getDeviceId();
             }
 
             /*
