@@ -164,11 +164,6 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap();
 
-    /*
-     * reserved device for IO through MDS (for pnfs dot files)
-     */
-    private static final deviceid4 MDS_ID = PoolDeviceMap.deviceidOf(0);
-
     private final Map<stateid4, NfsTransfer> _ioMessages = new ConcurrentHashMap<>();
 
     /**
@@ -495,11 +490,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
-        /* in case of MDS access we return the same interface which client already connected to */
-        if (deviceId.equals(MDS_ID)) {
-            return layoutDriver.getDeviceAddress(context.getRpcCall().getTransport().getLocalSocketAddress());
-        }
-
         PoolDS ds = _poolDeviceMap.getByDeviceId(deviceId);
         if( ds == null) {
             return null;
@@ -559,58 +549,54 @@ public class NFSv41Door extends AbstractCellComponent implements
                     /*
                      * all non regular files ( AKA pnfs dot files ) provided by door itself.
                      */
-                    deviceid = MDS_ID;
-
-                    // there are no associated transfer. create a dummy stateid.
-                    layoutStateId = client.createState(openStateId.getStateOwner(), openStateId);
-                } else {
-
-                    final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
-                    final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
-                                new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
-                                nfsInode.toNfsHandle()
-                            );
-
-                    NfsTransfer transfer = _ioMessages.get(openStateId.stateid());
-                    if (transfer == null) {
-                        transfer = new NfsTransfer(_pnfsHandler, client, openStateId, nfsInode,
-                                context.getRpcCall().getCredential().getSubject(), ioMode);
-
-                        transfer.setProtocolInfo(protocolInfo);
-                        transfer.setCellAddress(getCellAddress());
-                        transfer.setBillingStub(_billingStub);
-                        transfer.setPoolStub(_poolStub);
-                        transfer.setPoolManagerStub(_poolManagerStub);
-                        transfer.setPnfsId(pnfsId);
-                        transfer.setClientAddress(remote);
-                        transfer.setIoQueue(_ioQueue);
-
-                        /*
-                         * As all our layouts marked 'return-on-close', stop mover when
-                         * open-state disposed on CLOSE.
-                         */
-                        final NfsTransfer t = transfer;
-                        openStateId.addDisposeListener(state -> {
-                            /*
-                             * Cleanup transfer when state invalidated.
-                             */
-                            t.shutdownMover();
-                            if (t.isWrite()) {
-                                /* write request keep in the message map to
-                                 * avoid re-creates and trigger errors.
-                                 */
-                                _ioMessages.remove(openStateId.stateid());
-                            }
-                        });
-
-                         _ioMessages.put(openStateId.stateid(), transfer);
-                    }
-
-                    layoutStateId = transfer.getStateid();
-
-                    PoolDS ds = transfer.getPoolDataServer(NFS_REQUEST_BLOCKING);
-                    deviceid = ds.getDeviceId();
+                    throw new LayoutUnavailableException("special DOT file");
                 }
+
+                final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
+                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
+                            new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
+                            nfsInode.toNfsHandle()
+                        );
+
+                NfsTransfer transfer = _ioMessages.get(openStateId.stateid());
+                if (transfer == null) {
+                    transfer = new NfsTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                            context.getRpcCall().getCredential().getSubject(), ioMode);
+
+                    transfer.setProtocolInfo(protocolInfo);
+                    transfer.setCellAddress(getCellAddress());
+                    transfer.setBillingStub(_billingStub);
+                    transfer.setPoolStub(_poolStub);
+                    transfer.setPoolManagerStub(_poolManagerStub);
+                    transfer.setPnfsId(pnfsId);
+                    transfer.setClientAddress(remote);
+                    transfer.setIoQueue(_ioQueue);
+
+                    /*
+                     * As all our layouts marked 'return-on-close', stop mover when
+                     * open-state disposed on CLOSE.
+                     */
+                    final NfsTransfer t = transfer;
+                    openStateId.addDisposeListener(state -> {
+                        /*
+                         * Cleanup transfer when state invalidated.
+                         */
+                        t.shutdownMover();
+                        if (t.isWrite()) {
+                            /* write request keep in the message map to
+                             * avoid re-creates and trigger errors.
+                             */
+                            _ioMessages.remove(openStateId.stateid());
+                        }
+                    });
+
+                     _ioMessages.put(openStateId.stateid(), transfer);
+                }
+
+                layoutStateId = transfer.getStateid();
+
+                PoolDS ds = transfer.getPoolDataServer(NFS_REQUEST_BLOCKING);
+                deviceid = ds.getDeviceId();
             }
 
             //  -1 is special value, which means entire file
