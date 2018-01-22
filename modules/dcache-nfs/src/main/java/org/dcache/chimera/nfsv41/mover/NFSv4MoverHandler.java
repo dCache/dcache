@@ -296,7 +296,7 @@ public class NFSv4MoverHandler {
                 case nfs_opnum4.OP_WRITE:
                     return new EDSOperationWRITE(op, NFSv4MoverHandler.this);
                 case nfs_opnum4.OP_EXCHANGE_ID:
-                    return new OperationEXCHANGE_ID(op, nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS);
+                    return new OperationEXCHANGE_ID(op);
                 case nfs_opnum4.OP_CREATE_SESSION:
                     return new OperationCREATE_SESSION(op);
                 case nfs_opnum4.OP_DESTROY_SESSION:

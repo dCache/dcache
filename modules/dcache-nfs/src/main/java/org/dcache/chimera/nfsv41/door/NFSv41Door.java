@@ -87,6 +87,7 @@ import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.NoMatchingLayoutException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.ServerFaultException;
+import org.dcache.nfs.status.UnknownLayoutTypeException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -151,15 +152,10 @@ public class NFSv41Door extends AbstractCellComponent implements
      * Layout type specific driver.
      */
 
-    private final Map<Integer, LayoutDriver> _supportedDrivers = ImmutableMap.of(
+    private final Map<layouttype4, LayoutDriver> _supportedDrivers = ImmutableMap.of(
             layouttype4.LAYOUT4_FLEX_FILES,  new FlexFileLayoutDriver(4, 1, new utf8str_mixed("17"), new utf8str_mixed("17")),
             layouttype4.LAYOUT4_NFSV4_1_FILES,  new NfsV41FileLayoutDriver()
     );
-
-    /**
-     * An ordered array if layout types supported by the door.
-     */
-    private int[] supportedlayoutTypes ;
 
     /**
      * A mapping between pool name, nfs device id and pool's ip addresses.
@@ -315,22 +311,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Required
     public void setVfsCacheConfig(VfsCacheConfig vfsCacheConfig) {
         _vfsCacheConfig = vfsCacheConfig;
-    }
-
-    @Required
-    public void setSupportedLayouts(String[] layouts) {
-        int[] maxPossible = new int[_supportedDrivers.size()];
-        int configured = 0;
-
-        for(String layout: layouts) {
-            int type = layoutTypeToValue(layout);
-
-            if (!_supportedDrivers.containsKey(type)) {
-                throw new IllegalArgumentException("Insupported layout type: " + layout);
-            }
-            maxPossible[configured++] = type;
-        }
-        supportedlayoutTypes = Arrays.copyOf(maxPossible, configured);
     }
 
     @Required
@@ -499,7 +479,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
 
     @Override
-    public device_addr4 getDeviceInfo(CompoundContext context, deviceid4 deviceId, int layoutType) throws ChimeraNFSException {
+    public device_addr4 getDeviceInfo(CompoundContext context, deviceid4 deviceId, layouttype4 layoutType) throws ChimeraNFSException {
 
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
@@ -529,7 +509,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @throws IOException in case of any other errors
      */
     @Override
-    public Layout layoutGet(CompoundContext context, Inode nfsInode, int layoutType, int ioMode, stateid4 stateid)
+    public Layout layoutGet(CompoundContext context, Inode nfsInode, layouttype4 layoutType, int ioMode, stateid4 stateid)
             throws IOException {
 
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
@@ -683,8 +663,8 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @see org.dcache.nfsv4.NFSv41DeviceManager#getLayoutTypes()
      */
     @Override
-    public int[] getLayoutTypes() {
-        return supportedlayoutTypes;
+    public Set<layouttype4> getLayoutTypes() {
+        return _supportedDrivers.keySet();
     }
 
     public void setBillingStub(CellStub stub) {
@@ -700,9 +680,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         pw.println("NFS (" + _versions + ") door (MDS):");
         if (_nfs4 != null) {
             pw.printf("  IO queue                : %s\n", _ioQueue);
-            pw.printf("  Supported Layout types  : %s\n", Arrays.stream(supportedlayoutTypes)
-                .mapToObj(NFSv41Door::layoutTypeToString)
-                .collect(Collectors.joining(",", "[", "]")));
+            pw.printf("  Supported Layout types  : %s\n", _supportedDrivers.keySet());
             pw.printf("  Number of NFSv4 clients : %d\n", _nfs4.getStateHandler().getClients().size());
             pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getEntries().stream().count());
             pw.printf("  Active transfers        : %d\n", _ioMessages.values().size());
@@ -1264,14 +1242,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         _loginBrokerPublisher.setWritePaths(exportPaths);
     }
 
-    private LayoutDriver getLayoutDriver(int layoutType) throws BadLayoutException, LayoutUnavailableException {
-        if (layoutType < 1 || layoutType > layouttype4.LAYOUT4_TYPE_MAX) {
-            throw new BadLayoutException("Invalid layout type requested(" + layoutType + ")");
-        }
+    private LayoutDriver getLayoutDriver(layouttype4 layoutType) throws BadLayoutException, UnknownLayoutTypeException {
 
         LayoutDriver layoutDriver = _supportedDrivers.get(layoutType);
         if (layoutDriver == null) {
-            throw new LayoutUnavailableException("Layout type (" + layoutType + ") not supported");
+            throw new UnknownLayoutTypeException("Layout type (" + layoutType + ") not supported");
         }
         return layoutDriver;
     }
@@ -1305,39 +1280,6 @@ public class NFSv41Door extends AbstractCellComponent implements
             } catch (IOException e) {
                 _log.error("Failed to send call-back to the client: {}", e.getMessage());
             }
-        }
-    }
-
-    // this must go into nfs4j code
-    private static String layoutTypeToString(int type) {
-
-        switch (type) {
-            case layouttype4.LAYOUT4_NFSV4_1_FILES:
-                return "NFSV41_FILES";
-            case layouttype4.LAYOUT4_BLOCK_VOLUME:
-                return "BLOCK_VOLUME";
-            case layouttype4.LAYOUT4_OSD2_OBJECTS:
-                return "OSD2_OBJECTS";
-            case layouttype4.LAYOUT4_FLEX_FILES:
-                return "FLEX_FILES";
-            default:
-                return "Unknown";
-        }
-    }
-
-    private static int layoutTypeToValue(String type) {
-
-        switch (type) {
-            case "NFSV41_FILES":
-                return layouttype4.LAYOUT4_NFSV4_1_FILES;
-            case "BLOCK_VOLUME":
-                return layouttype4.LAYOUT4_BLOCK_VOLUME;
-            case "OSD2_OBJECTS":
-                return layouttype4.LAYOUT4_OSD2_OBJECTS;
-            case "FLEX_FILES":
-                return layouttype4.LAYOUT4_FLEX_FILES;
-            default:
-                throw new IllegalArgumentException("Illegal layout type: " + type);
         }
     }
 }

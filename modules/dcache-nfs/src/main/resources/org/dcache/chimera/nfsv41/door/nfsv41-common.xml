@@ -187,7 +187,6 @@
         <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}"/>
         <property name="loginBrokerPublisher" ref="lb"/>
         <property name="vfsCacheConfig" ref="cache-config"/>
-        <property name="supportedLayouts" value="${nfs.pnfs.layouts}" />
         <property name="accessLogMode" value="${nfs.enable.access-log}" />
     </bean>
 
