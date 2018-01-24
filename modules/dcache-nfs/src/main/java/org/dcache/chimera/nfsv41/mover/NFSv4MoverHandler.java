@@ -21,7 +21,6 @@ import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadHandleException;
-import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv4Defaults;
@@ -203,7 +202,6 @@ public class NFSv4MoverHandler {
     private final NFSv4OperationFactory _operationFactory = new EDSNFSv4OperationFactory();
 
     private final NFSServerV41 _embededDS;
-    private final EmbeddedV3 _v3;
 
     /**
      * A CellStub for communication with doors.
@@ -223,14 +221,13 @@ public class NFSv4MoverHandler {
             throws IOException , GSSException, OncRpcException {
 
         _embededDS = new NFSServerV41(_operationFactory, null, _fs, null);
-        _v3 = new EmbeddedV3(this);
+
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
                 .withMinPort(portRange.getLower())
                 .withMaxPort(portRange.getUpper())
                 .withTCP()
                 .withoutAutoPublish()
-                .withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS)
-                .withRpcService(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), _v3);
+                .withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
 
         _log.debug("Using {} IO strategy", ioStrategy);
         if (ioStrategy == IoStrategy.SAME_THREAD) {
