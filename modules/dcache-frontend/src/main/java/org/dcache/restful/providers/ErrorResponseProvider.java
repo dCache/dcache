@@ -17,6 +17,9 @@
  */
 package org.dcache.restful.providers;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.json.JSONObject;
 
 import javax.ws.rs.BadRequestException;
@@ -25,6 +28,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
+
 import java.util.Collections;
 
 /**
@@ -37,10 +41,28 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception>
     public static final Response NOT_IMPLEMENTED
                     = Response.status(Status.NOT_IMPLEMENTED).build();
 
+    private static String firstLineOf(String in)
+    {
+        int nl = in.indexOf('\n');
+        return nl == -1 ? in : in.substring(0, nl);
+    }
+
     @Override
     public Response toResponse(Exception e)
     {
-        if (e instanceof BadRequestException) {
+        if (e instanceof JsonParseException) {
+            // Unfortunately Jackson builds multiline messages, we work around this.
+            return buildResponse(Response.Status.BAD_REQUEST,
+                    "Supplied JSON is invalid: " + firstLineOf(e.getMessage()));
+        } else if (e instanceof UnrecognizedPropertyException) {
+            return buildResponse(Response.Status.BAD_REQUEST,
+                    "'" + ((UnrecognizedPropertyException)e).getPropertyName()
+                            + "' is an unrecognized field.");
+        } else if (e instanceof JsonMappingException) {
+            // Unfortunately Jackson builds multiline messages, we work around this.
+            return buildResponse(Response.Status.BAD_REQUEST,
+                    "Unable to interpret JSON: " + firstLineOf(e.getMessage()));
+        } else if (e instanceof BadRequestException) {
             return buildResponse(Response.Status.BAD_REQUEST,
                     e.getMessage() == null ? "Bad request" : e.getMessage());
         } else if (e instanceof InternalServerErrorException) {
