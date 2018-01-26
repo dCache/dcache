@@ -63,7 +63,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -83,12 +82,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileOperationMap;
@@ -233,10 +234,9 @@ public final class ResilienceCommands implements CellCommandListener {
 
         @Option(name = "order",
                         valueSpec = "asc|desc",
-                        usage = "Display lines in ascending or "
-                                        + "descending (default) "
-                                        + "order by timestamp.")
-        String order = "desc";
+                        usage = "Display lines in ascending (default) or "
+                                        + "descending order by timestamp.")
+        String order = "asc";
 
         @Option(name = "enable",
                         usage = "Turn the recording of statistics "
@@ -669,9 +669,9 @@ public final class ResilienceCommands implements CellCommandListener {
 
         @Option(name = "order",
                         valueSpec = "ASC|DESC",
-                        usage = "Display entries in ascending or descending "
-                                        + "(default) order of arrival.")
-        String order = "DESC";
+                        usage = "Display entries in ascending (default) or "
+                                        + "descending order of arrival.")
+        String order = "ASC";
 
         @Override
         protected String doCall() throws Exception {
@@ -686,17 +686,16 @@ public final class ResilienceCommands implements CellCommandListener {
             SortOrder order = SortOrder.valueOf(this.order.toUpperCase());
 
             switch (order) {
-                case ASC:
-                    if (limit != null) {
-                        return history.ascending(failed, limit);
-                    }
-                    return history.ascending(failed);
                 case DESC:
-                default:
                     if (limit != null) {
                         return history.descending(failed, limit);
                     }
                     return history.descending(failed);
+                default:
+                    if (limit != null) {
+                        return history.ascending(failed, limit);
+                    }
+                    return history.ascending(failed);
             }
         }
     }
