@@ -36,7 +36,6 @@ import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.StateOwner;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
@@ -52,7 +51,6 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private final NFS4State _state;
     private final PnfsHandler _namespace;
     private volatile CompletionHandler<Void, Void> _completionHandler;
-    private final verifier4 _bootVerifier;
 
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
             NfsTransferService nfsTransferService, PnfsHandler pnfsHandler, ChecksumModule checksumModule) {
@@ -61,7 +59,6 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
         _state = new MoverState(null, new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         _namespace = pnfsHandler;
-        _bootVerifier = nfsTransferService.getBootVerifier();
     }
 
     public stateid4 getStateId() {
@@ -162,10 +159,6 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         } catch (CacheException e) {
             throw new NfsIoException("Failed to update file size in the namespace", e);
         }
-    }
-
-    public verifier4 getBootVerifier() {
-        return _bootVerifier;
     }
 
     public synchronized boolean hasSession() {

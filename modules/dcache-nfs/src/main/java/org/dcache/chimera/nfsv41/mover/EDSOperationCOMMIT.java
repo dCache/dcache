@@ -40,6 +40,6 @@ public class EDSOperationCOMMIT extends AbstractNFSv4Operation {
 
         res.status = nfsstat.NFS_OK;
         res.resok4 = new COMMIT4resok();
-        res.resok4.writeverf = mover.getBootVerifier();
+        res.resok4.writeverf = cc.getRebootVerifier();
     }
 }

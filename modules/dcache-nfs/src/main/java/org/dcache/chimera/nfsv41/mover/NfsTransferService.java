@@ -71,7 +71,6 @@ public class NfsTransferService
     private CellStub _door;
     private PostTransferService _postTransferService;
     private final long _bootVerifier = System.currentTimeMillis();
-    private final verifier4 _bootVerifierBytes = verifier4.valueOf(_bootVerifier);
     private boolean _sortMultipathList;
     private PnfsHandler _pnfsHandler;
     private ChecksumModule _checksumModule;
@@ -328,9 +327,5 @@ public class NfsTransferService
             }
             return sb.toString();
         }
-    }
-
-    public verifier4 getBootVerifier() {
-        return _bootVerifierBytes;
     }
 }

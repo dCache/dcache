@@ -91,7 +91,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             res.resok4 = new WRITE4resok();
             res.resok4.count = new count4(bytesWritten);
             res.resok4.committed = stable;
-            res.resok4.writeverf = mover.getBootVerifier();
+            res.resok4.writeverf = context.getRebootVerifier();
 
             _log.debug("MOVER: {}@{} written, {} requested.", bytesWritten, offset, bytesWritten);
 
