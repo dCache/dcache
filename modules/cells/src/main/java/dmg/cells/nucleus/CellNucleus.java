@@ -219,12 +219,8 @@ public class CellNucleus implements ThreadFactory
         _messageExecutor = (executor == null) ? new BoundedCachedExecutor(this, 1) : new BoundedExecutor(executor, 1);
 
         CuratorFramework curatorFramework = __cellGlue.getCuratorFramework();
-        if (curatorFramework != null) {
-            _curatorFramework = new CellCuratorFramework(curatorFramework, _messageExecutor);
-            _curatorFramework.start();
-        } else {
-            _curatorFramework = null;
-        }
+        _curatorFramework = new CellCuratorFramework(curatorFramework, _messageExecutor);
+        _curatorFramework.start();
 
         LOGGER.info("Created {}", cellName);
     }
@@ -255,10 +251,7 @@ public class CellNucleus implements ThreadFactory
 
     public static void startCurator()
     {
-        CuratorFramework curatorFramework = __cellGlue.getCuratorFramework();
-        if (curatorFramework != null) {
-            curatorFramework.start();
-        }
+        __cellGlue.getCuratorFramework().start();
     }
 
     public static void shutdownCellGlue()
