@@ -1,9 +1,10 @@
 package org.dcache.boot;
 
+import org.apache.curator.framework.CuratorFramework;
 import com.google.common.base.Throwables;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -44,7 +45,7 @@ public class DomainConfigurationTest
         "b=2\n" +
         "c=5\n";
 
-    private final static SystemCell system = SystemCell.create(DOMAIN_NAME, null);
+    private final static SystemCell system = SystemCell.create(DOMAIN_NAME, Mockito.mock(CuratorFramework.class));
 
     static {
         try {
