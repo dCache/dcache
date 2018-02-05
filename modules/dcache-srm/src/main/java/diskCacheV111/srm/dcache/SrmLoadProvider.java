@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2018 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,11 +17,11 @@
  */
 package diskCacheV111.srm.dcache;
 
-import dmg.cells.services.login.LoginBrokerPublisher;
+import java.util.function.DoubleSupplier;
 
 import org.dcache.srm.SRM;
 
-public class SrmLoadProvider implements LoginBrokerPublisher.LoadProvider
+public class SrmLoadProvider implements DoubleSupplier
 {
     private SRM srm;
 
@@ -31,7 +31,7 @@ public class SrmLoadProvider implements LoginBrokerPublisher.LoadProvider
     }
 
     @Override
-    public double getLoad()
+    public double getAsDouble()
     {
         return srm.getLoad();
     }

@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -80,7 +81,7 @@ public class LoginBrokerPublisher
     private TimeUnit _brokerUpdateTimeUnit = MILLISECONDS;
     private double _brokerUpdateThreshold = 0.1;
     private LastEvent _lastEvent = LastEvent.NONE;
-    private LoadProvider _load = () -> 0.0;
+    private DoubleSupplier _load = () -> 0.0;
     private Supplier<List<InetAddress>> _addresses = createAnyAddressSupplier();
     private int _port;
     private ScheduledExecutorService _executor;
@@ -209,7 +210,7 @@ public class LoginBrokerPublisher
             return Optional.of(
                     new LoginBrokerInfo(getCellName(), getCellDomainName(), _protocolFamily, _protocolVersion,
                                         _protocolEngine, _root, readPaths, writePaths, _tags, addresses, _port,
-                                        _load.getLoad(), _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime)));
+                                        _load.getAsDouble(), _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime)));
         }
         return Optional.empty();
     }
@@ -361,9 +362,9 @@ public class LoginBrokerPublisher
         setLoadProvider(() -> load);
     }
 
-    public synchronized void setLoadProvider(LoadProvider load)
+    public synchronized void setLoadProvider(DoubleSupplier load)
     {
-        double diff = Math.abs(_load.getLoad() - load.getLoad());
+        double diff = Math.abs(_load.getAsDouble() - load.getAsDouble());
         if (diff > _brokerUpdateThreshold) {
             rescheduleTask();
         }
@@ -552,14 +553,6 @@ public class LoginBrokerPublisher
         }
 
         return new AnyAddressSupplier();
-    }
-
-    /**
-     * Callback interface to query the current load.
-     */
-    public interface LoadProvider
-    {
-        double getLoad();
     }
 
     public static class AnyAddressSupplier implements Supplier<List<InetAddress>>
