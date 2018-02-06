@@ -29,6 +29,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -157,36 +158,30 @@ public class PoolSelectionUnitV2
     @Override
     public String[] getDefinedPools(boolean enabledOnly) {
 
-        List<String> list = new ArrayList<>();
         rlock();
         try {
-
-            for (Pool pool : _pools.values()) {
-                if ((!enabledOnly) || pool.isEnabled()) {
-                    list.add(pool.getName());
-                }
-            }
+            return _pools.values().stream()
+                    .filter(p -> p.isEnabled() || !enabledOnly)
+                    .map(Pool::getName)
+                    .toArray(String[]::new);
         } finally {
             runlock();
         }
-        return list.toArray(new String[list.size()]);
     }
 
     @Override
     public String[] getActivePools() {
-        List<String> list = new ArrayList<>();
 
         rlock();
         try {
-            for (Pool pool : _pools.values()) {
-                if (pool.isEnabled() && pool.isActive()) {
-                    list.add(pool.getName());
-                }
-            }
+            return _pools.values().stream()
+                    .filter(Pool::isActive)
+                    .filter(Pool::isEnabled)
+                    .map(Pool::getName)
+                    .toArray(String[]::new);
         } finally {
             runlock();
         }
-        return list.toArray(new String[list.size()]);
     }
 
     @Override
