@@ -621,6 +621,7 @@ public class LocationManager extends CellAdapter
             LOGGER.info("{}", event);
             String cell;
 
+            new Exception().printStackTrace();
             switch (event.getType()) {
             case CHILD_REMOVED:
                 cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
