@@ -106,6 +106,18 @@
     </encoder>
   </appender>
 
+  <appender name="zookeeper" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${dcache.log.dir}/${dcache.domain.name}.zookeeper</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${dcache.log.dir}/${dcache.domain.name}.zookeeper.%d{yyyy-MM-dd}.gz</fileNamePattern>
+      <maxHistory>${dcache.log.zookeeper.max-history}</maxHistory>
+    </rollingPolicy>
+    <encoder>
+       <!-- Log of all ZooKeeper events. -->
+      <pattern>%d %m%n</pattern>
+    </encoder>
+  </appender>
+
   <!-- The conditional is to avoid an infinite retry of a non-existent connection
        by the socket appender if an alarms service is not running, which,
        for example, is the case when remote logging is left off system-wide. -->
@@ -143,6 +155,11 @@
     <appender-ref ref="access"/>
   </logger>
 
+  <logger name="org.dcache.zookeeper" additivity="false">
+    <appender-ref ref="zookeeper"/>
+  </logger>
+
+
   <!-- Nothing is logged to this logger. Its sole purpose is to list
        all appenders available; this ensures that the appenders are
        available in the dCache admin interface. -->
@@ -151,6 +168,7 @@
     <appender-ref ref="pinboard"/>
     <appender-ref ref="events"/>
     <appender-ref ref="access"/>
+    <appender-ref ref="zookeeper"/>
     <if condition='!"${dcache.log.level.remote}".equals("off")'>
       <then>
         <appender-ref ref="remote"/>
@@ -246,6 +264,12 @@
       <appender>access</appender>
       <logger>org.dcache.access</logger>
       <level>${dcache.log.level.access}</level>
+    </threshold>
+
+    <threshold>
+      <appender>zookeeper</appender>
+      <logger>org.dcache.zookeeper</logger>
+      <level>${dcache.log.level.zookeeper}</level>
     </threshold>
   </turboFilter>
 </configuration>
