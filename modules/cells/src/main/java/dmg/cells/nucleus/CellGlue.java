@@ -5,6 +5,9 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +42,7 @@ class CellGlue
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(CellGlue.class);
+    private static final Logger EVENT_LOGGER = LoggerFactory.getLogger("org.dcache.zookeeper");
 
     private final String _cellDomainName;
     private final ConcurrentMap<String, CellNucleus> _cellList = Maps.newConcurrentMap();
@@ -76,7 +80,7 @@ class CellGlue
                     System.currentTimeMillis();
         }
         _cellDomainName = cellDomainNameLocal;
-        _curatorFramework = curatorFramework;
+        _curatorFramework = withMonitoring(curatorFramework);
         _domainAddress = new CellAddressCore("*", _cellDomainName);
         _masterThreadGroup = new ThreadGroup("Master-Thread-Group");
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
@@ -89,6 +93,37 @@ class CellGlue
                                                           killerThreadFactory);
         _emergencyKillerExecutor.prestartCoreThread();
         _listenerExecutor = Executors.newSingleThreadExecutor(r -> newThread(_masterThreadGroup, r, "cell-event-listener"));
+    }
+
+    private static CuratorFramework withMonitoring(CuratorFramework curator)
+    {
+        curator.getConnectionStateListenable().addListener((c,s) -> {
+                    EVENT_LOGGER.info("[CURATOR: {}] connection state now {}",
+                            c.getState(), s);
+
+                    if (s == ConnectionState.CONNECTED) {
+                        try {
+                            ZooKeeper zk = c.getZookeeperClient().getZooKeeper();
+                            zk.register((WatchedEvent event) -> {
+                                        EVENT_LOGGER.info("[ZOOKEEPER] event "
+                                                + "type={}, state={}, path={}",
+                                                event.getType(), event.getState(),
+                                                event.getPath());
+                                    });
+                        } catch (Exception e) {
+                            EVENT_LOGGER.error("Failed to register ZK logging", e);
+                        }
+                    }
+                });
+        curator.getCuratorListenable().addListener((c,e) ->
+                    EVENT_LOGGER.info("[CURATOR: {}] event: type={}, name={}, "
+                            + "path={}, rc={}, children={}",
+                            c.getState(), e.getType(), e.getName(), e.getPath(),
+                            e.getResultCode(), e.getChildren()));
+        curator.getUnhandledErrorListenable().addListener((m,e) ->
+                    EVENT_LOGGER.warn("[CURATOR: {}] unhandled error \"{}\": {}",
+                            curator.getState(), m, e.getMessage()));
+        return curator;
     }
 
     static Thread newThread(ThreadGroup threadGroup, Runnable r)
