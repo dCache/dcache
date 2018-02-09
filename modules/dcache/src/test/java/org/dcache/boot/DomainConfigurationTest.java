@@ -1,9 +1,11 @@
 package org.dcache.boot;
 
 import com.google.common.base.Throwables;
-import org.junit.After;
+import org.apache.curator.framework.listen.Listenable;
+import org.apache.curator.framework.CuratorFramework;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -44,9 +46,18 @@ public class DomainConfigurationTest
         "b=2\n" +
         "c=5\n";
 
-    private final static SystemCell system = SystemCell.create(DOMAIN_NAME, null);
+    private final static SystemCell system;
 
     static {
+        CuratorFramework mockCurator = Mockito.mock(CuratorFramework.class);
+        Mockito.when(mockCurator.getConnectionStateListenable())
+                .thenReturn(Mockito.mock(Listenable.class));
+        Mockito.when(mockCurator.getCuratorListenable())
+                .thenReturn(Mockito.mock(Listenable.class));
+        Mockito.when(mockCurator.getUnhandledErrorListenable())
+                .thenReturn(Mockito.mock(Listenable.class));
+        system = SystemCell.create(DOMAIN_NAME, mockCurator);
+
         try {
             system.start().get();
         } catch (Exception e) {
