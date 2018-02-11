@@ -84,7 +84,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
 
         dbKey = new Document()
                 .append("pool", pool)
-                .append("pnfsid", pnfsId.toIdString());
+                .append("pnfsid", pnfsId.getId());
 
         state = new CacheRepositoryEntryState(dbKey, collection);
 

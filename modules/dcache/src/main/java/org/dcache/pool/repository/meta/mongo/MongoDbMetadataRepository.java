@@ -243,7 +243,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     }
 
     private void deleteIfExists(PnfsId id) {
-        deleteIfExists(id.toIdString());
+        deleteIfExists(id.getId());
     }
 
     @Override

@@ -126,13 +126,13 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     public DcacheFileMetaData(PnfsId pnfsId) {
         super();
         this.pnfsId = pnfsId;
-        this.fileId = pnfsId.toIdString();
+        this.fileId = pnfsId.getId();
     }
 
     public DcacheFileMetaData(PnfsId pnfsId,diskCacheV111.srm.FileMetaData fmd) {
         super(fmd);
         this.pnfsId = pnfsId;
-        this.fileId = pnfsId.toIdString();
+        this.fileId = pnfsId.getId();
     }
 
     public DcacheFileMetaData(FileAttributes attributes)

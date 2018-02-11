@@ -259,30 +259,6 @@ public class PnfsIdTests {
     }
 
     @Test
-    public void testSimpleGetBytes() {
-        byte[] bytes = _simplePnfsId.getBytes();
-        String encodedBytes = SerializableUtils.encode( bytes);
-        String expected = PNFS_SIMPLE_ID.toLowerCase();
-        assertEquals( "getBytes", expected, encodedBytes);
-    }
-
-    @Test
-    public void testDomainGetBytes() {
-        byte[] bytes = _domainPnfsId.getBytes();
-        String encodedBytes = SerializableUtils.encode( bytes);
-        String expected = PNFS_SIMPLE_ID.toLowerCase();
-        assertEquals( "getBytes", expected, encodedBytes);
-    }
-
-    @Test
-    public void testChimeraGetBytes() {
-        byte[] bytes = _chimeraId.getBytes();
-        String encodedBytes = SerializableUtils.encode( bytes);
-        String expected = CHIMERA_ID.toLowerCase();
-        assertEquals( "getBytes", expected, encodedBytes);
-    }
-
-    @Test
     public void testSimpleGetDatabaseId() {
         int dbId = _simplePnfsId.getDatabaseId();
         int expectedId = Integer.parseInt( PNFS_DATABASE, 16);
@@ -302,24 +278,6 @@ public class PnfsIdTests {
         String firstFourCharacters = CHIMERA_ID.substring( 0, 4);
         int expectedId = Integer.parseInt( firstFourCharacters, 16);
         assertEquals( "database ID", expectedId, dbId);
-    }
-
-    @Test
-    public void testSimpleGetDomain() {
-        String domain = _simplePnfsId.getDomain();
-        assertNull( "getDomain", domain);
-    }
-
-    @Test
-    public void testDomainGetDomain() {
-        String domain = _domainPnfsId.getDomain();
-        assertEquals( "getDomain", PNFS_DOMAIN, domain);
-    }
-
-    @Test
-    public void testChimeraGetDomain() {
-        String domain = _chimeraId.getDomain();
-        assertNull( "getDomain", domain);
     }
 
     @Test
@@ -356,70 +314,6 @@ public class PnfsIdTests {
     public void testChimeraToString() {
         String value = _chimeraId.toString();
         assertEquals( "toString", CHIMERA_ID, value);
-    }
-
-    @Test
-    public void testSimpleToShortString() {
-        String value = _simplePnfsId.toShortString();
-        assertEquals( "toShortString", PNFS_SIMPLE_ID_SHORT, value);
-    }
-
-    @Test
-    public void testDomainToShortString() {
-        String value = _domainPnfsId.toShortString();
-        assertEquals( "toShortString", PNFS_SIMPLE_ID_SHORT, value);
-    }
-
-    @Test
-    public void testChimeraToShortString() {
-        String value = _chimeraId.toShortString();
-        assertEquals( "toShortString", CHIMERA_ID, value);
-    }
-
-    @Test
-    public void testSimpleToIdString() {
-        String value = _simplePnfsId.toIdString();
-        assertEquals( "toIdString", PNFS_SIMPLE_ID, value);
-    }
-
-    @Test
-    public void testDomainToIdString() {
-        String value = _domainPnfsId.toIdString();
-        assertEquals( "toIdString", PNFS_SIMPLE_ID, value);
-    }
-
-    @Test
-    public void testChimeraToIdString() {
-        String value = _chimeraId.toIdString();
-        assertEquals( "toIdString", CHIMERA_ID, value);
-    }
-
-    @Ignore("Implementation seems to be broken")
-    @Test()
-    public void testToCompleteId() {
-        String completeId = PnfsId.toCompleteId( PNFS_SIMPLE_ID_SHORT);
-        assertEquals( "toCompleteId", PNFS_SIMPLE_ID, completeId);
-    }
-
-    @Test
-    public void testSimpleToBinPnfsId() {
-        byte[] result = _simplePnfsId.toBinPnfsId();
-        String encodedResult = SerializableUtils.encode( result);
-        assertEquals( "toBinPnfsId", ENCODED_TOBINPNFSID_PNFS, encodedResult);
-    }
-
-    @Test
-    public void testDomainToBinPnfsId() {
-        byte[] result = _domainPnfsId.toBinPnfsId();
-        String encodedResult = SerializableUtils.encode( result);
-        assertEquals( "toBinPnfsId", ENCODED_TOBINPNFSID_PNFS, encodedResult);
-    }
-
-    @Test
-    public void testChimeraToBinPnfsId() {
-        byte[] result = _chimeraId.toBinPnfsId();
-        String encodedResult = SerializableUtils.encode( result);
-        assertEquals( "toBinPnfsId", ENCODED_TOBINPNFSID_CHIMERA, encodedResult);
     }
 
     /*
