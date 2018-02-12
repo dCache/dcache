@@ -166,12 +166,12 @@ public class TarNearlineStorage implements NearlineStorage
                             request.activate().get();
                             Path file = Paths.get(request.getReplicaUri());
                             PnfsId pnfsId = request.getFileAttributes().getPnfsId();
-                            TarArchiveEntry entry = new TarArchiveEntry(pnfsId.getId());
+                            TarArchiveEntry entry = new TarArchiveEntry(pnfsId.toString());
                             entry.setSize(Files.size(file));
                             tarStream.putArchiveEntry(entry);
                             Files.copy(file, tarStream);
                             tarStream.closeArchiveEntry();
-                            uris.put(request.getReplicaUri(), new URI(type, name, '/' + tarName + '/' + pnfsId.getId(), null, null));
+                            uris.put(request.getReplicaUri(), new URI(type, name, '/' + tarName + '/' + pnfsId.toString(), null, null));
                         }
                         tarStream.finish();
                     }
@@ -207,7 +207,7 @@ public class TarNearlineStorage implements NearlineStorage
                 for (StageRequest request : stageRequests.removeAll(archive)) {
                     try {
                         request.activate().get();
-                        requests.put(request.getFileAttributes().getPnfsId().getId(), request);
+                        requests.put(request.getFileAttributes().getPnfsId().toString(), request);
                     } catch (Exception e) {
                         request.failed(e);
                     }

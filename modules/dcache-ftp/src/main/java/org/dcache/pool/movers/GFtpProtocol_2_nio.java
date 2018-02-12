@@ -383,7 +383,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 _portRange.bind(channel.socket(), localAddress, 128);
 
                 message =
-                        new GFtpTransferStartedMessage(fileAttributes.getPnfsId().getId(),
+                        new GFtpTransferStartedMessage(fileAttributes.getPnfsId().toString(),
                                                        channel.socket().getInetAddress().getHostAddress(),
                                                        channel.socket().getLocalPort());
                 mode.setPassive(channel);
@@ -392,7 +392,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                  * active mode.  When notified about this, the door
                  * will fall back to proxy mode.
                  */
-                message = new GFtpTransferStartedMessage(fileAttributes.getPnfsId().getId());
+                message = new GFtpTransferStartedMessage(fileAttributes.getPnfsId().toString());
             }
             CellPath path = new CellPath(gftpProtocolInfo.getDoorCellName(),
                                          gftpProtocolInfo.getDoorCellDomainName());

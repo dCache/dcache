@@ -85,7 +85,7 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
     {
         Path file = Paths.get(request.getReplicaUri());
         flush(file, getExternalPath(file.getFileName().toString()));
-        URI uri = new URI(type, name, '/' + request.getFileAttributes().getPnfsId().getId(), null, null);
+        URI uri = new URI(type, name, '/' + request.getFileAttributes().getPnfsId().toString(), null, null);
         return Collections.singleton(uri);
     }
 

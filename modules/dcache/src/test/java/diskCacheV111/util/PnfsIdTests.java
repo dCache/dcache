@@ -33,23 +33,18 @@ public class PnfsIdTests {
     private static final String PNFS_DATABASE = "000F";
     private static final String PNFS_COUNT_ZEROS = "00000000000000";
     private static final String PNFS_COUNT_NONZEROS = "389FC0";
-    private static final String PNFS_DOMAIN = "domain";
 
     private static final String PNFS_SIMPLE_ID =
             PNFS_DATABASE + PNFS_COUNT_ZEROS + PNFS_COUNT_NONZEROS;
     private static final String PNFS_SIMPLE_ID_SHORT =
             PNFS_DATABASE + PNFS_COUNT_NONZEROS;
-    private static final String PNFS_DOMAIN_ID =
-            PNFS_SIMPLE_ID + "." + PNFS_DOMAIN;
     private static final String PNFS_STAR_ID =
             PNFS_DATABASE + "*" + PNFS_COUNT_NONZEROS;
 
     private static final String EXPECTED_ENCODED_SERIALISED_SIMPLE_PNFS_PNFSID =
-        "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
-      + "34964fe7150258b9baecf0200025b00025f617400025b424c00075f646f6d"
-      + "61696e7400124c6a6176612f6c616e672f537472696e673b7870757200025"
-      + "b42acf317f8060854e002000078700000000c000f00000000000000389fc0"
-      + "70";
+         "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
+       + "34964fe7150258b9baecf0200015b00025f617400025b427870757200025b"
+       + "42acf317f8060854e002000078700000000c000f00000000000000389fc0";
 
     private static final String ENCODED_SERIALISED_SIMPLE_PNFS_PNFSIDS_FOR_DESERIALISATION[] = {
         "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
@@ -66,17 +61,9 @@ public class PnfsIdTests {
       + "37472696e6771007e00024c00095f746f537472696e6771007e0002787075"
       + "7200025b42acf317f8060854e002000078700000000c000f0000000000000"
       + "0389fc0707400183030304630303030303030303030303030303338394643"
-      + "3071007e0006"
-    };
+      + "3071007e0006",
 
-    private static final String EXPECTED_ENCODED_SERIALISED_DOMAIN_PNFS_PNFSID =
-        "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
-      + "34964fe7150258b9baecf0200025b00025f617400025b424c00075f646f6d"
-      + "61696e7400124c6a6176612f6c616e672f537472696e673b7870757200025"
-      + "b42acf317f8060854e002000078700000000c000f00000000000000389fc0"
-      + "740006646f6d61696e";
-
-    private static final String ENCODED_SERIALISED_DOMAIN_PNFS_PNFSIDS_FOR_DESERIALISATION[] = {
+        // SIMPLE_PNFS_PNFSID with a non-null '_domain' field.
         "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
       + "34964fe7150258b9baecf0200045b00025f617400025b424c00075f646f6d"
       + "61696e7400124c6a6176612f6c616e672f537472696e673b4c00095f69645"
@@ -84,15 +71,21 @@ public class PnfsIdTests {
       + "7200025b42acf317f8060854e002000078700000000c000f0000000000000"
       + "0389fc0740006646f6d61696e740018303030463030303030303030303030"
       + "30303033383946433074001f3030304630303030303030303030303030303"
-      + "338394643302e646f6d61696e"
-    };
+      + "338394643302e646f6d61696e",
 
-    private static final String EXPECTED_ENCODED_SERIALISED_CHIMERA_PNFSID =
+        // SIMPLE_PNFS_PNFSID with a null '_domain' field.
         "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
       + "34964fe7150258b9baecf0200025b00025f617400025b424c00075f646f6d"
       + "61696e7400124c6a6176612f6c616e672f537472696e673b7870757200025"
-      + "b42acf317f8060854e002000078700000001280d1b8b90ced30430608c580"
-      + "02811b3285fc70";
+      + "b42acf317f8060854e002000078700000000c000f00000000000000389fc0"
+      + "70"
+    };
+
+    private static final String EXPECTED_ENCODED_SERIALISED_CHIMERA_PNFSID =
+         "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
+       + "34964fe7150258b9baecf0200015b00025f617400025b427870757200025b"
+       + "42acf317f8060854e002000078700000001280d1b8b90ced30430608c5800"
+       + "2811b3285fc";
 
     private static final String ENCODED_SERIALISED_CHIMERA_PNFSIDS_FOR_DESERIALISATION[] = {
         "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
@@ -110,23 +103,22 @@ public class PnfsIdTests {
       + "37472696e6771007e00024c00095f746f537472696e6771007e0002787075"
       + "7200025b42acf317f8060854e002000078700000001280d1b8b90ced30430"
       + "608c58002811b3285fc707400243830443142384239304345443330343330"
-      + "3630384335383030323831314233323835464371007e0006"
+      + "3630384335383030323831314233323835464371007e0006",
+
+        // CHIMERA_PNFSID with a null '_domain' field.
+        "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
+      + "34964fe7150258b9baecf0200025b00025f617400025b424c00075f646f6d"
+      + "61696e7400124c6a6176612f6c616e672f537472696e673b7870757200025"
+      + "b42acf317f8060854e002000078700000001280d1b8b90ced30430608c580"
+      + "02811b3285fc70"
     };
-
-    private static final String ENCODED_TOBINPNFSID_PNFS =
-            "0f00000000000000c09f3800";
-
-    private static final String ENCODED_TOBINPNFSID_CHIMERA =
-            CHIMERA_ID.toLowerCase();
 
     PnfsId _chimeraId;
     PnfsId _simplePnfsId;
-    PnfsId _domainPnfsId;
 
     @Before
     public void setUp() {
         _simplePnfsId = new PnfsId( PNFS_SIMPLE_ID);
-        _domainPnfsId = new PnfsId( PNFS_DOMAIN_ID);
         _chimeraId = new PnfsId( CHIMERA_ID);
     }
 
@@ -184,11 +176,6 @@ public class PnfsIdTests {
     }
 
     @Test
-    public void testIsValidForPnfsDomainId() {
-        assertTrue( PnfsId.isValid(PNFS_DOMAIN_ID));
-    }
-
-    @Test
     public void testIsValidForChimeraId() {
         assertTrue( PnfsId.isValid(CHIMERA_ID));
     }
@@ -224,24 +211,10 @@ public class PnfsIdTests {
      */
 
     @Test
-    public void testDomainPnfsIdEqualsReflexive() {
-        PnfsId otherId = new PnfsId( PNFS_DOMAIN_ID);
-        assertEquals( "check domain-PNFS equality reflexive", otherId,
-                _domainPnfsId);
-    }
-
-    @Test
     public void testChimeraIdEqualsReflexive() {
         PnfsId otherId = new PnfsId( CHIMERA_ID);
         assertEquals( "check Chimera PNFS equality reflexive", otherId,
                 _chimeraId);
-    }
-
-    @Test
-    public void testSimplePnfsIdNotEqualToDomainPnfsId() {
-        PnfsId otherId = new PnfsId( PNFS_DOMAIN_ID);
-        assertFalse( "check PNFS equality", otherId.equals( _simplePnfsId));
-        assertFalse( "check PNFS equality", _simplePnfsId.equals( otherId));
     }
 
     @Test
@@ -252,22 +225,8 @@ public class PnfsIdTests {
     }
 
     @Test
-    public void testChimeraIdNotEqualToDomainPnfsId() {
-        PnfsId otherId = new PnfsId( PNFS_DOMAIN_ID);
-        assertFalse( "check PNFS equality", otherId.equals( _chimeraId));
-        assertFalse( "check PNFS equality", _chimeraId.equals( otherId));
-    }
-
-    @Test
     public void testSimpleGetDatabaseId() {
         int dbId = _simplePnfsId.getDatabaseId();
-        int expectedId = Integer.parseInt( PNFS_DATABASE, 16);
-        assertEquals( "database ID", expectedId, dbId);
-    }
-
-    @Test
-    public void testDomainGetDatabaseId() {
-        int dbId = _domainPnfsId.getDatabaseId();
         int expectedId = Integer.parseInt( PNFS_DATABASE, 16);
         assertEquals( "database ID", expectedId, dbId);
     }
@@ -281,33 +240,9 @@ public class PnfsIdTests {
     }
 
     @Test
-    public void testSimpleGetId() {
-        String id = _simplePnfsId.getId();
-        assertEquals( "getId", PNFS_SIMPLE_ID, id);
-    }
-
-    @Test
-    public void testDomainGetId() {
-        String id = _domainPnfsId.getId();
-        assertEquals( "getId", PNFS_SIMPLE_ID, id);
-    }
-
-    @Test
-    public void testChimeraGetId() {
-        String id = _chimeraId.getId();
-        assertEquals( "getId", CHIMERA_ID, id);
-    }
-
-    @Test
     public void testSimpleToString() {
         String value = _simplePnfsId.toString();
         assertEquals( "toString", PNFS_SIMPLE_ID, value);
-    }
-
-    @Test
-    public void testDomainToString() {
-        String value = _domainPnfsId.toString();
-        assertEquals( "toString", PNFS_DOMAIN_ID, value);
     }
 
     @Test
@@ -351,12 +286,6 @@ public class PnfsIdTests {
     }
 
     @Test
-    public void testDomainSerialise() throws IOException {
-        assertSerialisationExpected( "serialised domain pnfs",
-                EXPECTED_ENCODED_SERIALISED_DOMAIN_PNFS_PNFSID, _domainPnfsId);
-    }
-
-    @Test
     public void testChimeraSerialise() throws IOException {
         assertSerialisationExpected( "serialised chimera",
                 EXPECTED_ENCODED_SERIALISED_CHIMERA_PNFSID, _chimeraId);
@@ -367,13 +296,6 @@ public class PnfsIdTests {
     public void testEmitSimplePnfsSerialisation() throws IOException {
         SerializableUtils.emitJavaStringDeclaration(SERIALISED_DATA_STRING_PREFIX
                 + "SIMPLE_PNFS", _simplePnfsId);
-    }
-
-    @Ignore("Only needed when generating new expected serialisation data")
-    @Test
-    public void testEmitDomainPnfsSerialisation() throws IOException {
-        SerializableUtils.emitJavaStringDeclaration(SERIALISED_DATA_STRING_PREFIX
-                + "DOMAIN_PNFS", _domainPnfsId);
     }
 
     @Ignore("Only needed when generating new expected serialisation data")
@@ -389,15 +311,6 @@ public class PnfsIdTests {
         for( String serialisedData : ENCODED_SERIALISED_SIMPLE_PNFS_PNFSIDS_FOR_DESERIALISATION) {
             assertDeserialisationExpected("deserialise simple pnfs",
                     _simplePnfsId, serialisedData);
-        }
-    }
-
-    @Test
-    public void testDomainDeserialise() throws IOException,
-            ClassNotFoundException {
-        for( String serialisedData : ENCODED_SERIALISED_DOMAIN_PNFS_PNFSIDS_FOR_DESERIALISATION) {
-            assertDeserialisationExpected("deserialise domain pnfs",
-                    _domainPnfsId, serialisedData);
         }
     }
 

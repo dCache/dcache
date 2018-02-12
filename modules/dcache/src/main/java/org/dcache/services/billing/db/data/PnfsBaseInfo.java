@@ -97,7 +97,7 @@ public abstract class PnfsBaseInfo implements IHistogramData {
         action = info.getMessageType();
         transaction = info.getTransaction();
         if (info.getPnfsId() != null) {
-            pnfsID = info.getPnfsId().getId();
+            pnfsID = info.getPnfsId().toString();
         }
         errorCode = info.getResultCode();
         errorMessage = info.getMessage();

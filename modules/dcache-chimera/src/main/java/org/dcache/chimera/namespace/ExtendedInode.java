@@ -73,7 +73,7 @@ public class ExtendedInode extends FsInode
     public ExtendedInode(FileSystemProvider fs, PnfsId id, FileSystemProvider.StatCacheOption option)
             throws ChimeraFsException
     {
-        this(fs, fs.id2inode(id.getId(), option));
+        this(fs, fs.id2inode(id.toString(), option));
     }
 
     public ExtendedInode(FileSystemProvider fs, FsInode inode)

@@ -1169,7 +1169,7 @@ public abstract class AbstractFtpDoorV1
                     return;
                 }
 
-                if (!redirect.getPnfsId().equals(getPnfsId().getId())) {
+                if (!redirect.getPnfsId().equals(getPnfsId().toString())) {
                     LOGGER.error("GFtpTransferStartedMessage has wrong ID, expected {} but got {}", getPnfsId(), redirect.getPnfsId());
                     throw new FTPCommandException(451, "Transient internal failure");
                 }
