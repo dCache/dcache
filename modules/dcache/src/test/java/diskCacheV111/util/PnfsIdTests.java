@@ -365,22 +365,22 @@ public class PnfsIdTests {
     @Ignore("Only needed when generating new expected serialisation data")
     @Test
     public void testEmitSimplePnfsSerialisation() throws IOException {
-        String serialised = SerializableUtils.serialiseAndEncodeObject( _simplePnfsId);
-        SerializableUtils.emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "SIMPLE_PNFS", serialised);
+        SerializableUtils.emitJavaStringDeclaration(SERIALISED_DATA_STRING_PREFIX
+                + "SIMPLE_PNFS", _simplePnfsId);
     }
 
     @Ignore("Only needed when generating new expected serialisation data")
     @Test
     public void testEmitDomainPnfsSerialisation() throws IOException {
-        String serialised = SerializableUtils.serialiseAndEncodeObject( _domainPnfsId);
-        SerializableUtils.emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "DOMAIN_PNFS", serialised);
+        SerializableUtils.emitJavaStringDeclaration(SERIALISED_DATA_STRING_PREFIX
+                + "DOMAIN_PNFS", _domainPnfsId);
     }
 
     @Ignore("Only needed when generating new expected serialisation data")
     @Test
     public void testEmitChimeraSerialisation() throws IOException {
-        String serialised = SerializableUtils.serialiseAndEncodeObject( _chimeraId);
-        SerializableUtils.emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "CHIMERA", serialised);
+        SerializableUtils.emitJavaStringDeclaration(SERIALISED_DATA_STRING_PREFIX
+                + "CHIMERA", _chimeraId);
     }
 
     @Test
