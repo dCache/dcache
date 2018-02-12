@@ -62,8 +62,6 @@ package org.dcache.resilience.handlers;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
@@ -73,9 +71,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
+import dmg.cells.nucleus.CellPath;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellPath;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.PoolSelectionStrategy;
@@ -98,6 +98,7 @@ import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.RemoveLocationExtractor;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.StaticSinglePoolList;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 
@@ -604,12 +605,14 @@ public class FileOperationHandler {
                             pnfsId, target, e);
         }
 
-        Serializable exception = msg.getErrorObject();
+        CacheException exception = msg.getErrorObject() == null ? null :
+                        CacheExceptionFactory.exceptionOf(msg);
+
         if (exception != null && !CacheExceptionUtils.replicaNotFound(exception)) {
             throw CacheExceptionUtils.getCacheException(
                             CacheException.SELECTED_POOL_FAILED,
                             FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
-                            pnfsId, target, (Exception) exception);
+                            pnfsId, target, exception);
         }
     }
 
