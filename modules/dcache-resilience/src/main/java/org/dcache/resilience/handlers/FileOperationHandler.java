@@ -338,7 +338,8 @@ public class FileOperationHandler {
                              ReplicaState.CACHED, ONLINE_STICKY_RECORD,
                              Collections.EMPTY_LIST, attributes,
                              attributes.getAccessTime());
-        LOGGER.trace("Created migration task for {}: {}.", pnfsId, task);
+        LOGGER.trace("Created migration task for {}: source {}, list {}.",
+                     pnfsId, source, list);
 
         return task;
     }
