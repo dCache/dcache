@@ -769,7 +769,7 @@ public class FileOperationMap extends RunnableModule {
                                                     data.getSelectionAction(),
                                                     data.getCount(),
                                                     data.getSize());
-        operation.setParentOrSource(data.getPoolIndex(), data.isParent);
+        operation.setParentOrSource(data.getSourceIndex(), data.isParent());
         operation.setVerifySticky(data.shouldVerifySticky());
         FileAttributes attributes = data.getAttributes();
         operation.setRetentionPolicy(attributes.getRetentionPolicy().toString());
