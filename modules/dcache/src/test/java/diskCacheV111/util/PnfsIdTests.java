@@ -38,8 +38,6 @@ public class PnfsIdTests {
             PNFS_DATABASE + PNFS_COUNT_ZEROS + PNFS_COUNT_NONZEROS;
     private static final String PNFS_SIMPLE_ID_SHORT =
             PNFS_DATABASE + PNFS_COUNT_NONZEROS;
-    private static final String PNFS_STAR_ID =
-            PNFS_DATABASE + "*" + PNFS_COUNT_NONZEROS;
 
     private static final String EXPECTED_ENCODED_SERIALISED_SIMPLE_PNFS_PNFSID =
          "aced0005737200196469736b4361636865563131312e7574696c2e506e667"
@@ -129,22 +127,6 @@ public class PnfsIdTests {
                 _simplePnfsId);
     }
 
-    @Test
-    public void testStarPnfsIdEqualsSimple() {
-        PnfsId starPnfsId = new PnfsId( PNFS_STAR_ID);
-        assertEquals( "check PNFS equality", starPnfsId, _simplePnfsId);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalInitialStarPnfsId() {
-        new PnfsId( "*000");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalFinalStarPnfsId() {
-        new PnfsId( "000*");
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void testZeroLengthPnfsId() {
         new PnfsId( "");
@@ -178,16 +160,6 @@ public class PnfsIdTests {
     @Test
     public void testIsValidForChimeraId() {
         assertTrue( PnfsId.isValid(CHIMERA_ID));
-    }
-
-    @Test
-    public void testIsValidForIllegalInitialStarPnfsId() {
-        assertFalse( PnfsId.isValid("*000"));
-    }
-
-    @Test
-    public void testIsValidForIllegalFinalStarPnfsId() {
-        assertFalse( PnfsId.isValid("000*"));
     }
 
     @Test
