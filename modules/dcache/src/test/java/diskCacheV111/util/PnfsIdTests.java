@@ -197,21 +197,6 @@ public class PnfsIdTests {
     }
 
     @Test
-    public void testSimpleGetDatabaseId() {
-        int dbId = _simplePnfsId.getDatabaseId();
-        int expectedId = Integer.parseInt( PNFS_DATABASE, 16);
-        assertEquals( "database ID", expectedId, dbId);
-    }
-
-    @Test
-    public void testChimeraGetDatabaseId() {
-        int dbId = _chimeraId.getDatabaseId();
-        String firstFourCharacters = CHIMERA_ID.substring( 0, 4);
-        int expectedId = Integer.parseInt( firstFourCharacters, 16);
-        assertEquals( "database ID", expectedId, dbId);
-    }
-
-    @Test
     public void testSimpleToString() {
         String value = _simplePnfsId.toString();
         assertEquals( "toString", PNFS_SIMPLE_ID, value);

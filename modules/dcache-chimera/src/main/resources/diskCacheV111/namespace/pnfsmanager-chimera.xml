@@ -26,8 +26,7 @@
   <bean id="pnfs-manager" class="diskCacheV111.namespace.PnfsManagerV3"
         init-method="init" destroy-method="shutdown">
       <description>Request processor</description>
-      <property name="threads" value="${pnfsmanager.limits.threads-per-group}"/>
-      <property name="threadGroups" value="${pnfsmanager.limits.thread-groups}"/>
+      <property name="threads" value="${pnfsmanager.limits.threads}"/>
       <property name="listThreads" value="${pnfsmanager.limits.list-threads}"/>
       <property name="cacheModificationRelay" value="${pnfsmanager.destination.cache-notification}"/>
       <property name="logSlowThreshold" value="${pnfsmanager.limits.log-slow-threshold}"/>

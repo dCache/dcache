@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -96,8 +97,6 @@ import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.ColumnWriter;
-import org.dcache.util.MathUtils;
-import org.dcache.util.PrefixMap;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -133,11 +132,6 @@ public class PnfsManagerV3
         new RequestCounters<>("PnfsManagerV3.Folded");
 
     /**
-     * Cache of path prefix to database IDs mappings.
-     */
-    private final PrefixMap<Integer> _pathToDBCache = new PrefixMap<>();
-
-    /**
      * These messages are subject to being discarded if their time to
      * live has been exceeded (or is expected to be exceeded).
      */
@@ -152,7 +146,6 @@ public class PnfsManagerV3
     };
 
     private int _threads;
-    private int _threadGroups;
     private int _directoryListLimit;
     private int _queueMaxSize;
     private int _listThreads;
@@ -167,7 +160,7 @@ public class PnfsManagerV3
      * Queues for list operations. There is one queue per thread
      * group.
      */
-    private BlockingQueue<CellMessage>[] _listQueues;
+    private BlockingQueue<CellMessage> _listQueue;
 
     /**
      * Tasks queues used for messages that do not operate on cache
@@ -235,12 +228,6 @@ public class PnfsManagerV3
     public void setListThreads(int threads)
     {
         _listThreads = threads;
-    }
-
-    @Required
-    public void setThreadGroups(int threadGroups)
-    {
-        _threadGroups = threadGroups;
     }
 
     @Required
@@ -319,7 +306,7 @@ public class PnfsManagerV3
     {
         _stub = new CellStub(getCellEndpoint());
 
-        _fifos = new BlockingQueue[_threads * _threadGroups];
+        _fifos = new BlockingQueue[_threads];
         _log.info("Starting {} threads", _fifos.length);
         for (int i = 0; i < _fifos.length; i++) {
             if (_queueMaxSize > 0) {
@@ -330,44 +317,42 @@ public class PnfsManagerV3
             executor.execute(new ProcessThread(_fifos[i]));
         }
 
-        /* Start list-threads threads per thread group for list
-         * processing. We use a shared queue per thread group, as
-         * list operations are read only and thus there is no need
+        /* Start a seperate queue for list operations.  We use a shared queue,
+         * as list operations are read only and thus there is no need
          * to serialize the operations.
          */
-        _listQueues = new BlockingQueue[_threadGroups];
-        for (int i = 0; i < _threadGroups; i++) {
-            _listQueues[i] = new LinkedBlockingQueue<>();
-            for (int j = 0; j < _listThreads; j++) {
-                executor.execute(new ProcessThread(_listQueues[i]));
-            }
+        _listQueue = new LinkedBlockingQueue<>();
+        for (int j = 0; j < _listThreads; j++) {
+            executor.execute(new ProcessThread(_listQueue));
         }
     }
 
     public void shutdown() throws InterruptedException
     {
         drainQueues(_fifos);
-        drainQueues(_listQueues);
+        drainQueue(_listQueue);
         MoreExecutors.shutdownAndAwaitTermination(executor, 1, TimeUnit.SECONDS);
     }
 
     private void drainQueues(BlockingQueue<CellMessage>[] queues)
     {
-        String error = "Name space is shutting down.";
+        Arrays.stream(queues).forEach(this::drainQueue);
+    }
 
-        for (BlockingQueue<CellMessage> queue : queues) {
-            ArrayList<CellMessage> drained = new ArrayList<>();
-            queue.drainTo(drained);
-            for (CellMessage envelope : drained) {
-                Message msg = (Message) envelope.getMessageObject();
-                if (msg.getReplyRequired()) {
-                    envelope.setMessageObject(new NoRouteToCellException(envelope, error));
-                    envelope.revertDirection();
-                    sendMessage(envelope);
-                }
+    private void drainQueue(BlockingQueue<CellMessage> queue)
+    {
+        String error = "Name space is shutting down.";
+        ArrayList<CellMessage> drained = new ArrayList<>();
+        queue.drainTo(drained);
+        for (CellMessage envelope : drained) {
+            Message msg = (Message) envelope.getMessageObject();
+            if (msg.getReplyRequired()) {
+                envelope.setMessageObject(new NoRouteToCellException(envelope, error));
+                envelope.revertDirection();
+                sendMessage(envelope);
             }
-            queue.offer(SHUTDOWN_SENTINEL);
         }
+        queue.offer(SHUTDOWN_SENTINEL);
     }
 
     @Override
@@ -379,24 +364,15 @@ public class PnfsManagerV3
             pw.println(TimeUnit.MILLISECONDS.toSeconds(_atimeGap));
         }
         pw.println();
-        pw.println("List queues (" + _listQueues.length + ")");
-        for (int i = 0; i < _listQueues.length; i++) {
-            pw.println("    [" + i + "] " + _listQueues[i].size());
-        }
+        pw.println("List queue: " + _listQueue.size());
         pw.println();
         pw.println("Threads (" + _fifos.length + ") Queue");
         for (int i = 0; i < _fifos.length; i++) {
             pw.println( "    ["+i+"] "+_fifos[i].size() ) ;
         }
         pw.println();
-        pw.println("Thread groups (" + _threadGroups + ")");
-        for (int i = 0; i < _threadGroups; i++) {
-            int total = 0;
-            for (int j = 0; j < _threads; j++) {
-                total += _fifos[i * _threads + j].size();
-            }
-            pw.println("    [" + i + "] " + total);
-        }
+        pw.println("Threads: "
+                + Arrays.stream(_fifos).mapToInt(BlockingQueue::size).sum());
         pw.println();
 
         pw.println( "Statistics:" ) ;
@@ -415,7 +391,7 @@ public class PnfsManagerV3
         @Override
         public String call() throws CacheException
         {
-            return pathToPnfsid(ROOT, path, false).toString();
+            return _nameSpaceProvider.pathToPnfsid(ROOT, path, false).toString();
         }
 
     }
@@ -431,7 +407,7 @@ public class PnfsManagerV3
                 pnfsId   = new PnfsId( args.argv(0) ) ;
 
             }catch(Exception ee ){
-                pnfsId = pathToPnfsid(ROOT, args.argv(0), true );
+                pnfsId = _nameSpaceProvider.pathToPnfsid(ROOT, args.argv(0), true);
             }
 
             List<String> locations = _nameSpaceProvider.getCacheLocation(ROOT, pnfsId);
@@ -494,7 +470,7 @@ public class PnfsManagerV3
             if (PnfsId.isValid(pnfsidOrPath)) {
                 pnfsId = new PnfsId(pnfsidOrPath);
             } else {
-                pnfsId = pathToPnfsid(ROOT, pnfsidOrPath, true);
+                pnfsId = _nameSpaceProvider.pathToPnfsid(ROOT, pnfsidOrPath, true);
             }
 
             FileAttributes attributes = FileAttributes.of()
@@ -565,7 +541,7 @@ public class PnfsManagerV3
                     sb.append("PnfsId : ").append(pnfsId).append("\n");
                 }
             }else {
-                pnfsId = pathToPnfsid(ROOT, pnfsidOrPath, noLinks );
+                pnfsId = _nameSpaceProvider.pathToPnfsid(ROOT, pnfsidOrPath, noLinks);
                 if (verbose) {
                     sb.append("         Path : ").append(pnfsidOrPath)
                             .append("\n");
@@ -631,7 +607,7 @@ public class PnfsManagerV3
                 }
             } else
             {
-                pnfsId = pathToPnfsid(ROOT, pnfsidOrPath, noLinks );
+                pnfsId = _nameSpaceProvider.pathToPnfsid(ROOT, pnfsidOrPath, noLinks);
                 if (verbose) {
                     sb.append("         Path : ").append(pnfsidOrPath)
                                     .append("\n");
@@ -991,19 +967,6 @@ public class PnfsManagerV3
             return "";
         }
 
-    }
-
-    public static final String fh_show_path_cache =
-        "Shows cached information about mappings from path prefixes to\n" +
-        "name space database IDs. The cache is only populated if the\n" +
-        "number of thread groups is larger than 1.";
-    public String ac_show_path_cache(Args args)
-    {
-        StringBuilder s = new StringBuilder();
-        for (Map.Entry<FsPath,Integer> e: _pathToDBCache.entrySet()) {
-            s.append(String.format("%s -> %d\n", e.getKey(), e.getValue()));
-        }
-        return s.toString();
     }
 
     private void dumpThreadQueue(int queueId) {
@@ -1482,7 +1445,8 @@ public class PnfsManagerV3
             } else {
                 _log.info("map:  path2id for {}", globalPath);
                 checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(globalPath));
-                pnfsMessage.setPnfsId(pathToPnfsid(subject, globalPath, shouldResolve));
+                PnfsId id = _nameSpaceProvider.pathToPnfsid(subject, globalPath, shouldResolve);
+                pnfsMessage.setPnfsId(id);
             }
             checkMask(pnfsMessage);
         } catch(FileNotFoundCacheException fnf){
@@ -1702,9 +1666,7 @@ public class PnfsManagerV3
         if (path == null) {
             throw new InvalidMessageCacheException("Missing PNFS id and path");
         }
-        int group = pathToThreadGroup(path);
-        _log.info("Using list queue [{}] {}", path, group);
-        if (!_listQueues[group].offer(envelope)) {
+        if (!_listQueue.offer(envelope)) {
             throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
         }
     }
@@ -1717,14 +1679,10 @@ public class PnfsManagerV3
 
         int index;
         if (pnfsId != null) {
-            index =
-                pnfsIdToThreadGroup(pnfsId) * _threads +
-                (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
+            index = (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
             _log.info("Using thread [{}] {}", pnfsId, index);
         } else if (path != null) {
-            index =
-                pathToThreadGroup(path) * _threads +
-                (int) (Math.abs((long) path.hashCode()) % _threads);
+            index = (int) (Math.abs((long) path.hashCode()) % _threads);
             _log.info("Using thread [{}] {}", path, index);
         } else {
             index = _random.nextInt(_fifos.length);
@@ -1937,122 +1895,6 @@ public class PnfsManagerV3
     }
 
 
-    /**
-     * Maps path to PnfsId.
-     *
-     * Internally updates the path to database ID cache.
-     */
-    private PnfsId pathToPnfsid(Subject subject, String path, boolean resolve)
-        throws CacheException
-    {
-        PnfsId pnfsId = _nameSpaceProvider.pathToPnfsid(subject, path, resolve);
-        updatePathToDatabaseIdCache(path, pnfsId.getDatabaseId());
-        return pnfsId;
-    }
-
-    /**
-     * Adds an entry to the path to database ID cache if that entry
-     * does not already exist. The cache is only populated if the
-     * number of thread groups is large than 1.
-     */
-    private void updatePathToDatabaseIdCache(String path, int id)
-    {
-        try {
-            if (_threadGroups > 1) {
-                Integer db = _pathToDBCache.get(FsPath.create(path));
-                if (db == null || db != id) {
-                    String root = getDatabaseRoot(new File(path)).getPath();
-                    _pathToDBCache.put(FsPath.create(root), id);
-                    _log.info("Path cache updated: " + root + " -> " + id);
-                }
-            }
-        } catch (Exception e) {
-            /* Log it, but since it is only a cache update we don't
-             * mind too much.
-             */
-            _log.warn("Error while resolving the database ID: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Given a PNFS path, returns the database mount point of the
-     * database containing the entry.
-     */
-    private File getDatabaseRoot(File file)
-        throws Exception
-    {
-        /* First find the PNFS ID of file. May fail if the file does
-         * not exist, but then we look at the parent instead.
-         */
-        PnfsId id;
-        try {
-            id = _nameSpaceProvider.pathToPnfsid(ROOT, file.getPath(), true);
-        } catch (CacheException e) {
-            file = file.getParentFile();
-            if (file == null) {
-                throw e;
-            }
-            return getDatabaseRoot(file);
-        }
-
-        /* Now look at the path back to the root and find the point at
-         * which the database ID changes, or resolving the PNFS ID
-         * fails. That point is the database mount point.
-         */
-        try {
-            String parent = file.getParent();
-            if (parent == null) {
-                return file;
-            }
-
-            PnfsId parentId = _nameSpaceProvider.pathToPnfsid(ROOT, parent, true);
-            while (parentId.getDatabaseId() == id.getDatabaseId()) {
-                file = new File(parent);
-                parent = file.getParent();
-                if (parent == null) {
-                    return file;
-                }
-                parentId = _nameSpaceProvider.pathToPnfsid(ROOT, parent, true);
-            }
-
-            return file;
-        } catch (CacheException e) {
-            return file;
-        }
-    }
-
-    /**
-     * Returns the thread group number for a path. The mapping is
-     * based on the database ID of the path.  A cache is used to avoid
-     * lookups in the name space provider once the path prefix for a
-     * database has been determined. In case of a cache miss an
-     * arbitrary but deterministic thread group is chosen.
-     */
-    private int pathToThreadGroup(String path)
-    {
-        if (_threadGroups == 1) {
-            return 0;
-        }
-
-        Integer db = _pathToDBCache.get(FsPath.create(path));
-        if (db != null) {
-            return db % _threadGroups;
-        }
-
-        _log.info("Path cache miss for {}", path);
-
-        return MathUtils.absModulo(path.hashCode(), _threadGroups);
-    }
-
-    /**
-     * Returns the thread group number for a PNFS id. The mapping is
-     * based on the database ID of the PNFS id.
-     */
-    private int pnfsIdToThreadGroup(PnfsId id)
-    {
-        return (id.getDatabaseId() % _threadGroups);
-    }
-
     private boolean useEarlyDiscard(PnfsMessage message)
     {
         Class<? extends PnfsMessage> msgClass = message.getClass();
@@ -2185,7 +2027,7 @@ public class PnfsManagerV3
                 throw new InvalidMessageCacheException("no pnfsid or path defined");
             }
 
-            pnfsId = pathToPnfsid(message.getSubject(), path, true);
+            pnfsId = _nameSpaceProvider.pathToPnfsid(message.getSubject(), path, true);
             message.setPnfsId(pnfsId);
         }
         return pnfsId;
@@ -2230,7 +2072,7 @@ public class PnfsManagerV3
         if (!Subjects.isRoot(subject) && !mask.isEmpty()) {
             Set<FileAttribute> required =
                 _permissionHandler.getRequiredAttributes();
-            PnfsId pnfsId = pathToPnfsid(ROOT, path, false);
+            PnfsId pnfsId = _nameSpaceProvider.pathToPnfsid(ROOT, path, false);
             FileAttributes attributes =
                 _nameSpaceProvider.getFileAttributes(subject, pnfsId, required);
             if (!checkMask(subject, mask, attributes)) {

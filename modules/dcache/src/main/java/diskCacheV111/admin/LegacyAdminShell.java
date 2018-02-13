@@ -723,13 +723,7 @@ public class LegacyAdminShell
             pnfsId = new PnfsId(destination);
         }
 
-        int dbId = pnfsId.getDatabaseId();
-
-        try {
-            checkPermission("pool.*.uncache");
-        } catch (AclException ee) {
-            checkPermission("pool." + dbId + ".uncache");
-        }
+        checkPermission("pool.*.uncache");
 
         PnfsGetCacheLocationsMessage pnfsMessage =
                 new PnfsGetCacheLocationsMessage(pnfsId);
@@ -879,13 +873,7 @@ public class LegacyAdminShell
             pnfsId = new PnfsId(destination);
         }
 
-        int dbId = pnfsId.getDatabaseId();
-
-        try {
-            checkPermission("pnfs.*.update");
-        } catch (AclException ee) {
-            checkPermission("pnfs." + key + "." + dbId + ".update");
-        }
+        checkPermission("pnfs.*.update");
 
 
         PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, key,
@@ -932,15 +920,9 @@ public class LegacyAdminShell
             pnfsId = new PnfsId(args.argv(0));
         }
 
-        int dbId = pnfsId.getDatabaseId();
-
         String key = args.argv(1);
 
-        try {
-            checkPermission("pnfs.*.update");
-        } catch (AclException ee) {
-            checkPermission("pnfs." + key + "." + dbId + ".update");
-        }
+        checkPermission("pnfs.*.update");
 
 
         PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, key, PnfsFlagMessage.FlagOperation.REMOVE);

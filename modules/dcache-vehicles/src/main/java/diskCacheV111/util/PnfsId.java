@@ -84,10 +84,6 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         return t < o ? -1 : 1;
     }
 
-    public int getDatabaseId() {
-        return (((_a[0]) & 0xFF) << 8) | ((_a[1]) & 0xFF);
-    }
-
     @Override
     public String toString() {
         return BaseEncoding.base16().upperCase().encode(_a);
