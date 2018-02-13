@@ -78,6 +78,7 @@ fi
 # fix file /var/lib/dcache directory ownership
 chown dcache:dcache /var/lib/dcache
 
+%posttrans
 if [ ! -f /usr/share/dcache/lib/services.sh ]; then
     ln -s /usr/share/dcache/lib/services-daemon.sh /usr/share/dcache/lib/services.sh
 fi
