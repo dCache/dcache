@@ -71,17 +71,13 @@ public class CachingCertificateValidator implements X509CertChainValidatorExt
             /* Check that the chain is still valid; would be nice if we instead could limit the lifetime of the cache
              * entry, but Guava doesn't allow us to do that.
              */
-            for (X509Certificate cert : certChain) {
-                cert.checkValidity();
-                pos++;
-            }
-
-            pos = 0;
             Hasher hasher = Hashing.sha256().newHasher();
             for (X509Certificate cert : certChain) {
+                cert.checkValidity();
                 hasher.putBytes(cert.getEncoded());
                 pos++;
             }
+
             String certFingerprint = hasher.hash().toString();
 
             return cache.get(certFingerprint, () -> validator.validate(certChain));
