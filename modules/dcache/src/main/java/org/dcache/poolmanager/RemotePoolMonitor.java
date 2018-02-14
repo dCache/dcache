@@ -173,10 +173,12 @@ public class RemotePoolMonitor
     {
         try {
             if (poolMonitor == null) {
-                long deadline = addWithInfinity(System.currentTimeMillis(), poolManagerStub.getTimeoutInMillis());
+                long now = System.currentTimeMillis();
+                long deadline = addWithInfinity(now, poolManagerStub.getTimeoutInMillis());
                 do {
-                    wait(subWithInfinity(deadline, System.currentTimeMillis()));
-                } while (poolMonitor == null || deadline <= System.currentTimeMillis());
+                    wait(subWithInfinity(deadline, now));
+                    now = System.currentTimeMillis();
+                } while (poolMonitor == null || deadline <= now);
                 if (poolMonitor == null) {
                     throw new RemoteConnectFailureException("Cached pool information is not yet available.", null);
                 }
