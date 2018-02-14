@@ -1,6 +1,7 @@
 package dmg.cells.zookeeper;
 
 import com.google.common.base.Throwables;
+import java.util.concurrent.TimeUnit;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.zookeeper.CreateMode;
@@ -35,6 +36,7 @@ public class LmPersistentNode<T> extends PersistentNode
     public LmPersistentNode<T> update(T data, Function<T, byte[]> f, String basePath) throws PersistentNodeException
     {
         try {
+            waitForInitialCreate(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
             setData(f.apply(data));
             return this;
         } catch (Exception e) {
