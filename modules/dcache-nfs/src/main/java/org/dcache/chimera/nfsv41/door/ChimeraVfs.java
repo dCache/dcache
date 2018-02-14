@@ -210,7 +210,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             createEntry.setPnfsId(parentPnfsId);
             createEntry = _pnfsHandler.request(createEntry);
 
-            FsInode fsInode = _fs.id2inode(createEntry.getPnfsId().getId(), NO_STAT);
+            FsInode fsInode = _fs.id2inode(createEntry.getPnfsId().toString(), NO_STAT);
             return toInode(fsInode);
         } catch (CacheException | InterruptedException | ExecutionException e) {
             _log.warn("Failed to fetch storage info: {}", e.toString());
@@ -684,7 +684,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     }
 
     public Inode inodeFromPnfsId(PnfsId id) throws ChimeraFsException  {
-        return toInode(_fs.id2inode(id.getId(), FileSystemProvider.StatCacheOption.NO_STAT));
+        return toInode(_fs.id2inode(id.toString(), FileSystemProvider.StatCacheOption.NO_STAT));
     }
 
     /**

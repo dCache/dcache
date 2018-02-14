@@ -448,7 +448,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             org.dcache.chimera.posix.Stat stat = new org.dcache.chimera.posix.Stat();
             stat.setSize(size);
             Inode inode = _chimeraVfs.inodeFromPnfsId(pnfsid);
-            FsInode fsInode =_fileFileSystemProvider.id2inode(pnfsid.getId(), NO_STAT);
+            FsInode fsInode =_fileFileSystemProvider.id2inode(pnfsid.toString(), NO_STAT);
             _fileFileSystemProvider.setInodeAttributes(fsInode, 0, stat);
             _vfs.invalidateStatCache(inode);
         }
