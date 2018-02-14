@@ -62,6 +62,7 @@ package org.dcache.resilience.handlers;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
@@ -71,11 +72,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import dmg.cells.nucleus.CellPath;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import dmg.cells.nucleus.CellPath;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.PoolSelectionStrategy;
@@ -170,24 +171,46 @@ public class FileOperationHandler {
                             = FileUpdate.getAttributes(pnfsId, pool,
                                                        MessageType.CORRUPT_FILE,
                                                        namespace);
-            if (attributes == null || attributes.getLocations().size() < 2) {
+            int actual = 0;
+            int countable = 0;
+
+            if (attributes != null) {
+                actual = attributes.getLocations().size();
+                countable = poolInfoMap.getCountableLocations(attributes.getLocations());
+            }
+
+            if (actual <= 1) {
                 /*
                  * This is the only copy, or it is not/no longer in the
-                 * namespace.  In either case, do nothing, but cancel
-                 * any running operations for this pnfsid.
+                 * namespace. In either case, do nothing.
                  */
-                fileOpMap.cancel(pnfsId, true);
+                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+                                                          pnfsId.toString()),
+                             "{}: Repair of broken replicas is not possible, "
+                                             + "file currently inaccessible", pnfsId);
                 return;
             }
 
             removeTarget(pnfsId, pool);
-            FileUpdate update = new FileUpdate(pnfsId, pool,
-                                               MessageType.CLEAR_CACHE_LOCATION, false);
 
-            /*
-             * Bypass the message guard check of CDC session.
-             */
-            handleLocationUpdate(update);
+            if (countable > 1) {
+                FileUpdate update = new FileUpdate(pnfsId, pool,
+                                                   MessageType.CLEAR_CACHE_LOCATION,
+                                                   false);
+                /*
+                 * Bypass the message guard check of CDC session.
+                 */
+                handleLocationUpdate(update);
+            } else {
+                /*
+                 *  No alternate readable source; cannot attempt to make
+                 *  any further replicas.
+                 */
+                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+                                                          pnfsId.toString()),
+                             "{}: Repair of broken replicas is not possible, "
+                                             + "file currently inaccessible", pnfsId);
+            }
         } catch (CacheException e) {
             LOGGER.error("Error during handling of broken file removal ({}, {}): {}",
                          pnfsId, pool, new ExceptionMessage(e));
