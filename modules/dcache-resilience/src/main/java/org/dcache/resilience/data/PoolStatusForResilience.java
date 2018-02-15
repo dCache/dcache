@@ -66,21 +66,15 @@ import diskCacheV111.pools.PoolV2Mode;
  */
 public enum PoolStatusForResilience {
     UNINITIALIZED,      // no info yet
-    DOWN,               // equivalent to disabled -strict, or dead
-    ENABLED,            // equivalent to enabled
-    READ_ONLY;          // equivalent to disabled -readOnly
-
-    final static int[] notReadable = { PoolV2Mode.DISABLED_DEAD,
-                                       PoolV2Mode.DISABLED_STRICT,
-                                       PoolV2Mode.DISABLED_P2P_SERVER,
-                                       PoolV2Mode.DISABLED_FETCH };
-
-    final static int[] readable = { PoolV2Mode.DISABLED_P2P_CLIENT,
-                                    PoolV2Mode.DISABLED_RDONLY,
-                                    PoolV2Mode.DISABLED_STAGE,
-                                    PoolV2Mode.DISABLED_STORE };
+    DOWN,               // equivalent to the client's being unable to read from pool
+    ENABLED,            // normal read-write operations are possible
+    READ_ONLY;          // equivalent to disabled for writing by clients
 
     /**
+     *  <p>This status tells Resilience whether action (scanning) needs to
+     *  be taken with respect to the pool.  Hence this status is
+     *  slightly different from the pool's mode.</p>
+     *
      *  @return the status equivalent to the mode.
      */
     public static PoolStatusForResilience getStatusFor(PoolV2Mode poolMode) {
@@ -88,33 +82,37 @@ public enum PoolStatusForResilience {
             return UNINITIALIZED;
         }
 
-        PoolStatusForResilience state = READ_ONLY;
-
-        int mode = poolMode.getMode();
-
-        if (poolMode.isEnabled()) {
-            state = ENABLED;
+        /*
+         *  It does not matter whether we can still write to this pool;
+         *  for the purposes of resilience, if the pool is not readable
+         *  by the client, it should be treated as down.
+         */
+        if (poolMode.getMode() == PoolV2Mode.DISABLED ||
+                        poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD) ||
+                        poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
+            return DOWN;
         }
 
         /*
-         *  As a precaution, state is normalized explicitly
-         *  according to whether the pool is readable and/or writable.
+         *  For Resilience, 'READ_ONLY' should designate only the fact
+         *  that clients cannot write to the pool, or that staging is turned
+         *  off.
+         *
+         *  Whether p2p_client is enabled or disabled does not matter here;
+         *  it is reflected in the selection algorithm, but otherwise it
+         *  does not constitute a reason to migrate existing replicas.
          */
-        for (int mask : readable) {
-            if ((mode & mask) == mask) {
-                state = READ_ONLY;
-                break;
-            }
+        if (poolMode.isDisabled(PoolV2Mode.DISABLED_STORE) ||
+                        poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
+            return READ_ONLY;
         }
 
-        for (int mask : notReadable) {
-            if ((mode & mask) == mask) {
-                state = DOWN;
-                break;
-            }
-        }
-
-        return state;
+        /*
+         *  Not exactly the same as PoolV2Mode.ENABLED.  This
+         *  signifies that the pool can be written to and read from
+         *  by external clients or is available for staging.
+         */
+        return ENABLED;
     }
 
     public MessageType getMessageType() {
