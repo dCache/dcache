@@ -91,10 +91,15 @@ final class PoolInformation {
     private long lastUpdate;
 
     PoolInformation(String name, Integer key) {
+        this(name, key, null);
+    }
+
+    PoolInformation(String name, Integer key, PoolV2Mode mode) {
         this.name = name;
         this.key = key;
         lastUpdate = System.currentTimeMillis();
         excluded = false;
+        this.mode = mode;
     }
 
     public synchronized String toString() {
@@ -110,12 +115,17 @@ final class PoolInformation {
 
     synchronized boolean canRead() {
         return mode != null
-                        && (mode.isEnabled()
-                        || mode.getMode() == PoolV2Mode.DISABLED_RDONLY);
+                         && mode.getMode() != PoolV2Mode.DISABLED
+                         && !mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
+                         && !mode.isDisabled(PoolV2Mode.DISABLED_FETCH)
+                         && !mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER);
     }
 
     synchronized boolean canWrite() {
-        return mode != null && mode.isEnabled();
+        return mode != null
+                         && mode.getMode() != PoolV2Mode.DISABLED
+                         && !mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
+                         && !mode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT);
     }
 
     synchronized PoolCostInfo getCostInfo() {
