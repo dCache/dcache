@@ -160,6 +160,15 @@ public class RequestContainerV5
         this(DEFAULT_TICKER_INTERVAL);
     }
 
+    @Override
+    public CellSetupProvider mock()
+    {
+        RequestContainerV5 mock = new RequestContainerV5();
+        mock.setPartitionManager(new PartitionManager());
+        return mock;
+    }
+
+
     public void start()
     {
         _tickerThread = new Thread(this, "Container-ticker");
@@ -349,6 +358,7 @@ public class RequestContainerV5
 
     public static final String hh_rc_set_sameHostCopy =
         STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED;
+    @AffectsSetup
     public String ac_rc_set_sameHostCopy_$_1(Args args)
     {
         _partitionManager.setProperties("default", ImmutableMap.of("sameHostCopy", args.argv(0)));
@@ -357,6 +367,7 @@ public class RequestContainerV5
 
     public static final String hh_rc_set_sameHostRetry =
         STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED;
+    @AffectsSetup
     public String ac_rc_set_sameHostRetry_$_1(Args args)
     {
         _partitionManager.setProperties("default", ImmutableMap.of("sameHostRetry", args.argv(0)));
