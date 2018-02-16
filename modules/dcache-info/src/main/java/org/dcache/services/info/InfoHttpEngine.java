@@ -141,6 +141,9 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
                             "long to reply, suspect trouble (" +
                             cause.getMessage() + ")");
                 }
+                if (cause instanceof NoRouteToCellException) {
+                    throw new HttpException(503, "Unable to locate the info cell");
+                }
                 if (cause instanceof CacheException) {
                     throw new HttpException(500, "Error when requesting " +
                             "info from info cell. (" + cause.getMessage() + ")");
