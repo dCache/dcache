@@ -86,6 +86,7 @@ import static org.dcache.resilience.data.MessageType.ADD_CACHE_LOCATION;
 import static org.dcache.resilience.data.MessageType.CLEAR_CACHE_LOCATION;
 import static org.dcache.resilience.data.MessageType.CORRUPT_FILE;
 import static org.dcache.resilience.data.MessageType.POOL_STATUS_DOWN;
+import static org.dcache.resilience.data.MessageType.POOL_STATUS_UP;
 
 /**
  * <p>A transient encapsulation of pertinent configuration data regarding
@@ -265,7 +266,7 @@ public final class FileUpdate {
     }
 
     public boolean isParent() {
-        return type == POOL_STATUS_DOWN || type == POOL_STATUS_DOWN;
+        return type == POOL_STATUS_DOWN || type == POOL_STATUS_UP;
     }
 
     public void setCount(Integer count) {
