@@ -11,6 +11,7 @@ import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -30,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.RequestContainerV5;
@@ -59,6 +61,7 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
+
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
@@ -137,6 +140,9 @@ public class Transfer implements Comparable<Transfer>
 
     private Set<FileAttribute> _additionalAttributes =
             EnumSet.noneOf(FileAttribute.class);
+
+    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
+
 
     private static final ThreadFactory RETRY_THREAD_FACTORY =
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("transfer-retry-timer-%d").build();
@@ -281,6 +287,12 @@ public class Transfer implements Comparable<Transfer>
     {
         _billing = stub;
     }
+
+    public synchronized void setKafkaSender(Consumer<DoorRequestInfoMessage> kafkaSender)
+    {
+        _kafkaSender = kafkaSender;
+    }
+
 
 
     public synchronized void
@@ -1235,7 +1247,9 @@ public class Transfer implements Comparable<Transfer>
         _billing.notify(msg);
 
         _isBillingNotified = true;
+        _kafkaSender.accept(msg);
     }
+
 
     private static long getTimeoutFor(long deadline)
     {

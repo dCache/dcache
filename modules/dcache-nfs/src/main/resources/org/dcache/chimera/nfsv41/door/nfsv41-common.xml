@@ -217,6 +217,30 @@
             crreate a place holder to keep depemdency happy
         -->
         <bean id="rpcbind" class="java.lang.Object"/>
+
+    </beans>
+    <beans profile="kafka-true">
+        <bean id="transfer-template" class="org.springframework.kafka.core.KafkaTemplate">
+            <constructor-arg>
+                <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+                    <constructor-arg>
+                        <map>
+                            <entry key="bootstrap.servers" value="${nfs.kafka.bootstrap-servers}"/>
+                            <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer" />
+                            <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer" />
+                            <entry key="client.id" value="${nfs.cell.name}@${dcache.domain.name}" />
+                            <!-- TODO  values for max.block.ms and retries are important for Non Blocking (Async) callback.-->
+                            <!-- maximum time producer.send() will block by default set to 60000. Could be changed latter. -->
+                            <entry key="max.block.ms" value="0" />
+                            <!-- The maximum number of times to retry a call before failing it.-->
+                            <entry key="retries" value="0" />
+                        </map>
+                    </constructor-arg>
+                </bean>
+            </constructor-arg>
+            <constructor-arg name="autoFlush" value="false" />
+            <property name="defaultTopic" value="billing"/>
+        </bean>
     </beans>
 
 </beans>

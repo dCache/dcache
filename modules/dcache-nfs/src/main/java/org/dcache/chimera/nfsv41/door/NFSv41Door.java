@@ -5,8 +5,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
@@ -27,7 +30,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
@@ -61,6 +65,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.dcache.auth.Subjects;
@@ -139,6 +144,8 @@ import java.util.stream.Stream;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.dcache.auth.attributes.Restrictions;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.ProducerListener;
 
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
@@ -235,6 +242,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private ProxyIoFactory _proxyIoFactory;
 
+    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
+
     /**
      * Retry policy used for accessing files.
      */
@@ -316,6 +325,27 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Required
     public void setAccessLogMode(AccessLogMode accessLogMode) {
         _accessLogMode = accessLogMode;
+    }
+
+    @Autowired(required = false)
+    private void setTransferTemplate(KafkaTemplate kafkaTemplate) {
+        kafkaTemplate.setProducerListener(new ProducerListener() {
+            @Override
+            public void onSuccess(String topic, Integer partition, Object key, Object value, RecordMetadata recordMetadata) {
+                _log.info("Sent message.");
+            }
+
+            @Override
+            public void onError(String topic, Integer partition, Object key, Object value, Exception exception) {
+                _log.error("Unable to send message: {}", exception.getMessage());
+            }
+
+            @Override
+            public boolean isInterestedInSuccess() {
+                return false;
+            }
+        });
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     public void init() throws Exception {
@@ -564,6 +594,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.setPnfsId(pnfsId);
                     transfer.setClientAddress(remote);
                     transfer.setIoQueue(_ioQueue);
+                    transfer.setKafkaSender(_kafkaSender);
 
                     /*
                      * As all our layouts marked 'return-on-close', stop mover when
