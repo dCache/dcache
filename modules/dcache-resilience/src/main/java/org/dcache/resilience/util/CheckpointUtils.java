@@ -118,7 +118,7 @@ public final class CheckpointUtils {
     /**
      * <p>Read back in from the checkpoint file operation records.
      *    These are converted to {@link FileUpdate} objects and passed
-     *    to {@link FileOperationHandler#handleBrokenFileLocation(PnfsId, String)}
+     *    to {@link FileOperationHandler#handleLocationUpdate(FileUpdate)}(PnfsId, String)}
      *    for registration.</p>
      *
      * <p>The file to be reloaded is renamed, so that any checkpointing
