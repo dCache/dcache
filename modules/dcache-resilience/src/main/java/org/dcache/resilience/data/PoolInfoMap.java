@@ -651,7 +651,8 @@ public class PoolInfoMap {
         try {
             PoolInformation info = poolInfo.get(pool);
             return info != null && info.isInitialized()
-                            && (writable ? info.canWrite() : info.canRead());
+                            && (writable ? info.canRead() && info.canWrite()
+                                : info.canRead());
         } finally {
             read.unlock();
         }
