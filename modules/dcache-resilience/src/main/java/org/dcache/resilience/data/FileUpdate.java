@@ -82,6 +82,12 @@ import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.resilience.data.MessageType.ADD_CACHE_LOCATION;
+import static org.dcache.resilience.data.MessageType.CLEAR_CACHE_LOCATION;
+import static org.dcache.resilience.data.MessageType.CORRUPT_FILE;
+import static org.dcache.resilience.data.MessageType.POOL_STATUS_DOWN;
+import static org.dcache.resilience.data.MessageType.POOL_STATUS_UP;
+
 /**
  * <p>A transient encapsulation of pertinent configuration data regarding
  *      a file location.</p>
@@ -124,7 +130,7 @@ public final class FileUpdate {
             }
 
             if (attributes.getLocations().isEmpty()) {
-                if (messageType == MessageType.CLEAR_CACHE_LOCATION) {
+                if (messageType == CLEAR_CACHE_LOCATION) {
                     LOGGER.trace("ClearCacheLocationMessage for {}; "
                                                  + "no current locations; "
                                                  + "file probably deleted "
@@ -133,7 +139,7 @@ public final class FileUpdate {
                     return null;
                 }
 
-                if (messageType != MessageType.ADD_CACHE_LOCATION) {
+                if (messageType != ADD_CACHE_LOCATION) {
                     /*
                      * Since the scan began or the broken file reported,
                      * the file has been removed.
@@ -173,8 +179,6 @@ public final class FileUpdate {
     public final String  pool;
     public final MessageType     type;
     public final SelectionAction action;
-
-    final boolean isParent;
 
     private final boolean isFullScan;
 
@@ -220,18 +224,6 @@ public final class FileUpdate {
         this.pnfsId = pnfsId;
         this.pool = pool;
         this.type = type;
-        if (type == null) {
-            isParent = false;
-        } else {
-            switch (type) {
-                case POOL_STATUS_DOWN:
-                case POOL_STATUS_UP:
-                    isParent = true;
-                    break;
-                default:
-                    isParent = false;
-            }
-        }
         this.action = action;
         this.group = group;
         fromReload = false;
@@ -264,8 +256,17 @@ public final class FileUpdate {
         return unitIndex;
     }
 
+    public Integer getSourceIndex() {
+        return type == CORRUPT_FILE ||
+               type == CLEAR_CACHE_LOCATION ? null : poolIndex;
+    }
+
     public boolean isFromReload() {
         return fromReload;
+    }
+
+    public boolean isParent() {
+        return type == POOL_STATUS_DOWN || type == POOL_STATUS_UP;
     }
 
     public void setCount(Integer count) {
@@ -277,14 +278,16 @@ public final class FileUpdate {
     }
 
     public boolean shouldVerifySticky() {
-        return !isFromReload() && type != MessageType.CLEAR_CACHE_LOCATION &&
-                        (!isParent || action == SelectionAction.ADD);
+        return !isFromReload() && type != CLEAR_CACHE_LOCATION &&
+                        (!isParent() || action == SelectionAction.ADD);
     }
 
     public String toString() {
         return String.format(
-                        "(%s)(%s)(%s)(parent %s)(psu action %s)(group %s)(count %s)",
-                        pnfsId, pool, type, isParent, action, group, count);
+                        "(%s)(%s)(%s)(parent %s)(source %s)"
+                                        + "(psu action %s)(group %s)(count %s)",
+                        pnfsId, pool, type, isParent(), getSourceIndex(),
+                        action, group, count);
     }
 
     public boolean validateAttributes(NamespaceAccess access)
