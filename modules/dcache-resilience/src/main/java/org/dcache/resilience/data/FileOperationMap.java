@@ -84,14 +84,15 @@ import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.FileTaskCompletionHandler;
 import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
+import org.dcache.resilience.util.BrokenFileTask;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 import org.dcache.resilience.util.CheckpointUtils;
+import org.dcache.resilience.util.ForegroundBackgroundAllocator;
+import org.dcache.resilience.util.ForegroundBackgroundAllocator.ForegroundBackgroundAllocation;
 import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
-import org.dcache.resilience.util.ForegroundBackgroundAllocator;
-import org.dcache.resilience.util.ForegroundBackgroundAllocator.ForegroundBackgroundAllocation;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.StandardForegroundBackgroundAllocator;
 import org.dcache.util.RunnableModule;
@@ -328,20 +329,26 @@ public class FileOperationMap extends RunnableModule {
 
             boolean retry = false;
             boolean abort = false;
+            boolean broken = false;
 
             if (operation.getState() == FileOperation.FAILED) {
                 FailureType type =
                     CacheExceptionUtils.getFailureType(operation.getException(),
                                                        source != null);
-
                 switch (type) {
                     case BROKEN:
                         if (source != null) {
-                            pool = poolInfoMap.getPool(operation.getSource());
-                            operationHandler.handleBrokenFileLocation(operation.getPnfsId(),
-                                                                      pool);
+                            broken = true;
+
+                            /*
+                             *  Remove this operation,  then let the
+                             *  broken file handling decide if the
+                             *  process should be retried.
+                             */
+                            operation.setOpCount(0);
+                            break;
                         }
-                        // fall through - possibly retriable with another source
+                        // fall through, may be retriable
                     case NEWSOURCE:
                         operation.addSourceToTriedLocations();
                         operation.resetSourceAndTarget();
@@ -436,6 +443,16 @@ public class FileOperationMap extends RunnableModule {
                  *  removal.
                  */
                 remove(operation.getPnfsId(), abort);
+
+                /*
+                 *  If the operation reported a broken source, pass it off
+                 *  to the handler.
+                 */
+                if (broken) {
+                    pool = poolInfoMap.getPool(operation.getSource());
+                    new BrokenFileTask(operation.getPnfsId(), pool, operationHandler)
+                                    .submit();
+                }
             }
         }
 
