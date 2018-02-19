@@ -1,6 +1,5 @@
 package org.dcache.notification;
 
-import javafx.util.Duration;
 import org.apache.kafka.common.serialization.Serializer;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -8,7 +7,6 @@ import org.json.JSONObject;
 import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.Map;
-import java.util.Optional;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.MoverInfoMessage;
