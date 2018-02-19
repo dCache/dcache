@@ -73,6 +73,7 @@ import diskCacheV111.vehicles.Message;
 import org.dcache.pool.migration.Task;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestMessageProcessor;
+import org.dcache.resilience.TestSynchronousExecutor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileUpdate;
@@ -84,7 +85,11 @@ import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public final class FileOperationHandlerTest extends TestBase
                 implements TestMessageProcessor {
@@ -296,8 +301,7 @@ public final class FileOperationHandlerTest extends TestBase
         whenVerifyIsRun();
         afterInspectingSourceAndTarget();
         whenOperationFailsWithBrokenFileError();
-        whenVerifyIsRun();
-        assertTrue(theNewSourceIsDifferent());
+        assertNotNull(repRmMessage);
     }
 
     @Test
@@ -644,6 +648,7 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     private void whenOperationFailsWithBrokenFileError() throws IOException {
+        fileOperationHandler.setTaskService(new TestSynchronousExecutor(Mode.RUN));
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
                                          new CacheException(
