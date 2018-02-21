@@ -954,8 +954,8 @@ public abstract class AbstractFtpDoorV1
                     adapter.join(300000); // 5 minutes
                     if (adapter.isAlive()) {
                         throw new FTPCommandException(451, "FTP proxy did not shut down");
-                    } else if (_adapter.hasError()) {
-                        throw new FTPCommandException(451, "FTP proxy failed: " + _adapter.getError());
+                    } else if (adapter.hasError()) {
+                        throw new FTPCommandException(451, "FTP proxy failed: " + adapter.getError());
                     }
 
                     LOGGER.debug("Closing adapter");
