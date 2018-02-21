@@ -950,16 +950,18 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 if (adapter != null) {
-                    LOGGER.info("Waiting for adapter to finish.");
-                    adapter.join(300000); // 5 minutes
-                    if (adapter.isAlive()) {
-                        throw new FTPCommandException(451, "FTP proxy did not shut down");
-                    } else if (adapter.hasError()) {
-                        throw new FTPCommandException(451, "FTP proxy failed: " + adapter.getError());
+                    try {
+                        LOGGER.info("Waiting for adapter to finish.");
+                        adapter.join(300000); // 5 minutes
+                        if (adapter.isAlive()) {
+                            throw new FTPCommandException(451, "FTP proxy did not shut down");
+                        } else if (adapter.hasError()) {
+                            throw new FTPCommandException(451, "FTP proxy failed: " + adapter.getError());
+                        }
+                    } finally {
+                        LOGGER.debug("Closing adapter");
+                        adapter.close();
                     }
-
-                    LOGGER.debug("Closing adapter");
-                    adapter.close();
                 }
 
                 synchronized (this) {
