@@ -56,6 +56,7 @@ check -strong resilience.watchdog.scan.window.unit
 check -strong resilience.service.pinmanager
 check -strong resilience.service.pinmanager.timeout
 check -strong resilience.service.pinmanager.timeout.unit
+check -strong resilience.service.poolmanager
 check -strong resilience.service.pool.timeout
 check -strong resilience.service.pool.timeout.unit
 

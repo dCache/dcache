@@ -68,6 +68,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.Task;
@@ -89,6 +90,11 @@ import static diskCacheV111.util.AccessLatency.ONLINE;
  * <p>In the case of a copy/migration operation, the completion message
  *      from the pool is relayed by this task object to the internal migration
  *      task object.</p>
+ *
+ * <p>In the case of a replica which needs staging, the call to the
+ *      file operation handler results in a fire-and-forget request to
+ *      PoolManager, at which point the task (and operation) is considered
+ *      complete.</p>
  */
 public final class ResilientFileTask implements Cancellable, Callable<Void> {
     private static final String STAT_FORMAT
@@ -100,7 +106,6 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
     private final PnfsId               pnfsId;
     private final FileOperationHandler handler;
     private final int                  retry;
-
 
     private Task   migrationTask;
     private Future future;
@@ -141,7 +146,9 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
     @Override
     public Void call() {
         startTime = System.currentTimeMillis();
-        FileAttributes attributes = FileAttributes.of().accessLatency(ONLINE).pnfsId(pnfsId).build();
+        FileAttributes attributes = FileAttributes.of()
+                                                  .accessLatency(ONLINE)
+                                                  .pnfsId(pnfsId).build();
 
         if (cancelled) {
             return null;
@@ -154,6 +161,21 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
         switch (type) {
             case VOID:
                 endTime = System.currentTimeMillis();
+                break;
+            case WAIT_FOR_STAGE:
+                if (cancelled) {
+                    break;
+                }
+
+                startSubTask = System.currentTimeMillis();
+                /*
+                 * We do not want the resilience sessionID in the logging
+                 * context; the new cache location needs to be processed.
+                 *
+                 * Task completes immediately after message is sent.
+                 */
+                handler.handleStaging(pnfsId, this);
+                copyTerminated();
                 break;
             case COPY:
                 if (cancelled) {
@@ -169,11 +191,10 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
 
                 if (innerTask != null) {
                     MessageGuard.setResilienceSession();
-                    this.migrationTask = innerTask;
+                    migrationTask = innerTask;
                     innerTask.run();
                 } else {
-                    inCopy = System.currentTimeMillis() - startSubTask;
-                    endTime = System.currentTimeMillis();
+                    copyTerminated();
                 }
 
                 break;
@@ -183,8 +204,8 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
                 }
 
                 startSubTask = System.currentTimeMillis();
-                this.handler.getRemoveService()
-                            .schedule(new FireAndForgetTask(() -> runRemove(attributes)),
+                handler.getRemoveService()
+                       .schedule(new FireAndForgetTask(() -> runRemove(attributes)),
                                       0, TimeUnit.MILLISECONDS);
                 break;
         }
@@ -204,17 +225,17 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
             future.cancel(true);
         }
 
+        endTime = System.currentTimeMillis();
+
         switch(type) {
             case COPY:
-                inCopy = System.currentTimeMillis() - startSubTask;
+                inCopy = endTime - startSubTask;
                 break;
             case REMOVE:
-                inRemove = System.currentTimeMillis() - startSubTask;
+                inRemove = endTime - startSubTask;
                 break;
             default:
         }
-
-        endTime = System.currentTimeMillis();
     }
 
     public String getFormattedStatistics(String status,
@@ -264,9 +285,14 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
         }
 
         migrationTask.messageArrived(message);
-
-        inCopy = System.currentTimeMillis() - startSubTask;
         endTime = System.currentTimeMillis();
+        inCopy = endTime - startSubTask;
+    }
+
+    public void copyTerminated() {
+        endTime = System.currentTimeMillis();
+        inCopy = endTime - startSubTask;
+
     }
 
     public void submit() {
@@ -286,7 +312,8 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
     void runRemove(FileAttributes attributes) {
         MessageGuard.setResilienceSession();
         handler.handleRemoveOneCopy(attributes);
-        inRemove = System.currentTimeMillis() - startSubTask;
         endTime = System.currentTimeMillis();
+        inRemove = endTime - startSubTask;
+
     }
 }

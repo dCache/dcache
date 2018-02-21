@@ -63,11 +63,14 @@ import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+
 import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.vehicles.FileAttributes;
@@ -90,6 +93,7 @@ public interface NamespaceAccess {
     Set<FileAttribute> REFRESHABLE_ATTRIBUTES
                     = Collections.unmodifiableSet(
                     EnumSet.of(FileAttribute.ACCESS_TIME,
+                               FileAttribute.RETENTION_POLICY,
                                FileAttribute.LOCATIONS));
 
     /**
@@ -98,6 +102,13 @@ public interface NamespaceAccess {
      * <p>Requests attributes defined by #REQUIRED_ATTRIBUTES.</p>
      */
     FileAttributes getRequiredAttributes(PnfsId pnfsId) throws CacheException;
+
+    /**
+     * <p>Pass-through to namespace.</p>
+     *
+     * <p>Requests attributes defined by {@link PoolMgrSelectReadPoolMsg#getRequiredAttributes()}.</p>
+     */
+    FileAttributes getRequiredAttributesForStaging(PnfsId pnfsId) throws CacheException;
 
     /**
      * <p>The workhorse query.

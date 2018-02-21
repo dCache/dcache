@@ -62,7 +62,6 @@ package org.dcache.resilience.db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -70,9 +69,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
 
+import javax.sql.DataSource;
+
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.BackEndErrorHimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
@@ -162,6 +165,14 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                                            REQUIRED_ATTRIBUTES);
     }
 
+    @Override
+    public FileAttributes getRequiredAttributesForStaging(PnfsId pnfsId)
+                    throws CacheException {
+        return namespace.getFileAttributes(Subjects.ROOT,
+                                           pnfsId,
+                                           PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+    }
+
     /**
      * <p>Called by {@link PoolOperationHandler#handlePoolScan(ScanSummary)}.</p>
      */
@@ -192,6 +203,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                                                     attributes.getPnfsId(),
                                                     REFRESHABLE_ATTRIBUTES);
         attributes.setLocations(refreshed.getLocations());
+        attributes.setRetentionPolicy(refreshed.getRetentionPolicy());
         attributes.setAccessTime(refreshed.getAccessTime());
     }
 

@@ -226,6 +226,7 @@
       <property name="inaccessibleFileHandler" ref="InaccessibleFileHandler"/>
       <property name="pinManagerStub" ref="PinManager"/>
       <property name="poolStub" ref="Pools"/>
+      <property name="poolManagerAddress" value="${resilience.service.poolmanager}"/>
       <property name="namespace" ref="NamespaceAccess"/>
       <property name="fileOpMap" ref="FileOpMap"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>

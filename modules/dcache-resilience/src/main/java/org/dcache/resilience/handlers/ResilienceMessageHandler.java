@@ -68,10 +68,12 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
-import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.FileUpdate;
+import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.util.BrokenFileTask;
@@ -86,7 +88,7 @@ import org.dcache.vehicles.CorruptFileMessage;
  *      Also handles internal callbacks indicated the change of
  *      pool status/mode.</p>
  */
-public final class ResilienceMessageHandler implements CellMessageReceiver{
+public final class ResilienceMessageHandler implements CellMessageReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(
                     ResilienceMessageHandler.class);
 
@@ -149,6 +151,14 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
         fileOperationHandler.handleMigrationCopyFinished(message);
     }
 
+    public void messageArrived(CellMessage message, PoolMgrSelectReadPoolMsg reply) {
+        if (messageGuard.getStatus("PoolMgrSelectReadPoolMsg", message)
+                        == Status.DISABLED) {
+            return;
+        }
+        handleStagingRetry(reply);
+    }
+
     public void processBackloggedMessage(Message message) {
         if (message instanceof CorruptFileMessage) {
             handleBrokenFile((CorruptFileMessage) message);
@@ -156,6 +166,8 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
             handleClearCacheLocation((PnfsClearCacheLocationMessage) message);
         } else if (message instanceof PnfsAddCacheLocationMessage) {
             handleAddCacheLocation((PnfsAddCacheLocationMessage) message);
+        } else if (message instanceof PoolMgrSelectReadPoolMsg) {
+            handleStagingRetry((PoolMgrSelectReadPoolMsg)message);
         }
     }
 
@@ -202,6 +214,12 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
                                           message.getPoolName(),
                                           MessageType.CLEAR_CACHE_LOCATION,
                                           false));
+    }
+
+    private void handleStagingRetry(PoolMgrSelectReadPoolMsg reply) {
+        updateService.submit(() -> {
+                fileOperationHandler.handleStagingReply(reply);
+        });
     }
 
     private void updatePnfsLocation(FileUpdate data) {

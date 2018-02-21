@@ -63,20 +63,33 @@ import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.PoolSelectionStrategy;
@@ -114,7 +127,7 @@ import org.dcache.vehicles.resilience.RemoveReplicaMessage;
  *
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
-public class FileOperationHandler {
+public class FileOperationHandler implements CellMessageSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(
                     FileOperationHandler.class);
 
@@ -128,7 +141,8 @@ public class FileOperationHandler {
     public enum Type {
         COPY,
         REMOVE,
-        VOID
+        VOID,
+        WAIT_FOR_STAGE
     }
 
     private final PoolSelectionStrategy taskSelectionStrategy
@@ -141,7 +155,10 @@ public class FileOperationHandler {
 
     private CellStub                  pinManager;
     private CellStub                  pools;
+    private CellEndpoint              endpoint;
+    private String                    poolManagerAddress;
     private ScheduledExecutorService  taskService;
+
     private ScheduledExecutorService  migrationTaskService;
     private FileTaskCompletionHandler completionHandler;
     private InaccessibleFileHandler   inaccessibleFileHandler;
@@ -410,6 +427,135 @@ public class FileOperationHandler {
     }
 
     /**
+     * <p>Called when there are no available replicas, but the file
+     *    can be retrieved from an HSM.</p>
+     *
+     * <p>Issues a fire and forget request.  Task is considered complete at
+     *    that point.</p>
+     *
+     * <p>When staging actually completes on the PoolManager end, the new
+     *    cache location message should be processed by Resilience as a
+     *    new FileOperation.</p>
+     *
+     * <p>Should staging not complete before the pool is once again scanned,
+     *    PoolManager should collapse the repeated staging request.</p>
+     */
+    public void handleStaging(PnfsId pnfsId, ResilientFileTask task) {
+        try {
+            FileOperation operation = fileOpMap.getOperation(pnfsId);
+            FileAttributes attributes
+                            = namespace.getRequiredAttributesForStaging(pnfsId);
+            String poolGroup = poolInfoMap.getGroup(operation.getPoolGroup());
+            LOGGER.trace("handleStaging {}, pool group {}.", pnfsId, poolGroup);
+            migrationTaskService.schedule(() -> {
+                try {
+                    PoolMgrSelectReadPoolMsg msg =
+                                    new PoolMgrSelectReadPoolMsg(attributes,
+                                                                 getProtocolInfo(),
+                                                                 null);
+                    msg.setSubject(Subjects.ROOT);
+                    msg.setPoolGroup(poolGroup);
+                    CellMessage cellMessage
+                                    = new CellMessage(new CellPath(poolManagerAddress),
+                                                      msg);
+                    endpoint.sendMessage(cellMessage);
+                    LOGGER.trace("handleStaging, sent select read pool message "
+                                                 + "for {} to poolManager.", pnfsId);
+                    completionHandler.taskCompleted(pnfsId);
+                } catch (URISyntaxException e) {
+                    completionHandler.taskFailed(pnfsId,
+                                       CacheExceptionUtils.getCacheException(
+                                       CacheException.INVALID_ARGS,
+                                       "could not construct HTTP protocol: %s.",
+                                       pnfsId, e.getMessage(), null));
+                }
+            }, 0, TimeUnit.MILLISECONDS);
+        } catch (CacheException ce) {
+            completionHandler.taskFailed(pnfsId, ce);
+        }
+    }
+
+    /**
+     * <p>If the reply from the Pool Manager indicates that the file has
+     *    been staged to a pool outside the pool group, resend the message
+     *    with refreshed attributes to trigger a p2p by the Pool Manager to
+     *    a readable resilient pool in the correct group.  Otherwise,
+     *    discard the message.</p>
+     */
+    public void handleStagingReply(PoolMgrSelectReadPoolMsg reply) {
+        PnfsId pnfsId = reply.getPnfsId();
+        try {
+            if (reply.getReturnCode() == CacheException.OUT_OF_DATE) {
+                String error = CacheExceptionFactory.exceptionOf(reply)
+                                                    .getMessage();
+                FileAttributes attributes
+                                = namespace.getRequiredAttributesForStaging(pnfsId);
+                /*
+                 *  Check to see if one of the new locations is not resilient.
+                 */
+                Collection<String> locations = attributes.getLocations();
+                List<String> valid
+                                = poolInfoMap.getReadableLocations(locations)
+                                             .stream()
+                                             .filter(poolInfoMap::isResilientPool)
+                                             .collect(Collectors.toList());
+                LOGGER.trace("{}, handleStagingReply, readable resilience "
+                                             + "locations are now {}.", valid);
+                if (valid.size() == 0) {
+                    LOGGER.trace("{}, handleStagingReply, "
+                                                 + "PoolManager staged to"
+                                                 + " a non-resilient pool, "
+                                                 + "requesting p2p.",
+                                 pnfsId);
+
+                    /*
+                     *  Figure out what pool group this should be on.
+                     *  At this point, if locations is empty, it's a bug.
+                     *  If it isn't, the pools should belong to a resilient
+                     *  group, or else we wouldn't be processing this.
+                     */
+                    Integer gIndex = null;
+
+                    for (String loc: locations) {
+                        Integer pIndex = poolInfoMap.getPoolIndex(loc);
+                        gIndex = poolInfoMap.getResilientPoolGroup(pIndex);
+                        if (gIndex != null) {
+                            break;
+                        }
+                    }
+
+                    final String poolGroup = poolInfoMap.getGroup(gIndex);
+                    LOGGER.trace("{}, handleStagingReply, resilient pool group "
+                                                 + "for p2p request: {}.",
+                                 pnfsId, poolGroup);
+
+                    migrationTaskService.schedule(() -> {
+                        PoolMgrSelectReadPoolMsg msg =
+                                        new PoolMgrSelectReadPoolMsg(attributes,
+                                                                     reply.getProtocolInfo(),
+                                                                     reply.getContext(),
+                                                                     reply.getAllowedStates());
+                        msg.setSubject(reply.getSubject());
+                        msg.setPoolGroup(poolGroup);
+                        CellMessage cellMessage = new CellMessage(
+                                        new CellPath(poolManagerAddress),
+                                        msg);
+                        endpoint.sendMessage(cellMessage);
+                        LOGGER.trace("handleStagingReply, resent select read pool "
+                                                     + "message for {} to poolManager.",
+                                     pnfsId);
+                    }, 0, TimeUnit.MILLISECONDS);
+                    return;
+                }
+            }
+            LOGGER.trace("{} handleStagingReply {}, nothing to do.",
+                         pnfsId, reply);
+        } catch (CacheException ce) {
+            LOGGER.error("handleStagingReply failed: {}.", ce.toString());
+        }
+    }
+
+    /**
      * <p>Called when a pnfsid has been selected from the operation map for
      *      possible processing. Refreshes locations from namespace, and checks
      *      which of those are currently readable.  Sends an alarm if
@@ -447,6 +593,13 @@ public class FileOperationHandler {
          * Somehow, all the cache locations for this file have been removed.
          */
         if (locations.isEmpty()) {
+            LOGGER.trace("handleVerification {}, no locations found, "
+                                         + "checking to see if "
+                                         + "file can be staged.",
+                         pnfsId);
+            if (shouldTryToStage(attributes, operation)) {
+                return Type.WAIT_FOR_STAGE;
+            }
             return inaccessibleFileHandler.handleNoLocationsForFile(operation);
         }
 
@@ -476,10 +629,17 @@ public class FileOperationHandler {
                         readableLocations);
 
         if (inaccessibleFileHandler.isInaccessible(readableLocations, operation)) {
+            LOGGER.trace("handleVerification {}, no readable locations found, "
+                                         + "checking to see if "
+                                         + "file can be staged.", pnfsId);
+            if (shouldTryToStage(attributes, operation)) {
+                return Type.WAIT_FOR_STAGE;
+            }
             return inaccessibleFileHandler.handleInaccessibleFile(operation);
         }
 
         if (shouldEvictALocation(operation, readableLocations)) {
+            LOGGER.error("handleVerification, location should be evicted {}", readableLocations);
             return Type.REMOVE;
         }
 
@@ -489,6 +649,11 @@ public class FileOperationHandler {
         return determineTypeFromConstraints(operation,
                                             locations,
                                             readableLocations);
+    }
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint) {
+        this.endpoint = endpoint;
     }
 
     public void setCompletionHandler(
@@ -527,6 +692,10 @@ public class FileOperationHandler {
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
         this.poolInfoMap = poolInfoMap;
+    }
+
+    public void setPoolManagerAddress(String poolManagerAddress) {
+        this.poolManagerAddress = poolManagerAddress;
     }
 
     public void setPoolStub(CellStub pools) {
@@ -624,6 +793,15 @@ public class FileOperationHandler {
         return type;
     }
 
+    private ProtocolInfo getProtocolInfo() throws URISyntaxException {
+        return new HttpProtocolInfo("Http", 1, 1,
+                                    new InetSocketAddress("localhost", 0),
+                                    null,
+                                    null, null,
+                                    new URI("http", "localhost",
+                                            null, null));
+    }
+
     /**
      * <p>Synchronously removes from the target location the cache entry of the
      *      pnfsid associated with this task.  This is done via a message
@@ -691,6 +869,29 @@ public class FileOperationHandler {
             return true;
         }
 
+        return false;
+    }
+
+    /**
+     * <p>Called when there are no accessible replicas for the file.</p>
+     *
+     * <p>If the file's RetentionPolicy is CUSTODIAL, set the count to 1,
+     *    to make sure the task completes after this.  Staging is fire-and-forget,
+     *    and depends on a new add cache location message being processed
+     *    after staging.</p>
+     *
+     * @return true if file is CUSTODIAL, false otherwise.
+     */
+    private boolean shouldTryToStage(FileAttributes attributes,
+                                     FileOperation operation) {
+        if (attributes.getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
+            LOGGER.trace("shouldTryToStage {}, retention policy is CUSTODIAL.",
+                         operation.getPnfsId());
+            operation.setOpCount(1);
+            return true;
+        }
+        LOGGER.trace("shouldTryToStage {}, retention policy is not CUSTODIAL",
+                     operation.getPnfsId());
         return false;
     }
 }
