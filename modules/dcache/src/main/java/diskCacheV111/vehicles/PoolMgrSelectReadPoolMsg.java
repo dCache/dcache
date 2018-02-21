@@ -8,7 +8,6 @@ import java.util.EnumSet;
 import diskCacheV111.poolManager.RequestContainerV5;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.assumption.Assumption;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -54,6 +53,7 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
     private static final long serialVersionUID = -2126253028981131441L;
 
     private Context _context;
+    private String  _poolGroup;
 
     public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
                                     ProtocolInfo protocolInfo,
@@ -90,6 +90,11 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
         return _context;
     }
 
+    public String getPoolGroup()
+    {
+        return _poolGroup;
+    }
+
     public void setContext(Context context)
     {
         _context = context;
@@ -98,6 +103,10 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
     public void setContext(int retryCounter, String previousStageHost, String previousStagePool)
     {
         setContext(new Context(retryCounter, previousStageHost, previousStagePool));
+    }
+
+    public void setPoolGroup(String poolGroup) {
+        _poolGroup = poolGroup;
     }
 
     /**

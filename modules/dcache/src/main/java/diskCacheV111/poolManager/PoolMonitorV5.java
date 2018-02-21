@@ -11,14 +11,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CostException;
@@ -41,7 +45,9 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static java.util.stream.Collectors.toList;
-import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileAttribute.LOCATIONS;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 public class PoolMonitorV5
     extends SerializablePoolMonitor
@@ -245,6 +251,7 @@ public class PoolMonitorV5
             }
 
             CostException fallback = null;
+
             for (int prio = 0; prio < level.length; prio++) {
                 List<String> poolNames = level[prio].getPoolList();
                 _log.debug("[read] Allowed pools at level {}: {}",
@@ -316,10 +323,19 @@ public class PoolMonitorV5
 
         @Override
         public Partition.P2pPair selectPool2Pool(boolean force)
+                        throws CacheException
+        {
+            return selectPool2Pool(null, force);
+        }
+
+        @Override
+        public Partition.P2pPair selectPool2Pool(String poolGroup,
+                                                 boolean force)
             throws CacheException
         {
             Collection<String> locations = _fileAttributes.getLocations();
             _log.debug("[p2p] Expected source from pnfs: {}", locations);
+
             Map<String,PoolInfo> sources =
                 _costModule.getPoolInfoAsMap(locations);
             _log.debug("[p2p] Online source pools: {}", sources.values());
@@ -328,11 +344,25 @@ public class PoolMonitorV5
                 throw new CacheException("P2P denied: No source pools available");
             }
 
+            Predicate<String> poolFilter = p -> !sources.containsKey(p);
+
+            /*
+             * Restrict the pools to those of the group, if specified.
+             */
+            if (poolGroup != null) {
+                Collection<String> poolsOfGroup =
+                                _selectionUnit.getPoolsByPoolGroup(poolGroup)
+                                              .stream()
+                                              .map(SelectionPool::getName)
+                                              .collect(Collectors.toCollection(HashSet::new));
+                poolFilter = poolFilter.and(p -> poolsOfGroup.contains(p));
+            }
+
             PoolPreferenceLevel[] levels = match(DirectionType.P2P);
             for (PoolPreferenceLevel level: levels) {
                 List<PoolInfo> pools =
                         level.getPoolList().stream()
-                                .filter(pool -> !sources.containsKey(pool))
+                                .filter(poolFilter)
                                 .map(_costModule::getPoolInfo)
                                 .filter(Objects::nonNull)
                                 .collect(toList());

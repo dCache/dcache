@@ -47,6 +47,9 @@ public interface PoolSelector
 
     Partition.P2pPair selectPool2Pool(boolean force) throws CacheException;
 
+    Partition.P2pPair selectPool2Pool(String poolGroup,
+                                      boolean force) throws CacheException;
+
     SelectedPool selectStagePool(String previousPool, String previousHost)
             throws CacheException;
 

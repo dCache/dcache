@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -26,18 +27,6 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellSetupProvider;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.UOID;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
@@ -62,6 +51,18 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
+
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellSetupProvider;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.UOID;
 
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
@@ -663,6 +664,7 @@ public class RequestContainerV5
         boolean enforceP2P = false ;
 
         PnfsId       pnfsId       = request.getPnfsId() ;
+        String       poolGroup    = request.getPoolGroup();
         ProtocolInfo protocolInfo = request.getProtocolInfo() ;
         EnumSet<RequestState> allowedStates = request.getAllowedStates();
 
@@ -688,17 +690,22 @@ public class RequestContainerV5
                enforceP2P = true ;
            }
         }
-        String canonicalName = pnfsId +"@"+netName+"-"+protocolName+(enforceP2P?"-p2p":"")  ;
-        //
-        //
+
+        String canonicalName = pnfsId +"@"+netName+"-"+protocolName+(enforceP2P?"-p2p":"")
+                        +(poolGroup == null ? "" : ("-pg-" + poolGroup));
+
         PoolRequestHandler handler;
+
         _log.info( "Adding request for : {}", canonicalName ) ;
         synchronized( _handlerHash ){
-           handler = _handlerHash.computeIfAbsent(canonicalName, n -> new PoolRequestHandler(pnfsId, n, allowedStates));
+           handler = _handlerHash.computeIfAbsent(canonicalName, n ->
+                           new PoolRequestHandler(pnfsId,
+                                                  poolGroup,
+                                                  n,
+                                                  allowedStates));
            handler.addRequest(envelope) ;
         }
     }
-
 
     // replicate a file
     public static final String hh_replicate = " <pnfsid> <client IP>";
@@ -750,6 +757,7 @@ public class RequestContainerV5
     private class PoolRequestHandler  {
 
         protected final PnfsId       _pnfsId;
+        protected final String       _poolGroup;
         protected final List<CellMessage>    _messages = new ArrayList<>() ;
         protected int _retryCounter;
         private final CDC _cdc = new CDC();
@@ -831,10 +839,13 @@ public class RequestContainerV5
          */
         private long _nextTtlTimeout = Long.MAX_VALUE;
 
-        public PoolRequestHandler(PnfsId pnfsId, String canonicalName,
+        public PoolRequestHandler(PnfsId pnfsId,
+                                  String poolGroup,
+                                  String canonicalName,
                                   Collection<RequestState> allowedStates)
         {
 	    _pnfsId  = pnfsId ;
+	    _poolGroup = poolGroup;
 	    _name    = canonicalName ;
 	    _allowedStates = allowedStates ;
 	}
@@ -1986,7 +1997,7 @@ public class RequestContainerV5
         {
             try {
                 Partition.P2pPair pools =
-                    _poolSelector.selectPool2Pool(overwriteCost);
+                    _poolSelector.selectPool2Pool(_poolGroup, overwriteCost);
 
                 _p2pSourcePool = pools.source;
                 _p2pDestinationPool = pools.destination;
