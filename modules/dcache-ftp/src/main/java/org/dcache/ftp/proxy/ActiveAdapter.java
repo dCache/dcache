@@ -251,24 +251,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         return _error != null;
     }
 
-    @Override
-    public void setDirClientToPool() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setDirPoolToClient() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setModeE(boolean modeE) {
-        // TODO Auto-generated method stub
-
-    }
-
     /*
      * (non-Javadoc)
      *
@@ -277,16 +259,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     @Override
     public boolean isAlive() {
         return _t.isAlive();
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see diskCacheV111.util.ProxyAdapter#join()
-     */
-    @Override
-    public void join() throws InterruptedException {
-        _t.join();
     }
 
     /*

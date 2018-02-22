@@ -462,13 +462,9 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         _maxBlockSize = size;
     }
 
-    /* (non-Javadoc)
-     * @see diskCacheV111.util.ProxyAdapter#setModeE(boolean)
-     */
-    @Override
-    public synchronized void setModeE(boolean modeE)
+    public synchronized void setMode(TransferMode mode)
     {
-        _modeE = modeE;
+        _modeE = mode == TransferMode.MODE_E;
     }
 
     @Override
@@ -477,27 +473,21 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         return _poolConnectionHandler.getLocalAddress();
     }
 
-    /* (non-Javadoc)
-     * @see diskCacheV111.util.ProxyAdapter#setDirClientToPool()
-     */
     @Override
-    public void setDirClientToPool()
+    public void setDataDirection(Direction dir)
     {
-        _clientToPool = true;
-        _inbound = _clientConnectionHandler;
-        _outbound = _poolConnectionHandler;
+        _clientToPool = dir == Direction.UPLOAD;
 
-    }
-
-    /* (non-Javadoc)
-     * @see diskCacheV111.util.ProxyAdapter#setDirPoolToClient()
-     */
-    @Override
-    public void setDirPoolToClient()
-    {
-        _clientToPool = false;
-        _inbound = _poolConnectionHandler;
-        _outbound = _clientConnectionHandler;
+        switch (dir) {
+        case UPLOAD:
+            _inbound = _clientConnectionHandler;
+            _outbound = _poolConnectionHandler;
+            break;
+        case DOWNLOAD:
+            _inbound = _poolConnectionHandler;
+            _outbound = _clientConnectionHandler;
+            break;
+        }
     }
 
     /**
@@ -651,14 +641,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     @Override
     public boolean isAlive() {
         return _thread.isAlive();
-    }
-
-    /* (non-Javadoc)
-     * @see diskCacheV111.util.ProxyAdapter#join()
-     */
-    @Override
-    public void join() throws InterruptedException {
-        _thread.join();
     }
 
     /* (non-Javadoc)

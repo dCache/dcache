@@ -198,6 +198,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.ftp.proxy.ActiveAdapter;
 import org.dcache.ftp.proxy.PassiveConnectionHandler;
 import org.dcache.ftp.proxy.ProxyAdapter;
+import org.dcache.ftp.proxy.ProxyAdapter.Direction;
+import org.dcache.ftp.proxy.ProxyAdapter.TransferMode;
 import org.dcache.ftp.proxy.SocketAdapter;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
@@ -1023,12 +1025,8 @@ public abstract class AbstractFtpDoorV1
 
             if (_adapter != null) {
                 _adapter.setMaxBlockSize(_settings.getMaxBlockSize());
-                _adapter.setModeE(_xferMode.equals("E"));
-                if (isWrite()) {
-                    _adapter.setDirClientToPool();
-                } else {
-                    _adapter.setDirPoolToClient();
-                }
+                _adapter.setMode(_xferMode.equals("E") ? TransferMode.MODE_E : TransferMode.MODE_S);
+                _adapter.setDataDirection(isWrite() ? Direction.UPLOAD : Direction.DOWNLOAD);
             }
         }
 
