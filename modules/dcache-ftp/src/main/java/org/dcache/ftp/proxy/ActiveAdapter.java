@@ -84,6 +84,21 @@ import java.util.LinkedList;
 
 import static org.dcache.util.ByteUnit.KiB;
 
+/**
+ * The ActiveAdapter relays data by accepting TCP connections and establishing
+ * a corresponding TCP connection to the specified endpoint.  The adapter opens
+ * a server socket that listens for incoming connections.  When a connection is
+ * established, a corresponding connection to the target endpoint is established.
+ * <p>
+ * Once established, any data received from either connection is relayed to the
+ * corresponding connection.  This data is not parsed in any way and can contain
+ * arbitrary information.
+ * <p>
+ * When a remote party (on either side of the adapter) half-closes their
+ * connection (i.e., the adapter sees the connection's input is now closed), it
+ * will half-close the corresponding channel's output.  Therefore, when both
+ * remote parties close their connection, both connections are completely closed.
+ */
 public class ActiveAdapter implements Runnable, ProxyAdapter
 {
     private static final Logger _log =

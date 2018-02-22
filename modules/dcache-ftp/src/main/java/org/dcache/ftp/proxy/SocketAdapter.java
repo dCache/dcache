@@ -83,14 +83,27 @@ import java.util.List;
 import static org.dcache.util.ByteUnit.KiB;
 
 /**
- * Data channel proxy for FTP door. The proxy will run at the GridFTP
- * door and relay data between the client and the pool. Mode S and
- * mode E are supported. Mode E is only supported when data flows from
- * the client to the pool.
- *
- * The class is also used to establish data channels for transfering
- * directory listings. This use should be reconsidered, at it is
- * unrelated to the proxy functionality.
+ * The SocketAdapter relays data by listening on two server sockets.  The
+ * behaviour is perhaps easiest to understand consider two roles: the data
+ * sender and data recipient.  For a upload transfer, the data sender is the
+ * client and the data receiver is the pool.  For a download transfer, these
+ * roles are reversed.
+ * <p>
+ * Independent of whether the transfer is an upload or download, or whether
+ * the data protocol is MODE_S or MODE_E, there is only a single TCP connection
+ * from the door to the data recipient.  Once this single data recipient
+ * connection is established, the adapter accepts (potentially multiple)
+ * incoming data sender connections.
+ * <p>
+ * If the client connection is using MODE_S then the data sender establishes
+ * only a single TCP connection.  The connection to the pool also uses MODE_S.
+ * Data is simply read from the data sender and written to the data receiver.
+ * <p>
+ * If the client connection is using MODE_E then the data sender must be client
+ * (i.e., the transfer is an upload).  The connection to the pool also uses
+ * MODE_E.  The client may open multiple TCP connections; therefore, care is
+ * taken to ensure complete blocks are sent when multiplexing the single pool
+ * connection.
  */
 public class SocketAdapter implements Runnable, ProxyAdapter
 {
