@@ -1234,7 +1234,7 @@ public abstract class AbstractFtpDoorV1
                     LOGGER.info("Waiting for adapter to finish.");
                     adapter.join(300000); // 5 minutes
                     checkFTPCommand(!adapter.isAlive(), 451, "FTP proxy did not shut down");
-                    checkFTPCommand(!_adapter.hasError(), 451, "FTP proxy failed: %s", _adapter.getError());
+                    checkFTPCommand(!adapter.hasError(), 451, "FTP proxy failed: %s", adapter.getError());
                     LOGGER.debug("Closing adapter");
                     adapter.close();
                 }
