@@ -639,7 +639,8 @@ public class FileOperationHandler implements CellMessageSender {
         }
 
         if (shouldEvictALocation(operation, readableLocations)) {
-            LOGGER.error("handleVerification, location should be evicted {}", readableLocations);
+            LOGGER.trace("handleVerification, location should be evicted {}",
+                         readableLocations);
             return Type.REMOVE;
         }
 
