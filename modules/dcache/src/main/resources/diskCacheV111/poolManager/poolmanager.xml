@@ -12,7 +12,7 @@
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
     <description>Undeliverable message logger</description>
-    <property name="excludedDestinations" value="${poolmanager.destination.pool-status},${poolmanager.pool-monitor.topic}"/>
+    <property name="excludedDestinations" value="${poolmanager.destination.pool-status},${poolmanager.pool-monitor.topic},${poolmanager.restore-requests.topic}"/>
     <property name="excludedMessages" value="org.dcache.poolmanager.PoolMgrGetUpdatedHandler"/>
   </bean>
 
