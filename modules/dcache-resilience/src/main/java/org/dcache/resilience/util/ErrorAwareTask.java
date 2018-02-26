@@ -59,55 +59,43 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import java.util.concurrent.Future;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
-import org.dcache.pool.classic.Cancellable;
-import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PoolOperation.SelectionAction;
-import org.dcache.resilience.db.ScanSummary;
-import org.dcache.resilience.handlers.PoolOperationHandler;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
+import diskCacheV111.util.CacheException;
+import org.dcache.util.FireAndForgetTask;
+
+import static java.util.Objects.requireNonNull;
 
 /**
- * <p>Simple wrapper for calling the {@link PoolOperationHandler) method.
- *      The task is cancellable through its {@link Future}.</p>
+ * <p>Base class which provides Fire-and-Forget wrapper to
+ *    catch and handle properly RuntimeExceptions.</p>
  */
-public final class PoolScanTask extends ErrorAwareTask implements Cancellable {
-    private final PoolOperationHandler handler;
-    private final ScanSummary scan;
-    private Future future;
+public abstract class ErrorAwareTask implements Callable<Void> {
 
-    public PoolScanTask(String pool,
-                        MessageType type,
-                        SelectionAction action,
-                        Integer group,
-                        Integer storageUnit,
-                        boolean forced,
-                        PoolOperationHandler handler) {
-        scan = new ScanSummary(pool, type, action, group, storageUnit, forced);
-        this.handler = handler;
+    private Consumer<CacheException> errorHandler = (e) -> {};
+
+    public void setErrorHandler(Consumer<CacheException> handler) {
+        errorHandler = requireNonNull(handler);
     }
 
-    @Override
+    /*
+     * The NOP implementation is provided so
+     * as to remove the exception from the signature.
+     */
     public Void call() {
-        if (!scan.isCancelled()) {
-            MessageGuard.setResilienceSession();
-            handler.handlePoolScan(scan);
-        }
-
         return null;
     }
 
-    @Override
-    public synchronized void cancel() {
-        scan.setCancelled(true);
-        if (future != null) {
-            future.cancel(true);
-        }
-    }
-
-    public void submit() {
-        future = handler.getScanService()
-                        .submit(createFireAndForgetTask());
+    protected FireAndForgetTask createFireAndForgetTask() {
+        return new FireAndForgetTask(() -> {
+            try {
+                call();
+            } catch (RuntimeException e) {
+                errorHandler.accept(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                                       "Bug detected: " + e.toString(), e));
+                throw e;
+            }
+        });
     }
 }

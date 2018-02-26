@@ -59,21 +59,20 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
-
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.resilience.handlers.FileOperationHandler;
 
 /**
  * <p>Simple wrapper for calling the {@link FileOperationHandler ) method.</p>
  */
-public final class BrokenFileTask implements Callable<Void> {
+public final class BrokenFileTask extends ErrorAwareTask {
     private final PnfsId               pnfsId;
     private final String               pool;
     private final FileOperationHandler handler;
 
-    public BrokenFileTask(PnfsId pnfsId, String pool, FileOperationHandler handler) {
+    public BrokenFileTask(PnfsId pnfsId, String pool,
+                          FileOperationHandler handler) {
         this.pnfsId = pnfsId;
         this.pool = pool;
         this.handler = handler;
@@ -87,6 +86,6 @@ public final class BrokenFileTask implements Callable<Void> {
     }
 
     public void submit() {
-        handler.getTaskService().submit(new FutureTask<>(this));
+        handler.getTaskService().submit(createFireAndForgetTask());
     }
 }
