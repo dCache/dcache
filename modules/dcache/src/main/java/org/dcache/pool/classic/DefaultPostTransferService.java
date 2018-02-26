@@ -95,7 +95,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         kafkaTemplate.setProducerListener(new ProducerListener() {
             @Override
             public void onSuccess(String topic, Integer partition, Object key, Object value, RecordMetadata recordMetadata) {
-                LOGGER.info("Sent message.");
+                //forced by interface
             }
 
             @Override

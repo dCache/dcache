@@ -54,7 +54,7 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         o.put("pnfsid", data.getPnfsId());
         o.put("billingPath", data.getBillingPath());
         o.put("fileSize", data.getFileSize());
-        o.put("storageInfo", data.getStorageInfo());
+        o.put("storageInfo", data.getStorageInfo().getStorageClass() + "@" + data.getStorageInfo().getHsm());
         o.put("transferSize", data.getDataTransferred());
         o.put("transferTime", data.getConnectionTime());
         o.put("isWrite", data.isFileCreated() ? "write" : "read");
