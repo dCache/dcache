@@ -986,6 +986,7 @@ public class PoolOperationMap extends RunnableModule {
         operation.state = State.RUNNING;
         operation.lastUpdate = System.currentTimeMillis();
         operation.lastStatus = operation.currStatus;
+        operation.task.setErrorHandler(e -> update(pool, 0, e));
         operation.resetChildren();
         running.put(pool, operation);
         LOGGER.trace("Submitting pool scan task for {}.", pool);
