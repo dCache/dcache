@@ -62,12 +62,11 @@ package org.dcache.resilience.util;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.Task;
@@ -90,7 +89,7 @@ import static diskCacheV111.util.AccessLatency.ONLINE;
  *      from the pool is relayed by this task object to the internal migration
  *      task object.</p>
  */
-public final class ResilientFileTask implements Cancellable, Callable<Void> {
+public final class ResilientFileTask extends ErrorAwareTask implements Cancellable {
     private static final String STAT_FORMAT
                     = "%-28s | %25s %25s | %25s %25s %25s | %9s %9s %9s | %15s\n";
 
@@ -183,9 +182,9 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
                 }
 
                 startSubTask = System.currentTimeMillis();
-                this.handler.getRemoveService()
-                            .schedule(new FireAndForgetTask(() -> runRemove(attributes)),
-                                      0, TimeUnit.MILLISECONDS);
+                handler.getRemoveService()
+                       .schedule(new FireAndForgetTask(() -> runRemove(attributes)),
+                                 0, TimeUnit.MILLISECONDS);
                 break;
         }
 
@@ -265,8 +264,8 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
 
         migrationTask.messageArrived(message);
 
-        inCopy = System.currentTimeMillis() - startSubTask;
         endTime = System.currentTimeMillis();
+        inCopy = endTime - startSubTask;
     }
 
     public void submit() {
@@ -278,15 +277,14 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
             unit = TimeUnit.SECONDS;
         }
 
-        future = this.handler.getTaskService()
-                             .schedule(new FutureTask<>(this),
-                                       delay, unit);
+        future = handler.getTaskService()
+                        .schedule(createFireAndForgetTask(), delay, unit);
     }
 
     void runRemove(FileAttributes attributes) {
         MessageGuard.setResilienceSession();
         handler.handleRemoveOneCopy(attributes);
-        inRemove = System.currentTimeMillis() - startSubTask;
         endTime = System.currentTimeMillis();
+        inRemove = endTime - startSubTask;
     }
 }
