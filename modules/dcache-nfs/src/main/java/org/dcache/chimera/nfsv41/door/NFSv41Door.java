@@ -5,12 +5,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.ProducerListener;
 
 import javax.security.auth.Subject;
 
@@ -144,8 +145,6 @@ import java.util.stream.Stream;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.dcache.auth.attributes.Restrictions;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.ProducerListener;
 
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
@@ -332,7 +331,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         kafkaTemplate.setProducerListener(new ProducerListener() {
             @Override
             public void onSuccess(String topic, Integer partition, Object key, Object value, RecordMetadata recordMetadata) {
-                _log.info("Sent message.");
+                //forced by interface
             }
 
             @Override
