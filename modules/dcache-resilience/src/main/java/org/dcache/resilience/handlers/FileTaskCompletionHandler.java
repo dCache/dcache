@@ -62,7 +62,7 @@ package org.dcache.resilience.handlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
+import java.util.Calendar;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -75,9 +75,6 @@ import org.dcache.pool.migration.TaskCompletionHandler;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.ExceptionMessage;
-
-import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 
 /**
  * <p>Implements the handling of pnfsid task termination.
@@ -126,9 +123,9 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
                                 maxRetries), e);
         }
 
-        Instant ref =  Instant.now()
-                              .with(SECOND_OF_MINUTE, 0)
-                              .with(MINUTE_OF_HOUR, 0);
+        Calendar ref = Calendar.getInstance();
+        ref.set(Calendar.MINUTE, 0);
+        ref.set(Calendar.SECOND, 0);
 
         /*
          *  Alarm notification is keyed to the storage group, so as to avoid
@@ -139,7 +136,8 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
          */
         LOGGER.warn(AlarmMarkerFactory.getMarker(
                                         PredefinedAlarm.FAILED_REPLICATION,
-                                        storageUnit, "ABORT_REPLICATION-" + ref),
+                                        storageUnit, "ABORT_REPLICATION-"
+                                                        + ref.getTimeInMillis()),
                         ABORT_REPLICATION_ALARM_MESSAGE, storageUnit);
 
         /*
