@@ -62,12 +62,10 @@ package org.dcache.resilience.handlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.migration.Task;
@@ -76,21 +74,13 @@ import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.ExceptionMessage;
 
-import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
-
 /**
  * <p>Implements the handling of pnfsid task termination.
  *      Also implements the migration task termination logic.</p>
  */
 public final class FileTaskCompletionHandler implements TaskCompletionHandler {
     static final String ABORT_REPLICATION_LOG_MESSAGE
-                    = "Storage unit {}: aborted replication for {}; pools tried: {}; {}";
-
-    static final String ABORT_REPLICATION_ALARM_MESSAGE
-                    = "There are files in storage unit {} for which replication "
-                    + "has been aborted; please consult the resilience-specific "
-                    + "log or 'history errors' for details.";
+                    = "Aborting replication for {}; pools tried: {}; {}";
 
     static final String VERIFY_FAILURE_MESSAGE
                     = "Processing for %s failed during verify. %s%s";
@@ -105,9 +95,6 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
     private static final Logger LOGGER
                     = LoggerFactory.getLogger(FileTaskCompletionHandler.class);
 
-    private static final Logger ABORTED_LOGGER
-                    = LoggerFactory.getLogger("org.dcache.resilience-log");
-
     private FileOperationMap map;
 
     public void setMap(FileOperationMap map) {
@@ -115,7 +102,6 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
     }
 
     public void taskAborted(PnfsId pnfsId,
-                            String storageUnit,
                             Set<String> triedSources,
                             int retried,
                             int maxRetries,
@@ -126,27 +112,11 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
                                 maxRetries), e);
         }
 
-        Instant ref =  Instant.now()
-                              .with(SECOND_OF_MINUTE, 0)
-                              .with(MINUTE_OF_HOUR, 0);
-
-        /*
-         *  Alarm notification is keyed to the storage group, so as to avoid
-         *  spamming the server or email forwarding. The alarm key changes every hour.
-         *  This guarantees that a new alarm is registered each hour.
-         *  Send this at warn level, so it is possible to throttle repeated
-         *  messages in the domain log.
-         */
-        LOGGER.warn(AlarmMarkerFactory.getMarker(
+        LOGGER.error(AlarmMarkerFactory.getMarker(
                                         PredefinedAlarm.FAILED_REPLICATION,
-                                        storageUnit, "ABORT_REPLICATION-" + ref),
-                        ABORT_REPLICATION_ALARM_MESSAGE, storageUnit);
-
-        /*
-         *  Full info on the file is logged to the ".resilience" log.
-         */
-        ABORTED_LOGGER.error(ABORT_REPLICATION_LOG_MESSAGE, storageUnit, pnfsId,
-                     triedSources, new ExceptionMessage(e));
+                                        pnfsId.toString()),
+                        ABORT_REPLICATION_LOG_MESSAGE, pnfsId,
+                        triedSources, new ExceptionMessage(e));
     }
 
     @Override
