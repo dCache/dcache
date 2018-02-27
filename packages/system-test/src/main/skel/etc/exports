@@ -1,1 +1,1 @@
-/ *(rw) localhost(rw,no_root_squash)
+/ *(rw,lt=fsv4_1_files) localhost(rw,lt=fsv4_1_files,no_root_squash)
