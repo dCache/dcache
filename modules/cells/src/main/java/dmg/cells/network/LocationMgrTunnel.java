@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2001 - 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2001 - 2018 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -173,15 +173,8 @@ public class LocationMgrTunnel
                 throw new IOException("Remote dCache domain disconnected during handshake.");
             }
             short release = _remoteDomainInfo.getRelease();
-            if (release < Releases.RELEASE_2_16) {
+            if (release < Releases.RELEASE_3_0) {
                 throw new IOException("Connection from incompatible domain " + _remoteDomainInfo + " rejected.");
-            } else if (release < Releases.RELEASE_3_0) {
-                /* Releases before dCache 3.0 use Java Serialization for CellMessage.
-                 * This branch can be removed in 4.0.
-                 */
-                _log.debug("Using Java serialization for message envelope.");
-                _input = new JavaObjectSource(in);
-                _output = new JavaObjectSink(out);
             } else {
                 _log.debug("Using raw serialization for message envelope.");
 
@@ -356,48 +349,6 @@ public class LocationMgrTunnel
     private interface ObjectSink
     {
         void writeObject(CellMessage message) throws IOException;
-    }
-
-    private static class JavaObjectSource implements ObjectSource
-    {
-        private ObjectInputStream in;
-
-        private JavaObjectSource(ObjectInputStream in)
-        {
-            this.in = in;
-        }
-
-        @Override
-        public CellMessage readObject() throws IOException, ClassNotFoundException
-        {
-            return (CellMessage) in.readObject();
-        }
-    }
-
-    private static class JavaObjectSink implements ObjectSink
-    {
-        private ObjectOutputStream out;
-
-        private JavaObjectSink(ObjectOutputStream out)
-        {
-            this.out = out;
-        }
-
-        @Override
-        public void writeObject(CellMessage message) throws IOException
-        {
-            /* An object output stream will only serialize an object once
-             * and likewise the object input stream will recreate the
-             * object DAG at the other end. To avoid that the receiver
-             * needs to unnecessarily keep references to previous objects,
-             * we reset the stream. Notice that resetting the stream sends
-             * a reset message. Hence we reset the stream before flushing
-             * it.
-             */
-            out.writeObject(message);
-            out.reset();
-            out.flush();
-        }
     }
 
     private static class RawObjectSink implements ObjectSink
