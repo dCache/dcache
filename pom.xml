@@ -534,9 +534,20 @@
                 <version>1.6.0</version>
             </dependency>
             <dependency>
+                <!-- Newer versions have two problems. A performance regression causes it to block on non-responding network
+                     interfaces (https://liquibase.jira.com/browse/CORE-2549). There is also an as of yet unreported regression
+                     affecting how quoting rules are applied during rollback. -->
+		<!-- A separate issue was found with liquibase 3.5.4
+		     where the 'chimera' shell's writetag command
+		     failed on PostgreSQL 10.2 with the error:
+
+		         ERROR: column "ivalue" is of type oid but
+		         expression is of type bytea
+			 Hint: You will need to rewrite or cast the expression.
+		     -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>
-                <version>3.5.4</version>
+                <version>3.3.2</version>
             </dependency>
             <dependency>
                 <groupId>com.mattbertolini</groupId>
