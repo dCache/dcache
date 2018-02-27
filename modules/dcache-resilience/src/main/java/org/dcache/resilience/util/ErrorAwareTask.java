@@ -59,33 +59,43 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import diskCacheV111.util.PnfsId;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
-import org.dcache.resilience.handlers.FileOperationHandler;
+import diskCacheV111.util.CacheException;
+import org.dcache.util.FireAndForgetTask;
+
+import static java.util.Objects.requireNonNull;
 
 /**
- * <p>Simple wrapper for calling the {@link FileOperationHandler ) method.</p>
+ * <p>Base class which provides Fire-and-Forget wrapper to
+ *    catch and handle properly RuntimeExceptions.</p>
  */
-public final class BrokenFileTask extends ErrorAwareTask {
-    private final PnfsId               pnfsId;
-    private final String               pool;
-    private final FileOperationHandler handler;
+public abstract class ErrorAwareTask implements Callable<Void> {
 
-    public BrokenFileTask(PnfsId pnfsId, String pool,
-                          FileOperationHandler handler) {
-        this.pnfsId = pnfsId;
-        this.pool = pool;
-        this.handler = handler;
+    private Consumer<CacheException> errorHandler = (e) -> {};
+
+    public void setErrorHandler(Consumer<CacheException> handler) {
+        errorHandler = requireNonNull(handler);
     }
 
-    @Override
+    /*
+     * The NOP implementation is provided so
+     * as to remove the exception from the signature.
+     */
     public Void call() {
-        MessageGuard.setResilienceSession();
-        handler.handleBrokenFileLocation(pnfsId, pool);
         return null;
     }
 
-    public void submit() {
-        handler.getTaskService().submit(createFireAndForgetTask());
+    protected FireAndForgetTask createFireAndForgetTask() {
+        return new FireAndForgetTask(() -> {
+            try {
+                call();
+            } catch (RuntimeException e) {
+                errorHandler.accept(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                                       "Bug detected: " + e.toString(), e));
+                throw e;
+            }
+        });
     }
 }
