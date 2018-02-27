@@ -391,6 +391,7 @@ public final class FileOperation {
 
     public synchronized void submit() {
         if (task != null) {
+            task.setErrorHandler(this::updateOperation);
             task.submit();
         }
     }
