@@ -17,6 +17,9 @@ check -strong frontend.service.pnfsmanager.timeout.unit
 check -strong frontend.service.poolmanager
 check -strong frontend.service.poolmanager.timeout
 check -strong frontend.service.poolmanager.timeout.unit
+check -strong frontend.service.spacemanager
+check -strong frontend.service.spacemanager.timeout
+check -strong frontend.service.spacemanager.timeout.unit
 check -strong frontend.service.billing
 check -strong frontend.service.billing.timeout
 check -strong frontend.service.billing.timeout.unit
@@ -51,6 +54,7 @@ check -strong frontend.authn.ocsp-mode
 check -strong frontend.authz.anonymous-operations
 check -strong frontend.authz.readonly
 check -strong frontend.enable.proxy-protocol
+check -strong frontend.enable.space-reservation
 
 check -strong frontend.limits.acceptors
 check -strong frontend.limits.idle-time

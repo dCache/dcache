@@ -64,6 +64,13 @@
     <property name="timeoutUnit" value="${frontend.service.pool.timeout.unit}"/>
   </bean>
 
+  <bean id="spacemanager-stub" class="org.dcache.cells.CellStub">
+    <description>Spacemanager communication stub</description>
+    <property name="destination" value="${frontend.service.spacemanager}"/>
+    <property name="timeout" value="${frontend.service.spacemanager.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.spacemanager.timeout.unit}"/>
+  </bean>
+
   <bean id="login-stub" class="org.dcache.cells.CellStub">
       <description>Login service communication stub</description>
       <property name="destination" value="${frontend.service.gplazma}"/>
@@ -504,6 +511,9 @@
     <bean class="org.dcache.restful.resources.selection.UnitResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.PartitionResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.PoolPreferenceResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.space.SpaceManagerResources" scope="request">
+        <property name="spaceReservationEnabled" value="${frontend.enable.space-reservation}"/>
+    </bean>
     <bean class="org.dcache.restful.resources.transfers.TransferResources" scope="request"/>
 
     <beans profile="macaroons-true">

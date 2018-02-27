@@ -22,6 +22,7 @@ import org.dcache.restful.resources.selection.LinkResources;
 import org.dcache.restful.resources.selection.PartitionResources;
 import org.dcache.restful.resources.selection.PoolPreferenceResources;
 import org.dcache.restful.resources.selection.UnitResources;
+import org.dcache.restful.resources.space.SpaceManagerResources;
 import org.dcache.restful.resources.transfers.TransferResources;
 
 public class DcacheRestApplication extends ResourceConfig
@@ -45,6 +46,7 @@ public class DcacheRestApplication extends ResourceConfig
         register(UnitResources.class);
         register(PartitionResources.class);
         register(PoolPreferenceResources.class);
+        register(SpaceManagerResources.class);
         register(ApiListingResource.class);
         register(SwaggerSerializers.class);
 
