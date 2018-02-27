@@ -63,7 +63,6 @@ import java.util.concurrent.Future;
 
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
