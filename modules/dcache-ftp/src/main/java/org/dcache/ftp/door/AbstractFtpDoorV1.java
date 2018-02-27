@@ -1198,12 +1198,15 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 if (adapter != null) {
-                    LOGGER.info("Waiting for adapter to finish.");
-                    adapter.join(300000); // 5 minutes
-                    checkFTPCommand(!adapter.isAlive(), 451, "FTP proxy did not shut down");
-                    checkFTPCommand(!adapter.hasError(), 451, "FTP proxy failed: %s", adapter.getError());
-                    LOGGER.debug("Closing adapter");
-                    adapter.close();
+                    try {
+                        LOGGER.info("Waiting for adapter to finish.");
+                        adapter.join(300000); // 5 minutes
+                        checkFTPCommand(!adapter.isAlive(), 451, "FTP proxy did not shut down");
+                        checkFTPCommand(!adapter.hasError(), 451, "FTP proxy failed: %s", adapter.getError());
+                    } finally {
+                        LOGGER.debug("Closing adapter");
+                        adapter.close();
+                    }
                 }
 
                 synchronized (this) {
