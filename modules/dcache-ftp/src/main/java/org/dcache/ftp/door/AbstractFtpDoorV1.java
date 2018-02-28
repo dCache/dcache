@@ -1121,9 +1121,6 @@ public abstract class AbstractFtpDoorV1
             return protocolInfo;
         }
 
-        public void createTransactionLog()
-        { LOGGER.info("FTPTransactionLog: Function createTransactionLog no longer used.");
-        }
 
         public void abort(int replyCode, String msg)
         {
@@ -3330,7 +3327,6 @@ public abstract class AbstractFtpDoorV1
                 transfer.redirect(null);
             }
             transfer.readNameSpaceEntry(false);
-            transfer.createTransactionLog();
             transfer.checkAndDeriveOffsetAndSize();
 
             /* Transfer the file. As there is a delay between the
@@ -3443,7 +3439,6 @@ public abstract class AbstractFtpDoorV1
                 transfer.redirect(null);
             }
             transfer.createNameSpaceEntry();
-            transfer.createTransactionLog();
             if (_checkSum != null) {
                 transfer.setChecksum(_checkSum);
             }
