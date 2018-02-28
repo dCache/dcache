@@ -18,7 +18,6 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -81,7 +80,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     private String pool;
     private CellAddressCore poolAddress;
     private Assumption assumption;
-    private FTPTransactionLog tlog;
     private FileAttributes fileAttributes;
     public static final int INITIAL_STATE = 0;
     public static final int WAITING_FOR_PNFS_INFO_STATE = 1;
@@ -170,20 +168,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         } catch (Exception e) {
         }
 
-        try {
-            if (manager.getLogRootName() != null) {
-                tlog = new FTPTransactionLog(manager.getLogRootName());
-                String user_info =
-                        Subjects.getDn(transferRequest.getSubject())
-                        + "(" + info.getUid() + "." + info.getGid() + ")";
-                String rw = store ? "write" : "read";
-                InetAddress remoteaddr =
-                        InetAddress.getByName(new URI(transferRequest.getRemoteURL()).getHost());
-                tlog.begin(user_info, "remotegsiftp", rw, transferRequest.getPnfsPath(), remoteaddr);
-            }
-        } catch (Exception e) {
-            log.error("starting tlog failed :", e);
-        }
         manager.addActiveTransfer(id, this);
         setState(INITIAL_STATE);
         permissionHandler =
@@ -366,9 +350,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void storageInfoArrived(PnfsGetFileAttributes msg)
     {
-        if (!store && tlog != null) {
-            tlog.middle(msg.getFileAttributes().getSize());
-        }
         //
         // Added by litvinse@fnal.gov
         //
@@ -493,10 +474,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     doorMessage.getErrorObject());
             return;
         }
-
-        if (store && tlog != null) {
-            tlog.middle(doorMessage.getFileAttributes().getSize());
-        }
         sendSuccessReply();
     }
 
@@ -528,12 +505,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             }
         }
 
-
-        if (tlog != null) {
-            tlog.error("getFromRemoteGsiftpUrl failed: state = " + state
-                               + " replyCode=" + replyCode + " errorObject="
-                               + errorObject);
-        }
         if (info.getTimeQueued() < 0) {
             info.setTimeQueued(info.getTimeQueued() + System
                     .currentTimeMillis());
@@ -583,11 +554,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     errorObject, toString(true));
         }
 
-        if (tlog != null) {
-            tlog.error("getFromRemoteGsiftpUrl failed: state = " + state
-                    + " replyCode=" + replyCode + " errorObject="
-                    + errorObject);
-        }
         if (info.getTimeQueued() < 0) {
             info.setTimeQueued(info.getTimeQueued() + System
                     .currentTimeMillis());
@@ -646,9 +612,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             }
         }
         manager.finishTransfer();
-        if (tlog != null) {
-            tlog.success();
-        }
         try {
             TransferCompleteMessage errorReply = new TransferCompleteMessage(transferRequest);
             manager.sendMessage(new CellMessage(requestor, errorReply));
