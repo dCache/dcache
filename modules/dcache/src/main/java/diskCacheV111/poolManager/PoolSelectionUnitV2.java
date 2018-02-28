@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -2749,8 +2750,16 @@ public class PoolSelectionUnitV2
     @AffectsSetup
     public String ac_psu_remove_pool_$_1(Args args)
     {
-        removePool(args.argv(0));
-        return "";
+	if(Glob.isGlob(args.argv(0)))
+	{
+		Glob glob = new Glob(args.argv(0));	
+		List<String> names = getPools(glob.toPattern()).stream().map((Pool pool) -> pool.getName()).collect(Collectors.toList());
+		for(String name : names)
+			removePool(name);
+	}
+	else
+		removePool(args.argv(0));
+	return "";
     }
 
     public static final String hh_psu_remove_pgroup = "<pool group>";
