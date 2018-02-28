@@ -137,7 +137,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.doors.LineBasedInterpreter;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.CacheException;
@@ -936,7 +935,6 @@ public abstract class AbstractFtpDoorV1
         private long _offset;
         private long _size;
 
-        protected FTPTransactionLog _tLog;
 
         /**
          * Socket adapter used for the transfer.
@@ -1124,24 +1122,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         public void createTransactionLog()
-        {
-            String tlogRoot = _settings.getTlogRoot();
-            if (tlogRoot != null) {
-                LOGGER.info("Door will log ftp transactions to {}", tlogRoot);
-                _tLog = new FTPTransactionLog(tlogRoot);
-
-                if (_subject != null) {
-                    try {
-                        String user = AbstractFtpDoorV1.this.getUserName() + "(" +
-                                Subjects.getUid(_subject) + "." +
-                                Subjects.getPrimaryGid(_subject) + ")";
-                        _tLog.begin(user, _tlogName, isWrite() ? "write" : "read",
-                                _path.toString(), _remoteSocketAddress.getAddress());
-                    } catch (NoSuchElementException | IllegalArgumentException e) {
-                        LOGGER.error("Could not start tLog: {}", e.getMessage());
-                    }
-                }
-            }
+        { LOGGER.info("FTPTransactionLog: Function createTransactionLog no longer used.");
         }
 
         public void abort(int replyCode, String msg)
@@ -1250,11 +1231,6 @@ public abstract class AbstractFtpDoorV1
                     if (_perfMarkerTask != null) {
                         _perfMarkerTask.stop((GFtpProtocolInfo) getProtocolInfo());
                     }
-                    if (_tLog != null) {
-                        _tLog.middle(getFileAttributes().getSize());
-                        _tLog.success();
-                        _tLog = null;
-                    }
                 }
 
                 notifyBilling(0, "");
@@ -1325,10 +1301,6 @@ public abstract class AbstractFtpDoorV1
 
             String msg = String.valueOf(replyCode) + " " + replyMsg;
             notifyBilling(replyCode, replyMsg);
-            if (_tLog != null) {
-                _tLog.error(msg);
-                _tLog = null;
-            }
             LOGGER.error("Transfer error: {}", msg);
             if (!(t instanceof FTPCommandException)) {
                 LOGGER.debug(t.toString(), t);
