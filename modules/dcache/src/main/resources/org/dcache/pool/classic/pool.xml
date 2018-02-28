@@ -5,6 +5,7 @@
        xmlns:task="http://www.springframework.org/schema/task"
        xmlns:int="http://www.springframework.org/schema/integration"
        xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context
@@ -14,7 +15,8 @@
            http://www.springframework.org/schema/integration/kafka
            http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd
            http://www.springframework.org/schema/integration
-           http://www.springframework.org/schema/integration/spring-integration.xsd">
+           http://www.springframework.org/schema/integration/spring-integration.xsd
+           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
   <context:property-placeholder/>
   <context:annotation-config/>
@@ -376,26 +378,30 @@
       </property>
   </bean>
 
-  <bean id="http-transfer-service" class="org.dcache.http.HttpTransferService"
+  <bean id="http-transfer-service-parent" class="org.dcache.http.HttpTransferService"
           depends-on="rep">
-      <description>HTTP transfer service</description>
-      <property name="postTransferService" ref="post-transfer-service"/>
-      <property name="checksumModule" ref="csm"/>
-      <property name="threads" value="${pool.mover.http.threads}"/>
-      <property name="chunkSize" value="${pool.mover.http.chunk-size}"/>
-      <property name="clientIdleTimeout" value="${pool.mover.http.timeout.idle}"/>
-      <property name="clientIdleTimeoutUnit" value="${pool.mover.http.timeout.idle.unit}"/>
-      <property name="connectTimeout" value="${pool.mover.http.timeout.connect}"/>
-      <property name="connectTimeoutUnit" value="${pool.mover.http.timeout.connect.unit}"/>
-      <property name="doorStub" ref="doorStub"/>
-      <property name="portRange">
-          <bean class="org.dcache.util.NettyPortRange">
-              <constructor-arg value="${pool.mover.http.port.min}"/>
-              <constructor-arg value="${pool.mover.http.port.max}"/>
-          </bean>
-      </property>
-      <property name="customHeaders" ref="custom-headers"/>
-  </bean>
+        <description>HTTP transfer service</description>
+        <property name="postTransferService" ref="post-transfer-service"/>
+        <property name="checksumModule" ref="csm"/>
+        <property name="threads" value="${pool.mover.http.threads}"/>
+        <property name="chunkSize" value="${pool.mover.http.chunk-size}"/>
+        <property name="clientIdleTimeout" value="${pool.mover.http.timeout.idle}"/>
+        <property name="clientIdleTimeoutUnit" value="${pool.mover.http.timeout.idle.unit}"/>
+        <property name="connectTimeout" value="${pool.mover.http.timeout.connect}"/>
+        <property name="connectTimeoutUnit" value="${pool.mover.http.timeout.connect.unit}"/>
+        <property name="doorStub" ref="doorStub"/>
+        <property name="portRange">
+            <bean class="org.dcache.util.NettyPortRange">
+                <constructor-arg value="${pool.mover.http.port.min}"/>
+                <constructor-arg value="${pool.mover.http.port.max}"/>
+            </bean>
+        </property>
+        <property name="customHeaders" ref="custom-headers"/>
+    </bean>
+
+    <bean id="http-transfer-service"  parent="http-transfer-service-parent"/>
+
+
 
   <bean id="remote-http-transfer-service" class="org.dcache.pool.classic.RemoteHttpTransferService"
           depends-on="rep" destroy-method="shutdown">
@@ -441,7 +447,8 @@
        <property name="checksumModule" ref="csm"/>
   </bean>
 
-  <bean id="transfer-services" class="org.dcache.pool.classic.TransferServices">
+
+  <bean id="abstract-transfer-service" abstract="true" class="org.dcache.pool.classic.TransferServices">
       <description>Collection of transfer services</description>
       <property name="defaultFactory" ref="default-transfer-service"/>
       <property name="factories">
@@ -564,4 +571,34 @@
             <property name="defaultTopic" value="billing"/>
         </bean>
     </beans>
+
+    <beans profile="httpsredirect-false">
+        <bean id="transfer-services" parent="abstract-transfer-service">
+            <description>Collection of transfer services</description>
+        </bean>
+    </beans>
+
+    <beans profile="httpsredirect-true">
+        <bean id="transfer-services" parent="abstract-transfer-service">
+            <description>Collection of transfer services with https</description>
+            <property name="factories">
+                <map merge="true">
+                    <entry key="Https-1" value-ref="https-transfer-service"/>
+                </map>
+            </property>
+        </bean>
+
+        <bean id="https-transfer-service" parent="http-transfer-service-parent" class="org.dcache.http.HttpsTransferService">
+            <property name="serverCertificatePath" value="${pool.mover.https.hostcert.cert}"/>
+            <property name="serverKeyPath" value="${pool.mover.https.hostcert.key}"/>
+            <property name="serverCaPath" value="${pool.mover.https.capath}"/>
+            <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
+            <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
+        </bean>
+
+
+    </beans>
+
+
+
 </beans>

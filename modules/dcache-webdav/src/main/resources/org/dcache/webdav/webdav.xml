@@ -218,6 +218,7 @@
         <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
         <property name="redirectOnWriteEnabled" value="${webdav.redirect.on-write}"/>
         <property name="overwriteAllowed" value="${webdav.enable.overwrite}"/>
+        <property name="redirectToHttps" value="${webdav.redirect.allow-https}"/>
         <property name="poolMonitor" ref="pool-monitor"/>
     </bean>
 

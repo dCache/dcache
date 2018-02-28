@@ -123,7 +123,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
         doorStub.notify(new CellPath(httpDoor), httpDoorMessage);
     }
 
-    private URI getUri(HttpProtocolInfo protocolInfo, int port, UUID uuid)
+    protected URI getUri(HttpProtocolInfo protocolInfo, int port, UUID uuid)
             throws SocketException, CacheException, URISyntaxException
     {
         String path = protocolInfo.getPath();
@@ -145,9 +145,11 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
     protected void initChannel(Channel ch) throws Exception
     {
         super.initChannel(ch);
+        addChannelHandlers(ch.pipeline());
+    }
 
-        ChannelPipeline pipeline = ch.pipeline();
-
+    protected void addChannelHandlers(ChannelPipeline pipeline)
+    {
         pipeline.addLast("decoder", new HttpRequestDecoder());
         pipeline.addLast("encoder", new HttpResponseEncoder());
 
@@ -155,10 +157,10 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
             pipeline.addLast("logger", new LoggingHandler());
         }
         pipeline.addLast("idle-state-handler",
-                         new IdleStateHandler(0,
-                                              0,
-                                              clientIdleTimeout,
-                                              clientIdleTimeoutUnit));
+                new IdleStateHandler(0,
+                        0,
+                        clientIdleTimeout,
+                        clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
         pipeline.addLast("keepalive", new KeepAliveHandler());
 

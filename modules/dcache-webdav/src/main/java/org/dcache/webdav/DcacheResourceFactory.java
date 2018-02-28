@@ -153,6 +153,8 @@ public class DcacheResourceFactory
             PoolMonitorV5.getRequiredAttributesForFileLocality());
 
     private static final String PROTOCOL_INFO_NAME = "Http";
+    private static final String PROTOCOL_INFO_SSL_NAME = "Https";
+
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
     private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
     private static final int PROTOCOL_INFO_UNKNOWN_PORT = 0;
@@ -218,6 +220,7 @@ public class DcacheResourceFactory
         new AlwaysFailMissingFileStrategy();
 
     private PoolMonitor _poolMonitor;
+    private boolean _redirectToHttps;
 
     public DcacheResourceFactory()
         throws UnknownHostException
@@ -241,6 +244,11 @@ public class DcacheResourceFactory
     public void setPoolMonitor(PoolMonitor monitor)
     {
         _poolMonitor = monitor;
+    }
+
+    @Required
+    public void setRedirectToHttps(boolean redirectToHttps) {
+        _redirectToHttps = redirectToHttps;
     }
 
     /**
@@ -1092,6 +1100,7 @@ public class DcacheResourceFactory
         ReadTransfer transfer = new ReadTransfer(_pnfs, subject, restriction,
                 path, pnfsid, disposition);
         transfer.setIsChecksumNeeded(isDigestRequested());
+        transfer.setSSL(!isProxyTransfer && _redirectToHttps && ServletRequest.getRequest().isSecure());
         _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.setProxyTransfer(isProxyTransfer);
@@ -1396,6 +1405,7 @@ public class DcacheResourceFactory
         private ChecksumType _wantedChecksum;
         private InetSocketAddress _clientAddressForPool;
         protected HttpProtocolInfo.Disposition _disposition;
+        private boolean _isSSL;
 
         public HttpTransfer(PnfsHandler pnfs, Subject subject,
                 Restriction restriction, FsPath path) throws URISyntaxException
@@ -1412,7 +1422,7 @@ public class DcacheResourceFactory
         {
             HttpProtocolInfo protocolInfo =
                 new HttpProtocolInfo(
-                        PROTOCOL_INFO_NAME,
+                        _isSSL ? PROTOCOL_INFO_SSL_NAME : PROTOCOL_INFO_NAME,
                         PROTOCOL_INFO_MAJOR_VERSION,
                         PROTOCOL_INFO_MINOR_VERSION,
                         address,
@@ -1454,6 +1464,9 @@ public class DcacheResourceFactory
             } else {
                 _clientAddressForPool = getClientAddress();
             }
+        }
+        public void setSSL(boolean isSSL) {
+            _isSSL = isSSL;
         }
 
         public void killMover(String explanation)
