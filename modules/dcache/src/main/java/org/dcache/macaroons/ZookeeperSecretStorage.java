@@ -22,7 +22,6 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.io.ByteSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.utils.CloseableUtils;
@@ -38,6 +37,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
 import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.zookeeper.PathChildrenCache;
 
 import org.dcache.cells.CuratorFrameworkAware;
 
