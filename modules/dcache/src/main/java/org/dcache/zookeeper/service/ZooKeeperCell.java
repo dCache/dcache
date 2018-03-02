@@ -19,7 +19,9 @@ package org.dcache.zookeeper.service;
 
 import com.google.common.base.Strings;
 import org.apache.zookeeper.server.DatadirCleanupManager;
+import org.apache.zookeeper.server.LoggingShutdownHandler;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.zookeeper.server.PatchedZooKeeperServer;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.SessionTrackerImpl;
 import org.apache.zookeeper.server.ZKDatabase;
@@ -32,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.cells.AbstractCell;
@@ -46,27 +49,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class ZooKeeperCell extends AbstractCell
 {
     private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperCell.class);
-
-    private class PatchedZooKeeperServer extends ZooKeeperServer
-    {
-        // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2515
-        // and https://issues.apache.org/jira/browse/ZOOKEEPER-2812
-        @Override
-        public void createSessionTracker() {
-            sessionTracker = new SessionTrackerImpl(this, getZKDatabase().getSessionWithTimeOuts(),
-                                                    tickTime, 1, getZooKeeperServerListener())
-            {
-                @Override
-                public void shutdown() {
-                    super.shutdown();
-                    synchronized (this) {
-                        notifyAll();
-                    }
-                }
-            };
-        }
-    }
-
 
     @Option(name = "data-log-dir", required = true)
     protected File dataLogDir;
@@ -110,6 +92,7 @@ public class ZooKeeperCell extends AbstractCell
     @Option(name = "autoPurgeIntervalUnit", required = true)
     protected TimeUnit autoPurgeIntervalUnit;
 
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
     private ServerCnxnFactory cnxnFactory;
     private FileTxnSnapLog txnLog;
     private PatchedZooKeeperServer zkServer;
@@ -129,6 +112,9 @@ public class ZooKeeperCell extends AbstractCell
 
         checkArgument(autoPurgeInterval > 0, "zookeeper.auto-purge.purge-interval must be non-negative.");
         zkServer = new PatchedZooKeeperServer();
+
+        // Work-around https://issues.apache.org/jira/browse/ZOOKEEPER-2991
+        zkServer.registerServerShutdownHandler(new LoggingShutdownHandler(shutdownLatch));
 
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);
         zkServer.setTxnLogFactory(txnLog);
@@ -175,6 +161,14 @@ public class ZooKeeperCell extends AbstractCell
         // Must shutdown zkServer before shutting down cnxnFactory since
         // zkServer.shutdown flushes any pending messages while
         // cnxnFactory.shutdown closes the network sockets.
+
+        try {
+            // This should be a no-op, as ZK should already have shutdown.
+            shutdownLatch.await(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOG.error("ZooKeeper server failed to shutdown.");
+        }
+
         if (cnxnFactory != null) {
             cnxnFactory.shutdown();
         }
