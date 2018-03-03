@@ -38,9 +38,11 @@ import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -64,6 +66,7 @@ public class RemotePoolMonitor
     private CellStub poolManagerStub;
     private PoolMonitor poolMonitor;
     private long refreshCount;
+    private CellAddressCore previousMonitorSource;
 
     @Required
     public void setPoolManagerStub(CellStub stub)
@@ -93,7 +96,7 @@ public class RemotePoolMonitor
                                  @Override
                                  public void success(PoolManagerGetPoolMonitor message)
                                  {
-                                     messageArrived(message.getPoolMonitor());
+                                     acceptMonitor(message.getPoolMonitor());
                                  }
 
                                  @Override
@@ -113,7 +116,11 @@ public class RemotePoolMonitor
     @Override
     public PoolSelectionUnit getPoolSelectionUnit()
     {
-        return getPoolMonitor().getPoolSelectionUnit();
+        PoolSelectionUnit psu = getPoolMonitor().getPoolSelectionUnit();
+        if (LOGGER.isDebugEnabled() && psu.getLinkGroups().isEmpty()) {
+            LOGGER.debug("getPoolSelectionUnit returning no linkgroups");
+        }
+        return psu;
     }
 
     @Override
@@ -148,7 +155,7 @@ public class RemotePoolMonitor
 
     public void refresh() throws CacheException, InterruptedException, NoRouteToCellException
     {
-        messageArrived(poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor());
+        acceptMonitor(poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor());
     }
 
     public synchronized long getRefreshCount()
@@ -161,7 +168,19 @@ public class RemotePoolMonitor
         return lastRefreshTime;
     }
 
-    public synchronized void messageArrived(SerializablePoolMonitor monitor)
+    public void messageArrived(CellMessage envelope, SerializablePoolMonitor monitor)
+    {
+        if (LOGGER.isDebugEnabled()) {
+            if (!envelope.getSourceAddress().equals(previousMonitorSource)) {
+                LOGGER.debug("received PoolMonitor from {} with {} linkgroups",
+                        envelope.getSourceAddress(), monitor.getPoolSelectionUnit().getLinkGroups().size());
+            }
+            previousMonitorSource = envelope.getSourceAddress();
+        }
+        acceptMonitor(monitor);
+    }
+
+    private synchronized void acceptMonitor(SerializablePoolMonitor monitor)
     {
         poolMonitor = monitor;
         lastRefreshTime = System.currentTimeMillis();
