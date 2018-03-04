@@ -1,12 +1,15 @@
 package dmg.cells.nucleus ;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import dmg.util.AuthorizedString;
+import dmg.util.command.Command;
+import dmg.util.logback.FilterShell;
 import org.apache.curator.framework.CuratorFramework;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,30 +19,12 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
+import java.util.concurrent.*;
 import java.util.function.Function;
 
-import dmg.util.AuthorizedString;
-import dmg.util.Gate;
-import dmg.util.command.Command;
-import dmg.util.logback.FilterShell;
-
-import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.PredefinedAlarm;
-
-import static com.google.common.util.concurrent.Futures.allAsList;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
 import static org.dcache.util.ByteUnit.MiB;
 
 /**
@@ -66,7 +51,7 @@ public class      SystemCell
                 _packetsReplied,
                 _exceptionCounter;
    private final Runtime                _runtime = Runtime.getRuntime() ;
-   private final Gate                   _shutdownLock = new Gate(false);
+   private final Semaphore              _shutdownLock = new Semaphore(0);
 
    private class TheKiller extends Thread {
       @Override
@@ -74,7 +59,7 @@ public class      SystemCell
          _log.info("Running shutdown sequence");
          kill() ;
          _log.info("Kill done, waiting for shutdown lock");
-         _shutdownLock.check() ;
+         _shutdownLock.tryAcquire() ;
          _log.info("Killer done");
       }
    }
@@ -120,7 +105,7 @@ public class      SystemCell
         shutdownSystem();
         CellNucleus.shutdownCellGlue();
         _log.info("Opening shutdown lock");
-        _shutdownLock.open();
+        _shutdownLock.release();
         System.exit(0);
     }
 
