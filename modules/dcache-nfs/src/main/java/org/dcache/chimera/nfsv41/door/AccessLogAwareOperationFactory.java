@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2018 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,11 +28,13 @@ import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.NoEntException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.MDSOperationFactory;
@@ -326,6 +328,9 @@ public class AccessLogAwareOperationFactory extends MDSOperationFactory {
             } catch (ChimeraNFSException e) {
                 status = e.getStatus();
                 throw e;
+            } catch (FileNotFoundHimeraFsException e) {
+                status = nfsstat.NFSERR_NOENT;
+                throw new NoEntException("not found: " + name, e);
             } finally {
                 nl.add("nfs.status", nfsstat.toString(status));
                 nl.log();
