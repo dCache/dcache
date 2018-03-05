@@ -65,9 +65,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     {
     }
 
-    public GssFtpDoorV1(String ftpDoorName, String tlogName, String gssFlavor, DssContextFactory dssContextFactory)
+    public GssFtpDoorV1(String ftpDoorName, String gssFlavor, DssContextFactory dssContextFactory)
     {
-        super(ftpDoorName, tlogName);
+        super(ftpDoorName);
 
         this.gssFlavor = gssFlavor;
         this.dssContextFactory = dssContextFactory;

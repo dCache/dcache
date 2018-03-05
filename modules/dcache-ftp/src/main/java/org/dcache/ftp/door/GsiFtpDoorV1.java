@@ -10,7 +10,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
 {
     public GsiFtpDoorV1(DssContextFactory dssContextFactory)
     {
-        super("GSI FTP", "gsiftp", "gsi", dssContextFactory);
+        super("GSI FTP", "gsi", dssContextFactory);
     }
 
     @Override

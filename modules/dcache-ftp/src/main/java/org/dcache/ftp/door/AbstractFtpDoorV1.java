@@ -909,7 +909,6 @@ public abstract class AbstractFtpDoorV1
     private long _checksumProgressPeriod = 0;
 
     private final String _ftpDoorName;
-    private final String _tlogName;
     protected Checksum _checkSum;
     protected ChecksumType _optCheckSumType;
     protected long _allo;
@@ -1343,10 +1342,9 @@ public abstract class AbstractFtpDoorV1
 
     protected Transfer _transfer;
 
-    public AbstractFtpDoorV1(String ftpDoorName, String tlogName)
+    public AbstractFtpDoorV1(String ftpDoorName)
     {
         _ftpDoorName = ftpDoorName;
-        _tlogName = tlogName;
         /**
          * RFC 3659 requires GMT
          */

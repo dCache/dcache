@@ -53,7 +53,6 @@ check ftp.authn.ocsp-mode
 check ftp.authn.ciphers
 check ftp.authn.gsi.delegation.cache.lifetime
 check ftp.authn.gsi.delegation.cache.lifetime.unit
-check ftp.transaction-log
 check ftp.net.listen
 check ftp.net.internal
 check ftp.mover.queue
@@ -109,7 +108,6 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -overwrite=${ftp.enable.overwrite} \
    -proxyPassive=${ftp.proxy.on-passive} \
    -proxyActive=${ftp.proxy.on-active} \
-   -tlog=${ftp.transaction-log} \
    -read-only=${ftp.authz.readonly} \
    -kdc-list=${ftp.authn.kerberos.key-distribution-center-list} \
    -svc-principal=${ftp.authn.kerberos.service-principle-name} \

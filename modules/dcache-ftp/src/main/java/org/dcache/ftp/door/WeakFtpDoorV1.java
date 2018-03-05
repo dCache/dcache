@@ -24,7 +24,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
 
     public WeakFtpDoorV1()
     {
-        super("Weak FTP", "weakftp");
+        super("Weak FTP");
     }
 
     @Override

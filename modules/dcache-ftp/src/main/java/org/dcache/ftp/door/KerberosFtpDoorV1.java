@@ -10,7 +10,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
 {
     public KerberosFtpDoorV1(DssContextFactory dssContextFactory)
     {
-        super("Kerberos FTP", "krbftp", "k5", dssContextFactory);
+        super("Kerberos FTP", "k5", dssContextFactory);
     }
 
     @Override

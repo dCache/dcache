@@ -148,10 +148,6 @@ public class FtpDoorSettings
             unit = "seconds")
     protected int transferTimeout;
 
-    @Option(name = "tlog",
-            description = "Path to FTP transaction log")
-    protected String tLogRoot;
-
     /**
      * wlcg demands that support for overwrite in srm and gridftp
      * be off by default.
@@ -272,11 +268,6 @@ public class FtpDoorSettings
     public String getStageConfigurationFilePath()
     {
         return stageConfigurationFilePath;
-    }
-
-    public String getTlogRoot()
-    {
-        return tLogRoot;
     }
 
     public boolean isOverwrite()
