@@ -209,8 +209,8 @@ public final class SpaceManagerResources {
                                               @QueryParam("groupId") Long groupId,
                                               @ApiParam(value = "State of the token.")
                                               @QueryParam("state") String state,
-                                              @ApiParam(value = "Minimum amount of space (in bytes) allocated for token.")
-                                              @QueryParam("minAllocatedSpace") Long minAllocatedSpace,
+                                              @ApiParam(value = "Minimum size (in bytes) of token.")
+                                              @QueryParam("minSize") Long minSize,
                                               @ApiParam(value = "Minimum amount of space (in bytes) still free for token.")
                                               @QueryParam("minFreeSpace") Long minFreeSpace) {
         if (!spaceReservationEnabled) {
@@ -228,7 +228,7 @@ public final class SpaceManagerResources {
                                                  retentionPolicy,
                                                  groupId,
                                                  state,
-                                                 minAllocatedSpace,
+                                                 minSize,
                                                  minFreeSpace);
 
         try {
@@ -258,49 +258,49 @@ public final class SpaceManagerResources {
         Predicate<LinkGroup> predicate = group -> true;
 
         if (name != null) {
-            predicate.and(group -> group.getName().equals(name));
+            predicate = predicate.and(group -> group.getName().equals(name));
         }
 
         if (id != null) {
-            predicate.and(group -> group.getId() == id);
+            predicate = predicate.and(group -> group.getId() == id);
         }
 
         if (onlineAllowed != null) {
-            predicate.and(group -> group.isOnlineAllowed() == onlineAllowed);
+            predicate = predicate.and(group -> group.isOnlineAllowed() == onlineAllowed);
         }
 
         if (nearlineAllowed != null) {
-            predicate.and(group -> group.isNearlineAllowed() == nearlineAllowed);
+            predicate = predicate.and(group -> group.isNearlineAllowed() == nearlineAllowed);
         }
 
         if (replicaAllowed != null) {
-            predicate.and(group -> group.isReplicaAllowed() == replicaAllowed);
+            predicate = predicate.and(group -> group.isReplicaAllowed() == replicaAllowed);
         }
 
         if (outputAllowed != null) {
-            predicate.and(group -> group.isOutputAllowed() == outputAllowed);
+            predicate = predicate.and(group -> group.isOutputAllowed() == outputAllowed);
         }
 
         if (custodialAllowed != null) {
-            predicate.and(group -> group.isCustodialAllowed() == custodialAllowed);
+            predicate = predicate.and(group -> group.isCustodialAllowed() == custodialAllowed);
         }
 
         if (voGroup != null) {
-            predicate.and(group -> Stream.of(group.getVOs())
-                                         .map(VOInfo::getVoGroup)
-                                         .collect(Collectors.toSet())
-                                         .contains(voGroup));
+            predicate = predicate.and(group -> Stream.of(group.getVOs())
+                                                     .map(VOInfo::getVoGroup)
+                                                     .collect(Collectors.toSet())
+                                                     .contains(voGroup));
         }
 
         if (voRole != null) {
-            predicate.and(group -> Stream.of(group.getVOs())
-                                         .map(VOInfo::getVoRole)
-                                         .collect(Collectors.toSet())
-                                         .contains(voRole));
+            predicate = predicate.and(group -> Stream.of(group.getVOs())
+                                                     .map(VOInfo::getVoRole)
+                                                     .collect(Collectors.toSet())
+                                                     .contains(voRole));
         }
 
         if (minAvailableSpace != null) {
-            predicate.and(group -> group.getAvailableSpace() >= minAvailableSpace);
+            predicate = predicate.and(group -> group.getAvailableSpace() >= minAvailableSpace);
         }
 
         return predicate;
@@ -313,47 +313,47 @@ public final class SpaceManagerResources {
                                             String retentionPolicy,
                                             Long groupId,
                                             String state,
-                                            Long minAllocatedSpace,
+                                            Long minSize,
                                             Long minFreeSpace) {
         Predicate<Space> predicate = space -> true;
 
         if (id != null) {
-            predicate.and(space -> space.getId() == id);
+            predicate = predicate.and(space -> space.getId() == id);
         }
 
         if (voGroup != null) {
-            predicate.and(space -> voGroup.equals(space.getVoGroup()));
+            predicate = predicate.and(space -> voGroup.equals(space.getVoGroup()));
         }
 
         if (voRole != null) {
-            predicate.and(space -> voRole.equals(space.getVoRole()));
+            predicate = predicate.and(space -> voRole.equals(space.getVoRole()));
         }
 
         if (accessLatency != null) {
-            predicate.and(space -> AccessLatency.valueOf(accessLatency.toUpperCase())
-                                    == space.getAccessLatency());
+            predicate = predicate.and(space -> AccessLatency.valueOf(accessLatency.toUpperCase())
+                                == space.getAccessLatency());
         }
 
         if (retentionPolicy != null) {
-            predicate.and(space -> RetentionPolicy.valueOf(retentionPolicy.toUpperCase())
-                                    == space.getRetentionPolicy());
+            predicate = predicate.and(space -> RetentionPolicy.valueOf(retentionPolicy.toUpperCase())
+                                == space.getRetentionPolicy());
         }
 
         if (groupId != null) {
-            predicate.and(space -> space.getLinkGroupId() == groupId);
+            predicate = predicate.and(space -> space.getLinkGroupId() == groupId);
         }
 
         if (state != null) {
-            predicate.and(space -> SpaceState.valueOf(state) == space.getState());
+            predicate = predicate.and(space -> SpaceState.valueOf(state) == space.getState());
         }
 
-        if (minAllocatedSpace != null) {
-            predicate.and(space -> space.getAllocatedSpaceInBytes() >= minAllocatedSpace);
+        if (minSize != null) {
+            predicate = predicate.and(space -> space.getSizeInBytes() >= minSize);
         }
 
         if (minFreeSpace != null) {
-            predicate.and(space -> space.getAllocatedSpaceInBytes()
-                                    - space.getUsedSizeInBytes() >= minFreeSpace);
+            predicate = predicate.and(space -> space.getAllocatedSpaceInBytes()
+                                - space.getUsedSizeInBytes() >= minFreeSpace);
         }
 
         return predicate;
