@@ -648,11 +648,11 @@ public class MigrationModule
             case "size":
                 return new SizeOrder();
             case "-size":
-                return new ReverseOrder<>(new SizeOrder());
+                return new SizeOrder().reversed();
             case "lru":
                 return new LruOrder();
             case "-lru":
-                return new ReverseOrder<>(new LruOrder());
+                return new LruOrder().reversed();
             default:
                 throw new IllegalArgumentException(order + ": Invalid value for option -order");
             }
