@@ -135,6 +135,17 @@
     </then>
   </if>
 
+  <appender name="resilience" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${dcache.log.dir}/${dcache.domain.name}.resilience</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${dcache.log.dir}/${dcache.domain.name}.resilience.%d{yyyy-MM-dd}.gz</fileNamePattern>
+      <maxHistory>${dcache.log.resilience.max-history}</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>${dcache.log.format.file}</pattern>
+    </encoder>
+  </appender>
+
   <root>
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
@@ -157,6 +168,9 @@
     <appender-ref ref="zookeeper"/>
   </logger>
 
+  <logger name="org.dcache.resilience-log" additivity="false">
+    <appender-ref ref="resilience"/>
+  </logger>
 
   <!-- Nothing is logged to this logger. Its sole purpose is to list
        all appenders available; this ensures that the appenders are
@@ -172,6 +186,7 @@
         <appender-ref ref="remote"/>
       </then>
     </if>
+    <appender-ref ref="resilience"/>
   </logger>
 
   <turboFilter class="dmg.util.logback.CellThresholdFilter">
@@ -269,5 +284,12 @@
       <logger>org.dcache.zookeeper</logger>
       <level>${dcache.log.level.zookeeper}</level>
     </threshold>
+
+    <threshold>
+      <appender>resilience</appender>
+      <logger>org.dcache.resilience-log</logger>
+      <level>error</level>
+    </threshold>
+
   </turboFilter>
 </configuration>
