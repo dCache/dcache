@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1299,14 +1300,40 @@ public class DcacheResourceFactory
         return attributes;
     }
 
+    /**
+     * Return the RFC 3230 Want-Digest header value, if present.  If multiple
+     * headers are present then return a single value obtained by taking
+     * the values and creating the equivalent comma-separated list.
+     * @return an Optional containing the Want-Digest header value, if present.
+     */
+    public static Optional<String> wantDigest()
+    {
+        Enumeration<String> e = ServletRequest.getRequest().getHeaders("Want-Digest");
+        if (e == null || !e.hasMoreElements()) {
+            return Optional.empty();
+        }
+        StringBuilder sb = new StringBuilder();
+        while (e.hasMoreElements()) {
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            String value = e.nextElement();
+            if (!value.isEmpty()) {
+                sb.append(value);
+            }
+        }
+        return Optional.of(sb.toString());
+    }
+
     private static boolean isDigestRequested()
     {
         switch (HttpManager.request().getMethod()) {
         case PUT:
         case HEAD:
         case GET:
-            String wantDigest = ServletRequest.getRequest().getHeader("Want-Digest");
-            return Checksums.parseWantDigest(wantDigest).isPresent();
+            return wantDigest()
+                    .flatMap(Checksums::parseWantDigest)
+                    .isPresent();
         default:
             return false;
         }
@@ -1529,8 +1556,9 @@ public class DcacheResourceFactory
 
             _mtime = OwncloudClients.parseMTime(request);
 
-            Checksums.parseWantDigest(request.getHeader("Want-Digest"))
-                    .ifPresent(t -> setWantedChecksum(t));
+            wantDigest()
+                    .flatMap(Checksums::parseWantDigest)
+                    .ifPresent(this::setWantedChecksum);
         }
 
         @Override

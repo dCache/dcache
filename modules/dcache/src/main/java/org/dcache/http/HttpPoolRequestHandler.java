@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -108,6 +109,16 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     {
         _server = server;
         _chunkSize = chunkSize;
+    }
+
+    private static Optional<String> wantDigest(HttpRequest request)
+    {
+        List<String> wantDigests = request.headers().getAll("Want-Digest");
+        return wantDigests.isEmpty()
+                ? Optional.empty()
+                : Optional.of(wantDigests.stream()
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.joining(",")));
     }
 
     private static ByteBuf createMultipartFragmentMarker(long lower, long upper, long total)
@@ -284,8 +295,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         }
 
-        String wantDigest = request.headers().get("Want-Digest");
-        Optional<String> digest = Checksums.digestHeader(wantDigest, file.getFileAttributes());
+        Optional<String> digest = wantDigest(request)
+                .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
 
         if (ranges == null || ranges.isEmpty()) {
             /*
@@ -356,7 +367,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             }
 
             file.getProtocolInfo().getWantedChecksum().ifPresent(file::addChecksumType);
-            _wantedDigest = Checksums.parseWantDigest(request.headers().get("Want-Digest"));
+            _wantedDigest = wantDigest(request).flatMap(Checksums::parseWantDigest);
             _wantedDigest.ifPresent(file::addChecksumType);
 
             if (is100ContinueExpected(request)) {
@@ -464,7 +475,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         try {
             NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = open(request, false);
 
-            Optional<String> digest = Checksums.digestHeader(request.headers().get("Want-Digest"), file.getFileAttributes());
+            Optional<String> digest = wantDigest(request)
+                    .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
             context.write(new HttpGetResponse(file.size(), file, digest))
                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);

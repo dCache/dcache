@@ -199,8 +199,8 @@ public class DcacheFileResource
 
     public Optional<String> getRfc3230Digest()
     {
-        String wantDigest = ServletRequest.getRequest().getHeader("Want-Digest");
-        return Checksums.digestHeader(wantDigest, _attributes);
+        return DcacheResourceFactory.wantDigest()
+                .flatMap(h -> Checksums.digestHeader(h, _attributes));
     }
 
     @Override
