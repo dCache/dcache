@@ -28,14 +28,13 @@ public class RestoreHandlerCollector extends Collector {
         return Status.SUCCESS;
     }
 
-    @Override
-    public void initialize() {
-        receiver.initialize();
-        super.initialize();
-    }
-
     @Required
     public void setReceiver(RestoreRequestsReceiver receiver) {
+        /*
+         * Note that this receiver has already been initialized
+         * inside the httpd context.  It is passed via JNDI to
+         * webadmin and pulled out inside the webadmin context.
+         */
         this.receiver = receiver;
     }
 }
