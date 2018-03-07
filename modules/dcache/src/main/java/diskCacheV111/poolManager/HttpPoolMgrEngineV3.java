@@ -2,6 +2,7 @@ package diskCacheV111.poolManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
@@ -17,6 +18,15 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.HTMLWriter;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
+import diskCacheV111.vehicles.RestoreHandlerInfo;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
@@ -31,15 +41,6 @@ import dmg.util.AgingHash;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.HTMLWriter;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.PnfsMapPathMessage;
-import diskCacheV111.vehicles.RestoreHandlerInfo;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
 
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -135,6 +136,7 @@ public class HttpPoolMgrEngineV3 implements
                 decodeCss(argsString[i].substring(4));
             }
         }
+        _receiver.initialize();
         _restoreCollector = new Thread(this, "restore-collector");
         _log.info("Using CSS file : {}", _cssFile);
     }
@@ -161,7 +163,6 @@ public class HttpPoolMgrEngineV3 implements
     {
         _pm.start();
         _pm.afterStart();
-        _receiver.initialize();
         _restoreCollector.start();
     }
 

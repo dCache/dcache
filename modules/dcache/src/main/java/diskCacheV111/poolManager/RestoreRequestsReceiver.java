@@ -103,9 +103,7 @@ public class RestoreRequestsReceiver implements CellMessageReceiver {
      * @return currently registered keys.
      */
     public Set<String> getPoolManagers() {
-        synchronized (restores) {
-            return restores.asMap().keySet();
-        }
+        return restores.asMap().keySet();
     }
 
     /**
