@@ -202,6 +202,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                         reading = true;
                         buffer.clear();
                     }
+                    markInputClosed(_input);
                 } catch (IOException e) {
                     if (reading) {
                         setError("Error on socket to " + inputAddress + ": "
@@ -215,6 +216,15 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                 }
             } catch (InterruptedException e) {
                 LOGGER.warn("Interrupted while waiting for accept loop to terminate");
+            }
+        }
+
+        private void markInputClosed(SocketChannel channel)
+        {
+            try {
+                channel.shutdownInput();
+            } catch (IOException e) {
+                LOGGER.error("Failed to mark socket {} closed: {}", channel, e.toString());
             }
         }
     }
