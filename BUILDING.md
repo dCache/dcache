@@ -70,6 +70,11 @@ module:
 
     mvn clean package -am -pl modules/tar
 
+The dCache docker image is build by packaging the _packages/docker_
+module:
+
+    mvn clean package -am -pl packages/docker
+
 It is a separate module from the RPM and DEB packages because the file
 layout is significantly different in the tarball.
 
