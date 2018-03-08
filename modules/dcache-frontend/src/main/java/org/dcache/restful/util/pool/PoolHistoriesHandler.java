@@ -72,7 +72,9 @@ import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
+
 import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
@@ -189,8 +191,11 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
         groupCost.setSpace(groupSpace);
         pools.stream()
              .map(PoolInfoWrapper::getInfo)
+             .filter(Objects::nonNull)
              .map(PoolData::getDetailsData)
+             .filter(Objects::nonNull)
              .map(PoolDataDetails::getCostData)
+             .filter(Objects::nonNull)
              .map(PoolCostData::getSpace)
              .filter(Objects::nonNull)
              .forEach(groupSpace::aggregateData);
