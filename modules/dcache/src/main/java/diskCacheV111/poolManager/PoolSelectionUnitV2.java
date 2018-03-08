@@ -2755,10 +2755,14 @@ public class PoolSelectionUnitV2
 		Glob glob = new Glob(args.argv(0));	
 		List<String> names = getPools(glob.toPattern()).stream().map((Pool pool) -> pool.getName()).collect(Collectors.toList());
 		for(String name : names)
+		{
 			removePool(name);
+		}
 	}
 	else
+	{
 		removePool(args.argv(0));
+	}
 	return "";
     }
 
