@@ -678,6 +678,24 @@ public class PoolSelectionUnitTest {
     }
 
 
+
+    @Test
+    public void testGetPoolsWithFilter() throws CommandException {
+
+    		_ci.command( new Args("psu set active -on h1-read"  )  );
+    		_ci.command( new Args("psu set enabled -on h1-read"  )  );
+        String[] poolNames = _psu.getPoolsWithFilter(x ->x.isActive(), x -> x.isEnabled());
+
+        assertEquals("Null pool received", "h1-read", poolNames[0]);
+
+        SelectionPool pool = _psu.getPool(poolNames[0]);
+
+        assertTrue(pool.isActive());
+        assertTrue(pool.isEnabled());
+
+    }
+
+
     /*
      * test case: check that we do not get pools from LinkGroup
      */

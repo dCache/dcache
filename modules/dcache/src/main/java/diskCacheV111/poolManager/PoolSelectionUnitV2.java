@@ -155,34 +155,49 @@ public class PoolSelectionUnitV2
         return link;
     }
 
-    @Override
-    public String[] getDefinedPools(boolean enabledOnly) {
 
-        rlock();
-        try {
-            return _pools.values().stream()
-                    .filter(p -> p.isEnabled() || !enabledOnly)
-                    .map(Pool::getName)
-                    .toArray(String[]::new);
-        } finally {
-            runlock();
-        }
+    @SuppressWarnings("unchecked")
+@Override
+public String[] getDefinedPools(boolean enabledOnly) {
+
+  Predicate<Pool> myFilter = (p -> p.isEnabled() || !enabledOnly);
+  return getPoolsWithFilter(myFilter);
+
+}
+
+@SuppressWarnings("unchecked")
+@Override
+public String[] getActivePools() {
+
+  Predicate<Pool> isEnabledFilter = (p -> p.isEnabled());
+  Predicate<Pool> isAktiveFilter = (p -> p.isEnabled());
+  return getPoolsWithFilter(isEnabledFilter, isAktiveFilter);
+
+}
+
+@SuppressWarnings("unchecked")
+public String[] getPoolsWithFilter(Predicate<Pool>... passedFilters) {
+
+  Predicate<Pool> filters;
+
+  if (passedFilters.length == 0) {
+    filters = x -> true;
+  }
+  else {
+    filters = passedFilters[0];
+    for (int i = 1; i < passedFilters.length; i++) {
+      filters.and(passedFilters[i]);
     }
+  }
 
-    @Override
-    public String[] getActivePools() {
+  rlock();
+  try {
+    return _pools.values().stream().filter(filters).map(Pool::getName).toArray(String[]::new);
+  } finally {
+    runlock();
+  }
+}
 
-        rlock();
-        try {
-            return _pools.values().stream()
-                    .filter(Pool::isActive)
-                    .filter(Pool::isEnabled)
-                    .map(Pool::getName)
-                    .toArray(String[]::new);
-        } finally {
-            runlock();
-        }
-    }
 
     @Override
     public void beforeSetup()
