@@ -1122,6 +1122,13 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
+    public boolean setPrimaryLocation(FsInode inode, int type, String location) throws ChimeraFsException {
+        return inTransaction(status -> {
+                return _sqlDriver.setPrimaryLocation(inode, type, location);
+        });
+    }
+
+    @Override
     public void clearInodeLocation(FsInode inode, int type, String location) throws ChimeraFsException {
         inTransaction(status -> {
             _sqlDriver.clearInodeLocation(inode, type, location);

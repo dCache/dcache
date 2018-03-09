@@ -123,6 +123,12 @@ public class FileAttributes implements Serializable {
     private int _nlink;
 
     /**
+     * The initial location of a file. Used by set attributes.
+     * @since 4.2
+     */
+    private String _initialLocation;
+
+    /**
      * file's access latency ( e.g. ONLINE/NEARLINE )
      */
     private AccessLatency _accessLatency;

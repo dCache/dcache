@@ -352,4 +352,16 @@ public interface FileSystemProvider extends Closeable {
     {
         STAT, NO_STAT
     }
+
+    /**
+     * Set an initial location of the Inode. If inode already has a location then
+     * new location is not set.
+     *
+     * @param inode
+     * @param type
+     * @param location
+     * @return true, if location is set and false other wise.
+     * @throws ChimeraFsException
+     */
+    public boolean setPrimaryLocation(FsInode inode, int type, String location) throws ChimeraFsException;
 }

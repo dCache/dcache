@@ -33,5 +33,11 @@ public enum FileAttribute {
     /**
      * @since 3.0
      */
-    NLINK   // Be careful not to send this to pools before next golden release
+    NLINK,   // Be careful not to send this to pools before next golden release
+
+    /**
+     * Initial location of a file.
+     * @since 4.2
+     */
+    INITIAL_LOCATION
 }
