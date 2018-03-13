@@ -151,7 +151,7 @@ public final class AlarmsResources {
                                     @QueryParam("includeClosed") Boolean includeClosed,
                                     @ApiParam("Select log entries with at least this severity.")
                                     @QueryParam("severity") String severity,
-                                    @ApiParam("Select only log entries of this type.")
+                                    @ApiParam("Select only log entries of this alarm type.")
                                     @QueryParam("type") String type,
                                     @ApiParam("Select only log entries from this host.")
                                     @QueryParam("host") String host,
@@ -199,16 +199,16 @@ public final class AlarmsResources {
             })
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response bulkUpdateOrDelete(@ApiParam(value = "a JSON object"
+    public Response bulkUpdateOrDelete(@ApiParam(value = "A JSON object "
                                         + "describing the changes.  The \"action\" "
                                         + "item is a string with either \"update\" "
                                         + "or \"delete\" as a value.  The "
-                                        + "\"items\" item is a JSON Array. For "
+                                        + "\"items\" item is a JSON Array. For the "
                                         + "\"delete\" action, this array contains "
                                         + "strings, each the key of a log entry "
-                                        + "to delete.  For \"update\" action, "
-                                        + "the array contains JSON objects with "
-                                        + "\"key\" item and \"closed\" item.  "
+                                        + "to delete.  For the \"update\" action, "
+                                        + "the array contains JSON objects with a "
+                                        + "\"key\" item and a \"closed\" item.  "
                                         + "The closed value is a boolean and "
                                         + "the key value is a String.",
                                                examples = @Example({
@@ -288,10 +288,10 @@ public final class AlarmsResources {
     @Path("/logentries/{key}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateAlarmEntry(@ApiParam("The identifier for the specific log entry")
+    public Response updateAlarmEntry(@ApiParam("The identifier for the specific log entry.")
                                      @PathParam("key") String key,
-                                     @ApiParam(value = "An JSON Object with a 'closed' "
-                                             + "item containing a JSON Boolean value",
+                                     @ApiParam(value = "A JSON Object with a 'closed' "
+                                             + "item containing a JSON Boolean value.",
                                              examples = @Example({
                                                      @ExampleProperty("{\"closed\" : true}")
                                              }))
@@ -319,7 +319,7 @@ public final class AlarmsResources {
 
 
     @DELETE
-    @ApiOperation("Delete a specific log entry")
+    @ApiOperation("Delete a specific log entry.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
@@ -328,7 +328,7 @@ public final class AlarmsResources {
     @Path("/logentries/{key}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAlarmEntry(@ApiParam("The identifier for the specific log entry")
+    public Response deleteAlarmEntry(@ApiParam("The identifier for the specific log entry.")
                                      @PathParam("key") String key) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
@@ -350,7 +350,7 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation("Request the current mapping of alarm types to priorities")
+    @ApiOperation("Request the current mapping of all alarm types to priorities.")
     @ApiResponses({
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users.")
             })
@@ -367,13 +367,13 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation("Request the current mapping of alarm type to its priorities")
+    @ApiOperation("Request the current mapping of an alarm type to its priority.")
     @ApiResponses({
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users.")
             })
     @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getPriority(@ApiParam("The alarm type")
+    public String getPriority(@ApiParam("The alarm type.")
                               @PathParam("type") String type) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(

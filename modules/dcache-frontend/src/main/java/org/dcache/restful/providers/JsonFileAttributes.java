@@ -1,5 +1,8 @@
 package org.dcache.restful.providers;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.net.FileNameMap;
 import java.net.URI;
 import java.net.URLConnection;
@@ -13,6 +16,7 @@ import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.acl.ACL;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
@@ -20,164 +24,114 @@ import org.dcache.vehicles.FileAttributes;
 
 /**
  * This class is needed to mapping FileAttributes, when they are not defined.
- * The issue is that in the system not all attributes may be defined. Attempts to read undefined attributes
- * will throw IllegalStateException( e.g. guard(CHECKSUM)). So just returning FileAttributes in
+ * The issue is that in the system not all attributes may be defined.
+ * Attempts to read undefined attributes
+ * will throw IllegalStateException( e.g. guard(CHECKSUM)).
+ * So just returning FileAttributes in
  * FileResources.getFileAttributes will throw an error.
- * Therefore, we are forced to keep  JsonFileAttributes to  bypass  "quards" and set manually file attributes.
- *
+ * Therefore, we are forced to keep  JsonFileAttributes to  bypass  "quards"
+ * and set manually file attributes.
  */
+@ApiModel(description = "Specifies the attributes of a given file.")
 public class JsonFileAttributes
 {
     private static final FileNameMap MIME_TYPE_MAP =
             URLConnection.getFileNameMap();
 
-    /**
-     * NFSv4 Access control list.
-     */
+    @ApiModelProperty("NFSv4 Access control list.")
     private ACL _acl;
 
-    /**
-     * file's size
-     */
+    @ApiModelProperty("File size in bytes.")
     private Long _size;
 
-    /**
-     * file's attribute change time
-     */
+    @ApiModelProperty("File's attribute change timestamp, in unix-time.")
     private Long _ctime;
 
-    /**
-     * file's creation time
-     */
+    @ApiModelProperty("File's creation timestamp, in unix-time.")
     private Long _creationTime;
 
-    /**
-     * file's last access time
-     */
+    @ApiModelProperty("File's last access timestamp, in unix-time.")
     private Long _atime;
 
-    /**
-     * file's last modification time
-     */
+    @ApiModelProperty("File's last modification timestamp, in unix-time.")
     private Long _mtime;
 
-    /**
-     * file's known checksums
-     */
+    @ApiModelProperty("File's known checksums.")
     private Set<Checksum> _checksums;
 
-    /**
-     * file's owner's id
-     */
+    @ApiModelProperty("File owner's id.")
     private Integer _owner;
 
-    /**
-     * file's group id
-     */
+    @ApiModelProperty("Files group id.")
     private Integer _group;
 
-    /**
-     * POSIX.1 file mode
-     */
+    @ApiModelProperty("POSIX.1 file mode.")
     private Integer _mode;
 
-    /**
-     * file's access latency ( e.g. ONLINE/NEARLINE )
-     */
+    @ApiModelProperty(value="File's access latency.", allowableValues = "ONLINE, NEARLINE")
     private AccessLatency _accessLatency;
 
-    /**
-     * file's retention policy ( e.g. CUSTODIAL/REPLICA )
-     */
+    @ApiModelProperty(value="File's retention policy.", allowableValues = "CUSTODIAL, REPLICA, OUTPUT")
     private RetentionPolicy _retentionPolicy;
 
-    /**
-     * type of the file ( e.g. REG, DIR, LINK, SPECIAL )
-     */
+    @ApiModelProperty(value="File type.", allowableValues = "REG, DIR, LINK, SPECIAL")
     private FileType _fileType;
 
-    /**
-     * File locations within dCache.
-     */
+    @ApiModelProperty("File's (disk) locations within dCache.")
     private Collection<String> _locations;
 
-    /**
-     * Key value map of flags associated with the file.
-     */
+    @ApiModelProperty("Key value map of flags associated with the file.")
     private Map<String, String> _flags;
 
-    /**
-     * Number of links/
-     */
+    @ApiModelProperty("Number of links.")
     private Integer _nlink;
 
-    /**
-     * The unique PNFS ID of a file.
-     */
+    @ApiModelProperty("The PNFS-ID of the file (unique id).")
     private PnfsId _pnfsId;
 
-    /**
-     * The storage info of a file.
-     */
+    @ApiModelProperty("The storage info of the file.")
     private StorageInfo _storageInfo;
 
-    /**
-     * The storage uri list
-     */
+    @ApiModelProperty("List of storage (tape) uris.")
     private List<URI> _suris;
 
-    /**
-     * The storage class of a file.
-     */
+    @ApiModelProperty("Storage class of the file.")
     private String _storageClass;
 
-    /**
-     * The HSM of a file.
-     */
+    @ApiModelProperty("The HSM (hierarchical storage manager) storing the file.")
     private String _hsm;
 
-    /**
-     * The cache class of a file.
-     */
+    @ApiModelProperty("Cache class of the file.")
     private String _cacheClass;
 
-    /**
-     * The name of a file.
-     */
+    @ApiModelProperty("Name of the file.")
     private String fileName;
 
-    /**
-     * The file MIME type.
-     */
+    @ApiModelProperty("MIME type of the file.")
     private String fileMimeType;
 
-    /**
-     * The current parent directory of a file.
-     */
+    @ApiModelProperty("Current parent directory of a file.")
     private String sourcePath;
 
-    /**
-     * The new directory of a file, where the file will be moved.
-     */
+    @ApiModelProperty("New directory of a file, where the file will be moved.")
     private String newPath;
 
-
-    /**
-     * The file path.
-     */
+    @ApiModelProperty("File path.")
     private String path;
 
-
+    @ApiModelProperty("dCache file attributes for children, if this file is a directory.")
     private List<JsonFileAttributes> children;
 
+    @ApiModelProperty("dCache file attributes of the file.")
     public FileAttributes attributes;
 
+    @ApiModelProperty(value="Current file availability.", allowableValues = "ONLINE, NEARLINE, ONLINE_AND_NEARLINE")
     public FileLocality fileLocality;
 
-    /** Current QoS for this file. */
+    @ApiModelProperty("Current QoS for this file.")
     public String currentQos;
 
-    /** The target QoS if the file is changing QoS, or null otherwise. */
+    @ApiModelProperty("The target QoS if the file is changing QoS.")
     public String targetQos;
 
     public ACL getAcl() {

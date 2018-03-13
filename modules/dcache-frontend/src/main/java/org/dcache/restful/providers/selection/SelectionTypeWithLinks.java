@@ -66,6 +66,8 @@ import java.util.List;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 
 public abstract class SelectionTypeWithLinks extends SelectionType {
+
+    @ApiModelProperty("The associated links.")
     protected final List<String> links;
 
     public SelectionTypeWithLinks() {
@@ -78,7 +80,6 @@ public abstract class SelectionTypeWithLinks extends SelectionType {
         links = extractLinks(psu);
     }
 
-    @ApiModelProperty("The associated links.")
     public List<String> getLinks() {
         return links;
     }

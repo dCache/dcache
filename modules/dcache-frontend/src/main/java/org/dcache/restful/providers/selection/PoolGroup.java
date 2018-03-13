@@ -69,10 +69,12 @@ import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 
-@ApiModel("Information about a specific poolgroup.")
+@ApiModel(description = "Information about a specific poolgroup.")
 public final class PoolGroup extends SelectionTypeWithLinks {
     private static final long serialVersionUID = -3481667048585522521L;
-    private final  List<String> pools;
+
+    @ApiModelProperty("The pools that are a member of this poolgroup.")
+    private final List<String> pools;
 
     public PoolGroup() {
         this.pools = null;
@@ -86,16 +88,15 @@ public final class PoolGroup extends SelectionTypeWithLinks {
                    .collect(Collectors.toList());
     }
 
+    public List<String> getPools() {
+        return pools;
+    }
+
     @Override
     protected List<String> extractLinks(PoolSelectionUnit psu) {
         return psu.getLinksPointingToPoolGroup(name)
                   .stream()
                   .map(SelectionLink::getName)
                   .collect(Collectors.toList());
-    }
-
-    @ApiModelProperty("The pools that are a member of this poolgroup.")
-    public List<String> getPools() {
-        return pools;
     }
 }

@@ -144,15 +144,9 @@ public final class PoolGroupInfoResources {
         return new PoolGroup(group, poolMonitor.getPoolSelectionUnit());
     }
 
-    /**
-     * <p>Get a list of current pools.</p>
-     *
-     * @param group limit the list to this pool group
-     * @return names of pools in system, or in the specified group, if specified
-     */
     @GET
     @Path("/{group}/pools")
-    @ApiOperation("Get a list of pool that are a member of a poolgroup.  If no "
+    @ApiOperation("Get a list of pools that are a member of a poolgroup.  If no "
             + "poolgroup is specified then all pools are listed.")
     @Produces(MediaType.APPLICATION_JSON)
     public String[] getPoolsOfGroup(@ApiParam("The poolgroup to be described.")
@@ -189,7 +183,7 @@ public final class PoolGroupInfoResources {
 
 
     @GET
-    @ApiOperation("Get group queue information about a specific poolgroup.  "
+    @ApiOperation("Get pool activity information about pools of a specific poolgroup.  "
             + "Requires admin role.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
@@ -212,7 +206,7 @@ public final class PoolGroupInfoResources {
 
 
     @GET
-    @ApiOperation("Get space information about a specific poolgroup.  Requires "
+    @ApiOperation("Get space information about pools of a specific poolgroup.  Requires "
             + "admin role.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
@@ -235,7 +229,7 @@ public final class PoolGroupInfoResources {
 
 
     @GET
-    @ApiOperation("Get queue histogram information about a specific poolgroup.  "
+    @ApiOperation("Get aggregated pool activity histogram information from pools in a specific poolgroup.  "
             + "Requires admin role.")
     @Path("/{group}/histograms/queues")
     @Produces(MediaType.APPLICATION_JSON)
@@ -250,7 +244,7 @@ public final class PoolGroupInfoResources {
 
 
     @GET
-    @ApiOperation("Get file statistics about a specific poolgroup.  Requires "
+    @ApiOperation("Get aggregated file statistics histogram information from pools in a specific poolgroup.  Requires "
             + "admin role.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),

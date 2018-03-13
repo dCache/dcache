@@ -119,7 +119,7 @@ public class FileResources {
 
     @GET
     @ApiOperation(value="Find metadata and optionally directory contents.",
-            notes="The method offer the possibility to list the content of a "
+            notes="The method offers the possibility to list the content of a "
                     + "directory in addition to providing metadata of a "
                     + "specified file or directory.")
     @ApiResponses({

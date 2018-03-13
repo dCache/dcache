@@ -66,9 +66,6 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ForbiddenException;
@@ -78,8 +75,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.util.CacheException;
 
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Unit;

@@ -59,24 +59,32 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.billing;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.io.Serializable;
 import java.util.List;
 
-/**
- * <p>Encapsulates the lists of billing records associated with a given file.</p>
- */
+@ApiModel(description = "A listing of the billing records "
+                                + "associated with a given file.")
 public final class BillingRecords implements Serializable {
 
+    @ApiModelProperty("The PNFS-ID of the file.")
     private String pnfsid;
 
+    @ApiModelProperty("A list of writes to disk of this file.")
     private List<DoorTransferRecord> writes;
 
+    @ApiModelProperty("A list of reads from disk of this file.")
     private List<DoorTransferRecord> reads;
 
+    @ApiModelProperty("A list of flushes to tape of this file.")
     private List<HSMTransferRecord> stores;
 
+    @ApiModelProperty("A list of stages from tape of this file.")
     private List<HSMTransferRecord> restores;
 
+    @ApiModelProperty("A list of pool-to-pool transfers of this file.")
     private List<P2PTransferRecord> p2ps;
 
     public List<P2PTransferRecord> getP2ps() {

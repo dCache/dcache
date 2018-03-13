@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -66,11 +69,22 @@ import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
+@ApiModel(description = "Information about a specific link group.")
 public final class LinkGroup extends SelectionTypeWithLinks {
+
+    @ApiModelProperty("Whether custodial retention policy is allowed.")
     private final boolean custodialAllowed;
+
+    @ApiModelProperty("Whether output retention policy is allowed.")
     private final boolean outputAllowed;
+
+    @ApiModelProperty("Whether replica retention policy is allowed.")
     private final boolean replicaAllowed;
+
+    @ApiModelProperty("Whether online access latency is allowed.")
     private final boolean onlineAllowed;
+
+    @ApiModelProperty("Whether nearline access latency is allowed.")
     private final boolean nearlineAllowed;
 
     public LinkGroup() {

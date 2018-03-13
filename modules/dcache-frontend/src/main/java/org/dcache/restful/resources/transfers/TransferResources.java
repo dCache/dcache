@@ -89,7 +89,7 @@ import org.dcache.restful.services.transfers.TransferInfoService;
  * @version v1.0
  */
 @Component
-@Api(value = "transfers", authorizations = {@Authorization("basicAuth")})
+@Api(value = "transfers", authorizations = { @Authorization("basicAuth") })
 @Path("/transfers")
 public final class TransferResources {
     @Inject
@@ -97,18 +97,32 @@ public final class TransferResources {
 
     @GET
     @ApiOperation("Provide a list of all client-initiated transfers that are "
-            + "either queued or currently running.  Internal (pool-to-pool) "
-            + "transfers are excluded. ")
+                    + "either queued or currently running.  Internal (pool-to-pool) "
+                    + "transfers are excluded.")
     @ApiResponses({
-        @ApiResponse(code = 500, message = "Internal Server Error"),
+                    @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
-    public SnapshotList<TransferInfo> getTransfers(@QueryParam("token") UUID token,
+    public SnapshotList<TransferInfo> getTransfers(@ApiParam("Use the snapshot "
+                                                    + "corresponding to this UUID.  The "
+                                                    + "contract with the service is that if the "
+                                                    + "parameter value is null, the current snapshot "
+                                                    + "will be used, regardless of whether offset and "
+                                                    + "limit are still valid.  Initial/refresh "
+                                                    + "calls should always be without a token.  "
+                                                    + "Subsequent calls should send back the "
+                                                    + "current token; in the case that it no "
+                                                    + "longer corresponds to the current list, "
+                                                    + "the service will return a null token "
+                                                    + "and an empty list, and the client will "
+                                                    + "need to recall the method without a "
+                                                    + "token (refresh).")
+                                                   @QueryParam("token") UUID token,
                                                    @ApiParam("The number of items to skip.")
                                                    @QueryParam("offset") Integer offset,
                                                    @ApiParam("The maximum number items to return.")
                                                    @QueryParam("limit") Integer limit,
-                                                   @ApiParam("Select transfers in this state.")
+                                                   @ApiParam("Select transfers in this state (NOTFOUND, STAGING, QUEUED, RUNNING, CANCELED, DONE)")
                                                    @QueryParam("state") String state,
                                                    @ApiParam("Select transfers initiated through this door.")
                                                    @QueryParam("door") String door,

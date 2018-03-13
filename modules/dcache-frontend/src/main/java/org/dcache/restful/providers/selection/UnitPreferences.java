@@ -66,12 +66,40 @@ import java.io.Serializable;
 
 import diskCacheV111.poolManager.LinkReadWritePreferences;
 
-@ApiModel("Information about the preferences for a link.")
+@ApiModel(description = "Information about the preferences for a link.")
 public final class UnitPreferences implements Serializable {
     private static final long serialVersionUID = 6866520870092665548L;
+
+    @ApiModelProperty(value =
+                    "The preference for using this link to decide the "
+                                    + "target pool for a read operation.  A value of 0 disables this "
+                                    + "link for read pool selection, otherwise the link with the "
+                                    + "smallest value is selected preferentially.",
+                    allowableValues = "range[0,infinity]")
     private final Integer read;
+
+    @ApiModelProperty(value =
+                    "The preference for using this link to decide the "
+                                    + "target pool for a restore from tape operation.  A value of 0 "
+                                    + "disables this link for restore from tape pool selection, "
+                                    + "otherwise the link with the smallest value is selected preferentially.",
+                    allowableValues = "range[0,infinity]")
     private final Integer write;
+
+    @ApiModelProperty(value =
+                    "The preference for using this link to decide the "
+                                    + "target pool for a write operation.  A value of 0 disables this "
+                                    + "link for write pool selection, otherwise the link with the "
+                                    + "smallest value is selected preferentially.",
+                    allowableValues = "range[0,infinity]")
     private final Integer restore;
+
+    @ApiModelProperty(value =
+                    "The preference for using this link to decide the "
+                                    + "target pool for a pool-to-pool operation.  A value of 0 disables "
+                                    + "this link for pool-to-pool selection, otherwise the link with "
+                                    + "the smallest value is selected preferentially.",
+                    allowableValues = "range[0,infinity]")
     private final Integer p2p;
 
     public UnitPreferences() {
@@ -88,38 +116,18 @@ public final class UnitPreferences implements Serializable {
         p2p = preferences.getP2pPref();
     }
 
-    @ApiModelProperty(value = "The preference for using this link to decide the "
-            + "target pool for a pool-to-pool operation.  A value of 0 disables "
-            + "this link for pool-to-pool selection, otherwise the link with "
-            + "the smallest value is selected preferentially.",
-            allowableValues = "range[0,infinity]")
     public Integer getP2p() {
         return p2p;
     }
 
-    @ApiModelProperty(value = "The preference for using this link to decide the "
-            + "target pool for a read operation.  A value of 0 disables this "
-            + "link for read pool selection, otherwise the link with the "
-            + "smallest value is selected preferentially.",
-            allowableValues = "range[0,infinity]")
     public Integer getRead() {
         return read;
     }
 
-    @ApiModelProperty(value = "The preference for using this link to decide the "
-            + "target pool for a restore from tape operation.  A value of 0 "
-            + "disables this link for restore from tape pool selection, "
-            + "otherwise the link with the smallest value is selected preferentially.",
-            allowableValues = "range[0,infinity]")
     public Integer getRestore() {
         return restore;
     }
 
-    @ApiModelProperty(value = "The preference for using this link to decide the "
-            + "target pool for a write operation.  A value of 0 disables this "
-            + "link for write pool selection, otherwise the link with the "
-            + "smallest value is selected preferentially.",
-            allowableValues = "range[0,infinity]")
     public Integer getWrite() {
         return write;
     }

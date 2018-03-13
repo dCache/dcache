@@ -59,21 +59,24 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.pool;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.io.Serializable;
 
 import diskCacheV111.pools.PoolV2Mode;
 
-/**
- * <p>Encapsulates information for modifying the mode of a given pool.</p>
- * <p>The operations are limited to enabled, disabled rdonly and disabled strict.
- *    In addition, the flag can be set to exclude resilience from processing
- *    the change or not.</p>
- */
+@ApiModel(description = "Information for modifying the mode of a given pool.")
 public class PoolModeUpdate implements Serializable {
     private static final long serialVersionUID = 4199793636351366103L;
 
+    @ApiModelProperty("Change pool mode to 'disabled strict'.")
     private boolean strict;
+
+    @ApiModelProperty("Change pool mode to 'disabled read-only'.")
     private boolean rdonly;
+
+    @ApiModelProperty("Allow resilience to process this change.")
     private boolean resilience;
 
     public boolean isRdonly() {

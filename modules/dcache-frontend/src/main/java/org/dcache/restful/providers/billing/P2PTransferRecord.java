@@ -59,33 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.billing;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import org.dcache.services.billing.db.data.TransferRecord;
 
-/**
- * <p>Attributes pertinent to Pool-to-pool transfers.</p>
- */
+@ApiModel(description = "Properties pertinent to Pool-to-pool transfers.")
 public final class P2PTransferRecord extends DiskTransferRecord {
 
     private static final String MAINFORMAT = "%s (from %s)(to %s)(%s)(transferred %s) %s\n";
 
+    @ApiModelProperty("Source of the copy.")
     private String serverPool;
+
+    @ApiModelProperty("Destination of the copy.")
     private String clientPool;
-
-    public String getServerPool() {
-        return serverPool;
-    }
-
-    public void setServerPool(String serverPool) {
-        this.serverPool = serverPool;
-    }
-
-    public String getClientPool() {
-        return clientPool;
-    }
-
-    public void setClientPool(String clientPool) {
-        this.clientPool = clientPool;
-    }
 
     public P2PTransferRecord() {
 
@@ -95,6 +83,22 @@ public final class P2PTransferRecord extends DiskTransferRecord {
         super(record);
         this.serverPool = record.getCellName();
         this.clientPool = record.getInitiator();
+    }
+
+    public String getClientPool() {
+        return clientPool;
+    }
+
+    public String getServerPool() {
+        return serverPool;
+    }
+
+    public void setClientPool(String clientPool) {
+        this.clientPool = clientPool;
+    }
+
+    public void setServerPool(String serverPool) {
+        this.serverPool = serverPool;
     }
 
     public String toDisplayString() {
