@@ -211,11 +211,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                                          + e.getMessage());
                     }
                 } finally {
-                    try {
-                        _output.close();
-                    } catch (IOException e) {
-                        LOGGER.warn("Problem closing output: {}", e.getMessage());
-                    }
                     _inbound.returnChannel(_input);
                 }
             } catch (InterruptedException e) {
@@ -522,30 +517,38 @@ public class SocketAdapter implements Runnable, ProxyAdapter
              */
             SocketChannel output = _outbound.accept();
 
-            /* Send the EOF. The GridFTP protocol allows us to send
-             * this information at any time. Doing it up front will
-             * make sure, that the other end doesn't need to wait for
-             * it.
-             */
-            if (_modeE) {
-                sendEof(output);
-            }
+            try {
+                /* Send the EOF. The GridFTP protocol allows us to send
+                 * this information at any time. Doing it up front will
+                 * make sure, that the other end doesn't need to wait for
+                 * it.
+                 */
+                if (_modeE) {
+                    sendEof(output);
+                }
 
-            _inbound.accept(c -> {acceptNewChannel(c, output);});
+                _inbound.accept(c -> {acceptNewChannel(c, output);});
 
-            awaitRedirectors();
+                awaitRedirectors();
 
-            /* Send the EOD (remember that we already sent the EOF
-             * earlier).
-             */
-            if (_modeE) {
-                if (!isEODExpectedSpecified()) {
-                    setError("Did not receive EOF marker. Transfer failed.");
-                } else if (!hasSeenAllExpectedEOD()) {
-                    setError("Transfer failed: not enough EOD markers (expected " +
-                            getEODExpected() + ", got " + getEODSeen() + ")");
-                } else {
-                    sendEod(output);
+                /* Send the EOD (remember that we already sent the EOF
+                 * earlier).
+                 */
+                if (_modeE) {
+                    if (!isEODExpectedSpecified()) {
+                        setError("Did not receive EOF marker. Transfer failed.");
+                    } else if (!hasSeenAllExpectedEOD()) {
+                        setError("Transfer failed: not enough EOD markers (expected " +
+                                getEODExpected() + ", got " + getEODSeen() + ")");
+                    } else {
+                        sendEod(output);
+                    }
+                }
+            } finally {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Problem closing output: {}", e.getMessage());
                 }
             }
         } catch (InterruptedException e) {
