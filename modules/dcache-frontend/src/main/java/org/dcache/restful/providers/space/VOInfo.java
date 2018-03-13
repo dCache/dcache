@@ -60,12 +60,17 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.space;
 
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
 
-@ApiModel("Virtual organization (VO) group and role associated with a link group.")
+@ApiModel(description = "Virtual organization (VO) group and role associated with a link group.")
 public class VOInfo implements Serializable {
+
+    @ApiModelProperty("Group name.")
     private String voGroup;
+
+    @ApiModelProperty("Role name.")
     private String voRole;
 
     public VOInfo(diskCacheV111.util.VOInfo info) {

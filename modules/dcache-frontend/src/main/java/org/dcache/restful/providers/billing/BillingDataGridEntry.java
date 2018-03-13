@@ -60,6 +60,8 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.billing;
 
 import com.google.common.base.Preconditions;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import org.dcache.util.histograms.TimeFrame;
 import org.dcache.util.histograms.TimeFrame.BinType;
@@ -67,14 +69,25 @@ import org.dcache.util.histograms.TimeFrame.Type;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
 
-/**
- * <p>Defines a possible grid entry based on three enum types.</p>
- */
+@ApiModel(description = "Defines a possible grid entry based on four enumerations:  "
+                                + "type, series type, series data type and bin type.")
 public final class BillingDataGridEntry {
-    private SeriesType     type;
+
+    @ApiModelProperty(value = "Type of time series",
+                    allowableValues = "READ, WRITE, P2P, STORE, RESTORE, CONNECTION, CACHED")
+    private SeriesType type;
+
+    @ApiModelProperty(value = "Type of data represented",
+                    allowableValues = "BYTES, COUNT, AVGSECS, MAXSECS, MINSECS, HITS, MISSES")
     private SeriesDataType dataType;
-    private BinType        binType;
-    private Type           range;
+
+    @ApiModelProperty(value = "Type of histogram bin (unit of the time frame)",
+                    allowableValues = "HOUR, DAY, WEEK, MONTH")
+    private BinType binType;
+
+    @ApiModelProperty(value = "Extent of the time frame",
+                    allowableValues = "DAY, WEEK, MONTH, YEAR")
+    private Type range;
 
     public BillingDataGridEntry() {
     }

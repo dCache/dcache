@@ -59,16 +59,22 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.billing;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.Map;
 
-/**
- * <p>Provides a listing of available time series
- *      data according to types.</p>
- */
+@ApiModel(description = "A full listing of available time "
+                                + "series data according to types.")
 public final class BillingDataGrid {
+    @ApiModelProperty("Mapping of identifier to entry.")
     private Map<String, BillingDataGridEntry> dataGrid;
 
     public BillingDataGrid() {
+    }
+
+    public BillingDataGrid(Map<String, BillingDataGridEntry> dataGrid) {
+        this.dataGrid = dataGrid;
     }
 
     public Map<String, BillingDataGridEntry> getDataGrid() {
@@ -76,10 +82,6 @@ public final class BillingDataGrid {
     }
 
     public void setDataGrid(Map<String, BillingDataGridEntry> dataGrid) {
-        this.dataGrid = dataGrid;
-    }
-
-    public BillingDataGrid(Map<String, BillingDataGridEntry> dataGrid) {
         this.dataGrid = dataGrid;
     }
 }

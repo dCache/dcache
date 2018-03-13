@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -66,8 +69,11 @@ import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 
+@ApiModel(description = "Information about a specific pool.")
 public final class Pool extends SelectionTypeWithLinks {
     private static final long serialVersionUID = -6670696822057242568L;
+
+    @ApiModelProperty("The groups to which this pool belongs.")
     private final List<String> groups;
 
     public Pool() {

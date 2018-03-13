@@ -67,11 +67,15 @@ import java.util.List;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 
-@ApiModel("Candidate pools for some operation.")
+@ApiModel(description = "Candidate pools for some operation.")
 public final class PreferenceResult implements Serializable {
     private static final long serialVersionUID = -6647894964723072329L;
-    private final  List<String> pools;
-    private final  String       tag;
+
+    @ApiModelProperty("The selected pools.")
+    private final List<String> pools;
+
+    @ApiModelProperty("The associated tag, if any.")
+    private final String tag;
 
     public PreferenceResult() {
         tag = null;
@@ -83,12 +87,10 @@ public final class PreferenceResult implements Serializable {
         this.pools = poolPreferenceLevel.getPoolList();
     }
 
-    @ApiModelProperty("The selected pools.")
     public List<String> getPools() {
         return pools;
     }
 
-    @ApiModelProperty("The associated tag, if any.")
     public String getTag() {
         return tag;
     }

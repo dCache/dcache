@@ -138,7 +138,7 @@ public class IdResources {
             })
     @Path("{pnfsid}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonFileAttributes getAttributes(@ApiParam("The PNFS-ID of a file or directory")
+    public JsonFileAttributes getAttributes(@ApiParam("The PNFS-ID of a file or directory.")
                                             @PathParam("pnfsid") String value)
     {
         Set<FileAttribute> attributeSet = EnumSet.allOf(FileAttribute.class);

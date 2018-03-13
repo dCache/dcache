@@ -68,9 +68,6 @@ import io.swagger.annotations.Authorization;
 import org.json.JSONException;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
@@ -85,10 +82,13 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-import dmg.cells.nucleus.NoRouteToCellException;
+import java.util.ArrayList;
+import java.util.List;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.util.CacheException;
+
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
@@ -124,7 +124,7 @@ public final class PoolPreferenceResources {
     })
     @Produces(MediaType.APPLICATION_JSON)
     public List<PreferenceResult> match(@ApiParam(value = "The operation type.",
-                                                allowableValues = "READ,CACHE,WRITE")
+                                                allowableValues = "READ,CACHE,WRITE,P2P,ANY")
                                         @DefaultValue("READ")
                                         @QueryParam("type") String type,
                                         @ApiParam("The name of the matching store unit.")
