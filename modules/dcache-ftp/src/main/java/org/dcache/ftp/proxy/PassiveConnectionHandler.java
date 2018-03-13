@@ -308,6 +308,9 @@ public class PassiveConnectionHandler implements Closeable
      * Register that no further activity is expected (in the immediate
      * future) for a given SocketChannel.  If the TCP connection
      * is left open by both ends then it is kept open for possible future use.
+     * If the remote end has closed the the connection (e.g.,
+     * SocketChannel#read returns -1) then SocketChannel#shutdownInput must be
+     * called before returning the channel.
      */
     public synchronized void returnChannel(SocketChannel channel)
     {

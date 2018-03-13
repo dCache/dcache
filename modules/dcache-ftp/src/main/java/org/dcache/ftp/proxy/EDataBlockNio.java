@@ -66,10 +66,16 @@
 
 package org.dcache.ftp.proxy;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 public class EDataBlockNio {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EDataBlockNio.class);
+
     private ByteBuffer header;
 
     private ByteBuffer data;
@@ -161,6 +167,7 @@ public class EDataBlockNio {
             }
 
             if (n == -1) {
+                markInputClosed(socketChannel);
                 break;
             }
             len += n;
@@ -191,6 +198,7 @@ public class EDataBlockNio {
                 break;
             }
             if (nr == -1) {
+                markInputClosed(socketChannel);
                 break;
             }
             n += nr;
@@ -205,8 +213,17 @@ public class EDataBlockNio {
 
     public long read(SocketChannel socketChannel) {
         if (readHeader(socketChannel) == -1) {
+            markInputClosed(socketChannel);
             return -1;
         }
         return readData(socketChannel, getSize());
+    }
+
+    private void markInputClosed(SocketChannel channel) {
+        try {
+            channel.shutdownInput();
+        } catch (IOException e) {
+            LOGGER.error("Failed to mark socket {} closed: {}", channel, e.toString());
+        }
     }
 }
