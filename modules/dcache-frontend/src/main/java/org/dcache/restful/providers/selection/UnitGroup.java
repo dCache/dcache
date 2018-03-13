@@ -70,9 +70,12 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 
-@ApiModel("Information about a unitgroup.")
+@ApiModel(description = "Information about a unitgroup.")
 public final class UnitGroup extends SelectionTypeWithLinks {
     private static final long serialVersionUID = -5173508468206889927L;
+
+    @ApiModelProperty("A list of units.  If any unit is satisfied by a request "
+                    + "then the unitgroup is satisfied by the request.")
     private final List<String> units;
 
     public UnitGroup() {
@@ -87,8 +90,6 @@ public final class UnitGroup extends SelectionTypeWithLinks {
                      .collect(Collectors.toList());
     }
 
-    @ApiModelProperty("A list of units.  If any unit is satisfied by a request "
-            + "then the unitgroup is satisfied by the request.")
     public List<String> getUnits() {
         return units;
     }

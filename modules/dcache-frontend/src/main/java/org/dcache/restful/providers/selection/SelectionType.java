@@ -59,9 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import io.swagger.annotations.ApiModelProperty;
+
 import java.io.Serializable;
 
 public abstract class SelectionType implements Serializable {
+
+    @ApiModelProperty("The identifier for this selection type.")
     protected final String name;
 
     public SelectionType() {

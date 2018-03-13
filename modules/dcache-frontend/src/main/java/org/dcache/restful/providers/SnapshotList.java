@@ -60,58 +60,43 @@ documents or software obtained from this server.
 package org.dcache.restful.providers;
 
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+import javax.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import javax.validation.constraints.NotNull;
-
 import org.dcache.util.InvalidatableItem;
 
-/**
- * <p>JSON wrapper for returning list of serializable
- * objects.  The wrapper supports requests based on
- * token identifiers of snapshots, with an offset and limit into
- * the underlying snapshot.</p>
- */
-@ApiModel(value = "A selection of results from a semi-persistant snapshot.",
-        description = "Each snapshot has a UUID that identifies it.  The "
-                + "request that created the snapshot also accepts the uuid as"
-                + "an argument, allowing successive requests from the same "
-                + "snapshot with different offset and lengths, providing "
-                + "support for paging.")
+@ApiModel(description = "A selection of results from a semi-persistant snapshot. "
+                                + "Each snapshot has a UUID that identifies it.  The "
+                                + "request that created the snapshot also accepts the uuid as "
+                                + "an argument, allowing successive requests from the same "
+                                + "snapshot with different offset and lengths, providing "
+                                + "support for paging.")
 public class SnapshotList<T extends InvalidatableItem & Serializable>
                 implements Serializable {
-    /**
-     * <p>The returned data.</p>
-     */
+    @ApiModelProperty("  The list of returned data.")
     @NotNull
     private List<T> items = Collections.EMPTY_LIST;
 
-    /**
-     * <p>The original offset requested.  The first element in the
-     * returned list should correspond to this index in the
-     * underlying complete list.</p>
-     */
+    @ApiModelProperty("The original offset requested.  The first element in the "
+                    + "returned list should correspond to "
+                    + "this index in the underlying complete list.")
     private int currentOffset = 0;
 
-    /**
-     * <p>Should be the currentOffset plus the size of the returned list
-     * if the list has more elements; otherwise -1.</p>
-     */
+    @ApiModelProperty("Should be the currentOffset plus the size of the returned "
+                    + "list if the list has more elements; otherwise -1.")
     private int nextOffset = 0;
 
-    /**
-     * <p>Identifies the snapshot used to service this request.</p>
-     * <p>May be <code>null</code> only if transfers is empty.</p>
-     */
+    @ApiModelProperty("Identifies the snapshot used to service this request. "
+                    + "May be null only if transfers is empty.")
     private UUID currentToken;
 
-    /**
-     * <p>Timestamp in milliseconds of last update.</p>
-     */
+    @ApiModelProperty("Timestamp in unix-time when snapshot was created.")
     private long timeOfCreation = 0L;
 
     public int getCurrentOffset() {
@@ -126,12 +111,12 @@ public class SnapshotList<T extends InvalidatableItem & Serializable>
         return items;
     }
 
-    public long getTimeOfCreation() {
-        return timeOfCreation;
-    }
-
     public int getNextOffset() {
         return nextOffset;
+    }
+
+    public long getTimeOfCreation() {
+        return timeOfCreation;
     }
 
     public void setCurrentOffset(int currentOffset) {
@@ -146,11 +131,11 @@ public class SnapshotList<T extends InvalidatableItem & Serializable>
         this.items = items;
     }
 
-    public void setTimeOfCreation(long timeOfCreation) {
-        this.timeOfCreation = timeOfCreation;
-    }
-
     public void setNextOffset(int nextOffset) {
         this.nextOffset = nextOffset;
+    }
+
+    public void setTimeOfCreation(long timeOfCreation) {
+        this.timeOfCreation = timeOfCreation;
     }
 }

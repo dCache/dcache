@@ -60,23 +60,35 @@ documents or software obtained from this server.
 package org.dcache.restful.providers.billing;
 
 import com.google.common.base.Strings;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import org.dcache.services.billing.db.data.TransferRecord;
 
-/**
- * <p>Attributes pertinent to READs and WRITEs initiated by external clients
- * through a door/protocol.</p>
- */
+@ApiModel(description = "Properties pertinent to reads and writes initiated "
+                                + "by external clients through a door/protocol.")
 public final class DoorTransferRecord extends DiskTransferRecord {
 
     private static final String MAINFORMAT = "%s (pool %s)(door %s)(%s)(connect %s)(queued %s)(transferred %s)%s %s\n";
     private static final String USERFORMAT = "(fqan %s)(uid %s)(gid %s)(owner %s)";
 
-    private String  pool;
-    private String  door;
+    @ApiModelProperty("Target (write) or source (read) of the file replica.")
+    private String pool;
+
+    @ApiModelProperty("Door / protocol through which the transfer took place.")
+    private String door;
+
+    @ApiModelProperty("User id associated with the transaction.")
     private Integer mappedUID;
+
+    @ApiModelProperty("Group id associated with the transaction.")
     private Integer mappedGID;
-    private String  owner;
+
+    @ApiModelProperty("Owner of the file.")
+    private String owner;
+
+    @ApiModelProperty("Fully qualified attribute name (VOMs), if any, "
+                    + "associated with the transaction.")
     private String fqan;
 
     public DoorTransferRecord() {

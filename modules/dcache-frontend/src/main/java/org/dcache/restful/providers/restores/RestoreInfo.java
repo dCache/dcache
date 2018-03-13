@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.restores;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.io.Serializable;
 
 import diskCacheV111.util.PnfsId;
@@ -66,21 +69,42 @@ import diskCacheV111.vehicles.RestoreHandlerInfo;
 
 import org.dcache.util.InvalidatableItem;
 
-/**
- * <p>Restore/stage request metadata.</p>
- */
+@ApiModel(description = "Container for metadata pertaining to a file stage from tape.")
 public class RestoreInfo implements Comparable<RestoreInfo>, InvalidatableItem, Serializable {
+    @ApiModelProperty("Identifies the transfer.")
     private String key;
+
+    @ApiModelProperty("PNFS-ID of staged file.")
     private PnfsId pnfsId;
+
+    @ApiModelProperty("Path of staged file.")
     private String  path;
+
+    @ApiModelProperty("Net identifier of the staging host.")
     private String  subnet;
+
+    @ApiModelProperty("Pool selected for the stage.")
     private String  poolCandidate;
+
+    @ApiModelProperty("Staging began at this timestamp, in unix-time.")
     private Long    started;
+
+    @ApiModelProperty("Number of clients waiting for this file.")
     private Integer clients;
+
+    @ApiModelProperty("Number of times staging failed and was retried.")
     private Integer retries;
+
+    @ApiModelProperty("Current state of the request.")
     private String  status;
+
+    @ApiModelProperty("dCache error code.")
     private Integer error;
+
+    @ApiModelProperty("Description of error, if any.")
     private String  errorMessage;
+
+    @ApiModelProperty("Validity of current request.")
     private boolean valid;
 
     public RestoreInfo() {

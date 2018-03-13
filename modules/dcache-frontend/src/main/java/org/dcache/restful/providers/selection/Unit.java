@@ -68,11 +68,16 @@ import java.util.stream.Collectors;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 
-@ApiModel("A selection unit.  Describes a predicate that might be satisfied by "
-        + "a particular request.")
+@ApiModel(description = "A selection unit describes a predicate that might be satisfied by "
+                + "a particular request.")
 public final class Unit extends SelectionType {
     private static final long serialVersionUID = 5839097559975700910L;
-    private final String       type;
+
+    @ApiModelProperty(value = "The aspect of a request checked by this unit.",
+                    allowableValues = "net,store,dcache,protocol")
+    private final String type;
+
+    @ApiModelProperty("The unit groups that reference this unit.")
     private final List<String> groups;
 
     public Unit() {
@@ -89,13 +94,10 @@ public final class Unit extends SelectionType {
                      .collect(Collectors.toList());
     }
 
-    @ApiModelProperty("The unitgroups that reference this unit.")
     public List<String> getGroups() {
         return groups;
     }
 
-    @ApiModelProperty(value = "The aspect of a request checked by this unit.",
-            allowableValues="net,store,dcache,protocol")
     public String getType() {
         return type;
     }

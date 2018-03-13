@@ -67,10 +67,6 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -87,11 +83,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-import dmg.cells.nucleus.NoRouteToCellException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
+
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.billing.BillingDataGrid;
@@ -448,7 +448,9 @@ public class BillingResources {
      * @return the data (array of doubles).
      */
     @GET
-    @ApiOperation("Request the time series data for a particular specification.")
+    @ApiOperation("Request the time series data for a particular specification. "
+                    + "The available specifications can be obtained via GET on "
+                    + "histograms/grid/description.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
