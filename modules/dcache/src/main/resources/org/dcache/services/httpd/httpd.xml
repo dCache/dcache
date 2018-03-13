@@ -41,7 +41,8 @@
 
     <bean id="delegator" class="org.dcache.services.httpd.handlers.HandlerDelegator"/>
 
-    <bean id="restores-request-receiver" class="diskCacheV111.poolManager.RestoreRequestsReceiver">
+    <bean id="restores-request-receiver" class="diskCacheV111.poolManager.RestoreRequestsReceiver"
+          init-method="initialize">
         <property name="lifetime" value="${httpd.service.restore-requests.lifetime}"/>
         <property name="lifetimeUnit" value="${httpd.service.restore-requests.lifetime.unit}"/>
     </bean>

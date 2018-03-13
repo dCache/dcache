@@ -94,7 +94,6 @@ public class RestoreCollector extends
     public void initialize(Long timeout, TimeUnit timeUnit) {
         pnfsHandler = new PnfsHandler(pnfsStub);
         pnfsHandler.setSubject(Subjects.ROOT);
-        receiver.initialize();
         super.initialize(timeout, timeUnit);
     }
 
