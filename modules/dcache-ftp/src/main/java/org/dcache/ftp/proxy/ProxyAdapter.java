@@ -1,6 +1,7 @@
 package org.dcache.ftp.proxy;
 
-import java.io.PrintWriter;
+import org.dcache.ftp.TransferMode;
+
 import java.net.InetSocketAddress;
 
 import dmg.cells.nucleus.CellInfoProvider;
@@ -30,12 +31,6 @@ public interface ProxyAdapter extends CellInfoProvider
         UPLOAD, DOWNLOAD
     }
 
-    /**
-     * The protocol used over a data channel.
-     */
-    public enum TransferMode {
-        MODE_S, MODE_E
-    }
 
     /**
      * Sets the largest block size to be used in mode E. Blocks larger

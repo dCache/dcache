@@ -69,6 +69,8 @@ package org.dcache.ftp.proxy;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
+import org.dcache.ftp.TransferMode;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +90,9 @@ import org.dcache.util.PortRange;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.dcache.ftp.TransferMode.MODE_E;
+import static org.dcache.ftp.TransferMode.MODE_S;
 import static org.dcache.util.ByteUnit.KiB;
 
 /**
@@ -125,8 +130,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private PassiveConnectionHandler _inbound;
     private PassiveConnectionHandler _outbound;
 
-    /** True if mode E is used for transfer, false when mode S is used. */
-    private boolean _modeE;
+    private TransferMode _mode;
 
     /**
      * The number of EOD markers we have seen. This is only used for mode E
@@ -533,9 +537,11 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         _maxBlockSize = size;
     }
 
+    @Override
     public synchronized void setMode(TransferMode mode)
     {
-        _modeE = mode == TransferMode.MODE_E;
+        checkArgument(mode == MODE_S || mode == MODE_E, "Unsupported transfer mode %s", mode);
+        _mode = mode;
     }
 
     @Override
@@ -581,7 +587,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     public void run()
     {
         LOGGER.debug("Socket adapter thread starting");
-        assert _clientToPool || !_modeE;
+        assert _clientToPool || _mode == MODE_S;
 
         try {
             /* Accept connection on output channel. Since the socket
@@ -602,7 +608,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                  * make sure, that the other end doesn't need to wait for
                  * it.
                  */
-                if (_modeE) {
+                if (_mode == MODE_E) {
                     sendEof();
                 }
 
@@ -613,7 +619,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                 /* Send the EOD (remember that we already sent the EOF
                  * earlier).
                  */
-                if (_modeE) {
+                if (_mode == MODE_E) {
                     if (!isEODExpectedSpecified()) {
                         setError("Did not receive EOF marker. Transfer failed.");
                     } else if (!hasSeenAllExpectedEOD()) {
@@ -693,10 +699,15 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         LOGGER.debug("Accepting new TCP connection");
 
         Redirector redir;
-        if (_modeE) {
+        switch (_mode) {
+        case MODE_E:
             redir = new ModeERedirector(input, initialInput);
-        } else {
+            break;
+        case MODE_S:
             redir = new StreamRedirector(input, initialInput);
+            break;
+        default:
+            throw new RuntimeException("Unsupported transfer mode: " + _mode);
         }
         redir.start();
 
@@ -746,14 +757,14 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 
     @Override
     public String toString() {
-        return "SocketAdapter[mode=" + (_modeE ? "E" : "S") + " in=" + _inbound + ", out=" + _outbound + "]";
+        return "SocketAdapter[mode=" + _mode.getLabel() + " in=" + _inbound + ", out=" + _outbound + "]";
     }
 
     @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("Passive adapter:");
-        pw.println("    Transfer mode: " + (_modeE ? "E" : "S"));
+        pw.println("    Transfer mode: " + _mode.getLabel());
         pw.println("    Listening on:");
         pw.println("        Client: " + _clientConnectionHandler.getLocalAddress());
         pw.println("        Pool: " + _poolConnectionHandler.getLocalAddress());

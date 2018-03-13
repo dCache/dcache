@@ -69,6 +69,8 @@ package diskCacheV111.vehicles ;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 
+import org.dcache.ftp.TransferMode;
+
 public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
     private final int    _minor;
@@ -177,9 +179,11 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
             " " + _addr.getAddress().getHostAddress() +" "
             +  _addr.getPort();
     }
-    //
-    public void setMode(String mode)
-    {	_mode = mode;	}
+
+    public void setMode(TransferMode mode) {
+        _mode = mode.getLabel();
+    }
+
     public String getMode()
     {	return _mode;	}
 

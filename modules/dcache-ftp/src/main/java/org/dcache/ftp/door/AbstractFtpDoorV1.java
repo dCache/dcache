@@ -106,7 +106,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -134,6 +133,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -199,7 +199,7 @@ import org.dcache.ftp.proxy.ActiveAdapter;
 import org.dcache.ftp.proxy.PassiveConnectionHandler;
 import org.dcache.ftp.proxy.ProxyAdapter;
 import org.dcache.ftp.proxy.ProxyAdapter.Direction;
-import org.dcache.ftp.proxy.ProxyAdapter.TransferMode;
+import org.dcache.ftp.TransferMode;
 import org.dcache.ftp.proxy.SocketAdapter;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
@@ -858,7 +858,7 @@ public abstract class AbstractFtpDoorV1
     protected FsPath _filepath; // Absolute filepath to the file to be renamed
     protected PnfsId _fileId; // Id of the file to be renamed
     private String _symlinkPath; // User-supplied path of new symlink
-    protected String _xferMode = "S";
+    protected TransferMode _xferMode = TransferMode.MODE_S;
     protected PoolManagerHandler _poolManagerHandler;
     protected PoolManagerStub _poolManagerStub;
     protected CellStub _billingStub;
@@ -929,7 +929,7 @@ public abstract class AbstractFtpDoorV1
     protected class FtpTransfer extends AsynchronousRedirectedTransfer<GFtpTransferStartedMessage>
     {
         private final Mode _mode;
-        private final String _xferMode;
+        private final TransferMode _xferMode;
         private final int _parallel;
         private final InetSocketAddress _client;
         private final int _bufSize;
@@ -957,7 +957,7 @@ public abstract class AbstractFtpDoorV1
                            long offset,
                            long size,
                            Mode mode,
-                           String xferMode,
+                           TransferMode xferMode,
                            int parallel,
                            InetSocketAddress client,
                            int bufSize,
@@ -1027,7 +1027,7 @@ public abstract class AbstractFtpDoorV1
 
             if (_adapter != null) {
                 _adapter.setMaxBlockSize(_settings.getMaxBlockSize());
-                _adapter.setMode(_xferMode.equals("E") ? TransferMode.MODE_E : TransferMode.MODE_S);
+                _adapter.setMode(_xferMode);
                 _adapter.setDataDirection(isWrite() ? Direction.UPLOAD : Direction.DOWNLOAD);
             }
         }
@@ -1163,7 +1163,7 @@ public abstract class AbstractFtpDoorV1
                  * it, then we have to fail for now. REVISIT: We should
                  * use the other adapter in this case.
                  */
-                checkFTPCommand(_mode != Mode.PASSIVE || redirect.getPassive() || !_xferMode.equals("X"),
+                checkFTPCommand(_mode != Mode.PASSIVE || redirect.getPassive() || _xferMode != TransferMode.MODE_X,
                         504, "Cannot use passive X mode");
 
                 /* Determine the 127 response address to send back to the
@@ -1197,7 +1197,7 @@ public abstract class AbstractFtpDoorV1
 
             reply(_request, "150 Opening BINARY data connection for " + _path);
 
-            if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
+            if (isWrite() && _xferMode == TransferMode.MODE_E && _performanceMarkerPeriod > 0) {
                 _perfMarkerTask = new PerfMarkerTask(_request, getPool().getAddress(),
                         getMoverId(), _performanceMarkerPeriod / 2);
                 TIMER.schedule(_perfMarkerTask, _performanceMarkerPeriod, _performanceMarkerPeriod);
@@ -1321,7 +1321,7 @@ public abstract class AbstractFtpDoorV1
 
         public void getInfo(PrintWriter pw)
         {
-            pw.println( "  Data channel  : " + _mode + "; mode " + _xferMode + "; " + _parallel + " streams");
+            pw.println( "  Data channel  : " + _mode + "; mode " + _xferMode.getLabel() + "; " + _parallel + " streams");
             PerfMarkerTask perfMarkerTask = _perfMarkerTask;
             FileAttributes fileAttributes = getFileAttributes();
             if (fileAttributes.isDefined(SIZE)) {
@@ -2507,21 +2507,20 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    @Help("MODE <SP> <mode> - Sets the transfer mode.")
-    public void ftp_mode(String arg)
+    private static TransferMode asTransferMode(String label) throws FTPCommandException
     {
-        if (arg.equalsIgnoreCase("S")) {
-            _xferMode = "S";
-            reply("200 Will use Stream mode");
-        } else if (arg.equalsIgnoreCase("E")) {
-            _xferMode = "E";
-            reply("200 Will use Extended Block mode");
-        } else if (arg.equalsIgnoreCase("X")) {
-            _xferMode = "X";
-            reply("200 Will use GridFTP 2 eXtended block mode");
-        } else {
-            reply("200 Unsupported transfer mode");
-        }
+        return TransferMode.forLabel(label.toUpperCase())
+                .orElseThrow((Supplier<FTPCommandException>)()
+                        -> new FTPCommandException(501, "Unsupported transfer mode"));
+    }
+
+
+
+    @Help("MODE <SP> <mode> - Sets the transfer mode.")
+    public void ftp_mode(String arg) throws FTPCommandException
+    {
+        _xferMode = asTransferMode(arg);
+        reply("200 Will use " + _xferMode.getDescription());
     }
 
 
@@ -2855,7 +2854,7 @@ public abstract class AbstractFtpDoorV1
         ServerSocket ss = new ServerSocket();
 
         FtpTransfer transfer = new FtpTransfer(absolutePath(file),
-                            -1, -1, Mode.PASSIVE, "S", 1, (InetSocketAddress) ss.getLocalSocketAddress(),
+                            -1, -1, Mode.PASSIVE, TransferMode.MODE_S, 1, (InetSocketAddress) ss.getLocalSocketAddress(),
                             MiB.toBytes(1), DelayedPassiveReply.NONE, null, 1);
         return null;
     }
@@ -3303,7 +3302,7 @@ public abstract class AbstractFtpDoorV1
      * @param version       The mover version to use for the transfer
      */
     private void retrieve(String file, long offset, long size,
-                          Mode mode, String xferMode,
+                          Mode mode, TransferMode xferMode,
                           int parallel,
                           InetSocketAddress client, int bufSize,
                           DelayedPassiveReply delayedPassive,
@@ -3313,9 +3312,9 @@ public abstract class AbstractFtpDoorV1
          */
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
         checkFTPCommand(!file.isEmpty(), 501, "Missing path");
-        checkFTPCommand(!xferMode.equals("E") || mode != Mode.PASSIVE,
+        checkFTPCommand(xferMode != TransferMode.MODE_E || mode != Mode.PASSIVE,
                 500, "Cannot do passive retrieve in E mode");
-        checkFTPCommand(!xferMode.equals("X") || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
+        checkFTPCommand(xferMode != TransferMode.MODE_X || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
                 504, "Cannot use passive X mode");
         checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
         checkFTPCommand(_checkSum == null, 503, "Expecting STOR ESTO PUT commands");
@@ -3418,7 +3417,7 @@ public abstract class AbstractFtpDoorV1
      * @param protocolFamily Protocol family to use for passive mode
      * @param version       The mover version to use for the transfer
      */
-    private void store(String file, Mode mode, String xferMode,
+    private void store(String file, Mode mode, TransferMode xferMode,
                        int parallel,
                        InetSocketAddress client, int bufSize,
                        DelayedPassiveReply delayedPassive,
@@ -3427,9 +3426,9 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn(FORBID_ANONYMOUS_USER);
 
         checkFTPCommand(!file.equals(""), 501, "STOR command not understood");
-        checkFTPCommand(!xferMode.equals("E") || mode != Mode.ACTIVE,
+        checkFTPCommand(xferMode != TransferMode.MODE_E || mode != Mode.ACTIVE,
                 504, "Cannot store in active E mode");
-        checkFTPCommand(!xferMode.equals("X") || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
+        checkFTPCommand(xferMode != TransferMode.MODE_X || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
                 504, "Cannot use passive X mode");
         checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
 
@@ -4305,7 +4304,7 @@ public abstract class AbstractFtpDoorV1
             checkFTPCommand(parameters.containsKey("path"), 501, "Missing path");
 
             if (parameters.containsKey("mode")) {
-                _xferMode = parameters.get("mode").toUpperCase();
+                _xferMode = asTransferMode(parameters.get("mode"));
             }
 
             if (parameters.containsKey("pasv")) {
@@ -4345,7 +4344,7 @@ public abstract class AbstractFtpDoorV1
         checkFTPCommand(parameters.containsKey("path"), 501, "Missing path");
 
         if (parameters.containsKey("mode")) {
-            _xferMode = parameters.get("mode").toUpperCase();
+            _xferMode = asTransferMode(parameters.get("mode"));
         }
 
         if (parameters.containsKey("pasv")) {
