@@ -62,6 +62,7 @@ package org.dcache.util.collector.pools;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -137,7 +138,7 @@ public abstract class PoolInfoAggregator {
         return pools.stream()
                     .map(SelectionPool::getName)
                     .map(data::get)
-                    .filter((e) -> e != null)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
     }
 }
