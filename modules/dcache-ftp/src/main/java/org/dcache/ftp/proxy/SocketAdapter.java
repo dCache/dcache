@@ -93,6 +93,7 @@ import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.ftp.TransferMode.MODE_E;
 import static org.dcache.ftp.TransferMode.MODE_S;
+import static org.dcache.ftp.proxy.ProxyAdapter.Direction.UPLOAD;
 import static org.dcache.util.ByteUnit.KiB;
 
 /**
@@ -144,10 +145,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     private long _eodExpected;
 
-    /**
-     * True for uploads, false for downloads.
-     */
-    private boolean _clientToPool = true;
+    private Direction _direction = Direction.UPLOAD;
 
     /**
      * Non null if an error has occurred and the transfer has failed.
@@ -553,7 +551,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     @Override
     public void setDataDirection(Direction dir)
     {
-        _clientToPool = dir == Direction.UPLOAD;
+        _direction = dir;
 
         switch (dir) {
         case UPLOAD:
@@ -587,7 +585,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     public void run()
     {
         LOGGER.debug("Socket adapter thread starting");
-        assert _clientToPool || _mode == MODE_S;
+        assert _direction == UPLOAD || _mode == MODE_S;
 
         try {
             /* Accept connection on output channel. Since the socket
@@ -774,7 +772,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         boolean isFirstRow = true;
         for (Redirector redirector : _redirectors) {
             if (isFirstRow) {
-                if (_clientToPool) {
+                if (_direction == UPLOAD) {
                     proxy.pool(out);
                 } else {
                     proxy.client(out);
@@ -782,7 +780,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                 isFirstRow = false;
             }
             Socket in = redirector._input.socket();
-            if (_clientToPool) {
+            if (_direction == UPLOAD) {
                 proxy.client(in);
             } else {
                 proxy.pool(in);
