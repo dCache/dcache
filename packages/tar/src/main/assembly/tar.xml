@@ -95,7 +95,6 @@
             <outputDirectory></outputDirectory>
             <includes>
                 <include>var/alarms/**</include>
-                <include>var/cell-info/**</include>
                 <include>var/credentials/**</include>
                 <include>var/httpd/**</include>
                 <include>var/log/**</include>
