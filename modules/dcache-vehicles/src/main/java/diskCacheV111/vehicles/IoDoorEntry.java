@@ -2,11 +2,14 @@ package diskCacheV111.vehicles;
 
 import java.io.IOException;
 import java.io.Serializable;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import diskCacheV111.util.PnfsId;
+
+import org.dcache.auth.Subjects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -83,7 +86,7 @@ public class IoDoorEntry implements Serializable
 
     public String toString()
     {
-        return _serialId + ";" + _pnfsId + ';' + _subject + ';'
+        return _serialId + ";" + _pnfsId + ';' + Subjects.getDisplayName(_subject) + ';'
                + _replyHost + ';' + _pool + ';' + _status + ';'
                + (System.currentTimeMillis() - _waitingSince) + ';';
     }
