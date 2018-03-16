@@ -70,6 +70,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -79,8 +80,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 import static org.dcache.util.ByteUnit.KiB;
 
@@ -122,6 +125,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private Thread _t; // A thread driving the adapter
     private boolean _closeForced;
     private int _streamsCreated;
+    private final List<Tunnel> _tunnels = new ArrayList<>();
 
     public ActiveAdapter(InetAddress internalAddress, String host, int port)
             throws IOException
@@ -395,6 +399,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
 
             int r = scs.read(b);
             if (r < 0) {
+                scs.shutdownInput(); // Mark as shutdown
                 say("EOF on channel " + scs + ", shutting down output of " + sct);
                 sct.socket().shutdownOutput();
                 if (scs.socket().isOutputShutdown()) {
@@ -634,6 +639,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
                     // Prepare the socket channel for the target
                     SocketChannel sct = createSocketChannel(_tgtHost, _tgtPort);
                     Tunnel tnl = new Tunnel(scs, sct);
+                    _tunnels.add(tnl);
                     tnl.register(_selector);
                 } catch (IOException ie) {
                     // Something went wrong..........
@@ -661,5 +667,18 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     public String toString()
     {
         return "active -> " + _tgtHost + ":" + _tgtPort + "; " + _streamsCreated + " streams created";
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("Active adapter:");
+        pw.println("    Listening for pool on: " + _ssc.socket().getLocalSocketAddress());
+        pw.println("    Connecting to: " + _tgtHost + ":" + _tgtPort);
+        pw.println("    Streams: " + _streamsCreated);
+        pw.println("    Proxy status:");
+        ProxyPrinter proxy = new ProxyPrinter();
+        _tunnels.forEach(t -> proxy.client(t._sct.socket()).pool(t._scs.socket()).add());
+        pw.println(proxy);
     }
 }

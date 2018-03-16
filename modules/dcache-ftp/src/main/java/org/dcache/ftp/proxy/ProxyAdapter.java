@@ -1,6 +1,9 @@
 package org.dcache.ftp.proxy;
 
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
+
+import dmg.cells.nucleus.CellInfoProvider;
 
 /**
  * A ProxyAdaper implementation is responsible for relaying an FTP data
@@ -18,7 +21,7 @@ import java.net.InetSocketAddress;
  * has returned.  This has two effects: it forcing the adapter to stop any active
  * transfer and allowing the proxy adapter to clean up any remaining state.
  */
-public interface ProxyAdapter
+public interface ProxyAdapter extends CellInfoProvider
 {
     /**
      * The direction in which data will flow for this transfer.

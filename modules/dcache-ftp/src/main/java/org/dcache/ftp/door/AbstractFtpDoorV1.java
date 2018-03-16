@@ -1330,7 +1330,7 @@ public abstract class AbstractFtpDoorV1
             }
             ProxyAdapter adapter = _adapter;
             if (adapter != null) {
-                pw.println("         Proxy  : " + adapter);
+                adapter.getInfo(pw);
             }
         }
     }

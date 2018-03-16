@@ -70,14 +70,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.dcache.util.ColumnWriter;
 import org.dcache.util.PortRange;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -145,7 +148,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private String _error;
 
     /** All redirectores created by the SocketAdapter. */
-    private final List<Thread> _redirectors = new ArrayList<>();
+    private final List<Redirector> _redirectors = new ArrayList<>();
 
     /**
      * Size of the largest block allocated in mode E. Blocks larger
@@ -164,20 +167,36 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     private boolean _closing;
 
+    private SocketChannel _output;
+
+    private abstract class Redirector extends Thread
+    {
+        Redirector(String name)
+        {
+            super(name);
+        }
+
+        abstract SocketChannel input();
+    }
+
     /**
      * A redirector moves data between an input channel and an output
      * channel. This particular redirector does so in mode S.
      */
-    class StreamRedirector extends Thread
+    class StreamRedirector extends Redirector
     {
         private final SocketChannel _input;
-        private final SocketChannel _output;
 
-        public StreamRedirector(SocketChannel input, SocketChannel output)
+        public StreamRedirector(SocketChannel input)
         {
             super("ModeS-Proxy-" + _clientConnectionHandler.getLocalAddress());
             _input = input;
-            _output = output;
+        }
+
+        @Override
+        SocketChannel input()
+        {
+            return _input;
         }
 
         @Override
@@ -233,16 +252,20 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      * A redirector moves data between an input channel and an ouput
      * channel. This particular redirector does so in mode E.
      */
-    class ModeERedirector extends Thread
+    class ModeERedirector extends Redirector
     {
         private final SocketChannel _input;
-        private final SocketChannel _output;
 
-        public ModeERedirector(SocketChannel input, SocketChannel output)
+        public ModeERedirector(SocketChannel input)
         {
             super("ModeE-Proxy-" + _clientConnectionHandler.getLocalAddress());
             _input  = checkNotNull(input);
-            _output = checkNotNull(output);
+        }
+
+        @Override
+        SocketChannel input()
+        {
+            return _input;
         }
 
         @Override
@@ -525,7 +548,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
              * adapter and the pool, there will in any case be exactly
              * one connection on the output channel.
              */
-            SocketChannel output = _outbound.accept();
+            _output = _outbound.accept();
 
             try {
                 /* Send the EOF. The GridFTP protocol allows us to send
@@ -534,10 +557,10 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                  * it.
                  */
                 if (_modeE) {
-                    sendEof(output);
+                    sendEof();
                 }
 
-                _inbound.accept(c -> {acceptNewChannel(c, output);});
+                _inbound.accept(this::acceptNewChannel);
 
                 awaitRedirectors();
 
@@ -551,12 +574,12 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                         setError("Transfer failed: not enough EOD markers (expected " +
                                 getEODExpected() + ", got " + getEODSeen() + ")");
                     } else {
-                        sendEod(output);
+                        sendEod();
                     }
                 }
             } finally {
                 try {
-                    output.close();
+                    _output.close();
                 } catch (IOException e) {
                     LOGGER.warn("Problem closing output: {}", e.getMessage());
                 }
@@ -586,24 +609,24 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         }
     }
 
-    private void sendEof(SocketChannel channel) throws IOException
+    private void sendEof() throws IOException
     {
         ByteBuffer block = ByteBuffer.allocate(17);
         block.put((byte)(EDataBlockNio.EOF_DESCRIPTOR));
         block.putLong(0);
         block.putLong(1);
         block.flip();
-        channel.write(block);
+        _output.write(block);
     }
 
-    private void sendEod(SocketChannel channel) throws IOException
+    private void sendEod() throws IOException
     {
         ByteBuffer block = ByteBuffer.allocate(17);
         block.put((byte)EDataBlockNio.EOD_DESCRIPTOR);
         block.putLong(0);
         block.putLong(0);
         block.flip();
-        channel.write(block);
+        _output.write(block);
     }
 
     private void awaitRedirectors() throws InterruptedException
@@ -617,15 +640,15 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         LOGGER.trace("All redirectors have finished");
     }
 
-    private void acceptNewChannel(SocketChannel input, SocketChannel output)
+    private void acceptNewChannel(SocketChannel input)
     {
         LOGGER.debug("Accepting new TCP connection");
 
-        Thread redir;
+        Redirector redir;
         if (_modeE) {
-            redir = new ModeERedirector(input, output);
+            redir = new ModeERedirector(input);
         } else {
-            redir = new StreamRedirector(input, output);
+            redir = new StreamRedirector(input);
         }
         redir.start();
 
@@ -676,5 +699,37 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     @Override
     public String toString() {
         return "SocketAdapter[mode=" + (_modeE ? "E" : "S") + " in=" + _inbound + ", out=" + _outbound + "]";
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("Passive adapter:");
+        pw.println("    Transfer mode: " + (_modeE ? "E" : "S"));
+        pw.println("    Listening on:");
+        pw.println("        Client: " + _clientConnectionHandler.getLocalAddress());
+        pw.println("        Pool: " + _poolConnectionHandler.getLocalAddress());
+        pw.println("    Proxy status:");
+        ProxyPrinter proxy = new ProxyPrinter();
+        Socket out = _output.socket();
+        boolean isFirstRow = true;
+        for (Redirector redirector : _redirectors) {
+            if (isFirstRow) {
+                if (_clientToPool) {
+                    proxy.pool(out);
+                } else {
+                    proxy.client(out);
+                }
+                isFirstRow = false;
+            }
+            Socket in = redirector.input().socket();
+            if (_clientToPool) {
+                proxy.client(in);
+            } else {
+                proxy.pool(in);
+            }
+            proxy.add();
+        }
+        pw.println(proxy);
     }
 }
