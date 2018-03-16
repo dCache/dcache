@@ -502,10 +502,17 @@ public class ColumnWriter
     public static class TabulatedRow implements Row
     {
         private final Map<String, Object> values = new HashMap<>();
+        private final Map<String, String> fills = new HashMap<>();
 
         public TabulatedRow value(String column, Object value)
         {
             values.put(column, value);
+            return this;
+        }
+
+        public TabulatedRow fill(String column, String value)
+        {
+            fills.put(column, value);
             return this;
         }
 
@@ -526,7 +533,15 @@ public class ColumnWriter
                 }
                 Column column = columns.get(i);
                 Object value = values.get(column.name());
-                column.render(value, widths.get(i), out);
+                int width = widths.get(i);
+                if (value == null) {
+                    String fill = fills.get(column.name());
+                    if (fill != null) {
+                        int count = (width + width % fill.length())/fill.length();
+                        value = Strings.repeat(fill, count).subSequence(0, width);
+                    }
+                }
+                column.render(value, width, out);
             }
             out.print(endOfLine);
         }
