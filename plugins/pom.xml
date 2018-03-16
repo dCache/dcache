@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>dcache-parent</artifactId>
-    <version>4.0.8</version>
+    <version>4.0.9-SNAPSHOT</version>
   </parent>
 
   <artifactId>plugins</artifactId>
