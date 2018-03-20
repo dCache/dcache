@@ -16,16 +16,6 @@
         </dependencySet>
         <dependencySet>
             <includes>
-                <include>*:*:war:*</include>
-            </includes>
-            <outputDirectory>share/classes/webapps</outputDirectory>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </dependencySet>
-        <dependencySet>
-            <includes>
                 <include>saxon:saxon:*:*</include>
             </includes>
             <outputDirectory>share/classes/saxon</outputDirectory>
@@ -98,7 +88,6 @@
                 <include>var/credentials/**</include>
                 <include>var/httpd/**</include>
                 <include>var/log/**</include>
-                <include>var/plots/**</include>
                 <include>var/pool-history/**</include>
                 <include>var/resilience/**</include>
                 <include>var/run/**</include>

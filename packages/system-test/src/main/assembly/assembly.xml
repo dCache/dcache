@@ -17,16 +17,6 @@
         </dependencySet>
         <dependencySet>
             <includes>
-                <include>*:dcache-webadmin:war:*</include>
-            </includes>
-            <outputDirectory>share/classes/webapps</outputDirectory>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputFileNameMapping>webadmin.war</outputFileNameMapping>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </dependencySet>
-        <dependencySet>
-            <includes>
                 <include>saxon:saxon:*:*</include>
             </includes>
             <outputDirectory>share/classes/saxon</outputDirectory>

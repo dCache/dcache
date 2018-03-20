@@ -68,7 +68,6 @@
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.4.6.v20170531</version.jetty>
-        <version.wicket>7.6.0</version.wicket>
         <version.xrootd4j>3.2.2</version.xrootd4j>
         <version.jersey>2.26</version.jersey>
         <version.dcache-view>1.4.0</version.dcache-view>
@@ -625,37 +624,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-core</artifactId>
-                <version>${version.wicket}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-auth-roles</artifactId>
-                <version>${version.wicket}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-spring</artifactId>
-                <version>${version.wicket}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>cglib</artifactId>
-                        <groupId>cglib</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-extensions</artifactId>
-                <version>${version.wicket}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-datetime</artifactId>
-                <version>${version.wicket}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>1.3.175</version>
@@ -737,73 +705,6 @@
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>2.8.0</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.freehep</groupId>
-                <artifactId>freehep-jaida</artifactId>
-                <version>3.4.6</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.freehep</groupId>
-                        <artifactId>freehep-commandline</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.freehep</groupId>
-                        <artifactId>freehep-commanddispatcher</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.freehep</groupId>
-                        <artifactId>freehep-argv</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.freehep</groupId>
-                        <artifactId>freehep-jaida-xml</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.freehep</groupId>
-                        <artifactId>freehep-xml</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>hep.aida</groupId>
-                        <artifactId>aida-test</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.l2fprod</groupId>
-                        <artifactId>l2fprod-common-all</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-math</groupId>
-                        <artifactId>commons-math</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.help</groupId>
-                        <artifactId>javahelpr</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>jdom</groupId>
-                        <artifactId>jdom</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>net.java.dev</groupId>
-                        <artifactId>truezip</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xercesImpl</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.freehep</groupId>
-                <artifactId>freehep-graphics2d</artifactId>
-                <version>2.2.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.freehep</groupId>
-                <artifactId>freehep-graphicsio</artifactId>
-                <version>2.2.1</version>
             </dependency>
 
             <dependency>
@@ -1355,7 +1256,6 @@
         <module>modules/dcache-xrootd</module>
         <module>modules/dcache-dcap</module>
         <module>modules/dcache-gplazma</module>
-        <module>modules/dcache-webadmin</module>
         <module>modules/dcache-frontend</module>
         <module>modules/dcache-nfs</module>
         <module>modules/dcache-srm</module>

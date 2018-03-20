@@ -110,10 +110,9 @@ public class HandlerDelegator extends AbstractHandler {
             logger.debug("alias: {}, entry {}", alias, entry);
 
             /*
-             * The exclusion of POST used to be absolute; we allow it now only
-             * on webapps.
+             * Exclusion of POST is absolute.
              */
-            if (!request.getMethod().equals("GET") && entry.getType() != AliasEntry.AliasType.WEBAPP) {
+            if (!request.getMethod().equals("GET")) {
                 throw new HttpException(HttpServletResponse.SC_NOT_IMPLEMENTED,
                                 "Method not implemented: " + request.getMethod());
             }

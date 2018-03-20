@@ -44,9 +44,6 @@
   </bean>
 
   <beans profile="db-false">
-    <bean id="histogram-request-receiver" class="org.dcache.services.billing.cells.receivers.NOPHistogramRequestReceiver">
-        <!-- no connection to database; returns failure on request -->
-    </bean>
     <bean id="billing-record-request-receiver" class="org.dcache.services.billing.cells.receivers.BillingRecordRequestReceiver">
         <!-- no connection to database; returns failure on request -->
     </bean>
@@ -95,15 +92,6 @@
 
     <bean id="hourly-aggregata-data-handler" class="org.dcache.services.billing.db.impl.HourlyAggregateDataHandler" init-method="initialize">
       <property name="access" ref="jdbc-billing-info-access"/>
-    </bean>
-
-    <bean id="histogram-service" class="org.dcache.services.billing.histograms.data.JDOTimeFrameHistogramDataService">
-      <property name="access" ref="jdbc-billing-info-access"/>
-      <property name="hourlyAggregateDataHandler" ref="hourly-aggregata-data-handler"/>
-    </bean>
-
-    <bean id="histogram-request-receiver" class="org.dcache.services.billing.cells.receivers.HistogramRequestReceiver">
-      <property name="service" ref="histogram-service"/>
     </bean>
 
     <bean id="billing-record-request-receiver" class="org.dcache.services.billing.cells.receivers.BillingRecordRequestReceiver">

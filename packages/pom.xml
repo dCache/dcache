@@ -166,12 +166,6 @@
       <artifactId>gplazma2-htpasswd</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>dcache-webadmin</artifactId>
-        <version>${project.version}</version>
-        <type>war</type>
-    </dependency>
       <dependency>
           <groupId>org.dcache</groupId>
           <artifactId>dcache-frontend</artifactId>
@@ -192,31 +186,6 @@
         <groupId>saxon</groupId>
         <artifactId>saxon</artifactId>
         <scope>runtime</scope>
-    </dependency>
-
-      <!-- Dependencies of a WAR artifact are not automatically
-           included, so we have to repeat them here. There is a plugin
-           (org.appfuse:maven-warpath-plugin) to solve
-           that (REVISIT). -->
-    <dependency>
-        <groupId>org.apache.wicket</groupId>
-        <artifactId>wicket-core</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.wicket</groupId>
-        <artifactId>wicket-auth-roles</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.wicket</groupId>
-        <artifactId>wicket-spring</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.wicket</groupId>
-        <artifactId>wicket-extensions</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.wicket</groupId>
-        <artifactId>wicket-datetime</artifactId>
     </dependency>
   </dependencies>
 

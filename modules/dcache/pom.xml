@@ -267,25 +267,6 @@
     </dependency>
 
     <dependency>
-        <groupId>org.freehep</groupId>
-        <artifactId>freehep-jaida</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.freehep</groupId>
-        <artifactId>freehep-graphics2d</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.freehep</groupId>
-        <artifactId>freehep-graphicsio</artifactId>
-    </dependency>
-    <dependency>
-        <!-- The freehep libs depend on xerces -->
-        <groupId>xerces</groupId>
-        <artifactId>xercesImpl</artifactId>
-        <scope>runtime</scope>
-    </dependency>
-
-    <dependency>
         <groupId>org.python</groupId>
         <artifactId>jython</artifactId>
         <scope>test</scope>

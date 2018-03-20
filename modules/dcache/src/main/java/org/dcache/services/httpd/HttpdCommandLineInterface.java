@@ -25,7 +25,6 @@ import org.dcache.services.httpd.handlers.HandlerDelegator;
 import org.dcache.services.httpd.handlers.PathHandler;
 import org.dcache.services.httpd.handlers.RedirectHandler;
 import org.dcache.services.httpd.handlers.ResponseEngineHandler;
-import org.dcache.services.httpd.handlers.WebAppHandler;
 import org.dcache.services.httpd.util.AliasEntry;
 import org.dcache.util.Args;
 
@@ -155,14 +154,6 @@ public class HttpdCommandLineInterface
             entry = new AliasEntry(alias, aliasType, handler, sb.toString());
             entry.setIntFailureMsg(failure);
             entry.setStatusMessage(alias + " -> " + aliasType.getType() + "(" + entry.getSpecificString() + ")");
-            break;
-        case WEBAPP:
-            WebAppHandler webappContext = (WebAppHandler) beanFactory.getBean("webapp-handler");
-            webappContext.setWar(new File(specific).getAbsolutePath());
-            webappContext.setContextPath("/" + alias);
-            handler = webappContext;
-            entry = new AliasEntry(alias, aliasType, handler, specific);
-            entry.setStatusMessage(alias + " -> " + aliasType.getType() + "(" + args + ")");
             break;
         default:
             handler = new BadConfigHandler();

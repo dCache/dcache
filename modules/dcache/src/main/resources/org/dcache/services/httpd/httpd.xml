@@ -47,13 +47,6 @@
         <property name="lifetimeUnit" value="${httpd.service.restore-requests.lifetime.unit}"/>
     </bean>
 
-    <bean id="webapp-handler" class="org.dcache.services.httpd.handlers.WebAppHandler" scope="prototype">
-        <property name="defaultsDescriptor" value="${httpd.container.default-webapp}"/>
-        <property name="extractWAR" value="false"/>
-        <property name="poolMonitor" ref="pool-monitor"/>
-        <property name="receiver" ref="restores-request-receiver"/>
-    </bean>
-
     <bean id="jetty" class="org.dcache.services.httpd.Server">
         <description>Embedded HTTP server</description>
         <constructor-arg ref="thread-pool"/>
@@ -93,39 +86,7 @@
         </property>
     </bean>
 
-    <beans profile="authn-false">
-        <util:list id="connectors">
-            <ref bean="plain-connector"/>
-        </util:list>
-    </beans>
-
-    <beans profile="authn-true">
-        <util:list id="connectors">
-            <ref bean="plain-connector"/>
-            <ref bean="ssl-connector"/>
-        </util:list>
-
-        <bean id="ssl-connector" parent="connector">
-            <property name="port" value="${httpd.net.https-port}"/>
-
-            <property name="protocol" value="TLS"/>
-            <property name="needClientAuth" value="false"/>
-            <property name="wantClientAuth" value="true"/>
-
-            <property name="cipherFlags" value="${httpd.authn.ciphers}"/>
-
-            <property name="caPath" value="${httpd.authn.capath}"/>
-            <property name="caPathTimeout" value="${httpd.authn.capath.refresh}"/>
-            <property name="caPathTimeoutUnit" value="${httpd.authn.capath.refresh.unit}"/>
-
-            <property name="serverCertificatePath" value="${httpd.authn.hostcert.cert}"/>
-            <property name="serverKeyPath" value="${httpd.authn.hostcert.key}"/>
-            <property name="serverCertificateTimeout" value="${httpd.authn.hostcert.refresh}"/>
-            <property name="serverCertificateTimeoutUnit" value="${httpd.authn.hostcert.refresh.unit}"/>
-
-            <property name="namespaceMode" value="${httpd.authn.namespace-mode}"/>
-            <property name="crlCheckingMode" value="${httpd.authn.crl-mode}"/>
-            <property name="ocspCheckingMode" value="${httpd.authn.ocsp-mode}"/>
-        </bean>
-    </beans>
+    <util:list id="connectors">
+        <ref bean="plain-connector"/>
+    </util:list>
 </beans>
