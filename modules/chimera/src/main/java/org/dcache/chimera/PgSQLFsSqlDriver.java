@@ -296,6 +296,24 @@ public class PgSQLFsSqlDriver extends FsSqlDriver {
     }
 
     @Override
+    boolean setPrimaryLocation(FsInode inode, int type, String location) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        return _jdbc.update("INSERT INTO t_locationinfo (inumber,itype,ilocation,ipriority,ictime,iatime,istate) "
+                + "(SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS "
+                + "(SELECT 1 FROM t_locationinfo WHERE inumber=?))",
+                ps -> {
+                    ps.setLong(1, inode.ino());
+                    ps.setInt(2, type);
+                    ps.setString(3, location);
+                    ps.setInt(4, 10); // default priority
+                    ps.setTimestamp(5, now);
+                    ps.setTimestamp(6, now);
+                    ps.setInt(7, 1); // online
+                    ps.setLong(8, inode.ino());
+                }) > 0;
+    }
+
+    @Override
     void copyTags(FsInode orign, FsInode destination) {
         _jdbc.queryForList("INSERT INTO t_tags (inumber,itagid,isorign,itagname) (SELECT ?,itagid,0,itagname FROM t_tags WHERE inumber=?) RETURNING itagid",
                 Long.class, destination.ino(), orign.ino()).

@@ -926,6 +926,7 @@ public class ChimeraNameSpaceProvider
                 attributes.setChecksums(Sets.newHashSet(inode.getChecksums()));
                 break;
             case LOCATIONS:
+            case INITIAL_LOCATION:
                 attributes.setLocations(Lists.newArrayList(inode.getLocations(StorageGenericLocation.DISK)));
                 break;
             case FLAGS:
@@ -1079,12 +1080,18 @@ public class ChimeraNameSpaceProvider
                     case STORAGEINFO:
                         _extractor.setStorageInfo(inode, attr.getStorageInfo());
                         break;
+                    case INITIAL_LOCATION:
+                        break;
                     default:
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
             }
             if (stat.isDefinedAny()) {
                 inode.setStat(stat);
+            }
+
+            if (attr.isDefined(FileAttribute.INITIAL_LOCATION)) {
+                _fs.setPrimaryLocation(inode, StorageGenericLocation.DISK, attr.getInitialLocation());
             }
 
             if (attr.isDefined(FileAttribute.LOCATIONS)) {

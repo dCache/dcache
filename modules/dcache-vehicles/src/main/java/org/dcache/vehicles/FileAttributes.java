@@ -544,6 +544,16 @@ public class FileAttributes implements Serializable {
         return _worm;
     }
 
+    public void setInitialLocation(String initialLocation) {
+        define(INITIAL_LOCATION);
+        _initialLocation = initialLocation;
+    }
+
+    public String getInitialLocation() {
+        guard(INITIAL_LOCATION);
+        return _initialLocation;
+    }
+
 //    public Optional<Boolean> getWormIfPresent()
 //    {
 //        return toOptional(WORM, _worm);
@@ -590,6 +600,7 @@ public class FileAttributes implements Serializable {
                 .add("cacheClass", _cacheClass)
                 .add("hsm", _hsm)
                 .add("worm", _worm)
+                .add("initialLocation", _initialLocation)
                 .omitNullValues()
                 .toString();
     }

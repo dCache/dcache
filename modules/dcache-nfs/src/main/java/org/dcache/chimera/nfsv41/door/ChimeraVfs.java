@@ -177,44 +177,9 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         int gid = (int)Subjects.getPrimaryGid(subject);
         try {
             FsInode parentFsInode = toFsInode(parent);
-            PnfsId parentPnfsId = new PnfsId(parentFsInode.getId());
-            // resuest storageInfo of newly created file will match with
-            // storage info of the parent directory
-            FileAttributes fileAttributes = _pnfsHandler.getFileAttributes(parentPnfsId, EnumSet.of(
-                    STORAGEINFO,
-                    HSM,
-                    STORAGECLASS,
-                    PNFSID,
-                    ACCESS_LATENCY,
-                    RETENTION_POLICY
-            ));
 
-            PoolMgrSelectWritePoolMsg request
-                    = new PoolMgrSelectWritePoolMsg(fileAttributes,
-                            new NFS4ProtocolInfo(new InetSocketAddress(0), null, null), 0);
-            request = _poolManagerStub.sendAsync(request).get();
-
-            // create file with a given pool. If create succeeds, then new location
-            // is registered as well
-
-            // sanitize file attributes
-            fileAttributes = new FileAttributes();
-            fileAttributes.setOwner(uid);
-            fileAttributes.setGroup(gid);
-            fileAttributes.setMode(mode);
-            fileAttributes.setFileType(FileType.REGULAR);
-            fileAttributes.setLocations(ImmutableList.of(request.getPoolName()));
-
-            PnfsCreateEntryMessage createEntry = new PnfsCreateEntryMessage(path, fileAttributes);
-            // dirty-dirty hack: use pnfsid field as id of the parent directory
-            createEntry.setPnfsId(parentPnfsId);
-            createEntry = _pnfsHandler.request(createEntry);
-
-            FsInode fsInode = _fs.id2inode(createEntry.getPnfsId().toString(), NO_STAT);
+            FsInode fsInode = _fs.createFile(parentFsInode, path, uid, gid, mode | typeToChimera(type), typeToChimera(type));
             return toInode(fsInode);
-        } catch (CacheException | InterruptedException | ExecutionException e) {
-            _log.warn("Failed to fetch storage info: {}", e.toString());
-            throw ExceptionUtils.asNfsException(e, NfsIoException.class);
         } catch (FileExistsChimeraFsException e) {
             throw new ExistException("path already exists");
         }

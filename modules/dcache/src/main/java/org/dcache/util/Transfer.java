@@ -87,6 +87,7 @@ import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.REGULAR;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 
 /**
  * Facade for transfer related operations. Encapsulates information
@@ -801,6 +802,29 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * Reads the name space entry of the file to transfer. This will fill in the
+     * PnfsId and FileAttributes of the file.
+     * <p>
+     * Changes the I/O mode from write to read if the file is not new.
+     *
+     * @throws PermissionDeniedCacheException if permission to read/write the
+     * file is denied
+     * @throws NotFileCacheException if the file is not a regular file
+     * @throws FileIsNewCacheException when attempting to download an incomplete
+     * file
+     * @throws CacheException if reading the entry failed
+     * @throws InterruptedException if the thread is interrupted
+     */
+    public final void offerLocationAndReadNameSpaceEntry(String location)
+            throws CacheException, InterruptedException {
+        try {
+            getCancellable(offerLocationAndReadNameSpaceEntryAsync(location, _pnfs.getPnfsTimeout()));
+        } catch (NoRouteToCellException e) {
+            throw new TimeoutCacheException(e.getMessage(), e);
+        }
+    }
+
+    /**
      * Reads the name space entry of the file to transfer. This will fill in the PnfsId
      * and FileAttributes of the file.
      * <p>
@@ -861,6 +885,49 @@ public class Transfer implements Comparable<Transfer>
                                            setFileAttributes(attributes);
                                            return immediateFuture(null);
                                        });
+    }
+
+    private ListenableFuture<Void> offerLocationAndReadNameSpaceEntryAsync(String location, long timeout) {
+        Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE, WORM);
+        attr.addAll(_additionalAttributes);
+        attr.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+        Set<AccessMask> mask = EnumSet.of(AccessMask.READ_DATA, AccessMask.WRITE_DATA);
+
+        FileAttributes setAttribute = new FileAttributes();
+        setAttribute.setInitialLocation(location);
+
+        PnfsId pnfsId = getPnfsId();
+        PnfsSetFileAttributes request;
+        if (pnfsId != null) {
+            request = new PnfsSetFileAttributes(pnfsId, setAttribute, attr);
+            if (_path != null) {
+                // Needed for restriction check.
+                request.setPnfsPath(_path.toString());
+            }
+        } else {
+            request = new PnfsSetFileAttributes(_path.toString(), setAttribute, attr);
+        }
+        request.setAccessMask(mask);
+
+        ListenableFuture<PnfsSetFileAttributes> reply = _pnfs.requestAsync(request, timeout);
+
+        setStatusUntil("PnfsManager: Fetching storage info", reply);
+
+        return CellStub.transformAsync(reply,
+                msg -> {
+                    FileAttributes attributes = msg.getFileAttributes();
+                    /* We can only transfer regular files.
+                     */
+                    FileType type = attributes.getFileType();
+                    if (type == FileType.DIR || type == FileType.SPECIAL) {
+                        throw new NotFileCacheException("Not a regular file");
+                    }
+
+                    setWrite(true);
+
+                    setFileAttributes(attributes);
+                    return immediateFuture(null);
+                });
     }
 
     /**

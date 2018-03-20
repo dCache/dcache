@@ -1012,7 +1012,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             if (_redirectFuture == null) {
 
-                readNameSpaceEntry(_isWrite);
+                if (_isWrite) {
+                    offerLocationAndReadNameSpaceEntry("dcache-lab003-A");
+                } else {
+                    readNameSpaceEntry(_isWrite);
+                }
 
                 FileAttributes attr = getFileAttributes();
                 if (_isWrite && attr.getWorm()
