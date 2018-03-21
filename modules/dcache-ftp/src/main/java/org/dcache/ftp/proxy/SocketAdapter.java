@@ -218,19 +218,24 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     class StreamRedirector extends Redirector
     {
-        public StreamRedirector(SocketChannel input)
+        private final ByteBuffer _initial;
+        public StreamRedirector(SocketChannel input, ByteBuffer initial)
         {
             super(input, "ModeS");
+            _initial = initial;
         }
 
         @Override
         public void runProxy()
         {
             try {
+                LOGGER.debug("Initial data: {}", _initial);
                 _inbound.finishAccept(); // only expect a single connection.
 
-                boolean reading = true;
+                boolean reading = false;
                 try {
+                    _output.write(_initial);
+                    reading = true;
                     ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
                     while (_input.read(buffer) != -1) {
                         buffer.flip();
@@ -273,9 +278,12 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     class ModeERedirector extends Redirector
     {
-        public ModeERedirector(SocketChannel input)
+        private final ByteBuffer _initial;
+
+        public ModeERedirector(SocketChannel input, ByteBuffer initial)
         {
             super(input, "ModeE");
+            _initial = initial;
         }
 
         @Override
@@ -284,8 +292,9 @@ public class SocketAdapter implements Runnable, ProxyAdapter
             boolean eod = false;
             boolean used = false;
             try {
+                LOGGER.debug("Initial data: {}", _initial);
                 ByteBuffer header = ByteBuffer.allocate(17);
-                EDataBlockNio block = new EDataBlockNio(getName());
+                EDataBlockNio block = new EDataBlockNio(getName(), _initial);
                 boolean reading = true;
 
                 long count, position;
@@ -679,15 +688,15 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         LOGGER.debug("All redirectors have finished");
     }
 
-    private void acceptNewChannel(SocketChannel input)
+    private void acceptNewChannel(SocketChannel input, ByteBuffer initialInput)
     {
         LOGGER.debug("Accepting new TCP connection");
 
         Redirector redir;
         if (_modeE) {
-            redir = new ModeERedirector(input);
+            redir = new ModeERedirector(input, initialInput);
         } else {
-            redir = new StreamRedirector(input);
+            redir = new StreamRedirector(input, initialInput);
         }
         redir.start();
 
