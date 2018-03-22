@@ -474,7 +474,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         transfer.finished(transferFinishedMessage);
         Serializable error = transferFinishedMessage.getErrorObject();
-        transfer.notifyBilling(transferFinishedMessage.getReturnCode(), error == null? "" : error.toString());
+        //transfer.notifyBilling(transferFinishedMessage.getReturnCode(), error == null? "" : error.toString());
 
         // Ensure that we do not kill re-started transfer
         if(transfer.getId() == transferFinishedMessage.getId()) {

@@ -161,7 +161,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                                         "Transfer failed due to unexpected exception: " + e.getMessage());
                 completionHandler.failed(e, null);
             }
-            sendBillingMessage(mover, handle.getReplicaSize());
+            //sendBillingMessage(mover, handle.getReplicaSize());
             sendFinished(mover);
         }));
     }
