@@ -99,6 +99,7 @@
                 <include>var/httpd/**</include>
                 <include>var/log/**</include>
                 <include>var/plots/**</include>
+                <include>var/pool-history/**</include>
                 <include>var/resilience/**</include>
                 <include>var/run/**</include>
                 <include>var/statistics/**</include>
