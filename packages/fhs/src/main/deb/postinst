@@ -35,7 +35,6 @@ Please fix this and reinstall this package." >&2
 
     # protect directories that only dCache should access
     chmod 700 /var/lib/dcache/alarms
-    chmod 700 /var/lib/dcache/cell-info
     chmod 700 /var/lib/dcache/credentials
     chmod 700 /var/lib/dcache/httpd
     chmod 700 /var/lib/dcache/plots
