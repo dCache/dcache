@@ -27,6 +27,7 @@ Please fix this and reinstall this package." >&2
     chown dcache:dcache /var/lib/dcache/billing
     chown dcache:dcache /var/lib/dcache/httpd
     chown dcache:dcache /var/lib/dcache/plots
+    chown dcache:dcache /var/lib/dcache/pool-history
     chown dcache:dcache /var/lib/dcache/statistics
     chown dcache:dcache /var/lib/dcache/credentials
     chown dcache:dcache /var/lib/dcache/star
@@ -38,6 +39,7 @@ Please fix this and reinstall this package." >&2
     chmod 700 /var/lib/dcache/credentials
     chmod 700 /var/lib/dcache/httpd
     chmod 700 /var/lib/dcache/plots
+    chmod 700 /var/lib/dcache/pool-history
     chmod 700 /var/lib/dcache/resilience
     chmod 700 /var/lib/dcache/statistics
 
