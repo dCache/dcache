@@ -1,9 +1,7 @@
 package org.dcache.chimera.spi;
 
-import com.google.common.base.Splitter;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.sql.DataSource;
@@ -17,8 +15,8 @@ import static org.dcache.util.SqlHelper.tryToClose;
 public class PgSQLDrivertProvider implements DBDriverProvider {
 
 
-    // pattern to match versions like: 1.2.3 or 1.2rc1
-    private final static Pattern VERSION_PATTERN = Pattern.compile("(?<maj>\\d+)\\.(?<min>\\d+)(?:(\\.(\\d+))|(\\w+))");
+    // pattern to match versions like: 1.2.3 or 1.2rc1 or 1.2
+    private final static Pattern VERSION_PATTERN = Pattern.compile("(?<maj>\\d+)\\.(?<min>\\d+)(?:(\\.(\\d+))|(\\w+))?");
 
     @Override
     public boolean isSupportDB(DataSource dataSource) throws SQLException {
@@ -55,7 +53,7 @@ public class PgSQLDrivertProvider implements DBDriverProvider {
             } catch (NumberFormatException ignored) {
             }
 
-            if (maj >= 9 && min >= 5) {
+            if ((maj > 9) || (maj == 9 && min >= 5)) {
                 return new PgSQL95FsSqlDriver(dataSource);
             } else {
                 return new PgSQLFsSqlDriver(dataSource);
