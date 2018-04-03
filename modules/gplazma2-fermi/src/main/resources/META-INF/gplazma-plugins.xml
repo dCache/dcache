@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>vogroup</name>
+        <class>org.dcache.gplazma.plugins.VOGroupPlugin</class>
+    </plugin>
+</plugins>
