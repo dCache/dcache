@@ -1257,6 +1257,7 @@
         <module>modules/cells</module>
         <module>modules/gplazma2</module>
         <module>modules/gplazma2-argus</module>
+        <module>modules/gplazma2-fermi</module>
         <module>modules/gplazma2-grid</module>
         <module>modules/gplazma2-krb5</module>
         <module>modules/gplazma2-jaas</module>
