@@ -51,7 +51,7 @@ public class LocationManagerConnector
         _domain = a.getOpt("domain");
         _ssf = requireNonNull(socketFactory);
         HostAndPort where = HostAndPort.fromString(a.getOpt("where"));
-        _address = new InetSocketAddress(where.getHostText(), where.getPort());
+        _address = new InetSocketAddress(where.getHost(), where.getPort());
     }
 
     @Override
