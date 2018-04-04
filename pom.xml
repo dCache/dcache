@@ -67,11 +67,11 @@
         <version.aspectj>1.8.10</version.aspectj>
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
-        <version.jetty>9.4.6.v20170531</version.jetty>
+        <version.jetty>9.4.9.v20180320</version.jetty>
         <version.xrootd4j>3.2.2</version.xrootd4j>
         <version.jersey>2.26</version.jersey>
         <version.dcache-view>1.4.0</version.dcache-view>
-        <version.netty>4.1.10.Final</version.netty>
+        <version.netty>4.1.22.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.1.7</version.swagger-ui>
 
@@ -217,7 +217,7 @@
             <dependency>
                 <groupId>jline</groupId>
                 <artifactId>jline</artifactId>
-                <version>2.14.3</version>
+                <version>2.14.6</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -296,7 +296,7 @@
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>4.2.2</version>
+                <version>4.5.1</version>
             </dependency>
             <!-- xacml client incompatible with the newer opensaml library -->
             <dependency>
@@ -364,12 +364,12 @@
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
-                <version>2.7.3</version>
+                <version>2.7.8</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.1.4</version>
+                <version>42.2.2.jre7</version>
             </dependency>
             <dependency>
                 <groupId>io.milton</groupId>
