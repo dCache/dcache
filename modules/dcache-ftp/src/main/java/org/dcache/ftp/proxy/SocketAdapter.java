@@ -66,6 +66,9 @@
 
 package org.dcache.ftp.proxy;
 
+import com.google.common.io.BaseEncoding;
+import com.google.common.net.InetAddresses;
+import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,11 +83,11 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.dcache.util.ColumnWriter;
+import org.dcache.util.NDC;
 import org.dcache.util.PortRange;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.ByteUnit.KiB;
 
 /**
@@ -168,15 +171,45 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private boolean _closing;
 
     private SocketChannel _output;
+    private String _outputLocalAddress = "awaiting";
+    private String _outputRemoteAddress = "awaiting";
+
 
     private abstract class Redirector extends Thread
     {
-        Redirector(String name)
+        protected final SocketChannel _input;
+        protected final String _inputLocalAddress;
+        protected final String _inputRemoteAddress;
+        private final String _shortName;
+
+        Redirector(SocketChannel input, String namePrefix)
         {
-            super(name);
+            _input = requireNonNull(input);
+
+            _shortName = namePrefix + "-proxy-"
+                    + BaseEncoding.base64().omitPadding().encode(Ints.toByteArray(hashCode()));
+            setName(_shortName + "-" + SocketAdapter.toString(_clientConnectionHandler.getLocalAddress()));
+
+            _inputRemoteAddress = SocketAdapter.toString(_input.socket().getRemoteSocketAddress());
+            _inputLocalAddress = SocketAdapter.toString(_input.socket().getLocalSocketAddress());
         }
 
-        abstract SocketChannel input();
+        public abstract void runProxy();
+
+        @Override
+        public void run()
+        {
+            try {
+                NDC.push(_shortName);
+                LOGGER.debug("Accepting data: {} --> {}", _inputRemoteAddress,
+                        _inputLocalAddress);
+                LOGGER.debug("Sending data: {} --> {}", _outputLocalAddress,
+                        _outputRemoteAddress);
+                runProxy();
+            } finally {
+                NDC.pop();
+            }
+        }
     }
 
     /**
@@ -185,34 +218,19 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     class StreamRedirector extends Redirector
     {
-        private final SocketChannel _input;
-
         public StreamRedirector(SocketChannel input)
         {
-            super("ModeS-Proxy-" + _clientConnectionHandler.getLocalAddress());
-            _input = input;
+            super(input, "ModeS");
         }
 
         @Override
-        SocketChannel input()
-        {
-            return _input;
-        }
-
-        @Override
-        public void run()
+        public void runProxy()
         {
             try {
                 _inbound.finishAccept(); // only expect a single connection.
 
-                String inputAddress =
-                        _input.socket().getRemoteSocketAddress().toString();
-                String outputAddress =
-                        _output.socket().getRemoteSocketAddress().toString();
                 boolean reading = true;
                 try {
-                    LOGGER.debug("Starting mode S proxy from {} to {}",
-                                inputAddress, outputAddress);
                     ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
                     while (_input.read(buffer) != -1) {
                         buffer.flip();
@@ -224,13 +242,14 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                     markInputClosed(_input);
                 } catch (IOException e) {
                     if (reading) {
-                        setError("Error on socket to " + inputAddress + ": "
+                        setError("Error reading from " + _inputRemoteAddress + ": "
                                          + e.getMessage());
                     } else {
-                        setError("Error on socket to " + outputAddress + ": "
+                        setError("Error writing to " + _outputRemoteAddress + ": "
                                          + e.getMessage());
                     }
                 } finally {
+                    LOGGER.debug("Returning input channel");
                     _inbound.returnChannel(_input);
                 }
             } catch (InterruptedException e) {
@@ -249,43 +268,29 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     }
 
     /**
-     * A redirector moves data between an input channel and an ouput
+     * A redirector moves data between an input channel and an output
      * channel. This particular redirector does so in mode E.
      */
     class ModeERedirector extends Redirector
     {
-        private final SocketChannel _input;
-
         public ModeERedirector(SocketChannel input)
         {
-            super("ModeE-Proxy-" + _clientConnectionHandler.getLocalAddress());
-            _input  = checkNotNull(input);
+            super(input, "ModeE");
         }
 
         @Override
-        SocketChannel input()
-        {
-            return _input;
-        }
-
-        @Override
-        public void run()
+        public void runProxy()
         {
             boolean eod = false;
             boolean used = false;
             try {
                 ByteBuffer header = ByteBuffer.allocate(17);
                 EDataBlockNio block = new EDataBlockNio(getName());
-                SocketAddress inputAddress = _input.socket().getRemoteSocketAddress();
-                SocketAddress outputAddress = _output.socket().getRemoteSocketAddress();
                 boolean reading = true;
 
                 long count, position;
 
                 try {
-                    LOGGER.debug("Starting mode E proxy from {} to {}",
-                                inputAddress, outputAddress);
-
                     loop: while (!eod && block.readHeader(_input) > -1) {
                         used = true;
                         /* EOF blocks are never forwarded as they do not
@@ -300,12 +305,15 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                             }
                             setEODExcepted(conns);
                             if (hasSeenAllExpectedEOD()) {
+                                LOGGER.debug("Finishing accept");
                                 _inbound.finishAccept();
                             }
                             count = position = 0;
+                            LOGGER.debug("EOF descriptor: conns={}", conns);
                         } else {
                             count = block.getSize();
                             position = block.getOffset();
+                            LOGGER.debug("Read {} bytes for offset {}", count, position);
                         }
 
                         /* Read and send a single block. To limit memory
@@ -334,6 +342,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                             buffers[0].flip();
                             buffers[1].flip();
                             reading = false;
+                            LOGGER.debug("Sending {} bytes", len);
                             _output.write(buffers);
                             reading = true;
 
@@ -344,6 +353,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 
                         /* Check for EOD mark. */
                         if (block.isDescriptorSet(EDataBlockNio.EOD_DESCRIPTOR)) {
+                            LOGGER.debug("Block just received contains EOD");
                             eod = true;
                         }
                     }
@@ -351,27 +361,51 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                     if (eod) {
                         incrementEODSeen();
                         if (hasSeenAllExpectedEOD()) {
+                            LOGGER.debug("Finishing accept");
                             _inbound.finishAccept();
                         }
                     } else if (used) {
-                        setError("Data channel from " + inputAddress + " was closed before EOD marker");
+                        setError("Data channel from " + _inputRemoteAddress
+                                + " was closed before EOD marker");
                     }
                 } catch (InterruptedException e) {
                     setError("Interrupted waiting for accept to shut down");
                 } catch (IOException e) {
                     if (reading) {
-                        setError("Error on socket to " + inputAddress + ": "
+                        setError("Error reading from " + _inputRemoteAddress + ": "
                                          + e.getMessage());
                     } else {
-                        setError("Error on socket to " + outputAddress + ": "
+                        setError("Error writing to " + _outputRemoteAddress + ": "
                                          + e.getMessage());
                     }
                 }
             } finally {
+                LOGGER.debug("Returning input channel");
                 _inbound.returnChannel(_input);
             }
         }
     }
+
+    /**
+     * Provide a better string representation than String.valueOf(..).  The
+     * default representation always includes a '/' to seperate the hostname
+     * from the IP address, even if the hostname is not supplied.  In addition,
+     * any IPv6 address is not compressed.
+     */
+    private static String toString(SocketAddress sockAddr)
+    {
+        if (sockAddr == null) {
+            return "disconnected";
+        } else if (sockAddr instanceof InetSocketAddress) {
+            InetSocketAddress inetSockAddr = (InetSocketAddress) sockAddr;
+            InetAddress ip = inetSockAddr.getAddress();
+            String host = ip == null ? inetSockAddr.getHostString() : InetAddresses.toAddrString(ip);
+            return host + ":" + inetSockAddr.getPort();
+        } else {
+            return sockAddr.toString();
+        }
+    }
+
 
     public SocketAdapter(PassiveConnectionHandler handler, InetAddress addressForPools)
             throws IOException
@@ -382,7 +416,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         _poolConnectionHandler = new PassiveConnectionHandler(addressForPools, PortRange.ANY);
         _poolConnectionHandler.open();
 
-        _thread = new Thread(this, "SocketAdapter-" + _clientConnectionHandler.getLocalAddress());
+        _thread = new Thread(this, "SocketAdapter-" + toString(_clientConnectionHandler.getLocalAddress()));
     }
 
     /** Increments the EOD seen counter. Thread safe. */
@@ -549,6 +583,9 @@ public class SocketAdapter implements Runnable, ProxyAdapter
              * one connection on the output channel.
              */
             _output = _outbound.accept();
+            _outputRemoteAddress = SocketAdapter.toString(_output.socket().getRemoteSocketAddress());
+            _outputLocalAddress = SocketAdapter.toString(_output.socket().getLocalSocketAddress());
+
 
             try {
                 /* Send the EOF. The GridFTP protocol allows us to send
@@ -580,6 +617,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
             } finally {
                 try {
                     _output.close();
+                    _outputLocalAddress = "closed";
+                    _outputRemoteAddress = "closed";
                 } catch (IOException e) {
                     LOGGER.warn("Problem closing output: {}", e.getMessage());
                 }
@@ -637,7 +676,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         }
         _redirectors.clear();
 
-        LOGGER.trace("All redirectors have finished");
+        LOGGER.debug("All redirectors have finished");
     }
 
     private void acceptNewChannel(SocketChannel input)
@@ -722,7 +761,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                 }
                 isFirstRow = false;
             }
-            Socket in = redirector.input().socket();
+            Socket in = redirector._input.socket();
             if (_clientToPool) {
                 proxy.client(in);
             } else {

@@ -100,8 +100,6 @@ public class EDataBlockNio {
         _myName = name;
     }
 
-    public EDataBlockNio() {}
-
     public ByteBuffer getHeader() {
         return header;
     }
@@ -151,6 +149,7 @@ public class EDataBlockNio {
     }
 
     public long readHeader(SocketChannel socketChannel) {
+        LOGGER.debug("Reading header");
         if (header == null) {
             header = ByteBuffer.allocate(HEADER_LENGTH);
         }
@@ -162,11 +161,13 @@ public class EDataBlockNio {
             int n;
             try {
                 n = socketChannel.read(header);
-            } catch (Exception e) {
+            } catch (IOException e) {
+                LOGGER.error("Error reading header: {}", e.toString());
                 break;
             }
 
             if (n == -1) {
+                LOGGER.debug("Connection closed while reading header");
                 markInputClosed(socketChannel);
                 break;
             }
@@ -174,13 +175,17 @@ public class EDataBlockNio {
         }
 
         if (len < HEADER_LENGTH) {
+            LOGGER.debug("Partial read of header: {} bytes read", len);
             return -1;
         }
 
+        LOGGER.debug("Finish reading header: {} bytes read", len);
         return len;
     }
 
     public long readData(SocketChannel socketChannel, long size) {
+        LOGGER.debug("Reading {} bytes", size);
+
         if (data == null || data.capacity() < (int) size) {
             data = ByteBuffer.allocate((int) size);
         }
@@ -203,6 +208,7 @@ public class EDataBlockNio {
             }
             n += nr;
         }
+        LOGGER.debug("Finish reading data. {} bytes read", n);
         if (n < size) {
             n = -1;
         }
@@ -212,6 +218,7 @@ public class EDataBlockNio {
     }
 
     public long read(SocketChannel socketChannel) {
+        LOGGER.debug("Beginning read");
         if (readHeader(socketChannel) == -1) {
             markInputClosed(socketChannel);
             return -1;
