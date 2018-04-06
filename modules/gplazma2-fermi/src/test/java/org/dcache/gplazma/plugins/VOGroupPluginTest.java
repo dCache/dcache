@@ -68,6 +68,7 @@ import java.security.Principal;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
@@ -89,6 +90,7 @@ public class VOGroupPluginTest {
     public void setUp() throws Exception {
         URL url = ClassLoader.getSystemResource(TEST_FIXTURE);
         file = new File(url.toURI());
+        file.setLastModified(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1));
         map = new FileBackedVOGroupMap(file.getAbsolutePath());
         plugin = new VOGroupPlugin(map);
     }
