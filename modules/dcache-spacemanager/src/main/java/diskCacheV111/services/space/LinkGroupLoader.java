@@ -163,6 +163,8 @@ public class LinkGroupLoader
             for (PoolLinkGroupInfo info : linkGroupInfos) {
                 saveLinkGroup(currentTime, info);
             }
+        } else {
+            LOGGER.debug("In updateLinkGroups, poolMonitor updated no linkgroups");
         }
         latestUpdateTime = currentTime;
         return linkGroupInfos.size();
