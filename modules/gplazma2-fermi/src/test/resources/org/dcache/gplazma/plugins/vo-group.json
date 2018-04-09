@@ -1,0 +1,47 @@
+[
+  {
+    "fqan": "/GLOW/Role=None",
+    "mapped_uname": "glow",
+    "mapped_gid": "9784"
+  },
+  {
+    "fqan": "/fermilab/Role=None",
+    "mapped_uname": "",
+    "mapped_gid": "9767"
+  },
+  {
+    "fqan": "/fermilab/accelerator/Role=None",
+    "mapped_uname": "",
+    "mapped_gid": "1570"
+  },
+  {
+    "fqan": "/fermilab/accelerator/Role=Production",
+    "mapped_uname": "accelpro",
+    "mapped_gid": "1570"
+  },
+  {
+    "fqan": "/fermilab/Role=admin",
+    "mapped_uname": "fgadmin",
+    "mapped_gid": "9767"
+  },
+  {
+    "fqan": "/fermilab/annie/Role=None",
+    "mapped_uname": "",
+    "mapped_gid": "9467"
+  },
+  {
+    "fqan": "/fermilab/annie/Role=Analysis",
+    "mapped_uname": "",
+    "mapped_gid": "9467"
+  },
+  {
+    "fqan": "/fermilab/annie/Role=pilot",
+    "mapped_uname": "anniegli",
+    "mapped_gid": "9467"
+  },
+  {
+    "fqan": "/fermilab/annie/Role=Production",
+    "mapped_uname": "anniepro",
+    "mapped_gid": "9467"
+  }
+]
