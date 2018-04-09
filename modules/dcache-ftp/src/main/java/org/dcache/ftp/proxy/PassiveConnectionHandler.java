@@ -81,7 +81,7 @@ public class PassiveConnectionHandler implements Closeable
 
     public synchronized InetSocketAddress getLocalAddress()
     {
-        return (InetSocketAddress) _channel.socket().getLocalSocketAddress();
+        return _channel == null ? null : (InetSocketAddress) _channel.socket().getLocalSocketAddress();
     }
 
     public synchronized void setAddressSupplier(Supplier<Iterable<InterfaceAddress>> addressSupplier)
