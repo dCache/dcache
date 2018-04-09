@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import javax.annotation.concurrent.GuardedBy;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
@@ -130,30 +131,28 @@ public class CellMessageDispatcher
      * more specific than X, then you would expect the latter to be
      * called for message Y. This is not yet the case.
      */
-    private Collection<Receiver> findReceivers(Class<?> c)
-    {
-        synchronized (_receivers) {
-            Collection<Receiver> receivers = new ArrayList<>();
-            for (CellMessageReceiver listener : _messageListeners) {
-                Method m = ReflectionUtils.resolve(listener.getClass(),
-                                                   _receiverName,
-                                                   CellMessage.class, c);
-                if (m != null) {
-                    m.setAccessible(true);
-                    receivers.add(new LongReceiver(listener, m));
-                    continue;
-                }
-
-                m = ReflectionUtils.resolve(listener.getClass(),
-                                            _receiverName,
-                                            c);
-                if (m != null) {
-                    m.setAccessible(true);
-                    receivers.add(new ShortReceiver(listener, m));
-                }
+    @GuardedBy(value = "_receivers")
+    private Collection<Receiver> findReceivers(Class<?> c) {
+        Collection<Receiver> receivers = new ArrayList<>();
+        for (CellMessageReceiver listener : _messageListeners) {
+            Method m = ReflectionUtils.resolve(listener.getClass(),
+                    _receiverName,
+                    CellMessage.class, c);
+            if (m != null) {
+                m.setAccessible(true);
+                receivers.add(new LongReceiver(listener, m));
+                continue;
             }
-            return receivers;
+
+            m = ReflectionUtils.resolve(listener.getClass(),
+                    _receiverName,
+                    c);
+            if (m != null) {
+                m.setAccessible(true);
+                receivers.add(new ShortReceiver(listener, m));
+            }
         }
+        return receivers;
     }
 
     private String multipleRepliesError(Collection<Receiver> receivers, Object message)
