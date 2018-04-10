@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -790,20 +791,12 @@ public class RequestContainerV5
         private   volatile SelectedPool _poolCandidate;
 
         /**
-         * The host name of the pool used for staging.
-         *
-         * Serves a critical role when retrying staging to avoid that
-         * the same stage host is chosen twice in a row.
-         */
-        private   String     _stageCandidateHost;
-
-        /**
-         * The name of the pool used for staging.
+         * The pool used for staging.
          *
          * Serves a critical role when retrying staging to avoid that
          * the same pool is chosen twice in a row.
          */
-        private   String     _stageCandidatePool;
+        private Optional<SelectedPool> _stageCandidate = Optional.empty();
 
         /**
          * The destination of a pool to pool transfer. Set by
@@ -883,8 +876,7 @@ public class RequestContainerV5
            _transferPath = request.getTransferPath();
 
            _retryCounter = request.getContext().getRetryCounter();
-           _stageCandidateHost = request.getContext().getPreviousStageHost();
-           _stageCandidatePool = request.getContext().getPreviousStagePool();
+           _stageCandidate = Optional.ofNullable(request.getContext().getPreviousStagePool());
 
            if( request instanceof PoolMgrReplicateFileMsg ){
               _enforceP2P            = true ;
@@ -1098,7 +1090,7 @@ public class RequestContainerV5
                 CellMessage m =  messages.next();
                 PoolMgrSelectReadPoolMsg rpm =
                     (PoolMgrSelectReadPoolMsg) m.getMessageObject();
-                rpm.setContext(_retryCounter + 1, _stageCandidateHost, _stageCandidatePool);
+                rpm.setContext(_retryCounter + 1, _stageCandidate.orElse(null));
                 if (_currentRc == 0) {
                     rpm.setPoolName(_poolCandidate.name());
                     rpm.setPoolAddress(_poolCandidate.info().getAddress());
@@ -2049,11 +2041,9 @@ public class RequestContainerV5
         private RequestStatusCode askForStaging()
         {
             try {
-                SelectedPool pool =
-                    _poolSelector.selectStagePool(_stageCandidatePool, _stageCandidateHost);
+                SelectedPool pool =  _poolSelector.selectStagePool(_stageCandidate.map(SelectedPool::info));
                 _poolCandidate = pool;
-                _stageCandidatePool = pool.name();
-                _stageCandidateHost = pool.hostName();
+                _stageCandidate = Optional.of(pool);
 
                 _log.info("[staging] poolCandidate -> {}", _poolCandidate.info());
                 if (!sendFetchRequest(_poolCandidate)) {
@@ -2066,8 +2056,7 @@ public class RequestContainerV5
             } catch (CostException e) {
                if (e.getPool() != null) {
                    _poolCandidate = e.getPool();
-                   _stageCandidatePool = e.getPool().name();
-                   _stageCandidateHost = e.getPool().hostName();
+                   _stageCandidate = Optional.of(_poolCandidate);
                    return RequestStatusCode.FOUND;
                }
                _log.info("[stage] {}", e.getMessage());

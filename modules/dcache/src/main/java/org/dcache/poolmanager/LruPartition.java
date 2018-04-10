@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -156,8 +157,7 @@ public class LruPartition extends Partition
     @Override
     public SelectedPool selectStagePool(CostModule cm,
                                         List<PoolInfo> pools,
-                                        String previousPool,
-                                        String previousHost,
+                                        Optional<PoolInfo> previous,
                                         FileAttributes attributes)
         throws CacheException
     {

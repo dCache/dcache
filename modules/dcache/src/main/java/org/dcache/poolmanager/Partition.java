@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.NoSuchElementException;
 
 import diskCacheV111.poolManager.CostModule;
@@ -13,7 +14,6 @@ import diskCacheV111.util.CacheException;
 
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.*;
 import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.collect.Maps.filterValues;
@@ -385,8 +385,7 @@ public abstract class Partition implements Serializable
      */
     public abstract SelectedPool selectStagePool(CostModule cm,
                                                  List<PoolInfo> pools,
-                                                 String previousPool,
-                                                 String previousHost,
+                                                 Optional<PoolInfo> previous,
                                                  FileAttributes attributes)
         throws CacheException;
 

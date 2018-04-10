@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo;
@@ -162,7 +163,8 @@ public class BufferPartition extends Partition
     }
 
     @Override
-    public SelectedPool selectStagePool(CostModule cm, List<PoolInfo> pools, String previousPool, String previousHost,
+    public SelectedPool selectStagePool(CostModule cm, List<PoolInfo> pools,
+                                        Optional<PoolInfo> previous,
                                         FileAttributes attributes) throws CacheException
     {
         return selectPool(pools, attributes.getSize());

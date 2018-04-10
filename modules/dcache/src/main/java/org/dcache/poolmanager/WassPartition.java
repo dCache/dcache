@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.CacheException;
@@ -179,13 +180,12 @@ public class WassPartition extends ClassicPartition
     }
 
     private PoolInfo selectByPrevious(List<PoolInfo> pools,
-                                      String previousPool,
-                                      String previousHost,
+                                      Optional<PoolInfo> previous,
                                       FileAttributes attributes)
     {
-        if (previousHost != null && _allowSameHostRetry != SameHost.NOTCHECKED) {
+        if (previous.isPresent() && _allowSameHostRetry != SameHost.NOTCHECKED) {
             List<PoolInfo> filteredPools = pools.stream()
-                    .filter(p -> !Objects.equals(p.getHostName(), previousHost) && !Objects.equals(p.getName(), previousPool))
+                    .filter(p -> !Objects.equals(p.getHostName(), previous.get().getHostName()) && !Objects.equals(p.getName(), previous.get().getName()))
                     .collect(toList());
             PoolInfo pool = wass.selectByAvailableSpace(filteredPools, attributes.getSize(), PoolInfo::getCostInfo);
             if (pool != null) {
@@ -196,9 +196,9 @@ public class WassPartition extends ClassicPartition
             }
         }
 
-        if (previousPool != null) {
+        if (previous.isPresent()) {
             List<PoolInfo> filteredPools = pools.stream()
-                    .filter(p -> !Objects.equals(p.getName(), previousPool))
+                    .filter(p -> !Objects.equals(p.getName(), previous.get().getName()))
                     .collect(toList());
             PoolInfo pool = wass.selectByAvailableSpace(filteredPools, attributes.getSize(), PoolInfo::getCostInfo);
             if (pool != null) {
@@ -212,8 +212,7 @@ public class WassPartition extends ClassicPartition
     @Override
     public SelectedPool selectStagePool(CostModule cm,
                                         List<PoolInfo> pools,
-                                        String previousPool,
-                                        String previousHost,
+                                        Optional<PoolInfo> previous,
                                         FileAttributes attributes)
         throws CacheException
     {
@@ -225,7 +224,7 @@ public class WassPartition extends ClassicPartition
             List<PoolInfo> filtered =
                     pools.stream().filter(pool -> toPoolCost(pool).performanceCost < _fallbackCostCut).collect(toList());
             PoolInfo pool =
-                selectByPrevious(filtered, previousPool, previousHost, attributes);
+                selectByPrevious(filtered, previous, attributes);
             if (pool != null) {
                 return new SelectedPool(pool, PerformanceCostAssumption.of(_error, _fallbackCostCut));
             }
@@ -234,7 +233,7 @@ public class WassPartition extends ClassicPartition
              * set, but signal that the caller should fall back to
              * other links if possible.
              */
-            pool = selectByPrevious(pools, previousPool, previousHost, attributes);
+            pool = selectByPrevious(pools, previous, attributes);
             if (pool == null) {
                 throw new CostException("All pools full",
                                         null, true, false);
@@ -244,7 +243,7 @@ public class WassPartition extends ClassicPartition
             }
         } else {
             PoolInfo pool =
-                selectByPrevious(pools, previousPool, previousHost, attributes);
+                selectByPrevious(pools, previous, attributes);
             if (pool == null) {
                 throw new CostException("All pools full",
                                         null, true, false);

@@ -2,6 +2,7 @@ package org.dcache.poolmanager;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 import diskCacheV111.poolManager.CostModule;
@@ -102,8 +103,7 @@ public class RandomPartition extends Partition
     @Override
     public SelectedPool selectStagePool(CostModule cm,
                                         List<PoolInfo> pools,
-                                        String previousPool,
-                                        String previousHost,
+                                        Optional<PoolInfo> previous,
                                         FileAttributes attributes)
         throws CacheException
     {

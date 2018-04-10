@@ -382,8 +382,7 @@ public class PoolMonitorV5
         }
 
         @Override
-        public SelectedPool selectStagePool(String previousPool,
-                                            String previousHost)
+        public SelectedPool selectStagePool(Optional<PoolInfo> previous)
             throws CacheException
         {
             Collection<String> locations = _fileAttributes.getLocations();
@@ -403,9 +402,7 @@ public class PoolMonitorV5
                         Partition partition =
                             _partitionManager.getPartition(level.getTag());
                         return partition.selectStagePool(_costModule, pools,
-                                                         previousPool,
-                                                         previousHost,
-                                                         _fileAttributes);
+                                                         previous, _fileAttributes);
                     }
                 } catch (CostException e) {
                     if (!e.shouldFallBack()) {

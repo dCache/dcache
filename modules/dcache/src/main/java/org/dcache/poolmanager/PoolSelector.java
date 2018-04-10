@@ -1,6 +1,7 @@
 package org.dcache.poolmanager;
 
 import java.util.List;
+import java.util.Optional;
 
 import diskCacheV111.util.CacheException;
 
@@ -50,7 +51,15 @@ public interface PoolSelector
     Partition.P2pPair selectPool2Pool(String poolGroup,
                                       boolean force) throws CacheException;
 
-    SelectedPool selectStagePool(String previousPool, String previousHost)
+    /**
+     * Select pool for staging. If {@code previous} is provides, then request
+     * treated as a retry and previous selected pool is avoided, if possible.
+     *
+     * @param previous previously selected pool
+     * @return pool suited for staging.
+     * @throws CacheException
+     */
+    SelectedPool selectStagePool(Optional<PoolInfo> previous)
             throws CacheException;
 
     SelectedPool selectPinPool() throws CacheException;

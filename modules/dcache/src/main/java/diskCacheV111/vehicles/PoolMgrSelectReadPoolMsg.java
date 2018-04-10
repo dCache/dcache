@@ -8,6 +8,7 @@ import java.util.EnumSet;
 import diskCacheV111.poolManager.RequestContainerV5;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.SelectedPool;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -100,9 +101,9 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
         _context = context;
     }
 
-    public void setContext(int retryCounter, String previousStageHost, String previousStagePool)
+    public void setContext(int retryCounter, SelectedPool previousStagePool)
     {
-        setContext(new Context(retryCounter, previousStageHost, previousStagePool));
+        setContext(new Context(retryCounter, previousStagePool));
     }
 
     public void setPoolGroup(String poolGroup) {
@@ -118,20 +119,17 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
     {
         private static final long serialVersionUID = -1896293244725567276L;
         private final int _retryCounter;
-        private final String _previousStageHost;
-        private final String _previousStagePool;
+        private final SelectedPool _previousStagePool;
 
         public Context()
         {
             _retryCounter = 0;
-            _previousStageHost = null;
             _previousStagePool = null;
         }
 
-        public Context(int retryCounter, String previousStageHost, String previousStagePool)
+        public Context(int retryCounter, SelectedPool previousStagePool)
         {
             _retryCounter = retryCounter;
-            _previousStageHost = previousStageHost;
             _previousStagePool = previousStagePool;
         }
 
@@ -140,12 +138,7 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
             return _retryCounter;
         }
 
-        public String getPreviousStageHost()
-        {
-            return _previousStageHost;
-        }
-
-        public String getPreviousStagePool()
+        public SelectedPool getPreviousStagePool()
         {
             return _previousStagePool;
         }
