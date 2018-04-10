@@ -35,7 +35,6 @@ import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
-import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.auth.Subjects;
@@ -52,6 +51,8 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
@@ -534,11 +535,12 @@ public class PnfsManagerTest
     @Test
     public void testAddChecksumNonExist() {
 
-        PnfsSetChecksumMessage pnfsSetChecksumMessage = new PnfsSetChecksumMessage(new PnfsId(FsInode.generateNewID()), 1, "12345678");
-        pnfsSetChecksumMessage.setReplyRequired(false);
-        _pnfsManager.processPnfsMessage(null, pnfsSetChecksumMessage);
+        FileAttributes attr = FileAttributes.ofChecksum( new Checksum(ChecksumType.ADLER32, "12345678"));
+        PnfsSetFileAttributes pnfsSetAttributesMessage = new PnfsSetFileAttributes(new PnfsId(FsInode.generateNewID()), attr);
+        pnfsSetAttributesMessage.setReplyRequired(false);
+        _pnfsManager.processPnfsMessage(null, pnfsSetAttributesMessage);
 
-        assertEquals("Set checksum for non existing file must return FILE_NOT_FOUND",  CacheException.FILE_NOT_FOUND, pnfsSetChecksumMessage.getReturnCode());
+        assertEquals("Set checksum for non existing file must return FILE_NOT_FOUND",  CacheException.FILE_NOT_FOUND, pnfsSetAttributesMessage.getReturnCode());
 
     }
 

@@ -60,7 +60,6 @@ import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
-import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
@@ -200,7 +199,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsMapPathMessage.class);
         _gauges.addGauge(PnfsRenameMessage.class);
         _gauges.addGauge(PnfsFlagMessage.class);
-        _gauges.addGauge(PnfsSetChecksumMessage.class);
         _gauges.addGauge(PoolFileFlushedMessage.class);
         _gauges.addGauge(PnfsGetParentMessage.class);
         _gauges.addGauge(PnfsSetFileAttributes.class);
@@ -997,29 +995,6 @@ public class PnfsManagerV3
         return attributes.getChecksumsIfPresent().orElse(Collections.emptySet());
     }
 
-    private void setChecksum(PnfsSetChecksumMessage msg){
-
-        PnfsId pnfsId    = msg.getPnfsId();
-        String value     = msg.getValue() ;
-
-        try{
-            ChecksumType type = ChecksumType.getChecksumType(msg.getType());
-            Checksum checksum = new Checksum(type, value);
-            _nameSpaceProvider.setFileAttributes(msg.getSubject(), pnfsId,
-                    FileAttributes.ofChecksum(checksum), EnumSet.noneOf(FileAttribute.class));
-        }catch(FileNotFoundCacheException e) {
-            msg.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage() );
-        }catch( CacheException e ){
-            _log.warn("Unxpected CacheException: " + e);
-            msg.setFailed( e.getRc() , e.getMessage() ) ;
-        }catch ( Exception e){
-            _log.warn(e.toString()) ;
-            msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
-        }
-
-    }
-
-
     private void updateFlag(PnfsFlagMessage pnfsMessage){
 
         PnfsId pnfsId    = pnfsMessage.getPnfsId();
@@ -1754,8 +1729,6 @@ public class PnfsManagerV3
             rename((PnfsRenameMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsFlagMessage) {
             updateFlag((PnfsFlagMessage) pnfsMessage);
-        } else if (pnfsMessage instanceof PnfsSetChecksumMessage) {
-            setChecksum((PnfsSetChecksumMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PoolFileFlushedMessage) {
             processFlushMessage((PoolFileFlushedMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetParentMessage) {

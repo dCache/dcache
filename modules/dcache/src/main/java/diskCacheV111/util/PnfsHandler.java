@@ -22,7 +22,6 @@ import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
-import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 
 import dmg.cells.nucleus.CellEndpoint;
@@ -35,7 +34,6 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
-import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
@@ -626,15 +624,5 @@ public class PnfsHandler implements CellMessageSender
     public void setFileAttributes(FsPath path, FileAttributes attr) throws CacheException
     {
         request(new PnfsSetFileAttributes(path.toString(), attr, EnumSet.noneOf(FileAttribute.class)));
-    }
-
-    public void setChecksum(PnfsId pnfsId, Checksum checksum)
-        throws CacheException
-    {
-        PnfsSetChecksumMessage message =
-            new PnfsSetChecksumMessage(pnfsId,
-                                       checksum.getType().getType(),
-                                       checksum.getValue());
-        request(message);
     }
 }
