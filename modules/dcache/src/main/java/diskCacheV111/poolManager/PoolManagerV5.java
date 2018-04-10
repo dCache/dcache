@@ -577,7 +577,9 @@ public class PoolManagerV5
         List<String> offlinePools = new ArrayList<>();
         for (String name: msg.getPoolNames()) {
             PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
-            getPoolInformation(pool, onlinePools, offlinePools);
+            if (pool != null) {
+                getPoolInformation(pool, onlinePools, offlinePools);
+            }
         }
         msg.setPools(onlinePools);
         msg.setOfflinePools(offlinePools);
