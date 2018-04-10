@@ -171,13 +171,18 @@ public class FileOperationHandler {
                             = FileUpdate.getAttributes(pnfsId, pool,
                                                        MessageType.CORRUPT_FILE,
                                                        namespace);
-            int actual = 0;
-            int countable = 0;
-
-            if (attributes != null) {
-                actual = attributes.getLocations().size();
-                countable = poolInfoMap.getCountableLocations(attributes.getLocations());
+            if (attributes == null) {
+                LOGGER.trace("{} not ONLINE.", pnfsId);
+                return;
             }
+
+            if (!poolInfoMap.isResilientPool(pool)) {
+                LOGGER.trace("{} not in resilient group.", pool);
+                return;
+            }
+
+            int actual = attributes.getLocations().size();
+            int countable = poolInfoMap.getCountableLocations(attributes.getLocations());
 
             if (actual <= 1) {
                 /*
