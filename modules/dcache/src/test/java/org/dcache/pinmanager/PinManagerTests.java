@@ -171,7 +171,7 @@ public class PinManagerTests
         assertEquals(0, pin.getUid());
         assertEquals(0, pin.getGid());
         assertEquals(REQUEST_ID1, pin.getRequestId());
-        assertEquals(POOL1.getPool(), pin.getPool());
+        assertEquals(POOL1.getName(), pin.getPool());
         assertEquals(PINNED, pin.getState());
         assertValidSticky(pin.getSticky());
     }
