@@ -52,6 +52,7 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -111,14 +112,13 @@ public class Transfer implements Comparable<Transfer>
     protected final Object _session;
 
     protected PoolManagerStub _poolManager;
-    protected CellStub _pool;
+    protected CellStub _poolStub;
     protected CellStub _billing;
     protected CheckStagePermission _checkStagePermission;
 
     private CellAddressCore _cellAddress;
 
-    private String _poolName;
-    private CellAddressCore _poolAddress;
+    private Pool _pool;
     private Assumption _assumption;
     private Integer _moverId;
     private boolean _hasMoverBeenCreated;
@@ -276,7 +276,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized void setPoolStub(CellStub stub)
     {
-        _pool = stub;
+        _poolStub = stub;
     }
 
     /**
@@ -439,35 +439,18 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Sets the pool to use for this transfer.
      */
-    public synchronized void setPool(String pool)
+    public synchronized void setPool(Pool pool)
     {
-        _poolName = pool;
+        _pool = pool;
     }
 
     /**
      * Returns the pool to use for this transfer.
      */
     @Nullable
-    public synchronized String getPool()
+    public synchronized Pool getPool()
     {
-        return _poolName;
-    }
-
-    /**
-     * Sets the address of the pool to use for this transfer.
-     */
-    public synchronized void setPoolAddress(CellAddressCore poolAddress)
-    {
-        _poolAddress = poolAddress;
-    }
-
-    /**
-     * Returns the address of the pool to use for this transfer.
-     */
-    @Nullable
-    public synchronized CellAddressCore getPoolAddress()
-    {
-        return _poolAddress;
+        return _pool;
     }
 
     public synchronized void setAssumption(Assumption assumption)
@@ -717,7 +700,7 @@ public class Transfer implements Comparable<Transfer>
         return new IoDoorEntry(_id,
                                getPnfsId(),
                                _subject,
-                               _poolName,
+                               _pool.getName(),
                                _status,
                                _startedAt,
                                _clientAddresses.get(0).getHostString());
@@ -1055,8 +1038,7 @@ public class Transfer implements Comparable<Transfer>
         setStatusUntil("PoolManager: Selecting pool", reply);
         return CellStub.transform(reply,
                                   (PoolMgrSelectPoolMsg msg) -> {
-                                      setPool(msg.getPoolName());
-                                      setPoolAddress(msg.getPoolAddress());
+                                      setPool(msg.getPool());
                                       setAssumption(msg.getAssumption());
                                       setFileAttributes(msg.getFileAttributes());
                                       return null;
@@ -1069,7 +1051,7 @@ public class Transfer implements Comparable<Transfer>
     public ListenableFuture<Void> startMoverAsync(long timeout)
     {
         FileAttributes fileAttributes = getFileAttributes();
-        String pool = getPool();
+        Pool pool = getPool();
 
         if (fileAttributes == null || pool == null) {
             throw new IllegalStateException("Need PNFS ID, file attributes and pool before a mover can be started");
@@ -1083,10 +1065,10 @@ public class Transfer implements Comparable<Transfer>
                 allocated = fileAttributes.getSize();
             }
             message =
-                    new PoolAcceptFileMessage(pool, protocolInfo, fileAttributes, _assumption, allocated);
+                    new PoolAcceptFileMessage(pool.getName(), protocolInfo, fileAttributes, _assumption, allocated);
         } else {
             message =
-                    new PoolDeliverFileMessage(pool, protocolInfo, fileAttributes, _assumption);
+                    new PoolDeliverFileMessage(pool.getName(), protocolInfo, fileAttributes, _assumption);
         }
         message.setBillingPath(getBillingPath());
         message.setTransferPath(getTransferPath());
@@ -1095,7 +1077,7 @@ public class Transfer implements Comparable<Transfer>
         message.setId(_id);
         message.setSubject(_subject);
 
-        ListenableFuture<PoolIoFileMessage> reply = _poolManager.startAsync(getPoolAddress(), message, timeout);
+        ListenableFuture<PoolIoFileMessage> reply = _poolManager.startAsync(pool.getAddress(), message, timeout);
         setStatusUntil("Pool " + pool + ": Creating mover", reply);
         return CellStub.transformAsync(reply, msg -> {
             setMoverId(msg.getMoverId());
@@ -1133,16 +1115,15 @@ public class Transfer implements Comparable<Transfer>
         }
 
         Integer moverId = getMoverId();
-        String pool = getPool();
-        CellAddressCore poolAddress = getPoolAddress();
+        Pool pool = getPool();
         setStatus("Mover " + pool + "/" + moverId + ": Killing mover");
         try {
             /* Kill the mover.
              */
             PoolMoverKillMessage message =
-                    new PoolMoverKillMessage(pool, moverId, explanation);
+                    new PoolMoverKillMessage(pool.getName(), moverId, explanation);
             message.setReplyRequired(false);
-            _pool.notify(new CellPath(poolAddress), message);
+            _poolStub.notify(new CellPath(pool.getAddress()), message);
 
             /* To reduce the risk of orphans when using PNFS, we wait
              * for the transfer confirmation.
@@ -1171,7 +1152,7 @@ public class Transfer implements Comparable<Transfer>
         }
 
         try {
-            return _pool.sendAndWait(new CellPath(getPoolAddress()),
+            return _poolStub.sendAndWait(new CellPath(getPool().getAddress()),
                                      "mover ls -binary " + getMoverId(),
                                      IoJobInfo.class);
         } catch (NoRouteToCellException e) {

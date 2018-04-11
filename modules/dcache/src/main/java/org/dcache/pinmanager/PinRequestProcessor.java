@@ -23,6 +23,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 
@@ -35,7 +36,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
-import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.SelectedPool;
@@ -360,12 +360,11 @@ public class PinRequestProcessor
                                           * clean up if something
                                           * fails.
                                           */
-                                         String poolName = msg.getPoolName();
-                                         CellAddressCore poolAddress = msg.getPoolAddress();
-                                         task.getFileAttributes().getLocations().add(poolName);
-                                         setPool(task, poolName);
+                                         Pool pool = msg.getPool();
+                                         task.getFileAttributes().getLocations().add(pool.getName());
+                                         setPool(task, pool.getName());
 
-                                         setStickyFlag(task, poolName, poolAddress);
+                                         setStickyFlag(task, pool.getName(), pool.getAddress());
                                      } catch (CacheException e) {
                                          fail(task, e.getRc(), e.getMessage());
                                      } catch (RuntimeException e) {

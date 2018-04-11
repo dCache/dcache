@@ -52,6 +52,7 @@ import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
+import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
@@ -1686,7 +1687,7 @@ public class DCapDoorInterpreterV3
     protected  class IoHandler  extends PnfsSessionHandler  {
         private String           _ioMode;
         private DCapProtocolInfo _protocolInfo;
-        private String           _pool         = "<unknown>" ;
+        private Pool             _pool;
         private Assumption       _assumption;
         private Integer          _moverId;
         private boolean          _isHsmRequest;
@@ -1770,7 +1771,7 @@ public class DCapDoorInterpreterV3
             return new IoDoorEntry(_sessionId,
                                    pnfsid,
                                    _subject,
-                                   _pool,
+                                   _pool == null? "<unknown>" : _pool.getName(),
                                    _status,
                                    _statusSince,
                                    _clientSocketAddress.getAddress().getHostAddress());
@@ -2094,7 +2095,7 @@ public class DCapDoorInterpreterV3
                 }
                 return;
             }
-            String pool = reply.getPoolName();
+            Pool pool = reply.getPool();
             if (pool == null) {
                 sendReply( "poolMgrGetPoolArrived" , 33 , "No pools available" ) ;
                 removeUs() ;
@@ -2113,14 +2114,14 @@ public class DCapDoorInterpreterV3
                     ((PoolMgrSelectReadPoolMsg) reply).getContext();
                 poolMessage =
                         new PoolDeliverFileMessage(
-                                pool,
+                                pool.getName(),
                                 _protocolInfo ,
                                 _fileAttributes,
                                 _assumption);
             }else if( reply instanceof PoolMgrSelectWritePoolMsg ){
                 poolMessage =
                         new PoolAcceptFileMessage(
-                                pool,
+                                pool.getName(),
                                 _protocolInfo ,
                                 _fileAttributes,
                                 _assumption,
@@ -2155,7 +2156,7 @@ public class DCapDoorInterpreterV3
                 return ;
             }
             try{
-                _poolMgrStub.start(reply.getPoolAddress(), poolMessage);
+                _poolMgrStub.start(pool.getAddress(), poolMessage);
                 _poolRequestDone = true ;
             }catch(RuntimeException ie){
                 sendReply( "poolMgrGetPoolArrived" , 2 ,
@@ -2256,11 +2257,11 @@ public class DCapDoorInterpreterV3
         public void removeUs() {
             Integer moverId = _moverId;
             if (moverId != null) {
-                PoolMoverKillMessage message = new PoolMoverKillMessage(_pool,
+                PoolMoverKillMessage message = new PoolMoverKillMessage(_pool.getName(),
                         moverId, "killed by door: " + _explanation);
                 message.setReplyRequired(false);
 
-                _cell.sendMessage(new CellMessage(new CellPath(_pool), message));
+                _cell.sendMessage(new CellMessage(_pool.getAddress(), message));
             }
             super.removeUs();
         }

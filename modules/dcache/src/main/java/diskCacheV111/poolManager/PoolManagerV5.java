@@ -829,8 +829,7 @@ public class PoolManagerV5
 
         protected void requestSucceeded(SelectedPool pool)
         {
-            _request.setPoolName(pool.name());
-            _request.setPoolAddress(pool.address());
+            _request.setPool(new diskCacheV111.vehicles.Pool(pool.name(), pool.address()));
             _request.setAssumption(pool.assumption());
             _request.setSucceeded();
             reply(_request);

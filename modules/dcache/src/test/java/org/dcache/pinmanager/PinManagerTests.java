@@ -87,7 +87,7 @@ public class PinManagerTests
 
     final static String REQUEST_ID1 = "request1";
 
-    final static String POOL1 = "pool1";
+    final static diskCacheV111.vehicles.Pool POOL1 = new diskCacheV111.vehicles.Pool("pool1", new CellAddressCore("pool1"));
 
     final static String STICKY1 = "PinManager-1";
 
@@ -95,7 +95,7 @@ public class PinManagerTests
     {
         FileAttributes attributes = new FileAttributes();
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(Collections.singleton(POOL1));
+        attributes.setLocations(Collections.singleton(POOL1.getName()));
         StorageInfos.injectInto(STORAGE_INFO, attributes);
 
         // Required attributes, but the values are not relevant
@@ -129,8 +129,7 @@ public class PinManagerTests
         processor.setPoolManagerStub(new TestStub(new CellAddressCore("PinManager")) {
                 public PoolMgrSelectReadPoolMsg messageArrived(PoolMgrSelectReadPoolMsg msg)
                 {
-                    msg.setPoolName(POOL1);
-                    msg.setPoolAddress(new CellAddressCore(POOL1));
+                    msg.setPool(POOL1);
                     return msg;
                 }
             });
@@ -146,9 +145,8 @@ public class PinManagerTests
                     @Override
                     public SelectedPool selectPinPool()
                     {
-                        return new SelectedPool(new PoolInfo(
-                                new CellAddressCore(POOL1),
-                                new PoolCostInfo(POOL1, IoQueueManager.DEFAULT_QUEUE),
+                        return new SelectedPool(new PoolInfo(POOL1.getAddress(),
+                                new PoolCostInfo(POOL1.getName(), IoQueueManager.DEFAULT_QUEUE),
                                 ImmutableMap.of()));
                     }
                 };
@@ -188,15 +186,15 @@ public class PinManagerTests
                                      .requestId(REQUEST_ID1)
                                      .expirationTime(new Date(now() + 30))
                                      .pnfsId(PNFS_ID1)
-                                     .pool(POOL1)
+                                     .pool(POOL1.getName())
                                      .sticky(STICKY1)
                                      .state(PINNED));
 
-        Pool pool = new Pool(POOL1);
+        Pool pool = new Pool(POOL1.getName());
         pool.setActive(true);
-        pool.setAddress(new CellAddressCore(POOL1));
+        pool.setAddress(POOL1.getAddress());
         PoolMonitor poolMonitor = mock(PoolMonitor.class, RETURNS_DEEP_STUBS);
-        when(poolMonitor.getPoolSelectionUnit().getPool(POOL1)).thenReturn(pool);
+        when(poolMonitor.getPoolSelectionUnit().getPool(POOL1.getName())).thenReturn(pool);
 
         MovePinRequestProcessor processor = new MovePinRequestProcessor();
         processor.setDao(dao);
@@ -241,7 +239,7 @@ public class PinManagerTests
                                      .requestId(REQUEST_ID1)
                                      .expirationTime(new Date(now() + 30))
                                      .pnfsId(PNFS_ID1)
-                                     .pool(POOL1)
+                                     .pool(POOL1.getName())
                                      .sticky(STICKY1)
                                      .state(PINNED));
 
@@ -275,7 +273,7 @@ public class PinManagerTests
                                      .requestId(REQUEST_ID1)
                                      .expirationTime(new Date(now() + 30))
                                      .pnfsId(PNFS_ID1)
-                                     .pool(POOL1)
+                                     .pool(POOL1.getName())
                                      .sticky(STICKY1)
                                      .state(PINNED));
 

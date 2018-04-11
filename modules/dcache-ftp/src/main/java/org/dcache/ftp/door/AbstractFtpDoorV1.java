@@ -1193,7 +1193,7 @@ public abstract class AbstractFtpDoorV1
             reply(_request, "150 Opening BINARY data connection for " + _path);
 
             if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
-                _perfMarkerTask = new PerfMarkerTask(_request, getPoolAddress(),
+                _perfMarkerTask = new PerfMarkerTask(_request, getPool().getAddress(),
                         getMoverId(), _performanceMarkerPeriod / 2);
                 TIMER.schedule(_perfMarkerTask, _performanceMarkerPeriod, _performanceMarkerPeriod);
             }

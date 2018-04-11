@@ -29,6 +29,7 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
+import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -41,7 +42,6 @@ import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
-import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
@@ -77,8 +77,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     private String pnfsIdString;
     private String remoteUrl;
     transient boolean locked;
-    private String pool;
-    private CellAddressCore poolAddress;
+    private Pool pool;
     private Assumption assumption;
     private FileAttributes fileAttributes;
     public static final int INITIAL_STATE = 0;
@@ -404,8 +403,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     ((PoolMgrSelectReadPoolMsg) pool_info).getContext();
         }
 
-        setPool(pool_info.getPoolName());
-        setPoolAddress(pool_info.getPoolAddress());
+        setPool(pool_info.getPool());
         setAssumption(pool_info.getAssumption());
         fileAttributes = pool_info.getFileAttributes();
         manager.persist(this);
@@ -417,12 +415,12 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     {
         PoolIoFileMessage poolMessage = store
                 ? new PoolAcceptFileMessage(
-                pool,
+                pool.getName(),
                 protocol_info,
                 fileAttributes,
                 assumption)
                 : new PoolDeliverFileMessage(
-                pool,
+                pool.getName(),
                 protocol_info,
                 fileAttributes,
                 assumption);
@@ -436,7 +434,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         poolMessage.setId(id);
         setState(WAITING_FIRST_POOL_REPLY_STATE);
         manager.persist(this);
-        CellStub.addCallback(manager.getPoolManagerStub().startAsync(poolAddress, poolMessage), this, executor);
+        CellStub.addCallback(manager.getPoolManagerStub().startAsync(pool.getAddress(), poolMessage), this, executor);
     }
 
     public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)
@@ -726,7 +724,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         final MessageReply<TransferStatusQueryMessage> reply = new MessageReply<>();
 
         final ListenableFuture<IoJobInfo> future = manager.getPoolStub().
-                send(new CellPath(poolAddress), "mover ls -binary " + moverId,
+                send(new CellPath(pool.getAddress()), "mover ls -binary " + moverId,
                 IoJobInfo.class, 30_000);
         Futures.addCallback(future, new FutureCallback<IoJobInfo>()
         {
@@ -754,19 +752,14 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         return toString(false);
     }
 
-    public String getPool()
+    public Pool getPool()
     {
         return pool;
     }
 
-    public void setPool(String pool)
+    public void setPool(Pool pool)
     {
         this.pool = pool;
-    }
-
-    public void setPoolAddress(CellAddressCore poolAddress)
-    {
-        this.poolAddress = poolAddress;
     }
 
     public void setAssumption(Assumption assumption)
@@ -777,10 +770,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public void killMover(int moverId, String explanation)
     {
         log.debug("sending mover kill to pool {} for moverId={}", pool, moverId);
-        PoolMoverKillMessage killMessage = new PoolMoverKillMessage(pool, moverId,
+        PoolMoverKillMessage killMessage = new PoolMoverKillMessage(pool.getName(), moverId,
                 "killed by TransferManagerHandler: " + explanation);
         killMessage.setReplyRequired(false);
-        manager.getPoolStub().notify(new CellPath(poolAddress), killMessage);
+        manager.getPoolStub().notify(new CellPath(pool.getAddress()), killMessage);
     }
 
     public void setState(int istate)

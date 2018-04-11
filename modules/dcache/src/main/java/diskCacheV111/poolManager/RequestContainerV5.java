@@ -1092,8 +1092,7 @@ public class RequestContainerV5
                     (PoolMgrSelectReadPoolMsg) m.getMessageObject();
                 rpm.setContext(_retryCounter + 1, _stageCandidate.orElse(null));
                 if (_currentRc == 0) {
-                    rpm.setPoolName(_poolCandidate.name());
-                    rpm.setPoolAddress(_poolCandidate.info().getAddress());
+                    rpm.setPool( new diskCacheV111.vehicles.Pool(_poolCandidate.name(), _poolCandidate.info().getAddress()));
                     rpm.setAssumption(_poolCandidate.assumption());
                     rpm.setSucceeded();
                 } else {

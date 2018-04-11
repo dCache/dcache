@@ -6,8 +6,6 @@ import java.util.EnumSet;
 
 import diskCacheV111.util.PnfsId;
 
-import dmg.cells.nucleus.CellAddressCore;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
@@ -19,8 +17,7 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
     private static final long serialVersionUID = 8907604668091102254L;
 
     private final FileAttributes _fileAttributes;
-    private String _poolName;
-    private CellAddressCore _poolAddress;
+    private Pool _pool;
 
     public PoolMgrGetPoolMsg(FileAttributes fileAttributes)
     {
@@ -48,24 +45,14 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
 	return _fileAttributes.getPnfsId();
     }
 
-    public String getPoolName()
+    public Pool getPool()
     {
-	return _poolName;
+	return _pool;
     }
 
-    public void setPoolName(String poolName)
+    public void setPool(Pool pool)
     {
-	_poolName = poolName;
-    }
-
-    public void setPoolAddress(CellAddressCore poolAddress)
-    {
-        _poolAddress = poolAddress;
-    }
-
-    public CellAddressCore getPoolAddress()
-    {
-        return _poolAddress;
+	_pool = pool;
     }
 
     @Override
@@ -73,9 +60,8 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
     {
         if (getReturnCode() == 0) {
             return "PnfsId=" + getPnfsId()
-                    + ";StorageInfo=" + getStorageInfo()
-                    + ((_poolName == null) ? "" : ";PoolName=" + _poolName)
-                    + ((_poolAddress == null) ? "" : "PoolAddress=" + _poolAddress);
+                    + ";StorageInfo=" + getStorageInfo() + ";"
+                    + ((_pool == null) ? "" : _pool);
         } else {
             return super.toString();
         }

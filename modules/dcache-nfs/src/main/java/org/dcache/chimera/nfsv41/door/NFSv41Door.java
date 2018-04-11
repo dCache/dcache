@@ -36,6 +36,7 @@ import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
@@ -879,7 +880,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             return _ioMessages.values()
                     .stream()
-                    .filter(d -> pool == null ? true : pool.matches(d.getPool()))
+                    .filter(d -> pool == null ? true : pool.matches(d.getPool().getName()))
                     .filter(d -> client == null ? true : client.matches(d.getClient().toString()))
                     .filter(d -> pnfsid == null ? true : pnfsid.matches(d.getPnfsId().toString()))
                     .map(Object::toString)
@@ -1032,8 +1033,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                     }
                     String location = locations.iterator().next();
                     _log.debug("Using pre-existing WRITE pool {} for {}", location, getPnfsId());
-                    setPool(location);
-                    setPoolAddress(new CellAddressCore(location));
+                    // REVISIT: here we knoe that pool name and address are the same thing
+                    setPool(new Pool(location, new CellAddressCore(location)));
                     _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
                 } else {
                     _log.debug("looking a {} pool for {}", (isWrite() ? "WRITE" : "READ"), getPnfsId());

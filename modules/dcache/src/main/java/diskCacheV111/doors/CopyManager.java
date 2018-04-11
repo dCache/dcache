@@ -24,6 +24,7 @@ import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
 import diskCacheV111.vehicles.DCapClientProtocolInfo;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
@@ -216,10 +217,10 @@ public class CopyManager extends AbstractCellComponent
         private void appendTransfer(StringBuilder sb, Transfer transfer)
         {
             PnfsId id = transfer.getPnfsId();
-            String pool = transfer.getPool();
+            Pool pool = transfer.getPool();
             Integer mover = transfer.getMoverId();
             sb.append("        PNFS-ID: ").append(id == null ? "Not yet known" : id).append('\n');
-            sb.append("        Pool: ").append(pool == null ? "Not yet selected" : pool);
+            sb.append("        Pool: ").append(pool == null ? "Not yet selected" : pool.getName());
             if (mover != null) {
                 sb.append('\n');
                 sb.append("        Mover: ").append(mover);

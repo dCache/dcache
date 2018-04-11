@@ -979,7 +979,7 @@ public class LegacyAdminShell
             PoolMgrReplicateFileMsg select =
                     new PoolMgrReplicateFileMsg(fileAttributesMsg.getFileAttributes(), pinfo);
             select = _poolManager.sendAndWait(select, timeout);
-            return "p2p -> " + select.getPoolName();
+            return "p2p -> " + select.getPool().getName();
         }
     }
 

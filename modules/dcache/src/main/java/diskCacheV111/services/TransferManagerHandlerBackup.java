@@ -35,7 +35,7 @@ public class TransferManagerHandlerBackup {
 		id           = handler.getId();
 		pnfsPath     = handler.getPnfsPath();
 		pnfsIdString = handler.getPnfsIdString();
-		pool         = handler.getPool();
+		pool         = handler.getPool().getName();
 		store        = handler.getStore();
 		created      = handler.getCreated();
 		locked       = handler.getLocked();
