@@ -25,6 +25,7 @@ import io.swagger.annotations.Info;
 import io.swagger.annotations.License;
 import io.swagger.annotations.SecurityDefinition;
 import io.swagger.annotations.SwaggerDefinition;
+import io.swagger.annotations.Tag;
 
 import javax.ws.rs.ext.Provider;
 
@@ -61,7 +62,19 @@ import javax.ws.rs.ext.Provider;
         ),
         consumes = {"application/json"},
         produces = {"application/json"},
-        externalDocs = @ExternalDocs(value = "Wiki", url = "https://github.com/dCache/dcache/wiki/Restful-API")
+        externalDocs = @ExternalDocs(value = "Wiki", url = "https://github.com/dCache/dcache/wiki/Restful-API"),
+        tags = {
+            @Tag(name = "alarms", description = "The log of internal problems"),
+            @Tag(name = "billing", description = "The log of (significant) client activity"),
+            @Tag(name = "cells", description = "The running components within dCache"),
+            @Tag(name = "identity", description = "Information about users"),
+            @Tag(name = "namespace", description = "Files, directories and similar objects"),
+            @Tag(name = "poolmanager", description = "Data placement and selection decisions"),
+            @Tag(name = "pools", description = "File data storage"),
+            @Tag(name = "qos", description = "Managing how data is stored and handled"),
+            @Tag(name = "spacemanager", description = "Ensuring enough capacity for uploads"),
+            @Tag(name = "transfers", description = "The movement of data between dCache and clients")
+        }
 )
 @Provider
 public interface ApiConfig
