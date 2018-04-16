@@ -557,7 +557,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             NDC.push(pnfsId.toString());
             NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
 
-            deviceid4 deviceid;
+            deviceid4[] devices;
 
             final NFS4Client client;
             if (context.getMinorversion() == 0) {
@@ -624,8 +624,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 layoutStateId = transfer.getStateid();
 
-                PoolDS ds = transfer.getPoolDataServer(NFS_REQUEST_BLOCKING);
-                deviceid = ds.getDeviceId();
+                devices = transfer.getPoolDataServers(NFS_REQUEST_BLOCKING);
             }
 
             //  -1 is special value, which means entire file
@@ -633,7 +632,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout.lo_iomode = ioMode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-            layout.lo_content = layoutDriver.getLayoutContent(stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), deviceid);
+            layout.lo_content = layoutDriver.getLayoutContent(stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), devices);
 
             layoutStateId.bumpSeqid();
             if (ioMode == layoutiomode4.LAYOUTIOMODE4_RW) {
@@ -988,8 +987,20 @@ public class NFSv41Door extends AbstractCellComponent implements
             return _nfsInode;
         }
 
+        /**
+         * Returns an array of pNFS devices to be used for this transfer.
+         * If array have more than one element, then mirror IO is desired.
+         *
+         * @param timeout time in milliseconds to block before error is returned.
+         * @return an array of pNFS devices.
+         * @throws InterruptedException
+         * @throws ExecutionException
+         * @throws TimeoutException
+         * @throws CacheException
+         * @throws ChimeraNFSException
+         */
         @GuardedBy("nfsState")
-        PoolDS  getPoolDataServer(long timeout) throws
+        deviceid4[] getPoolDataServers(long timeout) throws
                 InterruptedException, ExecutionException,
                 TimeoutException, CacheException, ChimeraNFSException {
 
@@ -1082,7 +1093,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             }
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
 
-            return  waitForRedirect(NFS_REQUEST_BLOCKING);
+            deviceid4 ds = waitForRedirect(NFS_REQUEST_BLOCKING).getDeviceId();
+            return new deviceid4[] {ds};
         }
 
         /**
