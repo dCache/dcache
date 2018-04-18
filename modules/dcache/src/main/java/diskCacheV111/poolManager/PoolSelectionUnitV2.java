@@ -1106,13 +1106,11 @@ public class PoolSelectionUnitV2
     public void createPoolGroup(String name, boolean isResilient) {
             wlock();
         try {
-            if (_pGroups.get(name) != null) {
-                throw new IllegalArgumentException("Duplicated entry : " + name);
-            }
-
             PGroup group = new PGroup(name, isResilient);
 
-            _pGroups.put(group.getName(), group);
+            if (_pGroups.putIfAbsent(group.getName(), group) != null) {
+                throw new IllegalArgumentException("Duplicated entry : " + name);
+            }
         } finally {
             wunlock();
         }
@@ -1276,11 +1274,9 @@ public class PoolSelectionUnitV2
                                 "Unit type missing net/store/dcache/protocol");
             }
 
-            if (_units.get(name) != null) {
+            if (_units.putIfAbsent(name, unit) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
             }
-
-            _units.put(name, unit);
         } finally {
             wunlock();
         }
