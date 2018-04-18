@@ -6,7 +6,7 @@ class ProtocolUnit extends Unit {
     private int _version = -1;
 
     ProtocolUnit(String name) {
-        super(name, PoolSelectionUnitV2.PROTOCOL);
+        super(name, PoolSelectionUnit.UnitType.PROTOCOL);
 
         int pos = name.indexOf('/');
         if ((pos < 0) || (pos == 0) || ((name.length() - 1) == pos)) {

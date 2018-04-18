@@ -31,6 +31,17 @@ public interface PoolSelectionUnit  {
         P2P,
         ANY,
     }
+
+    /**
+     * Selection unit types.
+     */
+    enum UnitType {
+        STORE,
+        DCACHE,
+        NET,
+        PROTOCOL
+    }
+
     interface SelectionEntity {
 
         String getName();
@@ -179,8 +190,7 @@ public interface PoolSelectionUnit  {
 	}
 
     interface SelectionUnit extends SelectionEntity{
-        int getType();
-        String getUnitType();
+        UnitType getType();
         Collection<SelectionUnitGroup> getMemberOfUnitGroups();
     }
 

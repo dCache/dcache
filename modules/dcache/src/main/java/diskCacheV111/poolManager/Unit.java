@@ -8,14 +8,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
+import diskCacheV111.poolManager.PoolSelectionUnit.UnitType;
 
 class Unit implements Serializable, SelectionUnit {
     private static final long serialVersionUID = -2534629882175347637L;
     private final String _name;
-    private final int _type;
+    private final UnitType _type;
     final Map<String, UGroup> _uGroupList = new ConcurrentHashMap<>();
 
-    Unit(String name, int type) {
+    Unit(String name, UnitType type) {
         _name = name;
         _type = type;
     }
@@ -29,7 +30,7 @@ class Unit implements Serializable, SelectionUnit {
         return getName();
     }
 
-    public int getType() {
+    public UnitType getType() {
         return _type;
     }
 
@@ -39,19 +40,8 @@ class Unit implements Serializable, SelectionUnit {
     }
 
     @Override
-    public String getUnitType() {
-        switch (_type) {
-        case PoolSelectionUnitV2.STORE: return "Store";
-        case PoolSelectionUnitV2.DCACHE: return "DCache";
-        case PoolSelectionUnitV2.PROTOCOL: return "Protocol";
-        case PoolSelectionUnitV2.NET: return "Net";
-        }
-        return "Unknown";
-    }
-
-    @Override
     public String toString() {
-        return _name + "  (type=" + getUnitType() + ";canonical=" + getCanonicalName() + ";uGroups=" + _uGroupList.size() + ")";
+        return _name + "  (type=" + _type + ";canonical=" + getCanonicalName() + ";uGroups=" + _uGroupList.size() + ")";
     }
 
 }

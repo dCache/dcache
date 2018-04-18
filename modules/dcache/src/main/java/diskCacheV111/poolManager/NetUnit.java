@@ -11,7 +11,7 @@ class NetUnit extends Unit {
 
     public NetUnit(String name)
     {
-        super(name, PoolSelectionUnitV2.NET);
+        super(name, PoolSelectionUnit.UnitType.NET);
 
         _subnet = Subnet.create(name);
     }

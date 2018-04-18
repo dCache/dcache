@@ -52,6 +52,7 @@ import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Comparator.comparing;
+import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.*;
 
 public class PoolSelectionUnitV2
         implements Serializable, PoolSelectionUnit, PoolSelectionUnitAccess, CellSetupProvider,
@@ -65,11 +66,6 @@ public class PoolSelectionUnitV2
     public String getVersion() {
         return __version;
     }
-
-    public static final int STORE = 1;
-    public static final int DCACHE = 2;
-    public static final int NET = 3;
-    public static final int PROTOCOL = 4;
 
     private static final long serialVersionUID = 4852540784324544199L;
 

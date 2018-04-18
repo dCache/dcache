@@ -75,7 +75,7 @@ public class StorageUnit extends Unit {
     private List<String> onlyOneCopyPer;
 
     public StorageUnit(String name) {
-        super(name, PoolSelectionUnitV2.STORE);
+        super(name, PoolSelectionUnit.UnitType.STORE);
         required = 1;
         onlyOneCopyPer = ImmutableList.of();
     }

@@ -87,7 +87,7 @@ public final class Unit extends SelectionType {
 
     public Unit(SelectionUnit unit) {
         super(unit.getName());
-        type = unit.getUnitType();
+        type = unit.getType().name();
         groups = unit.getMemberOfUnitGroups()
                      .stream()
                      .map(SelectionUnitGroup::getName)
