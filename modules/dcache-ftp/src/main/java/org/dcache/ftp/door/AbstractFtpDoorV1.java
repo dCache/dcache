@@ -71,6 +71,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
@@ -304,6 +305,10 @@ public abstract class AbstractFtpDoorV1
 {
     private static final long MINIMUM_PERFORMANCE_MARKER_PERIOD = 2;
     private static final long MAXIMUM_PERFORMANCE_MARKER_PERIOD = TimeUnit.MINUTES.toSeconds(5);
+    private static final ImmutableMap<ProtocolFamily,String> PROTOCOLFAMILY_TO_STRING = ImmutableMap.<ProtocolFamily,String>builder()
+            .put(StandardProtocolFamily.INET, "IP v4")
+            .put(StandardProtocolFamily.INET6, "IP v6")
+            .build();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
@@ -2390,9 +2395,20 @@ public abstract class AbstractFtpDoorV1
             }
             return (InetSocketAddress) _passiveModeServerSocket.getLocalAddress();
         } catch (NoSuchElementException e) {
+            InetAddress address = _localSocketAddress.getAddress();
+            String iface;
+            try {
+                iface = "Interface " + NetworkInterface.getByInetAddress(address).getName();
+            } catch (SocketException se) {
+                LOGGER.warn("Unable to discover interface for address {}: {}",
+                        InetAddresses.toUriString(address), se.toString());
+                iface = "Interface";
+            }
+            ProtocolFamily family = _preferredProtocol.getProtocolFamily();
+            String ipVersion = PROTOCOLFAMILY_TO_STRING.getOrDefault(family, family.name());
             _mode = Mode.ACTIVE;
             closePassiveModeServerSocket();
-            throw new FTPCommandException(522, "Protocol family not supported");
+            throw new FTPCommandException(522, iface + " does not support " + ipVersion + " addresses");
         } catch (IOException e) {
             _mode = Mode.ACTIVE;
             closePassiveModeServerSocket();
