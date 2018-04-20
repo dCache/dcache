@@ -513,18 +513,19 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedForPathToPnfsidWithKnownPathAndResolvingSymlinks()
             throws Exception
     {
-        givenSuccessfulResponse((Modifier<PnfsMapPathMessage>)
-                (m) -> m.setPnfsId(A_PNFSID));
+        givenSuccessfulResponse((Modifier<PnfsGetFileAttributes>)
+                (m) -> m.setFileAttributes(FileAttributes.ofPnfsId(A_PNFSID)));
 
         PnfsId id = _namespace.pathToPnfsid(ROOT, "/path/to/entry", true);
 
-        PnfsMapPathMessage sent =
-                getSingleSendAndWaitMessage(PnfsMapPathMessage.class);
+        PnfsGetFileAttributes sent =
+                getSingleSendAndWaitMessage(PnfsGetFileAttributes.class);
+
         assertThat(sent.getReplyRequired(), is(true));
         assertThat(sent.getSubject(), is(ROOT));
-        assertThat(sent.getGlobalPath(), is("/path/to/entry"));
+        assertThat(sent.getPnfsPath(), is("/path/to/entry"));
         assertThat(sent.getPnfsId(), nullValue());
-        assertThat(sent.shouldResolve(), is(true));
+        assertThat(sent.isFollowSymlink(), is(true));
 
         assertThat(id, is(A_PNFSID));
     }
@@ -534,18 +535,18 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedForPathToPnfsidWithKnownPathAndNotResolvingSymlinks()
             throws Exception
     {
-        givenSuccessfulResponse((Modifier<PnfsMapPathMessage>)
-                (m) -> m.setPnfsId(A_PNFSID));
+        givenSuccessfulResponse((Modifier<PnfsGetFileAttributes>)
+                (m) -> m.setFileAttributes(FileAttributes.ofPnfsId(A_PNFSID)));
 
         PnfsId id = _namespace.pathToPnfsid(ROOT, "/path/to/entry", false);
 
-        PnfsMapPathMessage sent =
-                getSingleSendAndWaitMessage(PnfsMapPathMessage.class);
+        PnfsGetFileAttributes sent =
+                getSingleSendAndWaitMessage(PnfsGetFileAttributes.class);
         assertThat(sent.getReplyRequired(), is(true));
         assertThat(sent.getSubject(), is(ROOT));
-        assertThat(sent.getGlobalPath(), is("/path/to/entry"));
+        assertThat(sent.getPnfsPath(), is("/path/to/entry"));
         assertThat(sent.getPnfsId(), nullValue());
-        assertThat(sent.shouldResolve(), is(false));
+        assertThat(sent.isFollowSymlink(), is(false));
 
         assertThat(id, is(A_PNFSID));
     }

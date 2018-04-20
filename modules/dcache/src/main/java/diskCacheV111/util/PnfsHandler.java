@@ -454,7 +454,7 @@ public class PnfsHandler implements CellMessageSender
 	 * @throws CacheException
 	 */
 	public PnfsId getPnfsIdByPath(String path) throws CacheException {
-		return request(new PnfsMapPathMessage(path)).getPnfsId();
+            return getPnfsIdByPath(path, false);
 	}
 
     /**
@@ -468,9 +468,10 @@ public class PnfsHandler implements CellMessageSender
      */
     public PnfsId getPnfsIdByPath(String path, boolean resolve)
             throws CacheException {
-        PnfsMapPathMessage message = new PnfsMapPathMessage(path);
-        message.setShouldResolve(resolve);
-        return request(message).getPnfsId();
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(path,
+                EnumSet.of(FileAttribute.PNFSID));
+        message.setFollowSymlink(resolve);
+        return request(message).getFileAttributes().getPnfsId();
     }
 
 

@@ -27,7 +27,6 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -231,19 +230,14 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     setState(RECEIVED_PNFS_INFO_STATE);
                     storageInfoArrived(attributesMessage);
                     return;
-                }
-                log.error(this.toString() + " got unexpected PnfsGetStorageInfoMessage "
-                        + " : " + attributesMessage + " ; Ignoring");
-            } else if (message instanceof PnfsMapPathMessage) {
-                PnfsMapPathMessage mapMessage = (PnfsMapPathMessage) message;
-                if (state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE) {
+                } else if (state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE) {
                     state = RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE;
                     deletePnfsEntry();
                     return;
-                } else {
-                    log.error(this.toString() + " got unexpected PnfsMapPathMessage "
-                            + " : " + mapMessage + " ; Ignoring");
                 }
+
+                log.error(this.toString() + " got unexpected PnfsGetStorageInfoMessage "
+                        + " : " + attributesMessage + " ; Ignoring");
             } else if (message instanceof PoolMgrSelectPoolMsg) {
                 PoolMgrSelectPoolMsg select_pool_msg =
                         (PoolMgrSelectPoolMsg) message;
@@ -458,7 +452,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             pnfsMsg.setReplyRequired(true);
             CellStub.addCallback(manager.getPnfsManagerStub().send(pnfsMsg), this, executor);
         } else {
-            PnfsMapPathMessage message = new PnfsMapPathMessage(pnfsPath);
+            PnfsGetFileAttributes message = new PnfsGetFileAttributes(pnfsPath, EnumSet.noneOf(FileAttribute.class));
             setState(WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE);
             CellStub.addCallback(manager.getPnfsManagerStub().send(message), this, executor);
         }

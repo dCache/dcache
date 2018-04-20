@@ -30,7 +30,6 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolLinkInfo;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
@@ -701,9 +700,11 @@ public class LegacyAdminShell
         PnfsId pnfsId;
         if (destination.startsWith("/pnfs")) {
 
-            PnfsMapPathMessage map = new PnfsMapPathMessage(destination);
+            PnfsGetFileAttributes map = new PnfsGetFileAttributes(destination,
+                    EnumSet.of(FileAttribute.PNFSID));
+            map.setFollowSymlink(false);
 
-            map = (PnfsMapPathMessage) sendObject("PnfsManager", map);
+            map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
 
             if (map.getReturnCode() != 0) {
                 Object o = map.getErrorObject();
@@ -714,11 +715,7 @@ public class LegacyAdminShell
                 }
             }
 
-            if ((pnfsId = map.getPnfsId()) == null) {
-                throw new
-                        FileNotFoundException(destination);
-            }
-
+            pnfsId = map.getFileAttributes().getPnfsId();
         } else {
             pnfsId = new PnfsId(destination);
         }
@@ -850,9 +847,11 @@ public class LegacyAdminShell
         PnfsId pnfsId;
         if (destination.startsWith("/pnfs")) {
 
-            PnfsMapPathMessage map = new PnfsMapPathMessage(destination);
+            PnfsGetFileAttributes map = new PnfsGetFileAttributes(destination,
+                    EnumSet.of(FileAttribute.PNFSID));
+            map.setFollowSymlink(false);
 
-            map = (PnfsMapPathMessage) sendObject("PnfsManager", map);
+            map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
 
             if (map.getReturnCode() != 0) {
                 Object o = map.getErrorObject();
@@ -863,12 +862,7 @@ public class LegacyAdminShell
                 }
             }
 
-            pnfsId = map.getPnfsId();
-            if (pnfsId == null) {
-                throw new FileNotFoundException(destination);
-            }
-
-
+            pnfsId = map.getFileAttributes().getPnfsId();
         } else {
             pnfsId = new PnfsId(destination);
         }
@@ -900,9 +894,11 @@ public class LegacyAdminShell
         PnfsId pnfsId;
         if (args.argv(0).startsWith("/pnfs")) {
 
-            PnfsMapPathMessage map = new PnfsMapPathMessage(args.argv(0));
+            PnfsGetFileAttributes map = new PnfsGetFileAttributes(args.argv(0),
+                    EnumSet.of(FileAttribute.PNFSID));
+            map.setFollowSymlink(false);
 
-            map = (PnfsMapPathMessage) sendObject("PnfsManager", map);
+            map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
 
             if (map.getReturnCode() != 0) {
                 Object o = map.getErrorObject();
@@ -913,7 +909,7 @@ public class LegacyAdminShell
                 }
             }
 
-            pnfsId = map.getPnfsId();
+            pnfsId = map.getFileAttributes().getPnfsId();
 
 
         } else {
@@ -1156,9 +1152,11 @@ public class LegacyAdminShell
         PnfsId pnfsId;
         if (args.argv(0).startsWith("/pnfs")) {
 
-            PnfsMapPathMessage map = new PnfsMapPathMessage(args.argv(0));
+            PnfsGetFileAttributes map = new PnfsGetFileAttributes(args.argv(0),
+                    EnumSet.of(FileAttribute.PNFSID));
+            map.setFollowSymlink(false);
 
-            map = (PnfsMapPathMessage) sendObject("PnfsManager", map);
+            map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
 
             if (map.getReturnCode() != 0) {
                 Object o = map.getErrorObject();
@@ -1169,7 +1167,7 @@ public class LegacyAdminShell
                 }
             }
 
-            pnfsId = map.getPnfsId();
+            pnfsId = map.getFileAttributes().getPnfsId();
 
 
         } else {
@@ -1196,9 +1194,11 @@ public class LegacyAdminShell
                     IllegalArgumentException("not a global dCache path (/pnfs...)");
         }
 
-        PnfsMapPathMessage map = new PnfsMapPathMessage(args.argv(0));
+        PnfsGetFileAttributes map = new PnfsGetFileAttributes(args.argv(0),
+                EnumSet.of(FileAttribute.PNFSID));
+        map.setFollowSymlink(false);
 
-        map = (PnfsMapPathMessage) sendObject("PnfsManager", map);
+        map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
 
         if (map.getReturnCode() != 0) {
             Object o = map.getErrorObject();
@@ -1209,7 +1209,7 @@ public class LegacyAdminShell
             }
         }
 
-        return map.getPnfsId().toString();
+        return map.getFileAttributes().getPnfsId().toString();
 
     }
 

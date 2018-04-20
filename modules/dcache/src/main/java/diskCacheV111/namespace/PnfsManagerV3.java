@@ -1402,27 +1402,18 @@ public class PnfsManagerV3
 
     public void mapPath( PnfsMapPathMessage pnfsMessage ){
         PnfsId pnfsId     = pnfsMessage.getPnfsId() ;
-        String globalPath = pnfsMessage.getGlobalPath() ;
         Subject subject = pnfsMessage.getSubject();
-        boolean shouldResolve = pnfsMessage.shouldResolve();
 
-        if( ( pnfsId == null ) && ( globalPath == null ) ){
-            pnfsMessage.setFailed( 5 , "Illegal Arguments : need path or pnfsid" ) ;
-            return ;
+        if (pnfsId == null) {
+            pnfsMessage.setFailed(5, "Illegal Arguments : need pnfsid");
+            return;
         }
 
         try {
-            if (globalPath == null) {
-                _log.info("map:  id2path for {}", pnfsId);
-                String path = pathfinder(subject, pnfsId);
-                checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(path));
-                pnfsMessage.setGlobalPath(path);
-            } else {
-                _log.info("map:  path2id for {}", globalPath);
-                checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(globalPath));
-                PnfsId id = _nameSpaceProvider.pathToPnfsid(subject, globalPath, shouldResolve);
-                pnfsMessage.setPnfsId(id);
-            }
+            _log.info("map:  id2path for {}", pnfsId);
+            String path = pathfinder(subject, pnfsId);
+            checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(path));
+            pnfsMessage.setGlobalPath(path);
             checkMask(pnfsMessage);
         } catch(FileNotFoundCacheException fnf){
             pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
@@ -2000,7 +1991,7 @@ public class PnfsManagerV3
                 throw new InvalidMessageCacheException("no pnfsid or path defined");
             }
 
-            pnfsId = _nameSpaceProvider.pathToPnfsid(message.getSubject(), path, true);
+            pnfsId = _nameSpaceProvider.pathToPnfsid(message.getSubject(), path, message.isFollowSymlink());
             message.setPnfsId(pnfsId);
         }
         return pnfsId;

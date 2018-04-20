@@ -22,6 +22,7 @@ public class PnfsMessage extends Message {
     private PnfsId _pnfsId;
     private String _path;
     private Restriction _restriction = Restrictions.none();
+    private boolean _symlinkFollowed = true;
 
     private Set<AccessMask> _mask = Collections.emptySet();
 
@@ -58,6 +59,17 @@ public class PnfsMessage extends Message {
     {
         return _mask;
     }
+
+    public void setFollowSymlink(boolean follow)
+    {
+        _symlinkFollowed = follow;
+    }
+
+    public boolean isFollowSymlink()
+    {
+        return _symlinkFollowed;
+    }
+
 
     public void setRestriction(Restriction restriction)
     {
