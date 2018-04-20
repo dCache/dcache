@@ -50,6 +50,12 @@ Entry
                         fail(SERVICE_UNAVAILABLE, "PnfsManager failed (no route to cell)");
                 }
         query_failure(rc: Integer, cause: Object)
+                [ rc == FILE_NOT_FOUND ]
+                Failed
+                {
+                        failPermanently(FILE_NOT_FOUND, "File does not exist, skipped");
+                }
+        query_failure(rc: Integer, cause: Object)
                 Failed
                 {
                         fail(rc, "PnfsManager failed (" + cause + ")");
