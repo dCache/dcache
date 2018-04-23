@@ -23,6 +23,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
+import io.milton.http.Response.Status;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthenticationException;
@@ -51,6 +52,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.srm.CredentialServiceAnnouncement;
 import diskCacheV111.srm.CredentialServiceRequest;
@@ -143,12 +145,12 @@ public class CredentialServiceClient
     }
 
     public StaticOpenIdCredential getDelegatedCredential(String token,
-                                                         ImmutableMap<String, OpenIdClientSecret> clientSecrets)
+            ImmutableMap<String, OpenIdClientSecret> clientSecrets)
             throws InterruptedException, ErrorResponseException
     {
         HttpClient client = HttpClientBuilder.create().build();
-        for (Map.Entry<String, OpenIdClientSecret> entry: clientSecrets.entrySet())
-        {
+        List<String> failures = new ArrayList<>();
+        for (Map.Entry<String, OpenIdClientSecret> entry: clientSecrets.entrySet()) {
             String host = entry.getKey();
             String id = entry.getValue().getId();
             String secret = entry.getValue().getSecret();
@@ -162,10 +164,14 @@ public class CredentialServiceClient
 
                 return createOidcCredential(host, id, secret, json);
             } catch (AuthenticationException | IOException | JSONException e) {
-                LOGGER.warn("Fail Token Delegation with Openid Provider {}", host);
+                failures.add(String.format("[%s -> %s]", host, e.toString()));
             }
         }
-        return null;
+
+        LOGGER.warn("OIDC delegation failed: {}", failures.stream().collect(Collectors.joining(", ")));
+        throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
+                                   "Error performing OpenId-Connect delegation");
+
     }
 
     private HttpPost buildRequest(String token, String host, String clientId, String clientSecret)
