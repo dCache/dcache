@@ -329,21 +329,6 @@ public final class FileUpdate {
         StorageUnitConstraints constraints
                         = poolInfoMap.getStorageUnitConstraints(unitIndex);
 
-        /*
-         * Files may be in need of migration even if the correct number
-         * exist.  Force the file operation into the table if the
-         * storage unit matches the modified one, or if this is a periodic
-         * or admin initiated scan.
-         */
-        if (storageUnit == ScanSummary.ALL_UNITS || unitIndex.equals(storageUnit)) {
-            /*
-             * The maximum number of steps required to redistribute all files
-             * would be (required - 1) removes + (required - 1) copies.
-             */
-            count = 2 * (constraints.getRequired() - 1);
-            return true;
-        }
-
         Collection<String> locations
                         = poolInfoMap.getMemberLocations(group,
                                                          attributes.getLocations());
@@ -357,6 +342,34 @@ public final class FileUpdate {
             return false;
         }
 
+        int required = constraints.getRequired();
+
+        /*
+         * Force the file operation into the table if the storage unit matches
+         * the modified one, or if this is a periodic or admin initiated scan.
+         *
+         * In the former case, the scan was triggered by a change in storage
+         * unit requirements.  This could be from an altered number of replicas,
+         * or from a change in tag partitioning; even if the required number
+         * of copies exist, they may need to be removed and recopied if the
+         * tags have changed.
+         *
+         * The count must thus be the minimum necessary for the worst case
+         * scenario -- that is, remove all but one replica and recopy to
+         * the required number.  If it turns out this number is more than
+         * what is actually needed, the file operation will void itself at
+         * that point and quit.
+         */
+        if (storageUnit == ScanSummary.ALL_UNITS || unitIndex.equals(storageUnit)) {
+            /*
+             * The maximum number of steps required to redistribute all files
+             * would be (N - 1) removes + (required - 1) copies, where N
+             * is the max of required and current locations.
+             */
+            count = Math.max(required, locations.size()) + required - 2;
+            return true;
+        }
+
         /*
          *  Check the constraints.
          *  Countable means readable OR intentionally excluded locations.
@@ -364,10 +377,10 @@ public final class FileUpdate {
          *  do nothing.
          */
         int countable = poolInfoMap.getCountableLocations(locations);
-        count = constraints.getRequired() - countable;
+        count = required - countable;
         LOGGER.debug("validateForAction ({} needs {} replicas, locations {}, "
                                      + "{} countable; difference = {}.",
-                     pnfsId, constraints.getRequired(),
+                     pnfsId, required,
                      locations, countable, count);
 
         if (count == 0) {
@@ -375,7 +388,7 @@ public final class FileUpdate {
             return false;
         }
 
-        /**
+        /*
          * Multiple copies per update are set only when the file is a new
          * entry in the namespace. A pool status change or clear cache
          * location message will trigger only a single migration or single
