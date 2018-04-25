@@ -69,14 +69,12 @@ import java.util.List;
  * constraints associated with storage class.
  */
 public class StorageUnit extends Unit {
-    private static final long serialVersionUID = -2510355260024374990L;
-
-    private int required;
+    private static final long serialVersionUID = -5085234464176571891L;
+    private Integer required;
     private List<String> onlyOneCopyPer;
 
     public StorageUnit(String name) {
         super(name, PoolSelectionUnit.UnitType.STORE);
-        required = 1;
         onlyOneCopyPer = ImmutableList.of();
     }
 
@@ -84,16 +82,20 @@ public class StorageUnit extends Unit {
         return onlyOneCopyPer;
     }
 
-    public int getRequiredCopies() {
+    public Integer getRequiredCopies() {
         return required;
     }
 
-    public void setRequiredCopies(int required) {
+    public void setRequiredCopies(Integer required) {
         this.required = required;
     }
 
     public void setOnlyOneCopyPer(String[] onlyOneCopyPer) {
-        this.onlyOneCopyPer = ImmutableList.copyOf(onlyOneCopyPer);
+        if (onlyOneCopyPer == null) {
+            this.onlyOneCopyPer = ImmutableList.of();
+        } else {
+            this.onlyOneCopyPer = ImmutableList.copyOf(onlyOneCopyPer);
+        }
     }
 
     @Override

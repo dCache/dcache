@@ -63,6 +63,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -82,13 +83,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.FileOperation;
@@ -363,6 +364,10 @@ public final class ResilienceCommands implements CellCommandListener {
                 PnfsId pnfsId = new PnfsId(pnfsid);
                 FileAttributes attr = namespaceAccess.getRequiredAttributes(
                                 pnfsId);
+                int sunit = poolInfoMap.getStorageUnitIndex(attr);
+                if (!poolInfoMap.getStorageUnitConstraints(sunit).isResilient()) {
+                    return "File does not belong to a resilient storage unit.";
+                }
                 Iterator<String> it = attr.getLocations().iterator();
                 if (!it.hasNext()) {
                     return pnfsid + " does not seem to have any locations.";

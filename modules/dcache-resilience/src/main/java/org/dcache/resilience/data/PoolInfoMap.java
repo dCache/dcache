@@ -81,6 +81,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -91,6 +92,7 @@ import diskCacheV111.poolManager.StorageUnit;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.resilience.handlers.PoolInfoChangeHandler;
@@ -143,41 +145,6 @@ import org.dcache.vehicles.FileAttributes;
 public class PoolInfoMap {
     private static final Logger LOGGER = LoggerFactory.getLogger(
                     PoolInfoMap.class);
-
-    private static StorageUnitConstraints getConstraints(Integer storageUnit,
-                                                         Map<Integer, ResilienceMarker> constraints) {
-        ResilienceMarker marker = constraints.get(storageUnit);
-
-        if (marker != null && !(marker instanceof StorageUnitConstraints)) {
-            String message = "Index " + storageUnit + " does not correspond "
-                            + "to a storage unit";
-            throw new NoSuchElementException(message);
-        }
-
-        StorageUnitConstraints sconstraints = (StorageUnitConstraints) marker;
-        int required;
-        Set<String> oneCopyPer;
-
-        if (sconstraints != null) {
-            required = sconstraints.getRequired();
-            oneCopyPer = sconstraints.getOneCopyPer();
-        } else {
-            /*
-             *  This can occur if a link pointing to the pool group of this pool
-             *  has been changed or removed, or a storage unit removed from
-             *  the unit group associated with it.  The policy here will
-             *  be to consider these files non-existent for the purpose of
-             *  replication.  By leaving required = 1 we guarantee that
-             *  the entry remains "invisible" to replication handling
-             *  and no action will be taken.
-             */
-            required = 1;
-            oneCopyPer = null;
-        }
-
-        return new StorageUnitConstraints(required, oneCopyPer);
-    }
-
     private final List<String>                   pools              = new NonReindexableList<>();
     private final List<String>                   groups             = new NonReindexableList<>();
     private final List<String>                   sunits             = new NonReindexableList<>();
@@ -404,15 +371,19 @@ public class PoolInfoMap {
         }
     }
 
-    public Collection<Integer> getPoolGroupsFor(String storageUnit) {
+    public Stream<String> getResilientPoolGroupsFor(String storageUnit) {
         Integer uindex = getUnitIndex(storageUnit);
         if (uindex == null) {
-            return ImmutableList.of();
+            return Stream.empty();
         }
 
         read.lock();
         try {
-            return storageToPoolGroup.get(uindex);
+            return storageToPoolGroup.get(uindex)
+                                     .stream()
+                                     .filter(this::isResilientGroup)
+                                     .map(this::getGroup)
+                                     .unordered();
         } finally {
             read.unlock();
         }
@@ -556,7 +527,15 @@ public class PoolInfoMap {
     }
 
     public StorageUnitConstraints getStorageUnitConstraints(Integer unit) {
-        return getConstraints(unit, constraints);
+        ResilienceMarker marker = constraints.get(unit);
+
+        if (marker != null && !(marker instanceof StorageUnitConstraints)) {
+            String message = "Index " + unit + " does not correspond "
+                            + "to a storage unit";
+            throw new NoSuchElementException(message);
+        }
+
+        return (StorageUnitConstraints) marker;
     }
 
     public Integer getStorageUnitIndex(FileAttributes attributes) {
@@ -923,12 +902,19 @@ public class PoolInfoMap {
                 .filter((group) -> !diff.oldGroups.contains(group))
                 .forEach((group) -> diff.unitsRmved.put(group, unit));
 
-            int required = storageUnit.getRequiredCopies();
-            Set<String> oneCopyPer
-                            = ImmutableSet.copyOf(storageUnit.getOnlyOneCopyPer());
+            Integer required = storageUnit.getRequiredCopies();
+            int newRequired = required == null ? -1 : required;
+
             StorageUnitConstraints constraints
                             = (StorageUnitConstraints) this.constraints.get(index);
-            if (required != constraints.getRequired() ||
+
+            int oldRequired = !constraints.isResilient() ? -1 :
+                            constraints.getRequired();
+
+            Set<String> oneCopyPer
+                            = ImmutableSet.copyOf(storageUnit.getOnlyOneCopyPer());
+
+            if (newRequired != oldRequired ||
                             !oneCopyPer.equals(constraints.getOneCopyPer())) {
                 diff.constraints.put(unit,
                                      new StorageUnitConstraints(required,

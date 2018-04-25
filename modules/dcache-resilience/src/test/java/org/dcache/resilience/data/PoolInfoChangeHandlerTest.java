@@ -445,9 +445,9 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         getUpdatedPsu().addLink(link, group);
     }
 
-    private void whenPsuUpdateContainsStorageUnitWithNewConstraints(
-                    String unit) {
-        getUpdatedPsu().setStorageUnit(unit, null, new String[] { "subnet" });
+    private void whenPsuUpdateContainsStorageUnitWithNewConstraints(String unit) {
+        Integer required = getUpdatedPsu().getStorageUnit(unit).getRequiredCopies();
+        getUpdatedPsu().setStorageUnit(unit, required, new String[] { "subnet" });
     }
 
     private void whenPsuUpdateNoLongerContainsLink(String link) {

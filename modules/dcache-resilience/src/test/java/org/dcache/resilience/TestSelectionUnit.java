@@ -228,7 +228,7 @@ final class TestSelectionUnit implements PoolSelectionUnit {
     }
 
     void makeStorageUnitNonResilient(String unitKey) {
-        psu.setStorageUnit(unitKey, 1, new String[0]);
+        psu.setStorageUnit(unitKey, null, null);
     }
 
     void setOffline(String... offline) {

@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -30,8 +29,8 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -51,8 +50,8 @@ import org.dcache.util.Args;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
-import static java.util.Comparator.comparing;
 import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.*;
+import static java.util.Comparator.comparing;
 
 public class PoolSelectionUnitV2
         implements Serializable, PoolSelectionUnit, PoolSelectionUnitAccess, CellSetupProvider,
@@ -243,8 +242,8 @@ public class PoolSelectionUnitV2
 
                         if (unit instanceof StorageUnit) {
                             StorageUnit sunit = (StorageUnit)unit;
-                            int required = sunit.getRequiredCopies();
-                            if (required > 1) {
+                            Integer required = sunit.getRequiredCopies();
+                            if (required != null) {
                                 pw.append("psu set storage unit ")
                                                 .append(sunit.getName())
                                                 .append(" -required=")
@@ -1315,19 +1314,20 @@ public class PoolSelectionUnitV2
             }
 
             StorageUnit sUnit = (StorageUnit)unit;
+            sUnit.setRequiredCopies(required);
 
-            if (required != null) {
-                sUnit.setRequiredCopies(required);
+            if (required == null) {
+                sUnit.setOnlyOneCopyPer(null);
             }
 
             if (onlyOneCopyPer != null) {
-                Preconditions.checkArgument(sUnit.getRequiredCopies() >= 1,
-                                "required must be >= 1 in "
-                                                + "order to set partition tags, "
-						+ "is currently set to %s.",
-                                sUnit.getRequiredCopies());
-                sUnit.setOnlyOneCopyPer(onlyOneCopyPer);
+                Preconditions.checkArgument(sUnit.getRequiredCopies() != null,
+                                "required must be set to >= 1 "
+                                             + "in order to set partition tags, "
+						                     + "is currently set to none.");
             }
+
+            sUnit.setOnlyOneCopyPer(onlyOneCopyPer);
         } finally {
             wunlock();
         }
@@ -2923,8 +2923,8 @@ public class PoolSelectionUnitV2
                 usage = "Set the number of copies required. "
                         + "Must be an integer >= 1.  A storage "
                         + "unit has required set to 1 by default.  "
-                        + "Not specifying this attribute means "
-                        + "the current value is retained.")
+                        + "Not specifying this attribute removes the "
+                        + "required setting, making the unit non-resilient.")
         Integer required;
 
         @Option(name = "onlyOneCopyPer",
@@ -2933,9 +2933,7 @@ public class PoolSelectionUnitV2
                         + "partition copies across pools "
                         + "(interpreted as an 'and'-clause). "
                         + "A storage unit has an empty list by default.  "
-                        + "Not specifying this attribute means "
-                        + "the current value is retained; specifying "
-                        + "an empty string restores default behavior.")
+                        + "Not specifying this attribute restores the default.")
         String[] onlyOneCopyPer;
 
         @Argument(usage = "Name of the storage unit.")
@@ -2945,7 +2943,8 @@ public class PoolSelectionUnitV2
         public String call() throws IllegalArgumentException
         {
             Preconditions.checkArgument(required == null || required >= 1,
-                                        "required must be >= 1, was set to %s.",
+                                        "required must be >= 1, "
+                                                        + "was set to %s.",
                                         required);
             setStorageUnit(name, required, onlyOneCopyPer);
             return "";

@@ -329,6 +329,15 @@ public final class FileUpdate {
         StorageUnitConstraints constraints
                         = poolInfoMap.getStorageUnitConstraints(unitIndex);
 
+        /*
+         *  Ignore all files belonging to non-resilient groups.  This
+         *  no longer means simply a requirement of 1, but rather
+         *  having no requirement set.
+         */
+        if (!constraints.isResilient()) {
+            return false;
+        }
+
         Collection<String> locations
                         = poolInfoMap.getMemberLocations(group,
                                                          attributes.getLocations());
@@ -359,6 +368,10 @@ public final class FileUpdate {
          * the required number.  If it turns out this number is more than
          * what is actually needed, the file operation will void itself at
          * that point and quit.
+         * Files may be in need of migration even if the correct number
+         * exist.  Force the file operation into the table if the
+         * storage unit matches the modified one, or if this is a periodic
+         * or admin initiated scan.
          */
         if (storageUnit == ScanSummary.ALL_UNITS || unitIndex.equals(storageUnit)) {
             /*

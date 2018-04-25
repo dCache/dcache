@@ -70,6 +70,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellMessageReceiver;
+
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.poolmanager.PoolMonitor;
@@ -191,7 +192,8 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
             .forEach(this::poolRemovedFromPoolGroup);
 
         LOGGER.trace("Scanning pool groups with units whose "
-                        + "constraints have changed.");
+                        + "constraints have changed; new constraints {}.",
+                     diff.getConstraints());
         diff.getConstraints().keySet().stream()
             .forEach(this::storageUnitModified);
 
@@ -385,10 +387,13 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
      *      have files belonging to this storage unit should be scanned.</p>
      */
     private void storageUnitModified(String unit) {
-        poolInfoMap.getPoolGroupsFor(unit)
-                   .stream()
-                   .filter(poolInfoMap::isResilientGroup)
-                   .map(poolInfoMap::getGroup)
+        int index = poolInfoMap.getUnitIndex(unit);
+
+        if (!poolInfoMap.getStorageUnitConstraints(index).isResilient()) {
+            return;
+        }
+
+        poolInfoMap.getResilientPoolGroupsFor(unit)
                    .forEach((group) -> scanPoolsInGroup(group, unit));
     }
 }

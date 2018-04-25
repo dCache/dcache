@@ -73,7 +73,7 @@ public final class StorageUnitConstraints extends ResilienceMarker {
     /**
      *  <p>The number of copies which should be maintained.</p>
      */
-    private final int required;
+    private final Integer required;
 
     /**
      *  <p>Copies should be distributed across pools in such a way that
@@ -81,10 +81,14 @@ public final class StorageUnitConstraints extends ResilienceMarker {
      */
     private final ImmutableSet<String> oneCopyPer;
 
-    StorageUnitConstraints(int required, Collection<String> oneCopyPer) {
-        super(required > 1);
+    StorageUnitConstraints(Integer required, Collection<String> oneCopyPer) {
+        super(required != null);
         this.required = required;
-        this.oneCopyPer = ImmutableSet.copyOf(oneCopyPer);
+        if (oneCopyPer == null) {
+            this.oneCopyPer = ImmutableSet.of();
+        } else {
+            this.oneCopyPer = ImmutableSet.copyOf(oneCopyPer);
+        }
     }
 
     public boolean equals(StorageUnitConstraints constraints) {
@@ -97,6 +101,13 @@ public final class StorageUnitConstraints extends ResilienceMarker {
     }
 
     public int getRequired() {
+        if (required == null) {
+            throw new RuntimeException("Trying to verify required replicas "
+                                                       + "for a storage unit "
+                                                       + "which is not resilient; "
+                                                       + "this is a bug.");
+        }
+
         return required;
     }
 

@@ -118,14 +118,13 @@ public final class StorageUnitInfoExtractor {
 
     /**
      * @return true if the pool group has at least one storage group
-     * associated with it via a link, and the storage group overrides the
-     * pool group resilience settings for required number of copies
-     * (via a non-<code>null</code> value).
+     * associated with it via a link, and the storage group is resilient.
      */
     public static boolean hasResilientStorageUnit(String poolGroup,
                                                   PoolSelectionUnit psu) {
-        return getStorageUnitsInGroup(poolGroup, psu).stream()
-                        .filter((u) -> u.getRequiredCopies() > 1)
+        return getStorageUnitsInGroup(poolGroup, psu)
+                        .stream()
+                        .filter((u) -> u.getRequiredCopies() != null)
                         .findAny().isPresent();
     }
 
@@ -141,14 +140,14 @@ public final class StorageUnitInfoExtractor {
         Collection<String> onlyOneCopyPer = unit.getOnlyOneCopyPer();
         for (String group: groups) {
             verify(group, new CostModuleLocationExtractor(onlyOneCopyPer, module),
-                          storageRequired, psu);
+                   storageRequired, psu);
         }
     }
 
     private static Set<SelectionPoolGroup> getNonResilientGroups(PoolSelectionUnit psu) {
         return psu.getPoolGroups().values().stream()
-                        .filter((g) -> !g.isResilient())
-                        .collect(Collectors.toSet());
+                  .filter((g) -> !g.isResilient())
+                  .collect(Collectors.toSet());
     }
 
     private static boolean hasStorageUnit(String poolGroup,
