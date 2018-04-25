@@ -288,7 +288,7 @@ public class FileOperationHandler implements CellMessageSender {
         /*
          *  Determine if action needs to be taken (counts).
          */
-        if (!data.validateForAction(null, poolInfoMap, locationSelector)) {
+        if (!data.validateForAction(null, poolInfoMap)) {
             return false;
         }
 
@@ -329,7 +329,7 @@ public class FileOperationHandler implements CellMessageSender {
         /*
          *  Determine if action needs to be taken.
          */
-        if (!data.validateForAction(storageUnit, poolInfoMap, locationSelector)) {
+        if (!data.validateForAction(storageUnit, poolInfoMap)) {
             return false;
         }
 
@@ -491,8 +491,6 @@ public class FileOperationHandler implements CellMessageSender {
         PnfsId pnfsId = reply.getPnfsId();
         try {
             if (reply.getReturnCode() == CacheException.OUT_OF_DATE) {
-                String error = CacheExceptionFactory.exceptionOf(reply)
-                                                    .getMessage();
                 FileAttributes attributes
                                 = namespace.getRequiredAttributesForStaging(pnfsId);
                 /*

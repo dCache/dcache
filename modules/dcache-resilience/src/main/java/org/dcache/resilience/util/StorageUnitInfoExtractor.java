@@ -61,13 +61,10 @@ package org.dcache.resilience.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import diskCacheV111.poolManager.StorageUnit;
@@ -128,67 +125,12 @@ public final class StorageUnitInfoExtractor {
                         .findAny().isPresent();
     }
 
-    /**
-     * <p>Checks to make sure that resilient storage unit constraints can
-     *      be met by all resilient groups to which it is linked.</p>
-     */
-    public static void verifyCanBeSatisfied(StorageUnit unit,
-                                            PoolSelectionUnit psu,
-                                            CostModule module) {
-        Collection<String> groups = getResilientGroupsFor(unit.getName(), psu);
-        int storageRequired = unit.getRequiredCopies();
-        Collection<String> onlyOneCopyPer = unit.getOnlyOneCopyPer();
-        for (String group: groups) {
-            verify(group, new CostModuleLocationExtractor(onlyOneCopyPer, module),
-                   storageRequired, psu);
-        }
-    }
-
-    private static Set<SelectionPoolGroup> getNonResilientGroups(PoolSelectionUnit psu) {
-        return psu.getPoolGroups().values().stream()
-                  .filter((g) -> !g.isResilient())
-                  .collect(Collectors.toSet());
-    }
-
     private static boolean hasStorageUnit(String poolGroup,
                                           String storageUnit,
                                           PoolSelectionUnit psu) {
         return getStorageUnitsInGroup(poolGroup, psu).stream()
                         .filter((sunit) -> sunit.getName().equals(storageUnit))
                         .findAny().isPresent();
-    }
-
-    /**
-     * @param poolGroup to which storage unit is linked.
-     * @param extractor configured for the specific tag constraints.
-     * @param required  specific to this storage unit.
-     * @throws IllegalStateException upon encountering the first set of
-     *                               constraints which cannot be met.
-     */
-    private static void verify(String poolGroup,
-                               CostModuleLocationExtractor extractor,
-                               int required,
-                               PoolSelectionUnit psu) throws IllegalStateException {
-        Set<String> members = psu.getPoolsByPoolGroup(poolGroup).stream()
-                                 .map(SelectionPool::getName)
-                                 .collect(Collectors.toSet());
-
-        for (int i = 0; i < required; i++) {
-
-            Collection<String> candidates
-                            = extractor.getCandidateLocations(members);
-
-            if (candidates.isEmpty()) {
-                String message = String.format("At %s replicas, the ability for "
-                    + "pool group %s to distribute replicas according to "
-                    + "requirements is exceeded.", i, poolGroup);
-                throw new IllegalStateException(message);
-            }
-
-            String selected = RandomSelectionStrategy.SELECTOR.apply(candidates);
-            members.remove(selected);
-            extractor.addSeenTagsFor(selected);
-        }
     }
 
     private StorageUnitInfoExtractor() {

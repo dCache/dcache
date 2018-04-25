@@ -72,6 +72,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.resilience.db.LocalNamespaceAccess;
 import org.dcache.resilience.db.NamespaceAccess;
@@ -79,14 +80,9 @@ import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.resilience.util.ExceptionMessage;
-import org.dcache.resilience.util.LocationSelector;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.resilience.data.MessageType.ADD_CACHE_LOCATION;
-import static org.dcache.resilience.data.MessageType.CLEAR_CACHE_LOCATION;
-import static org.dcache.resilience.data.MessageType.CORRUPT_FILE;
-import static org.dcache.resilience.data.MessageType.POOL_STATUS_DOWN;
-import static org.dcache.resilience.data.MessageType.POOL_STATUS_UP;
+import static org.dcache.resilience.data.MessageType.*;
 
 /**
  * <p>A transient encapsulation of pertinent configuration data regarding
@@ -299,8 +295,7 @@ public final class FileUpdate {
     }
 
     public boolean validateForAction(Integer storageUnit,
-                                     PoolInfoMap poolInfoMap,
-                                     LocationSelector locationSelector) {
+                                     PoolInfoMap poolInfoMap) {
         /*
          * Storage unit is not recorded in checkpoint, so it should
          * be set here.
