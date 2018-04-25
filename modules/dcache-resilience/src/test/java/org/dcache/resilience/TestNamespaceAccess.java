@@ -125,7 +125,7 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
             FileUpdate data = new FileUpdate(attributes.getPnfsId(),
                                              scan.getPool(),
                                              scan.getType(),
-                                             scan.getAction(),
+                                             scan.isNewPool(),
                                              scan.getGroup(),
                                              scan.isForced());
             if (handler.handleScannedLocation(data, scan.getStorageUnit())) {

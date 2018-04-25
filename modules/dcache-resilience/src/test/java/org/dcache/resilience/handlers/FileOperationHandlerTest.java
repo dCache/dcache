@@ -78,7 +78,6 @@ import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.StorageUnitConstraints;
 import org.dcache.resilience.util.ResilientFileTask;
@@ -476,14 +475,14 @@ public final class FileOperationHandlerTest extends TestBase
     private void givenAFileUpdateFromAPoolScan() throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
-                           MessageType.POOL_STATUS_DOWN, SelectionAction.NONE);
+                           MessageType.POOL_STATUS_DOWN, false);
     }
 
     private void givenAFileUpdateFromAPoolScanForPoolAddedToGroup()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
-                           MessageType.POOL_STATUS_UP, SelectionAction.ADD);
+                           MessageType.POOL_STATUS_UP, true);
     }
 
     private void givenANewLocationForFile() throws CacheException {
@@ -593,7 +592,7 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     private void setUpdateWithGroup(FileAttributes attributes, MessageType type,
-                                    SelectionAction action) {
+                                    boolean newPool) {
         this.attributes = attributes;
         PnfsId pnfsId = attributes.getPnfsId();
         Iterator<String> iterator = attributes.getLocations().iterator();
@@ -601,7 +600,7 @@ public final class FileOperationHandlerTest extends TestBase
             String pool = iterator.next();
             Integer group = poolInfoMap.getResilientPoolGroup(
                             poolInfoMap.getPoolIndex(pool));
-            update = new FileUpdate(pnfsId, pool, type, action, group, false);
+            update = new FileUpdate(pnfsId, pool, type, newPool, group, false);
         } else {
             update = new FileUpdate(pnfsId, null, type, false);
         }

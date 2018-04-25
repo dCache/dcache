@@ -63,7 +63,6 @@ import java.util.concurrent.Future;
 
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 
@@ -78,12 +77,12 @@ public final class PoolScanTask extends ErrorAwareTask implements Cancellable {
 
     public PoolScanTask(String pool,
                         MessageType type,
-                        SelectionAction action,
+                        boolean newPool,
                         Integer group,
                         Integer storageUnit,
                         boolean forced,
                         PoolOperationHandler handler) {
-        scan = new ScanSummary(pool, type, action, group, storageUnit, forced);
+        scan = new ScanSummary(pool, type, newPool, group, storageUnit, forced);
         this.handler = handler;
     }
 

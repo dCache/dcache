@@ -73,7 +73,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.resilience.db.LocalNamespaceAccess;
 import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.db.ScanSummary;
@@ -174,7 +173,7 @@ public final class FileUpdate {
     public final PnfsId  pnfsId;
     public final String  pool;
     public final MessageType     type;
-    public final SelectionAction action;
+    public final boolean newPool;
 
     private final boolean isFullScan;
 
@@ -193,14 +192,14 @@ public final class FileUpdate {
                       Integer groupIndex,
                       Integer unitIndex,
                       FileAttributes attributes) {
-        this(pnfsId, pool, type, SelectionAction.NONE, groupIndex, true);
+        this(pnfsId, pool, type, false, groupIndex, true);
         this.poolIndex = poolIndex;
         this.unitIndex = unitIndex;
         this.attributes = attributes;
     }
 
     public FileUpdate(PnfsId pnfsId, String pool, MessageType type, boolean full) {
-        this(pnfsId, pool, type, SelectionAction.NONE, null, full);
+        this(pnfsId, pool, type, false, null, full);
     }
 
     /**
@@ -208,7 +207,7 @@ public final class FileUpdate {
      * @param pool   either the source of the message, or the pool being scanned.
      * @param type   CORRUPT_FILE, CLEAR_CACHE_LOCATION, ADD_CACHE_LOCATION,
      *               POOL_STATUS_DOWN, or POOL_STATUS_UP.
-     * @param action from PoolSelectionUnit (ADD, REMOVE, MODIFY, NONE).
+     * @param newPool whether processing files from a new pool.
      * @param group  of the pool, if action is not NONE or MODIFY
      *               (can be <code>null</code>).
      * @param full   if true, set the op count to the computed difference
@@ -216,11 +215,11 @@ public final class FileUpdate {
      *               set the op count to 1.
      */
     public FileUpdate(PnfsId pnfsId, String pool, MessageType type,
-                      SelectionAction action, Integer group, boolean full) {
+                      boolean newPool, Integer group, boolean full) {
         this.pnfsId = pnfsId;
         this.pool = pool;
         this.type = type;
-        this.action = action;
+        this.newPool = newPool;
         this.group = group;
         fromReload = false;
         isFullScan = full;
@@ -242,8 +241,8 @@ public final class FileUpdate {
         return poolIndex;
     }
 
-    public int getSelectionAction() {
-        return action.ordinal();
+    public boolean isNewPool() {
+        return newPool;
     }
 
     public long getSize() { return attributes.getSize(); }
@@ -275,15 +274,15 @@ public final class FileUpdate {
 
     public boolean shouldVerifySticky() {
         return !isFromReload() && type != CLEAR_CACHE_LOCATION &&
-                        (!isParent() || action == SelectionAction.ADD);
+                        (!isParent() || newPool);
     }
 
     public String toString() {
         return String.format(
                         "(%s)(%s)(%s)(parent %s)(source %s)"
-                                        + "(psu action %s)(group %s)(count %s)",
+                                        + "(new pool %s)(group %s)(count %s)",
                         pnfsId, pool, type, isParent(), getSourceIndex(),
-                        action, group, count);
+                        newPool, group, count);
     }
 
     public boolean validateAttributes(NamespaceAccess access)

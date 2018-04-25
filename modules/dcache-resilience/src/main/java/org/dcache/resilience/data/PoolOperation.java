@@ -87,14 +87,7 @@ public final class PoolOperation {
     enum NextAction {
         NOP,            // REMAIN IN CURRENT QUEUE
         UP_TO_DOWN,     // PROMOTE TO WAITING
-        DOWN_TO_UP     // CANCEL ANY CURRENT DOWN AND PROMOTE TO WAITING
-    }
-
-    public enum SelectionAction {
-        NONE,
-        ADD,
-        REMOVE,
-        MODIFY
+        DOWN_TO_UP      // CANCEL ANY CURRENT DOWN AND PROMOTE TO WAITING
     }
 
     boolean                 forceScan;     // Overrides non-handling of restarts
@@ -104,7 +97,7 @@ public final class PoolOperation {
     Integer                 unit;          // Set when unit has changed, or scan
                                            // is periodic or initiated by command
     State                   state;
-    SelectionAction         psuAction;
+    boolean                 newPool;
     PoolStatusForResilience lastStatus;
     PoolStatusForResilience currStatus;
     PoolScanTask            task;
@@ -118,7 +111,6 @@ public final class PoolOperation {
         group = null;
         unit = null;
         state = State.IDLE;
-        psuAction = SelectionAction.NONE;
         lastUpdate = System.currentTimeMillis();
         lastScan = lastUpdate;
         lastStatus = PoolStatusForResilience.UNINITIALIZED;

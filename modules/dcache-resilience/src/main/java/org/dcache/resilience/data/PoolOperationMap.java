@@ -632,7 +632,7 @@ public class PoolOperationMap extends RunnableModule {
                     if (update.storageUnit != null) {
                         operation.unit = poolInfoMap.getUnitIndex(update.storageUnit);
                     }
-                    operation.psuAction = update.action;
+                    operation.newPool = update.newPool;
                     operation.exception = null;
                     operation.task = null;
                     waiting.put(update.pool, operation);
@@ -826,7 +826,7 @@ public class PoolOperationMap extends RunnableModule {
         operation.forceScan = true;
         operation.lastUpdate = System.currentTimeMillis();
         operation.state = State.WAITING;
-        operation.psuAction = update.action;
+        operation.newPool = update.newPool;
         operation.group = update.group;
 
         if (update.storageUnit != null) {
@@ -860,7 +860,7 @@ public class PoolOperationMap extends RunnableModule {
         operation.lastUpdate = System.currentTimeMillis();
         operation.group = null;
         operation.unit = null;
-        operation.psuAction = PoolOperation.SelectionAction.NONE;
+        operation.newPool = false;
         operation.forceScan = false;
         operation.resetChildren();
         if (poolInfoMap.isResilientPool(pool)) {
@@ -978,7 +978,7 @@ public class PoolOperationMap extends RunnableModule {
     private void submit(String pool, PoolOperation operation) {
         operation.task = new PoolScanTask(pool,
                                           operation.currStatus.getMessageType(),
-                                          operation.psuAction,
+                                          operation.newPool,
                                           operation.group,
                                           operation.unit,
                                           operation.forceScan,

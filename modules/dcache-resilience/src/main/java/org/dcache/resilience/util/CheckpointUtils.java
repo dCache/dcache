@@ -85,7 +85,6 @@ import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperation;
 import org.dcache.resilience.handlers.FileOperationHandler;
-import org.dcache.resilience.data.PoolOperation.SelectionAction;
 
 /**
  * <p>Static methods for writing and reading data for checkpointing purposes.</p>
@@ -290,7 +289,6 @@ public final class CheckpointUtils {
         }
 
         builder.append(operation.getPnfsId()).append(",");
-        builder.append(operation.getSelectionAction()).append(",");
         builder.append(operation.getOpCount()).append(",");
         builder.append(map.getGroup(operation.getPoolGroup())).append(",");
         builder.append(pool);
@@ -310,11 +308,12 @@ public final class CheckpointUtils {
             return null;
         }
         PnfsId pnfsId = new PnfsId(parts[0]);
-        SelectionAction action = SelectionAction.values()[Integer.parseInt(parts[1])];
+        boolean newPool = Boolean.valueOf(parts[1]);
         int opCount = Integer.parseInt(parts[2]);
         Integer gindex = map.getGroupIndex(parts[3]);
         FileUpdate update = new FileUpdate(pnfsId, parts[4],
-                                           MessageType.ADD_CACHE_LOCATION, action, gindex, true);
+                                           MessageType.ADD_CACHE_LOCATION,
+                                           newPool, gindex, true);
         update.setCount(opCount);
         update.setFromReload(true);
         return update;

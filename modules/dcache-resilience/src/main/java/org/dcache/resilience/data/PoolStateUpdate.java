@@ -66,7 +66,6 @@ import java.util.Map;
 import diskCacheV111.pools.PoolV2Mode;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
-import org.dcache.resilience.data.PoolOperation.SelectionAction;
 
 /**
  * <p>A transient encapsulation of pertinent configuration data regarding
@@ -84,7 +83,7 @@ public final class PoolStateUpdate {
     public final String          pool;
     public final PoolV2Mode      mode;
     public final Integer         group;
-    public final SelectionAction action;
+    public final boolean         newPool;
     public final String          storageUnit;
 
     public PoolStateUpdate(Map.Entry<String, PoolV2Mode> entry) {
@@ -112,16 +111,13 @@ public final class PoolStateUpdate {
         this.storageUnit = storageUnit;
         if (addedTo != null) {
             group = addedTo;
-            action = PoolOperation.SelectionAction.ADD;
+            newPool = true;
         } else if (removedFrom != null) {
             group = removedFrom;
-            action = PoolOperation.SelectionAction.REMOVE;
         } else if (storageUnit != null) {
             group = null;
-            action = PoolOperation.SelectionAction.MODIFY;
         } else {
             group = null;
-            action = PoolOperation.SelectionAction.NONE;
         }
     }
 

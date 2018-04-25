@@ -784,7 +784,6 @@ public class FileOperationMap extends RunnableModule {
         FileOperation operation = new FileOperation(data.pnfsId,
                                                     data.getGroup(),
                                                     data.getUnitIndex(),
-                                                    data.getSelectionAction(),
                                                     data.getCount(),
                                                     data.getSize());
         operation.setParentOrSource(data.getSourceIndex(), data.isParent());

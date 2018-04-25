@@ -169,7 +169,6 @@ public final class FileOperation {
     private final long        size;
     private long              lastUpdate;
     private int               retentionPolicy;
-    private int               selectionAction;
     private int               poolGroup;
     private int               storageUnit;
     private int               parent;
@@ -185,10 +184,9 @@ public final class FileOperation {
     private ResilientFileTask task;
     private CacheException    exception;
 
-    FileOperation(PnfsId pnfsId, int pgroup, Integer sunit, int action,
+    FileOperation(PnfsId pnfsId, int pgroup, Integer sunit,
                   int opCount, long size) {
         this(pnfsId, opCount, size);
-        selectionAction = action;
         poolGroup = pgroup;
         storageUnit = setNilForNull(sunit);
         state = UNINITIALIZED;
@@ -211,8 +209,7 @@ public final class FileOperation {
     @VisibleForTesting
     public FileOperation(FileOperation operation) {
         this(operation.pnfsId, operation.poolGroup, operation.storageUnit,
-                        operation.selectionAction, operation.opCount,
-                        operation.size);
+                        operation.opCount, operation.size);
         lastUpdate = operation.lastUpdate;
         parent = operation.parent;
         exception = operation.exception;
@@ -299,10 +296,6 @@ public final class FileOperation {
 
     public int getRetentionPolicy() {
         return retentionPolicy;
-    }
-
-    public int getSelectionAction() {
-        return selectionAction;
     }
 
     public long getSize() { return size; }

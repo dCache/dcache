@@ -62,14 +62,14 @@ package org.dcache.resilience.db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
+
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
-
-import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -83,7 +83,6 @@ import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
-import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.ExceptionMessage;
@@ -246,7 +245,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         ResultSet resultSet = null;
         String pool = scan.getPool();
         MessageType type = scan.getType();
-        SelectionAction action = scan.getAction();
+        boolean action = scan.isNewPool();
         Integer group = scan.getGroup();
         Integer storageUnit = scan.getStorageUnit();
         boolean full = scan.isForced();
