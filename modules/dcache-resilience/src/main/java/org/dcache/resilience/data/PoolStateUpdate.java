@@ -114,10 +114,10 @@ public final class PoolStateUpdate {
             newPool = true;
         } else if (removedFrom != null) {
             group = removedFrom;
-        } else if (storageUnit != null) {
-            group = null;
+            newPool = false;
         } else {
             group = null;
+            newPool = false;
         }
     }
 
