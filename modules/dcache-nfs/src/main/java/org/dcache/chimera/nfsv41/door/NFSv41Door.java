@@ -3,6 +3,7 @@ package org.dcache.chimera.nfsv41.door;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -83,7 +84,6 @@ import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.utils.Bytes;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.FsExport;
@@ -1331,7 +1331,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() {
-            stateid4 stateid = new stateid4(Bytes.fromHexString(os), 0);
+            stateid4 stateid = new stateid4(BaseEncoding.base16().lowerCase().decode(os), 0);
             NfsTransfer t = _ioMessages.get(stateid);
             if (t == null) {
                 return "No matching transfer";
@@ -1353,7 +1353,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() {
-            stateid4 stateid = new stateid4(Bytes.fromHexString(os), 0);
+            stateid4 stateid = new stateid4(BaseEncoding.base16().lowerCase().decode(os), 0);
             NfsTransfer t = _ioMessages.remove(stateid);
             if (t == null) {
                 return "No matching transfer";
