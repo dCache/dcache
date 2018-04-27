@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>dCache events playground</title>
+<style>
+div.popup {
+    display: none;
+    background-color: AliceBlue;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    border-radius: 5px;
+    width: 40ex;
+    border: 1px solid;
+    padding: 10px;
+    box-shadow: 5px 10px 8px #888888;
+}
+
+p.body {
+    max-width: 79ex;
+}
+
+div.section {
+    background: #f8f8f8;
+    padding: 2px 20px;
+    margin: 20px 10px;
+}
+</style>
+</head>
+<body onload="pageLoaded()">
+<script>
+const channelsEndpoint = new URL("/api/v1/events/channels/", window.location.href);
+
+var channel;
+var source;
+var subscriptions = {}
+var userEmpty;
+var pwEmpty;
+var nextId = {};
+
+function pageLoaded() {
+    userEmpty=!Boolean(user());
+    pwEmpty=!Boolean(pw());
+    updateDisableStatus();
+    updateSubscriptionPreamble();
+}
+
+function user() {
+    return document.getElementById("username").value;
+}
+
+function pw() {
+    return document.getElementById("password").value;
+}
+
+function updateDisableStatus() {
+    let channelCreate = document.getElementById("channel.create");
+    let channelDestroy = document.getElementById("channel.destroy");
+    let newSubscriptionGo = document.getElementById("newSubscription.go");
+    let metronome = document.getElementById("newSubscription.selector.metronome");
+    let inotify = document.getElementById("newSubscription.selector.inotify");
+    let newSubscriptionTypeSelection = document.getElementById("newSubscription.typeSelection");
+    let newSubscriptionType = document.getElementById("newSubscription.type");
+
+    if (userEmpty || pwEmpty) {
+        channelCreate.disabled = true;
+        channelDestroy.disabled = true;
+        newSubscriptionGo.disabled = true;
+        newSubscriptionTypeSelection.style.display = "none";
+        metronome.style.display = "none";
+        inotify.style.display = "none";
+    } else if (channel === undefined) {
+        channelCreate.disabled = false;
+        channelDestroy.disabled = true;
+        newSubscriptionGo.disabled = true;
+        newSubscriptionTypeSelection.style.display = "none";
+        metronome.style.display = "none";
+        inotify.style.display = "none";
+    } else {
+        channelCreate.disabled = true;
+        channelDestroy.disabled = false;
+        newSubscriptionGo.disabled = false;
+        newSubscriptionTypeSelection.style.display = "inline";
+        if (newSubscriptionType.value == "metronome") {
+            metronome.style.display = "inline";
+            inotify.style.display = "none";
+            updateMetronomeValueTypePreamble();
+            updateMetronomeLifetimeValue();
+        } else if (newSubscriptionType.value == "inotify") {
+            metronome.style.display = "none";
+            inotify.style.display = "inline";
+        }
+    }
+}
+
+function userKU(event) {
+    let newUserEmpty=!Boolean(user());
+    if (userEmpty != newUserEmpty) {
+        userEmpty = newUserEmpty;
+        updateDisableStatus();
+    }
+}
+
+function pwKU(event) {
+    let newPwEmpty=!Boolean(pw());
+    if (pwEmpty != newPwEmpty) {
+        pwEmpty = newPwEmpty;
+        updateDisableStatus();
+    }
+}
+
+function createChannel() {
+    if (channel !== undefined) {
+        return;
+    }
+
+    let request = new XMLHttpRequest();
+    request.responseType = 'json';
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            if (this.status == 201) {
+                updateChannel(request.getResponseHeader("Location"));
+            } else {
+                alert("Channel registration failed: " + this.statusText);
+            }
+        }
+    };
+    request.open("POST", channelsEndpoint, true, user(), pw());
+    request.send();
+}
+
+function destroyChannel() {
+    if (channel === undefined) {
+        return;
+    }
+
+    let request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            if (this.status == 204) {
+                updateChannel(undefined);
+            } else {
+                alert("Channel deletion failed: " + this.statusText);
+            }
+        }
+    };
+    request.open("DELETE", channel, true, user(), pw());
+    request.send();
+}
+
+
+// Show a new event in the event list
+function appendEvent(type, html) {
+    let li = document.createElement("li");
+
+    let b = document.createElement("b");
+    b.appendChild(document.createTextNode(type));
+
+    let span = document.createElement("span");
+    span.innerHTML = html;
+    let date = new Date().toISOString();
+    li.appendChild(document.createTextNode(date + " "));
+    li.appendChild(b);
+    li.appendChild(document.createTextNode(" "));
+    li.appendChild(span);
+
+    let events = document.getElementById("events");
+    while (events.childNodes.length >= 10) {
+        events.removeChild(events.lastChild);
+    }
+    events.insertBefore(li, events.firstChild);
+}
+
+function addSource() {
+    let headers = new Headers();
+    headers.append('Authorization', 'Basic ' + window.btoa(user() + ":" + pw()));
+    source = new EventSource(channel, {headers: headers});
+    source.onerror = function() {
+        appendEvent("Connection", "Error with SSE connection");
+    }
+
+    source.onopen = function() {
+        appendEvent("Connection", "SSE connected established");
+    }
+
+    source.addEventListener("metronome", function(e) {
+        let data = JSON.parse(e.data);
+        let subscription = findSubscription(data.subscription);
+        let message = data.event;
+        let id = subscription ? subscription.id : "metronome";
+        appendEvent(id, message);
+    });
+
+    source.addEventListener("inotify", function(e) {
+        let data = JSON.parse(e.data);
+        let subscription = findSubscription(data.subscription);
+        let path = inotifyPath(subscription, data);
+        // REVISIT we assume that the first array item is the inotify event type
+        let inotifyEvent = data.event.mask[0];
+        let cookie = data.event.cookie ? (" [<tt>" + data.event.cookie + "</tt>]") : "";
+        let id = subscription ? subscription.id : "inotify";
+        appendEvent(id, "<tt>" + path + "</tt> " + inotifyEvent + cookie);
+    });
+
+    source.addEventListener("SYSTEM", function(e) {
+        let data = JSON.parse(e.data);
+        let type = data.type;
+        if (type == "NEW_SUBSCRIPTION") {
+            let url = data.subscription;
+            appendEvent("SYSTEM", "New subscription");
+            if (!findSubscription(url)) {
+                acceptSubscription(url);
+            }
+        } else if (type == "SUBSCRIPTION_CLOSED") {
+            let url = data.subscription;
+            let id = findSubscription(url).id;
+            appendEvent("SYSTEM", "Subscription " + id + " closed");
+            removeSubscription(id);
+        } else if (type == "SHUTDOWN") {
+            updateChannel(undefined);
+            appendEvent("SYSTEM", "dCache frontend shutting down");
+        } else {
+            appendEvent("SYSTEM", type);
+        }
+    });
+}
+
+function inotifyPath(subscription, data) {
+    let path = subscription ? subscription.details.selector.path : "...";
+    if (data.event.name) {
+        path += "/" + data.event.name;
+    }
+    if (data.event.mask.filter(m => m === "IN_ISDIR").length > 0) {
+        path += "/";
+    }
+    return path;
+}
+
+
+function findSubscription(url) {
+    // REVIST -- this is O(n) search, slow for large n.
+    for (const id of Object.keys(subscriptions)) {
+        let subscription = subscriptions [id];
+        if (subscription.url == url) {
+            return {
+                id: id,
+                details: subscription
+            };
+        }
+    }
+    return undefined;
+}
+
+
+function cancelSubscription(id) {
+    subscriptions[id].url;
+    let request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            if (this.status != 204) {
+                alert("Subscription deletion failed: " + this.statusText);
+            }
+        }
+    };
+    request.open("DELETE", subscriptions[id].url, true, user(), pw());
+    request.send();
+}
+
+function removeSubscription(id) {
+    let subscription = subscriptions[id];
+    if (!subscription) {
+        return;
+    }
+    let elemId = subscription.element;
+    if (elemId) {
+        let elem = document.getElementById(elemId);
+        if (elem) {
+            elem.parentNode.removeChild(elem);
+        }
+    }
+    delete subscriptions[id];
+    updateSubscriptionPreamble();
+}
+
+function acceptSubscription(url) {
+    let type = url.substring(channel.length+15).replace(/\/.*/, ''); // +15 for "/subscriptions/"
+
+    if (!nextId[type]) {
+        nextId[type] = 1;
+    }
+    let id = type + "-" + nextId[type]++;
+    let elementId = "subscriptions." + id;
+
+    subscriptions[id] = {
+        element: elementId,
+        url: url,
+        type: type
+    };
+
+    let request = new XMLHttpRequest();
+    request.responseType = 'json';
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            if (this.status == 200) {
+                let selector = request.response;
+                subscriptions [id].selector = selector;
+                let li = document.createElement("li");
+                li.id = elementId;
+                li.innerHTML = "<button onclick=\"cancelSubscription('" + id + "')\">Cancel</button> <b>" + id + "</b> " + describe(type, selector);
+
+                let ul = document.getElementById("subscriptions")
+                ul.appendChild(li);
+                updateSubscriptionPreamble();
+            } else {
+                alert("Selector query failed: " + this.statusText);
+            }
+        }
+    };
+    request.open("GET", url, true, user(), pw());
+    request.send();
+}
+
+function updateMetronomeValueTypePreamble() {
+    let valueType = document.getElementById("newSubscription.metronome.valueType").value;
+    let preambleHz = document.getElementById("newSubscription.metronome.valueTypePreamble.at");
+    let preambleSeconds = document.getElementById("newSubscription.metronome.valueTypePreamble.every");
+    if (valueType == "kHz" || valueType == "Hz") {
+        preambleHz.style.display = "inline";
+        preambleSeconds.style.display = "none";
+    } else if (valueType == "seconds" || valueType == "minutes") {
+        preambleHz.style.display = "none";
+        preambleSeconds.style.display = "inline";
+    } else {
+        preambleHz.style.display = "none";
+        preambleSeconds.style.display = "none";
+    }
+}
+
+function updateMetronomeLifetimeValue() {
+    let lifetimeType = document.getElementById("newSubscription.metronome.lifetimeType").value;
+    let duration = document.getElementById("newSubscription.metronome.lifetimeDuration");
+    if (lifetimeType == "forever") {
+        duration.style.display = "none";
+    } else {
+        duration.style.display = "inline";
+    }
+}
+
+function updateChannel(value) {
+    channel = value;
+    if (value === undefined) {
+        document.getElementById("channel.value").innerHTML="";
+        if (source) {
+            source.close();
+            source = undefined;
+        }
+        document.getElementById("subscriptions").innerHTML="";
+    } else {
+        document.getElementById("channel.value").innerHTML=channel;
+        addSource();
+    }
+    updateSubscriptionPreamble();
+    updateDisableStatus();
+}
+
+function describeMetronome(selector) {
+    description = "";
+
+    if (selector.message) {
+        description += "<tt>" + selector.message + "</tt>";
+    } else {
+        description += "default message";
+    }
+
+    if (selector.frequency) {
+        description += " at&nbsp;";
+        let f = selector.frequency;
+        let kf = Math.floor(f/1000);
+        if (kf*1000 == f) {
+            description += kf + "&nbsp;kHz";
+        } else {
+            description += f + "&nbsp;Hz";
+        }
+    } else {
+        description += " every&nbsp;";
+        let d = selector.delay;
+        let md = Math.floor(d/60);
+        let v;
+        let u;
+        if (md*60 == d) {
+            v = md;
+            u = "minute";
+        } else {
+            v = d;
+            u = "second";
+        }
+        if (v == 1) {
+            description += u;
+        } else {
+            description += v + "&nbsp;" + u + "s";
+        }
+    }
+
+    if (selector.count) {
+        description += " for " + selector.count + " messages";
+    }
+    return description;
+}
+
+function describeInotify(selector) {
+    return "watching&nbsp;<tt>" + selector.path + "</tt>";
+}
+
+function describe(type, selector) {
+    if (type == "metronome") {
+        return describeMetronome(selector);
+    } else if (type == "inotify") {
+        return describeInotify(selector);
+    } else {
+        return "Unknown type " + type;
+    }
+}
+
+function subscribe() {
+    let type = document.getElementById("newSubscription.type").value;
+
+    let selector={};
+
+    if (type == "metronome") {
+        let message = document.getElementById("newSubscription.metronome.message").value;
+        if (message && message.trim().length != 0) {
+            selector.message=message.trim();
+        }
+        let value = document.getElementById("newSubscription.metronome.value").value;
+        let valueType = document.getElementById("newSubscription.metronome.valueType").value;
+        if (valueType == "kHz") {
+            selector.frequency = 1000*value;
+        } else if (valueType == "Hz") {
+            selector.frequency = value;
+        } else if (valueType == "seconds") {
+            selector.delay = value;
+        } else if (valueType == "minutes") {
+            selector.delay = 60*value;
+        }
+        let lifetimeType = document.getElementById("newSubscription.metronome.lifetimeType").value;
+        if (lifetimeType == "for") {
+            selector["count"] = document.getElementById("newSubscription.metronome.lifetimeDurationValue").value;
+        }
+    } else if (type == "inotify") {
+        selector.path = document.getElementById("newSubscription.inotify.path").value;
+    }
+
+    let request = new XMLHttpRequest();
+    request.responseType = 'json';
+    request.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            if (this.status == 201) {
+                // Do nothing -- we accept new subscriptions via notification
+            } else if (this.status == 200) {
+                // We were redirected to the (potentially updated) existing subscription.
+                let url = request.responseURL;
+                let subscription = findSubscription(url);
+                if (subscription) {
+                    appendEvent(subscription.id, "subscription updated");
+                } else {
+                    alert("Unknown subscription: " + url);
+                }
+            } else {
+                alert(type + " subscription failed: " + this.status + " " + this.statusText);
+            }
+        }
+    };
+
+    request.open("POST", channel + "/subscriptions/" + type, true, user(), pw());
+    request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    request.send(JSON.stringify(selector));
+}
+
+function updateSubscriptionPreamble() {
+    let withSub = document.getElementById("subscription.preamble.withSubscriptions");
+    let withoutSub = document.getElementById("subscription.preamble.withoutSubscriptions");
+    let count = document.getElementById("subscriptions").getElementsByTagName("li").length;
+    if (count == 0) {
+        withSub.style.display = "none";
+        withoutSub.style.display = "inline";
+    } else {
+        withSub.style.display = "inline";
+        withoutSub.style.display = "none";
+    }
+}
+
+</script>
+
+<h1>Events Playground</h1>
+<p class="body">
+This page uses your web-browser's built-in support for Server-Sent
+Events (SSE) to receive events from dCache.  It provides a simple
+demonstration to show events are working as expected.
+</p>
+
+<div id="newSubscription.metronome.messageHint" class="popup">
+  <p>
+    If the message is empty then the default value is used.  The text
+    may contain variable references that are expanded in the returned
+    message, using the format <tt>${NAME}</tt> to refer to
+    variable <tt>NAME</tt>.  The following variables are supported:
+    <dl>
+      <dt><tt>count</tt></dt>
+      <dd>a message counter, value is 1 for the first message.</dd>
+      <dt><tt>username</tt></dt>
+      <dd>your dCache username.</dd>
+    </dl>
+  </p>
+</div>
+
+<div id="newSubscription.inotify.pathHint" class="popup">
+  <p>
+    The path value is the absolute path of some existing file or
+    directory.
+  </p>
+</div>
+
+<div class="section">
+<h2>1. Authentication</h2>
+<p class="body">
+Enter your dCache username and password.
+</p>
+<p>
+Name: <input id="username" type="text" onkeyup="userKU()">
+Password: <input id="password" type="password" defaultValue="password" onkeyup="pwKU()">
+</p>
+</div>
+
+<div class="section">
+<h2>2. Channel</h2>
+<p>
+Each client needs exactly one channel to subscribe to events.
+</p>
+<p>
+<button id="channel.create" type="button" onclick="createChannel()">Create</button>
+<button id="channel.destroy" disabled type="button" onclick="destroyChannel()">Destroy</button>
+<span id="channel.value"></span>
+</p>
+</div>
+
+<div class="section">
+<h2>3. Subscriptions</h2>
+<p class="body">
+Subscriptions are what generate events.  The <tt>SYSTEM</tt> eventType
+is automatically subscribed but one (or more) subscriptions are needed
+before the client receives events.
+</p>
+<p>
+<button id="newSubscription.go" type="button" onclick="subscribe()">Subscribe</button>
+<span id="newSubscription.typeSelection">
+to
+<select id="newSubscription.type" onchange="updateDisableStatus()">
+  <option value="metronome">metronome</option>
+  <option value="inotify">inotify</option>
+</select>
+events,
+</span>
+<span id="newSubscription.selector.metronome">
+  emitting the message <span onmouseover="document.getElementById('newSubscription.metronome.messageHint').style.display='block'" onmouseout="document.getElementById('newSubscription.metronome.messageHint').style.display='none'">&#9432;</span> <input id="newSubscription.metronome.message" size="12">
+  <span id="newSubscription.metronome.valueTypePreamble.at">at</span>
+  <span id="newSubscription.metronome.valueTypePreamble.every">every</span>
+  <input id="newSubscription.metronome.value" size="3">
+  <select id="newSubscription.metronome.valueType" onchange="updateMetronomeValueTypePreamble()">
+    <option value="" selected disabled hidden>Choose...</option>
+    <option value="kHz">kHz</option>
+    <option value="Hz">Hz</option>
+    <option value="seconds">seconds</option>
+    <option value="minutes">minutes</option>
+  </select>
+  <select id="newSubscription.metronome.lifetimeType" onchange="updateMetronomeLifetimeValue()">
+    <option value="forever" selected>forever</option>
+    <option value="for">for</option>
+  </select>
+  <span id="newSubscription.metronome.lifetimeDuration">
+    <input id="newSubscription.metronome.lifetimeDurationValue" size="3">
+    messages
+  </span>
+</span>
+<span id="newSubscription.selector.inotify">
+  targeting path <span onmouseover="document.getElementById('newSubscription.inotify.pathHint').style.display='block'" onmouseout="document.getElementById('newSubscription.inotify.pathHint').style.display='none'">&#9432;:</span> <input id="newSubscription.inotify.path">
+</span>
+</p>
+<p class="body">
+<span id="subscription.preamble.withSubscriptions">The current subscriptions:</span>
+<span id="subscription.preamble.withoutSubscriptions">There are currently no subscriptions.</span>
+</p>
+<ul id="subscriptions">
+</ul>
+</div>
+
+<div class="section">
+<h2>4. Events</h2>
+<p class="body">
+Here are the ten most recent events.
+</p>
+<ul id="events">
+</ul>
+</div>
+</body>
+</html>
