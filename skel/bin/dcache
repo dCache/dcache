@@ -45,6 +45,7 @@ usage()
     echo "   database doc <cell>@<domain> <out-dir>"
     echo "   dump heap [--force] <domain> <file>"
     echo "   dump threads [<domain>...]"
+    echo "   dump zklog [<path>]"
     echo "   kpwd <command> [-debug] [<command argument>]..."
     echo "   ports"
     echo "   pool convert <name> <target-type>"
@@ -642,6 +643,24 @@ case "$1" in
                         printp "Stack traces for $domain have been written to $LOG_FILE."
                     fi
                 done
+                ;;
+
+            zklog)
+                [ $# -gt 1 ] && usage
+                dir="$(getProperty zookeeper.data-log-dir)/version-2"
+                [ $# -eq 1 ] && dir="$1"
+
+                [ ! -d "$dir" ] && fail 1 "No such directory: $dir"
+
+                ls -r -t "$dir/log."* 2>/dev/null \
+                   | while read f; do
+                         name=$(basename "$f")
+                         echo
+                         echo "TRANSACTION LOG FILE $name:"
+                         echo
+                         CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.apache.zookeeper.server.LogFormatter "$f" \
+                             | awk '{print "  "$0}'
+                     done
                 ;;
 
             *)
