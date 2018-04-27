@@ -126,6 +126,7 @@ import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
+import org.dcache.pool.assumption.Assumptions;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Glob;
 import org.dcache.util.CDCScheduledExecutorServiceDecorator;
@@ -1046,7 +1047,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     String location = locations.iterator().next();
                     _log.debug("Using pre-existing WRITE pool {} for {}", location, getPnfsId());
                     // REVISIT: here we knoe that pool name and address are the same thing
-                    setPool(new Pool(location, new CellAddressCore(location)));
+                    setPool(new Pool(location, new CellAddressCore(location), Assumptions.none()));
                     _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
                 } else {
                     _log.debug("looking a {} pool for {}", (isWrite() ? "WRITE" : "READ"), getPnfsId());

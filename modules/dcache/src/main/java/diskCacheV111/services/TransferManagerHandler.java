@@ -55,7 +55,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
-import org.dcache.pool.assumption.Assumption;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
@@ -77,7 +76,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     private String remoteUrl;
     transient boolean locked;
     private Pool pool;
-    private Assumption assumption;
     private FileAttributes fileAttributes;
     public static final int INITIAL_STATE = 0;
     public static final int WAITING_FOR_PNFS_INFO_STATE = 1;
@@ -398,7 +396,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         }
 
         setPool(pool_info.getPool());
-        setAssumption(pool_info.getAssumption());
         fileAttributes = pool_info.getFileAttributes();
         manager.persist(this);
         log.debug("Positive reply from pool {}", pool);
@@ -412,12 +409,12 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 pool.getName(),
                 protocol_info,
                 fileAttributes,
-                assumption)
+                pool.getAssumption())
                 : new PoolDeliverFileMessage(
                 pool.getName(),
                 protocol_info,
                 fileAttributes,
-                assumption);
+                pool.getAssumption());
         poolMessage.setBillingPath(info.getBillingPath());
         poolMessage.setTransferPath(info.getTransferPath());
         poolMessage.setSubject(transferRequest.getSubject());
@@ -754,11 +751,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public void setPool(Pool pool)
     {
         this.pool = pool;
-    }
-
-    public void setAssumption(Assumption assumption)
-    {
-        this.assumption = assumption;
     }
 
     public void killMover(int moverId, String explanation)

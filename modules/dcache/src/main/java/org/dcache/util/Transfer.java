@@ -75,7 +75,6 @@ import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
-import org.dcache.pool.assumption.Assumption;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -119,7 +118,6 @@ public class Transfer implements Comparable<Transfer>
     private CellAddressCore _cellAddress;
 
     private Pool _pool;
-    private Assumption _assumption;
     private Integer _moverId;
     private boolean _hasMoverBeenCreated;
     private boolean _hasMoverFinished;
@@ -451,16 +449,6 @@ public class Transfer implements Comparable<Transfer>
     public synchronized Pool getPool()
     {
         return _pool;
-    }
-
-    public synchronized void setAssumption(Assumption assumption)
-    {
-        _assumption = assumption;
-    }
-
-    public synchronized Assumption getAssumption()
-    {
-        return _assumption;
     }
 
     /**
@@ -1040,7 +1028,6 @@ public class Transfer implements Comparable<Transfer>
         return CellStub.transform(reply,
                                   (PoolMgrSelectPoolMsg msg) -> {
                                       setPool(msg.getPool());
-                                      setAssumption(msg.getAssumption());
                                       setFileAttributes(msg.getFileAttributes());
                                       return null;
                                   });
@@ -1066,10 +1053,10 @@ public class Transfer implements Comparable<Transfer>
                 allocated = fileAttributes.getSize();
             }
             message =
-                    new PoolAcceptFileMessage(pool.getName(), protocolInfo, fileAttributes, _assumption, allocated);
+                    new PoolAcceptFileMessage(pool.getName(), protocolInfo, fileAttributes, pool.getAssumption(), allocated);
         } else {
             message =
-                    new PoolDeliverFileMessage(pool.getName(), protocolInfo, fileAttributes, _assumption);
+                    new PoolDeliverFileMessage(pool.getName(), protocolInfo, fileAttributes, pool.getAssumption());
         }
         message.setBillingPath(getBillingPath());
         message.setTransferPath(getTransferPath());

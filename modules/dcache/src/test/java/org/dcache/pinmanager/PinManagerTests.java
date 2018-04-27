@@ -56,6 +56,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.cells.CellMessageDispatcher;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.model.Pin;
+import org.dcache.pool.assumption.Assumptions;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
@@ -87,7 +88,7 @@ public class PinManagerTests
 
     final static String REQUEST_ID1 = "request1";
 
-    final static diskCacheV111.vehicles.Pool POOL1 = new diskCacheV111.vehicles.Pool("pool1", new CellAddressCore("pool1"));
+    final static diskCacheV111.vehicles.Pool POOL1 = new diskCacheV111.vehicles.Pool("pool1", new CellAddressCore("pool1"), Assumptions.none());
 
     final static String STICKY1 = "PinManager-1";
 
