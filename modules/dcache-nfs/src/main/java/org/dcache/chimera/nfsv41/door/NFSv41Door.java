@@ -1373,7 +1373,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     private synchronized long recallLayouts(String pool) {
 
         return _ioMessages.values().stream()
-                .filter(t -> pool.equals(t.getPool()))
+                .filter(t -> t.getPool() != null)
+                .filter(t -> pool.equals(t.getPool().getName()))
                 .filter(t -> t.getClient().getMinorVersion() > 0)
                 .peek(t -> {
                     t.recallLayout(_callbackExecutor);
