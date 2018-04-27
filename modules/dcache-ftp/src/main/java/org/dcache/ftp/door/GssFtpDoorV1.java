@@ -1,6 +1,5 @@
 package org.dcache.ftp.door;
 
-import com.google.common.base.Strings;
 
 import org.dcache.dss.DssContext;
 import org.dcache.dss.DssContextFactory;
@@ -13,8 +12,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
@@ -36,8 +34,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     private static final GssCommandContext SECURE_COMMAND_CONTEXT = new GssCommandContext();
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
             ":globus-mapping:";
-
-    private static final Charset UTF8 = Charset.forName("UTF-8");
 
     protected Subject subject;
     // GSS general
@@ -83,7 +79,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     protected void secure_reply(CommandRequest request, String answer, String code)
     {
         answer = answer + "\r\n";
-        byte[] data = answer.getBytes(UTF8);
+        byte[] data = answer.getBytes(StandardCharsets.UTF_8);
         try {
             data = context.wrap(data, 0, data.length);
         } catch (IOException e) {
@@ -225,7 +221,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         for (i = data.length; i > 0 && data[i - 1] == 0; i--) {
             //do nothing, just decrement i
         }
-        String msg = new String(data, 0, i, UTF8).trim();
+        String msg = new String(data, 0, i, StandardCharsets.UTF_8).trim();
 
         if (msg.equalsIgnoreCase("CCC")) {
             sectype = ReplyType.CLEAR;

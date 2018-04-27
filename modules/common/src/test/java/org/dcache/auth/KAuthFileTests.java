@@ -6,7 +6,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.*;
 
@@ -150,7 +150,7 @@ public class KAuthFileTests
     private KAuthFile saveAndParse(KAuthFile in)
     {
         String contents = in.toString();
-        byte[] bytes = contents.getBytes(Charset.forName("UTF-8"));
+        byte[] bytes = contents.getBytes(StandardCharsets.UTF_8);
         InputStream input = new ByteArrayInputStream(bytes);
         KAuthFile parsed;
 

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -27,7 +27,6 @@ public final class PoolStatusCollector extends Thread
 {
     private static final Logger _log =
         LoggerFactory.getLogger(PoolStatusCollector.class);
-    private static final Charset UTF8 = Charset.forName("UTF-8");
 
     private final Path _report;
     private final CellStub _poolManagerStub;
@@ -43,7 +42,7 @@ public final class PoolStatusCollector extends Thread
      */
     @Override
     public void run() {
-        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(_report, UTF8))) {
+        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(_report, StandardCharsets.UTF_8))) {
             PoolManagerCellInfo info =
                 _poolManagerStub.sendAndWait("xgetcellinfo",
                                              PoolManagerCellInfo.class);

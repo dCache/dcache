@@ -15,7 +15,7 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -65,7 +65,6 @@ public final class BillingCell
 {
     private static final Logger _log =
         LoggerFactory.getLogger(BillingCell.class);
-    private static final Charset UTF8 = Charset.forName("UTF-8");
     public static final String FORMAT_PREFIX = "billing.text.format.";
 
     private final SimpleDateFormat _formatter =
@@ -150,7 +149,8 @@ public final class BillingCell
     {
         try {
             String headers = getFormatHeaders();
-            Files.write(path, headers.getBytes(UTF8), StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+            Files.write(path, headers.getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.APPEND, StandardOpenOption.WRITE);
         } catch (NoSuchFileException ignored) {
         } catch (IOException e) {
             throw new CommandThrowableException("Failed to write to billing file " + path + ": " + e, e);
@@ -269,7 +269,7 @@ public final class BillingCell
             name = "poolFlow-" + _fileNameFormat.format(new Date());
         }
         Path report = _logsDir.resolve(name);
-        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(report, UTF8))) {
+        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(report, StandardCharsets.UTF_8))) {
             Set<Map.Entry<String, Map<String, long[]>>> pools = _poolStorageMap.entrySet();
 
             for (Map.Entry<String, Map<String, long[]>> poolEntry : pools) {
@@ -337,14 +337,15 @@ public final class BillingCell
 
     private void log(Path path, String output)
     {
-        byte[] outputBytes = (output + "\n").getBytes(UTF8);
+        byte[] outputBytes = (output + "\n").getBytes(StandardCharsets.UTF_8);
         try {
             try {
                 Files.write(path, outputBytes, WRITE, APPEND);
             } catch (NoSuchFileException f) {
                 String outputWithHeader = getFormatHeaders() + output + '\n';
                 try {
-                    Files.write(path, outputWithHeader.getBytes(UTF8), WRITE, CREATE_NEW);
+                    Files.write(path, outputWithHeader.getBytes(StandardCharsets.UTF_8),
+                            WRITE, CREATE_NEW);
                 } catch (FileAlreadyExistsException e) {
                     // Lost the race, so try appending again
                     Files.write(path, outputBytes, WRITE, APPEND);

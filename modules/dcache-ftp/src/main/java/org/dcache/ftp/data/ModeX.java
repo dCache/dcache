@@ -6,9 +6,9 @@ import java.nio.CharBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 import org.dcache.pool.repository.RepositoryChannel;
@@ -96,17 +96,12 @@ public class ModeX extends Mode
     /**
      *
      */
-    private static final Charset _ascii = Charset.forName("ascii");
+    private static final CharsetEncoder _encoder = StandardCharsets.US_ASCII.newEncoder();
 
     /**
      *
      */
-    private static final CharsetEncoder _encoder = _ascii.newEncoder();
-
-    /**
-     *
-     */
-    private static final CharsetDecoder _decoder = _ascii.newDecoder();
+    private static final CharsetDecoder _decoder = StandardCharsets.US_ASCII.newDecoder();
 
     /**
      * Implementation of send in mode X. There will be an instance per

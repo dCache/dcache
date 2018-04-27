@@ -7,7 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -101,7 +101,6 @@ public class Utf8DataClassLoader extends ClassLoader {
      * encoded sequence of bytes.
      */
     public class TestURLConnection extends URLConnection {
-        private static final String CHARSET_NAME_UTF_8 = "UTF-8";
         private byte[] _rawData;
 
         public TestURLConnection( URL url) {
@@ -124,8 +123,7 @@ public class Utf8DataClassLoader extends ClassLoader {
         }
 
         private byte[] getByteContent( String content) {
-            Charset utf8 = Charset.forName( CHARSET_NAME_UTF_8);
-            return content.getBytes( utf8);
+            return content.getBytes(StandardCharsets.UTF_8);
         }
     }
 }
