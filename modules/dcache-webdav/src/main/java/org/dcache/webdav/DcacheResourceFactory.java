@@ -23,7 +23,9 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
 
@@ -57,6 +59,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
@@ -222,10 +225,17 @@ public class DcacheResourceFactory
     private PoolMonitor _poolMonitor;
     private boolean _redirectToHttps;
 
+    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
+
     public DcacheResourceFactory()
         throws UnknownHostException
     {
         _internalAddress = InetAddress.getLocalHost();
+    }
+
+    @Autowired(required = false)
+    private void setTransferTemplate(KafkaTemplate kafkaTemplate) {
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Required
@@ -1032,6 +1042,8 @@ public class DcacheResourceFactory
         infoRemove.setFileSize(attributes.getSizeIfPresent().orElse(0L));
         infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
         _billingStub.notify(infoRemove);
+
+        _kafkaSender.accept(infoRemove);
     }
 
     /**
@@ -1288,6 +1300,7 @@ public class DcacheResourceFactory
                 collect(Collectors.toList());
         transfer.setClientAddresses(addresses);
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
+        transfer.setKafkaSender(_kafkaSender);
     }
 
     private Set<FileAttribute> buildRequestedAttributes()

@@ -118,7 +118,7 @@ exec env verify-${webdav.authn.connector}.exe
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${webdav.cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
-    -profiles=missing-files-${webdav.enable.missing-files},owncloud-${webdav.enable.owncloud},macaroons-${webdav.enable.macaroons} \
+    -profiles=missing-files-${webdav.enable.missing-files},owncloud-${webdav.enable.owncloud},macaroons-${webdav.enable.macaroons},kafka-${webdav.enable.kafka} \
     -consume=${webdav.cell.consume} \
     -subscribe=${webdav.cell.subscribe} \
     -cellClass=WebDAVDoor"

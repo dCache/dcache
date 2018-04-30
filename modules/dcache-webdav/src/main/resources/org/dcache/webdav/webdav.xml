@@ -602,4 +602,33 @@
             <property name="rootPath" value="${webdav.root}"/>
         </bean>
     </beans>
+
+
+    <beans profile="kafka-true">
+
+        <bean id="listener" class="org.dcache.kafka.LoggingProducerListener"/>
+
+        <bean id="billing-template" class="org.springframework.kafka.core.KafkaTemplate">
+            <constructor-arg>
+                <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+                    <constructor-arg>
+                        <map>
+                            <entry key="bootstrap.servers" value="${webdav.kafka.bootstrap-servers}"/>
+                            <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer" />
+                            <entry key="value.serializer" value="org.dcache.notification.BillingMessageSerializer" />
+                            <entry key="client.id" value="${webdav.cell.name}@${dcache.domain.name}" />
+                            <!-- TODO  values for max.block.ms and retries are important for Non Blocking (Async) callback.-->
+                            <!-- maximum time producer.send() will block by default set to 60000. Could be changed latter. -->
+                            <entry key="max.block.ms" value="0" />
+                            <!-- The maximum number of times to retry a call before failing it.-->
+                            <entry key="retries" value="0" />
+                        </map>
+                    </constructor-arg>
+                </bean>
+            </constructor-arg>
+            <property name="defaultTopic" value="billing"/>
+            <property name="producerListener" ref="listener"/>
+
+        </bean>
+    </beans>
 </beans>
