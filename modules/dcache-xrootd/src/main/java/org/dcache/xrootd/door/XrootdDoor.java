@@ -21,6 +21,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
@@ -40,6 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
@@ -57,6 +59,7 @@ import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
+
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
@@ -97,6 +100,8 @@ import org.dcache.xrootd.util.FileStatus;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import diskCacheV111.util.FileExistsCacheException;
+import org.springframework.kafka.core.KafkaTemplate;
+
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
@@ -157,11 +162,20 @@ public class XrootdDoor
 
     private ScheduledExecutorService _scheduledExecutor;
 
+    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
+
+
     /**
      * Current xrootd transfers. The key is the xrootd file handle.
      */
     private final Map<Integer,XrootdTransfer> _transfers =
         new ConcurrentHashMap<>();
+
+    @Autowired(required = false)
+    private void setKafkaTemplate(KafkaTemplate kafkaTemplate )
+    {
+        _kafkaSender = kafkaTemplate::sendDefault;
+    }
 
     @Required
     public void setPnfsStub(CellStub pnfsStub) {
@@ -411,6 +425,7 @@ public class XrootdDoor
         transfer.setDoorAddress(local);
         transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
+        transfer.setKafkaSender(_kafkaSender);
         return transfer;
     }
 
@@ -449,6 +464,7 @@ public class XrootdDoor
         transfer.setDoorAddress(local);
         transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
+        transfer.setKafkaSender(_kafkaSender);
         return transfer;
     }
 
@@ -640,6 +656,8 @@ public class XrootdDoor
             infoRemove.setClient(origin.getAddress().getHostAddress());
         }
         _billingStub.notify(infoRemove);
+
+        _kafkaSender.accept(infoRemove);
     }
 
     /**

@@ -43,6 +43,7 @@ onerror continue
 create org.dcache.cells.UniversalSpringCell ${xrootd.cell.name} \
        "classpath:org/dcache/xrootd/door/xrootd.xml \
         -consume=${xrootd.cell.consume} \
+        -profiles=kafka-${xrootd.enable.kafka}\
         -subscribe=${xrootd.cell.subscribe} \
         -cellClass=XrootdDoor"
 
