@@ -92,22 +92,6 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     @Autowired(required = false)
     private void setKafkaTemplate(KafkaTemplate kafkaTemplate )
     {
-        kafkaTemplate.setProducerListener(new ProducerListener() {
-            @Override
-            public void onSuccess(String topic, Integer partition, Object key, Object value, RecordMetadata recordMetadata) {
-                //forced by interface
-            }
-
-            @Override
-            public void onError(String topic, Integer partition, Object key, Object value, Exception exception) {
-                LOGGER.error("Unable to send message: {}", exception.getMessage());
-            }
-
-            @Override
-            public boolean isInterestedInSuccess() {
-                return false;
-            }
-        });
         _kafkaSender = kafkaTemplate::sendDefault;
     }
 

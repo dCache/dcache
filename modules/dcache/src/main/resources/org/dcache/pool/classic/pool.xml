@@ -549,6 +549,9 @@
   </beans>
 
     <beans profile="kafka-true">
+
+       <bean id="listener" class="org.dcache.kafka.LoggingProducerListener"/>
+
        <bean id="billing-template" class="org.springframework.kafka.core.KafkaTemplate">
             <constructor-arg>
                 <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
@@ -569,6 +572,7 @@
             </constructor-arg>
             <constructor-arg name="autoFlush" value="false" />
             <property name="defaultTopic" value="billing"/>
+            <property name="producerListener" ref="listener"/>
         </bean>
     </beans>
 

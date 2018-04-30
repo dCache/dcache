@@ -331,23 +331,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Autowired(required = false)
     private void setTransferTemplate(KafkaTemplate kafkaTemplate) {
-        kafkaTemplate.setProducerListener(new ProducerListener() {
-            @Override
-            public void onSuccess(String topic, Integer partition, Object key, Object value, RecordMetadata recordMetadata) {
-                //forced by interface
-            }
-
-            @Override
-            public void onError(String topic, Integer partition, Object key, Object value, Exception exception) {
-                _log.error("Unable to send message: {}", exception.getMessage());
-            }
-
-            @Override
-            public boolean isInterestedInSuccess() {
-                return false;
-            }
-        });
-        _kafkaSender = kafkaTemplate::sendDefault;
+       _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     public void init() throws Exception {
