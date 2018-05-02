@@ -344,6 +344,13 @@ SERVICE. If no services or domains are specified, stack traces of all
 running domains will be dumped. The information is written to the log
 files of the respective domains.
 
+.TP
+.B dump zklog [PATH]
+List the transactions recorded in the ZooKeeper server log files.
+These are 'log.' files located within PATH.  If PATH is omitted then
+the expanded value of '${zookeeper.data-log-dir}/version-2' is used.
+The transaction information is written to standard out.
+
 .SH DEFINITIONS
 The following definitions are used throughout this document:
 
