@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+                               http://www.hazelcast.com/schema/config/hazelcast-config-3.9.xsd"
+           xmlns="http://www.hazelcast.com/schema/config">
+
+    <properties>
+        <property name="hazelcast.logging.type">slf4j</property>
+    </properties>
+
+    <group>
+        <name>dcache-namespace</name>
+    </group>
+
+    <!-- explicit disable all networking option: single node mode -->
+    <network>
+        <join>
+            <multicast enabled="false" />
+            <tcp-ip enabled="false" />
+            <aws enabled="false" />
+        </join>
+    </network>
+
+    <!--each entry ~ 30 bytes, we ~3MB per map -->
+
+    <map name="inumber-to-pnfsid">
+        <eviction-policy>LRU</eviction-policy>
+        <max-size policy="PER_NODE">100000</max-size>
+        <in-memory-format>BINARY</in-memory-format>
+    </map>
+
+    <map name="pnfsid-to-inumber">
+        <eviction-policy>LRU</eviction-policy>
+        <max-size policy="PER_NODE">100000</max-size>
+        <in-memory-format>BINARY</in-memory-format>
+    </map>
+
+
+</hazelcast>

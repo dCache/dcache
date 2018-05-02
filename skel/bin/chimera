@@ -9,7 +9,7 @@ classpath=$(printLimitedClassPath dcache-vehicles dcache-chimera chimera HikariC
     guava jline common-cli dcache-common acl-vehicles acl \
     slf4j-api logback-classic logback-core logback-console-config jcl-over-slf4j \
     spring-core spring-beans spring-jdbc spring-tx \
-    postgresql h2 hsqldb)
+    postgresql h2 hsqldb hazelcast)
 
 CLASSPATH="$classpath" quickJava -Dlog=${DCACHE_LOG:-warn} \
     org.dcache.chimera.cli.Shell \
