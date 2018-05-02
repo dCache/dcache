@@ -615,7 +615,7 @@
                         <map>
                             <entry key="bootstrap.servers" value="${webdav.kafka.bootstrap-servers}"/>
                             <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer" />
-                            <entry key="value.serializer" value="org.dcache.notification.BillingMessageSerializer" />
+                            <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer" />
                             <entry key="client.id" value="${webdav.cell.name}@${dcache.domain.name}" />
                             <!-- TODO  values for max.block.ms and retries are important for Non Blocking (Async) callback.-->
                             <!-- maximum time producer.send() will block by default set to 60000. Could be changed latter. -->
