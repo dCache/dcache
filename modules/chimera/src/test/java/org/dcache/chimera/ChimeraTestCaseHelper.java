@@ -59,6 +59,7 @@ public abstract class ChimeraTestCaseHelper {
         Connection conn = _dataSource.getConnection();
         conn.createStatement().execute("SHUTDOWN;");
         _dataSource.close();
+        _fs.close();
     }
 
 }

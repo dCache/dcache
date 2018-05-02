@@ -36,6 +36,7 @@ public class FsFactory
             @Override
             public void close() throws IOException
             {
+                super.close();
                 dataSource.close();
             }
         };
