@@ -86,11 +86,11 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     @Override
     protected void secure_reply(CommandRequest request, String answer, String code)
     {
-        answer = answer + "\r\n";
-        byte[] data = answer.getBytes(UTF8);
+        byte[] data = (answer + "\r\n").getBytes(UTF8);
         try {
             data = context.wrap(data, 0, data.length);
         } catch (IOException e) {
+            LOGGER.error("Failed to encrypt reply '{}': {}", answer, e.toString());
             reply(request.getOriginalRequest(), "500 Reply encryption error: " + e);
             return;
         }
