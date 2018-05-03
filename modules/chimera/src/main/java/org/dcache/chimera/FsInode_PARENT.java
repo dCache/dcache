@@ -32,9 +32,8 @@ public class FsInode_PARENT extends FsInode {
         int rc = -1;
 
         if (_parent == null) {
-            try {
-                _parent = _fs.getParentOf(this);
-            } catch (ChimeraFsException e) {
+            _parent = getParent();
+            if (_parent == null) {
                 return -1;
             }
         }
@@ -70,7 +69,7 @@ public class FsInode_PARENT extends FsInode {
         Stat ret = new Stat(super.stat());
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
         if (_parent == null) {
-            FsInode parentInode = _fs.getParentOf(this);
+            FsInode parentInode = getParent();
             if (parentInode == null) {
                 throw new FileNotFoundHimeraFsException();
             }

@@ -17,6 +17,7 @@
 package org.dcache.chimera;
 
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -352,7 +353,8 @@ public class FsInode {
     public FsInode getParent() {
         if (_parent == null) {
             try {
-                _parent = _fs.getParentOf(this);
+                Collection<Link> locations = _fs.find(this);
+                _parent = locations.isEmpty() ? null : locations.iterator().next().getParent();
             } catch (ChimeraFsException e) {
             }
         }

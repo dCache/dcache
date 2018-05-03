@@ -35,12 +35,14 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
+
 import javax.sql.DataSource;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -959,8 +961,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public FsInode getParentOf(FsInode inode) throws ChimeraFsException {
-        return _sqlDriver.getParentOf(inode);
+    public Collection<Link> find(FsInode inode) throws ChimeraFsException {
+        return _sqlDriver.find(inode);
     }
 
     @Override

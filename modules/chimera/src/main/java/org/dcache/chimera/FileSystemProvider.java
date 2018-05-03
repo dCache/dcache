@@ -17,6 +17,7 @@
 package org.dcache.chimera;
 
 import java.io.Closeable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -197,8 +198,15 @@ public interface FileSystemProvider extends Closeable {
     boolean removeFileMetadata(String path, int level)
             throws ChimeraFsException;
 
-    FsInode getParentOf(FsInode inode)
-            throws ChimeraFsException;
+    /**
+     * Locate the given inode within the namespace.  For directories, there
+     * is (at most) a single location, but files may yield multiple locations if
+     * the file has hard links.
+     * @param inode the target to locate
+     * @return a collection of locations where the file may be found.
+     * @throws ChimeraFsException
+     */
+    Collection<Link> find(FsInode inode) throws ChimeraFsException;
 
     void setInodeAttributes(FsInode inode, int level, Stat stat)
             throws ChimeraFsException;

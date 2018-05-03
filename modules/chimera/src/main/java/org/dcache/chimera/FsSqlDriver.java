@@ -33,6 +33,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 
 import javax.sql.DataSource;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +45,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -57,11 +59,13 @@ import java.util.stream.Stream;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
+
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
+import org.dcache.chimera.FileSystemProvider.StatCacheOption;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.spi.DBDriverProvider;
 import org.dcache.chimera.store.InodeStorageInformation;
@@ -69,7 +73,6 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
 import static java.util.stream.Collectors.toList;
-import static org.dcache.chimera.FileSystemProvider.StatCacheOption;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
 /**
@@ -765,17 +768,18 @@ public class FsSqlDriver {
     }
 
     /**
-     *
-     * return a parent of inode. In case of hard links, one of the parents is returned
-     *
+     * Find locations of inode within the namespace.  For directories, a single
+     * value is returned, for files, multiple entries may be returned if the
+     * file has hard-links.
      * @param inode
      * @return
      */
-    FsInode getParentOf(FsInode inode) {
+    Collection<Link> find(FsInode inode) {
+        FileSystemProvider provider = inode.getFs();
         return _jdbc.query(
-                "SELECT iparent FROM t_dirs WHERE ichild=?",
+                "SELECT iparent,iname FROM t_dirs WHERE ichild=?",
                 ps -> ps.setLong(1, inode.ino()),
-                rs -> rs.next() ? new FsInode(inode.getFs(), rs.getLong("iparent")) : null);
+                (rs,n) -> new Link(new FsInode(provider, rs.getLong("iparent")), rs.getString("iname")));
     }
 
     boolean setInodeAttributes(FsInode inode, int level, Stat stat) {
