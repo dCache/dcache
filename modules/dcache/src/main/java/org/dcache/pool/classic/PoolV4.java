@@ -90,6 +90,7 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
+import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -490,7 +491,7 @@ public class PoolV4
                 int mode;
                 try {
                     _repository.init();
-                    disablePool(PoolV2Mode.DISABLED_RDONLY, 1, "Loading...");
+                    disablePool(PoolV2Mode.DISABLED_RDONLY_REPOSITORY_LOADING, 1, "Loading...");
                     _repository.load();
                     enablePool(PoolV2Mode.ENABLED);
                     _flushingThread.start();
@@ -1312,12 +1313,35 @@ public class PoolV4
     public PoolModifyModeMessage messageArrived(PoolModifyModeMessage msg)
     {
         PoolV2Mode mode = msg.getPoolMode();
+        boolean isRepositoryLoading =
+            _poolMode.isDisabled(PoolV2Mode.REPOSITORY_LOADING);
         if (mode != null) {
             if (mode.isEnabled()) {
+                if (isRepositoryLoading) {
+                    msg.setFailed(CacheException.DEFAULT_ERROR_CODE,
+                                  "The pool repository is loading, cannot enable pool");
+                    return msg;
+                }
                 enablePool(mode.getMode());
             } else {
-                disablePool(mode.getMode(), msg.getStatusCode(),
-                                            msg.getStatusMessage());
+                int targetMode = (mode.getMode() & ~PoolV2Mode.REPOSITORY_LOADING) |
+                    (_poolMode.getMode() & PoolV2Mode.REPOSITORY_LOADING);
+                    /**
+                       if Repository is loading only two states are allowd -
+                       PoolV2Mode.DISABLED_STRICT or PoolV2Mode.DISABLED_RDONLY
+                     */
+                if (isRepositoryLoading &&
+                    !((targetMode & PoolV2Mode.DISABLED_STRICT) ==
+                      PoolV2Mode.DISABLED_STRICT) &&
+                    !((targetMode & PoolV2Mode.DISABLED_RDONLY) ==
+                      PoolV2Mode.DISABLED_RDONLY)) {
+                    msg.setFailed(CacheException.DEFAULT_ERROR_CODE,
+                                  "The pool repository is loading, pool cannot be set to " +
+                                  mode + " state");
+                    return msg;
+                }
+                disablePool(targetMode, msg.getStatusCode(),
+                            msg.getStatusMessage());
             }
         }
         msg.setSucceeded();
@@ -1885,6 +1909,20 @@ public class PoolV4
             if (rdonly) {
                 modeBits |= PoolV2Mode.DISABLED_RDONLY;
             }
+            if (_poolMode.isDisabled(PoolV2Mode.REPOSITORY_LOADING)) {
+                modeBits |= PoolV2Mode.REPOSITORY_LOADING;
+            }
+
+            if ((modeBits & PoolV2Mode.REPOSITORY_LOADING) ==
+                PoolV2Mode.REPOSITORY_LOADING &&
+                !((modeBits & PoolV2Mode.DISABLED_STRICT) ==
+                  PoolV2Mode.DISABLED_STRICT) &&
+                !((modeBits & PoolV2Mode.DISABLED_RDONLY) ==
+                  PoolV2Mode.DISABLED_RDONLY)) {
+                PoolV2Mode mode = new PoolV2Mode(modeBits);
+                return "The pool repository is loading, pool cannot be set to " +
+                    mode + " state";
+            }
 
             disablePool(modeBits, errorCode, errorMessage);
 
@@ -1896,10 +1934,15 @@ public class PoolV4
     class PoolEnableCommand implements Callable<String>
     {
         @Override
-        public String call()
+        public String call() throws CommandException
         {
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
-                return "The pool is dead and a restart is required to enable it";
+                throw new
+                    CommandException("The pool is dead and a restart is required to enable it");
+            }
+            if (_poolMode.isDisabled(PoolV2Mode.REPOSITORY_LOADING)) {
+                throw new
+                    CommandException("The pool repository is loading, cannot enable the pool");
             }
 
             enablePool(PoolV2Mode.ENABLED);

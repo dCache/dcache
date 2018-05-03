@@ -31,6 +31,14 @@ public class PoolV2Mode implements Serializable {
     private static final int RESILIENCE_ENABLED = 0x7F ;
     private static final int RESILIENCE_DISABLED = 0x80 ;
 
+    public static final int REPOSITORY_LOADING = 0x100;
+    public static final int DISABLED_RDONLY_REPOSITORY_LOADING =
+                                     DISABLED_RDONLY |
+                                     REPOSITORY_LOADING;
+    public static final int DISABLED_STRICT_REPOSITORY_LOADING =
+                                     DISABLED_STRICT |
+                                     REPOSITORY_LOADING;
+
     private static final String [] __modeString = {
        "fetch" , "store" , "stage" , "p2p-client" , "p2p-server"  , "dead"
     } ;
@@ -79,6 +87,9 @@ public class PoolV2Mode implements Serializable {
         }
         if (!isResilienceEnabled()) {
             sb.append(",noresilience");
+        }
+        if (isDisabled(REPOSITORY_LOADING)) {
+            sb.append(",loading");
         }
         sb.append(')');
         return sb.toString();
