@@ -32,6 +32,33 @@ import org.dcache.vehicles.FileAttributes;
 public interface NameSpaceProvider
 {
     /**
+     * A Link represents the appearance of a file or directory within the
+     * namespace.  The parent is always a directory.  Listing that directory
+     * will yield the target with the given name.
+     */
+    public class Link
+    {
+        private final PnfsId parent;
+        private final String name;
+
+        public Link(PnfsId parent, String name)
+        {
+            this.parent = parent;
+            this.name = name;
+        }
+
+        public PnfsId getParent()
+        {
+            return parent;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+    }
+
+    /**
      * When the mode field is not specified in createEntry, the mode
      * is inherited from the parent directory. When creating new
      * directories, this UMASK is applied to the inherited mode.
@@ -141,7 +168,17 @@ public interface NameSpaceProvider
     String pnfsidToPath(Subject subject, PnfsId pnfsId) throws CacheException;
     PnfsId pathToPnfsid(Subject subject, String path, boolean followLinks) throws CacheException;
 
-    PnfsId getParentOf(Subject subject, PnfsId pnfsId) throws CacheException;
+    /**
+     * Find the locations of the target file or directory within the namespace.
+     * If the target is a directory then there is (at most) one location.  If
+     * the target is a file then more than one location is returned if the file
+     * has hard links.
+     * @param subject Subject of the user who invoked this method
+     * @param pnfsId the target to locate
+     * @return The locations where the target may be found.
+     * @throws CacheException
+     */
+    Collection<Link> find(Subject subject, PnfsId pnfsId) throws CacheException;
 
     void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute) throws CacheException;
 

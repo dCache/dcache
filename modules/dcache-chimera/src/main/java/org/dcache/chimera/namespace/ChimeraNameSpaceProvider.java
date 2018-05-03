@@ -33,6 +33,8 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
@@ -829,14 +831,27 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public PnfsId getParentOf(Subject subject, PnfsId pnfsId) throws CacheException {
+    public Collection<Link> find(Subject subject, PnfsId pnfsId) throws CacheException {
         try {
-            ExtendedInode inodeOfResource = new ExtendedInode(_fs, pnfsId, NO_STAT);
-            ExtendedInode inodeParent = inodeOfResource.getParent();
-            if (inodeParent == null) {
+            ExtendedInode target = new ExtendedInode(_fs, pnfsId, NO_STAT);
+
+            Collection<Link> locations = _fs.find(target).stream()
+                    .flatMap(l -> {
+                                try {
+                                    ExtendedInode parent = new ExtendedInode(_fs, l.getParent());
+                                    PnfsId parentId = parent.getPnfsId();
+                                    return Stream.of(new Link(parentId, l.getName()));
+                                } catch (ChimeraFsException e) {
+                                    _log.error("Failed to find PnfsId of parent {}: {}",
+                                            l.getParent(), e.toString());
+                                    return Stream.of();
+                                }
+                            })
+                    .collect(Collectors.toList());
+            if (locations.isEmpty()) {
                 throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
             }
-            return inodeParent.getPnfsId();
+            return locations;
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         } catch (IOException e) {

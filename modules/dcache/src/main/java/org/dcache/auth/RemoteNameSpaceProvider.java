@@ -141,10 +141,9 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public PnfsId getParentOf(Subject subject, PnfsId id) throws CacheException
+    public Collection<Link> find(Subject subject, PnfsId id) throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
-        return pnfs.getParentOf(id);
+        return new PnfsHandler(_pnfs, subject, Restrictions.none()).find(id);
     }
 
     @Override

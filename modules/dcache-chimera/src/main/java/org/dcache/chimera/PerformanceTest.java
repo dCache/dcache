@@ -32,7 +32,6 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -44,10 +43,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.auth.Subjects;
@@ -85,7 +82,7 @@ public class PerformanceTest extends Thread
         CREATE_ENTRY("createentry", "Create a new file entry in the pool"),
         DELETE_ENTRY("deleteentry", "Removes file entry from the pool"),
         PNFS_ID_TO_PATH("pnfsidtopath", "Reads path of the file"),
-        GET_PARENT("getparent", "Reads the parent pnfsid of the file"),
+        FIND("find", "Locates the file in the namespace"),
         ADD_CHECKSUM("addchecksum", "Adds the given checksum to the file"),
         GET_CHECKSUMS("getchecksums", "Reads all the checksums of the file"),
         SET_FILE_ATTR("setfileattr", "Updates the file attributes"),
@@ -285,8 +282,8 @@ public class PerformanceTest extends Thread
             case PNFS_ID_TO_PATH:
                 provider.pnfsidToPath(Subjects.ROOT, getPnfsid(path));
                 break;
-            case GET_PARENT:
-                provider.getParentOf(Subjects.ROOT, getPnfsid(path));
+            case FIND:
+                provider.find(Subjects.ROOT, getPnfsid(path));
                 break;
             case ADD_CHECKSUM:
                 provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),

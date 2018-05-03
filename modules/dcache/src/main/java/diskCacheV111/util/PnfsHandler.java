@@ -6,12 +6,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.namespace.NameSpaceProvider.Link;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
@@ -362,10 +365,17 @@ public class PnfsHandler implements CellMessageSender
        return request(new PnfsCreateEntryMessage(path, attributes));
     }
 
-    public PnfsId getParentOf(PnfsId pnfsId)
-        throws CacheException
+    public Collection<Link> find(PnfsId pnfsId) throws CacheException
     {
-            return request(new PnfsGetParentMessage(pnfsId)).getParent();
+        PnfsGetParentMessage response = request(new PnfsGetParentMessage(pnfsId));
+        List<PnfsId> parents = response.getParents();
+        List<String> names = response.getNames();
+        int count = Math.min(parents.size(), names.size());
+        List<Link> locations = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            locations.add(new Link(parents.get(i), names.get(i)));
+        }
+        return locations;
     }
 
     public PnfsId deletePnfsEntry(String path) throws CacheException

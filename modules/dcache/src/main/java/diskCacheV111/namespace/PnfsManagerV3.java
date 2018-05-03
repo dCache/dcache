@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.namespace.NameSpaceProvider.Link;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
@@ -1431,7 +1432,8 @@ public class PnfsManagerV3
         try {
             PnfsId pnfsId = populatePnfsId(msg);
             checkMask(msg);
-            msg.setParent(_nameSpaceProvider.getParentOf(msg.getSubject(), pnfsId));
+            _nameSpaceProvider.find(msg.getSubject(), pnfsId)
+                    .forEach(l -> msg.addLocation(l.getParent(), l.getName()));
         } catch (CacheException e) {
             _log.warn(e.toString());
             msg.setFailed(e.getRc(), e.getMessage());

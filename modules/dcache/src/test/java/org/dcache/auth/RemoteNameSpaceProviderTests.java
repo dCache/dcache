@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
+import diskCacheV111.namespace.NameSpaceProvider.Link;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -422,12 +423,12 @@ public class RemoteNameSpaceProviderTests
 
 
     @Test
-    public void shouldSucceedForGetParentOfExistingEntry() throws Exception
+    public void shouldSucceedForFindExistingEntry() throws Exception
     {
         givenSuccessfulResponse((Modifier<PnfsGetParentMessage>)
-                (r) -> r.setParent(ANOTHER_PNFSID));
+                (r) -> r.addLocation(ANOTHER_PNFSID, "file"));
 
-        PnfsId parent = _namespace.getParentOf(ROOT, A_PNFSID);
+        Collection<Link> locations = _namespace.find(ROOT, A_PNFSID);
 
         PnfsGetParentMessage sent =
                 getSingleSendAndWaitMessage(PnfsGetParentMessage.class);
@@ -435,16 +436,19 @@ public class RemoteNameSpaceProviderTests
         assertThat(sent.getSubject(), is(ROOT));
         assertThat(sent.getPnfsId(), is(A_PNFSID));
 
-        assertThat(parent, is(ANOTHER_PNFSID));
+        assertThat(locations.size(), is(1));
+        Link location = locations.iterator().next();
+        assertThat(location.getParent(), is(ANOTHER_PNFSID));
+        assertThat(location.getName(), is("file"));
     }
 
 
     @Test(expected=FileNotFoundCacheException.class)
-    public void shouldFailForGetParentOfMissingEntry() throws Exception
+    public void shouldFailForFindMissingEntry() throws Exception
     {
         givenFailureResponse(FILE_NOT_FOUND);
 
-        _namespace.getParentOf(ROOT, A_PNFSID);
+        _namespace.find(ROOT, A_PNFSID);
     }
 
 
