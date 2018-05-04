@@ -19,13 +19,10 @@ package org.dcache.zookeeper.service;
 
 import com.google.common.base.Strings;
 import org.apache.zookeeper.server.DatadirCleanupManager;
-import org.apache.zookeeper.server.LoggingShutdownHandler;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.PatchedZooKeeperServer;
 import org.apache.zookeeper.server.ServerCnxnFactory;
-import org.apache.zookeeper.server.SessionTrackerImpl;
 import org.apache.zookeeper.server.ZKDatabase;
-import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,9 +109,6 @@ public class ZooKeeperCell extends AbstractCell
 
         checkArgument(autoPurgeInterval > 0, "zookeeper.auto-purge.purge-interval must be non-negative.");
         zkServer = new PatchedZooKeeperServer();
-
-        // Work-around https://issues.apache.org/jira/browse/ZOOKEEPER-2991
-        zkServer.registerServerShutdownHandler(new LoggingShutdownHandler(shutdownLatch));
 
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);
         zkServer.setTxnLogFactory(txnLog);

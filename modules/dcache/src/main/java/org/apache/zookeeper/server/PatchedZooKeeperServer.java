@@ -38,11 +38,4 @@ public class PatchedZooKeeperServer extends ZooKeeperServer
             }
         };
     }
-
-    // Work-around for https://issues.apache.org/jira/browse/ZOOKEEPER-2991
-    @Override
-    public void registerServerShutdownHandler(ZooKeeperServerShutdownHandler handler)
-    {
-        super.registerServerShutdownHandler(handler);
-    }
 }
