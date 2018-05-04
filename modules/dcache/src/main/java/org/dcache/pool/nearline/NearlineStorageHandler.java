@@ -25,9 +25,14 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.Monitor;
+import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -56,6 +61,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -152,6 +158,9 @@ public class NearlineStorageHandler
 
     private CellAddressCore cellAddress;
 
+    private Consumer<StorageInfoMessage> _kafkaSender = (s) -> {};
+
+
     @Override
     public void setCellAddress(CellAddressCore address)
     {
@@ -162,6 +171,13 @@ public class NearlineStorageHandler
     public void setScheduledExecutor(ScheduledExecutorService executor)
     {
         this.scheduledExecutor = checkNotNull(executor);
+    }
+
+
+    @Autowired(required = false)
+    @Qualifier("hsm")
+    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Required
@@ -1000,6 +1016,9 @@ public class NearlineStorageHandler
 
             billingStub.notify(infoMsg);
 
+            _kafkaSender.accept(infoMsg);
+
+
             flushRequests.removeAndCallback(pnfsId, cause);
         }
 
@@ -1179,6 +1198,9 @@ public class NearlineStorageHandler
             }
             infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
             billingStub.notify(infoMsg);
+
+            _kafkaSender.accept(infoMsg);
+
             stageRequests.removeAndCallback(pnfsId, cause);
         }
 

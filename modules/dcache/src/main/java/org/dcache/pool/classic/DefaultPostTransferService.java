@@ -20,12 +20,11 @@ package org.dcache.pool.classic;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.io.IOException;
@@ -90,7 +89,8 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     }
 
     @Autowired(required = false)
-    private void setKafkaTemplate(KafkaTemplate kafkaTemplate )
+    @Qualifier("transfer")
+    public void setKafkaTemplate(KafkaTemplate kafkaTemplate)
     {
         _kafkaSender = kafkaTemplate::sendDefault;
     }

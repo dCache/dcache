@@ -11,7 +11,10 @@ import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,6 +38,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -218,9 +222,19 @@ public class PoolV4
 
     private boolean _enableHsmFlag;
 
+    private Consumer<RemoveFileInfoMessage> _kafkaSender = (s) -> {};
+
+
     protected void assertNotRunning(String error)
     {
         checkState(!_running, error);
+    }
+
+
+    @Autowired(required = false)
+    @Qualifier("remove")
+    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Required
@@ -651,6 +665,8 @@ public class PoolV4
                 msg.setFileSize(entry.getReplicaSize());
                 msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
                 _billingStub.notify(msg);
+
+                _kafkaSender.accept(msg);
             }
         }
     }
