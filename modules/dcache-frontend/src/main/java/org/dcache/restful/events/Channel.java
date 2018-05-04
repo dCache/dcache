@@ -282,6 +282,10 @@ public class Channel extends CloseableWithTasks
 
         if (sink != null && !sink.isClosed()) {
             // Permit only one SSE (HTTP GET) operation per channel.
+            sendEvent(sse.newEventBuilder()
+                        .name("SYSTEM")
+                        .data("{\"type\":\"COMPETING_CLIENT\"}")
+                        .build());
             sink.close();
         }
 
@@ -319,6 +323,16 @@ public class Channel extends CloseableWithTasks
                         .skip(1)
                         .forEach(Event::sendEvent);
             }
+        }
+    }
+
+    public synchronized void notifyOfShutdown()
+    {
+        if (sink != null && !sink.isClosed()) {
+            sendEvent(sse.newEventBuilder()
+                        .name("SYSTEM")
+                        .data("{\"type\":\"SHUTDOWN\"}")
+                        .build());
         }
     }
 

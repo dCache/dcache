@@ -35,12 +35,14 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
+import dmg.cells.nucleus.CellLifeCycleAware;
+
 import org.dcache.auth.Subjects;
 
 /**
  *  The Registrar is responsible for holding client channels.
  */
-public class Registrar
+public class Registrar implements CellLifeCycleAware
 {
     @FunctionalInterface
     public interface SubscriptionValueBuilder
@@ -117,6 +119,12 @@ public class Registrar
     public long getDefaultDisconnectTimeout()
     {
         return defaultDisconnectTimeout;
+    }
+
+    @Override
+    public void beforeStop()
+    {
+        _channels.values().forEach(Channel::notifyOfShutdown);
     }
 
     public String newChannel(Subject user, String clientId, SubscriptionValueBuilder serialiser)
