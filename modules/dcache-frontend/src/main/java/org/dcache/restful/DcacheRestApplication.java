@@ -60,10 +60,15 @@ public class DcacheRestApplication extends ResourceConfig
         register(EntityFilteringFeature.class);
         register(ErrorResponseProvider.class);
 
-        /**
-         * Jersey framework has a built-in functionality to easily enable content encoding.
-         * Uncomment the line below to activate this default built-in functionality
-        */
-        EncodingFilter.enableFor(this, GZipEncoder.class);
+        /*
+         * The Jersey support for content-encoding (in particular, compression)
+         * is currently broken for SSE.  There is no (easy) work-around, so
+         * support for compression must not be enabled until this is resolved.
+         * For details, see:
+         *
+         *     https://github.com/eclipse-ee4j/jersey/issues/3809
+         *
+         * EncodingFilter.enableFor(this, GZipEncoder.class);
+         */
     }
 }
