@@ -19,6 +19,7 @@
 package org.dcache.restful.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -27,6 +28,12 @@ import java.util.List;
  */
 public class CloseableWithTasks
 {
+    /*
+     * NB. Tasks must not be run from within the closeTasks monitor.  The task
+     * could (attempt to) acquire other locks/monitors, which has the potential
+     * to deadlock.
+     */
+
     private final List<Runnable> closeTasks = new ArrayList<>();
     private boolean isClosed;
 
@@ -36,27 +43,32 @@ public class CloseableWithTasks
      */
     public void close()
     {
+       List<Runnable> todo;
         synchronized (closeTasks) {
             if (!isClosed) {
                 isClosed = true;
+                todo = new ArrayList<>(closeTasks);
+                closeTasks.clear();
+            } else {
+                todo = Collections.emptyList();
+            }
+        }
 
-                RuntimeException exception = null;
-                for (Runnable task : closeTasks) {
-                    try {
-                        task.run();
-                    } catch (RuntimeException e) {
-                        if (exception == null) {
-                            exception = e;
-                        } else {
-                            exception.addSuppressed(e);
-                        }
-                    }
-                }
-
-                if (exception != null) {
-                    throw exception;
+        RuntimeException exception = null;
+        for (Runnable task : todo) {
+            try {
+                task.run();
+            } catch (RuntimeException e) {
+                if (exception == null) {
+                    exception = e;
+                } else {
+                    exception.addSuppressed(e);
                 }
             }
+        }
+
+        if (exception != null) {
+            throw exception;
         }
     }
 
@@ -74,12 +86,15 @@ public class CloseableWithTasks
      */
     public final void onClose(Runnable task)
     {
+        boolean runNow;
         synchronized (closeTasks) {
-            if (isClosed) {
-                task.run();
-            } else {
+            runNow = isClosed;
+            if (!runNow) {
                 closeTasks.add(task);
             }
+        }
+        if (runNow) {
+            task.run();
         }
     }
 }
