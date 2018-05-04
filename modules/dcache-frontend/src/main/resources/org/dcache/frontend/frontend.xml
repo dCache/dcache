@@ -123,8 +123,7 @@
     </property>
   </bean>
 
-  <bean id="event-registrar" class="org.dcache.restful.events.Registrar"
-	init-method="start" destroy-method="stop">
+  <bean id="event-registrar" class="org.dcache.restful.events.Registrar">
     <description>Registrar for clients</description>
     <property name="maximumChannelsPerUser"
             value="${frontend.limit.events.channels-per-user}"/>

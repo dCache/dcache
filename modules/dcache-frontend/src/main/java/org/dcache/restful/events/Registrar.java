@@ -34,8 +34,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.Subjects;
 
@@ -92,7 +90,6 @@ public class Registrar
     private final Random random = new Random();
     private int maximumChannelsPerUser;
     private long defaultDisconnectTimeout;
-    private volatile ScheduledFuture keepAlive;
 
     @Inject
     private ScheduledExecutorService executor;
@@ -189,17 +186,5 @@ public class Registrar
         synchronized (ids) {
             return new ArrayList<>(ids);
         }
-    }
-
-    public void start()
-    {
-        keepAlive = executor.scheduleWithFixedDelay(
-                () -> _channels.values().forEach(Channel::sendKeepAlive),
-                10, 10, TimeUnit.SECONDS);
-    }
-
-    public void stop()
-    {
-        keepAlive.cancel(false);
     }
 }

@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.primitives.Ints;
@@ -150,9 +149,6 @@ public class Channel extends CloseableWithTasks
     private final EventStreamRepository repository;
     private final BiFunction<String,String,String> subscriptionValueBuilder;
 
-    // Stopwatch is always running after the first event has been sent.
-    private final Stopwatch lastSentEvent = Stopwatch.createUnstarted();
-
     private SseEventSink sink;
     private Sse sse;
     private ScheduledFuture closeFuture;
@@ -260,7 +256,6 @@ public class Channel extends CloseableWithTasks
 
                     return new CompletableFuture();
                 });
-        lastSentEvent.reset().start();
         return true;
     }
 
@@ -279,14 +274,6 @@ public class Channel extends CloseableWithTasks
     private void scheduleClose()
     {
         closeFuture = executor.schedule(this::close, timeout, TimeUnit.MILLISECONDS);
-    }
-
-    public synchronized void sendKeepAlive()
-    {
-        if (!isClosed() && sse != null && sink != null
-                && (!lastSentEvent.isRunning() || lastSentEvent.elapsed(TimeUnit.SECONDS) > 5)) {
-            sendEvent(sse.newEventBuilder().comment("").build());
-        }
     }
 
     public synchronized void acceptConnection(Sse newSse, SseEventSink newSink, String lastId)
