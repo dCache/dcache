@@ -33,12 +33,12 @@ public class Json
 {
     private Json()
     {
+        // Prevent instantiation of utility class.
     }
 
     public static ObjectNode readFromJar(String path) throws UncheckedIOException
     {
-        InputStream stream = Json.class.getResourceAsStream(path);
-        try {
+        try (InputStream stream = Json.class.getResourceAsStream(path)) {
             JsonNode node = new ObjectMapper().readTree(stream);
             if (!node.isObject()) {
                 throw new RuntimeException("JSON is not an object");
