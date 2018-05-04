@@ -312,7 +312,7 @@ public class Channel extends CloseableWithTasks
             if (ringBuffer.isEmpty()) {
                 sendEvent(sse.newEventBuilder()
                         .name("SYSTEM")
-                        .data("{\"type\":\"event-loss\"}")
+                        .data("{\"type\":\"EVENT_LOSS\"}")
                         .build());
             } else {
                 ringBuffer.stream()
@@ -341,6 +341,23 @@ public class Channel extends CloseableWithTasks
         }
     }
 
+    private synchronized void sendSubscriptionEvent(String type,
+            String eventType, String subscriptionId)
+    {
+        if (sink != null && !sink.isClosed()) {
+            try {
+                ObjectNode event = JsonNodeFactory.instance.objectNode();
+                event.put("type", type);
+                String url = subscriptionValueBuilder.apply(eventType, subscriptionId);
+                event.put("subscription", url);
+                String data = new ObjectMapper().writeValueAsString(event);
+                sendEvent(sse.newEventBuilder().name("SYSTEM").data(data).build());
+            } catch (JsonProcessingException e) {
+                LOGGER.warn("Failed to build {} data: {}", type, e.toString());
+            }
+        }
+    }
+
     public SubscriptionResult subscribe(String channelId, String eventType, JsonNode selector)
     {
         EventStream es = repository.getEventStream(eventType)
@@ -356,10 +373,15 @@ public class Channel extends CloseableWithTasks
                         }, selector);
 
         if (result.getStatus() == SelectionStatus.CREATED) {
-            SubscriptionId id = new SubscriptionId(eventType, result.getSelectedEventStream().getId());
+            String subscriptionId = result.getSelectedEventStream().getId();
+            SubscriptionId id = new SubscriptionId(eventType, subscriptionId);
             Subscription s = new Subscription(eventType, result.getSelectedEventStream());
             subscriptionsByIdentity.put(id, s);
+            s.onClose(() -> {
+                        sendSubscriptionEvent("SUBSCRIPTION_CLOSED", eventType, subscriptionId);
+                    });
             s.onClose(() -> subscriptionsByIdentity.remove(id, s));
+            sendSubscriptionEvent("NEW_SUBSCRIPTION", eventType, subscriptionId);
         }
 
         return new SubscriptionResult(result);
