@@ -62,4 +62,10 @@ public class IoStatisticsReplicaStore extends ForwardingReplicaStore
     {
         return new IoStatisticsReplicaRecord(super.create(id, flags));
     }
+
+    @Override
+    public String toString()
+    {
+        return inner.toString();
+    }
 }
