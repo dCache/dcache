@@ -96,6 +96,7 @@ import org.dcache.nfs.status.NoMatchingLayoutException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.ServerFaultException;
 import org.dcache.nfs.status.UnknownLayoutTypeException;
+import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -999,6 +1000,14 @@ public class NFSv41Door extends AbstractCellComponent implements
                 readNameSpaceEntry(_ioMode == layoutiomode4.LAYOUTIOMODE4_RW);
 
                 FileAttributes attr = getFileAttributes();
+
+                /*
+                 * allow writes only into new files
+                 */
+                if ((_ioMode == layoutiomode4.LAYOUTIOMODE4_RW) && !attr.getStorageInfo().isCreatedOnly()) {
+                    throw new PermException("Can't modify existing file");
+                }
+
                 if (!isWrite() && attr.getLocations().isEmpty()
                         && !attr.getStorageInfo().isStored()) {
                     throw new NfsIoException("lost file " + getPnfsId());
