@@ -6,6 +6,7 @@
 
     <properties>
         <property name="hazelcast.logging.type">slf4j</property>
+        <property name="hazelcast.phone.home.enabled">false</property>
     </properties>
 
     <group>
