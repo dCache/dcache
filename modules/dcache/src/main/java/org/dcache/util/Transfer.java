@@ -290,8 +290,6 @@ public class Transfer implements Comparable<Transfer>
         _kafkaSender = kafkaSender;
     }
 
-
-
     public synchronized void
     setCheckStagePermission(CheckStagePermission checkStagePermission)
     {

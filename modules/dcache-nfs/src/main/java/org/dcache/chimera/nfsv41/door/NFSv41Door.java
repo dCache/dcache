@@ -331,7 +331,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     @Autowired(required = false)
-    private void setTransferTemplate(KafkaTemplate kafkaTemplate) {
+    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
