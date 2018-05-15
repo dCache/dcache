@@ -35,8 +35,8 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.nfs.v4.NfsIdMapping;
-import org.dcache.xdr.RpcLoginService;
-import org.dcache.xdr.XdrTransport;
+import org.dcache.oncrpc4j.rpc.RpcLoginService;
+import org.dcache.oncrpc4j.rpc.RpcTransport;
 
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
@@ -171,7 +171,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
     }
 
     @Override
-    public Subject login(XdrTransport xt, GSSContext gssc) {
+    public Subject login(RpcTransport xt, GSSContext gssc) {
 
         try {
 

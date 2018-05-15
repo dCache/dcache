@@ -52,14 +52,14 @@ import org.dcache.nfs.vfs.DirectoryStream;
 import org.dcache.util.PortRange;
 import org.dcache.util.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
-import org.dcache.xdr.IoStrategy;
-import org.dcache.xdr.IpProtocolType;
-import org.dcache.xdr.OncRpcProgram;
-import org.dcache.xdr.OncRpcSvc;
-import org.dcache.xdr.OncRpcSvcBuilder;
-import org.dcache.xdr.RpcLoginService;
-import org.dcache.xdr.gss.GssSessionManager;
-import org.dcache.xdr.OncRpcException;
+import org.dcache.oncrpc4j.rpc.IoStrategy;
+import org.dcache.oncrpc4j.rpc.net.IpProtocolType;
+import org.dcache.oncrpc4j.rpc.OncRpcProgram;
+import org.dcache.oncrpc4j.rpc.OncRpcSvc;
+import org.dcache.oncrpc4j.rpc.OncRpcSvcBuilder;
+import org.dcache.oncrpc4j.rpc.RpcLoginService;
+import org.dcache.oncrpc4j.rpc.gss.GssSessionManager;
+import org.dcache.oncrpc4j.rpc.OncRpcException;
 
 /**
  *

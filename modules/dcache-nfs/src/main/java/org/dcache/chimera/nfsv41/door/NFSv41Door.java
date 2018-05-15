@@ -137,10 +137,10 @@ import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
-import org.dcache.xdr.OncRpcProgram;
-import org.dcache.xdr.OncRpcSvc;
-import org.dcache.xdr.OncRpcSvcBuilder;
-import org.dcache.xdr.gss.GssSessionManager;
+import org.dcache.oncrpc4j.rpc.OncRpcProgram;
+import org.dcache.oncrpc4j.rpc.OncRpcSvc;
+import org.dcache.oncrpc4j.rpc.OncRpcSvcBuilder;
+import org.dcache.oncrpc4j.rpc.gss.GssSessionManager;
 
 import static java.util.stream.Collectors.toList;
 
@@ -163,7 +163,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
 
     private final Map<layouttype4, LayoutDriver> _supportedDrivers = ImmutableMap.of(
-            layouttype4.LAYOUT4_FLEX_FILES,  new FlexFileLayoutDriver(4, 1, new utf8str_mixed("17"), new utf8str_mixed("17")),
+            layouttype4.LAYOUT4_FLEX_FILES,  new FlexFileLayoutDriver(4, 1, new utf8str_mixed("17"), new utf8str_mixed("17"), lr -> {}),
             layouttype4.LAYOUT4_NFSV4_1_FILES,  new NfsV41FileLayoutDriver()
     );
 
@@ -654,7 +654,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @see org.dcache.chimera.nfsv4.NFSv41DeviceManager#releaseDevice(stateid4 stateid)
      */
     @Override
-    public void layoutReturn(CompoundContext context, stateid4 stateid) throws IOException {
+    public void layoutReturn(CompoundContext context, stateid4 stateid, layouttype4 layoutType, byte[] body) throws IOException {
 
         final NFS4Client client;
         if (context.getMinorversion() > 0) {

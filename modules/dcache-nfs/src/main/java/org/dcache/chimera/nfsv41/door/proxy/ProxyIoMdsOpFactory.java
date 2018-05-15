@@ -12,7 +12,7 @@ import org.dcache.nfs.v4.NFSv4OperationFactory;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
-import org.dcache.xdr.OncRpcException;
+import org.dcache.oncrpc4j.rpc.OncRpcException;
 
 /**
  * NFS operation factory which uses Proxy IO adapter for read requests

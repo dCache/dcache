@@ -30,15 +30,15 @@ import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.state_protect_how4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VirtualFileSystem;
-import org.dcache.xdr.IoStrategy;
-import org.dcache.xdr.IpProtocolType;
-import org.dcache.xdr.OncRpcException;
-import org.dcache.xdr.OncRpcSvc;
-import org.dcache.xdr.OncRpcSvcBuilder;
-import org.dcache.xdr.RpcAuth;
-import org.dcache.xdr.RpcAuthTypeUnix;
-import org.dcache.xdr.RpcCall;
-import org.dcache.xdr.XdrTransport;
+import org.dcache.oncrpc4j.rpc.IoStrategy;
+import org.dcache.oncrpc4j.rpc.net.IpProtocolType;
+import org.dcache.oncrpc4j.rpc.OncRpcException;
+import org.dcache.oncrpc4j.rpc.OncRpcSvc;
+import org.dcache.oncrpc4j.rpc.OncRpcSvcBuilder;
+import org.dcache.oncrpc4j.rpc.RpcAuth;
+import org.dcache.oncrpc4j.rpc.RpcAuthTypeUnix;
+import org.dcache.oncrpc4j.rpc.RpcCall;
+import org.dcache.oncrpc4j.rpc.RpcTransport;
 
 /**
  * A {@link ProxyIoAdapter} which proxies requests to an other NFSv4.1 server.
@@ -78,7 +78,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
     private final InetSocketAddress remoteClient;
     private final RpcCall client;
     private final OncRpcSvc rpcsvc;
-    private final XdrTransport transport;
+    private final RpcTransport transport;
     private final ScheduledExecutorService sessionThread;
 
     public NfsProxyIo(InetSocketAddress poolAddress,  InetSocketAddress remoteClient, Inode inode, stateid4 stateid, long timeout, TimeUnit timeUnit) throws IOException {
@@ -194,7 +194,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
         return result;
     }
 
-    public XdrTransport getTransport() {
+    public RpcTransport getTransport() {
         return client.getTransport();
     }
 

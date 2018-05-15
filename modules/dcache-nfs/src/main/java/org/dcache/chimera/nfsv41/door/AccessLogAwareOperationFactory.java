@@ -49,7 +49,7 @@ import org.dcache.nfs.v4.OperationSETATTR;
 import org.dcache.nfs.v4.xdr.opentype4;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.nfs.vfs.Inode;
-import org.dcache.xdr.OncRpcException;
+import org.dcache.oncrpc4j.rpc.OncRpcException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.google.common.base.Throwables.getRootCause;

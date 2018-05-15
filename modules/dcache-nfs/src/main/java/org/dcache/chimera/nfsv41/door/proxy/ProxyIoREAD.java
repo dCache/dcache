@@ -89,6 +89,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();
+            bb.flip();
             res.resok4.data = bb;
             res.resok4.eof = readResult.isEof();
 

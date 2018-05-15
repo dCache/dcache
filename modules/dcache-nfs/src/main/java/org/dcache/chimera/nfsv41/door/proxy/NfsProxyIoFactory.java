@@ -32,7 +32,7 @@ import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory;
 import org.dcache.util.backoff.IBackoffAlgorithm;
-import org.dcache.utils.net.InetSocketAddresses;
+import org.dcache.oncrpc4j.rpc.net.InetSocketAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,7 +138,7 @@ retry:  while (true) {
          }
 
         _log.error("Failed to connect to pool {} within {}, Giving up!", toString(nfs4DeviceAddr.nflda_multipath_ds_list[0].value), connectStopwatch);
-        deviceManager.layoutReturn(context, stateid);
+        deviceManager.layoutReturn(context, stateid, layouttype4.LAYOUT4_NFSV4_1_FILES, new byte[0]);
         context.getStateHandler().getClientIdByStateId(stateid).releaseState(layout.getStateid());
         throw new NfsIoException("can't connect to pool");
     }

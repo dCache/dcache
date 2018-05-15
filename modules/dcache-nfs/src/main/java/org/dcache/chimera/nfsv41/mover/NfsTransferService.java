@@ -53,8 +53,8 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
-import org.dcache.xdr.IoStrategy;
-import org.dcache.xdr.OncRpcException;
+import org.dcache.oncrpc4j.rpc.IoStrategy;
+import org.dcache.oncrpc4j.rpc.OncRpcException;
 
 /**
  * Factory and transfer service for NFS movers.

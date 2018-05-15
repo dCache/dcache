@@ -67,8 +67,8 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();
+            bb.flip();
             res.resok4.data = bb;
-
             if( bytesRead == -1 || offset + bytesRead == fc.size() ) {
                 res.resok4.eof = true;
             }
