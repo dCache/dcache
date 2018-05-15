@@ -105,9 +105,14 @@
 
     <bean id="export" class="org.dcache.nfs.ExportFile">
         <description>NFS export file</description>
-        <constructor-arg>
+        <constructor-arg index = "0">
             <bean class="java.io.File">
                 <constructor-arg value="${nfs.export.file}"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index = "1">
+            <bean class="java.io.File">
+                <constructor-arg value="${nfs.export.dir}"/>
             </bean>
         </constructor-arg>
     </bean>
