@@ -1,8 +1,8 @@
 package org.dcache.util;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Collections2;
@@ -27,25 +27,163 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterators.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Various network related utility functions.
  */
 public abstract class NetworkUtils {
+
+    /**
+     * Accept a space-separated list of identifiers that are then used to build
+     * the supplied list of InetAddress.  Each identifier may be an IP address
+     * or a hostname.  Host names are resolved when an object is created and
+     * that lookup is subsequently cached.  If any identifier is a wildcard IP
+     * address (0.0.0.0 or ::) or hosts is null then the supplied addresses
+     * will include all local addresses.
+     */
+    private static class HostListAddressSupplier implements java.util.function.Supplier<List<InetAddress>>
+    {
+        private final List<InetAddress> fixedAddresses;
+        private final java.util.function.Supplier<List<InetAddress>> dynamicAddresses;
+
+        // hosts may be null
+        public HostListAddressSupplier(String hosts) throws UnknownHostException
+        {
+            boolean wildcard = false;
+            ImmutableList.Builder<InetAddress> builder = ImmutableList.builder();
+            for (String host : Splitter.on(' ').omitEmptyStrings().split(hosts)) {
+                if (isInetAddress(host)) {
+                    InetAddress address = InetAddresses.forString(host);
+                    checkArgument(!address.isMulticastAddress(), "Invalid address %s: cannot publish a multicast address", host);
+                    if (address.isAnyLocalAddress()) {
+                        wildcard = true;
+                    } else {
+                        builder.add(withCanonicalAddress(address));
+                    }
+                } else {
+                    builder.add(InetAddress.getByName(host)); // REVISIT InetAddress#getAllByName ?
+                }
+            }
+            dynamicAddresses = wildcard ? new AnyAddressSupplier() : () -> Collections.emptyList();
+            fixedAddresses = builder.build();
+        }
+
+        @Override
+        public List<InetAddress> get()
+        {
+            List<InetAddress> dynamic = dynamicAddresses.get();
+            if (dynamic.isEmpty()) {
+                return fixedAddresses;
+            } else if (fixedAddresses.isEmpty()) {
+                return dynamic;
+            } else {
+                List<InetAddress> combined = new ArrayList<>();
+                combined.addAll(dynamic);
+                combined.addAll(fixedAddresses);
+                return combined;
+            }
+        }
+    }
+
+    /**
+     * A supplier that returns all Internet addresses of network interfaces
+     * that are both up and not a loopback interface.
+     * REVISIT: LocalAddressSupplier and AnyAddressSupplier are essentially the
+     * same and should be merged.
+     */
+    public static class AnyAddressSupplier implements java.util.function.Supplier<List<InetAddress>>
+    {
+        private List<InetAddress> _previous = Collections.emptyList();
+
+        @Override
+        public List<InetAddress> get()
+        {
+            NDC.push("NIC auto-discovery");
+            try {
+                ArrayList<InetAddress> addresses = new ArrayList<>();
+                Stopwatch stopwatch = Stopwatch.createStarted();
+                try {
+                    Enumeration<NetworkInterface> interfaces =
+                            NetworkInterface.getNetworkInterfaces();
+                    while (interfaces.hasMoreElements()) {
+                        NetworkInterface i = interfaces.nextElement();
+                        try {
+                            if (i.isUp() && !i.isLoopback()) {
+                                Enumeration<InetAddress> e = i.getInetAddresses();
+                                while (e.hasMoreElements()) {
+                                    addresses.add(NetworkUtils.withCanonicalAddress(e.nextElement()));
+                                }
+                            }
+                        } catch (SocketException e) {
+                            logger.warn("Not publishing NIC {}: {}", i.getName(), e.getMessage());
+                        }
+                    }
+                } catch (SocketException e) {
+                    logger.warn("Not publishing NICs: {}", e.getMessage());
+                }
+
+                logger.debug("Scan took {}", stopwatch);
+                logChanges(addresses);
+                return addresses;
+            } finally {
+                NDC.pop();
+            }
+        }
+
+        private synchronized void logChanges(List<InetAddress> addresses)
+        {
+            if (!_previous.equals(addresses)) {
+                List<InetAddress> added = addresses.stream().filter(a -> !_previous.contains(a)).collect(toList());
+                List<InetAddress> removed = _previous.stream().filter(a -> !addresses.contains(a)).collect(toList());
+
+                boolean adding = !added.isEmpty();
+                boolean removing = !removed.isEmpty();
+
+                if (removing || adding) {
+                    StringBuilder sb = new StringBuilder();
+                    if (removing) {
+                        sb.append("Removing ").append(describeList(removed));
+                    }
+
+                    if (adding) {
+                        if (removing) {
+                            sb.append(", adding ");
+                        } else {
+                            sb.append("Adding ");
+                        }
+                        sb.append(describeList(added));
+                    }
+                    logger.warn(sb.toString());
+                }
+
+                _previous = new ArrayList<>(addresses);
+            }
+        }
+
+        private static String describeList(List<InetAddress> addresses)
+        {
+            if (addresses.size() == 1) {
+                return addresses.get(0).toString();
+            } else {
+                return addresses.stream().map(NetworkUtils::toString).collect(joining(", ", "[", "]"));
+            }
+        }
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(NetworkUtils.class);
 
@@ -358,8 +496,30 @@ public abstract class NetworkUtils {
 
     }
 
+    public static java.util.function.Supplier<List<InetAddress>> anyAddressSupplier()
+    {
+        return new AnyAddressSupplier();
+    }
+
     /**
-     *  A supplier that returns all internet addresses of network interfaces that are up.
+     * Accept a space-separated list of identifiers that are then used to build
+     * the supplied list of InetAddress.  Each identifier may be an IP address
+     * or a hostname.  Hostnames are resolved when an object is created and that
+     * lookup is subsequently cached.  If any identifier is a wildcard IP
+     * address (0.0.0.0 or ::) then the supplied addresses will include all
+     * local addresses.
+     */
+    public static java.util.function.Supplier<List<InetAddress>> hostListAddressSupplier(String list)
+            throws UnknownHostException
+    {
+        return new HostListAddressSupplier(list);
+    }
+
+
+    /**
+     * A supplier that returns all Internet addresses of network interfaces that
+     * are up.  REVISIT: LocalAddressSupplier and AnyAddressSupplier are
+     * essentially the same and should be merged.
      */
     private static class LocalAddressSupplier implements Supplier<List<InetAddress>>
     {
