@@ -143,7 +143,7 @@ public class IdResources {
     {
         Set<FileAttribute> attributeSet = EnumSet.allOf(FileAttribute.class);
         JsonFileAttributes result = new JsonFileAttributes();
-        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
 
         try {
             PnfsId id = new PnfsId(value);

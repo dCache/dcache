@@ -150,7 +150,7 @@ public class FileResources {
     {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
-        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
         try {
 
@@ -277,7 +277,7 @@ public class FileResources {
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
-            PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
+            PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
             FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 
             // FIXME: which attributes do we actually need?
@@ -287,7 +287,7 @@ public class FileResources {
                 case "mkdir":
                     String name = (String) reqPayload.get("name");
                     FsPath.checkChildName(name, BadRequestException::new);
-                    handler = HandlerBuilders.pnfsHandler(pnfsmanager, request); // FIXME: non-role identity to ensure correct ownership
+                    handler = HandlerBuilders.pnfsHandler(pnfsmanager); // FIXME: non-role identity to ensure correct ownership
                     handler.createPnfsDirectory(path.child(name).toString());
                     break;
 
@@ -381,7 +381,7 @@ public class FileResources {
     public Response deleteFileEntry(@ApiParam(value="Path of file or directory.", required=true)
                                     @PathParam("path") String requestPath) throws CacheException
     {
-        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 
         try {

@@ -17,23 +17,43 @@
  */
 package org.dcache.restful.util;
 
-import javax.security.auth.Subject;
-import javax.ws.rs.NotAuthorizedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
+
+import java.io.IOException;
 import java.security.AccessController;
 
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restriction;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.util.Exceptions.genericCheck;
 
 /**
  * Utility class to handle the identity of the user issuing the request.
+ * It also acts as a JAX-RS Filter to populate thread-local to avoid having
+ * to work with HttpServletRequest objects.
  */
-public class RequestUser
+public class RequestUser implements ContainerRequestFilter, ContainerResponseFilter
 {
-    private RequestUser()
+    private static final ThreadLocal<Restriction> RESTRICTIONS = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> IS_ADMIN = new ThreadLocal<>();
+
+    @Inject
+    private HttpServletRequest request;
+
+    public RequestUser()
     {
-        // Prevent instantiation.
+        // Allow instantiation as a JAX-RS Filter.
     }
 
     public static Subject getSubject()
@@ -46,9 +66,38 @@ public class RequestUser
         return Subjects.isNobody(getSubject());
     }
 
+    public static Restriction getRestriction()
+    {
+        Restriction restriction = RESTRICTIONS.get();
+        checkState(restriction != null, "RequestUser#getRestriction called outside of REST request");
+        return restriction;
+    }
+
+    public static boolean isAdmin()
+    {
+        Boolean isAdmin = IS_ADMIN.get();
+        checkState(isAdmin != null, "RequestUser#isAdmin called outside of REST request");
+        return isAdmin;
+    }
+
     public static void checkAuthenticated() throws NotAuthorizedException
     {
         genericCheck(!isAnonymous(), NotAuthorizedException::new,
                 "anonymous access not allowed");
+    }
+
+    @Override
+    public void filter(ContainerRequestContext requestContext) throws IOException
+    {
+        RESTRICTIONS.set(HttpServletRequests.getRestriction(request));
+        IS_ADMIN.set(HttpServletRequests.isAdmin(request));
+    }
+
+    @Override
+    public void filter(ContainerRequestContext requestContext,
+            ContainerResponseContext responseContext) throws IOException
+    {
+        RESTRICTIONS.set(null);
+        IS_ADMIN.set(null);
     }
 }

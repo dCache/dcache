@@ -25,6 +25,7 @@ import org.dcache.restful.resources.selection.PoolPreferenceResources;
 import org.dcache.restful.resources.selection.UnitResources;
 import org.dcache.restful.resources.space.SpaceManagerResources;
 import org.dcache.restful.resources.transfers.TransferResources;
+import org.dcache.restful.util.RequestUser;
 
 public class DcacheRestApplication extends ResourceConfig
 {
@@ -54,6 +55,7 @@ public class DcacheRestApplication extends ResourceConfig
 
         //register filters
         register(ResponseHeaderFilter.class);
+        register(RequestUser.class);
 
         //register features/provider
         register(ObjectMapperProvider.class);

@@ -31,19 +31,19 @@ import org.dcache.cells.CellStub;
  */
 public class HandlerBuilders
 {
-    public static PnfsHandler pnfsHandler(CellStub pnfsManager, HttpServletRequest request)
+    public static PnfsHandler pnfsHandler(CellStub pnfsManager)
     {
         PnfsHandler handler = new PnfsHandler(pnfsManager);
         handler.setSubject(RequestUser.getSubject());
-        handler.setRestriction(HttpServletRequests.getRestriction(request));
+        handler.setRestriction(RequestUser.getRestriction());
         return handler;
     }
 
-    public static PnfsHandler roleAwarePnfsHandler(CellStub pnfsManager, HttpServletRequest request)
+    public static PnfsHandler roleAwarePnfsHandler(CellStub pnfsManager)
     {
-        PnfsHandler handler = pnfsHandler(pnfsManager, request);
+        PnfsHandler handler = pnfsHandler(pnfsManager);
 
-        if (HttpServletRequests.isAdmin(request)) {
+        if (RequestUser.isAdmin()) {
             handler.setSubject(Subjects.ROOT);
             handler.setRestriction(Restrictions.none());
         }

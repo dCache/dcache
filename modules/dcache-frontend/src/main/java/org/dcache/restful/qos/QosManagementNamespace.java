@@ -206,7 +206,7 @@ public class QosManagementNamespace {
 
     public FileAttributes getFileAttributes(String requestPath) throws CacheException {
 
-        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path;
         if (requestPath == null || requestPath.isEmpty()) {
             path = FsPath.ROOT;
