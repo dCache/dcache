@@ -1,7 +1,7 @@
 dCache
 ======
 
-<img src="modules/dcache-webadmin/src/main/resources/org/dcache/webadmin/view/panels/header/dCache.png" height="165" width="200">
+<img src="dCache.png" height="165" width="200">
 
 __dCache__ is a system for storing and retrieving huge amounts of data,
 distributed among a large number of heterogeneous server nodes, under
