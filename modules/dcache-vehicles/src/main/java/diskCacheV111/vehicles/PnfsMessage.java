@@ -12,6 +12,7 @@ import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -33,7 +34,11 @@ public class PnfsMessage extends Message {
 
     public PnfsMessage(){ }
 
-    public void setPnfsPath( String pnfsPath ){ _path = pnfsPath ; }
+    public void setPnfsPath(String pnfsPath) {
+        checkArgument(pnfsPath == null || pnfsPath.charAt(0) == '/');
+        _path = pnfsPath;
+    }
+
     public String getPnfsPath(){ return _path ;}
 
     public FsPath getFsPath()
