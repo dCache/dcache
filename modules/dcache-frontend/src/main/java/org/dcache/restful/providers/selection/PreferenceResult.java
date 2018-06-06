@@ -64,6 +64,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 
@@ -88,7 +89,8 @@ public final class PreferenceResult implements Serializable {
     }
 
     public List<String> getPools() {
-        return pools;
+        return pools == null? null :
+                        pools.stream().sorted().collect(Collectors.toList());
     }
 
     public String getTag() {

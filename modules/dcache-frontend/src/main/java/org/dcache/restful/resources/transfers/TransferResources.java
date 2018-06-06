@@ -68,6 +68,7 @@ import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
@@ -143,6 +144,7 @@ public final class TransferResources {
                                                    @ApiParam("Select transfers involving this client.")
                                                    @QueryParam("client") String client,
                                                    @ApiParam("A comma-seperated list of fields to sort the responses.")
+                                                   @DefaultValue("door,waiting")
                                                    @QueryParam("sort") String sort) {
         try {
             return service.get(token,

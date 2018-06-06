@@ -62,6 +62,7 @@ package org.dcache.restful.providers.selection;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -105,14 +106,17 @@ public final class Link extends SelectionType {
         preferences = new UnitPreferences(link.getPreferences());
         pools = link.getPools()
                     .stream()
+                    .sorted(Comparator.comparing(SelectionPool::getName))
                     .map(SelectionPool::getName)
                     .collect(Collectors.toList());
         poolGroups = link.getPoolGroupsPointingTo()
                          .stream()
+                         .sorted(Comparator.comparing(SelectionPoolGroup::getName))
                          .map(SelectionPoolGroup::getName)
                          .collect(Collectors.toList());
         unitGroups = link.getUnitGroupsTargetedBy()
                          .stream()
+                         .sorted(Comparator.comparing(SelectionUnitGroup::getName))
                          .map(SelectionUnitGroup::getName)
                          .collect(Collectors.toList());
     }

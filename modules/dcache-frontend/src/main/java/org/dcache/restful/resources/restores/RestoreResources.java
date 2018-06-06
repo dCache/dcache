@@ -68,6 +68,7 @@ import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
@@ -130,6 +131,7 @@ public final class RestoreResources {
                                                  @ApiParam("Select only restores with this status.")
                                                  @QueryParam("status") String status,
                                                  @ApiParam("A comma-seperated list of fields on which to sort the results.")
+                                                 @DefaultValue("pool,started")
                                                  @QueryParam("sort") String sort) {
         try {
             return service.get(token,

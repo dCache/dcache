@@ -80,6 +80,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -123,7 +124,8 @@ public final class SpaceManagerResources {
     private boolean spaceReservationEnabled;
 
     @GET
-    @ApiOperation("Get information about link groups.  Requires admin role.")
+    @ApiOperation("Get information about link groups.  Requires admin role."
+                    + " Results sorted lexicographically by link group name.")
     @ApiResponses({
         @ApiResponse(code = 400, message = "Bad Request Error"),
         @ApiResponse(code = 403, message = "Link group info only accessible to admin users."),
@@ -177,6 +179,7 @@ public final class SpaceManagerResources {
 
             return reply.getLinkGroups()
                         .stream()
+                        .sorted(Comparator.comparing(LinkGroup::getName))
                         .filter(filter)
                         .map(LinkGroupInfo::new)
                         .collect(Collectors.toList());
@@ -187,7 +190,7 @@ public final class SpaceManagerResources {
 
     @GET
     @ApiOperation("Get information about space tokens.  "
-                    + "Requires admin role.")
+                    + "Requires admin role.  Results sorted by token id.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Space token info only accessible to admin users."),
         @ApiResponse(code = 404, message = "DCache not configured for space management."),
@@ -237,6 +240,7 @@ public final class SpaceManagerResources {
 
             return reply.getSpaceTokenSet()
                         .stream()
+                        .sorted(Comparator.comparing(Space::getId))
                         .filter(filter)
                         .map(SpaceToken::new)
                         .collect(Collectors.toList());
