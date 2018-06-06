@@ -20,6 +20,8 @@ check -strong admin.service.pnfsmanager.timeout.unit
 check -strong admin.service.acm
 check -strong admin.service.acm.timeout
 check -strong admin.service.acm.timeout.unit
+check -string admin.ssh.authn.enabled
+check -strong admin.ssh.authn.kerberos.keytab-file
 check admin.loginbroker.request-topic
 check -strong admin.authz.gid
 check admin.paths.authorized-keys
