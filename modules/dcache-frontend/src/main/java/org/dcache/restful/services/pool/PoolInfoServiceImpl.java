@@ -59,17 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.pool;
 
+import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.Required;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.command.Command;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
@@ -78,6 +76,10 @@ import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.command.Command;
 
 import org.dcache.cells.json.CellData;
 import org.dcache.pool.json.PoolData;
@@ -302,6 +304,10 @@ public class PoolInfoServiceImpl extends
                                        String storageClass,
                                        String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException {
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "class,created";
+        }
+
         PoolFlushListingMessage message
                         = new PoolFlushListingMessage(offset,
                                                       Math.min(limit, maxPoolActivityListSize),
@@ -375,6 +381,10 @@ public class PoolInfoServiceImpl extends
                                           String storageClass,
                                           String sort) throws InterruptedException,
                      NoRouteToCellException, CacheException {
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "door,startTime";
+        }
+
         PoolMoverListingMessage message
                         = new PoolMoverListingMessage(offset,
                                                       Math.min(limit, maxPoolActivityListSize),
@@ -403,6 +413,10 @@ public class PoolInfoServiceImpl extends
                                   String storageClass,
                                   String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException {
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "door,startTime";
+        }
+
         PoolP2PListingMessage message
                         = new PoolP2PListingMessage(offset,
                                                     Math.min(limit, maxPoolActivityListSize),
@@ -479,6 +493,10 @@ public class PoolInfoServiceImpl extends
                                                        state,
                                                        storageClass,
                                                        sort);
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "class,created";
+        }
+
         ListenableFutureWrapper<PoolRemoveListingMessage> wrapper
                         = collector.sendRequestToPool(pool, message);
         return getNearlineData(pool, wrapper);
@@ -500,6 +518,10 @@ public class PoolInfoServiceImpl extends
                                             String storageClass,
                                             String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException {
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "class,created";
+        }
+
         PoolStageListingMessage message
                         = new PoolStageListingMessage(offset,
                                                       Math.min(limit, maxPoolActivityListSize),

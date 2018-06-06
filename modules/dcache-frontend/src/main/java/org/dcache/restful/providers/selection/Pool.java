@@ -62,6 +62,7 @@ package org.dcache.restful.providers.selection;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,6 +96,7 @@ public final class Pool extends SelectionTypeWithLinks {
                   .map(SelectionPoolGroup::getName)
                   .map(psu::getLinksPointingToPoolGroup)
                   .flatMap(links -> links.stream())
+                  .sorted(Comparator.comparing(SelectionLink::getName))
                   .map(SelectionLink::getName)
                   .collect(Collectors.toList());
     }

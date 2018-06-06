@@ -62,6 +62,7 @@ package org.dcache.restful.providers.selection;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -86,6 +87,7 @@ public final class UnitGroup extends SelectionTypeWithLinks {
         super(group.getName(), psu);
         units = group.getMemeberUnits()
                      .stream()
+                     .sorted(Comparator.comparing(SelectionUnit::getName))
                      .map(SelectionUnit::getName)
                      .collect(Collectors.toList());
     }
@@ -99,6 +101,7 @@ public final class UnitGroup extends SelectionTypeWithLinks {
         return psu.getUnitGroups().get(name)
                   .getLinksPointingTo()
                   .stream()
+                  .sorted(Comparator.comparing(SelectionLink::getName))
                   .map(SelectionLink::getName)
                   .collect(Collectors.toList());
     }

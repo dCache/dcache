@@ -151,6 +151,7 @@ public class BillingResources {
                                              @ApiParam("Only select reads requested by the client.")
                                              @QueryParam("client") String client,
                                              @ApiParam("How to sort responses.")
+                                             @DefaultValue("date")
                                              @QueryParam("sort") String sort) {
         try {
             if (!HttpServletRequests.isAdmin(request)) {
@@ -210,6 +211,7 @@ public class BillingResources {
                                               @ApiParam("Only select writes requested by the client.")
                                               @QueryParam("client") String client,
                                               @ApiParam("How to sort responses.")
+                                              @DefaultValue("date")
                                               @QueryParam("sort") String sort) {
         try {
             if (!HttpServletRequests.isAdmin(request)) {
@@ -269,6 +271,7 @@ public class BillingResources {
                                            @ApiParam("Only select transfers triggered by the specified client.")
                                            @QueryParam("client") String client,
                                            @ApiParam("How to sort responses.")
+                                           @DefaultValue("date")
                                            @QueryParam("sort") String sort) {
         try {
             if (!HttpServletRequests.isAdmin(request)) {
@@ -324,6 +327,7 @@ public class BillingResources {
                                              @ApiParam("Only select tape writes involving the specified pool.")
                                              @QueryParam("pool") String pool,
                                              @ApiParam("How to sort responses.")
+                                             @DefaultValue("date")
                                              @QueryParam("sort") String sort) {
         try {
             if (!HttpServletRequests.isAdmin(request)) {
@@ -377,6 +381,7 @@ public class BillingResources {
                                                @ApiParam("Only select tape reads involving the specified pool.")
                                                @QueryParam("pool") String pool,
                                                @ApiParam("How to sort responses.")
+                                               @DefaultValue("date")
                                                @QueryParam("sort") String sort) {
         try {
             if (!HttpServletRequests.isAdmin(request)) {
@@ -406,7 +411,8 @@ public class BillingResources {
 
 
     @GET
-    @ApiOperation("Provide the full \"grid\" of time series data in one pass.")
+    @ApiOperation("Provide the full \"grid\" of time series data in one pass. "
+                    + "Data is sorted lexicographically by key.")
     @ApiResponses({
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
@@ -420,6 +426,7 @@ public class BillingResources {
                    .getDataGrid()
                    .keySet()
                    .stream()
+                   .sorted()
                    .forEach((key) -> {
                        try {
                            gridData.add(service.getHistogram(key));

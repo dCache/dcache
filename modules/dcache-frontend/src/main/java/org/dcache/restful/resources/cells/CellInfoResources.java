@@ -78,6 +78,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
@@ -138,7 +139,8 @@ public final class CellInfoResources {
 
 
     @GET
-    @ApiOperation("Provide information about all cells.  Requires admin role.")
+    @ApiOperation("Provide information about all cells.  Requires admin role. "
+                    + "Results sorted lexicographically by cell name.")
     @ApiResponses({
                 @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
             })
@@ -151,6 +153,10 @@ public final class CellInfoResources {
 
         return Arrays.stream(service.getAddresses())
                      .map(service::getCellData)
-                     .collect(Collectors.toList()).toArray(new CellData[0]);
+                     .collect(Collectors.toList())
+                     .stream()
+                     .sorted(Comparator.comparing(CellData::getCellName))
+                     .collect(Collectors.toList())
+                     .toArray(new CellData[0]);
     }
 }

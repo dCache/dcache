@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.billing;
 
+import com.google.common.base.Strings;
+
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,14 +72,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PnfsId;
 
 import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.billing.BillingDataGrid;
@@ -274,6 +276,10 @@ public class BillingInfoServiceImpl
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "date";
+        }
+
         TransferRecordRequestMessage message
                         = new TransferRecordRequestMessage(pnfsid,
                                                            getDate(before),
@@ -305,7 +311,8 @@ public class BillingInfoServiceImpl
         return getDoorTransfers(Type.READ, pnfsid, before, after,
                                 limit, offset, door, pool, client, sort);
     }
-                                                              @Override
+
+    @Override
     public PagedList<HSMTransferRecord> getRestores(PnfsId pnfsid,
                                                     String before, String after,
                                                     Integer limit, int offset,
@@ -385,6 +392,10 @@ public class BillingInfoServiceImpl
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "date";
+        }
+
         TransferRecordRequestMessage message
                         = new TransferRecordRequestMessage(pnfsid,
                                                            getDate(before),
@@ -415,6 +426,10 @@ public class BillingInfoServiceImpl
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "date";
+        }
+
         StorageRecordRequestMessage message
                         = new StorageRecordRequestMessage(pnfsid,
                                                           getDate(before),
@@ -424,6 +439,7 @@ public class BillingInfoServiceImpl
                                                           limit,
                                                           offset,
                                                           sort);
+
         message = collector.sendRecordRequest(message);
         List<HSMTransferRecord> list = message.getRecords()
                                               .stream().map(HSMTransferRecord::new)

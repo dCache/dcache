@@ -75,10 +75,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Unit;
@@ -102,7 +105,8 @@ public final class UnitResources {
     private PoolMonitor poolMonitor;
 
     @GET
-    @ApiOperation("List all units.  Requires admin role.")
+    @ApiOperation("List all units.  Requires admin role."
+                    + " Results sorted lexicographically by unit name.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Unit info only accessible to admin users."),
     })
@@ -115,13 +119,15 @@ public final class UnitResources {
 
         return poolMonitor.getPoolSelectionUnit().getSelectionUnits().values()
                           .stream()
+                          .sorted(Comparator.comparing(SelectionUnit::getName))
                           .map(Unit::new)
                           .collect(Collectors.toList());
     }
 
 
     @GET
-    @ApiOperation("List all unitgroups.  Requires admin role.")
+    @ApiOperation("List all unitgroups.  Requires admin role."
+                    + " Results sorted lexicographically by unit group name.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Unit info only accessible to admin users."),
     })
@@ -137,6 +143,7 @@ public final class UnitResources {
 
         return poolMonitor.getPoolSelectionUnit().getUnitGroups().values()
                           .stream()
+                          .sorted(Comparator.comparing(SelectionUnitGroup::getName))
                           .map((g) -> new UnitGroup(g, psu))
                           .collect(Collectors.toList());
     }
