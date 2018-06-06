@@ -117,5 +117,7 @@
         </property>
         <property name="idleTimeout" value="#{T(org.dcache.util.Strings).parseLong('${admin.ssh.idle-timeout}')}" />
         <property name="idleTimeoutUnit" value="${admin.ssh.idle-timeout.unit}" />
+	<property name="enabledAuthenticationMechanisms" value="${admin.ssh.authn.enabled}"/>
+        <property name="keyTabFile" value="${admin.ssh.authn.kerberos.keytab-file}" />
     </bean>
 </beans>
