@@ -92,10 +92,12 @@ import javax.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -158,7 +160,7 @@ public final class PoolInfoResources {
 
     @GET
     @ApiOperation("Get information about all pools (name, group membership, links).  "
-                    + "Requires admin role.")
+                    + "Requires admin role.  Results sorted lexicographically by pool name.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Pool info only accessible to admin users."),
     })
@@ -173,6 +175,7 @@ public final class PoolInfoResources {
 
         return psu.getPools().values()
                   .stream()
+                  .sorted(Comparator.comparing(SelectionPool::getName))
                   .map((p) -> new Pool(p.getName(), psu))
                   .collect(Collectors.toList());
     }
@@ -316,6 +319,7 @@ public final class PoolInfoResources {
                                      @ApiParam("Select movers with a specific storage class.")
                                      @QueryParam("storageClass") String storageClass,
                                      @ApiParam("How returned items should be sorted.")
+                                     @DefaultValue("door,startTime")
                                      @QueryParam("sort") String sort) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
@@ -396,6 +400,7 @@ public final class PoolInfoResources {
                                                 @ApiParam("Select only operations of this storage class.")
                                                 @QueryParam("storageClass") String storageClass,
                                                 @ApiParam("How the returned values should be sorted.")
+                                                @DefaultValue("class,created")
                                                 @QueryParam("sort") String sort) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(

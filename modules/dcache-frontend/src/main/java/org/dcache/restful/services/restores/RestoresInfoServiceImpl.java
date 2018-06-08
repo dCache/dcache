@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.restful.services.restores;
 
 import com.google.common.base.Strings;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -70,10 +71,10 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import dmg.util.command.Command;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
+
+import dmg.util.command.Command;
 
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
@@ -188,12 +189,14 @@ public final class RestoresInfoServiceImpl extends
                                          String sort)
                     throws CacheException {
         Predicate<RestoreInfo> filter = getFilter(pnfsid, subnet, pool, status);
-        List<FieldSort> fields = null;
-        if (sort != null) {
-            fields= Arrays.stream(sort.split(","))
-                          .map(FieldSort::new)
-                          .collect(Collectors.toList());
+
+        if (Strings.isNullOrEmpty(sort)) {
+            sort = "pool,started";
         }
+
+        List<FieldSort> fields= Arrays.stream(sort.split(","))
+                                      .map(FieldSort::new)
+                                      .collect(Collectors.toList());
         Comparator<RestoreInfo> sorter
                         = FieldSort.getSorter(fields, nextComparator());
         return access.getSnapshot(token, offset, limit, filter, sorter);

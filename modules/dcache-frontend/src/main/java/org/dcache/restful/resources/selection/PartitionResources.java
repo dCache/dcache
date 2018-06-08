@@ -75,7 +75,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.dcache.poolmanager.PoolMonitor;
@@ -100,7 +102,8 @@ public final class PartitionResources {
 
 
     @GET
-    @ApiOperation("Get information about all partitions.  Requires admin role.")
+    @ApiOperation("Get information about all partitions.  Requires admin role."
+                    + " Results sorted lexicographically by partition name.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Partition info only accessible to admin users."),
     })
@@ -113,6 +116,7 @@ public final class PartitionResources {
 
         return poolMonitor.getPartitionManager().getPartitions().entrySet()
                           .stream()
+                          .sorted(Comparator.comparing(Entry::getKey))
                           .map(Partition::new)
                           .collect(Collectors.toList());
     }

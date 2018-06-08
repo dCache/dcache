@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.restful.services.cells;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -67,6 +68,7 @@ import java.util.stream.Collectors;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.util.command.Command;
+
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.util.admin.ReadWriteData;
 import org.dcache.restful.util.cells.CellInfoCollector;
@@ -108,6 +110,7 @@ public class CellInfoServiceImpl extends
         public String call() throws Exception {
             return Arrays.stream(getAddresses())
                          .map(CellInfoServiceImpl.this::getCellData)
+                         .sorted(Comparator.comparing(CellData::getCellName))
                          .map(CellData::toString)
                          .collect(Collectors.joining("\n"));
         }

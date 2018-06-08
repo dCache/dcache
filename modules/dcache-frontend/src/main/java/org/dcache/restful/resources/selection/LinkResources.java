@@ -75,10 +75,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Link;
@@ -103,7 +106,8 @@ public final class LinkResources {
 
 
     @GET
-    @ApiOperation("Get information about all links.  Requires admin role.")
+    @ApiOperation("Get information about all links.  Requires admin role."
+                    + " Results sorted lexicographically by link name.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Link info only accessible to admin users."),
     })
@@ -116,12 +120,14 @@ public final class LinkResources {
 
         return poolMonitor.getPoolSelectionUnit().getLinks().values()
                           .stream()
+                          .sorted(Comparator.comparing(SelectionLink::getName))
                           .map(Link::new)
                           .collect(Collectors.toList());
     }
 
     @GET
-    @ApiOperation("Get information about all linkgroups.  Requires admin role.")
+    @ApiOperation("Get information about all linkgroups.  Requires admin role."
+                    + " Results sorted lexicographically by link group name.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Link group info only accessible to admin users."),
     })
@@ -137,6 +143,7 @@ public final class LinkResources {
 
         return psu.getLinkGroups().values()
                   .stream()
+                  .sorted(Comparator.comparing(SelectionLinkGroup::getName))
                   .map((g) -> new LinkGroup(g, psu))
                   .collect(Collectors.toList());
     }

@@ -65,6 +65,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -244,6 +245,7 @@ public final class PoolInfoCollectorUtils {
 
         return poolSelectionUnit.getPoolGroups().values()
                                 .stream()
+                                .sorted(Comparator.comparing(SelectionPoolGroup::getName))
                                 .map(SelectionPoolGroup::getName)
                                 .toArray(String[]::new);
     }
@@ -258,6 +260,7 @@ public final class PoolInfoCollectorUtils {
 
         return poolSelectionUnit.getPools().values()
                                 .stream()
+                                .sorted(Comparator.comparing(SelectionPool::getName))
                                 .map(SelectionPool::getName)
                                 .toArray(String[]::new);
     }
@@ -276,6 +279,7 @@ public final class PoolInfoCollectorUtils {
 
         return poolSelectionUnit.getPoolsByPoolGroup(group)
                                 .stream()
+                                .sorted(Comparator.comparing(SelectionPool::getName))
                                 .map(SelectionPool::getName)
                                 .toArray(String[]::new);
     }

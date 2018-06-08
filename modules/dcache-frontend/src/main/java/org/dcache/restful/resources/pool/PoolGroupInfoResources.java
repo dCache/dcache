@@ -77,10 +77,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
@@ -107,7 +109,8 @@ public final class PoolGroupInfoResources {
     private PoolMonitor poolMonitor;
 
     @GET
-    @ApiOperation("Get a list of poolgroups.  Requires admin role.")
+    @ApiOperation("Get a list of poolgroups.  Requires admin role."
+                    + " Results sorted lexicographically by group name.")
     @ApiResponses({
         @ApiResponse(code = 403, message = "Pool group info only accessible to admin users."),
     })
@@ -122,6 +125,7 @@ public final class PoolGroupInfoResources {
 
         return psu.getPoolGroups().values()
                   .stream()
+                  .sorted(Comparator.comparing(SelectionPoolGroup::getName))
                   .map((g) -> new PoolGroup(g.getName(), psu))
                   .collect(Collectors.toList());
     }
@@ -147,7 +151,8 @@ public final class PoolGroupInfoResources {
     @GET
     @Path("/{group}/pools")
     @ApiOperation("Get a list of pools that are a member of a poolgroup.  If no "
-            + "poolgroup is specified then all pools are listed.")
+            + "poolgroup is specified then all pools are listed. "
+                    + "Results sorted lexicographically by pool name.")
     @Produces(MediaType.APPLICATION_JSON)
     public String[] getPoolsOfGroup(@ApiParam("The poolgroup to be described.")
                                     @PathParam("group") String group) {
