@@ -195,7 +195,6 @@
   </dependencies>
 
   <modules>
-    <module>docker</module>
     <module>fhs</module>
     <module>tar</module>
     <module>system-test</module>
