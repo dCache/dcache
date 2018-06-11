@@ -1,6 +1,8 @@
 package org.dcache.services.ssh2;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.NamedFactory;
@@ -12,10 +14,17 @@ import org.apache.sshd.common.session.SessionListener;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.gss.GSSAuthenticator;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.Origin;
+import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.Subjects;
 import org.dcache.util.Glob;
 import org.dcache.util.Subnet;
 
@@ -24,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,12 +46,14 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.AuthorizedKeyParser;
@@ -51,11 +63,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
 
-import org.dcache.auth.LoginReply;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.Origin;
-import org.dcache.auth.PasswordCredential;
-import org.dcache.auth.Subjects;
 import org.dcache.util.Files;
 import org.dcache.util.NetLoggerBuilder;
 
@@ -89,6 +96,10 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private TimeUnit _idleTimeoutUnit;
     private long _idleTimeout;
     private enum Outcome { ALLOW, DENY, DEFER }
+    // switches for different Authenticators
+    private enum AuthenticationMechanism {KERBEROS, PASSWORD, PUBLICKEY}
+    private EnumSet<AuthenticationMechanism>  enabledAuthenticationMechanisms;
+    private String keyTabFile;
 
     public Ssh2Admin() {
         _server = SshServer.setUpDefaultServer();
@@ -163,9 +174,31 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         _idleTimeoutUnit = unit;
     }
 
-    public void configureAuthentication() {
-        _server.setPasswordAuthenticator(new AdminPasswordAuthenticator());
-        _server.setPublickeyAuthenticator(new AdminPublickeyAuthenticator());
+    @Required
+    public void setEnabledAuthenticationMechanisms(String mechanisms) {
+        enabledAuthenticationMechanisms = EnumSet.copyOf(
+                Arrays.stream(
+                        Iterables.toArray(
+                                Splitter.on(',')
+                                        .trimResults()
+                                        .split(mechanisms.toUpperCase()),
+                                String.class))
+                        .map(AuthenticationMechanism::valueOf)
+                        .collect(Collectors.toList()));
+    }
+
+    @Required
+    public void setKeyTabFile(String name) {
+        keyTabFile = name;
+    }
+
+    private void configureAuthentication() {
+        _server.setGSSAuthenticator(enabledAuthenticationMechanisms.contains(AuthenticationMechanism.KERBEROS) ?
+                new AdminGssAuthenticator() : null);
+        _server.setPasswordAuthenticator(enabledAuthenticationMechanisms.contains(AuthenticationMechanism.PASSWORD) ?
+                new AdminPasswordAuthenticator() : null);
+        _server.setPublickeyAuthenticator(enabledAuthenticationMechanisms.contains(AuthenticationMechanism.PUBLICKEY) ?
+                new AdminPublickeyAuthenticator() : null);
     }
 
     @Override
@@ -388,6 +421,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         }
     }
 
+
+
     private class AdminConnectionLogger implements SessionListener {
 
         @Override
@@ -407,6 +442,52 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     .add("remote.socket", session.getIoSession()
                             .getRemoteAddress())
                     .toLogger(_accessLog);
+        }
+    }
+
+    private class AdminGssAuthenticator extends GSSAuthenticator {
+
+        AdminGssAuthenticator() {
+            setKeytabFile(keyTabFile);
+        }
+
+        @Override
+        public boolean validateInitialUser(ServerSession session, String user) {
+            session.setUsername(user);
+            return true;
+        }
+
+        @Override
+        public boolean validateIdentity(ServerSession session, String identity) {
+            boolean successful = false;
+            String reason = null;
+            Subject subject = new Subject();
+            subject.getPrincipals().add(new KerberosPrincipal(identity));
+            String userName = session.getUsername();
+            if (userName != null) {
+                subject.getPrincipals().add(new LoginNamePrincipal(userName));
+            }
+            addOrigin(session, subject);
+            try {
+                LoginReply reply = _loginStrategy.login(subject);
+                Subject authenticatedSubject = reply.getSubject();
+                if (!Subjects.hasGid(authenticatedSubject, _adminGroupId)) {
+                    throw new PermissionDeniedCacheException("not member of admin gid");
+                }
+                successful = true;
+            } catch (PermissionDeniedCacheException e) {
+                _log.error("Login for {} denied: {}",
+                           Strings.nullToEmpty(userName),
+                           e.getMessage());
+                reason = e.getMessage();
+            } catch (CacheException e) {
+                reason = e.toString();
+                _log.error("Login for {} failed: {}",
+                           Strings.nullToEmpty(userName),
+                           e.toString());
+            }
+            logLoginTry(userName, session, "GSS", successful, reason);
+            return successful;
         }
     }
 }
