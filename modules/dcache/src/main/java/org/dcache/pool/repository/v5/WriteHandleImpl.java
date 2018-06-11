@@ -11,11 +11,13 @@ import java.nio.file.OpenOption;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -176,7 +178,23 @@ class WriteHandleImpl implements ReplicaDescriptor
             verifyFileSize(length);
             _fileAttributes.setSize(length);
 
-            registerFileAttributesInNameSpace();
+            boolean namespaceUpdated = false;
+            do {
+                /*
+                 * We may run into timeout if PnfsManager or network is down.
+                 * (NOTICE, that PnfsHandler converts NoRouteToCell into Timeout exception)
+                 * In such situations we should re-try the request. If timeout exception
+                 * is propagated, then file will be stored in error state, to recover it
+                 * during the next restart.
+                 */
+                try {
+                    registerFileAttributesInNameSpace();
+                    namespaceUpdated = true;
+                } catch (TimeoutCacheException e) {
+                    _log.warn("Failed to update namespace: {}. Retrying in 15 s", e.getMessage());
+                    TimeUnit.SECONDS.sleep(15);
+                }
+            } while (!namespaceUpdated);
 
             _entry.update(r -> {
                 r.setFileAttributes(_fileAttributes);
