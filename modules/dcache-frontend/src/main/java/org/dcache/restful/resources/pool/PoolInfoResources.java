@@ -488,11 +488,17 @@ public final class PoolInfoResources {
         try {
             poolStub.sendAndWait(new CellPath(pool),
                                  new PoolMoverKillMessage(pool, id,
-                                    "Killed by user."));
+                                                          "Killed by user."));
             transferInfoService.setCancelled(pool, id);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
-        } catch (InterruptedException | NoRouteToCellException | CacheException e) {
+        } catch (CacheException e) {
+            if (e.getRc() == CacheException.MOVER_NOT_FOUND) {
+                transferInfoService.setCancelled(pool, id);
+            } else {
+                throw new InternalServerErrorException(e);
+            }
+        } catch (InterruptedException | NoRouteToCellException e) {
             throw new InternalServerErrorException(e);
         }
 
