@@ -94,6 +94,7 @@ public class CacheExceptionFactory {
             case POOL_DISABLED:
             case NO_POOL_CONFIGURED:
             case NO_POOL_ONLINE:
+            case MOVER_NOT_FOUND:
             default:
                 return new CacheException(errorCode, message, cause);
         }

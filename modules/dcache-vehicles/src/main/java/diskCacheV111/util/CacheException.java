@@ -121,6 +121,9 @@ public class CacheException extends Exception
     /** Transfer between pool and remote site failed. */
     public static final int THIRD_PARTY_TRANSFER_FAILED = 10027;
 
+    /** Mover was not found **/
+    public static final int MOVER_NOT_FOUND = 10028;
+
     /**
      * default error code. <b>It's recommended to use more specific error
      * codes</b>
