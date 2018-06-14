@@ -120,7 +120,7 @@ public final class AlarmsResources {
     private AlarmsInfoService service;
 
 
-    @ApiOperation(value = "General information about alarms service.",
+    @ApiOperation(value = "General information about alarms service. Requires admin role.",
             hidden = true)
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -131,7 +131,7 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation("Provides a filtered list of log entries.")
+    @ApiOperation("Provides a filtered list of log entries. Requires admin role.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
@@ -191,7 +191,7 @@ public final class AlarmsResources {
 
     @PATCH
     @Path("logentries") // collection of all LogEntry.
-    @ApiOperation("Batch request to update or delete the indicated alarms.")
+    @ApiOperation("Batch request to update or delete the indicated alarms. Requires admin role.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
@@ -268,7 +268,7 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation(value = "Request for a single log entry.", hidden = true)
+    @ApiOperation(value = "Request for a single log entry. Requires admin role.", hidden = true)
     @Path("/logentries/{key}")
     @Produces(MediaType.APPLICATION_JSON)
     public LogEntry getLogEntry(@ApiParam("The log entry to provide.")
@@ -279,7 +279,7 @@ public final class AlarmsResources {
 
 
     @PATCH
-    @ApiOperation("Request to open or close the indicated log entry.")
+    @ApiOperation("Request to open or close the indicated log entry. Requires admin role.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
@@ -319,7 +319,7 @@ public final class AlarmsResources {
 
 
     @DELETE
-    @ApiOperation("Delete a specific log entry.")
+    @ApiOperation("Delete a specific log entry. Requires admin role.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
@@ -350,7 +350,7 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation("Request the current mapping of all alarm types to priorities.")
+    @ApiOperation("Request the current mapping of all alarm types to priorities. Requires admin role.")
     @ApiResponses({
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users.")
             })
@@ -367,7 +367,7 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation("Request the current mapping of an alarm type to its priority.")
+    @ApiOperation("Request the current mapping of an alarm type to its priority. Requires admin role.")
     @ApiResponses({
                 @ApiResponse(code = 403, message = "Alarm service only accessible to admin users.")
             })
@@ -385,7 +385,7 @@ public final class AlarmsResources {
 
 
     @PUT
-    @ApiOperation(value="Change the priority of the given alarm type.",
+    @ApiOperation(value="Change the priority of the given alarm type. Requires admin role.",
             hidden=true)
     @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -398,7 +398,7 @@ public final class AlarmsResources {
 
 
     @DELETE
-    @ApiOperation(value="Reset the priority of the given alarm to the default.",
+    @ApiOperation(value="Reset the priority of the given alarm to the default. Requires admin role.",
             hidden=true)
     @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
