@@ -54,9 +54,7 @@ public class RunSystem implements Runnable {
     }
 
     private void say(String str) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("[{}] ", _id, str);
-        }
+        _log.debug("[{}] {}", _id, str);
     }
 
     private void interruptReaders(){
