@@ -6,20 +6,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.Queue;
 
 import static java.lang.Math.max;
 
 public class Pinboard
 {
-    private static final DateTimeFormatter TIMESTAMP_FORMAT =
-            DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault());
-
-    private final Queue<PinEntry> _entries;
+    private final Queue<String> _entries;
 
     public Pinboard(int size)
     {
@@ -28,7 +21,7 @@ public class Pinboard
 
     public synchronized void pin(String note)
     {
-        _entries.add(new PinEntry(note));
+        _entries.add(note);
     }
 
     public synchronized void dump(StringBuilder sb)
@@ -52,24 +45,6 @@ public class Pinboard
     {
         try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
             _entries.stream().skip(max(0, _entries.size() - last)).forEach(pw::println);
-        }
-    }
-
-    private static class PinEntry
-    {
-        final String message;
-        final long timestamp;
-
-        public PinEntry(String message)
-        {
-            this.message = message;
-            this.timestamp = System.currentTimeMillis();
-        }
-
-        @Override
-        public String toString()
-        {
-            return TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(timestamp)) + ' ' + message;
         }
     }
 }
