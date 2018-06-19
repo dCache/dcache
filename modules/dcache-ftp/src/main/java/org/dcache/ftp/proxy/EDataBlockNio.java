@@ -81,6 +81,7 @@ public class EDataBlockNio {
     private ByteBuffer data;
 
     private String _myName = "unknown";
+    private final ByteBuffer _initial;
 
     public static final int EOR_DESCRIPTOR = 128;
 
@@ -96,8 +97,9 @@ public class EDataBlockNio {
 
     public static final int HEADER_LENGTH = 17;
 
-    public EDataBlockNio(String name) {
+    public EDataBlockNio(String name, ByteBuffer initial) {
         _myName = name;
+        _initial = initial;
     }
 
     public ByteBuffer getHeader() {
@@ -148,14 +150,32 @@ public class EDataBlockNio {
         return header.getLong(9);
     }
 
+    // Copy data from initial to target.  This behaves similarly to ByteBuffer#put
+    // except that no exception is thrown if initial.remaining() > target.remaining()
+    private static void prefill(ByteBuffer initial, ByteBuffer target)
+    {
+        if (initial.remaining() > 0) {
+            int count = Math.min(initial.remaining(), target.remaining());
+            LOGGER.debug("prefilling, initial data is {}", initial);
+            int oldLimit = initial.limit();
+            initial.limit(initial.position() + count);
+
+            target.put(initial);
+
+            initial.limit(oldLimit);
+            initial.compact().flip();
+            LOGGER.debug("after prefilling, initial data now {}", initial);
+        }
+    }
+
     public long readHeader(SocketChannel socketChannel) {
         LOGGER.debug("Reading header");
         if (header == null) {
             header = ByteBuffer.allocate(HEADER_LENGTH);
         }
-        int len = 0;
         header.clear();
-        header.position(0);
+        prefill(_initial, header);
+        int len = header.position();
 
         while (len < HEADER_LENGTH) {
             int n;
@@ -174,13 +194,10 @@ public class EDataBlockNio {
             len += n;
         }
 
-        if (len < HEADER_LENGTH) {
-            LOGGER.debug("Partial read of header: {} bytes read", len);
-            return -1;
-        }
+        LOGGER.debug("Finish reading header: {} bytes read from {}", len,
+                socketChannel.socket().getRemoteSocketAddress());
 
-        LOGGER.debug("Finish reading header: {} bytes read", len);
-        return len;
+        return len < HEADER_LENGTH ? -1 : HEADER_LENGTH;
     }
 
     public long readData(SocketChannel socketChannel, long size) {
@@ -191,10 +208,10 @@ public class EDataBlockNio {
         }
 
         data.clear();
-        data.position(0);
         data.limit((int) size);
+        prefill(_initial, data);
 
-        int n = 0;
+        int n = data.position();
         while (n < size) {
             int nr;
             try {
