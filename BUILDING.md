@@ -1,6 +1,10 @@
 Building dCache
 ===============
 
+To build dCache, you need Maven 3.1.1 or newer. Centos/Redhat 7 
+comes with version 3.0.5. See https://maven.apache.org/install.html 
+on how to install a newer version.
+
 dCache uses Maven as a build system and as a repository of Maven
 artifacts. A top level aggregator project allows all Maven modules to
 be build in one operation:
