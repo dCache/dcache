@@ -3,9 +3,10 @@ package org.dcache.pool.repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.EnumSet;
 
@@ -17,12 +18,12 @@ public class MetaDataCopyTool
         LoggerFactory.getLogger(MetaDataCopyTool.class);
 
     static ReplicaStore createStore(Class<? extends ReplicaStore> clazz,
-                                    FileStore fileStore, File poolDir, boolean readOnly)
+                                    FileStore fileStore, Path poolDir, boolean readOnly)
         throws NoSuchMethodException, InstantiationException,
                IllegalAccessException, InvocationTargetException
     {
         Constructor<? extends ReplicaStore> constructor =
-            clazz.getConstructor(FileStore.class, File.class, Boolean.TYPE);
+            clazz.getConstructor(FileStore.class, Path.class, Boolean.TYPE);
         return constructor.newInstance(fileStore, poolDir, readOnly);
     }
 
@@ -37,7 +38,7 @@ public class MetaDataCopyTool
             System.exit(1);
         }
 
-        File poolDir = new File(args[0]);
+        Path poolDir = FileSystems.getDefault().getPath(args[0]);
         FileStore fromFileStore = new DummyFileStore(DummyFileStore.Mode.ALL_EXIST);
         FileStore toFileStore = new DummyFileStore(DummyFileStore.Mode.NONE_EXIST);
         try (ReplicaStore fromStore =
