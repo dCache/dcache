@@ -281,8 +281,8 @@ poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
            "The pool meta data database of '$name' was converted from
             type $src to type $3. Note that to use the new meta data
             store, the pool configuration must be updated by adjusting
-            the metaDataRepository property, eg, in the layout file:" \
-           "metaDataRepository=$3"
+            the pool.plugins.meta property, eg, in the layout file:" \
+           "pool.plugins.meta=$3"
 
     exit 0
 }
