@@ -7,7 +7,7 @@ on how to install a newer version.
 
 dCache uses Maven as a build system and as a repository of Maven
 artifacts. A top level aggregator project allows all Maven modules to
-be build in one operation:
+be built in one operation:
 
     mvn package
 
@@ -114,7 +114,7 @@ manager or pin manager. The embedded database is single process, and thus the
 console can only be started if dCache is not running.
 
 
-Multible versions of dCache can be tested for compatibility by installing
+Multiple versions of dCache can be tested for compatibility by installing
 older versions using
 
     packages/system-test/target/bin/ctlcluster install VERSION
