@@ -18,33 +18,36 @@ public class MetaDataCopyTool
         LoggerFactory.getLogger(MetaDataCopyTool.class);
 
     static ReplicaStore createStore(Class<? extends ReplicaStore> clazz,
-                                    FileStore fileStore, Path poolDir, boolean readOnly)
+                                    FileStore fileStore, Path poolDir,
+                                    String poolName, boolean readOnly)
         throws NoSuchMethodException, InstantiationException,
                IllegalAccessException, InvocationTargetException
     {
         Constructor<? extends ReplicaStore> constructor =
-            clazz.getConstructor(FileStore.class, Path.class, Boolean.TYPE);
-        return constructor.newInstance(fileStore, poolDir, readOnly);
+            clazz.getConstructor(FileStore.class, Path.class, String.class, Boolean.TYPE);
+        return constructor.newInstance(fileStore, poolDir, poolName, readOnly);
     }
 
     public static void main(String[] args)
         throws Exception
     {
-        if (args.length != 3) {
-            System.err.println("Synopsis: MetaDataCopyTool DIR FROM TO");
+        if (args.length != 4) {
+            System.err.println("Synopsis: MetaDataCopyTool DIR NAME FROM TO");
             System.err.println();
-            System.err.println("Where DIR is the pool directory, and FROM and TO are");
-            System.err.println("meta data store class names.");
+            System.err.println("Where DIR is the pool directory, NAME is the ");
+            System.err.println("pool name, and FROM and TO are meta data store");
+            System.err.println("class names.");
             System.exit(1);
         }
 
         Path poolDir = FileSystems.getDefault().getPath(args[0]);
+        String poolName = args[1];
         FileStore fromFileStore = new DummyFileStore(DummyFileStore.Mode.ALL_EXIST);
         FileStore toFileStore = new DummyFileStore(DummyFileStore.Mode.NONE_EXIST);
         try (ReplicaStore fromStore =
-                     createStore(Class.forName(args[1]).asSubclass(ReplicaStore.class), fromFileStore, poolDir, true);
+                     createStore(Class.forName(args[2]).asSubclass(ReplicaStore.class), fromFileStore, poolDir, poolName, true);
              ReplicaStore toStore =
-                     createStore(Class.forName(args[2]).asSubclass(ReplicaStore.class), toFileStore, poolDir, false)) {
+                     createStore(Class.forName(args[3]).asSubclass(ReplicaStore.class), toFileStore, poolDir, poolName, false)) {
             fromStore.init();
             toStore.init();
 
