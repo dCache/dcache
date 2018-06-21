@@ -1253,6 +1253,9 @@ public class Transfer implements Comparable<Transfer>
 
     public ListenableFuture<Void> selectPoolAndStartMoverAsync(TransferRetryPolicy policy)
     {
+        checkNotNull(_poolStub, "Pool stub must be set");
+        checkNotNull(_poolManager, "PoolManager stub must be set");
+
         long deadLine = addWithInfinity(System.currentTimeMillis(), policy.getTotalTimeOut());
 
         AsyncFunction<Void, Void> selectPool =
