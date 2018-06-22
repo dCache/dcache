@@ -975,7 +975,7 @@ public abstract class AbstractFtpDoorV1
             setCheckStagePermission(_checkStagePermission);
             setOverwriteAllowed(_settings.isOverwrite());
             setPoolManagerStub(_poolManagerStub);
-            setPoolStub(_poolStub);
+            setPoolStub(AbstractFtpDoorV1.this._poolStub);
             setBillingStub(_billingStub);
             setAllocation(_allo);
             setIoQueue(_settings.getIoQueueName());
