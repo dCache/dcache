@@ -670,6 +670,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         _log.debug("Releasing layout by stateid: {}, open-state: {}", stateid,
                 openState.stateid());
 
+        getLayoutDriver(layoutType).acceptLayoutReturnData(body);
+
         NfsTransfer transfer = _ioMessages.get(openState.stateid());
         if (transfer != null) {
             transfer.shutdownMover();
