@@ -3,6 +3,7 @@ package org.dcache.gplazma.strategies;
 import java.security.Principal;
 import java.util.Set;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
@@ -16,6 +17,7 @@ public interface AuthenticationStrategy
 
     void authenticate(LoginMonitor monitor, Set<Object> publicCredential,
                       Set<Object> privateCredential,
-                      Set<Principal> identifiedPrincipals)
+                      Set<Principal> identifiedPrincipals,
+                      Set<Restriction> restrictionStore)
                 throws AuthenticationException;
 }

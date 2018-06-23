@@ -10,6 +10,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
@@ -127,8 +128,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     @Test
@@ -141,8 +143,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     @Test(expected=AuthenticationException.class)
@@ -155,8 +158,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     @Test
@@ -169,8 +173,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     @Test
@@ -183,8 +188,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     @Test
@@ -197,8 +203,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     @Test
@@ -211,8 +218,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     /**
@@ -229,8 +237,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     /**
@@ -248,8 +257,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     /**
@@ -268,8 +278,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     /**
@@ -288,8 +299,9 @@ public class AuthenticationStrategyTests
         Set<Object> publicCredential = Sets.newHashSet();
         Set<Object> privateCredential = Sets.newHashSet();
         Set<Principal> identifiedPrincipals = Sets.newHashSet();
+        Set<Restriction> restrictions = Sets.newHashSet();
         strategy.authenticate(IGNORING_LOGIN_MONITOR, publicCredential,
-                privateCredential, identifiedPrincipals);
+                privateCredential, identifiedPrincipals, restrictions);
     }
 
     private static final class DoNotingStrategy

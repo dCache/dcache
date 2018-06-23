@@ -7,6 +7,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
@@ -49,7 +50,8 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
     public void authenticate(final LoginMonitor monitor,
             final Set<Object> publicCredential,
             final Set<Object> privateCredential,
-            final Set<Principal> identifiedPrincipals)
+            final Set<Principal> identifiedPrincipals,
+            final Set<Restriction> restrictionStore)
             throws AuthenticationException
     {
         pamStyleAuthentiationStrategy.callPlugins(service -> {
@@ -62,8 +64,8 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
             Result result = Result.FAIL;
             String error = null;
             try {
-                plugin.authenticate(publicCredential,
-                        privateCredential, identifiedPrincipals);
+                plugin.authenticate(publicCredential, privateCredential,
+                        identifiedPrincipals, restrictionStore);
                 result = Result.SUCCESS;
             } catch(AuthenticationException e) {
                 error = e.getMessage();

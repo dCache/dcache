@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.util.NDC;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
@@ -54,6 +55,7 @@ import org.dcache.gplazma.strategies.SessionStrategy;
 import org.dcache.gplazma.strategies.StrategyFactory;
 import org.dcache.gplazma.validation.ValidationStrategy;
 import org.dcache.gplazma.validation.ValidationStrategyFactory;
+import org.dcache.util.AppendOnlySet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.instanceOf;
@@ -262,10 +264,12 @@ public class GPlazma
         }
 
         Set<Principal> principals = new HashSet<>();
-        setup.doAuthPhase(monitor, subject, principals);
+        Set<Restriction> restrictions = new HashSet<>();
+        setup.doAuthPhase(monitor, subject, principals, new AppendOnlySet(restrictions));
         setup.doMapPhase(monitor, principals);
         setup.doAccountPhase(monitor, principals);
         Set<Object> attributes = setup.doSessionPhase(monitor, principals);
+        attributes.addAll(restrictions);
         removeIf(principals, p -> !isPublic(p));
 
         return buildReply(monitor, subject, principals, attributes);
@@ -538,8 +542,8 @@ public class GPlazma
             manager.stopAsync().awaitStopped();
         }
 
-        void doAuthPhase(LoginMonitor monitor, Subject subject, Set<Principal> principals)
-                throws AuthenticationException
+        void doAuthPhase(LoginMonitor monitor, Subject subject, Set<Principal> principals,
+                Set<Restriction> restrictionStore) throws AuthenticationException
         {
             Set<Object> publicCredentials = subject.getPublicCredentials();
             Set<Object> privateCredentials = subject.getPrivateCredentials();
@@ -550,7 +554,8 @@ public class GPlazma
             Result result = Result.FAIL;
             try {
                 monitor.authBegins(publicCredentials, privateCredentials, principals);
-                authStrategy.authenticate(monitor, publicCredentials, privateCredentials, principals);
+                authStrategy.authenticate(monitor, publicCredentials, privateCredentials,
+                        principals, restrictionStore);
                 result = Result.SUCCESS;
             } finally {
                 NDC.pop();
