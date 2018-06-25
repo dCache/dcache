@@ -189,6 +189,13 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         json.put("macaroon", macaroon).put("uri", uris);
         uris.put("target", request.getRequestURL());
         String withMacaroon = "?" + AuthenticationHandler.BEARER_TOKEN_QUERY_KEY + "=" + macaroon;
+
+        /*
+         * NB. The value of "targetWithMacaroon" is used in the
+         * 'get-share-link' script here:
+         *
+         *     https://github.com/onnozweers/dcache-scripts/
+         */
         uris.put("targetWithMacaroon", request.getRequestURL() + withMacaroon);
         URI req = URI.create(new String(request.getRequestURL()));
 
