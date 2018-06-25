@@ -77,7 +77,7 @@ public class PoolDeviceMap {
                 _deviceMap.remove(ds.getDeviceId());
             }
             deviceid4 deviceid = deviceidOf(_nextDeviceID++);
-            ds = new PoolDS(deviceid, poolAddress, verifier);
+            ds = new PoolDS(name, deviceid, poolAddress, verifier);
             _poolNameToIpMap.put(name, ds);
             _deviceMap.put(ds.getDeviceId(), ds);
             return ds;

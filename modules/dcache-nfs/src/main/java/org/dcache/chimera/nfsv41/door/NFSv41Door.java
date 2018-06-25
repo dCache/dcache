@@ -844,9 +844,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         public String call() throws IOException {
             return _poolDeviceMap.getEntries()
                     .stream()
-                    .filter(d -> pool == null ? true : d.getKey().equals(pool))
-                    .map(d -> String.format("    %s : [%s]\n", d.getKey(), d.getValue()))
-                    .collect(Collectors.joining());
+                    .map(Map.Entry::getValue)
+                    .filter(p -> pool == null ? true : p.getName().equals(pool))
+                    .map(Object::toString)
+                    .collect(Collectors.joining("\n"));
         }
     }
 
@@ -897,11 +898,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     static class PoolDS {
 
+        private final String _name;
         private final deviceid4 _deviceId;
         private final InetSocketAddress[] _socketAddress;
         private final long _verifier;
 
-        public PoolDS(deviceid4 deviceId, InetSocketAddress[] ip, long verifier) {
+        public PoolDS(String name, deviceid4 deviceId, InetSocketAddress[] ip, long verifier) {
+            _name = name;
             _deviceId = deviceId;
             _socketAddress = ip;
             _verifier = verifier;
@@ -919,10 +922,14 @@ public class NFSv41Door extends AbstractCellComponent implements
             return _verifier;
         }
 
+        public String getName() {
+            return _name;
+        }
+
         @Override
         public String toString() {
-            return String.format("DS: %s, InetAddress: %s",
-                    _deviceId, Arrays.toString(_socketAddress));
+            return String.format("%s: DS: %s, InetAddress: %s",
+                    _name, _deviceId, Arrays.toString(_socketAddress));
         }
     }
 
