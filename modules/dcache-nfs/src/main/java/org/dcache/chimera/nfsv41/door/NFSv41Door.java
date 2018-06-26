@@ -88,6 +88,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.FsExport;
+import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
@@ -123,6 +124,10 @@ import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.LayoutDriver;
 import org.dcache.nfs.v4.NfsV41FileLayoutDriver;
 import org.dcache.nfs.v4.xdr.length4;
+import org.dcache.nfs.v4.ff.ff_ioerr4;
+import org.dcache.nfs.v4.ff.ff_layoutreturn4;
+import org.dcache.nfs.v4.xdr.device_error4;
+import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.offset4;
 import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.vfs.Inode;
@@ -373,7 +378,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         // Supported layout drivers
         _supportedDrivers = new EnumMap<>(layouttype4.class);
         _supportedDrivers.put(layouttype4.LAYOUT4_FLEX_FILES,
-                new FlexFileLayoutDriver(4, 1, new utf8str_mixed("17"), new utf8str_mixed("17"), lr -> {}));
+                new FlexFileLayoutDriver(4, 1, new utf8str_mixed("17"), new utf8str_mixed("17"), this::logLayoutErrors));
         _supportedDrivers.put(layouttype4.LAYOUT4_NFSV4_1_FILES, new NfsV41FileLayoutDriver());
 
         _rpcService = oncRpcSvcBuilder.build();
@@ -650,6 +655,15 @@ public class NFSv41Door extends AbstractCellComponent implements
         return Lists.newArrayList(_poolDeviceMap.getDeviceIds());
     }
 
+    private void logLayoutErrors(ff_layoutreturn4 lr) {
+        for (ff_ioerr4 ioerr : lr.fflr_ioerr_report) {
+            for (device_error4 de : ioerr.ffie_errors) {
+                PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
+                String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
+                _log.error("Client reports error {} on {} for op {}", nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
+            }
+        }
+    }
 
     /*
      * (non-Javadoc)
