@@ -396,6 +396,7 @@ public class FileOperationMap extends RunnableModule {
                                         .map(poolInfoMap::getPool)
                                         .collect(Collectors.toSet());
                         completionHandler.taskAborted(operation.getPnfsId(),
+                                                      pool,
                                                       poolInfoMap.getUnit(operation.getStorageUnit()),
                                                       tried,
                                                       operation.getRetried(),
