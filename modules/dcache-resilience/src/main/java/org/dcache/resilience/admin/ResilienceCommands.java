@@ -85,10 +85,13 @@ import java.util.regex.Pattern;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
+import org.dcache.resilience.data.FileCancelFilter;
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileOperationMap;
@@ -607,7 +610,7 @@ public final class ResilienceCommands implements CellCommandListener {
                 return "Please provide a non-empty string value for state.";
             }
 
-            FileFilter filter = new FileFilter();
+            FileFilter filter = new FileCancelFilter();
 
             if (!"*".equals(pnfsids)) {
                 filter.setLastUpdateBefore(getTimestamp(lastUpdateBefore));

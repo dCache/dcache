@@ -74,6 +74,7 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.SerializablePoolMonitor;
+import org.dcache.resilience.data.FileCancelFilter;
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.PoolFilter;
@@ -290,14 +291,14 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         PoolFilter poolFilter = new PoolFilter();
         poolFilter.setPools(pool);
         poolOperationMap.cancel(poolFilter);
-        FileFilter fileFilter = new FileFilter();
+        FileFilter fileFilter = new FileCancelFilter();
         fileFilter.setParent(pool);
         fileFilter.setForceRemoval(true);
         fileOperationMap.cancel(fileFilter);
-        fileFilter = new FileFilter();
+        fileFilter = new FileCancelFilter();
         fileFilter.setSource(pool);
         fileOperationMap.cancel(fileFilter);
-        fileFilter = new FileFilter();
+        fileFilter = new FileCancelFilter();
         fileFilter.setTarget(pool);
         fileOperationMap.cancel(fileFilter);
     }
