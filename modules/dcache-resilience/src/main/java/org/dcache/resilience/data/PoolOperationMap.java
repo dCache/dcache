@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
@@ -79,6 +80,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.resilience.data.PoolOperation.NextAction;
@@ -293,21 +295,22 @@ public class PoolOperationMap extends RunnableModule {
      */
     public String list(PoolMatcher filter) {
         StringBuilder builder = new StringBuilder();
-        Map<String, PoolOperation> tmp = new LinkedHashMap<>();
-
+        TreeMap<String, PoolOperation>[] tmp =  new TreeMap[]{new TreeMap(),
+                                                              new TreeMap<>(),
+                                                              new TreeMap<>()};
         lock.lock();
 
         try {
             if (filter.matchesRunning()) {
-                tmp.putAll(running);
+                tmp[0].putAll(running);
             }
 
             if (filter.matchesWaiting()) {
-                tmp.putAll(waiting);
+                tmp[1].putAll(waiting);
             }
 
             if (filter.matchesIdle()) {
-                tmp.putAll(idle);
+                tmp[2].putAll(idle);
             }
         } finally {
             lock.unlock();
@@ -315,12 +318,14 @@ public class PoolOperationMap extends RunnableModule {
 
         int total = 0;
 
-        for (Entry<String, PoolOperation> entry : tmp.entrySet()) {
-            String pool = entry.getKey();
-            PoolOperation op = entry.getValue();
-            if (filter.matches(pool, op)) {
-                builder.append(pool).append("\t").append(op).append("\n");
-                ++total;
+        for (TreeMap<String, PoolOperation> map: tmp) {
+            for (Entry<String, PoolOperation> entry: map.entrySet()) {
+                String key = entry.getKey();
+                PoolOperation op = entry.getValue();
+                if (filter.matches(key, op)) {
+                    builder.append(key).append("\t").append(op).append("\n");
+                    ++total;
+                }
             }
         }
 
