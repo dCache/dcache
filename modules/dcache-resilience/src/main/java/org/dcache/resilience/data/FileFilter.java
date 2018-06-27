@@ -67,7 +67,7 @@ import java.util.Set;
 /**
  * <p>Simple implementation of matcher.</p>
  */
-public final class FileFilter implements FileMatcher {
+public class FileFilter implements FileMatcher {
     private Set<String> state;
     private Set<String> pnfsids;
     private String      retentionPolicy;
@@ -80,9 +80,9 @@ public final class FileFilter implements FileMatcher {
     private Integer     opCount;
     private boolean     forceRemoval = false;
 
-    private static boolean matchesPool(String toMatch,
-                                       Integer operationValue,
-                                       PoolInfoMap map) {
+    protected boolean matchesPool(String toMatch,
+                                  Integer operationValue,
+                                  PoolInfoMap map) {
         if (toMatch == null) {
             return true;
         }
@@ -91,12 +91,11 @@ public final class FileFilter implements FileMatcher {
             return operationValue == null;
         }
 
-        Integer filterValue = map.getPoolIndex(toMatch);
-        if (filterValue == null) {
+        if (!map.hasPool(toMatch)) {
             return false;
         }
 
-        return filterValue.equals(operationValue);
+        return map.getPoolIndex(toMatch).equals(operationValue);
     }
 
     @Override
@@ -109,6 +108,7 @@ public final class FileFilter implements FileMatcher {
         return pnfsids == null ? false : pnfsids.size() == 1;
     }
 
+    @Override
     public boolean isUndefined() {
         return (null == pnfsids || pnfsids.isEmpty()) &&
                         null == state &&

@@ -607,7 +607,7 @@ public class PoolOperationMap extends RunnableModule {
                  *  the second operation will complete successfully.
                  */
                 operation.task.cancel(null);
-                FileFilter fileFilter = new FileFilter();
+                FileFilter fileFilter = new FileCancelFilter();
                 fileFilter.setForceRemoval(true);
                 fileFilter.setParent(update.pool);
                 fileOperationMap.cancel(fileFilter);
