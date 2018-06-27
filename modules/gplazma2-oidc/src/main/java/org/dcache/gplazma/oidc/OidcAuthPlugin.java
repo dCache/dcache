@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Base64;
@@ -37,16 +38,18 @@ import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.toMap;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 {
     private final static Logger LOG = LoggerFactory.getLogger(OidcAuthPlugin.class);
     private final static String OIDC_HOSTNAMES = "gplazma.oidc.hostnames";
+    private final static String OIDC_PROVIDER_PREFIX = "gplazma.oidc.provider!";
 
-    private final LoadingCache<String, JsonNode> cache;
+    private final Map<URI,IdentityProvider> providersByIssuer;
+    private final LoadingCache<IdentityProvider, JsonNode> cache;
     private final Random random = new Random();
-    private Set<String> discoveryDocs;
     private JsonHttpClient jsonHttpClient;
 
     public OidcAuthPlugin(Properties properties)
@@ -61,10 +64,21 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     }
 
     @VisibleForTesting
-    OidcAuthPlugin(Properties properties, JsonHttpClient client, LoadingCache<String, JsonNode> cache)
+    OidcAuthPlugin(Properties properties, JsonHttpClient client, LoadingCache<IdentityProvider, JsonNode> cache)
+    {
+        Set<IdentityProvider> providers = new HashSet<>();
+        providers.addAll(buildHosts(properties));
+        providers.addAll(buildProviders(properties));
+        checkArgument(!providers.isEmpty(), "No OIDC providers configured");
+
+        providersByIssuer = providers.stream().collect(toMap(IdentityProvider::getIssuerEndpoint, p -> p));
+        jsonHttpClient = client;
+        this.cache = cache;
+    }
+
+    private static Set<IdentityProvider> buildHosts(Properties properties)
     {
         String oidcHostnamesProperty = properties.getProperty(OIDC_HOSTNAMES);
-
         checkArgument(oidcHostnamesProperty != null, OIDC_HOSTNAMES + " not defined");
 
         Map<Boolean, Set<String>> validHosts = Arrays.stream(oidcHostnamesProperty.split("\\s+"))
@@ -74,35 +88,48 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                                                                      Collectors.toSet())
                                                              );
 
-        checkArgument(!validHosts.containsKey(Boolean.FALSE),
-                String.format("Invalid hosts in %s: %s", OIDC_HOSTNAMES,
-                        Joiner.on(", ").join(nullToEmpty(validHosts.get(Boolean.FALSE)))));
+        Set<String> badHosts = validHosts.get(Boolean.FALSE);
+        checkArgument(badHosts == null, "Invalid hosts in %s: %s",
+                OIDC_HOSTNAMES, Joiner.on(", ").join(nullToEmpty(badHosts)));
 
-        checkArgument(validHosts.containsKey(Boolean.TRUE),
-                String.format("No hosts specified in %s", OIDC_HOSTNAMES));
-
-        this.discoveryDocs = validHosts.get(Boolean.TRUE);
-        this.jsonHttpClient = client;
-        this.cache = cache;
+        Set<String> goodHosts = validHosts.get(Boolean.TRUE);
+        return goodHosts == null
+                ? Collections.emptySet()
+                : goodHosts.stream()
+                        .map(h -> new IdentityProvider(h, "https://" + h + "/"))
+                        .collect(Collectors.toSet());
     }
 
-    private static LoadingCache<String, JsonNode> createLoadingCache(final JsonHttpClient client)
+    private static Set<IdentityProvider> buildProviders(Properties properties)
+    {
+        return properties.stringPropertyNames().stream()
+                .filter(n -> n.startsWith(OIDC_PROVIDER_PREFIX))
+                .map(n -> {
+                            try {
+                                return new IdentityProvider(n.substring(OIDC_PROVIDER_PREFIX.length()), properties.getProperty(n));
+                            } catch (IllegalArgumentException e) {
+                                throw new IllegalArgumentException("Bad OIDC provider " + n + ": " + e.getMessage());
+                            }
+                        })
+                .collect(Collectors.toSet());
+    }
+
+    private static LoadingCache<IdentityProvider, JsonNode> createLoadingCache(final JsonHttpClient client)
     {
         return CacheBuilder.newBuilder()
                            .maximumSize(100)
                            .expireAfterAccess(1, TimeUnit.HOURS)
                            .build(
-                                   new CacheLoader<String, JsonNode>() {
+                                   new CacheLoader<IdentityProvider, JsonNode>() {
                                        @Override
-                                       public JsonNode load(String hostname) throws OidcException, IOException
+                                       public JsonNode load(IdentityProvider provider) throws OidcException, IOException
                                        {
-                                           JsonNode discoveryDoc = client.doGet("https://" +
-                                                   hostname +
-                                                   "/.well-known/openid-configuration");
+                                           URI configuration = provider.getConfigurationEndpoint();
+                                           JsonNode discoveryDoc = client.doGet(configuration);
                                            if (discoveryDoc != null && discoveryDoc.has("userinfo_endpoint")) {
                                                return discoveryDoc;
                                            } else {
-                                               throw new OidcException(hostname,
+                                               throw new OidcException(provider.getName(),
                                                        "Discovery Document at " + discoveryDoc +
                                                                " does not contain userinfo endpoint url");
                                            }
@@ -127,19 +154,19 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
         for (Object credential : privateCredentials) {
             if (credential instanceof BearerTokenCredential) {
-                BearerTokenCredential token = (BearerTokenCredential) credential;
+                String token = ((BearerTokenCredential) credential).getToken();
                 foundBearerToken = true;
-                for (String host : discoveryDocs) {
+                for (IdentityProvider ip : identityProviders(token)) {
                     try {
-                        identifiedPrincipals.addAll(
-                                validateBearerTokenWithOpenIdProvider(token,
-                                        extractUserInfoEndPoint(cache.get(host)),
-                                        host));
+                        JsonNode discoveryDoc = cache.get(ip);
+                        String userInfoEndPoint = extractUserInfoEndPoint(discoveryDoc);
+                        Set<Principal> found = validateBearerTokenWithOpenIdProvider(token, userInfoEndPoint, ip.getName());
+                        identifiedPrincipals.addAll(found);
                         return;
                     } catch (OidcException oe) {
                         failures.add(oe.getMessage());
                     } catch (ExecutionException e) {
-                        failures.add("(\"" + host + "\", " + e.getMessage() + ")");
+                        failures.add("(\"" + ip.getName() + "\", " + e.getMessage() + ")");
                     }
                 }
             }
@@ -156,11 +183,18 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         }
     }
 
-    private Set<Principal> validateBearerTokenWithOpenIdProvider
-            (BearerTokenCredential credential, String infoUrl, String host) throws OidcException
+    private Collection<IdentityProvider> identityProviders(String token)
+    {
+        // REVISIT if the token is a JWT then it may be parsed and the issuer discovered.
+        // otherwise, return them all.
+        return providersByIssuer.values();
+    }
+
+    private Set<Principal> validateBearerTokenWithOpenIdProvider(String token,
+            String infoUrl, String name) throws OidcException
     {
         try {
-            JsonNode userInfo = getUserInfo(infoUrl, credential.getToken());
+            JsonNode userInfo = getUserInfo(infoUrl, token);
             if (userInfo != null && userInfo.has("sub")) {
                 LOG.debug("UserInfo from OpenId Provider: {}", userInfo);
                 Set<Principal> principals = new HashSet<>();
@@ -170,14 +204,14 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 addGroups(userInfo, principals);
                 return principals;
             } else {
-                throw new OidcException(host, "No OpendId \"sub\"");
+                throw new OidcException(name, "No OpendId \"sub\"");
             }
         } catch (IllegalArgumentException iae) {
-            throw new OidcException(host, "Error parsing UserInfo: " + iae.getMessage());
+            throw new OidcException(name, "Error parsing UserInfo: " + iae.getMessage());
         } catch (AuthenticationException e) {
-            throw new OidcException(host, e.getMessage());
+            throw new OidcException(name, e.getMessage());
         } catch (IOException e) {
-            throw new OidcException(host, "Failed to fetch UserInfo: " + e.getMessage());
+            throw new OidcException(name, "Failed to fetch UserInfo: " + e.getMessage());
         }
     }
 
@@ -237,7 +271,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         }
     }
 
-    private <T> Collection<T> nullToEmpty(final Collection<T> collection)
+    private static <T> Collection<T> nullToEmpty(final Collection<T> collection)
     {
         return collection == null ? Collections.emptySet() : collection;
     }

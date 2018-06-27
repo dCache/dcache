@@ -13,6 +13,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
 
 public class JsonHttpClient {
     private HttpClient httpclient;
@@ -33,9 +34,9 @@ public class JsonHttpClient {
         return json;
     }
 
-    public JsonNode doGet(String url) throws IOException
+    public JsonNode doGet(URI url) throws IOException
     {
-        return this.doGet(url, null);
+        return this.doGet(url.toASCIIString(), null);
     }
 
     public JsonNode doGet(String url, Header header) throws IOException
