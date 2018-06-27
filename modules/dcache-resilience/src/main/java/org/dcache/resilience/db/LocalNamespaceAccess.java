@@ -69,7 +69,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -301,7 +303,10 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                 throw new InterruptedException();
             }
 
+            LOGGER.info("executing {}.", statement);
             resultSet = statement.executeQuery();
+
+            LOGGER.info("starting check of pnfsids for {}.", location);
 
             while (resultSet.next()) {
                 if (Thread.interrupted()) {
@@ -310,14 +315,25 @@ public class LocalNamespaceAccess implements NamespaceAccess {
 
                 PnfsId pnfsId = new PnfsId(resultSet.getString(1));
                 try {
-                    if (getRequiredAttributes(pnfsId).getLocations().stream()
-                                    .map(poolInfoMap::getPoolIndex)
-                                    .filter((i) -> poolInfoMap.isPoolViable(i, false))
-                                    .collect(Collectors.toList()).isEmpty()) {
+                    FileAttributes attributes = getRequiredAttributes(pnfsId);
+                    Collection<String> locations = attributes.getLocations();
+                    for (Iterator<String> i = locations.iterator(); i.hasNext();) {
+                        String pool = i.next();
+                        try {
+                            int index = poolInfoMap.getPoolIndex(pool);
+                            if (!poolInfoMap.isPoolViable(index, false)) {
+                                i.remove();
+                            }
+                        } catch (NoSuchElementException e) {
+                            i.remove();
+                        }
+                    }
+                    if (locations.isEmpty()) {
                         writer.println(pnfsId);
+                        LOGGER.info("orphaned: {}.", pnfsId);
                     }
                 } catch (CacheException e) {
-                    LOGGER.debug("{}: {}", pnfsId, new ExceptionMessage(e));
+                    LOGGER.info("{}: {}", pnfsId, new ExceptionMessage(e));
                 }
             }
         } finally {

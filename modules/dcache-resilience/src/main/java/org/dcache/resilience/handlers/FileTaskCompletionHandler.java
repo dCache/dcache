@@ -82,7 +82,8 @@ import org.dcache.resilience.util.ExceptionMessage;
  */
 public final class FileTaskCompletionHandler implements TaskCompletionHandler {
     static final String ABORT_REPLICATION_LOG_MESSAGE
-                    = "Storage unit {}: aborted replication for {}; pools tried: {}; {}";
+                    = "Storage unit {}: aborted replication for {}; "
+                    + "referring pool {}; pools tried: {}; {}";
 
     static final String ABORT_REPLICATION_ALARM_MESSAGE
                     = "There are files in storage unit {} for which replication "
@@ -112,6 +113,7 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
     }
 
     public void taskAborted(PnfsId pnfsId,
+                            String pool,
                             String storageUnit,
                             Set<String> triedSources,
                             int retried,
@@ -144,7 +146,8 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
          *  Full info on the file is logged to the ".resilience" log.
          */
         ABORTED_LOGGER.error(ABORT_REPLICATION_LOG_MESSAGE, storageUnit, pnfsId,
-                     triedSources, new ExceptionMessage(e));
+                             pool == null ? "none" : pool, triedSources,
+                             new ExceptionMessage(e));
     }
 
     @Override
