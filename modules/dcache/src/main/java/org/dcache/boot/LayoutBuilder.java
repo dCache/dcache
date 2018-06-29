@@ -14,8 +14,11 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 import org.dcache.util.Version;
+import org.dcache.util.configuration.ProblemConsumer;
+import org.dcache.util.configuration.UniversalUsageChecker;
+import org.dcache.util.configuration.UsageChecker;
 
 import static java.util.stream.Collectors.joining;
 import static org.dcache.boot.Properties.*;
@@ -24,10 +27,9 @@ public class LayoutBuilder
 {
     private final Set<File> _sourceFiles = Sets.newHashSet();
     private final Set<File> _sourceDirectories = Sets.newHashSet();
-    private ConfigurationProperties.ProblemConsumer problemConsumer =
-            new SilentProblemConsumer();
+    private ProblemConsumer problemConsumer = new SilentProblemConsumer();
 
-    public LayoutBuilder setProblemConsumer(ConfigurationProperties.ProblemConsumer problemConsumer)
+    public LayoutBuilder setProblemConsumer(ProblemConsumer problemConsumer)
     {
         this.problemConsumer = problemConsumer;
         return this;
@@ -56,7 +58,7 @@ public class LayoutBuilder
     }
 
     private ConfigurationProperties loadConfigurationFromPath(
-            ConfigurationProperties defaults, File path, ConfigurationProperties.UsageChecker usageChecker)
+            ConfigurationProperties defaults, File path, UsageChecker usageChecker)
             throws IOException
     {
         ConfigurationProperties config = new ConfigurationProperties(defaults, usageChecker);
@@ -86,7 +88,7 @@ public class LayoutBuilder
     }
 
     private ConfigurationProperties loadConfigurationByProperty(
-            ConfigurationProperties defaults, String property, ConfigurationProperties.UsageChecker usageChecker)
+            ConfigurationProperties defaults, String property, UsageChecker usageChecker)
             throws IOException
     {
         ConfigurationProperties config = defaults;
@@ -115,7 +117,7 @@ public class LayoutBuilder
         if (files != null) {
             for (File file: files) {
                 if (file.isDirectory()) {
-                    config = loadConfigurationFromPath(config, file, new ConfigurationProperties.UniversalUsageChecker());
+                    config = loadConfigurationFromPath(config, file, new UniversalUsageChecker());
                 }
             }
         }
@@ -133,7 +135,7 @@ public class LayoutBuilder
         config.setProblemConsumer(problemConsumer);
 
         /* ... and a chain of properties files. */
-        config = loadConfigurationByProperty(config, PROPERTY_DEFAULTS_PATH, new ConfigurationProperties.UniversalUsageChecker());
+        config = loadConfigurationByProperty(config, PROPERTY_DEFAULTS_PATH, new UniversalUsageChecker());
         for (String dir: getPluginDirs()) {
             config = loadPlugins(config, new File(dir));
         }
@@ -185,14 +187,14 @@ public class LayoutBuilder
     {
         ConfigurationProperties config = loadSystemProperties();
         config.setProblemConsumer(new SilentProblemConsumer());
-        config = loadConfigurationByProperty(config, PROPERTY_DEFAULTS_PATH, new ConfigurationProperties.UniversalUsageChecker());
+        config = loadConfigurationByProperty(config, PROPERTY_DEFAULTS_PATH, new UniversalUsageChecker());
         config = loadConfigurationByProperty(config, PROPERTY_SETUP_PATH, new DcacheConfigurationUsageChecker());
         config = loadLayout(config).properties();
         String dir = config.getValue(PROPERTY_PLUGIN_PATH);
         return (dir == null) ? new String[0] : dir.split(PATH_DELIMITER);
     }
 
-    private static class SilentProblemConsumer implements ConfigurationProperties.ProblemConsumer
+    private static class SilentProblemConsumer implements ProblemConsumer
     {
         @Override
         public void setFilename(String name)

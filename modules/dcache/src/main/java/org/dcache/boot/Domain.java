@@ -35,7 +35,7 @@ import dmg.cells.nucleus.SystemCell;
 import dmg.util.CommandException;
 
 import org.dcache.util.Args;
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 import org.dcache.util.Exceptions;
 
 import static org.dcache.boot.Properties.*;

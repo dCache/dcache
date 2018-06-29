@@ -1,15 +1,12 @@
-package org.dcache.util;
+package org.dcache.util.configuration;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -17,9 +14,7 @@ import java.io.InputStream;
 import java.io.LineNumberReader;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -28,14 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import dmg.util.Formats;
 import dmg.util.PropertiesBackedReplaceable;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -107,9 +100,6 @@ public class ConfigurationProperties
         EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
 
     private static final Pattern MATCH_COMMAS = Pattern.compile(",");
-
-    private static final Logger _log =
-        LoggerFactory.getLogger(ConfigurationProperties.class);
 
     private final PropertiesBackedReplaceable _replaceable =
         new PropertiesBackedReplaceable(this);
@@ -488,356 +478,5 @@ public class ConfigurationProperties
     private void putAnnotatedKey(AnnotatedKey key)
     {
         _annotatedKeys.put(key.getPropertyName(), key);
-    }
-
-    /**
-     * A class for parsing and storing a set of annotations associated with
-     * some specific property declaration's key in addition to a potential
-     * custom error message.
-     *
-     * Annotations take the form of a comma-separated list of keywords
-     * within parentheses that immediately precede the property name;
-     *
-     * If a property is annotated as forbidden then the property value is taken
-     * as a custom error message to report.  If the value is empty then a default
-     * error message is used instead.
-     */
-    public static class AnnotatedKey
-    {
-        private static final String RE_ATTRIBUTE = "[^),]+";
-        private static final String RE_SEPARATOR = ",";
-        private static final String RE_ANNOTATION_DECLARATION =
-            "(\\((" + RE_ATTRIBUTE + "(?:" + RE_SEPARATOR + RE_ATTRIBUTE + ")*)\\))";
-        private static final String RE_KEY_DECLARATION =
-            RE_ANNOTATION_DECLARATION + "(.*)";
-
-        private static final Pattern PATTERN_KEY_DECLARATION = Pattern.compile(RE_KEY_DECLARATION);
-        private static final Pattern PATTERN_SEPARATOR = Pattern.compile(RE_SEPARATOR);
-
-        private static final Set<Annotation> FORBIDDEN_OBSOLETE_DEPRECATED =
-            EnumSet.of(Annotation.FORBIDDEN, Annotation.OBSOLETE, Annotation.DEPRECATED);
-
-        private static final Set<Annotation> FORBIDDEN_OBSOLETE =
-            EnumSet.of(Annotation.FORBIDDEN, Annotation.OBSOLETE);
-
-        private final String _name;
-        private final String _annotationDeclaration;
-        private final Map<Annotation,String> _annotations =
-                new EnumMap<>(Annotation.class);
-        private final String _error;
-
-        public AnnotatedKey(Object propertyKey, Object propertyValue)
-        {
-            String key = propertyKey.toString();
-            Matcher m = PATTERN_KEY_DECLARATION.matcher(key);
-            if(m.matches()) {
-                _annotationDeclaration = m.group(1);
-
-                for(String annotation : PATTERN_SEPARATOR.split(m.group(2))) {
-                    addAnnotation(annotation);
-                }
-
-                _name = m.group(3);
-
-                if(countDeclaredAnnotationsFrom(FORBIDDEN_OBSOLETE_DEPRECATED) > 1) {
-                    throw new IllegalArgumentException("At most one of forbidden, obsolete " +
-                            "and deprecated may be specified.");
-                }
-            } else {
-                _annotationDeclaration = "";
-                _name = key;
-            }
-
-            _error = hasAnyOf(FORBIDDEN_OBSOLETE) ? propertyValue.toString() : "";
-        }
-
-        /**
-         * Process an individual attribute declaration.  An annotation has
-         * one or more attributes.  Each attribute has the form:
-         * <pre>&lt;label>['?'&lt;parameter>]</pre>
-         */
-        private void addAnnotation(String declaration)
-        {
-            int idx = declaration.indexOf('?');
-            String label = (idx != -1) ? declaration.substring(0, idx) :
-                    declaration;
-            Annotation annotation = Annotation.forLabel(label);
-
-            checkArgument(!annotation.isParameterRequired() || idx != -1,
-                    "Annotation " + label + " declared without parameter");
-            checkArgument(annotation.isParameterRequired() || idx == -1,
-                    "Annotation " + label + " declared with parameter");
-
-            if(annotation.isParameterRequired()) {
-                String parameter = declaration.substring(idx+1,
-                        declaration.length());
-                _annotations.put(annotation, parameter);
-            } else {
-                _annotations.put(annotation, null);
-            }
-        }
-
-        private int countDeclaredAnnotationsFrom(Set<Annotation> items) {
-            Collection<Annotation> a = EnumSet.copyOf(items);
-            a.retainAll(_annotations.keySet());
-            return a.size();
-        }
-
-        public boolean hasAnnotation(Annotation annotation) {
-            return _annotations.keySet().contains(annotation);
-        }
-
-        public final boolean hasAnyOf(Set<Annotation> annotations) {
-            return countDeclaredAnnotationsFrom(annotations) > 0;
-        }
-
-        public boolean hasAnnotations() {
-            return !_annotations.isEmpty();
-        }
-
-        public String getAnnotationDeclaration() {
-            return _annotationDeclaration;
-        }
-
-        public String getPropertyName() {
-            return _name;
-        }
-
-        public String getError() {
-            return _error;
-        }
-
-        public boolean hasError() {
-            return !_error.isEmpty();
-        }
-
-        public String getParameter(Annotation annotation) {
-            String parameter = _annotations.get(annotation);
-
-            if(parameter == null) {
-                throw new IllegalArgumentException("No such annotation or " +
-                        "annotation given without parameter: " + annotation);
-            }
-
-            return parameter;
-        }
-    }
-
-    /**
-     *  This enum represents a property key annotation.  Each annotation has
-     *  an associated label that is present as a comma-separated list within
-     *  parentheses.
-     */
-    public enum Annotation
-    {
-        FORBIDDEN("forbidden"),
-        OBSOLETE("obsolete"),
-        ONE_OF("one-of", true),
-        DEPRECATED("deprecated"),
-        NOT_FOR_SERVICES("not-for-services"),
-        IMMUTABLE("immutable"),
-        ANY_OF("any-of", true),
-        PREFIX("prefix");
-
-        private static final Map<String,Annotation> ANNOTATION_LABELS =
-                new HashMap<>();
-
-        private final String _label;
-        private final boolean _isParameterRequired;
-
-        static {
-            for( Annotation annotation : Annotation.values()) {
-                ANNOTATION_LABELS.put(annotation._label, annotation);
-            }
-        }
-
-        public static Annotation forLabel(String label)
-        {
-            checkArgument(ANNOTATION_LABELS.containsKey(label),
-                    "Unknown annotation: " + label);
-            return ANNOTATION_LABELS.get(label);
-        }
-
-        Annotation(String label)
-        {
-            this(label, false);
-        }
-
-        Annotation(String label, boolean isParameterRequired)
-        {
-            _label = label;
-            _isParameterRequired = isParameterRequired;
-        }
-
-        public boolean isParameterRequired()
-        {
-            return _isParameterRequired;
-        }
-    }
-
-
-    /**
-     * A class that implement this interface, when registered, will accept
-     * responsibility for handling the warnings and errors produced when
-     * parsing dCache configuration.  These methods may throw an exception,
-     * to terminate parsing; however, code using a ProblemsAware class must
-     * not assume that this will happen.
-     */
-    public interface ProblemConsumer {
-        void setFilename(String name);
-        void setLineNumberReader(LineNumberReader reader);
-        void error(String message);
-        void warning(String message);
-        void info(String message);
-    }
-
-    /**
-     * This class provides the default behaviour if no problem
-     * consumer is registered: warnings are logged and errors
-     * result in an IllegalArgumentException being thrown.
-     */
-    public static class DefaultProblemConsumer implements ProblemConsumer
-    {
-        private String _filename;
-        private LineNumberReader _reader;
-
-        protected String addContextTo(String message)
-        {
-            if( _filename == null || _reader == null) {
-                return message;
-            }
-
-            return _filename + ":" + _reader.getLineNumber() + ": " + message;
-        }
-
-        @Override
-        public void error(String message)
-        {
-            throw new IllegalArgumentException(addContextTo(message));
-        }
-
-        @Override
-        public void warning(String message)
-        {
-            _log.warn(addContextTo(message));
-        }
-
-        @Override
-        public void info(String message)
-        {
-            _log.info(addContextTo(message));
-        }
-
-        @Override
-        public void setFilename(String name)
-        {
-            _filename = name;
-        }
-
-        @Override
-        public void setLineNumberReader(LineNumberReader reader)
-        {
-            _reader = reader;
-        }
-    }
-
-
-    /**
-     * This reader wraps a BufferedReader and extends the basic Reader class
-     * so that it compensates for Configuration.read behaviour.  The perser's
-     * behaviour results in unreliable line numbers being reported if
-     * LineNumberReader is used directly.  This is due to two reasons:
-     * <p>
-     * First, the load method uses an internal buffer to read as much as
-     * possible from the reader.  It is very likely that this will include
-     * many lines, advancing the LineNumberReader so the line number count
-     * will be unreliable.  The put method, when reporting a problem, will
-     * very likely use a line number greater than that of the line where the
-     * problem is located.
-     * <p>
-     * Second, when finished parsing a line, if the parsing has exhausted
-     * the available data then the parser will always fetch more data.  This
-     * is needed if the line ends with a backslash ('\'), but the parser does
-     * this unconditionally if the buffer is exhausted.  This behaviour
-     * results in an out-by-one error in the line numbers, except when reading
-     * the last line.
-     * <p>
-     * To counter the first problem, this class replies with exactly one line
-     * for each read request.  For the second problem, this class injects
-     * a empty line in between each real line-read, provided the previous
-     * line didn't end with a backslash.  These empty lines do not cause the
-     * line number to increase but prevent the out-by-one error.
-     * <p>
-     * NB. In case it isn't obvious: this class is nothing more than an ugly
-     * hack.  The correct solution is to write a replacement parser.
-     */
-    public static class ConfigurationParserAwareReader extends Reader
-    {
-        private final BufferedReader _inner;
-        private boolean _shouldInjectBlankLine;
-        private String _remaining = "";
-
-        public ConfigurationParserAwareReader(BufferedReader reader)
-        {
-            _inner = reader;
-        }
-
-        @Override
-        public int read(char[] cbuf, int off, int len) throws IOException
-        {
-            String data = getDataForParser();
-            if(data == null) {
-                return -1;
-            }
-
-            int count = Math.min(len, data.length());
-            System.arraycopy(data.toCharArray(), 0, cbuf, off, count);
-
-            _remaining = data.substring(count);
-
-            if(_remaining.isEmpty()) {
-                if (_shouldInjectBlankLine){
-                    _shouldInjectBlankLine = false;
-                } else {
-                    _shouldInjectBlankLine = !data.endsWith("\\\n");
-                }
-            }
-
-            return count;
-        }
-
-        private String getDataForParser() throws IOException
-        {
-            if( !_remaining.isEmpty()) {
-                return _remaining;
-            }
-
-            if(_shouldInjectBlankLine) {
-                return "\n";
-            }
-
-            String data = _inner.readLine();
-
-            return data == null ? null : data + "\n";
-        }
-
-        @Override
-        public void close() throws IOException {
-            _inner.close();
-        }
-    }
-
-    public interface UsageChecker
-    {
-        boolean isStandardProperty(Properties defaults, String name);
-    }
-
-    public static class UniversalUsageChecker implements UsageChecker
-    {
-        @Override
-        public boolean isStandardProperty(Properties defaults, String name)
-        {
-            return true;
-        }
     }
 }

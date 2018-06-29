@@ -85,7 +85,7 @@
 
     <bean id="srmHandler" class="diskCacheV111.srm.SrmHandler">
         <property name="pingExtraInfo">
-            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+            <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
                 <property name="prefix" value="srm.ping-extra-info"/>
             </bean>
         </property>

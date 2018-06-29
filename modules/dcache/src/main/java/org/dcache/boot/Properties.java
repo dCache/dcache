@@ -1,6 +1,6 @@
 package org.dcache.boot;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 /**
  * Constants for property names used by the boot loader.

@@ -26,7 +26,7 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 import static org.junit.Assert.*;
 

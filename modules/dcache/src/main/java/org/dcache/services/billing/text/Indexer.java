@@ -66,7 +66,7 @@ import java.util.regex.Pattern;
 
 import org.dcache.boot.LayoutBuilder;
 import org.dcache.util.Args;
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.io.Files.isFile;

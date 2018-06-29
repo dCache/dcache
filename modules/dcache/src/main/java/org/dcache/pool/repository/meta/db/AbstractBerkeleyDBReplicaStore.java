@@ -45,7 +45,7 @@ import dmg.cells.nucleus.EnvironmentAware;
 
 import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.util.ConfigurationMapFactoryBean;
+import org.dcache.util.configuration.ConfigurationMapFactoryBean;
 
 import static org.dcache.util.Exceptions.messageOrClassName;
 

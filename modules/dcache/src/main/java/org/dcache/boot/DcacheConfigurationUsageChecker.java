@@ -5,11 +5,12 @@ import com.google.common.collect.Sets;
 import java.util.Properties;
 import java.util.Set;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
+import org.dcache.util.configuration.UsageChecker;
 
 import static org.dcache.boot.Properties.*;
 
-class DcacheConfigurationUsageChecker implements ConfigurationProperties.UsageChecker
+class DcacheConfigurationUsageChecker implements UsageChecker
 {
     private static final Set<String> GENERATED_PROPERTIES =
             Sets.newHashSet(

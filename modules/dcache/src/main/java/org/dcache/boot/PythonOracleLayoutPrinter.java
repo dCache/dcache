@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 
 import java.io.PrintStream;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 /**
  * Creates a Python declaration for a class that is an oracle for

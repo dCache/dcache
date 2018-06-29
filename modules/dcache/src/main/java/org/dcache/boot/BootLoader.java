@@ -15,8 +15,8 @@ import dmg.util.CommandException;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
-import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
-import org.dcache.util.ConfigurationProperties.ProblemConsumer;
+import org.dcache.util.configuration.DefaultProblemConsumer;
+import org.dcache.util.configuration.ProblemConsumer;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Throwables.getRootCause;

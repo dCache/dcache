@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import java.util.Properties;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 import static org.junit.Assert.assertEquals;
 

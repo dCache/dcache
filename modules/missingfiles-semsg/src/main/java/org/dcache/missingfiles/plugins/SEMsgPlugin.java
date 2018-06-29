@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 import org.dcache.util.FireAndForgetTask;
 
 import static com.google.common.collect.Lists.newArrayList;

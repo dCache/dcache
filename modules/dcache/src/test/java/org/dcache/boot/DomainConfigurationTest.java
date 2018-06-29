@@ -17,7 +17,7 @@ import dmg.cells.nucleus.SystemCell;
 import dmg.util.CommandException;
 import dmg.util.Formats;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 import static org.junit.Assert.assertEquals;
 

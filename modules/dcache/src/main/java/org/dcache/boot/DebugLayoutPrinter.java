@@ -6,7 +6,7 @@ import java.io.PrintStream;
 import java.util.Enumeration;
 import java.util.Map;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 /**
  * Provide a clean view of the configuration properties.  This is intended to

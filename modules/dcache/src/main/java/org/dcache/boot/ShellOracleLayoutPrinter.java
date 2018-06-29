@@ -4,7 +4,9 @@ import com.google.common.base.Strings;
 
 import java.io.PrintStream;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.AnnotatedKey;
+import org.dcache.util.configuration.Annotation;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 /**
  * Generates a shell function {@code getProperty} which serves as
@@ -131,9 +133,9 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
     {
         out.append(indent).println("case \"$1\" in");
         for (String key: properties.stringPropertyNames()) {
-            ConfigurationProperties.AnnotatedKey annotatedKey = properties.getAnnotatedKey(key);
+            AnnotatedKey annotatedKey = properties.getAnnotatedKey(key);
             if (annotatedKey == null ||
-                    !annotatedKey.hasAnnotation(ConfigurationProperties.Annotation.DEPRECATED)) {
+                    !annotatedKey.hasAnnotation(Annotation.DEPRECATED)) {
                 String value = properties.getValue(key);
                 if (!value.equals(parentProperties.getValue(key))) {
                     out.append(indent).append("  ");

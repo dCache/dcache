@@ -98,12 +98,12 @@
     <property name="channelHandlerFactories" ref="channelhandler-factories"/>
     <property name="rootPath" value="${xrootd.root}"/>
     <property name="queryConfig">
-        <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+        <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
             <property name="prefix" value="xrootd.query-config"/>
         </bean>
     </property>
     <property name="appIoQueues">
-        <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+        <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
             <property name="prefix" value="xrootd.app-ioqueue"/>
         </bean>
     </property>

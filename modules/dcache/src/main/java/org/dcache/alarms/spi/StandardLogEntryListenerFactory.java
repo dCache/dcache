@@ -75,7 +75,7 @@ public class StandardLogEntryListenerFactory
                 extends BaseLogEntryListenerFactory<StandardLogEntryListener> {
     /**
      * <p>Map is injected after being built using
-     * a {@link org.dcache.util.ConfigurationMapFactoryBean}.</p>
+     * a {@link org.dcache.util.configuration.ConfigurationMapFactoryBean}.</p>
      */
     private Map<String, String> configuration;
 

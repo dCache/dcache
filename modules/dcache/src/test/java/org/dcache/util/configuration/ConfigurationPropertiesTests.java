@@ -1,4 +1,4 @@
-package org.dcache.util;
+package org.dcache.util.configuration;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;

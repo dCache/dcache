@@ -8,7 +8,7 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

@@ -444,7 +444,7 @@
     <bean id="scheduling-strategy-provider" class="org.dcache.srm.scheduler.SchedulingStrategyFactoryBean">
         <property name="name" value="${srmmanager.plugins.scheduler}"/>
         <property name="configuration">
-            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+            <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
                 <property name="prefix" value="srmmanager.scheduler.${srmmanager.plugins.scheduler}"/>
             </bean>
         </property>
@@ -453,7 +453,7 @@
     <bean id="transfer-strategy-provider" class="org.dcache.srm.scheduler.TransferStrategyFactoryBean">
         <property name="name" value="${srmmanager.plugins.transfer}"/>
         <property name="configuration">
-            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+            <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
                 <property name="prefix" value="srmmanager.transfer.${srmmanager.plugins.transfer}"/>
             </bean>
         </property>

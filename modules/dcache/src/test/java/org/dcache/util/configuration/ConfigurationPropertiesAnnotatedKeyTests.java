@@ -1,11 +1,9 @@
-package org.dcache.util;
+package org.dcache.util.configuration;
 
 import org.junit.Test;
 
 import java.util.EnumSet;
 import java.util.Set;
-
-import org.dcache.util.ConfigurationProperties.Annotation;
 
 import static org.junit.Assert.*;
 
@@ -42,26 +40,26 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public static final String DECLARATION_KEY_SCOPED_OBSOLETE = ANNOTATION_FOR_OBSOLETE + PROPERTY_KEY_SCOPED_OBSOLETE;
     public static final String DECLARATION_KEY_AWKWARD_NAME_DEPRECATED = ANNOTATION_FOR_DEPRECATED + PROPERTY_KEY_WITH_AWKWARD_NAME;
 
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_NOT_ANNOTATED =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_NOT_ANNOTATED, "");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_DEPRECATED =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_DEPRECATED, "");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_FORBIDDEN =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_FORBIDDEN, "");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_OBSOLETE =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_OBSOLETE, "");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_ONE_OF =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_ONE_OF, "true");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_ANY_OF =
-            new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_ANY_OF, "none");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_NOT_FOR_SERVICES =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_NOT_FOR_SERVICES, "");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_DEP_AND_NOT =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_DEP_AND_NOT, "");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_SCOPED_OBSOLETE =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_SCOPED_OBSOLETE, "");
-    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_AWKWARD_NAME_DEPRECATED =
-        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_AWKWARD_NAME_DEPRECATED, "");
+    public static final AnnotatedKey ANNOTATION_NOT_ANNOTATED =
+        new AnnotatedKey(DECLARATION_KEY_NOT_ANNOTATED, "");
+    public static final AnnotatedKey ANNOTATION_DEPRECATED =
+        new AnnotatedKey(DECLARATION_KEY_DEPRECATED, "");
+    public static final AnnotatedKey ANNOTATION_FORBIDDEN =
+        new AnnotatedKey(DECLARATION_KEY_FORBIDDEN, "");
+    public static final AnnotatedKey ANNOTATION_OBSOLETE =
+        new AnnotatedKey(DECLARATION_KEY_OBSOLETE, "");
+    public static final AnnotatedKey ANNOTATION_ONE_OF =
+        new AnnotatedKey(DECLARATION_KEY_ONE_OF, "true");
+    public static final AnnotatedKey ANNOTATION_ANY_OF =
+            new AnnotatedKey(DECLARATION_KEY_ANY_OF, "none");
+    public static final AnnotatedKey ANNOTATION_NOT_FOR_SERVICES =
+        new AnnotatedKey(DECLARATION_KEY_NOT_FOR_SERVICES, "");
+    public static final AnnotatedKey ANNOTATION_DEP_AND_NOT =
+        new AnnotatedKey(DECLARATION_KEY_DEP_AND_NOT, "");
+    public static final AnnotatedKey ANNOTATION_SCOPED_OBSOLETE =
+        new AnnotatedKey(DECLARATION_KEY_SCOPED_OBSOLETE, "");
+    public static final AnnotatedKey ANNOTATION_AWKWARD_NAME_DEPRECATED =
+        new AnnotatedKey(DECLARATION_KEY_AWKWARD_NAME_DEPRECATED, "");
 
     public static final Set<Annotation> DEPRECATED = EnumSet.of(Annotation.DEPRECATED);
     public static final Set<Annotation> OBSOLETE = EnumSet.of(Annotation.OBSOLETE);
@@ -197,44 +195,44 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
 
     @Test(expected=IllegalArgumentException.class)
     public void testDeprecatedAndObsoleteAnnotatedDeclarationCreation() {
-        new ConfigurationProperties.AnnotatedKey("(deprecated,obsolete)foo", "");
+        new AnnotatedKey("(deprecated,obsolete)foo", "");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testDeprecatedAndForbiddenAnnotatedDeclarationCreation() {
-        new ConfigurationProperties.AnnotatedKey("(deprecated,forbidden)foo", "");
+        new AnnotatedKey("(deprecated,forbidden)foo", "");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testObsoleteAndForbiddenAnnotatedDeclarationCreation() {
-        new ConfigurationProperties.AnnotatedKey("(obsolete,forbidden)foo", "");
+        new AnnotatedKey("(obsolete,forbidden)foo", "");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testDeprecatedObsoleteAndForbiddenAnnotatedDeclarationCreation() {
-        new ConfigurationProperties.AnnotatedKey("(deprecated,obsolete,forbidden)foo", "");
+        new AnnotatedKey("(deprecated,obsolete,forbidden)foo", "");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testUnknownAnnotatedDeclarationCreation() {
-        new ConfigurationProperties.AnnotatedKey("(gobbledygook)foo", "");
+        new AnnotatedKey("(gobbledygook)foo", "");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testTwoUnknownAnnotatedDeclarationCreation() {
-        new ConfigurationProperties.AnnotatedKey("(gobbledygook,fandango)foo", "");
+        new AnnotatedKey("(gobbledygook,fandango)foo", "");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testAnnotationTakesParameterButNoneGiven()
     {
-        new ConfigurationProperties.AnnotatedKey("(one-of)foo", "");
+        new AnnotatedKey("(one-of)foo", "");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testAnnotationDoesntTakeParameterButParameterGiven()
     {
-        new ConfigurationProperties.AnnotatedKey("(obsolete:foo)foo", "");
+        new AnnotatedKey("(obsolete:foo)foo", "");
     }
 
 

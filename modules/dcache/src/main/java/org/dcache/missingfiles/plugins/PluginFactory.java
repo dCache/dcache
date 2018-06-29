@@ -1,6 +1,6 @@
 package org.dcache.missingfiles.plugins;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 
 /**

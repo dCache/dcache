@@ -3,7 +3,7 @@ package org.dcache.boot;
 import java.io.PrintStream;
 import java.util.Enumeration;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 /**
  * Print the configuration as a series of statements that define XML

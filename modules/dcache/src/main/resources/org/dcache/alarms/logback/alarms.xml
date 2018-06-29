@@ -77,7 +77,7 @@
     <bean id="standardListenerFactory" class="org.dcache.alarms.spi.StandardLogEntryListenerFactory"
           init-method="load">
         <property name="configuration">
-            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+            <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
                 <property name="prefix" value="alarms.plugin"/>
             </bean>
         </property>

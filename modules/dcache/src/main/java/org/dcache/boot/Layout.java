@@ -19,8 +19,8 @@ import java.util.regex.Pattern;
 
 import diskCacheV111.util.FsPath;
 
-import org.dcache.util.ConfigurationProperties;
-import org.dcache.util.ConfigurationProperties.ProblemConsumer;
+import org.dcache.util.configuration.ConfigurationProperties;
+import org.dcache.util.configuration.ProblemConsumer;
 import org.dcache.util.NetworkUtils;
 
 import static org.dcache.boot.Properties.PROPERTY_DOMAINS;

@@ -14,7 +14,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.Properties;
 
-import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.configuration.ConfigurationProperties;
 
 import static org.dcache.boot.Properties.PROPERTY_CELL_NAME_SUFFIX;
 import static org.hamcrest.Matchers.is;
