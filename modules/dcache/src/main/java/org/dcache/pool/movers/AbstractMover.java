@@ -33,6 +33,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.OpenOption;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -81,6 +82,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
     private final Set<ChecksumType> _checksumTypes;
+    private final Set<Checksum> _checksums = new HashSet<>();
     private volatile ChecksumChannel _checksumChannel;
     private volatile Optional<RepositoryChannel> _channel = Optional.empty();
 
@@ -121,6 +123,18 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                 }
             }
         }
+    }
+
+    public void addExpectedChecksum(Checksum checksum)
+    {
+        addChecksumType(checksum.getType());
+        _checksums.add(checksum);
+    }
+
+    @Override
+    public Set<Checksum> getExpectedChecksums()
+    {
+        return _checksums;
     }
 
     @Override
@@ -323,12 +337,6 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         return (_checksumChannel == null)
                 ? Collections.emptySet()
                 : _checksumChannel.getChecksums();
-    }
-
-    @Nonnull
-    @Override
-    public Set<Checksum> getExpectedChecksums() {
-        return Collections.emptySet();
     }
 
     @Override

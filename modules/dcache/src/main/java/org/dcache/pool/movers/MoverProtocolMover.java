@@ -17,9 +17,6 @@
  */
 package org.dcache.pool.movers;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
@@ -28,7 +25,6 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.classic.ChecksumModule;
-import org.dcache.util.Checksum;
 
 /**
  * A Mover implementation based on the MoverProtocol interface.
@@ -39,7 +35,6 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
      * mover implementation suitable for this transfer
      */
     protected final MoverProtocol _moverProtocol;
-    private final Set<Checksum> _checksums = new HashSet<>();
 
     public MoverProtocolMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
                     TransferService<MoverProtocolMover> transferService,
@@ -65,18 +60,6 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     public long getLastTransferred()
     {
         return _moverProtocol.getLastTransferred();
-    }
-
-    public void addExpectedChecksum(Checksum checksum)
-    {
-        addChecksumType(checksum.getType());
-        _checksums.add(checksum);
-    }
-
-    @Override
-    public Set<Checksum> getExpectedChecksums()
-    {
-        return _checksums;
     }
 
     public MoverProtocol getMover()

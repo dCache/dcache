@@ -67,6 +67,7 @@ import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.CDCThreadFactory;
+import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.NettyPortRange;
 import org.dcache.util.TryCatchTemplate;
@@ -357,7 +358,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             {
                 NettyMoverChannel channel =
                         autoclose(new NettyMoverChannel(mover.open(), connectTimeoutUnit.toMillis(connectTimeout), this,
-                                mover::addChecksumType));
+                                mover::addChecksumType, mover::addExpectedChecksum));
                 if (uuids.putIfAbsent(mover.getUuid(), channel) != null) {
                     throw new IllegalStateException("UUID conflict");
                 }
@@ -434,15 +435,18 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         private final CDC cdc = new CDC();
         private final SettableFuture<Void> closeFuture = SettableFuture.create();
         private final Consumer<ChecksumType> checksumCalculation;
+        private final Consumer<Checksum> integrityChecker;
 
         public NettyMoverChannel(MoverChannel<P> file,
                                  long connectTimeout,
                                  CompletionHandler<Void, Void> completionHandler,
-                                 Consumer<ChecksumType> checksumCalculation)
+                                 Consumer<ChecksumType> checksumCalculation,
+                                 Consumer<Checksum> integrityChecker)
         {
             super(file);
             this.completionHandler = completionHandler;
             this.checksumCalculation = checksumCalculation;
+            this.integrityChecker = integrityChecker;
             timeout = timeoutScheduler.schedule(() -> {
                 try (CDC ignored = cdc.restore()) {
                     if (sync.onTimeout()) {
@@ -459,6 +463,11 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         public void addChecksumType(ChecksumType type)
         {
             checksumCalculation.accept(type);
+        }
+
+        public void addChecksum(Checksum value)
+        {
+            integrityChecker.accept(value);
         }
 
         @Override

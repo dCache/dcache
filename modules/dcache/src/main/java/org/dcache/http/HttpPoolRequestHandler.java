@@ -2,6 +2,7 @@ package org.dcache.http;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -50,6 +51,7 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import dmg.util.HttpException;
 
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
@@ -81,6 +83,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private static final String TWO_HYPHENS = "--";
     // See RFC 2045 for definition of 'tspecials'
     private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
+
+    private static final List<String> SUPPORTED_CONTENT_HEADERS
+            = ImmutableList.of(CONTENT_LENGTH, CONTENT_MD5);
 
     /**
      * The mover channels that were opened.
@@ -119,6 +124,16 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 : Optional.of(wantDigests.stream()
                         .filter(s -> !s.isEmpty())
                         .collect(Collectors.joining(",")));
+    }
+
+    private static Optional<Checksum> contentMd5Checksum(HttpRequest request) throws HttpException
+    {
+        try {
+            Optional<String> contentMd5 = Optional.ofNullable(request.headers().get(CONTENT_MD5));
+            return contentMd5.map(Checksums::parseContentMd5);
+        } catch (IllegalArgumentException e) {
+            throw new HttpException(BAD_REQUEST.code(), "Bad " + CONTENT_MD5 + " header: " + e);
+        }
     }
 
     private static ByteBuf createMultipartFragmentMarker(long lower, long upper, long total)
@@ -357,7 +372,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         Exception exception = null;
 
         try {
-            checkContentHeader(request.headers().names(), Collections.singletonList(CONTENT_LENGTH));
+            checkContentHeader(request.headers().names(), SUPPORTED_CONTENT_HEADERS);
 
             file = open(request, true);
 
@@ -365,6 +380,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 throw new HttpException(METHOD_NOT_ALLOWED.code(),
                         "Resource is not open for writing");
             }
+
+            contentMd5Checksum(request).ifPresent(file::addChecksum);
 
             file.getProtocolInfo().getWantedChecksum().ifPresent(file::addChecksumType);
             _wantedDigest = wantDigest(request).flatMap(Checksums::parseWantDigest);
