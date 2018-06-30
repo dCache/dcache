@@ -16,11 +16,12 @@ import com.google.common.net.InetAddresses;
 import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
+import io.milton.http.ResponseStatus;
+import io.milton.http.exceptions.BadRequestException;
 import io.milton.resource.Resource;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -697,7 +698,7 @@ public class DcacheResourceFactory
      */
     public DcacheResource createFile(FsPath path, InputStream inputStream, Long length)
             throws CacheException, InterruptedException, IOException,
-                   URISyntaxException
+                   URISyntaxException, BadRequestException
     {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
@@ -722,6 +723,11 @@ public class DcacheResourceFactory
                     transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                            "Error relaying data: " + message);
                     transfer.killMover("door experienced error relaying data: " + message);
+                    throw e;
+                } catch (BadRequestException e) {
+                    transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                           e.getMessage());
+                    transfer.killMover("pool reported bad request: " + e.getMessage());
                     throw e;
                 } catch (CacheException e) {
                     transfer.notifyBilling(e.getRc(), e.getMessage());
@@ -1620,7 +1626,7 @@ public class DcacheResourceFactory
         }
 
         public void relayData(InputStream inputStream)
-                throws IOException, CacheException, InterruptedException
+                throws IOException, CacheException, InterruptedException, BadRequestException
         {
             setStatus("Mover " + getPool() + "/" + getMoverId() +
                     ": Opening data connection");
@@ -1644,7 +1650,12 @@ public class DcacheResourceFactory
                         ByteStreams.copy(inputStream, outputStream);
                         outputStream.flush();
                     }
-                    if (connection.getResponseCode() != HttpResponseStatus.CREATED.code()) {
+                    switch (connection.getResponseCode()) {
+                    case ResponseStatus.SC_CREATED:
+                        break;
+                    case ResponseStatus.SC_BAD_REQUEST:
+                        throw new BadRequestException(connection.getResponseMessage());
+                    default:
                         throw new CacheException(connection.getResponseMessage());
                     }
                 } finally {
