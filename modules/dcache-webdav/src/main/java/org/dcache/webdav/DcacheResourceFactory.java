@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
@@ -106,6 +107,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
+import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.util.Exceptions;
@@ -1572,6 +1574,7 @@ public class DcacheResourceFactory
     private class WriteTransfer extends HttpTransfer
     {
         private final Optional<Instant> _mtime;
+        private final Optional<Checksum> _contentMd5;
 
         public WriteTransfer(PnfsHandler pnfs, Subject subject,
                 Restriction restriction, FsPath path) throws URISyntaxException
@@ -1585,6 +1588,13 @@ public class DcacheResourceFactory
             wantDigest()
                     .flatMap(Checksums::parseWantDigest)
                     .ifPresent(this::setWantedChecksum);
+
+            try {
+                _contentMd5 = Optional.ofNullable(ServletRequest.getRequest().getHeader("Content-MD5"))
+                        .map(Checksums::parseContentMd5);
+            } catch (IllegalArgumentException e) {
+                throw new UncheckedBadRequestException("Bad Content-MD5 header: " + e.toString(), null);
+            }
         }
 
         @Override
@@ -1602,6 +1612,10 @@ public class DcacheResourceFactory
 
             if (_mtime.isPresent()) {
                 OwncloudClients.addMTimeAccepted(ServletResponse.getResponse());
+            }
+
+            if (_contentMd5.isPresent()) {
+                setChecksum(_contentMd5.get());
             }
         }
 

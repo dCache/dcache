@@ -173,6 +173,12 @@ public class Checksums
         return parseWantDigest(wantDigest, EnumSet.allOf(ChecksumType.class));
     }
 
+    public static Checksum parseContentMd5(String value)
+    {
+        byte[] bytes = Base64.getMimeDecoder().decode(value);
+        return new Checksum(ChecksumType.MD5_TYPE, bytes);
+    }
+
     /**
      * Choose the best checksum algorithm based on the client's stated
      * preferences and what checksums are available.
