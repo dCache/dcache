@@ -631,6 +631,24 @@ public class PoolInfoMap {
         }
     }
 
+    public boolean hasPool(String pool) {
+        read.lock();
+        try {
+            return pools.contains(pool);
+        } finally {
+            read.unlock();
+        }
+    }
+
+    public boolean isValidPoolIndex(Integer index) {
+        String pool = null;
+        try {
+            pool = getPool(index);
+        } catch (NoSuchElementException e) {
+        }
+        return pool != null;
+    }
+
     public boolean isPoolViable(Integer pool, boolean writable) {
         read.lock();
         try {

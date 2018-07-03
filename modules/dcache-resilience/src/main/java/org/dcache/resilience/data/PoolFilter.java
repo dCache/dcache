@@ -80,6 +80,7 @@ public final class PoolFilter implements FileMatcher, PoolMatcher {
     private Long   lastScanBefore;
     private Long   lastScanAfter;
 
+    @Override
     public boolean isUndefined() {
         return          null == state &&
                         null == pools &&
@@ -90,6 +91,7 @@ public final class PoolFilter implements FileMatcher, PoolMatcher {
                         null == lastScanAfter;
     }
 
+    @Override
     public boolean isForceRemoval() {
         return parent;
     }
