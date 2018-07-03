@@ -1,0 +1,147 @@
+{
+    "$id": "http://dcache.org/frontend/events/namespaceEvents#",
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "description": "the description of a change in the namespace",
+    "type": "object",
+    "oneOf": [
+        {
+            "$ref": "#/definitions/nonMoveChildEvent"
+        },
+        {
+            "$ref": "#/definitions/moveChildEvent"
+        },
+        {
+            "$ref": "#/definitions/selfEvent"
+        },
+        {
+            "$ref": "#/definitions/managementEvent"
+        }
+    ],
+    "definitions": {
+        "childEvent": {
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "title": "The name of the target",
+                    "description": "The filename of the filesystem object that triggered this event.",
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "nonMoveChildEvent": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/childEvent"
+                },
+                {
+                    "properties": {
+                        "mask": {
+                            "title": "One or more flags that describe this event",
+                            "description": "The semantics are based on inotify(7)",
+                            "type": "array",
+                            "minitems": 1,
+                            "maxitems": 2,
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "IN_ACCESS",
+                                    "IN_ATTRIB",
+                                    "IN_CLOSE_WRITE",
+                                    "IN_CLOSE_NOWRITE",
+                                    "IN_CREATE",
+                                    "IN_DELETE",
+                                    "IN_MODIFY",
+                                    "IN_OPEN",
+                                    "IN_ISDIR"
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "moveChildEvent": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/childEvent"
+                },
+                {
+                    "required": [
+                        "mask",
+                        "cookie"
+                    ],
+                    "properties": {
+                        "mask": {
+                            "title": "One or more flags that describe this event",
+                            "description": "The semantics are based on inotify(7)",
+                            "type": "array",
+                            "minitems": 1,
+                            "maxitems": 2,
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "IN_MOVED_FROM",
+                                    "IN_MOVED_TO",
+                                    "IN_ISDIR"
+                                ]
+                            }
+                        },
+                        "cookie": {
+                            "title": "move association",
+                            "description": "An id that is the same for the MOVED_FROM and MOVED_TO events from a single namespace operation.",
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    }
+                }
+            ]
+        },
+        "selfEvent": {
+            "required": [
+                "mask"
+            ],
+            "properties": {
+                "mask": {
+                    "title": "One or more flags that describe this event",
+                    "description": "The semantics are based on inotify(7)",
+                    "type": "array",
+                    "minitems": 1,
+                    "maxitems": 2,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "IN_DELETE_SELF",
+                            "IN_MOVE_SELF",
+                            "IN_ISDIR"
+                        ]
+                    }
+                }
+            }
+        },
+        "managementEvent": {
+            "required": [
+                "mask"
+            ],
+            "properties": {
+                "mask": {
+                    "title": "One or more flags that describe this event",
+                    "description": "The semantics are based on inotify(7)",
+                    "type": "array",
+                    "minitems": 1,
+                    "maxitems": 3,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "IN_IGNORED",
+                            "IN_Q_OVERFLOW",
+                            "IN_UNMOUNT"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

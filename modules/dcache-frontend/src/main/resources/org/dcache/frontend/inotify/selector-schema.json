@@ -1,0 +1,47 @@
+{
+    "$id": "http://dcache.org/frontend/events/namespaceSelectors#",
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "description": "path of a directory to watch",
+    "type": "object",
+    "required": [
+        "path"
+    ],
+    "properties": {
+        "path": {
+            "title": "The path of the file or directory to watch",
+            "description": "The target must exist when the request is made.  The watch will follow the target, if it is moved.",
+            "pattern": "^/(.*[^/])?$",
+            "type": "string"
+        },
+        "flags": {
+            "title": "Control which events are selected",
+            "description": "See inotify(7) for the meaning of these flags.",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "IN_ACCESS",
+                    "IN_ATTRIB",
+                    "IN_CLOSE_WRITE",
+                    "IN_CLOSE_NOWRITE",
+                    "IN_CREATE",
+                    "IN_DELETE",
+                    "IN_DELETE_SELF",
+                    "IN_MODIFY",
+                    "IN_MOVE_SELF",
+                    "IN_MOVED_FROM",
+                    "IN_MOVED_TO",
+                    "IN_OPEN",
+                    "IN_ALL_EVENTS",
+                    "IN_CLOSE",
+                    "IN_MOVE",
+                    "IN_DONT_FOLLOW",
+                    "IN_EXCL_UNLINK",
+                    "IN_MASK_ADD",
+                    "IN_ONESHOT",
+                    "IN_ONLYDIR"]
+            }
+        }
+    },
+    "additionalProperties": false
+}
