@@ -29,4 +29,12 @@
 
   <bean class="org.dcache.restful.events.streams.metronome.Metronome"
 	destroy-method="shutdown"/>
+
+  <bean class="org.dcache.restful.events.streams.inotify.Inotify">
+      <property name="pnfsHandler">
+          <bean class="diskCacheV111.util.PnfsHandler">
+              <constructor-arg ref="pnfs-stub"/>
+          </bean>
+      </property>
+  </bean>
 </beans>
