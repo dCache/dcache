@@ -867,11 +867,12 @@ public class PnfsManagerV3
         @Argument(index = 1,
                   usage = "The checksums type of the file. These following checksums " +
                           "are supported: adler32, md5 and md4.")
-        ChecksumType type;
+        String typeArg;
 
         @Override
         public String call() throws CacheException, NoSuchAlgorithmException
         {
+            ChecksumType type = ChecksumType.getChecksumType(typeArg);
             return getChecksums(ROOT, pnfsId).stream()
                     .filter(c -> c.getType() == type)
                     .map(Checksum::toString)
