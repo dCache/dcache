@@ -71,7 +71,11 @@ public class PoolTaskCompletionHandler {
     private PoolOperationMap map;
 
     public void childTerminated(String pool, PnfsId pnfsId) {
-        map.update(pool, pnfsId);
+        map.update(pool, pnfsId, false);
+    }
+
+    public void childTerminatedWithFailure(String pool, PnfsId pnfsId) {
+        map.update(pool, pnfsId, true);
     }
 
     public void setMap(PoolOperationMap map) {

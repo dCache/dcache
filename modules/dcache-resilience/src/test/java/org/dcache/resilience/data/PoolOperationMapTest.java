@@ -417,7 +417,7 @@ public class PoolOperationMapTest extends TestBase {
 
     private void whenAllChildrenCompleteFor(String pool) {
         for (int c = 0; c < children; c++) {
-            poolOperationMap.update(pool, (PnfsId) null);
+            poolOperationMap.update(pool, (PnfsId) null, false);
         }
     }
 

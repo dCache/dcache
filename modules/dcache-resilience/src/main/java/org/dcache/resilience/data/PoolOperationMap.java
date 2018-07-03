@@ -631,6 +631,7 @@ public class PoolOperationMap extends RunnableModule {
                                     update.pool, operation);
                     queue.remove(update.pool);
                     operation.resetChildren();
+                    operation.resetFailed();
                     operation.lastUpdate = System.currentTimeMillis();
                     operation.state = State.WAITING;
                     operation.group = update.group;
@@ -659,13 +660,13 @@ public class PoolOperationMap extends RunnableModule {
     /**
      * <p>Called by the {@link FileOperationMap ) when a child operation completes.</p>
      */
-    public void update(String pool, PnfsId pnfsId) {
+    public void update(String pool, PnfsId pnfsId, boolean failed) {
         LOGGER.debug("Parent {}, child operation for {} has completed.", pool,
                      pnfsId);
         lock.lock();
         try {
             PoolOperation operation = get(pool);
-            operation.incrementCompleted();
+            operation.incrementCompleted(failed);
             if (operation.isComplete()) {
                 terminate(pool, operation);
                 condition.signalAll();
@@ -839,6 +840,7 @@ public class PoolOperationMap extends RunnableModule {
         }
 
         operation.exception = null;
+        operation.resetFailed();
         operation.task = null;
         waiting.put(update.pool, operation);
         return true;
@@ -870,12 +872,14 @@ public class PoolOperationMap extends RunnableModule {
         operation.resetChildren();
         if (poolInfoMap.isResilientPool(pool)) {
             idle.put(pool, operation);
-        } else if (operation.state == State.FAILED) {
+        } else if (operation.state == State.FAILED || operation.failedChildren() > 0) {
+            String message = operation.exception == null ? "" : "exception: " +
+                            new ExceptionMessage(operation.exception);
             LOGGER.error(AlarmMarkerFactory.getMarker(
                             PredefinedAlarm.FAILED_REPLICATION, pool),
                             "{} was removed from resilient group but final scan "
-                                            + "failed: {}.", pool,
-                            new ExceptionMessage(operation.exception));
+                                            + "{}; {} failed file operations.",
+                         pool, message, operation.failedChildren());
         }
     }
 
@@ -921,6 +925,8 @@ public class PoolOperationMap extends RunnableModule {
                     i.remove();
                     operation.forceScan = true;
                     operation.state = State.WAITING;
+                    operation.resetFailed();
+                    operation.exception = null;
                     /*
                      *  This is a periodic scan, so check for repartitioning.
                      */
@@ -992,7 +998,6 @@ public class PoolOperationMap extends RunnableModule {
         operation.lastUpdate = System.currentTimeMillis();
         operation.lastStatus = operation.currStatus;
         operation.task.setErrorHandler(e -> update(pool, 0, e));
-        operation.resetChildren();
         running.put(pool, operation);
         LOGGER.trace("Submitting pool scan task for {}.", pool);
         operation.task.submit();

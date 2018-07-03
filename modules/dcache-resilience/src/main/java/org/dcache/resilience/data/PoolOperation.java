@@ -105,6 +105,7 @@ public final class PoolOperation {
 
     private int children;
     private int completed;
+    private int failed;
 
     PoolOperation() {
         forceScan = false;
@@ -117,6 +118,7 @@ public final class PoolOperation {
         currStatus = PoolStatusForResilience.UNINITIALIZED;
         children = 0;
         completed = 0;
+        failed = 0;
     }
 
     public String toString() {
@@ -127,9 +129,9 @@ public final class PoolOperation {
                              FileOperation.getFormattedDateFromMillis(lastUpdate),
                              FileOperation.getFormattedDateFromMillis(lastScan),
                              lastStatus, currStatus, state,
-                             exception == null ? "" : new ExceptionMessage(exception));
+                             exception == null ? getFailedMessage() :
+                                             new ExceptionMessage(exception));
     }
-
 
     public synchronized boolean isExcluded() {
         return state == State.EXCLUDED;
@@ -187,21 +189,30 @@ public final class PoolOperation {
         }
     }
 
-    synchronized void incrementCompleted() {
-        LOGGER.debug("entering incrementCompleted, state {}, children {}, completed = {}.",
-                     state, children, completed );
+    synchronized void incrementCompleted(boolean failed) {
+        LOGGER.trace("entering incrementCompleted, state {}, failed {}, "
+                                     + "children {}, completed = {}.",
+                     state, failed, children, completed );
         if (state == State.RUNNING) {
             ++completed;
+            if (failed) {
+                ++this.failed;
+            }
         }
-        LOGGER.debug("leaving incrementCompleted, state {}, children {}, completed = {}.",
+        LOGGER.trace("leaving incrementCompleted, state {}, failed {}, "
+                                     + "children {}, completed = {}.",
                      state, children, completed );
     }
 
     synchronized boolean isComplete() {
         boolean isComplete = children > 0 && children == completed;
-        LOGGER.debug("isComplete {}, children {}, completed = {}.",
+        LOGGER.trace("isComplete {}, children {}, completed = {}.",
                      isComplete, children, completed );
         return isComplete;
+    }
+
+    synchronized int failedChildren() {
+        return failed;
     }
 
     synchronized void resetChildren() {
@@ -209,10 +220,18 @@ public final class PoolOperation {
         completed = 0;
     }
 
+    synchronized void resetFailed() {
+        failed = 0;
+    }
+
     synchronized void setChildren(int children) {
         if (state == State.RUNNING) {
             this.children = children;
         }
+    }
+
+    private String getFailedMessage() {
+        return failed == 0 ? "" : failed + " file operations failed";
     }
 
     private String getFormattedPercentDone() {

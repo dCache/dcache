@@ -148,7 +148,7 @@ public final class FileOperation {
                     "%s (%s %s)(%s %s)(parent %s, count %s, retried %s)";
     private static final String TO_HISTORY_STRING =
                     "%s (%s %s)(%s %s)(parent %s, retried %s) %s";
-    private static final String FORMAT_STR = "E MMM dd HH:mm:ss zzz yyyy";
+    private static final String FORMAT_STR = "yyyy/MM/dd HH:mm:ss";
 
     /*
      * Hidden marker for null, used with int->Integer autoboxing.

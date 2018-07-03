@@ -1088,7 +1088,13 @@ public class FileOperationMap extends RunnableModule {
                                 + "queue has no parent: {}; "
                                 + "this is a bug.", operation);
             }
-            poolTaskCompletionHandler.childTerminated(parent, pnfsId);
+
+            if (failed) {
+                poolTaskCompletionHandler.childTerminatedWithFailure(parent,
+                                                                     pnfsId);
+            } else {
+                poolTaskCompletionHandler.childTerminated(parent, pnfsId);
+            }
         }
 
         history.add(operation.toHistoryString(), failed);
