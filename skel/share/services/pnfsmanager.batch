@@ -31,4 +31,5 @@ create org.dcache.cells.UniversalSpringCell ${pnfsmanager.cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \
         -consume=${pnfsmanager.cell.consume} -subscribe=${pnfsmanager.cell.subscribe} \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+        -profiles=inotify-${pnfsmanager.inotify-generation.enable} \
        "

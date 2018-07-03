@@ -23,7 +23,7 @@
         <property name="excludedDestinations" value="${pnfsmanager.destination.cache-notification}"/>
     </bean>
 
-  <bean id="pnfs-manager" class="diskCacheV111.namespace.PnfsManagerV3"
+  <bean abstract="true" id="pnfs-manager" class="diskCacheV111.namespace.PnfsManagerV3"
         init-method="init" destroy-method="shutdown">
       <description>Request processor</description>
       <property name="threads" value="${pnfsmanager.limits.threads}"/>
@@ -33,7 +33,6 @@
       <property name="folding" value="${pnfsmanager.enable.folding}"/>
       <property name="directoryListLimit" value="${pnfsmanager.limits.list-chunk-size}"/>
       <property name="permissionHandler" ref="permission-handler"/>
-      <property name="nameSpaceProvider" ref="name-space-provider"/>
       <property name="queueMaxSize" value="${pnfsmanager.limits.queue-length}"/>
       <property name="atimeGap" value="${pnfsmanager.atime-gap}" />
       <property name="flushNotificationTarget" value="${pnfsmanager.destination.flush-notification}"/>
@@ -108,4 +107,47 @@
       <description>ACL command line</description>
       <property name="nameSpaceProvider" ref="name-space-provider"/>
   </bean>
+
+  <beans profile="inotify-true">
+      <bean id="event-notifier" class="diskCacheV111.namespace.EventNotifier">
+          <description>Service allowing other dCache components to be notified of namespace events</description>
+          <property name="cellStub">
+              <bean class="org.dcache.cells.CellStub">
+                  <property name="timeout" value="10"/>
+                  <property name="timeoutUnit" value="SECONDS"/>
+              </bean>
+          </property>
+          <property name="dispatchExecutor">
+              <bean class="org.dcache.util.BoundedCachedExecutor"
+                    destroy-method="shutdownNow">
+                  <constructor-arg value="1"/>  <!-- Only a single thread -->
+                  <constructor-arg value="${pnfsmanager.inotify-generation.backlog.initial}"/>
+              </bean>
+          </property>
+          <property name="senderExecutor">
+              <bean class="java.util.concurrent.Executors"
+                    factory-method="newSingleThreadExecutor"
+                    destroy-method="shutdownNow"/>
+          </property>
+          <property name="eventBatchSize"
+                    value="${pnfsmanager.inotify-generation.message-batch-size}"/>
+          <property name="maximumQueuedEvents"
+                    value="${pnfsmanager.inotify-generation.backlog.per-door}"/>
+      </bean>
+
+      <bean parent="pnfs-manager">
+          <property name="nameSpaceProvider">
+              <bean class="diskCacheV111.namespace.MonitoringNameSpaceProvider">
+                  <property name="nameSpaceProvider" ref="name-space-provider"/>
+                  <property name="eventReceiver" ref="event-notifier"/>
+              </bean>
+          </property>
+      </bean>
+  </beans>
+
+  <beans profile="inotify-false">
+      <bean parent="pnfs-manager">
+          <property name="nameSpaceProvider" ref="name-space-provider"/>
+      </bean>
+  </beans>
 </beans>
