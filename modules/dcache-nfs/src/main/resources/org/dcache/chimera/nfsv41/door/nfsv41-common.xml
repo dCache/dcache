@@ -171,7 +171,7 @@
         <property name="root" value="/"/>
     </bean>
 
-    <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
+    <bean abstract="true" id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
           init-method="init" destroy-method="destroy" depends-on="rpcbind">
         <description>dCache implementation of NFSv4.1 MDS</description>
         <property name="poolStub" ref="pool-stub"/>
@@ -255,4 +255,39 @@
         </bean>
     </beans>
 
+    <beans profile="inotify-true">
+        <bean id="event-notifier" class="diskCacheV111.namespace.EventNotifier">
+            <description>Service for sending inotify events</description>
+            <property name="cellStub">
+                <bean class="org.dcache.cells.CellStub">
+                    <property name="timeout" value="10"/>
+                    <property name="timeoutUnit" value="SECONDS"/>
+                </bean>
+            </property>
+            <property name="dispatchExecutor">
+                <bean class="org.dcache.util.BoundedCachedExecutor"
+                      destroy-method="shutdownNow">
+                    <constructor-arg value="1"/> <!-- only single thread -->
+                    <constructor-arg value="${nfs.inotify-generation.backlog.initial}"/>
+                </bean>
+            </property>
+            <property name="senderExecutor">
+                <bean class="java.util.concurrent.Executors"
+                      factory-method="newSingleThreadExecutor"
+                      destroy-method="shutdownNow"/>
+            </property>
+            <property name="eventBatchSize"
+                      value="${nfs.inotify-generation.message-batch-size}"/>
+            <property name="maximumQueuedEvents"
+                      value="${nfs.inotify-generation.backlog.per-door}"/>
+        </bean>
+
+        <bean parent="door">
+            <property name="eventNotifier" ref="event-notifier"/>
+        </bean>
+    </beans>
+
+    <beans profile="inotify-false">
+        <bean parent="door"/>
+    </beans>
 </beans>

@@ -56,5 +56,5 @@ create org.dcache.cells.UniversalSpringCell ${nfs.cell.name} \
             -consume=${nfs.cell.consume} \
             -subscribe=${nfs.cell.subscribe} \
             -cell.max-message-threads=${nfs.cell.max-message-threads} -cell.max-messages-queued=${nfs.cell.max-messages-queued} \
-            -profiles=portmap-${nfs.enable.portmap},kafka-${nfs.enable.kafka}"
+            -profiles=portmap-${nfs.enable.portmap},kafka-${nfs.enable.kafka},inotify-${nfs.inotify-generation.enable}"
 

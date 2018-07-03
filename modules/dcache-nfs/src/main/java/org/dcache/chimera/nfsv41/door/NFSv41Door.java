@@ -156,7 +156,10 @@ import java.util.stream.Stream;
 
 import javax.annotation.concurrent.GuardedBy;
 
+import diskCacheV111.namespace.EventNotifier;
+
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
@@ -242,8 +245,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private boolean _enableRpcsecGss;
 
-    private VfsCache _vfs;
+    private EventNotifier _eventNotifier;
+    private VfsCache _vfsCache;
     private ChimeraVfs _chimeraVfs;
+    private VirtualFileSystem _vfs;
 
     private LoginBrokerPublisher _loginBrokerPublisher;
 
@@ -274,6 +279,10 @@ public class NFSv41Door extends AbstractCellComponent implements
      * Exception thrown by transfer if accessed after mover have finished.
      */
     private static final ChimeraNFSException POISON = new NfsIoException("Mover finished, EIO");
+
+    public void setEventNotifier(EventNotifier notifier) {
+        _eventNotifier = notifier;
+    }
 
     public void setEnableRpcsecGss(boolean enable) {
         _enableRpcsecGss = enable;
@@ -339,10 +348,20 @@ public class NFSv41Door extends AbstractCellComponent implements
        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
+    public VirtualFileSystem wrapWithMonitoring(VirtualFileSystem inner) {
+        MonitoringVfs monitor = new MonitoringVfs();
+        monitor.setInner(inner);
+        monitor.setFileSystemProvider(_fileFileSystemProvider);
+        monitor.setEventReceiver(_eventNotifier);
+        return monitor;
+    }
+
     public void init() throws Exception {
 
         _chimeraVfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
-        _vfs = new VfsCache(_chimeraVfs, _vfsCacheConfig);
+        _vfsCache = new VfsCache(_chimeraVfs, _vfsCacheConfig);
+        _vfs = _eventNotifier == null ? _vfsCache : wrapWithMonitoring(_vfsCache);
+
         MountServer ms = new MountServer(_exportFile, _vfs);
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
@@ -634,7 +653,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             if (ioMode == layoutiomode4.LAYOUTIOMODE4_RW) {
                 // in case of WRITE, invalidate vfs cache on close
                 layoutStateId.addDisposeListener(state -> {
-                    _vfs.invalidateStatCache(nfsInode);
+                    _vfsCache.invalidateStatCache(nfsInode);
                 });
             }
 
