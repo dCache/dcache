@@ -49,6 +49,12 @@ public enum SelectionStatus
     BAD_SELECTOR,
 
     /**
+     * The selector could not be accepted because, although well-formed, it
+     * has a field that fails some condition.
+     */
+    CONDITION_FAILED,
+
+    /**
      * Some internal error.
      */
     INTERNAL_ERROR

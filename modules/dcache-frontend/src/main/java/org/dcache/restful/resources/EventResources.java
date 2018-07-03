@@ -545,6 +545,9 @@ public class EventResources
         case BAD_SELECTOR:
             throw new BadRequestException("Bad selector: " + result.getMessage());
 
+        case CONDITION_FAILED:
+            throw new BadRequestException("Failed condition: " + result.getMessage());
+
         default:
             throw new InternalServerErrorException("Unexpected status: " + result.getStatus());
         }

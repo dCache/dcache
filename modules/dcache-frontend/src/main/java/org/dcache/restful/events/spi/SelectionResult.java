@@ -40,7 +40,35 @@ public class SelectionResult
     public static SelectionResult created(@NotNull SelectedEventStream ses)
     {
         return new SelectionResult(ses, SelectionStatus.CREATED, null);
+    }
 
+    public static SelectionResult merged(@NotNull SelectedEventStream ses)
+    {
+        return new SelectionResult(ses, SelectionStatus.MERGED, null);
+    }
+
+    public static SelectionResult permissionDenied(@NotNull String template, Object...args)
+    {
+        return new SelectionResult(null, SelectionStatus.PERMISSION_DENIED,
+                String.format(template, args));
+    }
+
+    public static SelectionResult resourceNotFound(@NotNull String template, Object...args)
+    {
+        return new SelectionResult(null, SelectionStatus.RESOURCE_NOT_FOUND,
+                String.format(template, args));
+    }
+
+    public static SelectionResult conditionFailed(@NotNull String template, Object...args)
+    {
+        return new SelectionResult(null, SelectionStatus.CONDITION_FAILED,
+                String.format(template, args));
+    }
+
+    public static SelectionResult internalError(@NotNull String template, Object...args)
+    {
+        return new SelectionResult(null, SelectionStatus.INTERNAL_ERROR,
+                String.format(template, args));
     }
 
     private SelectionResult(SelectedEventStream ses, SelectionStatus status,
