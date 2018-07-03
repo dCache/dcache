@@ -79,8 +79,5 @@ public enum EventType
     IN_MOVED_TO,
 
     /** File or directory was opened. */
-    IN_OPEN,
-
-    /** Queue overflow -- events may have been lost. */
-    OVERFLOW;
+    IN_OPEN;
 }
