@@ -41,6 +41,7 @@ import org.dcache.chimera.DirNotEmptyHimeraFsException;
 import org.dcache.chimera.DirectoryStreamHelper;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.FsInode_CONST;
@@ -291,7 +292,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 fsStat.getUsedFiles());
     }
 
-    private FsInode toFsInode(Inode inode) throws IOException {
+    FsInode toFsInode(Inode inode) throws IOException {
         return inodeFromBytes(inode.getFileId());
     }
 
@@ -593,6 +594,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
      * @throws BadHandleException if provided {@c0de handle} can't be converted into FsInode.
      */
     public FsInode inodeFromBytes(byte[] handle) throws BadHandleException {
+        return inodeFromBytes(_fs, handle);
+    }
+
+    public static FsInode inodeFromBytes(FileSystemProvider fs, byte[] handle) throws BadHandleException {
         FsInode inode;
 
         if (handle.length < MIN_HANDLE_LEN) {
@@ -620,56 +625,56 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 if (level < 0 || level > JdbcFs.LEVELS_NUMBER) {
                     throw new BadHandleException("Bad file handle: invalid level:" + level);
                 }
-                inode = new FsInode(_fs, ino, level);
+                inode = new FsInode(fs, ino, level);
                 break;
 
             case ID:
-                inode = new FsInode_ID(_fs, ino);
+                inode = new FsInode_ID(fs, ino);
                 break;
 
             case TAGS:
-                inode = new FsInode_TAGS(_fs, ino);
+                inode = new FsInode_TAGS(fs, ino);
                 break;
 
             case TAG:
                 String tag = new String(handle, b.position(), opaqueLen);
-                inode = new FsInode_TAG(_fs, ino, tag);
+                inode = new FsInode_TAG(fs, ino, tag);
                 break;
 
             case NAMEOF:
-                inode = new FsInode_NAMEOF(_fs, ino);
+                inode = new FsInode_NAMEOF(fs, ino);
                 break;
 
             case PARENT:
-                inode = new FsInode_PARENT(_fs, ino);
+                inode = new FsInode_PARENT(fs, ino);
                 break;
 
             case PATHOF:
-                inode = new FsInode_PATHOF(_fs, ino);
+                inode = new FsInode_PATHOF(fs, ino);
                 break;
 
             case CONST:
-                inode = new FsInode_CONST(_fs, ino);
+                inode = new FsInode_CONST(fs, ino);
                 break;
 
             case PSET:
-                inode = new FsInode_PSET(_fs, ino, getArgs(b, opaqueLen));
+                inode = new FsInode_PSET(fs, ino, getArgs(b, opaqueLen));
                 break;
 
             case PCUR:
-                inode = new FsInode_PCUR(_fs, ino);
+                inode = new FsInode_PCUR(fs, ino);
                 break;
 
             case PLOC:
-                inode = new FsInode_PLOC(_fs, ino);
+                inode = new FsInode_PLOC(fs, ino);
                 break;
 
             case PCRC:
-                inode = new FsInode_PCRC(_fs, ino);
+                inode = new FsInode_PCRC(fs, ino);
                 break;
 
             case SURI:
-                inode = new FsInode_SURI(_fs, ino);
+                inode = new FsInode_SURI(fs, ino);
                 break;
 
             default:
@@ -678,7 +683,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         return inode;
     }
 
-    private String[] getArgs(ByteBuffer b, int opaqueLen) {
+    private static String[] getArgs(ByteBuffer b, int opaqueLen) {
 
         StringTokenizer st = new StringTokenizer(new String(b.array(), b.position(), opaqueLen), "[:]");
         int argc = st.countTokens();
