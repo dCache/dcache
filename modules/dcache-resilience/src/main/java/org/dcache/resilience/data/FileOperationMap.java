@@ -653,7 +653,7 @@ public class FileOperationMap extends RunnableModule {
      *               only to the current (running) operation.
      */
     public void cancel(PnfsId pnfsId, boolean remove) {
-        FileFilter filter = new FileFilter();
+        FileFilter filter = new FileCancelFilter();
         filter.setPnfsIds(pnfsId.toString());
         filter.setForceRemoval(remove);
         cancel(filter);
