@@ -64,7 +64,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -839,34 +841,87 @@ public final class ResilienceCommands implements CellCommandListener {
     @Command(name = "inaccessible",
                     hint = "list pnfsids for a pool which "
                                     + "currently have no readable locations",
-                    description = "Issues a query to the namespace to scan the pool, "
+                    description = "With no options, issues a query to the "
+                                    + "namespace to scan the pool, "
                                     + "checking locations of each file with online "
                                     + "access latency; results are written to a  "
                                     + "file in resilience home named '"
                                     + INACCESSIBLE_PREFIX
-                                    + "' + pool. Executed asynchronously.")
+                                    + "' + pool. Executed asynchronously. Using "
+                                    + "the options, the scan status can be checked, "
+                                    + "scan canceled, and contents of file "
+                                    + "(pnfsid listing) displayed for single pools.")
     class InaccessibleFilesCommand extends ResilienceCommand {
-        @Option(name = "cancel", usage = "Cancel the running job.")
+        @Option(name = "status", usage = "Check status of scan.")
+        boolean status = false;
+
+        @Option(name = "list", usage = "List the inaccessible pnfsids.")
+        boolean list = false;
+
+        @Option(name = "delete", usage = "Delete scan file.")
+        boolean delete = false;
+
+        @Option(name = "cancel", usage = "Cancel the running scan job.")
         boolean cancel = false;
 
-        @Argument(usage = "A regular expression for pool names.")
-        String expression;
+        @Argument(usage = "With run and cancel, this can be a regular expression "
+                        + "for pool names; with the other options, it must be "
+                        + "a single pool name.")
+        String poolExpression;
 
         @Override
         protected String doCall() throws Exception {
+            if (status) {
+                return getStatus();
+            }
+
+            if (delete) {
+                return doDelete();
+            }
+
+            if (list) {
+                return getListing();
+            }
+
+            return doScan();
+        }
+
+        private String getStatus() {
+            if (futureMap.containsKey(poolExpression)) {
+                return "RUNNING";
+            }
+
+            if (getListingFile(poolExpression, resilienceDir).exists()) {
+                return "DONE";
+            }
+
+            return "NOT FOUND";
+        }
+
+        private String doDelete() {
+            File toDelete = getListingFile(poolExpression, resilienceDir);
+            if (toDelete.exists()) {
+                toDelete.delete();
+                return "Deleted " + toDelete;
+            }
+
+            return "Not found: " + toDelete;
+        }
+
+        private String doScan() {
             try {
                 StringBuilder builder = new StringBuilder();
-                Pattern pattern = Pattern.compile(expression);
+                Pattern pattern = Pattern.compile(poolExpression);
 
                 poolInfoMap.getResilientPools()
                            .stream()
                            .filter((pool) -> pattern.matcher(pool).find())
                            .forEach((pool) -> handleOption(cancel, pool, builder));
 
-                builder.insert(0, "Started jobs to write the lists "
-                                + "of inaccessible pnfsids "
-                                + "to the following files:\n\n");
-                builder.append("Check pinboard for progress.\n");
+                if (!cancel) {
+                    builder.insert(0, "Writing inaccessible pnfsids "
+                                    + "to the following files:\n\n");
+                }
 
                 return builder.toString();
             } catch (Exception e) {
@@ -881,13 +936,14 @@ public final class ResilienceCommands implements CellCommandListener {
                 Future<?> future = futureMap.remove(pool);
                 if (future != null) {
                     future.cancel(true);
+                    builder.append("Cancelled job for ")
+                           .append(pool).append("\n");
+                } else {
+                    builder.append("No running job for ")
+                           .append(pool).append("\n");
                 }
-
-                builder.append("cancelled job for ")
-                                .append(pool).append("\n");
             } else {
-                File file = printToFile(pool,
-                                resilienceDir);
+                File file = printToFile(pool, resilienceDir);
                 builder.append("   ")
                                 .append(file.getAbsolutePath())
                                 .append("\n");
@@ -895,7 +951,7 @@ public final class ResilienceCommands implements CellCommandListener {
         }
 
         private File printToFile(String pool, String dir) {
-            File file = new File(dir, INACCESSIBLE_PREFIX + pool);
+            File file = getListingFile(pool, dir);
             ListeningExecutorService decoratedExecutor
                             = MoreExecutors.listeningDecorator(executor);
 
@@ -923,6 +979,25 @@ public final class ResilienceCommands implements CellCommandListener {
             future.addListener(() -> futureMap.remove(pool),
                                      MoreExecutors.directExecutor());
             return file;
+        }
+
+        private String getListing() {
+            File file = getListingFile(poolExpression, resilienceDir);
+            if (!file.exists()) {
+                return "There is no current listing for " + poolExpression;
+            }
+            StringBuilder builder = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                            new FileReader(getListingFile(poolExpression, resilienceDir)))) {
+                    reader.lines().forEach((l) -> builder.append(l).append("\n"));
+            } catch (IOException e) {
+                return "Trouble reading file for " + poolExpression + ": " + e.getMessage();
+            }
+            return builder.toString();
+        }
+
+        private File getListingFile(String pool, String dir) {
+            return new File(dir, INACCESSIBLE_PREFIX + pool);
         }
     }
 
