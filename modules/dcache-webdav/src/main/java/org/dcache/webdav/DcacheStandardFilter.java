@@ -12,8 +12,13 @@ import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.http.exceptions.NotFoundException;
 import io.milton.http.quota.StorageChecker;
 import io.milton.http.webdav.WebDavResponseHandler;
+import io.milton.servlet.ServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 
 /**
  * Custom StandardFilter for Milton.
@@ -67,6 +72,8 @@ public class DcacheStandardFilter implements Filter
             }
         } catch (BadRequestException e) {
             responseHandler.respondBadRequest(e.getResource(), response, request);
+            // Work-around: milton doesn't allow non-standard text, so we update the value here.
+            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_BAD_REQUEST, e.getReason());
         } catch (UncheckedBadRequestException e) {
             log.debug("Client supplied bad request parameters: {}", e.getMessage());
             responseHandler.respondBadRequest(e.getResource(), response, request);
