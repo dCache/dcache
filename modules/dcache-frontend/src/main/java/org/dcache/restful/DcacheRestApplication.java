@@ -2,10 +2,8 @@ package org.dcache.restful;
 
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
-import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.filter.EncodingFilter;
 
 import org.dcache.restful.filters.ResponseHeaderFilter;
 import org.dcache.restful.providers.ErrorResponseProvider;
@@ -15,6 +13,7 @@ import org.dcache.restful.resources.EventResources;
 import org.dcache.restful.resources.alarms.AlarmsResources;
 import org.dcache.restful.resources.billing.BillingResources;
 import org.dcache.restful.resources.cells.CellInfoResources;
+import org.dcache.restful.resources.doors.DoorsResources;
 import org.dcache.restful.resources.namespace.FileResources;
 import org.dcache.restful.resources.pool.PoolGroupInfoResources;
 import org.dcache.restful.resources.pool.PoolInfoResources;
@@ -52,6 +51,7 @@ public class DcacheRestApplication extends ResourceConfig
         register(ApiListingResource.class);
         register(SwaggerSerializers.class);
         register(EventResources.class);
+        register(DoorsResources.class);
 
         //register filters
         register(ResponseHeaderFilter.class);
