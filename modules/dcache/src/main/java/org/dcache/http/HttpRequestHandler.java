@@ -7,11 +7,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,8 +115,8 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t)
     {
         if (t instanceof TooLongFrameException) {
-            HttpTextResponse response = createErrorResponse(BAD_REQUEST, "Max request length exceeded");
-            HttpHeaders.setKeepAlive(response, false);
+            FullHttpResponse response = createErrorResponse(BAD_REQUEST, "Max request length exceeded");
+            HttpUtil.setKeepAlive(response, false);
             ctx.channel().writeAndFlush(response);
         } else if (ctx.channel().isActive()) {
             // We cannot know whether the error was generated before or
@@ -167,20 +168,18 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
         return null;
     }
 
-    public static HttpTextResponse createErrorResponse(int status, String message)
+    public static FullHttpResponse createErrorResponse(HttpResponseStatus status, String message)
     {
-        return createErrorResponse(HttpResponseStatus.valueOf(status), message);
+        return createErrorResponse(status.code(), message);
     }
 
-    public static HttpTextResponse createErrorResponse(HttpResponseStatus status, String message)
+    public static FullHttpResponse createErrorResponse(int code, String message)
     {
-        if (message == null || message.isEmpty()) {
-            message = "An unexpected server error has occurred.";
-        }
-
-        LOGGER.info("Sending error {} with message '{}' to client.",
-                    status, message);
-        return new HttpTextResponse(status, message);
+        HttpResponseStatus status = new HttpResponseStatus(code, message);
+        LOGGER.info("Sending error '{}' to client.", status);
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, status);
+        response.headers().set(CONTENT_LENGTH, 0);
+        return response;
     }
 
     protected static class HttpTextResponse extends DefaultFullHttpResponse
