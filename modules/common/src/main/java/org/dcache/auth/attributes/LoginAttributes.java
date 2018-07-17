@@ -18,6 +18,7 @@
 package org.dcache.auth.attributes;
 
 import java.util.Collection;
+import java.util.OptionalLong;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.FsPath;
@@ -80,5 +81,14 @@ public class LoginAttributes
                 .filter(UnassertedRole.class::isInstance)
                 .map(UnassertedRole.class::cast)
                 .map(UnassertedRole::getRole);
+    }
+
+    public static OptionalLong maximumUploadSize(Collection<LoginAttribute> attributes)
+    {
+        return attributes.stream()
+                .filter(MaxUploadSize.class::isInstance)
+                .map(MaxUploadSize.class::cast)
+                .mapToLong(a -> a.getMaximumSize())
+                .min();
     }
 }
