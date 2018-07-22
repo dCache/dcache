@@ -28,6 +28,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -375,7 +376,8 @@ class Companion
                 ReplicaState.FROM_POOL,
                 _targetState,
                 _stickyRecords,
-                EnumSet.of(StandardOpenOption.CREATE));
+                EnumSet.of(StandardOpenOption.CREATE),
+                OptionalLong.empty());
     }
 
     //

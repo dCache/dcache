@@ -3,6 +3,7 @@ package org.dcache.pool.repository;
 import java.io.IOException;
 import java.nio.file.OpenOption;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -69,6 +70,7 @@ public interface Repository
      * @param targetState the target state
      * @param sticky sticky record to apply to entry; can be null
      * @param flags options that influence how the entry is created
+     * @param maximumSize an optional limit on the size of this entry
      * @return A write handle for the entry.
      * @throws FileInCacheException if an entry with the same ID
      * already exists.
@@ -78,7 +80,8 @@ public interface Repository
                                   ReplicaState transferState,
                                   ReplicaState targetState,
                                   List<StickyRecord> sticky,
-                                  Set<? extends OpenOption> flags)
+                                  Set<? extends OpenOption> flags,
+                                  OptionalLong maximumSize)
         throws CacheException;
 
     /**

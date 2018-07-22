@@ -13,6 +13,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,6 +56,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.LimitedAllocator;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaState;
@@ -563,7 +565,8 @@ public class ReplicaRepository
                                    ReplicaState transferState,
                                    ReplicaState targetState,
                                    List<StickyRecord> stickyRecords,
-                                   Set<? extends OpenOption> flags)
+                                   Set<? extends OpenOption> flags,
+                                   OptionalLong maximumSize)
         throws CacheException
     {
         if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO))) {
@@ -600,7 +603,7 @@ public class ReplicaRepository
             return entry.update(r -> {
                 r.setFileAttributes(fileAttributes);
                 r.setState(transferState);
-                return new WriteHandleImpl(this, buildAllocator(flags), _pnfs,
+                return new WriteHandleImpl(this, buildAllocator(flags, maximumSize), _pnfs,
                         entry, fileAttributes, targetState, stickyRecords);
             });
         } catch (DuplicateEntryException e) {
@@ -614,10 +617,14 @@ public class ReplicaRepository
         }
     }
 
-    private Allocator buildAllocator(Set<? extends OpenOption> flags)
+    private Allocator buildAllocator(Set<? extends OpenOption> flags,
+            OptionalLong maximumSize)
     {
         Allocator allocator = flags.contains(OpenFlags.NONBLOCK_SPACE_ALLOCATION)
                 ? new ImmediateAllocator(_account) : new BlockingAllocator(_account);
+        if (maximumSize.isPresent()) {
+            allocator = new LimitedAllocator(allocator, maximumSize.getAsLong());
+        }
         return new FairQueueAllocator(allocator);
     }
 

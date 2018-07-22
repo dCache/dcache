@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -792,7 +793,8 @@ public class PoolV4
                                                  ReplicaState.FROM_CLIENT,
                                                  targetState,
                                                  stickyRecords,
-                                                 moverFactory.getChannelCreateOptions());
+                                                 moverFactory.getChannelCreateOptions(),
+                                                 OptionalLong.empty());
             } else {
                 Set<? extends OpenOption> openFlags =
                         message.isPool2Pool()

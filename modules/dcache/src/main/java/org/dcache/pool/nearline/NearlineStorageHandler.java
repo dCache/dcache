@@ -25,7 +25,9 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.Monitor;
+
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +69,8 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
+import java.util.OptionalLong;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
@@ -1104,7 +1108,8 @@ public class NearlineStorageHandler
                             ReplicaState.FROM_STORE,
                             ReplicaState.CACHED,
                             Collections.emptyList(),
-                            EnumSet.noneOf(Repository.OpenFlags.class));
+                            EnumSet.noneOf(Repository.OpenFlags.class),
+                            OptionalLong.empty());
             LOGGER.debug("Stage request created for {}.", pnfsId);
         }
 

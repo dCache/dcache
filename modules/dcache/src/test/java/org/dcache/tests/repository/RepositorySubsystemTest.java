@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -142,7 +143,8 @@ public class RepositorySubsystemTest
                                                ReplicaState.FROM_CLIENT,
                                                state,
                                                sticky,
-                                               EnumSet.noneOf(OpenFlags.class));
+                                               EnumSet.noneOf(OpenFlags.class),
+                                               OptionalLong.empty());
                 try {
                     createFile(handle, attributes.getSize());
                     handle.commit();
@@ -372,7 +374,8 @@ public class RepositorySubsystemTest
         repository.init();
         List<StickyRecord> stickyRecords = Collections.emptyList();
         repository.createEntry(FileAttributes.of().pnfsId(id1).storageInfo(info1).build(),
-                FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class));
+                FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class),
+                OptionalLong.empty());
     }
 
     @Test(expected=IllegalStateException.class)
@@ -488,7 +491,7 @@ public class RepositorySubsystemTest
                     throws CacheException, InterruptedException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
                 ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED, stickyRecords,
-                        EnumSet.noneOf(OpenFlags.class));
+                        EnumSet.noneOf(OpenFlags.class), OptionalLong.empty());
                 try {
                     createFile(handle, attributes5.getSize());
                     handle.commit();
@@ -744,7 +747,7 @@ public class RepositorySubsystemTest
             {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
                 repository.createEntry(attributes1, FROM_CLIENT, PRECIOUS, stickyRecords,
-                                       EnumSet.noneOf(OpenFlags.class));
+                                       EnumSet.noneOf(OpenFlags.class), OptionalLong.empty());
             }
         };
     }
@@ -808,7 +811,8 @@ public class RepositorySubsystemTest
                 List<StickyRecord> stickyRecords = Collections.emptyList();
                 ReplicaDescriptor handle =
                     repository.createEntry(attributes4, transferState,
-                                           finalState, stickyRecords, EnumSet.noneOf(OpenFlags.class));
+                                           finalState, stickyRecords, EnumSet.noneOf(OpenFlags.class),
+                                           OptionalLong.empty());
                 try {
                     assertStep("No clear after this point", 2);
                     createFile(handle, size4);
