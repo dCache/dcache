@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
@@ -42,13 +41,11 @@ import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolManagerPoolModeMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
-import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellArgsAware;
@@ -101,9 +98,6 @@ public class PoolManagerV5
     private WatchdogThread     _watchdog;
     private PoolMonitorThread _poolMonitorThread;
 
-    private boolean _quotasEnabled;
-    private CellStub _quotaManager;
-
     private static final Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
 
     private final ExecutorService _executor = new CDCExecutorServiceDecorator<>(
@@ -151,18 +145,6 @@ public class PoolManagerV5
     public void setPoolStatusTopic(CellStub stub)
     {
         _poolStatusTopic = stub;
-    }
-
-    @Required
-    public void setQuotaManager(CellStub stub)
-    {
-        if (stub == null) {
-            _quotasEnabled = false;
-            _quotaManager = null;
-        } else {
-            _quotasEnabled = true;
-            _quotaManager = stub;
-        }
     }
 
     @Required
@@ -503,32 +485,6 @@ public class PoolManagerV5
         return msg;
     }
 
-    public PoolMgrGetPoolByLink messageArrived(PoolMgrGetPoolByLink msg)
-        throws CacheException
-    {
-        String linkName = msg.getLinkName();
-        long filesize = msg.getFilesize();
-
-        PoolSelectionUnit.SelectionLink link =
-            _selectionUnit.getLinkByName(linkName);
-        List<PoolInfo> pools =
-                link.getPools().stream()
-                        .map(PoolSelectionUnit.SelectionEntity::getName)
-                        .map(_costModule::getPoolInfo)
-                        .filter(Objects::nonNull)
-                        .collect(toList());
-
-        if (pools.isEmpty()) {
-            throw new CacheException(57, "No appropriate pools found for link: " + linkName);
-        }
-
-        Partition partition =
-            _poolMonitor.getPartitionManager().getPartition(link.getTag());
-        msg.setPoolName(partition.selectWritePool(_costModule, pools, new FileAttributes(), filesize).name());
-        msg.setSucceeded();
-        return msg;
-    }
-
     public PoolManagerGetPoolsByHsmMessage
     messageArrived(PoolManagerGetPoolsByHsmMessage msg)
     {
@@ -750,17 +706,6 @@ public class PoolManagerV5
     }
     */
 
-    private boolean quotasExceeded(FileAttributes fileAttributes) {
-        String storageClass = fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm() ;
-        try {
-            QuotaMgrCheckQuotaMessage quotas = new QuotaMgrCheckQuotaMessage(storageClass);
-           return _quotaManager.sendAndWait(quotas).isHardQuotaExceeded();
-        } catch (Exception e) {
-            _log.warn("quotasExceeded of {} : Exception : {}", storageClass, e.toString());
-            return false;
-        }
-    }
-
     public PoolManagerGetPoolMonitor
         messageArrived(PoolManagerGetPoolMonitor msg)
     {
@@ -798,11 +743,6 @@ public class PoolManagerV5
 
            _log.info("{} write handler started", _pnfsId);
            long started = System.currentTimeMillis();
-
-           if( _quotasEnabled && quotasExceeded(fileAttributes) ){
-              requestFailed(55, "Quotas Exceeded for StorageClass : " + fileAttributes.getStorageClass()) ;
-              return ;
-           }
 
            SelectedPool pool;
            try {

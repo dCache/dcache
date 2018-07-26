@@ -39,7 +39,6 @@ import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -401,95 +400,6 @@ public class LegacyAdminShell
             _timeout = timeout;
         }
         return "Timeout = " + (_timeout / 1000L);
-
-    }
-
-    public static final String hh_getpoolbylink = "<linkName> [-size=<filesize>] [-service=<serviceCellName]";
-
-    public String ac_getpoolbylink_$_1(Args args) throws Exception
-    {
-
-        String linkName = args.argv(0);
-        String service = args.getOpt("service");
-        String sizeString = args.getOpt("size");
-
-        PoolMgrGetPoolByLink msg = new PoolMgrGetPoolByLink(linkName);
-        if (sizeString != null) {
-            msg.setFilesize(Long.parseLong(sizeString));
-        }
-        service = service == null ? "PoolManager" : service;
-
-        Object result = sendObject(service, msg);
-        if (result == null) {
-            throw new
-                    Exception("QuotaRequest timed out");
-        }
-
-        if (result instanceof PoolMgrGetPoolByLink) {
-            PoolMgrGetPoolByLink link = (PoolMgrGetPoolByLink) result;
-            int rc = link.getReturnCode();
-            if (rc != 0) {
-                return "Problem " + rc + " <" + link.getErrorObject() + "> reported for link " + linkName;
-            } else {
-                return "Pool <" + link.getPoolName() + "> selected for link " + linkName;
-            }
-        }
-        return "Unexpected class " + result.getClass().getName() +
-               " arrived with message " + result.toString();
-    }
-
-    public static final String hh_quota_query = "<storageClassName>|* [-l] [-service=<serviceCellName>]";
-
-    public Object ac_quota_query_$_1(Args args) throws Exception
-    {
-
-        String storageClassName = args.argv(0);
-        String service = args.getOpt("service");
-        service = service == null ? "QuotaManager" : service;
-        boolean extended = args.hasOption("l");
-
-        Message msg;
-
-        if (storageClassName.equals("*")) {
-            msg = new PoolMgrGetPoolLinks();
-        } else {
-            msg = new QuotaMgrCheckQuotaMessage(storageClassName);
-        }
-
-        Object result = sendObject(service, msg);
-        if (result == null) {
-            throw new
-                    Exception("QuotaRequest timed out");
-        }
-
-        if (result instanceof QuotaMgrCheckQuotaMessage) {
-            return result.toString();
-        } else if (result instanceof PoolMgrGetPoolLinks) {
-            if (extended) {
-                PoolMgrGetPoolLinks info = (PoolMgrGetPoolLinks) result;
-                PoolLinkInfo[] links = info.getPoolLinkInfos();
-                StringBuilder sb = new StringBuilder();
-                if (links == null) {
-                    return "Object doesn't contain a Links list";
-                }
-
-                for (PoolLinkInfo link : links) {
-                    sb.append(" Link ").append(link.getName()).append(" : ")
-                            .append(link.getAvailableSpaceInBytes()).append("\n");
-                    String[] storageGroups = link.getStorageGroups();
-                    if (storageGroups == null) {
-                        continue;
-                    }
-                    for (String storageGroup : storageGroups) {
-                        sb.append("    ").append(storageGroup).append("\n");
-                    }
-                }
-                return sb.toString();
-            }
-            return result.toString();
-        }
-        return "Unexpected class " + result.getClass().getName() +
-               " arrived with message " + result.toString();
 
     }
 
