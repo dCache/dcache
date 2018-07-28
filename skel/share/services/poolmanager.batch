@@ -5,7 +5,6 @@ onerror shutdown
 check -strong poolmanager.cell.name
 check poolmanager.cell.consume
 check poolmanager.cell.subscribe
-check -strong poolmanager.plugins.quota-manager
 check -strong poolmanager.service.pnfsmanager
 check -strong poolmanager.service.billing
 check -strong poolmanager.service.pool.timeout
