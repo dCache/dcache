@@ -90,4 +90,10 @@ public class MacaroonContextBuilder
         context.updateExpiry(expiry);
         return this;
     }
+
+    public MacaroonContextBuilder withMaxUpload(long value) throws InvalidCaveatException
+    {
+        context.updateMaxUpload(value);
+        return this;
+    }
 }

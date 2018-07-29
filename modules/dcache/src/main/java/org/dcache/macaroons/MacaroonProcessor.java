@@ -99,6 +99,7 @@ public class MacaroonProcessor
         identity.getRoot().ifPresent(p -> builder.addCaveat(CaveatType.ROOT, p));
         identity.getHome().ifPresent(p -> builder.addCaveat(CaveatType.HOME, p));
         identity.getPath().ifPresent(p -> builder.addCaveat(CaveatType.PATH, p));
+        identity.getMaxUpload().ifPresent(p -> builder.addCaveat(CaveatType.MAX_UPLOAD, p));
 
         identity.getAllowedActivities()
                 .map(CaveatValues::asActivityCaveatValue)

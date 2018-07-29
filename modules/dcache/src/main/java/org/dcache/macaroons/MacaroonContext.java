@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.stream.LongStream;
 
 import diskCacheV111.util.FsPath;
@@ -47,6 +48,7 @@ public class MacaroonContext
     private FsPath home = FsPath.ROOT;
     private FsPath path = FsPath.ROOT;
     private String username;
+    private OptionalLong maxUpload = OptionalLong.empty();
     private long uid = -1;
     private long[] gids;
     private EnumSet<Activity> activities = EnumSet.allOf(Activity.class);
@@ -235,5 +237,17 @@ public class MacaroonContext
     public Optional<Instant> getExpiry()
     {
         return expiry;
+    }
+
+    public void updateMaxUpload(long value) throws InvalidCaveatException
+    {
+        checkCaveat(value > 0, CaveatType.MAX_UPLOAD.getLabel() + " must be a positive value");
+        long updatedValue = maxUpload.isPresent() ? Math.min(maxUpload.getAsLong(), value) : value;
+        maxUpload = OptionalLong.of(updatedValue);
+    }
+
+    public OptionalLong getMaxUpload()
+    {
+        return maxUpload;
     }
 }

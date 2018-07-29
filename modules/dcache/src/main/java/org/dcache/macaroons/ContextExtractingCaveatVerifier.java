@@ -74,6 +74,15 @@ public class ContextExtractingCaveatVerifier implements GeneralCaveatVerifier
                 } catch (DateTimeParseException e) {
                     throw InvalidCaveatException.wrap("Bad ISO 8601 timestamp", e);
                 }
+
+            case MAX_UPLOAD:
+                try {
+                    long maxUpload = Long.parseLong(value);
+                    context.updateMaxUpload(maxUpload);
+                    return true;
+                } catch (NumberFormatException e) {
+                    throw InvalidCaveatException.wrap("Bad " + CaveatType.MAX_UPLOAD.getLabel(), e);
+                }
             }
         } catch (InvalidCaveatException e) {
             error = e.getMessage() + ": " + serialised;

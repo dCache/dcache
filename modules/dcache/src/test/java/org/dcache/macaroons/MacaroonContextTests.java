@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import diskCacheV111.util.FsPath;
 
@@ -207,6 +208,38 @@ public class MacaroonContextTests
         _context.updateExpiry(laterExpiry);
 
         assertThat(_context.getExpiry(), is(equalTo(Optional.of(earlierExpiry))));
+    }
+
+    @Test
+    public void shouldHaveInitiallyNoUploadLimit() throws Exception
+    {
+        given(macaroonContext());
+
+        assertThat(_context.getMaxUpload(), is(equalTo(OptionalLong.empty())));
+    }
+
+    @Test
+    public void shouldAcceptUploadLimit() throws Exception
+    {
+        given(macaroonContext().withMaxUpload(1024));
+
+        assertThat(_context.getMaxUpload(), is(equalTo(OptionalLong.of(1024))));
+    }
+
+    @Test
+    public void shouldNotUpdateMaxUploadLimitWithLargerValue() throws Exception
+    {
+        given(macaroonContext().withMaxUpload(1024).withMaxUpload(2048));
+
+        assertThat(_context.getMaxUpload(), is(equalTo(OptionalLong.of(1024))));
+    }
+
+    @Test
+    public void shouldUpdateMaxUploadLimitWithSmallerValue() throws Exception
+    {
+        given(macaroonContext().withMaxUpload(2048).withMaxUpload(1024));
+
+        assertThat(_context.getMaxUpload(), is(equalTo(OptionalLong.of(1024))));
     }
 
     void given(MacaroonContextBuilder builder)

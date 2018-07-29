@@ -35,7 +35,8 @@ public enum CaveatType
     ACTIVITY("activity"),
     IDENTITY("id"),
     BEFORE("before"),
-    IP("ip");
+    IP("ip"),
+    MAX_UPLOAD("max-upload");
 
     public static final Map<String,CaveatType> labels = new HashMap<>();
 

@@ -37,6 +37,7 @@ import org.dcache.auth.attributes.DenyActivityRestriction;
 import org.dcache.auth.attributes.Expiry;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.PrefixRestriction;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.macaroons.InvalidMacaroonException;
@@ -78,6 +79,7 @@ public class MacaroonLoginStrategy implements LoginStrategy
             context.getExpiry().map(Expiry::new).ifPresent(attributes::add);
             context.getPath().map(PrefixRestriction::new).ifPresent(attributes::add);
             context.getAllowedActivities().map(EnumSet::complementOf).map(DenyActivityRestriction::new).ifPresent(attributes::add);
+            context.getMaxUpload().ifPresent(s -> attributes.add(new MaxUploadSize(s)));
 
             Set<Principal> principals = reply.getSubject().getPrincipals();
             principals.add(new UidPrincipal(context.getUid()));

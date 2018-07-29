@@ -58,6 +58,7 @@ import org.dcache.auth.attributes.DenyActivityRestriction;
 import org.dcache.auth.attributes.Expiry;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.PrefixRestriction;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.RootDirectory;
@@ -268,6 +269,12 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
                 }
             } else if (attr instanceof Restriction) {
                 throw new ErrorResponseException(SC_BAD_REQUEST, "Cannot serialise restriction " + attr.getClass().getSimpleName());
+            } else if (attr instanceof MaxUploadSize) {
+                try {
+                    context.updateMaxUpload(((MaxUploadSize)attr).getMaximumSize());
+                } catch (InvalidCaveatException e) {
+                    throw new ErrorResponseException(SC_BAD_REQUEST, "Cannot add max-upload: " + e.getMessage());
+                }
             }
         }
 
