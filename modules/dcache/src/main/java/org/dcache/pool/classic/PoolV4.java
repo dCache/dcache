@@ -785,6 +785,7 @@ public class PoolV4
         ReplicaDescriptor handle;
         try {
             if (message instanceof PoolAcceptFileMessage) {
+                OptionalLong maximumSize = ((PoolAcceptFileMessage)message).getMaximumSize();
                 List<StickyRecord> stickyRecords =
                         _replicaStatePolicy.getStickyRecords(attributes);
                 ReplicaState targetState =
@@ -794,7 +795,7 @@ public class PoolV4
                                                  targetState,
                                                  stickyRecords,
                                                  moverFactory.getChannelCreateOptions(),
-                                                 OptionalLong.empty());
+                                                 maximumSize);
             } else {
                 Set<? extends OpenOption> openFlags =
                         message.isPool2Pool()

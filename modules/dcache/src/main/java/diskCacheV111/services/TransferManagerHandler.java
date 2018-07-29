@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
@@ -409,7 +410,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 pool.getName(),
                 protocol_info,
                 fileAttributes,
-                pool.getAssumption())
+                pool.getAssumption(),
+                OptionalLong.empty())
                 : new PoolDeliverFileMessage(
                 pool.getName(),
                 protocol_info,

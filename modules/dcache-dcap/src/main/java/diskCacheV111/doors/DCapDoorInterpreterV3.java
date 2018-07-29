@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -2133,6 +2134,7 @@ public class DCapDoorInterpreterV3
                                 _protocolInfo ,
                                 _fileAttributes,
                                 pool.getAssumption(),
+                                OptionalLong.empty(),
                                 getPreallocated());
             }else{
                 sendReply( "poolMgrGetPoolArrived" , 7 ,

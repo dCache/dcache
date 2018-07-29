@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -61,7 +62,6 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
@@ -131,6 +131,7 @@ public class Transfer implements Comparable<Transfer>
     private String _ioQueue;
 
     private long _allocated;
+    private OptionalLong _maximumSize = OptionalLong.empty();
 
     private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
     private boolean _isBillingNotified;
@@ -890,9 +891,10 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized void setLength(long length)
     {
-        if (!isWrite()) {
-            throw new IllegalStateException("Can only set length for uploads");
-        }
+        checkState(isWrite(), "Can only set length for uploads");
+        // The following check is to catch bugs: the door should have already handled this situation
+        checkArgument(!_maximumSize.isPresent() || _maximumSize.getAsLong() >= length,
+                "file length is larger than the already specified maximum length");
         _fileAttributes.setSize(length);
     }
 
@@ -930,6 +932,21 @@ public class Transfer implements Comparable<Transfer>
     public synchronized void setAllocation(long length)
     {
         _allocated = length;
+    }
+
+    /**
+     * Set the maximum allowed size for an upload.  If the size of the file
+     * is known in advance then {@link #setLength(long)} should be used instead.
+     * @param length the maximum number of bytes for this transfer.
+     */
+    public synchronized void setMaximumLength(long length)
+    {
+        checkState(isWrite(), "Can only set maximum length for uploads");
+        checkArgument(length > 0, "maximum length must be a positive number");
+        // The following check is to catch bugs: the door should have already handled this situation
+        checkArgument(!_fileAttributes.isDefined(SIZE) || _fileAttributes.getSize() <= length,
+                "maximum file length is smaller than already specified file length");
+        _maximumSize = OptionalLong.of(length);
     }
 
     /**
@@ -1052,7 +1069,7 @@ public class Transfer implements Comparable<Transfer>
                 allocated = fileAttributes.getSize();
             }
             message =
-                    new PoolAcceptFileMessage(pool.getName(), protocolInfo, fileAttributes, pool.getAssumption(), allocated);
+                    new PoolAcceptFileMessage(pool.getName(), protocolInfo, fileAttributes, pool.getAssumption(), _maximumSize, allocated);
         } else {
             message =
                     new PoolDeliverFileMessage(pool.getName(), protocolInfo, fileAttributes, pool.getAssumption());
