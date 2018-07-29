@@ -59,12 +59,6 @@
     <property name="partitionManager" ref="pm"/>
   </bean>
 
-  <bean id="quota-stub" class="org.dcache.cells.CellStub">
-      <property name="destination" value="${poolmanager.plugins.quota-manager}"/>
-      <property name="timeout" value="20"/>
-      <property name="timeoutUnit" value="SECONDS"/>
-  </bean>
-
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
       <property name="destination" value="${poolmanager.service.billing}"/>
   </bean>
