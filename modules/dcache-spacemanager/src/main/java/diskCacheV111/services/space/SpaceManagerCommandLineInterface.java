@@ -9,7 +9,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -33,7 +32,7 @@ import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.auth.FQAN;
-import org.dcache.util.ByteUnit;
+import org.dcache.util.ByteSizeParser;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.SqlGlob;
@@ -41,10 +40,7 @@ import org.dcache.util.SqlGlob;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.primitives.Longs.tryParse;
-import static java.lang.Double.parseDouble;
-import static org.dcache.util.ByteUnit.BYTES;
 import static org.dcache.util.ByteUnits.isoPrefix;
-import static org.dcache.util.ByteUnits.isoSymbol;
 
 public class SpaceManagerCommandLineInterface implements CellCommandListener
 {
@@ -803,30 +799,8 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
     private static long parseByteQuantity(String arg)
     {
-        // REVISIT: does this need really to be case insensitive?
-
-        try {
-            String s = arg.endsWith("B") || arg.endsWith("b") ?
-                arg.substring(0, arg.length()-1).toUpperCase() : arg.toUpperCase();
-
-            ByteUnit units = Arrays.stream(ByteUnit.values())
-                    .skip(1)
-                    .filter(u -> s.endsWith(isoPrefix().of(u).toUpperCase()))
-                    .findFirst().orElse(BYTES);
-
-            String num = (units == BYTES) ? s :
-                    s.substring(0, s.length() - isoPrefix().of(units).length());
-
-            return checkNonNegative((long) (units.toBytes(parseDouble(num)) + 0.5));
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Cannot convert size specified (" + arg + ") to non-negative number. \n"
-                                                       + "Valid definitions of size:\n"
-                                                       + "\t\t - a number of bytes (long integer less than 2^64) \n"
-                                                       + "\t\t - a number with a prefix; e.g., 100 k, 100 kB,\n"
-                                                       + "\t\t   100 KiB, 100M, 100MB, 100MiB, 100G, 100GB,\n"
-                                                       + "\t\t   100GiB, 10T, 10.5TB, 100TiB, 2P, 2.3PB, 1PiB\n"
-                                                       + "see http://en.wikipedia.org/wiki/Gigabyte for an explanation.");
-        }
+        String s = arg.endsWith("B") ? arg.substring(0, arg.length()-1) : arg;
+        return checkNonNegative(ByteSizeParser.using(isoPrefix()).parse(s));
     }
 
     private static long checkNonNegative(long size)

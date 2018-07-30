@@ -1,7 +1,6 @@
 package diskCacheV111.util;
 
-import java.util.Arrays;
-
+import org.dcache.util.ByteSizeParser;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.ByteUnits.JedecPrefix;
 import org.dcache.util.ByteUnits.Representation;
@@ -59,15 +58,7 @@ public class DiskSpace
             return Long.MAX_VALUE;
         }
 
-        String lastChar = s.substring(s.length()-1).toUpperCase();
-        ByteUnit units = Arrays.stream(ByteUnit.values())
-                .skip(1)
-                .filter(u -> u.hasType(BINARY) && lastChar.equals(jedecPrefix().of(u)))
-                .findFirst()
-                .orElse(BYTES);
-
-        String number = units == BYTES ? s : s.substring(0, s.length() -1);
-        return units.toBytes(Long.parseLong(number));
+        return ByteSizeParser.using(jedecPrefix()).parse(s.toUpperCase());
     }
 
     @Override

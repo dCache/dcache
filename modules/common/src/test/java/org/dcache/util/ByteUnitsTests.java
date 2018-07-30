@@ -19,6 +19,8 @@ package org.dcache.util;
 
 import org.junit.Test;
 
+import java.util.Optional;
+
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
@@ -342,5 +344,281 @@ public class ByteUnitsTests
     public void shouldHaveCorrectExbiJedecSymbol()
     {
         assertThat(ByteUnits.jedecSymbol().of(ByteUnit.EiB), equalTo("EB"));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixBytes()
+    {
+        assertThat(ByteUnits.isoPrefix().parse(""), equalTo(Optional.of(ByteUnit.BYTES)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixKilo()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("k"), equalTo(Optional.of(ByteUnit.KB)));
+    }
+
+    @Test
+    public void shouldNotParseIsoSymbolKilo()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("kB"), equalTo(Optional.empty()));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixKibi()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("Ki"), equalTo(Optional.of(ByteUnit.KiB)));
+    }
+
+    @Test
+    public void shouldNotParseWrongIsoPrefixKibi()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("ki"), equalTo(Optional.empty()));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixMega()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("M"), equalTo(Optional.of(ByteUnit.MB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixMibi()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("Mi"), equalTo(Optional.of(ByteUnit.MiB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixGiga()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("G"), equalTo(Optional.of(ByteUnit.GB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixGibi()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("Gi"), equalTo(Optional.of(ByteUnit.GiB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixTera()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("T"), equalTo(Optional.of(ByteUnit.TB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixTibi()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("Ti"), equalTo(Optional.of(ByteUnit.TiB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixPeta()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("P"), equalTo(Optional.of(ByteUnit.PB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixPibi()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("Pi"), equalTo(Optional.of(ByteUnit.PiB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixExa()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("E"), equalTo(Optional.of(ByteUnit.EB)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixEibi()
+    {
+        assertThat(ByteUnits.isoPrefix().parse("Ei"), equalTo(Optional.of(ByteUnit.EiB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolBytes()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("B"), equalTo(Optional.of(ByteUnit.BYTES)));
+    }
+
+    @Test
+    public void shouldNotParseIsoPrefixKilo()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("k"), equalTo(Optional.empty()));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolKilo()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("kB"), equalTo(Optional.of(ByteUnit.KB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolKibi()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("KiB"), equalTo(Optional.of(ByteUnit.KiB)));
+    }
+
+    @Test
+    public void shouldNotParseWrongIsoSymbolKibi()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("kiB"), equalTo(Optional.empty()));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolMega()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("MB"), equalTo(Optional.of(ByteUnit.MB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolMibi()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("MiB"), equalTo(Optional.of(ByteUnit.MiB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolGiga()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("GB"), equalTo(Optional.of(ByteUnit.GB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolGibi()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("GiB"), equalTo(Optional.of(ByteUnit.GiB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolTera()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("TB"), equalTo(Optional.of(ByteUnit.TB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolTibi()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("TiB"), equalTo(Optional.of(ByteUnit.TiB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolPeta()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("PB"), equalTo(Optional.of(ByteUnit.PB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolPibi()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("PiB"), equalTo(Optional.of(ByteUnit.PiB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolExa()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("EB"), equalTo(Optional.of(ByteUnit.EB)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolEibi()
+    {
+        assertThat(ByteUnits.isoSymbol().parse("EiB"), equalTo(Optional.of(ByteUnit.EiB)));
+    }
+
+    @Test
+    public void shouldParseJedecPrefixBytes()
+    {
+        assertThat(ByteUnits.jedecPrefix().parse(""), equalTo(Optional.of(ByteUnit.BYTES)));
+    }
+
+    @Test
+    public void shouldParseJedecPrefixKilo()
+    {
+        assertThat(ByteUnits.jedecPrefix().parse("K"), equalTo(Optional.of(ByteUnit.KiB)));
+    }
+
+    @Test
+    public void shouldParseJedecAlternativePrefixKilo()
+    {
+        assertThat(ByteUnits.jedecPrefix().parse("k"), equalTo(Optional.of(ByteUnit.KiB)));
+    }
+
+    @Test
+    public void shouldParseJedecPrefixMega()
+    {
+        assertThat(ByteUnits.jedecPrefix().parse("M"), equalTo(Optional.of(ByteUnit.MiB)));
+    }
+
+    @Test
+    public void shouldParseJedecPrefixGiga()
+    {
+        assertThat(ByteUnits.jedecPrefix().parse("G"), equalTo(Optional.of(ByteUnit.GiB)));
+    }
+
+    @Test
+    public void shouldParseJedecPrefixTera()
+    {
+        assertThat(ByteUnits.jedecPrefix().parse("T"), equalTo(Optional.of(ByteUnit.TiB)));
+    }
+
+    @Test
+    public void shouldParseJedecPrefixPeta()
+    {
+        assertThat(ByteUnits.jedecPrefix().parse("P"), equalTo(Optional.of(ByteUnit.PiB)));
+    }
+
+    @Test
+    public void shouldParseJedecPrefixExa()
+    {
+        assertThat(ByteUnits.jedecPrefix().parse("E"), equalTo(Optional.of(ByteUnit.EiB)));
+    }
+
+    @Test
+    public void shouldParseJedecSymbolBytes()
+    {
+        assertThat(ByteUnits.jedecSymbol().parse("B"), equalTo(Optional.of(ByteUnit.BYTES)));
+    }
+
+    @Test
+    public void shouldParseJedecSymbolKilo()
+    {
+        assertThat(ByteUnits.jedecSymbol().parse("KB"), equalTo(Optional.of(ByteUnit.KiB)));
+    }
+
+    @Test
+    public void shouldParseJedecAlternativeSymbolKilo()
+    {
+        assertThat(ByteUnits.jedecSymbol().parse("kB"), equalTo(Optional.of(ByteUnit.KiB)));
+    }
+
+    @Test
+    public void shouldParseJedecSymbolMega()
+    {
+        assertThat(ByteUnits.jedecSymbol().parse("MB"), equalTo(Optional.of(ByteUnit.MiB)));
+    }
+
+    @Test
+    public void shouldParseJedecSymbolGiga()
+    {
+        assertThat(ByteUnits.jedecSymbol().parse("GB"), equalTo(Optional.of(ByteUnit.GiB)));
+    }
+
+    @Test
+    public void shouldParseJedecSymbolTera()
+    {
+        assertThat(ByteUnits.jedecSymbol().parse("TB"), equalTo(Optional.of(ByteUnit.TiB)));
+    }
+
+    @Test
+    public void shouldParseJedecSymbolPeta()
+    {
+        assertThat(ByteUnits.jedecSymbol().parse("PB"), equalTo(Optional.of(ByteUnit.PiB)));
+    }
+
+    @Test
+    public void shouldParseJedecSymbolExa()
+    {
+        assertThat(ByteUnits.jedecSymbol().parse("EB"), equalTo(Optional.of(ByteUnit.EiB)));
     }
 }

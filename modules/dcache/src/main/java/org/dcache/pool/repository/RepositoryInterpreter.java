@@ -1,7 +1,6 @@
 package org.dcache.pool.repository;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,15 +31,13 @@ import org.dcache.vehicles.FileAttributes;
 
 import static java.util.stream.Collectors.joining;
 import static org.dcache.util.ByteUnit.*;
+import static org.dcache.util.ByteUnits.jedecPrefix;
 
 public class RepositoryInterpreter
     implements CellCommandListener
 {
     private static final Logger _log =
             LoggerFactory.getLogger(RepositoryInterpreter.class);
-
-    private static final Map<String,ByteUnit> STRING_TO_UNIT =
-            ImmutableMap.of("k", KiB, "m", MiB, "g", GiB, "t", TiB);
 
     private Repository _repository;
 
@@ -233,7 +230,7 @@ public class RepositoryInterpreter
             } else if (binary) {
                 return listBinary();
             } else if (stat != null) {
-                return listStatistics(STRING_TO_UNIT.getOrDefault(stat, BYTES));
+                return listStatistics(jedecPrefix().parse(stat.toUpperCase()).orElse(BYTES));
             } else {
                 return listAll();
             }
