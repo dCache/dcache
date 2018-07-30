@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -21,6 +22,7 @@ import org.dcache.auth.LoginUidPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
@@ -123,13 +125,13 @@ public class AuthzDbPlugin
             switch (type) {
             case UID:
                 if (loginUid != null) {
-                    return new UserAuthzInformation(null, null, loginUid, null, null, null, null);
+                    return new UserAuthzInformation(null, null, loginUid, null, null, null, null, OptionalLong.empty());
                 }
                 break;
 
             case GID:
                 if (loginGid != null) {
-                    return new UserAuthzInformation(null, null, 0, new long[] {loginGid}, null, null, null);
+                    return new UserAuthzInformation(null, null, 0, new long[] {loginGid}, null, null, null, OptionalLong.empty());
                 }
                 break;
 
@@ -269,6 +271,9 @@ public class AuthzDbPlugin
             if (mapping.isReadOnly()) {
                 attrib.add(Restrictions.readOnly());
             }
+            mapping.getMaxUpload().ifPresent(s -> {
+                        attrib.add(new MaxUploadSize(s));
+                    });
         }
     }
 }

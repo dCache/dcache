@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.OptionalLong;
 
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
 
@@ -46,7 +47,8 @@ public class CachedAuthzMapTest
                 new long[] { VALID_USERNAME_GID },
                 "/ fff/fff/!@# $% /",
                 "/",
-                null));
+                null,
+                OptionalLong.empty()));
 
         assertCollectionContainsNot(results, new UserAuthzInformation(
                 VALID_USERNAME_RESPONSE,
@@ -55,7 +57,8 @@ public class CachedAuthzMapTest
                 new long[] { -1 },
                 null,
                 null,
-                null));
+                null,
+                OptionalLong.empty()));
     }
 
     @Test
