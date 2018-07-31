@@ -376,6 +376,11 @@
               <property name="prefix" value="pool.mover.xrootd.query-config"/>
           </bean>
       </property>
+      <property name="tpcClientPlugins">
+          <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
+            <property name="plugins" value="${pool.mover.xrootd.tpc-authn-plugins}"/>
+          </bean>
+      </property>
   </bean>
 
   <bean id="http-transfer-service-parent" class="org.dcache.http.HttpTransferService"
@@ -400,8 +405,6 @@
     </bean>
 
     <bean id="http-transfer-service"  parent="http-transfer-service-parent"/>
-
-
 
   <bean id="remote-http-transfer-service" class="org.dcache.pool.classic.RemoteHttpTransferService"
           depends-on="rep" destroy-method="shutdown">
