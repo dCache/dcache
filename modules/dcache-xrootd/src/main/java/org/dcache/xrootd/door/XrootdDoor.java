@@ -22,7 +22,9 @@ import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import javax.security.auth.Subject;
 
@@ -31,6 +33,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +48,7 @@ import java.util.function.Consumer;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -59,7 +63,6 @@ import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
-
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
@@ -96,12 +99,11 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.tpc.XrootdTpcInfo;
+import org.dcache.xrootd.tpc.XrootdTpcInfoCleanerTask;
 import org.dcache.xrootd.util.FileStatus;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import diskCacheV111.util.FileExistsCacheException;
-import org.springframework.kafka.core.KafkaTemplate;
-
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
@@ -126,12 +128,16 @@ public class XrootdDoor
                       XROOTD_PROTOCOL_MAJOR_VERSION,
                       XROOTD_PROTOCOL_MINOR_VERSION);
 
+    private static final String TPC_PLACEMENT = "tpc-placement";
+
     private static final Logger _log =
         LoggerFactory.getLogger(XrootdDoor.class);
 
     private static final AtomicInteger _handleCounter = new AtomicInteger();
+    private static final AtomicInteger _tpcPlaceholder = new AtomicInteger();
 
     private static final long PING_DELAY = 300000;
+    private static final long TPC_EVICT_DELAY = TimeUnit.MINUTES.toMillis(2);
 
     private static final TransferRetryPolicy RETRY_POLICY =
         TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE);
@@ -172,10 +178,14 @@ public class XrootdDoor
         new ConcurrentHashMap<>();
 
     @Autowired(required = false)
-    private void setKafkaTemplate(KafkaTemplate kafkaTemplate )
+    private void setKafkaTemplate(
+                    @Qualifier("billing-template") KafkaTemplate kafkaTemplate )
     {
         _kafkaSender = kafkaTemplate::sendDefault;
     }
+
+    private final Map<String, XrootdTpcInfo> _tpcInfo     = new HashMap<>();
+    private final Map<Integer, String>       _tpcFdIndex  = new HashMap<>();
 
     @Required
     public void setPnfsStub(CellStub pnfsStub) {
@@ -326,6 +336,10 @@ public class XrootdDoor
         _scheduledExecutor = executor;
         executor.scheduleAtFixedRate(new FireAndForgetTask(new PingMoversTask<>(_transfers.values())),
                                      PING_DELAY, PING_DELAY,
+                                     TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(new FireAndForgetTask(new XrootdTpcInfoCleanerTask(_tpcInfo,
+                                                                                        _tpcFdIndex)),
+                                     TPC_EVICT_DELAY, TPC_EVICT_DELAY,
                                      TimeUnit.MILLISECONDS);
     }
 
@@ -892,9 +906,12 @@ public class XrootdDoor
      * Check whether the given path matches against a list of allowed
      * read paths.
      *
+     * Package visibility because needed by redirect handler in
+     * case of a third-party source request.
+     *
      * @param path the path which is going to be checked
      */
-    private boolean isReadAllowed(FsPath path)
+    boolean isReadAllowed(FsPath path)
     {
         for (FsPath prefix: _readPaths) {
             if (path.hasPrefix(prefix)) {
@@ -1096,6 +1113,51 @@ public class XrootdDoor
             }
         }
         return flags;
+    }
+
+    public int nextTpcPlaceholder()
+    {
+        synchronized (_tpcFdIndex) {
+            Integer next = _tpcPlaceholder.getAndIncrement();
+            _tpcFdIndex.put(next, TPC_PLACEMENT);
+            _log.debug("Added fhandle {} without key.", next);
+            return next;
+        }
+    }
+
+    public XrootdTpcInfo updateRendezvousInfo(String key, String slfn,
+                                               Map<String, String> opaque)
+    {
+        synchronized (_tpcFdIndex) {
+            XrootdTpcInfo info = _tpcInfo.get(key);
+            if (info == null) {
+                info = new XrootdTpcInfo(key);
+                _tpcInfo.put(key, info);
+                Integer next = _tpcPlaceholder.getAndIncrement();
+                _tpcFdIndex.put(next, key);
+                info.setFd(next);
+                _log.debug("Added fhandle {} for key {}.", next, key);
+            }
+            info.addInfoFromOpaque(slfn, opaque);
+            _log.debug("Updated info {} for key {}.", info, key);
+            return info;
+        }
+    }
+
+    public boolean removeTpcPlaceholder(int fd)
+    {
+        synchronized (_tpcFdIndex) {
+            String tpc = _tpcFdIndex.remove(fd);
+            if (tpc != null) {
+                if (!tpc.equals(TPC_PLACEMENT)) {
+                    _tpcInfo.remove(tpc);
+                    _log.debug("fhandle {} was removed.", fd);
+                }
+                return true;
+            }
+            _log.debug("fhandle {} is invalid.", fd);
+            return false;
+        }
     }
 
     /**
