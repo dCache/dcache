@@ -381,6 +381,7 @@
             <property name="plugins" value="${pool.mover.xrootd.tpc-authn-plugins}"/>
           </bean>
       </property>
+      <property name="thirdPartyShutdownExecutor" ref="workerThreadPool"/>
   </bean>
 
   <bean id="http-transfer-service-parent" class="org.dcache.http.HttpTransferService"

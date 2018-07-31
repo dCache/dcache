@@ -67,6 +67,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.NettyTransferService.NettyMoverChannel;
@@ -84,10 +85,13 @@ import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.tpc.protocol.messages.InboundReadResponse;
+import org.dcache.xrootd.tpc.protocol.messages.InboundRedirectResponse;
 import org.dcache.xrootd.util.ByteBuffersProvider;
 import org.dcache.xrootd.util.FileStatus;
+import org.dcache.xrootd.util.ParseException;
 
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
 
 /**
@@ -108,14 +112,17 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     private static final Logger                 LOGGER
                     = LoggerFactory.getLogger(TpcWriteDescriptor.class);
 
-    private final XrootdTpcClient             client;
     private final NioEventLoopGroup           group;
     private final ChannelHandlerContext       userResponseCtx;
     private final List<ChannelHandlerFactory> authPlugins;
 
-    private SyncRequest syncRequest;
-    private boolean     isFirstSync;
-    private Integer     transferStatus;
+    /*
+     * May be reassigned because of a redirect.
+     */
+    private XrootdTpcClient client;
+    private SyncRequest     syncRequest;
+    private boolean         isFirstSync;
+    private Integer         transferStatus;
 
     public TpcWriteDescriptor(NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel,
                               boolean posc,
@@ -126,7 +133,10 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     {
         super(channel, posc);
         userResponseCtx = ctx;
-        client = new XrootdTpcClient(userUrn, info, this);
+        client = new XrootdTpcClient(userUrn,
+                                     info,
+                                     this,
+                                     service.getThirdPartyShutdownExecutor());
         group = service.getThirdPartyClientGroup();
         authPlugins = service.getTpcClientPlugins();
         isFirstSync = true;
@@ -187,12 +197,74 @@ public final class TpcWriteDescriptor extends WriteDescriptor
         return new StatResponse(msg, fileStatus);
     }
 
-    /**
+    @Override
+    public synchronized void redirect(ChannelHandlerContext ctx,
+                         InboundRedirectResponse response)
+                    throws XrootdException
+    {
+        try {
+            LOGGER.info("redirect {} called for client channel {}, stream {}.",
+                            response,
+                            client.getChannelFuture().channel().id(),
+                            client.getStreamId());
+            XrootdTpcClient current = client;
+            XrootdTpcInfo currentInfo = current.getInfo();
+            XrootdTpcInfo info = response.isReconnect() ? currentInfo:
+                            currentInfo.copyForRedirect(response);
+            client = new XrootdTpcClient(current.getUserUrn(),
+                                         info,
+                                         this,
+                                         current.getExecutor());
+            client.configureRedirects(current);
+
+            try {
+                current.shutDown(ctx);
+            } catch (InterruptedException e) {
+                LOGGER.warn("redirect, shutdown of old client, channel {}, "
+                                            + "stream {} was interrupted.",
+                            current.getChannelFuture().channel().id(),
+                            current.getStreamId());
+                return;
+            }
+
+            if (!client.canRedirect()) {
+                throw new XrootdException(kXR_ServerError, "Client was redirected "
+                                + "more than the maximum number of times in the "
+                                + "past 10 minutes; quitting.");
+            }
+
+            /*
+             *  Done on the executor thread, else we risk deadlock because this
+             *  method is usually called from the event loop thread.
+             */
+            client.getExecutor().schedule(()-> {
+                try {
+                    client.connect(group,
+                                   authPlugins,
+                                   new TpcWriteDescriptorHandler(this));
+                    LOGGER.info("redirect, created and connected new client, "
+                                                + "channel {}, stream {}.",
+                                client.getChannelFuture().channel().id(),
+                                client.getStreamId());
+                } catch (InterruptedException e) {
+                    LOGGER.warn("redirect, connection of new client, channel {}, "
+                                                + "stream {} was interrupted.",
+                                client.getChannelFuture().channel().id(),
+                                client.getStreamId());
+                }
+            }, response.getWsec(), TimeUnit.SECONDS);
+        } catch (ParseException e) {
+            throw new XrootdException(kXR_ServerError, e.getMessage());
+        }
+    }
+
+    /*
      *  In the case of third-party destination, the first sync call
      *  should start the embedded third-party client; the second
      *  sync should not receive a response until the copy/transfer
      *  has terminated.
      */
+    @Override
     public synchronized XrootdResponse<SyncRequest> sync(SyncRequest syncRequest)
                     throws IOException, InterruptedException
     {

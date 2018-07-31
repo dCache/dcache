@@ -111,7 +111,7 @@ public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler
                                  info.getSrc(),
                                  id,
                                  streamId);
-                    handleDisconnect(kXR_ok, null, ctx);
+                    handleTransferTerminated(kXR_ok, null, ctx);
                     return;
                 }
             }
@@ -124,11 +124,12 @@ public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler
                                      streamId,
                                      sourceValue,
                                      dCacheValue);
-        handleDisconnect(kXR_error, error, ctx);
+        handleTransferTerminated(kXR_error, error, ctx);
     }
 
     @Override
-    protected int getChunkSize() {
+    protected int getChunkSize()
+    {
         return DEFAULT_CHUNK;
     }
 }
