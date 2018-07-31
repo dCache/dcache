@@ -36,6 +36,7 @@ import java.net.SocketException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -102,6 +103,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     private List<ChannelHandlerFactory>       tpcClientPlugins;
     private Map<String, String>               queryConfig;
     private NioEventLoopGroup                 thirdPartyClientGroup;
+    private ScheduledExecutorService          thirdPartyShutdownExecutor;
 
     public XrootdTransferService()
     {
@@ -111,6 +113,11 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public NioEventLoopGroup getThirdPartyClientGroup()
     {
         return thirdPartyClientGroup;
+    }
+
+    public ScheduledExecutorService getThirdPartyShutdownExecutor()
+    {
+        return thirdPartyShutdownExecutor;
     }
 
     @PostConstruct
@@ -132,6 +139,13 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public List<ChannelHandlerFactory> getPlugins()
     {
         return plugins;
+    }
+
+    @Required
+    public void setThirdPartyShutdownExecutor(
+                    ScheduledExecutorService thirdPartyShutdownExecutor)
+    {
+        this.thirdPartyShutdownExecutor = thirdPartyShutdownExecutor;
     }
 
     @Required
