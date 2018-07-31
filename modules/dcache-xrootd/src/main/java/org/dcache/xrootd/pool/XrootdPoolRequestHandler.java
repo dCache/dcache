@@ -79,10 +79,11 @@ import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.XrootdRequest;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
+import org.dcache.xrootd.tpc.TpcWriteDescriptor;
+import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
-
 
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
@@ -102,8 +103,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     private static final Logger _log =
         LoggerFactory.getLogger(XrootdPoolRequestHandler.class);
 
+    public static final int DEFAULT_FILESTATUS_FLAGS = 0;
     private static final int DEFAULT_FILESTATUS_ID = 0;
-    private static final int DEFAULT_FILESTATUS_FLAGS = 0;
     private static final int DEFAULT_FILESTATUS_MODTIME = 0;
 
     private static final int MAX_JAVA_ARRAY = Integer.MAX_VALUE - 5;
@@ -131,7 +132,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     /**
      * The server on which this request handler is running.
      */
-    private NettyTransferService<XrootdProtocolInfo> _server;
+    private XrootdTransferService _server;
 
     /**
      * Maximum size of frame used for xrootd replies.
@@ -143,7 +144,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      */
     private final Map<String,String> _queryConfig;
 
-    public XrootdPoolRequestHandler(NettyTransferService<XrootdProtocolInfo> server, int maxFrameSize,
+    public XrootdPoolRequestHandler(XrootdTransferService server,
+                                    int maxFrameSize,
                                     Map<String, String> queryConfig)
     {
         _server = server;
@@ -204,6 +206,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     } else {
                         descriptor.getChannel().release(t);
                     }
+
+                    if (descriptor instanceof TpcWriteDescriptor) {
+                        ((TpcWriteDescriptor)descriptor).fireDelayedSync(kXR_error,
+                                                                         t.getMessage());
+                    }
                 }
             }
             _descriptors.clear();
@@ -216,7 +223,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg) {
+    protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg)
+    {
         XrootdSessionIdentifier sessionId = new XrootdSessionIdentifier();
         return new LoginResponse(msg, sessionId, "");
     }
@@ -230,24 +238,40 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 
     /**
      * Obtains the right mover channel using an opaque token in the
-     * request. The mover channel is wrapper by a file descriptor. The
+     * request. The mover channel is wrapped by a file descriptor. The
      * file descriptor is stored for subsequent access.
+     *
+     * In the case that this is a write request as destination in a third party
+     * copy, a third-party client is started.  The client issues login, open and
+     * read requests to the source server, and writes the responses
+     * to the file descriptor.
+     *
+     * The third-party client also sends a sync response back to the client
+     * when the transfer has completed.
      */
     @Override
-    protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx, OpenRequest msg)
+    protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx,
+                                                   OpenRequest msg)
         throws XrootdException
     {
         try {
-            UUID uuid = getUuid(msg.getOpaque());
+            Map<String, String> opaqueMap = getOpaqueMap(msg.getOpaque());
+            UUID uuid = getUuid(opaqueMap);
             if (uuid == null) {
                 _log.info("Request to open {} contains no UUID.", msg.getPath());
-                throw new XrootdException(kXR_NotAuthorized, "Request lacks the " + UUID_PREFIX + " property.");
+                throw new XrootdException(kXR_NotAuthorized, "Request lacks the "
+                                + UUID_PREFIX + " property.");
             }
 
-            NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel file = _server.openFile(uuid, false);
+            NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel file
+                            = _server.openFile(uuid, false);
             if (file == null) {
                 _log.info("No mover found for {} with UUID {}.", msg.getPath(), uuid);
-                return redirectToDoor(ctx, msg, () -> { throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX + " is no longer valid."); });
+                return redirectToDoor(ctx, msg, () ->
+                {
+                    throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX
+                                    + " is no longer valid.");
+                });
             }
 
             try {
@@ -258,8 +282,18 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 } else if (msg.isDelete() && !isWrite) {
                     throw new XrootdException(kXR_Unsupported, "File exists.");
                 } else if ((msg.isNew() || msg.isReadWrite()) && isWrite) {
-                    descriptor = new WriteDescriptor(file, (msg.getOptions() & kXR_posc) == kXR_posc ||
-                            file.getProtocolInfo().getFlags().contains(XrootdProtocolInfo.Flags.POSC));
+                    boolean posc = (msg.getOptions() & kXR_posc) == kXR_posc ||
+                                    file.getProtocolInfo().getFlags()
+                                        .contains(XrootdProtocolInfo.Flags.POSC);
+                    if (opaqueMap.containsKey("tpc.src")) {
+                        _log.trace("Request to open {} is as third-party destination.", msg);
+                        descriptor = new TpcWriteDescriptor(file, posc, ctx,
+                                                            _server,
+                                                            opaqueMap.get("org.dcache.xrootd.client"),
+                                                            new XrootdTpcInfo(opaqueMap));
+                    } else {
+                        descriptor = new WriteDescriptor(file, posc);
+                    }
                 } else {
                     descriptor = new ReadDescriptor(file);
                 }
@@ -284,19 +318,9 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         }
     }
 
-    private UUID getUuid(String opaque) throws XrootdException
+    private UUID getUuid(Map<String, String> opaque)  throws XrootdException
     {
-        Map<String,String> map;
-        try {
-            map = OpaqueStringParser.getOpaqueMap(opaque);
-        } catch (ParseException e) {
-            _log.warn("Could not parse the opaque information {}: {}",
-                      opaque, e.getMessage());
-            throw new XrootdException(kXR_NotAuthorized,
-                    "Cannot parse opaque data: " + e.getMessage());
-        }
-
-        String uuidString = map.get(XrootdProtocol.UUID_PREFIX);
+        String uuidString = opaque.get(XrootdProtocol.UUID_PREFIX);
         if (uuidString == null) {
             return null;
         }
@@ -307,13 +331,33 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         } catch (IllegalArgumentException e) {
             _log.warn("Failed to parse UUID {}: {}", opaque, e.getMessage());
             throw new XrootdException(kXR_NotAuthorized,
-                    "Cannot parse " + uuidString + ": " + e.getMessage());
+                                      "Cannot parse " + uuidString + ": " + e.getMessage());
         }
         return uuid;
     }
 
+    private  Map<String,String> getOpaqueMap(String opaque) throws XrootdException
+    {
+        Map<String,String> map;
+        try {
+            map = OpaqueStringParser.getOpaqueMap(opaque);
+        } catch (ParseException e) {
+            _log.warn("Could not parse the opaque information {}: {}",
+                      opaque, e.getMessage());
+            throw new XrootdException(kXR_NotAuthorized,
+                                      "Cannot parse opaque data: " + e.getMessage());
+        }
+
+        return map;
+    }
+
     /**
-     * Not supported on the pool - should be issued to the door.
+     * In third-party requests where dCache is the destination, the client
+     * may ask for a size update.  This can be provided by checking
+     * channel size.
+     *
+     * Otherwise, stat is not supported on the pool and should be issued to the door.
+     *
      * @param ctx Received from the netty pipeline
      * @param msg The actual request
      */
@@ -321,6 +365,17 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     protected XrootdResponse<StatRequest> doOnStat(ChannelHandlerContext ctx, StatRequest msg)
         throws XrootdException
     {
+        int fd = msg.getFhandle();
+
+        if (isValidFileDescriptor(fd)) {
+            FileDescriptor descriptor = _descriptors.get(fd);
+            if (descriptor instanceof TpcWriteDescriptor) {
+                _log.trace("Request to stat {} is for third-party transfer.", msg);
+                return ((TpcWriteDescriptor)descriptor).handleStat(msg);
+            }
+        }
+
+        _log.trace("Request to stat {}; redirecting to door.", msg);
         return redirectToDoor(ctx, msg);
     }
 
@@ -521,15 +576,19 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         }
 
         FileDescriptor descriptor = _descriptors.get(fd);
+
         try {
-            descriptor.sync(msg);
+            return descriptor.sync(msg);
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
                     "The file was forcefully closed by the server.");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
+        } catch (InterruptedException e) {
+            throw new XrootdException(kXR_ServerError,
+                                      "The server was interrupted; sync "
+                                                      + "could not complete.");
         }
-        return withOk(msg);
     }
 
     /**
@@ -609,7 +668,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             if (pos == -1) {
                 return redirectToDoor(ctx, msg);
             }
-            UUID uuid = getUuid(args.substring(pos + 1));
+            UUID uuid = getUuid(getOpaqueMap(args.substring(pos + 1)));
             if (uuid == null) {
                 /* The spec isn't clear about whether the path includes the opaque information or not.
                  * Thus we cannot rely on there being a uuid and without the uuid we cannot lookup the

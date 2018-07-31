@@ -258,7 +258,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 boolean persistOnSuccessfulClose = (req.getOptions()
                         & XrootdProtocol.kXR_posc) == XrootdProtocol.kXR_posc;
                 // TODO: replace with req.isPersistOnSuccessfulClose() with the latest xrootd4j
-
                 transfer = _door.write(remoteAddress, path,
                         ioQueue, uuid, createDir, overwrite, size, localAddress,
                         req.getSubject(), _authz, persistOnSuccessfulClose,
@@ -354,6 +353,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
          *  time to live, fails, the request is cancelled.  Otherwise,
          *  the destination is allowed to open the mover and get the
          *  normal redirect response.
+         *
+         *  Note that the tpc info is created by either the client or the
+         *  server, whichever gets here first.  Verification of the key
+         *  itself is not necessary because correctness is satisfied
+         *  by matching org, host and file name.
          */
         if (opaque.containsKey("tpc.org")) {
             switch (info.verify(remoteHost, slfn, opaque.get("tpc.org"))) {
@@ -399,6 +403,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
          *  The request originated from the TPC client, indicating dCache
          *  is the destination.  Remove the rendezvous info (not needed),
          *  allow mover to start and redirect the client to the pool.
+         *  is the destination.  Remove the rendezvous info (not needed by door),
+         *  allow mover to start and redirect the client to the pool.
+         *
+         *  It is not necessary to delegate the tpc information through the
+         *  protocol, particularly the rendezvous key, because is it part of
+         * the opaque data, and if any of the opaque tpc info is missing
+         * from redirected call to the pool, the transfer will fail.
          */
         if (opaque.containsKey("tpc.src")) {
             _log.debug("Open request {} from client to door as destination: OK;"
