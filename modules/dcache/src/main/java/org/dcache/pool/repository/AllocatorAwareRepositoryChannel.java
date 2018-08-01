@@ -57,17 +57,11 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
 
     private final Object positionLock = new Object();
 
-    /**
-     * Tells, should allocator block for available space or not.
-     */
-    private final boolean useHardAllocator;
-
-    public AllocatorAwareRepositoryChannel(RepositoryChannel inner, Allocator allocator, boolean useHardAllocator) throws IOException {
+    public AllocatorAwareRepositoryChannel(RepositoryChannel inner, Allocator allocator) throws IOException {
         this.inner = inner;
         this.allocator = allocator;
         // file existing in the repository already have allocated space.
         this.allocated = inner.size();
-        this.useHardAllocator = useHardAllocator;
     }
 
     @Override
@@ -197,11 +191,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
                 if (pos > allocated) {
                     long delta = Math.max(pos - allocated, SPACE_INC);
                     LOGGER.trace("preallocate: {}", delta);
-                    if (useHardAllocator) {
-                        allocator.allocate(delta);
-                    } else if (!allocator.allocateNow(delta)) {
-                        throw new OutOfDiskException();
-                    }
+                    allocator.allocate(delta);
                     allocated += delta;
                 }
             } catch (InterruptedException e) {

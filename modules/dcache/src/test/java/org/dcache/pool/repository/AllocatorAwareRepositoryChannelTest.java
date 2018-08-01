@@ -22,7 +22,7 @@ public class AllocatorAwareRepositoryChannelTest {
     public void setUp() throws IOException {
         inner = mock(RepositoryChannel.class);
         allocator = mock(Allocator.class);
-        allocatorChannel = new AllocatorAwareRepositoryChannel(inner, allocator, true);
+        allocatorChannel = new AllocatorAwareRepositoryChannel(inner, allocator);
     }
 
     @Test

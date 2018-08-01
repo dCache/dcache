@@ -144,7 +144,6 @@
     <property name="executor" ref="workerThreadPool"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="account" ref="account"/>
-    <property name="allocator" ref="allocator"/>
     <property name="spaceSweeperPolicy" ref="sweeper"/>
     <property name="volatile"
               value="#{ '${pool.lfs}' == 'volatile' or '${pool.lfs}' == 'transient' }"/>
@@ -314,10 +313,13 @@
     <description>Repository space accounting</description>
   </bean>
 
-  <bean id="allocator"
-        class="org.dcache.pool.classic.FairQueueAllocation">
-    <description>Space allocation policy</description>
-    <property name="account" ref="account"/>
+  <bean id="allocator" class="org.dcache.pool.classic.FairQueueAllocator">
+    <description>Space allocation policy for nearline storage</description>
+    <constructor-arg>
+      <bean class="org.dcache.pool.classic.BlockingAllocator">
+	<constructor-arg ref="account"/>
+      </bean>
+    </constructor-arg>
   </bean>
 
   <bean id="io-queue-manager" class="org.dcache.pool.classic.IoQueueManager"

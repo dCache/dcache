@@ -46,6 +46,9 @@ import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.PoolDataBeanProvider;
+import org.dcache.pool.classic.BlockingAllocator;
+import org.dcache.pool.classic.FairQueueAllocator;
+import org.dcache.pool.classic.ImmediateAllocator;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.CacheEntry;
@@ -174,12 +177,6 @@ public class ReplicaRepository
      */
     @GuardedBy("_stateLock")
     private Account _account;
-
-    /**
-     * Allocator used for when allocating space for new entries.
-     */
-    @GuardedBy("_stateLock")
-    private Allocator _allocator;
 
     /**
      * Policy defining which files may be garbage collected.
@@ -343,20 +340,6 @@ public class ReplicaRepository
         }
     }
 
-    /**
-     * The allocator implements an allocation policy.
-     */
-    public void setAllocator(Allocator allocator)
-    {
-        _stateLock.readLock().lock();
-        try {
-            checkUninitialized();
-            _allocator = allocator;
-        } finally {
-            _stateLock.readLock().unlock();
-        }
-    }
-
     public void setReplicaStore(ReplicaStore store)
     {
         _stateLock.readLock().lock();
@@ -491,7 +474,6 @@ public class ReplicaRepository
     {
         checkState(_pnfs != null, "Pnfs handler must be set.");
         checkState(_account != null, "Account must be set.");
-        checkState(_allocator != null, "Allocator must be set.");
 
         if (!compareAndSetState(State.UNINITIALIZED, State.INITIALIZED)) {
             throw new IllegalStateException("Can only initialize uninitialized repository.");
@@ -618,9 +600,8 @@ public class ReplicaRepository
             return entry.update(r -> {
                 r.setFileAttributes(fileAttributes);
                 r.setState(transferState);
-                return new WriteHandleImpl(
-                        this, _allocator, _pnfs, entry, fileAttributes,
-                        targetState, stickyRecords, flags.contains(OpenFlags.NONBLOCK_SPACE_ALLOCATION));
+                return new WriteHandleImpl(this, buildAllocator(flags), _pnfs,
+                        entry, fileAttributes, targetState, stickyRecords);
             });
         } catch (DuplicateEntryException e) {
             /* Somebody got the idea that we don't have the file, so we make
@@ -631,6 +612,13 @@ public class ReplicaRepository
         } finally {
             _stateLock.readLock().unlock();
         }
+    }
+
+    private Allocator buildAllocator(Set<? extends OpenOption> flags)
+    {
+        Allocator allocator = flags.contains(OpenFlags.NONBLOCK_SPACE_ALLOCATION)
+                ? new ImmediateAllocator(_account) : new BlockingAllocator(_account);
+        return new FairQueueAllocator(allocator);
     }
 
     @Override

@@ -38,17 +38,16 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.classic.FairQueueAllocation;
 import org.dcache.pool.classic.SpaceSweeper2;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FlatFileStore;
 import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.SpaceRecord;
@@ -59,11 +58,11 @@ import org.dcache.pool.repository.v5.ReplicaRepository;
 import org.dcache.tests.cells.CellEndpointHelper;
 import org.dcache.tests.cells.CellStubHelper;
 import org.dcache.tests.cells.Message;
+import org.dcache.util.ByteUnit;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static org.dcache.pool.repository.ReplicaState.*;
-import org.dcache.util.ByteUnit;
 import static org.junit.Assert.*;
 
 public class RepositorySubsystemTest
@@ -187,7 +186,6 @@ public class RepositorySubsystemTest
     private void initRepository()
             throws IOException, DatabaseException
     {
-        FairQueueAllocation allocator = new FairQueueAllocation();
         FileStore fileStore = new FlatFileStore(dataRoot);
         replicaStore =
             new FileMetaDataRepository(fileStore, metaRoot, "pool");
@@ -196,9 +194,7 @@ public class RepositorySubsystemTest
         sweeper = new SpaceSweeper2();
         repository = new ReplicaRepository();
 
-        allocator.setAccount(account);
         repository.setCellAddress(address);
-        repository.setAllocator(allocator);
         repository.setPnfsHandler(pnfs);
         repository.setAccount(account);
         repository.setReplicaStore(replicaStore);

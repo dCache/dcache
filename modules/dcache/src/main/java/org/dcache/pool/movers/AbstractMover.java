@@ -49,6 +49,7 @@ import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
@@ -267,6 +268,9 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                 } catch (RuntimeException e) {
                     LOGGER.error("Transfer failed due to a bug", e);
                     setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, "Bug detected (please report): " + e.getMessage());
+                } catch (OutOfDiskException e) {
+                    LOGGER.debug("Transfer failed due to insufficient capacity: {}", e.getMessage());
+                    setTransferStatus(CacheException.RESOURCE, "Insufficient capacity: " + e.getMessage());
                 } catch (Exception e) {
                     LOGGER.error("Transfer failed: {}", e.toString());
                     setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "General problem: " + e.getMessage());

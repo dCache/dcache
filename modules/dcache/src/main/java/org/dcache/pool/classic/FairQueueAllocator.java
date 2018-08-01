@@ -4,32 +4,35 @@ package org.dcache.pool.classic;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.ForwardingAllocator;
+import org.dcache.pool.repository.OutOfDiskException;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * Implementation of the SpaceMonitor interface, which serves requests
- * in FIFO order.
+ * Implementation of Allocator that ensures that an active thread does not
+ * prevent other threads from allocating capacity.
  */
-public class FairQueueAllocation
-    implements Allocator
+public class FairQueueAllocator extends ForwardingAllocator
 {
-    private Account _account;
+    private final Allocator _inner;
 
     /**
      * A list of threads waiting for space. Requests are served in the
      * order they appear in this list.
      */
-    private final List<Thread> _list =
-        new ArrayList<>();
+    private final List<Thread> _list = new ArrayList<>();
 
-    public FairQueueAllocation()
+    public FairQueueAllocator(Allocator inner)
     {
+        _inner = inner;
     }
 
-    public synchronized void setAccount(Account account)
+    @Override
+    protected Allocator getAllocator()
     {
-        _account = account;
+        return _inner;
     }
 
     private synchronized void enqueue(Thread thread)
@@ -59,44 +62,17 @@ public class FairQueueAllocation
      * such that the sweeper knows that additional space is required.
      */
     @Override
-    public void allocate(long space)
-        throws InterruptedException
+    public void allocate(long space) throws InterruptedException, OutOfDiskException
     {
-        if (space < 0) {
-            throw new IllegalArgumentException("Cannot allocate negative space");
-        }
+        checkArgument(space >= 0, "Cannot allocate negative space");
 
         final Thread self = Thread.currentThread();
         enqueue(self);
         try {
             waitForTurn(self);
-            _account.allocate(space);
+            super.allocate(space);
         } finally {
             dequeue(self);
         }
-    }
-
-    @Override
-    public boolean allocateNow(long space)
-        throws InterruptedException
-    {
-        if (space < 0) {
-            throw new IllegalArgumentException("Cannot allocate negative space");
-        }
-
-        final Thread self = Thread.currentThread();
-        enqueue(self);
-        try {
-            waitForTurn(self);
-            return _account.allocateNow(space);
-        } finally {
-            dequeue(self);
-        }
-    }
-
-    @Override
-    public void free(long space)
-    {
-        _account.free(space);
     }
 }

@@ -89,19 +89,13 @@ class WriteHandleImpl implements ReplicaDescriptor
     /** Last access time of new replica. */
     private Long _atime;
 
-    /**
-     * Tells, should allocator block for available space or not.
-     */
-    private final boolean _useHardAllocator;
-
     WriteHandleImpl(ReplicaRepository repository,
                     Allocator allocator,
                     PnfsHandler pnfs,
                     ReplicaRecord entry,
                     FileAttributes fileAttributes,
                     ReplicaState targetState,
-                    List<StickyRecord> stickyRecords,
-                    boolean useHardAllocator)
+                    List<StickyRecord> stickyRecords)
     {
         _repository = checkNotNull(repository);
         _allocator = checkNotNull(allocator);
@@ -111,7 +105,6 @@ class WriteHandleImpl implements ReplicaDescriptor
         _initialState = entry.getState();
         _targetState = checkNotNull(targetState);
         _stickyRecords = checkNotNull(stickyRecords);
-        _useHardAllocator = useHardAllocator;
         _state = HandleState.OPEN;
 
         checkState(_initialState != ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
@@ -131,7 +124,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         }
 
         return new AllocatorAwareRepositoryChannel(_entry.openChannel(OPEN_OPTIONS),
-                _allocator,  _useHardAllocator);
+                _allocator);
     }
 
     private void registerFileAttributesInNameSpace()

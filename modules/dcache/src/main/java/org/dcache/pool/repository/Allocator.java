@@ -13,25 +13,13 @@ public interface Allocator
      * @throws IllegalStateException if operation is not allowed at this point
      * @throws IllegalArgumentException if <code>size</code> is less
      * than 0.
+     * @throws OutOfDiskException if no further capacity is available.
      */
     void allocate(long size)
         throws IllegalStateException,
                IllegalArgumentException,
-               InterruptedException;
-
-    /**
-     * Allocates space if available.
-     *
-     * @param size in bytes
-     * @throws InterruptedException if thread was interrupted
-     * @throws IllegalStateException if operation is not allowed at this point
-     * @throws IllegalArgumentException if <code>size</code> is less than 0.
-     * @return true if and only if the request space was allocated
-     */
-    boolean allocateNow(long size)
-            throws IllegalStateException,
-            IllegalArgumentException,
-            InterruptedException;
+               InterruptedException,
+               OutOfDiskException;
 
     /**
      * Frees space previously allocated with one of the allocate
