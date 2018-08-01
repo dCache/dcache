@@ -203,7 +203,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         this.connectTimeoutUnit = connectTimeoutUnit;
     }
 
-
     @Required
     public void setDoorStub(CellStub stub)
     {

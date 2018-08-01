@@ -7,7 +7,8 @@ import java.nio.channels.ClosedChannelException;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
-import org.dcache.xrootd.protocol.messages.WriteRequest;
+import org.dcache.xrootd.protocol.messages.XrootdResponse;
+import org.dcache.xrootd.util.ByteBuffersProvider;
 
 /**
  * Encapsulates an open file in the xrootd data server.
@@ -28,9 +29,10 @@ public interface FileDescriptor
      *
      * @throws ClosedChannelException if the descriptor is closed.
      * @throws IOException if the operation failed.
+     * @return the response, or <code>null</code> if the response is delayed.
      */
-    void sync(SyncRequest msg)
-        throws IOException;
+    XrootdResponse<SyncRequest> sync(SyncRequest msg)
+        throws IOException, InterruptedException;
 
     /**
      * Writes data to the file.
@@ -38,7 +40,7 @@ public interface FileDescriptor
      * @throws ClosedChannelException if the descriptor is closed.
      * @throws IOException if the operation failed.
      */
-    void write(WriteRequest msg)
+    void write(ByteBuffersProvider msg)
         throws IOException;
 
     /**

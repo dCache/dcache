@@ -17,13 +17,18 @@
  */
 package org.dcache.xrootd.pool;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -31,6 +36,9 @@ import java.net.SocketException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 
@@ -38,6 +46,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -79,19 +88,46 @@ import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
  *
  * * At least for vector read, the behaviour when reading beyond the
  *   end of the file is wrong.
+ *
+ * Additions:  third-party client support for dCache as destination.
+ *   Responsible for the management of the loop thread group used by
+ *   third-party embedded clients.
  */
 public class XrootdTransferService extends NettyTransferService<XrootdProtocolInfo>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(XrootdTransferService.class);
 
-    private int maxFrameSize;
-    private List<ChannelHandlerFactory> plugins;
-    private Map<String, String> queryConfig;
+    private int                               maxFrameSize;
+    private List<ChannelHandlerFactory>       plugins;
+    private List<ChannelHandlerFactory>       tpcClientPlugins;
+    private Map<String, String>               queryConfig;
+    private NioEventLoopGroup                 thirdPartyClientGroup;
+    private ScheduledExecutorService          thirdPartyShutdownExecutor;
 
     public XrootdTransferService()
     {
         super("xrootd");
+    }
+
+    public NioEventLoopGroup getThirdPartyClientGroup()
+    {
+        return thirdPartyClientGroup;
+    }
+
+    public ScheduledExecutorService getThirdPartyShutdownExecutor()
+    {
+        return thirdPartyShutdownExecutor;
+    }
+
+    @PostConstruct
+    @Override
+    public synchronized void init() {
+        super.init();
+        ThreadFactory factory = new ThreadFactoryBuilder()
+                        .setNameFormat("xrootd-tpc-client-%d")
+                        .build();
+        thirdPartyClientGroup = new NioEventLoopGroup(0, new CDCThreadFactory(factory));
     }
 
     @Required
@@ -103,6 +139,24 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public List<ChannelHandlerFactory> getPlugins()
     {
         return plugins;
+    }
+
+    @Required
+    public void setThirdPartyShutdownExecutor(
+                    ScheduledExecutorService thirdPartyShutdownExecutor)
+    {
+        this.thirdPartyShutdownExecutor = thirdPartyShutdownExecutor;
+    }
+
+    @Required
+    public void setTpcClientPlugins(List<ChannelHandlerFactory> tpcClientPlugins)
+    {
+        this.tpcClientPlugins = tpcClientPlugins;
+    }
+
+    public List<ChannelHandlerFactory> getTpcClientPlugins()
+    {
+        return tpcClientPlugins;
     }
 
     @Required
@@ -173,5 +227,17 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                                                          clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
         pipeline.addLast("transfer", new XrootdPoolRequestHandler(this, maxFrameSize, queryConfig));
+    }
+
+    @PreDestroy
+    @Override
+    public synchronized void shutdown() {
+        super.shutdown();
+        thirdPartyClientGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+        try {
+            thirdPartyClientGroup.terminationFuture().sync();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

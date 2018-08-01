@@ -5,8 +5,10 @@ import java.nio.ByteBuffer;
 
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.protocol.messages.OkResponse;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
-import org.dcache.xrootd.protocol.messages.WriteRequest;
+import org.dcache.xrootd.protocol.messages.XrootdResponse;
+import org.dcache.xrootd.util.ByteBuffersProvider;
 
 /**
  * Encapsulates an open file for reading in the xrootd data server.
@@ -37,15 +39,17 @@ public class ReadDescriptor implements FileDescriptor
     }
 
     @Override
-    public void sync(SyncRequest msg) throws IOException
+    public XrootdResponse<SyncRequest> sync(SyncRequest msg) throws IOException,
+                    InterruptedException
     {
         /* As this is a read only file, there is no reason to sync
          * anything.
          */
+        return new OkResponse<>(msg);
     }
 
     @Override
-    public void write(WriteRequest msg)
+    public void write(ByteBuffersProvider msg)
         throws IOException
     {
         throw new IOException("File is read only");
