@@ -1655,8 +1655,10 @@ public class DcacheResourceFactory
                         break;
                     case ResponseStatus.SC_BAD_REQUEST:
                         throw new BadRequestException(connection.getResponseMessage());
+                    case ResponseStatus.SC_INTERNAL_SERVER_ERROR:
+                        throw new CacheException("Pool error: " + connection.getResponseMessage());
                     default:
-                        throw new CacheException(connection.getResponseMessage());
+                        throw new CacheException("Unexpected pool response: " + connection.getResponseCode() + " " + connection.getResponseMessage());
                     }
                 } finally {
                     connection.disconnect();
