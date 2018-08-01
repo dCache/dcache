@@ -23,6 +23,7 @@ import com.google.common.base.Strings;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CheckStagePermission;
@@ -31,6 +32,8 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.dcache.auth.CachingLoginStrategy;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.UnionLoginStrategy;
@@ -76,6 +79,21 @@ public class DcapDoorSettings
             description = "Cell address of billing",
             defaultValue = "billing")
     protected CellPath billing;
+
+    @Option(name = "kafka",
+            description = "Kafka service enabled",
+            defaultValue = "false")
+    protected boolean isKafkaEnabled;
+
+    @Option(name = "bootstrap-server")
+    protected String bootstrapServer;
+
+    @Option(name = "max-block-ms")
+    protected String maxBlockMs;
+
+    @Option(name = "retries")
+    protected String retries;
+
 
     @Option(name = "hsm",
             description = "Cell address of hsm manager",
@@ -202,6 +220,14 @@ public class DcapDoorSettings
         return billing;
     }
 
+    public boolean isKafkaEnabled() { return isKafkaEnabled; }
+
+    public String getBootstrapServer() { return bootstrapServer; }
+
+    public String getMaxBlockMs() { return maxBlockMs; }
+
+    public String getRetries() { return retries; }
+
     public CellPath getHsmManager()
     {
         return hsmManager;
@@ -285,6 +311,24 @@ public class DcapDoorSettings
         stub.setMaximumPoolManagerTimeoutUnit(TimeUnit.MILLISECONDS);
         return stub;
     }
+
+    public KafkaProducer createKafkaProducer(String bootstrap_server,
+                                             String client_id,
+                                             String max_block_ms,
+                                             String retries)
+    {
+        Properties props = new Properties();
+
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_server);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, client_id);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.dcache.notification.DoorRequestMessageSerializer");
+        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, max_block_ms);
+        props.put(ProducerConfig.RETRIES_CONFIG, retries);
+
+        return new KafkaProducer<>(props);
+    }
+
 
     public CellStub createPinManagerStub(CellEndpoint cell)
     {
