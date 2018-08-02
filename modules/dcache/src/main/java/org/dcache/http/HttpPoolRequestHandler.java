@@ -51,6 +51,7 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import dmg.util.HttpException;
 
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
@@ -471,6 +472,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     }, MoreExecutors.directExecutor());
                     return promise;
                 }
+            } catch (OutOfDiskException e) {
+                _writeChannel.release(e);
+                _files.remove(_writeChannel);
+                _writeChannel = null;
+                return context.writeAndFlush(createErrorResponse(INSUFFICIENT_STORAGE, e.getMessage()));
             } catch (IOException e) {
                 _writeChannel.release(e);
                 _files.remove(_writeChannel);
