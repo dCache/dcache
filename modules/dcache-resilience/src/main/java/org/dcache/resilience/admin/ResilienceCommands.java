@@ -1613,28 +1613,43 @@ public final class ResilienceCommands implements CellCommandListener {
         this.resilienceDir = resilienceDir;
     }
 
-    private String runFileChecks(List<String> list) throws CacheException {
+    private String runFileChecks(List<String> list) {
+        StringBuilder reply = new StringBuilder();
+        int successful = 0;
         for (String pnfsid: list) {
-            PnfsId pnfsId = new PnfsId(pnfsid);
-            FileAttributes attr = namespaceAccess.getRequiredAttributes(
-                            pnfsId);
-            int sunit = poolInfoMap.getStorageUnitIndex(attr);
-            if (!poolInfoMap.getStorageUnitConstraints(sunit).isResilient()) {
-                return "File does not belong to a resilient storage unit.";
+            try {
+                PnfsId pnfsId = new PnfsId(pnfsid);
+                FileAttributes attr
+                                = namespaceAccess.getRequiredAttributes(pnfsId);
+                int sunit = poolInfoMap.getStorageUnitIndex(attr);
+
+                if (!poolInfoMap.getStorageUnitConstraints(sunit)
+                                .isResilient()) {
+                    reply.append(pnfsid).append(" not a resilient file.\n");
+                    continue;
+                }
+
+                Iterator<String> it = attr.getLocations().iterator();
+                if (!it.hasNext()) {
+                    reply.append(pnfsid).append(" no locations found.\n");
+                    continue;
+                }
+                String pool = it.next();
+                FileUpdate update
+                                = new FileUpdate(pnfsId, pool,
+                                                 MessageType.ADD_CACHE_LOCATION,
+                                                 true);
+                fileOperationHandler.handleLocationUpdate(update);
+                ++successful;
+            } catch (NoSuchElementException| CacheException e) {
+                reply.append(pnfsid).append(" ").append(e.getMessage()).append("\n");
             }
-            Iterator<String> it = attr.getLocations().iterator();
-            if (!it.hasNext()) {
-                return pnfsid + " does not seem to have any locations.";
-            }
-            String pool = it.next();
-            FileUpdate update
-                            = new FileUpdate(pnfsId, pool,
-                                             MessageType.ADD_CACHE_LOCATION,
-                                             true);
-            fileOperationHandler.handleLocationUpdate(update);
         }
 
-        return "An adjustment activity has been started for "
-                        + list.size() + " pnfsids.";
+        reply.append("Replica checks started for ")
+             .append(successful)
+             .append(" files.\n");
+
+        return reply.toString();
     }
 }
