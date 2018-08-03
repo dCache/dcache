@@ -1647,8 +1647,19 @@ public class DcacheResourceFactory
                     try (OutputStream outputStream = connection.getOutputStream()) {
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
                                 ": Receiving data");
-                        ByteStreams.copy(inputStream, outputStream);
-                        outputStream.flush();
+                        try {
+                            ByteStreams.copy(inputStream, outputStream);
+                            outputStream.flush();
+                        } catch (IOException e) {
+                            // Although we were unable to send all the data,
+                            // the pool may have replied with a valid HTTP response
+                            try {
+                                connection.getResponseCode();
+                            } catch (IOException ignored) {
+                                // oh well, propagate the original exception
+                                throw e;
+                            }
+                        }
                     }
                     switch (connection.getResponseCode()) {
                     case ResponseStatus.SC_CREATED:
