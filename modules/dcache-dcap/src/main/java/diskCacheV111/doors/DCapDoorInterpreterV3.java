@@ -87,6 +87,7 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -778,6 +779,7 @@ public class DCapDoorInterpreterV3
         private final long      _timestamp       = System.currentTimeMillis() ;
 
         protected Subject _subject;
+        protected OptionalLong _maximumFileSize = OptionalLong.empty();
         protected Origin _origin;
         protected Restriction _authz = Restrictions.denyAll();
         protected String _explanation = "unspecified problem";
@@ -800,6 +802,7 @@ public class DCapDoorInterpreterV3
         {
             LoginReply login = login(_vargs.getOpt("role"));
             _subject = login.getSubject();
+            _maximumFileSize = LoginAttributes.maximumUploadSize(login.getLoginAttributes());
             _origin = Subjects.getOrigin(_subject);
             _authz = Restrictions.concat(_settings.getDoorRestriction(), login.getRestriction());
             _info.setSubject(_subject);
@@ -2134,7 +2137,7 @@ public class DCapDoorInterpreterV3
                                 _protocolInfo ,
                                 _fileAttributes,
                                 pool.getAssumption(),
-                                OptionalLong.empty(),
+                                _maximumFileSize,
                                 getPreallocated());
             }else{
                 sendReply( "poolMgrGetPoolArrived" , 7 ,
