@@ -85,14 +85,14 @@ public class DcapDoorSettings
             defaultValue = "false")
     protected boolean isKafkaEnabled;
 
-    @Option(name = "bootstrap-server")
-    protected String bootstrapServer;
+    @Option(name = "bootstrap-server-kafka")
+    protected String kafkaBootstrapServer;
 
-    @Option(name = "max-block-ms")
-    protected String maxBlockMs;
+    @Option(name = "max-block-ms-kafka")
+    protected String kafkaMaxBlockMs;
 
-    @Option(name = "retries")
-    protected String retries;
+    @Option(name = "retries-kafka")
+    protected String kafkaRetries;
 
 
     @Option(name = "hsm",
@@ -220,13 +220,46 @@ public class DcapDoorSettings
         return billing;
     }
 
-    public boolean isKafkaEnabled() { return isKafkaEnabled; }
+    /**
+     *  Returns Kafka service enabled
+     *  If enabled, the various dCache services, like pools and doors will publish messages to
+     *   a Kafka cluster after each transfer.
+     *
+     * @return true if the user wants to send messages to Kafka
+     */
+    public boolean isKafkaEnabled() {
+        return isKafkaEnabled;
+    }
 
-    public String getBootstrapServer() { return bootstrapServer; }
+    /**
+     * Returns a list of host/port pairs (brokers) to use for establishing the initial connection to the Kafka cluster.
+     * This list is just used to discover the rest of the brokers in the cluster and should be in the form
+     * host1:port1,host2:port2,....
+     *
+     * @return    the list of  of host/port pairs
+     */
+    public String getKafkaBootstrapServer() {
+        return kafkaBootstrapServer;
+    }
 
-    public String getMaxBlockMs() { return maxBlockMs; }
+    /**
+     * Returns the parameter that controls how long
+     * how long the producer will block when calling send().
+     *
+     * @retrun a timeframe during which producer will block sending messages, by default set to 60000
+     */
+    public String getKafkaMaxBlockMs() {
+        return kafkaMaxBlockMs;
+    }
 
-    public String getRetries() { return retries; }
+    /**
+     * Returns the number of retries that the producer will retry sending the messages before failing it.
+     *
+     *  @return number of retries, set to 0 by default
+     */
+    public String getKafkaRetries() {
+        return kafkaRetries;
+    }
 
     public CellPath getHsmManager()
     {
