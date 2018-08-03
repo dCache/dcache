@@ -57,6 +57,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -97,6 +98,7 @@ import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.LoginAttributes;
+import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -131,6 +133,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.webdav.InsufficientStorageException.checkStorageSufficient;
 
 /**
  * This ResourceFactory exposes the dCache name space through the
@@ -703,6 +706,8 @@ public class DcacheResourceFactory
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
+        checkUploadSize(length);
+
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
         _transfers.put((int) transfer.getId(), transfer);
         try {
@@ -728,6 +733,10 @@ public class DcacheResourceFactory
                     transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                            e.getMessage());
                     transfer.killMover("pool reported bad request: " + e.getMessage());
+                    throw e;
+                } catch (InsufficientStorageException e) {
+                    transfer.notifyBilling(CacheException.RESOURCE, e.getMessage());
+                    transfer.killMover("pool reported insufficient storage: " + e.getMessage());
                     throw e;
                 } catch (CacheException e) {
                     transfer.notifyBilling(e.getRc(), e.getMessage());
@@ -765,6 +774,8 @@ public class DcacheResourceFactory
     {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
+
+        checkUploadSize(length);
 
         String uri = null;
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
@@ -1224,6 +1235,20 @@ public class DcacheResourceFactory
         return (Restriction) servletRequest.getAttribute(AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
     }
 
+    private OptionalLong getMaxUploadSize()
+    {
+        HttpServletRequest servletRequest = ServletRequest.getRequest();
+        Set<LoginAttribute> attributes = AuthenticationHandler.getLoginAttributes(servletRequest);
+        return LoginAttributes.maximumUploadSize(attributes);
+    }
+
+    private void checkUploadSize(Long length)
+    {
+        OptionalLong maxUploadSize = getMaxUploadSize();
+        checkStorageSufficient(!maxUploadSize.isPresent() || length == null
+                || length <= maxUploadSize.getAsLong(), "Upload too large");
+    }
+
     private boolean isAdmin()
     {
         Set<LoginAttribute> attributes = AuthenticationHandler.getLoginAttributes(ServletRequest.getRequest());
@@ -1623,6 +1648,8 @@ public class DcacheResourceFactory
             if (_contentMd5.isPresent()) {
                 setChecksum(_contentMd5.get());
             }
+
+            getMaxUploadSize().ifPresent(this::setMaximumLength);
         }
 
         public void relayData(InputStream inputStream)
@@ -1666,6 +1693,8 @@ public class DcacheResourceFactory
                         break;
                     case ResponseStatus.SC_BAD_REQUEST:
                         throw new BadRequestException(connection.getResponseMessage());
+                    case 507: // Insufficient Storage
+                        throw new InsufficientStorageException(connection.getResponseMessage(), null);
                     case ResponseStatus.SC_INTERNAL_SERVER_ERROR:
                         throw new CacheException("Pool error: " + connection.getResponseMessage());
                     default:
