@@ -62,6 +62,9 @@ package org.dcache.resilience.util;
 import com.google.common.collect.EvictingQueue;
 
 import java.util.Iterator;
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * <p>A small circular buffer for preserving the most recent operation
@@ -124,6 +127,22 @@ public class OperationHistory {
             }
         }
         return builder.toString();
+    }
+
+    public List<String> getErrorPnfsids() {
+        List<String> pnfsids;
+        synchronized(errors) {
+            pnfsids = errors.stream()
+                            .map((s) ->
+                                 {
+                                    String pnfsid = s.substring(s.indexOf("(") + 1);
+                                    return pnfsid.substring(pnfsid.indexOf(" "));
+                                 })
+                            .collect(toList());
+            errors.clear();
+        }
+
+        return pnfsids;
     }
 
     public void initialize() {

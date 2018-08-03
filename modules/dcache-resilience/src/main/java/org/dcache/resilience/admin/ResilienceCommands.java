@@ -73,9 +73,11 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -362,27 +364,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
         @Override
         protected String doCall() throws Exception {
-            String[] list = pnfsids.split("[,]");
-            for (String pnfsid: list) {
-                PnfsId pnfsId = new PnfsId(pnfsid);
-                FileAttributes attr = namespaceAccess.getRequiredAttributes(
-                                pnfsId);
-                int sunit = poolInfoMap.getStorageUnitIndex(attr);
-                if (!poolInfoMap.getStorageUnitConstraints(sunit).isResilient()) {
-                    return "File does not belong to a resilient storage unit.";
-                }
-                Iterator<String> it = attr.getLocations().iterator();
-                if (!it.hasNext()) {
-                    return pnfsid + " does not seem to have any locations.";
-                }
-                String pool = it.next();
-                FileUpdate update
-                                = new FileUpdate(pnfsId, pool,
-                                                 MessageType.ADD_CACHE_LOCATION,
-                                                 true);
-                fileOperationHandler.handleLocationUpdate(update);
-            }
-            return "An adjustment activity has been started for " + pnfsids + ".";
+            return runFileChecks(Arrays.asList(pnfsids.split("[,]")));
         }
     }
 
@@ -837,6 +819,23 @@ public final class ResilienceCommands implements CellCommandListener {
             }
 
             return fileOperationMap.list(filter, limitValue);
+        }
+    }
+
+    @Command(name = "retry errors",
+                    hint = "launch operations to adjust replicas for "
+                                    + "all pnfsids currently appearing in "
+                                    + "the history errors list",
+                    description = "For each pnfsid, runs a check to see that "
+                                    + "the number of replicas is properly "
+                                    + "constrained, creating new copies or "
+                                    + "removing redundant ones as necessary. "
+                                    + "NOTE: running this command also "
+                                    + "clears the current errors list.")
+    class FileRetryCommand extends ResilienceCommand {
+        @Override
+        protected String doCall() throws Exception {
+            return runFileChecks(history.getErrorPnfsids());
         }
     }
 
@@ -1612,5 +1611,30 @@ public final class ResilienceCommands implements CellCommandListener {
 
     public void setResilienceDir(String resilienceDir) {
         this.resilienceDir = resilienceDir;
+    }
+
+    private String runFileChecks(List<String> list) throws CacheException {
+        for (String pnfsid: list) {
+            PnfsId pnfsId = new PnfsId(pnfsid);
+            FileAttributes attr = namespaceAccess.getRequiredAttributes(
+                            pnfsId);
+            int sunit = poolInfoMap.getStorageUnitIndex(attr);
+            if (!poolInfoMap.getStorageUnitConstraints(sunit).isResilient()) {
+                return "File does not belong to a resilient storage unit.";
+            }
+            Iterator<String> it = attr.getLocations().iterator();
+            if (!it.hasNext()) {
+                return pnfsid + " does not seem to have any locations.";
+            }
+            String pool = it.next();
+            FileUpdate update
+                            = new FileUpdate(pnfsId, pool,
+                                             MessageType.ADD_CACHE_LOCATION,
+                                             true);
+            fileOperationHandler.handleLocationUpdate(update);
+        }
+
+        return "An adjustment activity has been started for "
+                        + list.size() + " pnfsids.";
     }
 }
