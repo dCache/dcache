@@ -5,10 +5,8 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.google.common.net.InetAddresses;
-import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -233,10 +231,10 @@ public class DCapDoorInterpreterV3
         _loginStrategy = settings.createLoginStrategy(cell);
 
         if ( _settings.isKafkaEnabled() ){
-            _kafkaProducer = settings.createKafkaProducer(_settings.getBootstrapServer(),
+            _kafkaProducer = settings.createKafkaProducer(_settings.getKafkaBootstrapServer(),
                     address.toString(),
-                    _settings.getMaxBlockMs(),
-                    _settings.getRetries());
+                    _settings.getKafkaMaxBlockMs(),
+                    _settings.getKafkaRetries());
         }
 
         _startedTS = new Date();
