@@ -189,10 +189,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
                 checkArgument(pos >= 0);
 
                 if (pos > allocated) {
-                    long delta = Math.max(pos - allocated, SPACE_INC);
-                    LOGGER.trace("preallocate: {}", delta);
-                    allocator.allocate(delta);
-                    allocated += delta;
+                    allocated += allocate(pos - allocated);
                 }
             } catch (InterruptedException e) {
                 throw new InterruptedIOException(e.getMessage());
@@ -200,5 +197,19 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
                 throw new ClosedChannelException();
             }
         }
+    }
+
+    private long allocate(long minRequired) throws InterruptedException, OutOfDiskException
+    {
+        long delta = Math.max(minRequired, SPACE_INC);
+        try {
+            allocator.allocate(delta);
+        } catch (OutOfDiskException e) {
+            // Try again, but this time with the minimum required.
+            delta = minRequired;
+            allocator.allocate(delta);
+        }
+        LOGGER.trace("preallocate: {}", delta);
+        return delta;
     }
 }
