@@ -29,6 +29,7 @@ import java.nio.channels.ClosedChannelException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -45,6 +46,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.LoginReply;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
@@ -57,6 +59,7 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.protocol.XrootdProtocol.FilePerm;
 import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
@@ -94,6 +97,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     private final XrootdDoor _door;
 
     private Restriction _authz = Restrictions.denyAll();
+    private OptionalLong _maximumUploadSize = OptionalLong.empty();
     private final Map<String, String> _appIoQueues;
 
     private FsPath _rootPath;
@@ -258,9 +262,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 boolean persistOnSuccessfulClose = (req.getOptions()
                         & XrootdProtocol.kXR_posc) == XrootdProtocol.kXR_posc;
                 // TODO: replace with req.isPersistOnSuccessfulClose() with the latest xrootd4j
+
                 transfer = _door.write(remoteAddress, path,
-                        ioQueue, uuid, createDir, overwrite, size, localAddress,
-                        req.getSubject(), _authz, persistOnSuccessfulClose,
+                        ioQueue, uuid, createDir, overwrite, size, _maximumUploadSize,
+                        localAddress, req.getSubject(), _authz, persistOnSuccessfulClose,
                         ((_isLoggedIn) ? _userRootPath : _rootPath));
             } else {
                 transfer = _door.read(remoteAddress, path, ioQueue,
@@ -1011,6 +1016,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                     .map(RootDirectory::getRoot)
                     .map(FsPath::create)
                     .orElse(FsPath.ROOT);
+            _maximumUploadSize = LoginAttributes.maximumUploadSize(reply.getLoginAttributes());
         } else {
             _isLoggedIn = false;
         }

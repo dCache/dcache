@@ -36,6 +36,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -104,6 +105,7 @@ import org.dcache.xrootd.tpc.XrootdTpcInfoCleanerTask;
 import org.dcache.xrootd.util.FileStatus;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static diskCacheV111.util.MissingResourceCacheException.checkResourceNotMissing;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
@@ -555,7 +557,7 @@ public class XrootdDoor
 
     public XrootdTransfer
             write(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
-                    boolean createDir, boolean overwrite, Long size,
+                    boolean createDir, boolean overwrite, Long size, OptionalLong maxUploadSize,
                     InetSocketAddress local, Subject subject, Restriction restriction,
                     boolean persistOnSuccessfulClose, FsPath rootPath)
             throws CacheException, InterruptedException {
@@ -596,7 +598,10 @@ public class XrootdDoor
                     throw e;
                 }
             }
+            maxUploadSize.ifPresent(transfer::setMaximumLength);
             if (size != null) {
+                checkResourceNotMissing(!maxUploadSize.isPresent() || size <= maxUploadSize.getAsLong(),
+                        "File exceeds maximum upload size");
                 transfer.setLength(size);
             }
             try {

@@ -1,5 +1,7 @@
 package diskCacheV111.util;
 
+import static org.dcache.util.Exceptions.genericCheck;
+
 /**
  * Signals that a resource is missing.
  *
@@ -8,6 +10,12 @@ package diskCacheV111.util;
 public class MissingResourceCacheException extends CacheException {
 
 	private static final long serialVersionUID = 4728338447299397298L;
+
+    public static void checkResourceNotMissing(boolean isOK, String format,
+            Object...arguments) throws MissingResourceCacheException
+    {
+        genericCheck(isOK, MissingResourceCacheException::new, format, arguments);
+    }
 
 	public MissingResourceCacheException(String msg) {
 		super(CacheException.RESOURCE, msg);
