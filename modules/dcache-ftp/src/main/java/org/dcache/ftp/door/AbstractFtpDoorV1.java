@@ -128,6 +128,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Timer;
@@ -148,6 +149,7 @@ import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -195,6 +197,7 @@ import static org.dcache.auth.attributes.Activity.*;
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.RootDirectory;
@@ -879,6 +882,7 @@ public abstract class AbstractFtpDoorV1
     private boolean _subjectLogged;
     protected Subject _subject;
     protected Restriction _doorRestriction;
+    private OptionalLong _maximumUploadSize = OptionalLong.empty();
     protected Restriction _authz = Restrictions.denyAll();
     protected FsPath _userRootPath = FsPath.ROOT;
     protected FsPath _doorRootPath = FsPath.ROOT;
@@ -1345,6 +1349,9 @@ public abstract class AbstractFtpDoorV1
             if (t instanceof FTPCommandException) {
                 replyCode = ((FTPCommandException) t).getCode();
                 replyMsg = t.getMessage();
+            } else if (t instanceof MissingResourceCacheException) {
+                replyCode = 452;
+                replyMsg = t.getMessage();
             } else if (t instanceof RuntimeException) {
                 _log.error("Possible bug detected.", t);
                 replyCode = 451;
@@ -1624,6 +1631,11 @@ public abstract class AbstractFtpDoorV1
                 userRootPath = FsPath.create(((RootDirectory) attribute).getRoot());
             } else if (attribute instanceof HomeDirectory) {
                 userHomePath = ((HomeDirectory) attribute).getHome();
+            } else if (attribute instanceof MaxUploadSize) {
+                long max = ((MaxUploadSize) attribute).getMaximumSize();
+                if (!_maximumUploadSize.isPresent() || max < _maximumUploadSize.getAsLong()) {
+                    _maximumUploadSize = OptionalLong.of(max);
+                }
             }
         }
         _authz = Restrictions.concat(_doorRestriction, login.getRestriction());
@@ -3476,7 +3488,7 @@ public abstract class AbstractFtpDoorV1
                 transfer.abort(500, "Invalid request: " + e.getMessage(), e);
                 break;
             case CacheException.RESOURCE:
-                transfer.abort(452, "Insufficient resources: " + e.getMessage(), e);
+                transfer.abort(452, e.getMessage(), e);
                 break;
             default:
                 transfer.abort(451, "Operation failed: " + e.getMessage(), e);
@@ -3536,6 +3548,8 @@ public abstract class AbstractFtpDoorV1
         checkFTPCommand(xferMode != TransferMode.MODE_X || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
                 504, "Cannot use passive X mode");
         checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
+        checkFTPCommand(!_maximumUploadSize.isPresent() || _allo <= _maximumUploadSize.getAsLong(),
+                552, "File exceeds allowed size");
 
         FtpTransfer transfer =
             new FtpTransfer(absolutePath(file),
@@ -3558,6 +3572,7 @@ public abstract class AbstractFtpDoorV1
             if (_checkSum != null) {
                 transfer.setChecksum(_checkSum);
             }
+            _maximumUploadSize.ifPresent(transfer::setMaximumLength);
 
             transfer.createAdapter();
             transfer.selectPoolAndStartMoverAsync(_writeRetryPolicy);
@@ -3589,7 +3604,7 @@ public abstract class AbstractFtpDoorV1
                 transfer.abort(500, "Invalid request: " + e.getMessage(), e);
                 break;
             case CacheException.RESOURCE:
-                transfer.abort(452, "Insufficient resources: " + e.getMessage(), e);
+                transfer.abort(452, e.getMessage(), e);
                 break;
             default:
                 transfer.abort(451, "Operation failed: " + e.getMessage(), e);
