@@ -45,6 +45,7 @@ import org.dcache.ftp.data.Multiplexer;
 import org.dcache.ftp.data.Role;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
@@ -241,6 +242,8 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 PortUnreachableException | UnknownHostException e) {
             throw Exceptions.wrap("Failed to connect " +
                     mode.getRemoteAddressDescription(), e, IOException.class);
+        } catch (OutOfDiskException e) {
+            throw e;
         } catch (IOException e) {
             throw Exceptions.wrap("Problem while connected to " +
                     mode.getRemoteAddressDescription(), e, IOException.class);
