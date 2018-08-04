@@ -35,10 +35,12 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.net.ProtocolConnectionPool.Listen;
 import org.dcache.net.ProtocolConnectionPoolFactory;
+import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.Exceptions;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
 
@@ -67,6 +69,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private ByteBuffer _bigBuffer;
     private String  _status          = "None";
     private boolean _io_ok           = true;
+    private Exception ioException    = null;
     private long    _ioError         = -1;
     private PnfsId  _pnfsId;
     private int     _sessionId       = -1;
@@ -289,7 +292,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         throws Exception
     {
         configureBufferSizes();
-        Exception ioException         = null;
 
         if(! (protocol instanceof DCapProtocolInfo)) {
             throw new
@@ -452,9 +454,16 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                             cntOut.writeFIN(DCapConstants.IOCMD_WRITE);
                             socketChannel.write(cntOut.buffer());
                         }else{
-                            _log.error("Reporting IO problem to client");
-                            cntOut.writeFIN(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,
-                                            "[2]Problem in writing");
+                            String errmsg = "WRITE failed : " + (ioException == null ? "IOError" : Exceptions.messageOrClassName(ioException));
+                            int rc;
+                            if (ioException instanceof OutOfDiskException) {
+                                _log.debug(errmsg);
+                                rc = CacheException.RESOURCE;
+                            } else {
+                                _log.error(errmsg);
+                                rc = CacheException.ERROR_IO_DISK;
+                            }
+                            cntOut.writeFIN(DCapConstants.IOCMD_WRITE, rc, errmsg);
                             socketChannel.write(cntOut.buffer());
                         }
 
@@ -604,10 +613,16 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                             cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE);
                             socketChannel.write(cntOut.buffer());
                         }else{
-                            String errmsg = "SEEK_AND_WRITE failed : IOError";
-                            _log.error(errmsg);
-                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE,CacheException.ERROR_IO_DISK,errmsg);
-                            socketChannel.write(cntOut.buffer());
+                            String errmsg = "SEEK_AND_WRITE failed : " + (ioException == null ? "IOError" : Exceptions.messageOrClassName(ioException));
+                            int rc;
+                            if (ioException instanceof OutOfDiskException) {
+                                _log.debug(errmsg);
+                                rc = CacheException.RESOURCE;
+                            } else {
+                                _log.error(errmsg);
+                                rc = CacheException.ERROR_IO_DISK;
+                            }
+                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE, rc, errmsg);
                         }
 
                     }
@@ -735,10 +750,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             //
 
             if(! _io_ok) {
-                throw new
-                        DiskErrorCacheException(
-                                   "Disk I/O Error " +
-                                   (ioException!=null?ioException.toString():""));
+                if (ioException instanceof OutOfDiskException) {
+                    throw ioException;
+                } else {
+                    throw new
+                            DiskErrorCacheException(
+                                       "Disk I/O Error " +
+                                       (ioException!=null?ioException.toString():""));
+                }
             }else{
                 if (ioException != null && !(ioException instanceof EOFException)) {
                      _log.warn("Problem in command block : {} {}", requestBlock, ioException.toString());
@@ -976,6 +995,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                         // clear interrupted state
                         Thread.interrupted();
                         throw new InterruptedException(ee.getMessage());
+                    } catch (OutOfDiskException e) {
+                        _io_ok = false;
+                        ioException = e;
                     }catch(IOException ioe){
                         _log.error("IOException in writing data to disk : {}", ioe.toString());
                         _io_ok = false;
