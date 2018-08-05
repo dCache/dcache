@@ -44,6 +44,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;
@@ -547,6 +548,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 
         try {
             descriptor.write(msg);
+        } catch (OutOfDiskException e) {
+            throw new XrootdException(kXR_NoSpace, e.getMessage());
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
                     "The file was forcefully closed by the server.");
