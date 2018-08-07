@@ -28,7 +28,7 @@ License
 
 The project is licensed under __AGPL v3__. Some parts licensed under __BSD__ and __LGPL__. See the source code for details.
 
-####For more info, check official [dCache.ORG] (http://www.dcache.org) web page.####
+#### For more info, check official [dCache.ORG] (http://www.dcache.org) web page.####
 
 Getting Started
 ===============
