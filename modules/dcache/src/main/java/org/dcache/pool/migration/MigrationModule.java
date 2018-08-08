@@ -55,6 +55,7 @@ import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.pool.migration.json.MigrationData;
 
 import static java.util.Arrays.asList;
+import java.util.function.Predicate;
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
 
 /**
@@ -716,10 +717,10 @@ public class MigrationModule
             return patterns;
         }
 
-        private List<CacheEntryFilter> createFilters()
+        private List<Predicate<CacheEntry>> createFilters()
                 throws IllegalArgumentException
         {
-            List<CacheEntryFilter> filters = new ArrayList<>();
+            List<Predicate<CacheEntry>> filters = new ArrayList<>();
 
             if (storage != null) {
                 filters.add(new StorageClassFilter(storage));

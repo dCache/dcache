@@ -43,6 +43,7 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.expression.Expression;
 
 import static com.google.common.base.Preconditions.checkState;
+import java.util.function.Predicate;
 
 /**
  * Encapsulates a job as defined by a user command.
@@ -634,8 +635,8 @@ public class Job
      */
     private boolean accept(CacheEntry entry)
     {
-        for (CacheEntryFilter filter: _definition.filters) {
-            if (!filter.accept(entry)) {
+        for (Predicate<CacheEntry> filter: _definition.filters) {
+            if (!filter.test(entry)) {
                 return false;
             }
         }
