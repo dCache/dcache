@@ -38,7 +38,7 @@ public enum AceFlags {
     IDENTIFIER_GROUP(0x00000040, 'g');
 
     // Logger
-    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AceFlags.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AceFlags.class);
 
     private final int _value;
 
@@ -104,14 +104,14 @@ public enum AceFlags {
 
             if ( INHERIT_ONLY_ACE.matches(flags) ) {
                 if ( res == 0 ) {
-                    logger.warn("Unsupported flags of directory: {}", flags);
+                    LOGGER.warn("Unsupported flags of directory: {}", flags);
                 } else {
                     res += INHERIT_ONLY_ACE._value;
                 }
             }
 
         } else if ( flags != 0 && flags != IDENTIFIER_GROUP._value ) {
-            logger.warn("Unsupported flags of file: {}", flags);
+            LOGGER.warn("Unsupported flags of file: {}", flags);
         }
 
         if ( IDENTIFIER_GROUP.matches(flags) ) {
