@@ -635,12 +635,7 @@ public class Job
      */
     private boolean accept(CacheEntry entry)
     {
-        for (Predicate<CacheEntry> filter: _definition.filters) {
-            if (!filter.test(entry)) {
-                return false;
-            }
-        }
-        return true;
+        return _definition.filter.test(entry);
     }
 
     /** Adds a new task to the job. */

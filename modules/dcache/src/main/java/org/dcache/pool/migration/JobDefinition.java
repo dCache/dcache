@@ -16,7 +16,7 @@ public class JobDefinition
     /**
      * Selection criteria defining which replicas to include in the migration job.
      */
-    public final List<Predicate<CacheEntry>> filters;
+    public final Predicate<CacheEntry> filter;
 
     /**
      * New mode of the source replica to apply after successful migration.
@@ -108,7 +108,7 @@ public class JobDefinition
      */
     public final int replicas;
 
-    public JobDefinition(List<Predicate<CacheEntry>> filters,
+    public JobDefinition(Predicate<CacheEntry> filter,
                          CacheEntryMode sourceMode,
                          CacheEntryMode targetMode,
                          PoolSelectionStrategy selectionStrategy,
@@ -127,7 +127,7 @@ public class JobDefinition
                          Expression stopWhen,
                          boolean forceSourceMode)
     {
-        this.filters = Collections.unmodifiableList(filters);
+        this.filter = filter;
         this.sourceMode = sourceMode;
         this.targetMode = targetMode;
         this.selectionStrategy = selectionStrategy;
