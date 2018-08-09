@@ -1,6 +1,7 @@
 package org.dcache.pool.migration;
 
 import com.google.common.collect.Range;
+import java.util.function.Predicate;
 
 import org.dcache.pool.repository.CacheEntry;
 
@@ -8,7 +9,7 @@ import org.dcache.pool.repository.CacheEntry;
  * Repository entry filter which only accepts entries with a size in a
  * given range.
  */
-public class SizeFilter implements CacheEntryFilter
+public class SizeFilter implements Predicate<CacheEntry>
 {
     private final Range<Long> _size;
 
@@ -18,7 +19,7 @@ public class SizeFilter implements CacheEntryFilter
     }
 
     @Override
-    public boolean accept(CacheEntry entry)
+    public boolean test(CacheEntry entry)
     {
         return _size.contains(entry.getReplicaSize());
     }

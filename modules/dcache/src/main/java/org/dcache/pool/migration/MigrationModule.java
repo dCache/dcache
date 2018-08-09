@@ -55,6 +55,7 @@ import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.pool.migration.json.MigrationData;
 
 import static java.util.Arrays.asList;
+import java.util.function.Predicate;
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
 
 /**
@@ -715,65 +716,68 @@ public class MigrationModule
             }
             return patterns;
         }
-
-        private List<CacheEntryFilter> createFilters()
+        
+         private Predicate<CacheEntry> createFilter()
                 throws IllegalArgumentException
         {
-            List<CacheEntryFilter> filters = new ArrayList<>();
-
+            // DEFAULT PREDICATE
+            // Always return true (no filter = entry accepted)
+            // Additional filters are chained using logical AND
+            Predicate<CacheEntry> root = a -> true;
+            
             if (storage != null) {
-                filters.add(new StorageClassFilter(storage));
+                root = root.and(new StorageClassFilter(storage));
             }
 
             if (cache != null) {
-                filters.add(new CacheClassFilter(Strings.emptyToNull(cache)));
+                root = root.and(new CacheClassFilter(Strings.emptyToNull(cache)));
             }
 
             if (pnfsid != null) {
-                filters.add(new PnfsIdFilter(new HashSet<>(asList(pnfsid))));
+                root = root.and(new PnfsIdFilter(new HashSet<>(asList(pnfsid))));
             }
 
             if (state == null) {
-                filters.add(new StateFilter(ReplicaState.CACHED, ReplicaState.PRECIOUS));
+                root = root.and(new StateFilter(ReplicaState.CACHED, ReplicaState.PRECIOUS));
             } else if (state.equals("cached")) {
-                filters.add(new StateFilter(ReplicaState.CACHED));
+                root = root.and(new StateFilter(ReplicaState.CACHED));
             } else if (state.equals("precious")) {
-                filters.add(new StateFilter(ReplicaState.PRECIOUS));
+                root = root.and(new StateFilter(ReplicaState.PRECIOUS));
             } else {
                 throw new IllegalArgumentException(state + ": Invalid state");
             }
 
             if (sticky != null) {
                 if (sticky.length == 0) {
-                    filters.add(new StickyFilter());
+                    root = root.and(new StickyFilter());
                 } else {
                     for (String owner: sticky) {
                         if (owner.startsWith("-")) {
-                            filters.add(new NotStickyOwnerFilter(owner.substring(1)));
+                            root = root.and(new StickyOwnerFilter(owner.substring(1)).negate());
                         } else {
-                            filters.add(new StickyOwnerFilter(owner));
+                            root = root.and(new StickyOwnerFilter(owner));
                         }
                     }
                 }
             }
 
             if (size != null) {
-                filters.add(new SizeFilter(parseRange(size)));
+                root = root.and(new SizeFilter(parseRange(size)));
             }
 
             if (accessed != null) {
-                filters.add(new AccessedFilter(parseRange(accessed)));
+                root = root.and(new AccessedFilter(parseRange(accessed)));
             }
 
             if (accessLatency != null) {
-                filters.add(new AccessLatencyFilter(AccessLatency.getAccessLatency(accessLatency)));
+                root = root.and(new AccessLatencyFilter(AccessLatency.getAccessLatency(accessLatency)));
             }
 
             if (retentionPolicy != null) {
-                filters.add(new RetentionPolicyFilter(RetentionPolicy.getRetentionPolicy(retentionPolicy)));
+                root = root.and(new RetentionPolicyFilter(RetentionPolicy.getRetentionPolicy(retentionPolicy)));
             }
 
-            return filters;
+            return root;
         }
 
         @Override
@@ -826,7 +830,7 @@ public class MigrationModule
                             sourceList);
 
             JobDefinition definition =
-                    new JobDefinition(createFilters(),
+                    new JobDefinition(createFilter(),
                             createCacheEntryMode(sourceMode),
                             createCacheEntryMode(targetMode),
                             createPoolSelectionStrategy(select),

@@ -1,5 +1,6 @@
 package org.dcache.pool.migration;
 
+import java.util.function.Predicate;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
 
@@ -7,7 +8,7 @@ import org.dcache.pool.repository.StickyRecord;
  * Repository entry filter accepting entries with sticky flags by a
  * given owner.
  */
-public class StickyOwnerFilter implements CacheEntryFilter
+public class StickyOwnerFilter implements Predicate<CacheEntry>
 {
     private final String _owner;
 
@@ -17,7 +18,7 @@ public class StickyOwnerFilter implements CacheEntryFilter
     }
 
     @Override
-    public boolean accept(CacheEntry entry)
+    public boolean test(CacheEntry entry)
     {
         for (StickyRecord record: entry.getStickyRecords()) {
             if (record.owner().equals(_owner)) {

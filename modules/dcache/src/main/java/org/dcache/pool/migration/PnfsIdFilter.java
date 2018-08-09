@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import diskCacheV111.util.PnfsId;
+import java.util.function.Predicate;
 
 import org.dcache.pool.repository.CacheEntry;
 
@@ -11,7 +12,7 @@ import org.dcache.pool.repository.CacheEntry;
  * Repository entry filter which only accepts entries with specific
  * PNFS ids.
  */
-public class PnfsIdFilter implements CacheEntryFilter
+public class PnfsIdFilter implements Predicate<CacheEntry>
 {
     private final Collection<PnfsId> _pnfsIds;
 
@@ -21,7 +22,7 @@ public class PnfsIdFilter implements CacheEntryFilter
     }
 
     @Override
-    public boolean accept(CacheEntry entry)
+    public boolean test(CacheEntry entry)
     {
         return _pnfsIds.contains(entry.getPnfsId());
     }

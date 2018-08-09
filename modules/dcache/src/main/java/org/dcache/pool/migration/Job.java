@@ -43,6 +43,7 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.expression.Expression;
 
 import static com.google.common.base.Preconditions.checkState;
+import java.util.function.Predicate;
 
 /**
  * Encapsulates a job as defined by a user command.
@@ -634,12 +635,7 @@ public class Job
      */
     private boolean accept(CacheEntry entry)
     {
-        for (CacheEntryFilter filter: _definition.filters) {
-            if (!filter.accept(entry)) {
-                return false;
-            }
-        }
-        return true;
+        return _definition.filter.test(entry);
     }
 
     /** Adds a new task to the job. */

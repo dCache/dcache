@@ -1,12 +1,13 @@
 package org.dcache.pool.migration;
 
+import java.util.function.Predicate;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
 
 /**
  * Repository entry filter accepting entries in particular states.
  */
-public class StateFilter implements CacheEntryFilter
+public class StateFilter implements Predicate<CacheEntry>
 {
     private final ReplicaState[] _states;
 
@@ -16,7 +17,7 @@ public class StateFilter implements CacheEntryFilter
     }
 
     @Override
-    public boolean accept(CacheEntry entry)
+    public boolean test(CacheEntry entry)
     {
         for (ReplicaState state: _states) {
             if (entry.getState() == state) {

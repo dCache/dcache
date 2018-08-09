@@ -3,6 +3,7 @@ package org.dcache.pool.migration;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.util.expression.Expression;
@@ -15,7 +16,7 @@ public class JobDefinition
     /**
      * Selection criteria defining which replicas to include in the migration job.
      */
-    public final List<CacheEntryFilter> filters;
+    public final Predicate<CacheEntry> filter;
 
     /**
      * New mode of the source replica to apply after successful migration.
@@ -107,7 +108,7 @@ public class JobDefinition
      */
     public final int replicas;
 
-    public JobDefinition(List<CacheEntryFilter> filters,
+    public JobDefinition(Predicate<CacheEntry> filter,
                          CacheEntryMode sourceMode,
                          CacheEntryMode targetMode,
                          PoolSelectionStrategy selectionStrategy,
@@ -126,7 +127,7 @@ public class JobDefinition
                          Expression stopWhen,
                          boolean forceSourceMode)
     {
-        this.filters = Collections.unmodifiableList(filters);
+        this.filter = filter;
         this.sourceMode = sourceMode;
         this.targetMode = targetMode;
         this.selectionStrategy = selectionStrategy;
