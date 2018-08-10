@@ -20,10 +20,7 @@ public abstract class InfoMessage implements Serializable
     private final String _cellType;
     private final String _messageType;
 
-    @Deprecated // Since 2.17, remove after next golden release
-    private final String _cellName = null;
-
-    private CellAddressCore _cellAddress;
+    private final CellAddressCore _cellAddress;
 
     private long _timeQueued;
     private int _resultCode;
@@ -131,20 +128,6 @@ public abstract class InfoMessage implements Serializable
 
     public Subject getSubject()
     {
-        /* The null check ensures compatibility with pools earlier
-         * than version 2.1. Those pools do not include a subject
-         * field.
-         */
-        return (_subject == null) ? Subjects.ROOT : _subject;
-    }
-
-    private void readObject(java.io.ObjectInputStream stream)
-            throws java.io.IOException, ClassNotFoundException
-    {
-        stream.defaultReadObject();
-
-        if (_cellName != null) {
-            _cellAddress = new CellAddressCore(_cellName);
-        }
+        return _subject;
     }
 }
