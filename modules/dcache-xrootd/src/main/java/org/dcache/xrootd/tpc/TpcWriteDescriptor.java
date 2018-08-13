@@ -177,6 +177,12 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     public synchronized XrootdResponse<StatRequest> handleStat(StatRequest msg)
                     throws XrootdException
     {
+        if (client.getError() != null) {
+            return new ErrorResponse<>(msg,
+                                       client.getErrno(),
+                                       client.getError());
+        }
+
         int fd = msg.getFhandle();
         NettyMoverChannel channel = getChannel();
         FileStatus fileStatus;
@@ -268,6 +274,12 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     public synchronized XrootdResponse<SyncRequest> sync(SyncRequest syncRequest)
                     throws IOException, InterruptedException
     {
+        if (client.getError() != null) {
+            return new ErrorResponse<>(syncRequest,
+                                       client.getErrno() ,
+                                       client.getError());
+        }
+
         LOGGER.trace("Request to sync ({}) is for third-party write.",
                      syncRequest);
 
@@ -293,9 +305,6 @@ public final class TpcWriteDescriptor extends WriteDescriptor
              * Not yet terminated.  Wait for fireDelayedSync call.
              */
             this.syncRequest = syncRequest;
-            if (client.getErrno() != kXR_ok) {
-                fireDelayedSync(client.getErrno(), client.getError());
-            }
             return null;
         }
 
