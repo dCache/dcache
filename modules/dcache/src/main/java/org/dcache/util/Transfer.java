@@ -79,7 +79,6 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.util.concurrent.Futures.*;
 import static org.dcache.namespace.FileAttribute.*;
@@ -267,7 +266,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized void setPoolManagerStub(PoolManagerStub stub)
     {
-        _poolManager = requireNonNull(stub, "PoolManager stub can't be null");
+        _poolManager = stub;
     }
 
     /**
@@ -275,7 +274,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized void setPoolStub(CellStub stub)
     {
-        _poolStub = requireNonNull(stub, "Pool stub can't be null");
+        _poolStub = stub;
     }
 
     /**
@@ -283,7 +282,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized void setBillingStub(CellStub stub)
     {
-        _billing = requireNonNull(stub, "Billing stub can't be null");
+        _billing = stub;
     }
 
     public synchronized void setKafkaSender(Consumer<DoorRequestInfoMessage> kafkaSender)
@@ -1254,7 +1253,6 @@ public class Transfer implements Comparable<Transfer>
 
     public ListenableFuture<Void> selectPoolAndStartMoverAsync(TransferRetryPolicy policy)
     {
-
         long deadLine = addWithInfinity(System.currentTimeMillis(), policy.getTotalTimeOut());
 
         AsyncFunction<Void, Void> selectPool =
