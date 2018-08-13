@@ -1064,7 +1064,7 @@ public class Transfer implements Comparable<Transfer>
         message.setId(_id);
         message.setSubject(_subject);
 
-        ListenableFuture<PoolIoFileMessage> reply = _poolStub.send(new CellPath(pool.getAddress()), message, timeout);
+        ListenableFuture<PoolIoFileMessage> reply = _poolManager.startAsync(pool.getAddress(), message, timeout);
         setStatusUntil("Pool " + pool + ": Creating mover", reply);
         return CellStub.transformAsync(reply, msg -> {
             setMoverId(msg.getMoverId());

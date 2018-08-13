@@ -980,7 +980,7 @@ public abstract class AbstractFtpDoorV1
             setCheckStagePermission(_checkStagePermission);
             setOverwriteAllowed(_settings.isOverwrite());
             setPoolManagerStub(_poolManagerStub);
-            setPoolStub(AbstractFtpDoorV1.this._poolStub);
+            setPoolStub(_poolStub);
             setBillingStub(_billingStub);
 
             if(_settings.isKafkaEnabled()){
