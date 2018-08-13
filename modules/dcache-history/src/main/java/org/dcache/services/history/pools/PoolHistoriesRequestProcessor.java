@@ -59,8 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.services.history.pools;
 
-import com.google.common.base.Throwables;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.File;
@@ -72,10 +73,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.util.CacheException;
+
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
@@ -134,19 +135,29 @@ public final class PoolHistoriesRequestProcessor extends
         GsonBuilder builder = new GsonBuilder();
 
         for (File file : files) {
+            info = null;
+            key = null;
+
             try (FileReader reader = new FileReader(file)) {
-                info = builder.create().fromJson(reader,
-                                                 PoolInfoWrapper.class);
                 key = file.getName();
                 if (key.contains(".")) {
                     key = key.substring(0, key.lastIndexOf("."));
                 }
 
-                values.put(key, info);
+                info = builder.create().fromJson(reader,
+                                                 PoolInfoWrapper.class);
+            } catch (JsonSyntaxException | JsonIOException e) {
+                LOGGER.warn("Json parsing/syntax problem for {}: {}; file "
+                                            + "is corrupt or incomplete; removing ...",
+                            file, e.getMessage());
+                file.delete();
             } catch (IOException e) {
-                LOGGER.warn("There was a problem deserializing json file {}: "
-                                            + "{}, {}",
-                            file, e.getMessage(), Throwables.getRootCause(e));
+                LOGGER.warn("There was a problem reading json file {}: {}.",
+                            file, e.getMessage());
+            }
+
+            if (key != null) {
+                values.put(key, info == null ? new PoolInfoWrapper() : info);
             }
         }
 
