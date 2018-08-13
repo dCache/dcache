@@ -4,17 +4,12 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.concurrent.atomic.AtomicLong;
 
 import dmg.cells.nucleus.CellAddressCore;
 
-import org.dcache.auth.Subjects;
-
 public abstract class InfoMessage implements Serializable
 {
-    private static final SimpleDateFormat __dateFormat = new SimpleDateFormat("MM.dd HH:mm:ss");
-
     private static final AtomicLong COUNTER = new  AtomicLong(0);
 
     private final String _cellType;
