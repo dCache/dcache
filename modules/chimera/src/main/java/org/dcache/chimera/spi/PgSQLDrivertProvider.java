@@ -1,6 +1,7 @@
 package org.dcache.chimera.spi;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +27,23 @@ public class PgSQLDrivertProvider implements DBDriverProvider {
             dbConnection = dataSource.getConnection();
             String databaseProductName = dbConnection.getMetaData().getDatabaseProductName();
 
-            return databaseProductName.equalsIgnoreCase("PostgreSQL");
+            if (databaseProductName.equalsIgnoreCase("PostgreSQL")) {
+                /*
+                 * CockroachDB presents itself as PostgreSQL. However,
+                 * on-the-wire is only supported. As a result, we can't use any
+                 * server-side optimizations. IOW, CockroachDB is not PostgreSQL.
+                 */
+                try (ResultSet rs = dbConnection.getMetaData().getSchemas()) {
+                    while(rs.next()) {
+                        String schema = rs.getString("TABLE_SCHEM");
+                        if (schema.equalsIgnoreCase("crdb_internal")) {
+                             return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
         } finally {
             tryToClose(dbConnection);
         }
