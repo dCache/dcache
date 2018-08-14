@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import dmg.util.CommandException;
@@ -69,6 +70,7 @@ import org.dcache.delegation.gridsite2.DelegationServiceLocator;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.srm.client.HttpClientSender;
 import org.dcache.srm.client.HttpClientTransport;
+import org.dcache.ssl.CanlContextFactory.Builder;
 import org.dcache.util.Args;
 import org.dcache.util.cli.ShellApplication;
 
@@ -143,7 +145,10 @@ public class DelegationShell extends ShellApplication
         _proxy = new PEMCredential(proxyPath, (char[]) null);
 
         HttpClientSender sender = new HttpClientSender();
-        sender.setSslContextFactory(CanlContextFactory.createDefault());
+        Builder contextBuilder = CanlContextFactory.custom();
+        Optional.ofNullable(System.getenv("X509_CERT_DIR"))
+                .ifPresent(contextBuilder::withCertificateAuthorityPath);
+        sender.setSslContextFactory(contextBuilder.build());
         sender.init();
         _provider.deployTransport(HttpClientTransport.DEFAULT_TRANSPORT_NAME, new SimpleTargetedChain(sender));
         _v1Locator = new org.dcache.delegation.gridsite1.DelegationServiceLocator(_provider);
