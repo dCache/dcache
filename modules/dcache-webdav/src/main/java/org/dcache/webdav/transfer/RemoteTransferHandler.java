@@ -125,29 +125,20 @@ public class RemoteTransferHandler implements CellMessageReceiver
      * The different transport schemes supported.
      */
     public enum TransferType {
-        GSIFTP("gsiftp", GRIDSITE, EnumSet.noneOf(CredentialSource.class)),
-        HTTP(  "http",   NONE,     EnumSet.noneOf(CredentialSource.class)),
-        HTTPS( "https",  GRIDSITE, EnumSet.of(OIDC, NONE));
+        GSIFTP("gsiftp", EnumSet.of(GRIDSITE)),
+        HTTP(  "http",   EnumSet.of(NONE)),
+        HTTPS( "https",  EnumSet.of(GRIDSITE, OIDC, NONE));
 
         private static final ImmutableMap<String,TransferType> BY_SCHEME =
             ImmutableMap.of("gsiftp", GSIFTP, "http", HTTP, "https", HTTPS);
 
-        private final CredentialSource _defaultCredentialSource;
         private final EnumSet<CredentialSource> _supported;
         private final String _scheme;
 
-        TransferType(String scheme, CredentialSource defaultSource,
-                EnumSet<CredentialSource> additionalSources)
+        TransferType(String scheme, EnumSet<CredentialSource> supportedSources)
         {
-            _defaultCredentialSource = defaultSource;
-            _supported = EnumSet.copyOf(additionalSources);
-            _supported.add(defaultSource);
+            _supported = EnumSet.copyOf(supportedSources);
             _scheme = scheme;
-        }
-
-        public CredentialSource getDefaultCredentialSource()
-        {
-            return _defaultCredentialSource;
         }
 
         public boolean isSupported(CredentialSource source)
