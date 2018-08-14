@@ -107,7 +107,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public abstract class Request extends Job {
 
-    private static final Logger logger = LoggerFactory.getLogger(Request.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Request.class);
     private final String client_host;
     private final SRMUser user;
 
@@ -162,7 +162,7 @@ public abstract class Request extends Job {
         this.description = description;
         this.client_host = client_host;
         this.user = user;
-        logger.debug("restored");
+        LOGGER.debug("restored");
     }
 
 
@@ -326,13 +326,13 @@ public abstract class Request extends Job {
         wlock();
         try {
             if (creationTime + lifetime < System.currentTimeMillis() && !getState().isFinal()) {
-                logger.info("expiring request #{}", getId());
+                LOGGER.info("expiring request #{}", getId());
                 StringBuilder sb = new StringBuilder().append("Request lifetime (");
                 TimeUtils.appendDuration(sb, lifetime, MILLISECONDS, TimeUnitFormat.SHORT).append(") expired.");
                 setStateAndStatusCode(State.FAILED, sb.toString(), TStatusCode.SRM_REQUEST_TIMED_OUT);
             }
         } catch (IllegalStateTransition e) {
-            logger.error("Illegal state transition while expiring job: {}", e.toString());
+            LOGGER.error("Illegal state transition while expiring job: {}", e.toString());
         } finally {
             wunlock();
         }

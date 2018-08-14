@@ -123,8 +123,7 @@ import org.dcache.util.URIs;
  */
 public final class RemoteTurlPutterV2 extends TurlGetterPutter
 {
-    private static final Logger logger =
-        LoggerFactory.getLogger(RemoteTurlPutterV2.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteTurlPutterV2.class);
     private ISRM srmv2;
     private String requestToken;
     private final String targetSpaceToken;
@@ -186,16 +185,16 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmv2.srmPutDone(srmPutDoneRequest);
         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
         if(returnStatus == null) {
-            logger.error("srmPutDone return status is null");
+            LOGGER.error("srmPutDone return status is null");
             return;
         }
-        logger.debug("srmPutDone status code={}", returnStatus.getStatusCode());
+        LOGGER.debug("srmPutDone status code={}", returnStatus.getStatusCode());
     }
 
     @Override
     public void getInitialRequest() throws SRMException {
         if(number_of_file_reqs == 0) {
-            logger.debug("number_of_file_reqs is 0, nothing to do");
+            LOGGER.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -245,7 +244,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
         }
         catch(URISyntaxException | IOException | InterruptedException | ServiceException e) {
-            logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
+            LOGGER.error("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
 
@@ -255,7 +254,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     @Override
     public void run() {
         if(number_of_file_reqs == 0) {
-            logger.debug("number_of_file_reqs is 0, nothing to do");
+            LOGGER.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -276,7 +275,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                         statusCode+" explanation="+status.getExplanation());
             }
             requestToken = srmPrepareToPutResponse.getRequestToken();
-            logger.debug(" srm returned requestToken = {} one of remote surls = {}", requestToken, SURLs[0]);
+            LOGGER.debug(" srm returned requestToken = {} one of remote surls = {}", requestToken, SURLs[0]);
 
             ArrayOfTPutRequestFileStatus arrayOfTPutRequestFileStatus =
                 srmPrepareToPutResponse.getArrayOfFileStatuses();
@@ -303,12 +302,12 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 for(TPutRequestFileStatus putRequestFileStatus: putRequestFileStatuses) {
                     URI surl = putRequestFileStatus.getSURL();
                     if(surl == null) {
-                        logger.error("invalid putRequestFileStatus, surl is null");
+                        LOGGER.error("invalid putRequestFileStatus, surl is null");
                         continue;
                     }
                     String surl_string = surl.toString();
                     if(!pendingSurlsToIndex.containsKey(surl_string)) {
-                        logger.error("invalid putRequestFileStatus, surl = {} not found", surl_string);
+                        LOGGER.error("invalid putRequestFileStatus, surl = {} not found", surl_string);
                         continue;
                     }
                     TReturnStatus fileStatus = putRequestFileStatus.getStatus();
@@ -322,7 +321,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                     if(RequestStatusTool.isFailedFileRequestStatus(fileStatus)){
                         String error ="retreval of surl "+surl_string+" failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
-                        logger.error(error);
+                        LOGGER.error(error);
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
                         haveCompletedFileRequests = true;
@@ -344,7 +343,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 }
 
                 if(pendingSurlsToIndex.isEmpty()) {
-                    logger.debug("no more pending transfers, breaking the loop");
+                    LOGGER.debug("no more pending transfers, breaking the loop");
                     break;
                 }
                 // do not wait longer then 60 seconds
@@ -353,7 +352,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 }
                 try {
 
-                    logger.debug("sleeping {} seconds ...", estimatedWaitInSeconds);
+                    LOGGER.debug("sleeping {} seconds ...", estimatedWaitInSeconds);
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 }
                 catch(InterruptedException ie) {
@@ -407,7 +406,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
 
                 if(putRequestFileStatuses == null ||
                         putRequestFileStatuses.length !=  expectedResponseLength) {
-                    logger.error( "incorrect number of RequestFileStatuses");
+                    LOGGER.error( "incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
 
@@ -427,7 +426,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
 
         }
         catch(IOException ioe) {
-            logger.error(ioe.toString());
+            LOGGER.error(ioe.toString());
             notifyOfFailure(ioe);
         }
 
@@ -474,9 +473,9 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmv2.srmPutDone(srmPutDoneRequest);
         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
         if(returnStatus == null) {
-            logger.error("srmPutDone return status is null");
+            LOGGER.error("srmPutDone return status is null");
             return;
         }
-        logger.debug("srmPutDone status code={}", returnStatus.getStatusCode());
+        LOGGER.debug("srmPutDone status code={}", returnStatus.getStatusCode());
     }
 }

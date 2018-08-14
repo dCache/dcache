@@ -44,7 +44,7 @@ import org.dcache.delegation.gridsite2.DelegationException;
  */
 public class BouncyCastleCredentialDelegation implements CredentialDelegation
 {
-    private static final Logger LOG = LoggerFactory.getLogger(BouncyCastleCredentialDelegation.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BouncyCastleCredentialDelegation.class);
 
     private final DelegationIdentity _id;
     private final X509Certificate[] _certificates;
@@ -63,11 +63,11 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
         try {
             _pemRequest = pemEncode(createRequest(certificates, keypair));
         } catch (GeneralSecurityException e) {
-            LOG.error("Failed to create CSR: {}", e.toString());
+            LOGGER.error("Failed to create CSR: {}", e.toString());
             throw new DelegationException("cannot create certificate-signing" +
                     " request: " + e.getMessage());
         } catch (IOException e) {
-            LOG.error("Failed to convert CSR to PEM: {}", e.toString());
+            LOGGER.error("Failed to convert CSR to PEM: {}", e.toString());
             throw new DelegationException("cannot PEM-encode certificate-" +
                     "signing request: " + e.getMessage());
         }
@@ -112,7 +112,7 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
                     new ByteArrayInputStream(encodedCertificate.getBytes(StandardCharsets.UTF_8)),
                     CertificateUtils.Encoding.PEM);
         } catch (IOException e) {
-            LOG.debug("Bad certificate: {}", e.getMessage());
+            LOGGER.debug("Bad certificate: {}", e.getMessage());
             throw new DelegationException("Supplied certificate is unacceptable: " + e.getMessage());
         }
 
@@ -122,7 +122,7 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
         try {
             return new KeyAndCertCredential(_keyPair.getPrivate(), newCertificates);
         } catch (KeyStoreException e) {
-            LOG.error("Failed to create delegated credential: {}", e.getMessage());
+            LOGGER.error("Failed to create delegated credential: {}", e.getMessage());
             throw new DelegationException("Unable to create delegated credential: " + e.getMessage());
         }
     }

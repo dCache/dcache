@@ -7,7 +7,7 @@ import org.dcache.srm.SRM;
 import org.dcache.srm.util.Configuration;
 
 public class QOSPluginFactory {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(QOSPluginFactory.class);
 
 	public static QOSPlugin createInstance(SRM srm) {
@@ -21,9 +21,9 @@ public class QOSPluginFactory {
 								qosPluginClass).asSubclass(QOSPlugin.class);
 				qosPlugin = pluginClass.newInstance();
 				qosPlugin.setSrm(srm);
-				logger.debug("Created new qos plugin of type {}", qosPluginClass);
+				LOGGER.debug("Created new qos plugin of type {}", qosPluginClass);
 			} catch (Exception e) {
-				logger.error("Could not create class " + qosPluginClass, e);
+				LOGGER.error("Could not create class " + qosPluginClass, e);
 			}
 		}
 		return qosPlugin;

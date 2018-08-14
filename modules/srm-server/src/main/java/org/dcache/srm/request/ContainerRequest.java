@@ -117,7 +117,7 @@ import static org.dcache.util.TimeUtils.relativeTimestamp;
  */
 
 public abstract class ContainerRequest<R extends FileRequest<?>> extends Request {
-    private static final Logger logger = LoggerFactory.getLogger(ContainerRequest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ContainerRequest.class);
     // dcache  requires that once client created a connection to a dcache door,
     // it uses the same door to make all following dcap transfers
     // therefore we need to synchronize the recept of dcap turls
@@ -328,12 +328,12 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                 } else {
                     // we should never be here, but we have this block
                     // in case request is restored with no files in it
-                    logger.error("request state is unknown or no files in request!!!");
+                    LOGGER.error("request state is unknown or no files in request!!!");
                     setState(State.FAILED, "Request state is unknown or no files in request!!!");
                 }
             }
         } catch (IllegalStateTransition e) {
-            logger.error("Illegal State Transition : {}", e.getMessage());
+            LOGGER.error("Illegal State Transition : {}", e.getMessage());
         } finally {
             wunlock();
         }
@@ -407,7 +407,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                 failure=true;
             }
             else {
-                logger.error("Unknown request status code {} for request {}", fr.getState(), fr.getId());
+                LOGGER.error("Unknown request status code {} for request {}", fr.getState(), fr.getId());
             }
         }
 
@@ -603,4 +603,3 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         }
     }
 }
-

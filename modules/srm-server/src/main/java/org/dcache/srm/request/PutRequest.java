@@ -112,7 +112,7 @@ import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
  * @author  timur
  */
 public final class PutRequest extends ContainerRequest<PutFileRequest> {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(PutRequest.class);
 
     // private PutFileRequest fileRequests[];
@@ -303,18 +303,18 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         State state = getState();
         if(state.isFinal()) {
 
-            logger.debug("put request state changed to {}", state);
+            LOGGER.debug("put request state changed to {}", state);
             for (PutFileRequest request : getFileRequests()) {
                 request.wlock();
                 try {
                     State fr_state = request.getState();
                     if(!fr_state.isFinal())
                     {
-                        logger.debug("changing fr#{} to {}", request.getId(), state);
+                        LOGGER.debug("changing fr#{} to {}", request.getId(), state);
                         request.setState(state, "Changing file state because request state has changed.");
                     }
                 } catch (IllegalStateTransition ist) {
-                    logger.error(ist.getMessage());
+                    LOGGER.error(ist.getMessage());
                 } finally {
                     request.wunlock();
                 }
@@ -391,13 +391,13 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
         TPutRequestFileStatus[] statusArray = getArrayOfTPutRequestFileStatus(surls);
 
-        if (logger.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             StringBuilder s = new StringBuilder("getSrmStatusOfPutRequestResponse:");
             s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
             for (TPutRequestFileStatus fs : statusArray) {
                 s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
             }
-            logger.debug(s.toString());
+            LOGGER.debug(s.toString());
         }
 
         response.setArrayOfFileStatuses(new ArrayOfTPutRequestFileStatus(statusArray));

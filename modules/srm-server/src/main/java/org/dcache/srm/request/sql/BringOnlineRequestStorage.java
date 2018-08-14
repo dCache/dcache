@@ -39,8 +39,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<BringOnlineRequest,BringOnlineFileRequest> {
-   private static final Logger logger =
-            LoggerFactory.getLogger(BringOnlineRequestStorage.class);
+   private static final Logger LOGGER = LoggerFactory.getLogger(BringOnlineRequestStorage.class);
      public static final String TABLE_NAME ="bringonlinerequests";
 
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
@@ -172,7 +171,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
         String sql = "SELECT PROTOCOL FROM "+ getProtocolsTableName() +"  WHERE RequestID=?";
             PreparedStatement statement = _con.prepareStatement(sql);
             statement.setLong(1, ID);
-            logger.debug("executing: SELECT PROTOCOL FROM {} WHERE RequestID={} ",
+            LOGGER.debug("executing: SELECT PROTOCOL FROM {} WHERE RequestID={} ",
                     getProtocolsTableName(),ID);
             ResultSet fileIdsSet = statement.executeQuery();
             List<String> protocols = new ArrayList<>();

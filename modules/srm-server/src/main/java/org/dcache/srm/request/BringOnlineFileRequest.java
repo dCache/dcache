@@ -112,7 +112,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * low-latency state with a single request.
  */
 public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest> {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(BringOnlineFileRequest.class);
 
     // the globus url class created from surl_string
@@ -125,7 +125,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     public BringOnlineFileRequest(long requestId, URI surl, long lifetime)
     {
         super(requestId, lifetime);
-        logger.debug("BringOnlineFileRequest, requestId={} fileRequestId = {}", requestId, getId());
+        LOGGER.debug("BringOnlineFileRequest, requestId={} fileRequestId = {}", requestId, getId());
         this.surl = surl;
     }
 
@@ -233,7 +233,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         try {
              fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            logger.error(e.toString());
+            LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
         }
 
@@ -252,7 +252,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         try {
             return new TSURLReturnStatus(new org.apache.axis.types.URI(getSurlString()), getReturnStatus());
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            logger.error(e.toString());
+            LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
         }
     }
@@ -285,7 +285,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     @Override
     public final void run() throws SRMException, IllegalStateTransition
     {
-        logger.trace("run");
+        LOGGER.trace("run");
         if (!getState().isFinal() && getPinId() == null) {
             // [ SRM 2.2, 5.4.3] SRM_FILE_BUSY: client requests for a file which there is an
             // active srmPrepareToPut (no srmPutDone is yet called) request for.
@@ -326,7 +326,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             desiredPinLifetime *= 1000;  // convert to millis
         }
         URI surl = getSurl();
-        logger.info("Pinning {}", surl);
+        LOGGER.info("Pinning {}", surl);
         CheckedFuture<AbstractStorageElement.Pin,? extends SRMException> future =
                 getStorage().pinFile(
                         request.getUser(),
@@ -334,20 +334,20 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                         request.getClient_host(),
                         desiredPinLifetime,
                         String.valueOf(getRequestId()));
-        logger.debug("BringOnlineFileRequest: waiting async notification about pinId...");
+        LOGGER.debug("BringOnlineFileRequest: waiting async notification about pinId...");
         future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.directExecutor());
     }
 
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.debug("State changed from {} to {}", oldState, getState());
+        LOGGER.debug("State changed from {} to {}", oldState, getState());
         switch (state) {
         case READY:
             try {
                 getContainerRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
             }
             break;
         case CANCELED:
@@ -358,13 +358,13 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 String fileId = getFileId();
                 AbstractStorageElement storage = getStorage();
                 if (fileId != null && pinId != null) {
-                    logger.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
+                    LOGGER.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
                     CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(null, fileId, pinId);
                     future.addListener(() -> {
                         try {
-                            logger.debug("File unpinned (pinId={}).", future.checkedGet());
+                            LOGGER.debug("File unpinned (pinId={}).", future.checkedGet());
                         } catch (SRMException e) {
-                            logger.error("Unpinning failed: {}", e.getMessage());
+                            LOGGER.error("Unpinning failed: {}", e.getMessage());
                         }
 
                     }, MoreExecutors.directExecutor());
@@ -372,7 +372,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     unpinBySURLandRequestToken(storage, user, String.valueOf(getRequestId()), getSurl());
                 }
             } catch (SRMInternalErrorException | SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
             }
             break;
         }
@@ -416,7 +416,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             wunlock();
         }
 
-        logger.debug("srmReleaseFile, unpinning fileId={} pinId={}", fileId, pinId);
+        LOGGER.debug("srmReleaseFile, unpinning fileId={} pinId={}", fileId, pinId);
         CheckedFuture<String, ? extends SRMException> future =
                 getStorage().unPinFile(user, fileId, pinId);
         try {
@@ -532,7 +532,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 fr.wlock();
                 try {
                     AbstractStorageElement.Pin pin = getPin();
-                    logger.debug("File pinned (pinId={}).", pin.pinId);
+                    LOGGER.debug("File pinned (pinId={}).", pin.pinId);
 
                     State state = fr.getState();
                     if (state == State.INPROGRESS) {
@@ -554,10 +554,10 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     fr.wunlock();
                 }
             } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
+                LOGGER.warn(e.getMessage());
             } catch (IllegalStateTransition e) {
                 if (!e.getFromState().isFinal()) {
-                    logger.error(e.getMessage());
+                    LOGGER.error(e.getMessage());
                 }
             }
         }
