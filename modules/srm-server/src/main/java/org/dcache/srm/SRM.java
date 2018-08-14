@@ -140,7 +140,7 @@ import static java.util.Arrays.asList;
  */
 public class SRM implements CellLifeCycleAware
 {
-    private static final Logger logger = LoggerFactory.getLogger(SRM.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SRM.class);
     private static final String SFN_STRING = "SFN=";
     private final Configuration configuration;
     private RequestCredentialStorage requestCredentialStorage;
@@ -220,7 +220,7 @@ public class SRM implements CellLifeCycleAware
             //already initialized
         }
 
-        logger.debug("srm started :\n\t{}", configuration.toString());
+        LOGGER.debug("srm started :\n\t{}", configuration.toString());
     }
 
     public void setSchedulers(SchedulerContainer schedulers)
@@ -440,7 +440,7 @@ public class SRM implements CellLifeCycleAware
             sb.append(r.toString(false)).append('\n');
         } catch (IllegalStateTransition ist) {
             sb.append("Illegal State Transition : ").append(ist.getMessage());
-            logger.error("Illegal State Transition : {}", ist.getMessage());
+            LOGGER.error("Illegal State Transition : {}", ist.getMessage());
         }
     }
 
@@ -491,7 +491,7 @@ public class SRM implements CellLifeCycleAware
         for (long requestId : activeRequestIds) {
             Matcher m = p.matcher(String.valueOf(requestId));
             if (m.matches()) {
-                logger.debug("cancelAllRequest: request Id #{} of type {} " +
+                LOGGER.debug("cancelAllRequest: request Id #{} of type {} " +
                         "matches pattern", requestId, type.getSimpleName());
                 jobsToKill.add(requestId);
             }
@@ -513,11 +513,11 @@ public class SRM implements CellLifeCycleAware
                     try {
                         job.setState(State.CANCELED, "Canceled by admin through cancelall command.");
                     } catch (IllegalStateTransition ist) {
-                        logger.error("Illegal State Transition : {}", ist.getMessage());
+                        LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                     }
                 }).start();
             } catch(SRMInvalidRequestException e) {
-                logger.error("request with request id {} is not found", requestId);
+                LOGGER.error("request with request id {} is not found", requestId);
             }
         }
     }
@@ -688,7 +688,7 @@ public class SRM implements CellLifeCycleAware
                 didAbortUpload = true;
             } catch (IllegalStateTransition e) {
                 // The request likely aborted or finished before we could abort it
-                logger.debug("Attempted to abort put request {}, but failed: {}",
+                LOGGER.debug("Attempted to abort put request {}, but failed: {}",
                              request.getId(), e.getMessage());
             }
         }
@@ -698,7 +698,7 @@ public class SRM implements CellLifeCycleAware
                 request.abort(reason);
             } catch (IllegalStateTransition e) {
                 // The request likely aborted or finished before we could abort it
-                logger.debug("Attempted to abort get request {}, but failed: {}",
+                LOGGER.debug("Attempted to abort get request {}, but failed: {}",
                              request.getId(), e.getMessage());
             }
         }

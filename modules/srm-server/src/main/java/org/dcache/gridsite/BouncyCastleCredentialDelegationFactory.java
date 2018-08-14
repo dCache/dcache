@@ -35,8 +35,7 @@ import org.dcache.gsi.KeyPairCache;
  */
 public class BouncyCastleCredentialDelegationFactory implements CredentialDelegationFactory
 {
-    private static final Logger LOG =
-            LoggerFactory.getLogger(BouncyCastleCredentialDelegationFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BouncyCastleCredentialDelegationFactory.class);
 
     private KeyPairCache _keypairs;
 
@@ -60,7 +59,7 @@ public class BouncyCastleCredentialDelegationFactory implements CredentialDelega
         try {
             keypair = _keypairs.getKeyPair(bits);
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            LOG.error("Failed to create key-pair for request: {}", e.getMessage());
+            LOGGER.error("Failed to create key-pair for request: {}", e.getMessage());
             throw new DelegationException("Internal error: cannot create key-pair.");
         }
 

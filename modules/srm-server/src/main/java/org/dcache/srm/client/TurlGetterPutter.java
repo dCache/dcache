@@ -86,11 +86,11 @@ import org.dcache.srm.request.RequestCredential;
  * @author  timur
  */
 public abstract class TurlGetterPutter implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(TurlGetterPutter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TurlGetterPutter.class);
     private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
 
     public void notifyOfTURL(String SURL,String TURL,String requestId, String fileId,Long size) {
-        logger.debug("notifyOfTURL( surl={} , turl={})", SURL, TURL);
+        LOGGER.debug("notifyOfTURL( surl={} , turl={})", SURL, TURL);
         changeSupport.firePropertyChange(new TURLsArrivedEvent(this,SURL,TURL,requestId,fileId,size));
     }
 

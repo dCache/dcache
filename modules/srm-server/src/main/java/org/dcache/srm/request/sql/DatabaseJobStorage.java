@@ -103,7 +103,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>, Runnable {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(DatabaseJobStorage.class);
 
     @SuppressWarnings("unchecked")
@@ -162,7 +162,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public J getJob(long jobId,Connection _con) throws SQLException
     {
-        logger.debug("executing statement: SELECT * FROM {} WHERE ID=?({})",
+        LOGGER.debug("executing statement: SELECT * FROM {} WHERE ID=?({})",
                 getTableName(), jobId);
         try (PreparedStatement statement = getPreparedStatement(_con,
                 "SELECT * FROM " + getTableName() + " WHERE ID=?", jobId);
@@ -298,11 +298,11 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         List<Job.JobHistory> l = new ArrayList<>();
         String select = "SELECT * FROM " +getHistoryTableName()+
                 " WHERE JOBID="+jobId + " ORDER BY ID";
-        logger.debug("executing statement: {}", select);
+        LOGGER.debug("executing statement: {}", select);
         Statement statement = _con.createStatement();
         ResultSet set = statement.executeQuery(select);
         if(!set.next()) {
-            logger.debug("no history elements in table {} found, returning NULL",
+            LOGGER.debug("no history elements in table {} found, returning NULL",
                          getHistoryTableName());
             statement.close();
             return null;
@@ -319,7 +319,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                     TRANSITIONTIME);
             jh.setSaved();
             l.add(jh);
-            logger.debug("found JobHistory: {}", jh);
+            LOGGER.debug("found JobHistory: {}", jh);
 
         } while (set.next());
         statement.close();
@@ -337,7 +337,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
             try {
                 scheduler.queue(Job.getJob(ID, jobType));
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
             }
         }
     }
@@ -388,7 +388,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     {
         return new HashSet<>(jdbcTemplate.query(psc, (rs, rowNum) -> {
             J job = getJob(rs.getStatement().getConnection(), rs);
-            logger.debug("==========> deserialized job with id {}", job.getId());
+            LOGGER.debug("==========> deserialized job with id {}", job.getId());
             return job;
         }));
 
@@ -435,9 +435,9 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         try {
             jdbcTemplate.update("DELETE FROM " + getTableName() + " WHERE CREATIONTIME + LIFETIME < ?", timestamp);
         } catch (DataAccessException e) {
-            logger.warn("Failed to remove out-of-date historic data from {}: {}", getTableName(), e.toString());
+            LOGGER.warn("Failed to remove out-of-date historic data from {}: {}", getTableName(), e.toString());
         } catch (RuntimeException e) {
-            logger.error("Bug detected", e);
+            LOGGER.error("Bug detected", e);
         }
     }
 
@@ -454,4 +454,3 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         return stmt;
     }
 }
-

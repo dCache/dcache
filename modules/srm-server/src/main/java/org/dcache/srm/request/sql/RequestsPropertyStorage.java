@@ -89,7 +89,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class RequestsPropertyStorage extends JobIdGeneratorFactory implements JobIdGenerator
 {
-    private static final Logger logger = LoggerFactory.getLogger(RequestsPropertyStorage.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RequestsPropertyStorage.class);
     private static final int NEXT_INT_STEP = 1000;
     private static final long NEXT_LONG_STEP = 10000;
     private static RequestsPropertyStorage requestsPropertyStorage;
@@ -139,7 +139,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
             nextIntIncrement = 0;
         }
         int nextInt = nextIntBase + nextIntIncrement++;
-        logger.trace("RequestsPropertyStorage: return nextInt={}", nextInt);
+        LOGGER.trace("RequestsPropertyStorage: return nextInt={}", nextInt);
         return nextInt;
     }
 
@@ -176,7 +176,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
         }
 
         long nextLong = nextLongBase + nextLongIncrement++;
-        logger.debug("RequestsPropertyStorage: return nextLong={}", nextLong);
+        LOGGER.debug("RequestsPropertyStorage: return nextLong={}", nextLong);
         return nextLong;
     }
 

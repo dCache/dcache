@@ -109,7 +109,7 @@ import org.dcache.util.URIs;
  * @author  timur
  */
 public final class RemoteTurlGetterV2 extends TurlGetterPutter {
-    private static final Logger logger = LoggerFactory.getLogger(RemoteTurlGetterV2.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteTurlGetterV2.class);
 
     private ISRM srmv2;
     protected final String[] SURLs;
@@ -155,10 +155,10 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
         if(returnStatus == null) {
-            logger.error("srmReleaseFiles return status is null");
+            LOGGER.error("srmReleaseFiles return status is null");
             return;
         }
-        logger.debug("srmReleaseFilesResponse status code={}", returnStatus.getStatusCode());
+        LOGGER.debug("srmReleaseFilesResponse status code={}", returnStatus.getStatusCode());
 
     }
 
@@ -166,10 +166,10 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     public  void getInitialRequest() throws SRMException
     {
         if(number_of_file_reqs == 0) {
-            logger.debug("number_of_file_reqs is 0, nothing to do");
+            LOGGER.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
-        logger.debug("SURLs[0] is {}", SURLs[0]);
+        LOGGER.debug("SURLs[0] is {}", SURLs[0]);
         try {
             srmv2 = new SRMClientV2(URIs.createWithDefaultPort(SURLs[0]),
                                     credential.getDelegatedCredential(),
@@ -208,7 +208,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             srmPrepareToGetResponse = srmv2.srmPrepareToGet(srmPrepareToGetRequest);
         }
         catch(Exception e) {
-            logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
+            LOGGER.error("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
     }
@@ -217,7 +217,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     public void run() {
 
         if(number_of_file_reqs == 0) {
-            logger.debug("number_of_file_reqs is 0, nothing to do");
+            LOGGER.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
@@ -238,7 +238,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                         statusCode+" explanation="+status.getExplanation());
             }
             requestToken = srmPrepareToGetResponse.getRequestToken();
-            logger.debug(" srm returned requestToken = {}", requestToken);
+            LOGGER.debug(" srm returned requestToken = {}", requestToken);
             ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus  =
                 srmPrepareToGetResponse.getArrayOfFileStatuses();
             if(arrayOfTGetRequestFileStatus == null  ) {
@@ -262,12 +262,12 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 for( TGetRequestFileStatus getRequestFileStatus:getRequestFileStatuses) {
                     URI surl = getRequestFileStatus.getSourceSURL();
                     if(surl == null) {
-                        logger.error("invalid getRequestFileStatus, surl is null");
+                        LOGGER.error("invalid getRequestFileStatus, surl is null");
                         continue;
                     }
                     String surl_string = surl.toString();
                     if(!pendingSurlsToIndex.containsKey(surl_string)) {
-                        logger.error("invalid getRequestFileStatus, surl = {} not found", surl_string);
+                        LOGGER.error("invalid getRequestFileStatus, surl = {} not found", surl_string);
                         continue;
                     }
                     TReturnStatus fileStatus = getRequestFileStatus.getStatus();
@@ -282,7 +282,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                         String error ="retreval of surl "+surl_string+
                         " failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
-                        logger.error(error);
+                        LOGGER.error(error);
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
                         haveCompletedFileRequests = true;
@@ -296,7 +296,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                             size = getRequestFileStatus.getFileSize().longValue();
                         }
                         else {
-                            logger.error("size is not set in FileStatus for SURL={}", SURLs[indx]);
+                            LOGGER.error("size is not set in FileStatus for SURL={}", SURLs[indx]);
                         }
                         notifyOfTURL(SURLs[indx], transferUrl, requestToken,null,size );
                         haveCompletedFileRequests = true;
@@ -311,7 +311,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
 
                 if(pendingSurlsToIndex.isEmpty()) {
-                    logger.debug("no more pending transfers, breaking the loop");
+                    LOGGER.debug("no more pending transfers, breaking the loop");
                     break;
                 }
                 // do not wait longer then 60 seconds
@@ -320,7 +320,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
                 try {
 
-                    logger.debug("sleeping {} seconds ...", estimatedWaitInSeconds);
+                    LOGGER.debug("sleeping {} seconds ...", estimatedWaitInSeconds);
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 }
                 catch(InterruptedException ie) {
@@ -367,7 +367,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 arrayOfTGetRequestFileStatus =
                     srmStatusOfGetRequestResponse.getArrayOfFileStatuses();
                 if(arrayOfTGetRequestFileStatus == null ) {
-                    logger.error( "incorrect number of RequestFileStatuses");
+                    LOGGER.error( "incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
 
@@ -375,7 +375,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
 
                 if(getRequestFileStatuses == null ||
                         getRequestFileStatuses.length !=  expectedResponseLength) {
-                    logger.error( "incorrect number of RequestFileStatuses");
+                    LOGGER.error( "incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
 
@@ -394,7 +394,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             }
         }
         catch(IOException e) {
-            logger.error(e.toString());
+            LOGGER.error(e.toString());
             notifyOfFailure(e);
         }
     }
@@ -425,9 +425,9 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
         if(returnStatus == null) {
-            logger.error("srmReleaseFiles return status is null");
+            LOGGER.error("srmReleaseFiles return status is null");
             return;
         }
-        logger.debug("srmReleaseFilesResponse status code={}", returnStatus.getStatusCode());
+        LOGGER.debug("srmReleaseFilesResponse status code={}", returnStatus.getStatusCode());
     }
 }

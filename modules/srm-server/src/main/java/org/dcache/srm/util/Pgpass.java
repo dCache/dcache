@@ -19,7 +19,7 @@ import java.net.UnknownHostException;
  * @author  Vladimir Podstavkov
  */
 public class Pgpass {
-    private static final Logger _logger = LoggerFactory.getLogger(Pgpass.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Pgpass.class);
     private final String _pwdfile;
     private String _hostname;
     private String _port;
@@ -47,7 +47,7 @@ public class Pgpass {
                 try {
                     hostMatched = Tools.sameHost(sa[0],hostname);
                 } catch(UnknownHostException uhe) {
-                    _logger.warn(uhe.toString());
+                    LOGGER.warn(uhe.toString());
                 }
             }
             if ( hostMatched                                   &&
@@ -84,12 +84,12 @@ public class Pgpass {
                 _port = r1[1];
             } else if (r1.length > 2) {
                 String error = "illegal jdbc url format: "+url+legalFormats;
-                _logger.error(error);
+                LOGGER.error(error);
                 throw new MalformedURLException(error);
             }
         } else {
                 String error = "illegal jdbc url format: "+url+legalFormats;
-                _logger.error(error);
+                LOGGER.error(error);
                 throw new MalformedURLException(error);
         }
     }
@@ -109,7 +109,7 @@ public class Pgpass {
                 try {
                     p1.waitFor();
                 } catch (InterruptedException x) {
-                    _logger.error("stat for '" + _pwdfile + "' was interrupted", x);
+                    LOGGER.error("stat for '" + _pwdfile + "' was interrupted", x);
                     throw new InterruptedIOException("Cannot stat '" + _pwdfile + "'");
                 }
             }
@@ -117,10 +117,10 @@ public class Pgpass {
 
             //             System.out.println("mode: '"+reply+"'");
             if (reply==null) {
-                _logger.error("Cannot stat '{}'", _pwdfile);
+                LOGGER.error("Cannot stat '{}'", _pwdfile);
                 throw new IOException("Cannot stat '"+_pwdfile+"'");
             } else if (!reply.equals("'600'")) {
-                _logger.error("Protection for '{}' must be '600'", _pwdfile);
+                LOGGER.error("Protection for '{}' must be '600'", _pwdfile);
                 throw new IOException("Protection for '"+_pwdfile+"' must be '600'");
             }
             /*
@@ -139,12 +139,12 @@ public class Pgpass {
                 String error = String.format("could not get password from '%s' "+
                     "for  hostname: '%s' ,port: %s ,database: '%s' " +
                     "and username: '%s' ",_pwdfile,hostname,port,database,username);
-                _logger.error(error);
+                LOGGER.error(error);
                 throw new IOException(error);
             }
             return r;
         } catch (IOException ioe) {
-            _logger.error("processing '"+_pwdfile+"' failed: I/O error",ioe);
+            LOGGER.error("processing '"+_pwdfile+"' failed: I/O error",ioe);
             throw new IOException("processing '"+_pwdfile+"' failed: I/O error",ioe);
         }
     }

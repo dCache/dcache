@@ -99,7 +99,7 @@ import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 public final class CopyFileRequest extends FileRequest<CopyRequest> implements DelegatedCredentialAware
 {
-    private static final Logger LOG = LoggerFactory.getLogger(CopyFileRequest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CopyFileRequest.class);
 
     private final URI sourceSurl;
     private final URI destinationSurl;
@@ -128,13 +128,13 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                            ImmutableMap<String,String> extraInfo)
     {
         super(requestId, lifetime);
-        LOG.debug("CopyFileRequest");
+        LOGGER.debug("CopyFileRequest");
         this.sourceSurl = sourceSurl;
         this.destinationSurl = destinationSurl;
         this.spaceReservationId = spaceToken;
         this.extraInfo = extraInfo;
         this.credentialId = requestCredentalId;
-        LOG.debug("constructor from={} to={}", sourceSurl, destinationSurl);
+        LOGGER.debug("constructor from={} to={}", sourceSurl, destinationSurl);
     }
 
     /**
@@ -206,7 +206,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
 
     public void done()
     {
-        LOG.debug("done");
+        LOGGER.debug("done");
     }
 
     public void error()
@@ -424,7 +424,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
 
     private void runLocalToLocalCopy() throws IllegalStateTransition, SRMException
     {
-        LOG.debug("copying from local to local");
+        LOGGER.debug("copying from local to local");
         FileMetaData fmd ;
         try {
             fmd = getStorage().getFileMetaData(getUser(), getSourceSurl(), true);
@@ -434,7 +434,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                                       srme.getMessage(),
                                       TStatusCode.SRM_INVALID_PATH);
             } catch (IllegalStateTransition ist) {
-                LOG.error("Illegal State Transition : {}", ist.getMessage());
+                LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
             return;
         }
@@ -442,7 +442,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
 
         if (getDestinationFileId() == null) {
             addHistoryEvent("Doing name space lookup.");
-            LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
+            LOGGER.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
             CheckedFuture<String,? extends SRMException> future =
                     getStorage().prepareToPut(
                             getUser(),
@@ -453,11 +453,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                             getSpaceReservationId(),
                             getContainerRequest().isOverwrite());
             future.addListener(new PutCallbacks(getId(), future), directExecutor());
-            LOG.debug("callbacks.waitResult()");
+            LOGGER.debug("callbacks.waitResult()");
             return;
         }
 
-        LOG.debug("known source size is {}", size);
+        LOGGER.debug("known source size is {}", size);
 
         try {
             getStorage().localCopy(getUser(), getSourceSurl(), getDestinationFileId());
@@ -472,11 +472,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     private void runRemoteToLocalCopy() throws IllegalStateTransition,
             SRMException
     {
-        LOG.debug("copying from remote to local");
+        LOGGER.debug("copying from remote to local");
         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         if (getDestinationFileId() == null) {
             addHistoryEvent("Doing name space lookup.");
-            LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
+            LOGGER.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
             CheckedFuture<String,? extends SRMException> future =
                     getStorage().prepareToPut(
                             getUser(), getDestinationSurl(), size,
@@ -485,10 +485,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                             getSpaceReservationId(),
                             getContainerRequest().isOverwrite());
             future.addListener(new PutCallbacks(getId(), future), directExecutor());
-            LOG.debug("callbacks.waitResult");
+            LOGGER.debug("callbacks.waitResult");
             return;
         }
-        LOG.debug("known source size is {}", size);
+        LOGGER.debug("known source size is {}", size);
 
         if (getTransferId() == null) {
             addHistoryEvent("started remote transfer, waiting completion");
@@ -532,10 +532,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 try {
                     getContainerRequest().fileRequestCompleted();
                 } catch (SRMInvalidRequestException ire) {
-                    LOG.error("Failed to find container request: {}", ire.toString());
+                    LOGGER.error("Failed to find container request: {}", ire.toString());
                 }
             } catch (IllegalStateTransition ist) {
-                LOG.error("Failed to set copy file request state to DONE: {}",
+                LOGGER.error("Failed to set copy file request state to DONE: {}",
                         ist.getMessage());
             }
         }
@@ -550,10 +550,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 try {
                     getContainerRequest().fileRequestCompleted();
                 } catch (SRMInvalidRequestException e) {
-                    LOG.error("Failed to find container request: {}", e.toString());
+                    LOGGER.error("Failed to find container request: {}", e.toString());
                 }
             } catch (IllegalStateTransition ist) {
-                LOG.error("Failed to set copy file request state to FAILED: {}",
+                LOGGER.error("Failed to set copy file request state to FAILED: {}",
                         ist.getMessage());
             }
         }
@@ -562,7 +562,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     private void runLocalToRemoteCopy() throws SRMException, IllegalStateTransition
     {
         if (getTransferId() == null) {
-            LOG.debug("copying using storage.putToRemoteTURL");
+            LOGGER.debug("copying using storage.putToRemoteTURL");
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
             setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), extraInfo, copycallbacks));
@@ -580,7 +580,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     @Override
     public void run() throws SRMException, IllegalStateTransition
     {
-        LOG.trace("run");
+        LOGGER.trace("run");
         if (!getState().isFinal()) {
             if (getLocalDestinationPath() != null && getLocalSourcePath() != null) {
                 runLocalToLocalCopy();
@@ -589,7 +589,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             } else if (getDestinationTurl() != null && getLocalSourcePath() != null) {
                 runLocalToRemoteCopy();
             } else {
-                LOG.error("Unknown combination of to/from ursl");
+                LOGGER.error("Unknown combination of to/from ursl");
                 setStateToFailed("Unknown combination of to/from ursl");
             }
         }
@@ -609,7 +609,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                         getStorage().abortPut(null, toFileId, getDestinationSurl(),
                                               (transferError == null) ? null : transferError.getMessage());
                     } catch (SRMException e) {
-                        LOG.error("Failed to abort copy: {}", e.getMessage());
+                        LOGGER.error("Failed to abort copy: {}", e.getMessage());
                     }
                 }
             }
@@ -633,13 +633,13 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     public void remoteFileRequestDone(URI SURL,String remoteRequestId,String remoteFileId)
     {
         try {
-            LOG.debug("setting remote file status to Done, SURL={} " +
+            LOGGER.debug("setting remote file status to Done, SURL={} " +
                     "remoteRequestId={} remoteFileId={}", SURL,
                     remoteRequestId, remoteFileId);
             getContainerRequest().remoteFileRequestDone(SURL.toString(),
                     remoteRequestId, remoteFileId);
         } catch (Exception e) {
-            LOG.error("set remote file status to done failed, surl={}, " +
+            LOGGER.error("set remote file status to done failed, surl={}, " +
                     "requestId={}, fileId={}", SURL, remoteRequestId, remoteFileId);
         }
     }
@@ -781,7 +781,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                     String fileId = future.checkedGet();
                     State state = fr.getState();
                     if (state == State.INPROGRESS) {
-                        LOG.debug("PutCallbacks success for file {}", fr.getDestinationSurl());
+                        LOGGER.debug("PutCallbacks success for file {}", fr.getDestinationSurl());
                         fr.setDestinationFileId(fileId);
                         fr.saveJob(true);
                         Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
@@ -793,9 +793,9 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                             e.getStatusCode());
                 }
             } catch (IllegalStateTransition e) {
-                LOG.error("Illegal State Transition: {}", e.getMessage());
+                LOGGER.error("Illegal State Transition: {}", e.getMessage());
             } catch (SRMInvalidRequestException e) {
-                LOG.error(e.getMessage());
+                LOGGER.error(e.getMessage());
             }
         }
     }
@@ -820,10 +820,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         {
             try {
                 CopyFileRequest copyFileRequest = getCopyFileRequest();
-                LOG.debug("copy succeeded");
+                LOGGER.debug("copy succeeded");
                 copyFileRequest.setStateToDone();
             } catch (SRMInvalidRequestException ire) {
-                LOG.error(ire.toString());
+                LOGGER.error(ire.toString());
             }
         }
 
@@ -834,11 +834,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             try {
                 copyFileRequest = getCopyFileRequest();
             } catch (SRMInvalidRequestException ire) {
-                LOG.error(ire.toString());
+                LOGGER.error(ire.toString());
                 return;
             }
             copyFileRequest.setTransferError(e);
-            LOG.error("copy failed: {}", e.getMessage());
+            LOGGER.error("copy failed: {}", e.getMessage());
             State state = copyFileRequest.getState();
             Scheduler scheduler = Scheduler.getScheduler(copyFileRequest.getSchedulerId());
             if (!state.isFinal() && scheduler != null) {
@@ -858,13 +858,13 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         try {
             sourceSurl = new org.apache.axis.types.URI(getDestinationSurl().toASCIIString());
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            LOG.error(e.toString());
+            LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong SURL format: " + getDestinationSurl());
         }
         try {
             destinationSurl = new org.apache.axis.types.URI(getSourceSurl().toASCIIString());
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            LOG.error(e.toString());
+            LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong SURL format: " + getSourceSurl());
         }
         copyRequestFileStatus.setSourceSURL(destinationSurl);

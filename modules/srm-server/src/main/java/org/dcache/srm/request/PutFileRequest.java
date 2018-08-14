@@ -97,7 +97,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 public final class PutFileRequest extends FileRequest<PutRequest> {
-    private static final Logger logger = LoggerFactory.getLogger(PutFileRequest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PutFileRequest.class);
     private final URI surl;
     private final Long size;
     private URI turl;
@@ -227,7 +227,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         try {
             anSurl= new org.apache.axis.types.URI(getSurlString());
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            logger.error(e.toString());
+            LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
         }
         fileStatus.setSURL(anSurl);
@@ -241,7 +241,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             try {
                 transferURL = new org.apache.axis.types.URI(turlstring);
             } catch (org.apache.axis.types.URI.MalformedURIException e) {
-                logger.error("Generated broken TURL \"{}\": {}", turlstring, e);
+                LOGGER.error("Generated broken TURL \"{}\": {}", turlstring, e);
                 throw new SRMInvalidRequestException("wrong turl format");
             }
             fileStatus.setTransferURL(transferURL);
@@ -301,7 +301,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     @Override
     public void run() throws IllegalStateTransition, SRMException
     {
-        logger.trace("run");
+        LOGGER.trace("run");
         if (!getState().isFinal()) {
             if (getFileId() == null) {
                 // [SRM 2.2, 5.5.2, t)] Upon srmPrepareToPut, SURL entry is inserted to the name space, and any
@@ -349,12 +349,12 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.debug("State changed from {} to {}", oldState, getState());
+        LOGGER.debug("State changed from {} to {}", oldState, getState());
         if(state == State.READY) {
             try {
                 getContainerRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
             }
         }
         try {
@@ -363,7 +363,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 getStorage().abortPut(getUser(), getFileId(), getSurl(), reason);
             }
         } catch (SRMException e) {
-            logger.error("Failed to abort put after failure: {}", e.getMessage());
+            LOGGER.error("Failed to abort put after failure: {}", e.getMessage());
         }
         super.stateChanged(oldState);
     }
@@ -571,7 +571,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                     State state = fr.getState();
                     switch (state) {
                     case INPROGRESS:
-                        logger.trace("Storage info arrived for file {}.", fr.getSurlString());
+                        LOGGER.trace("Storage info arrived for file {}.", fr.getSurlString());
                         fr.setFileId(fileId);
                         fr.saveJob(true);
                         Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
@@ -581,7 +581,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                         fr.getStorage().abortPut(fr.getUser(), fileId, fr.getSurl(), fr.latestHistoryEvent());
                         break;
                     default:
-                        logger.error("Put request is in an unexpected state in callback: {}", state);
+                        LOGGER.error("Put request is in an unexpected state in callback: {}", state);
                         fr.getStorage().abortPut(fr.getUser(), fileId, fr.getSurl(), fr.latestHistoryEvent());
                         break;
                     }
@@ -593,7 +593,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 }
             } catch (IllegalStateTransition ist) {
                 if (!ist.getFromState().isFinal()) {
-                    logger.error(ist.getMessage());
+                    LOGGER.error(ist.getMessage());
                 }
             } catch (SRMInvalidRequestException e) {
                 try {

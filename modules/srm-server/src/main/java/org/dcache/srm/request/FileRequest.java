@@ -107,7 +107,7 @@ import static java.util.Arrays.asList;
  * in the srmLs operation.
  */
 public abstract class FileRequest<R extends ContainerRequest> extends Job {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(FileRequest.class);
     //file ContainerRequest is being processed
     // for get and put it means that file turl
@@ -134,7 +134,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     {
         super(lifetime);
         this.requestId = requestId;
-        logger.debug("created");
+        LOGGER.debug("created");
     }
 
     /** this constructor is used for restoring the previously
@@ -164,7 +164,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         lastStateTransitionTime,
         jobHistoryArray, statusCodeString);
         this.requestId = requestId;
-        logger.debug("restored");
+        LOGGER.debug("restored");
 
     }
 
@@ -191,7 +191,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     }
 
     public void setStatus(SRMUser user, String status) throws SRMException {
-        logger.debug("({})", status);
+        LOGGER.debug("({})", status);
         try {
             wlock();
             try {
@@ -216,7 +216,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
                 }
                 else {
                     String error =  "Can't set Status to "+status;
-                    logger.error(error);
+                    LOGGER.error(error);
                     throw new SRMException(error);
 
                 }
@@ -226,7 +226,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         }
         catch(IllegalStateTransition ist) {
             String error =  "Can't set Status to " + status + " due to: " + ist.getMessage();
-            logger.error(error);
+            LOGGER.error(error);
             throw new SRMException(error);
         }
 
@@ -238,7 +238,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         try {
             getContainerRequest().fileRequestStateChanged(this);
         } catch (SRMInvalidRequestException ire) {
-            logger.error(ire.toString());
+            LOGGER.error(ire.toString());
         }
     }
 
@@ -317,7 +317,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
                 extendLifetime(newLifetime);
             }
         } catch (SRMException e) {
-            logger.debug("Unable to adjust lifetime: {}", e.getMessage());
+            LOGGER.debug("Unable to adjust lifetime: {}", e.getMessage());
         }
     }
 

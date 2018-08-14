@@ -43,7 +43,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TUserPermission;
 
 public final class LsFileRequest extends FileRequest<LsRequest> {
-        private static final Logger logger =
+        private static final Logger LOGGER =
                 LoggerFactory.getLogger(LsFileRequest.class);
         private static final String SFN_STRING="SFN=";
         private final URI surl;
@@ -118,12 +118,12 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         @Override
         public synchronized void run() throws IllegalStateTransition
         {
-            logger.trace("run");
+            LOGGER.trace("run");
             if (!getState().isFinal()) {
                 try {
                     LsRequest parent = getContainerRequest();
                     long t0 = 0;
-                    if (logger.isDebugEnabled()) {
+                    if (LOGGER.isDebugEnabled()) {
                         t0 = System.currentTimeMillis();
                     }
 
@@ -160,13 +160,13 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                                        parent.getNumOfLevels(),
                                                        parent.getLongFormat());
                     }
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("LsFileRequest.run(), TOOK {}", (System.currentTimeMillis() - t0));
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("LsFileRequest.run(), TOOK {}", (System.currentTimeMillis() - t0));
                     }
                     try {
                         getContainerRequest().resetRetryDeltaTime();
                     } catch (SRMInvalidRequestException ire) {
-                        logger.error(ire.toString());
+                        LOGGER.error(ire.toString());
                     }
                     wlock();
                     try {
@@ -182,7 +182,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 } catch (URISyntaxException e) {
                     fail(TStatusCode.SRM_FAILURE, e.getMessage());
                 } catch (DataAccessException | IllegalStateTransition e) {
-                    logger.error(e.toString(), e);
+                    LOGGER.error(e.toString(), e);
                     fail(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
                 }
             }
@@ -200,7 +200,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 setState(State.FAILED, msg);
             }
         } catch (IllegalStateTransition e) {
-            logger.error("Illegal State Transition : {}", e.getMessage());
+            LOGGER.error("Illegal State Transition : {}", e.getMessage());
         } finally {
             wunlock();
         }
@@ -208,7 +208,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
 
     @Override
         protected void stateChanged(State oldState) {
-                logger.debug("State changed from {} to {}", oldState, getState());
+                LOGGER.debug("State changed from {} to {}", oldState, getState());
                 super.stateChanged(oldState);
         }
 
@@ -582,7 +582,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         metaDataPathDetail.setType(TFileType.FILE);
                 }
                 else {
-                        logger.debug("file type is Unknown");
+                        LOGGER.debug("file type is Unknown");
                 }
                 if(verbose) {
                         // TODO: this needs to be rewritten to
@@ -638,4 +638,3 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 return metaDataPathDetail;
         }
 }
-
