@@ -108,7 +108,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public abstract class Job  {
 
-    private static final Logger logger = LoggerFactory.getLogger(Job.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Job.class);
 
     protected static final String TIMESTAMP_FORMAT = "yyyy-MM-dd' 'HH:mm:ss.SSS";
 
@@ -216,10 +216,10 @@ public abstract class Job  {
             savedInFinalState = isFinalState;
         } catch (TransactionException e) {
             // if saving fails we do not want to fail the request
-            logger.error("Failed to save SQL request to database: {}", e.toString());
+            LOGGER.error("Failed to save SQL request to database: {}", e.toString());
         } catch (RuntimeException e) {
             // if saving fails we do not want to fail the request
-            logger.error("Failed to save SQL request to database. Please report to support@dcache.org.", e);
+            LOGGER.error("Failed to save SQL request to database. Please report to support@dcache.org.", e);
         } finally {
             wunlock();
        }
@@ -251,7 +251,7 @@ public abstract class Job  {
                         return type.cast(job);
                     }
                 } catch (DataAccessException e) {
-                    logger.error("Failed to read job", e);
+                    LOGGER.error("Failed to read job", e);
                 }
             }
         }
@@ -863,7 +863,7 @@ public abstract class Job  {
          if (schedulerId != null) {
             Scheduler scheduler = Scheduler.getScheduler(schedulerId);
             if (scheduler != null) {
-                logger.debug("notifySchedulerOfStateChange calls scheduler.stateChanged()");
+                LOGGER.debug("notifySchedulerOfStateChange calls scheduler.stateChanged()");
                 scheduler.stateChanged(this, oldState, newState);
                 if (state.isFinal()) {
                     schedulerId = null;
@@ -952,7 +952,7 @@ public abstract class Job  {
                 break;
             }
         } catch (IllegalStateTransition e) {
-            logger.error("Failed to restore job: {}", e.getMessage());
+            LOGGER.error("Failed to restore job: {}", e.getMessage());
         } finally {
             wunlock();
         }

@@ -105,7 +105,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  */
 public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRequest> {
-    private static final Logger logger = LoggerFactory.getLogger(BringOnlineRequest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BringOnlineRequest.class);
     /** array of protocols supported by client or server (copy) */
     private final String[] protocols;
     private final long desiredOnlineLifetimeInSeconds;
@@ -132,8 +132,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                           .forEachOrdered(requests::add);
                   return requests.build();
               });
-        logger.debug("constructor");
-        logger.debug("user = {}", user);
+        LOGGER.debug("constructor");
+        LOGGER.debug("user = {}", user);
         if(protocols != null) {
             int len = protocols.length;
             this.protocols = new String[len];
@@ -251,16 +251,16 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     protected void stateChanged(State oldState) {
         State state = getState();
         if (state.isFinal()) {
-            logger.debug("Get request state changed to {}", state);
+            LOGGER.debug("Get request state changed to {}", state);
             for (BringOnlineFileRequest fr: getFileRequests()) {
                 fr.wlock();
                 try {
                     if (!fr.getState().isFinal()) {
-                        logger.debug("Changing fr#{} to {}", fr.getId(), state);
+                        LOGGER.debug("Changing fr#{} to {}", fr.getId(), state);
                         fr.setState(state, "Changing file state because request state has changed.");
                     }
                 } catch (IllegalStateTransition e) {
-                    logger.error(e.getMessage());
+                    LOGGER.error(e.getMessage());
                 } finally {
                     fr.wunlock();
                 }
@@ -329,13 +329,13 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         response.setReturnStatus(getTReturnStatus());
         TBringOnlineRequestFileStatus[] statusArray = getArrayOfTBringOnlineRequestFileStatus(surls);
         response.setArrayOfFileStatuses(new ArrayOfTBringOnlineRequestFileStatus(statusArray));
-        if (logger.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             StringBuilder s = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
             s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
             for (TBringOnlineRequestFileStatus fs : statusArray) {
                 s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
             }
-            logger.debug(s.toString());
+            LOGGER.debug(s.toString());
         }
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
@@ -385,7 +385,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         SRMUser user = getUser();
         int len = getNumOfFileRequest();
         TSURLReturnStatus[] surlReturnStatuses = new TSURLReturnStatus[len];
-        logger.debug("releaseFiles, releasing all {} files", len);
+        LOGGER.debug("releaseFiles, releasing all {} files", len);
         List<BringOnlineFileRequest> requests = getFileRequests();
         for (int i = 0; i < len; i++) {
             BringOnlineFileRequest request = requests.get(i);
@@ -411,7 +411,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         for (int i = 0; i < len; i++) {
             org.apache.axis.types.URI surl = surls[i];
             URI uri = URI.create(surl.toString());
-            logger.debug("releaseFiles, releasing {}", surl);
+            LOGGER.debug("releaseFiles, releasing {}", surl);
             try {
                 BringOnlineFileRequest fr = getFileRequestBySurl(uri);
                 surlReturnStatuses[i] = new TSURLReturnStatus(surl, fr.release(user));

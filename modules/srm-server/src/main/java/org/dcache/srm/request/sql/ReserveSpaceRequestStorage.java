@@ -37,7 +37,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSpaceRequest> {
-    private static final Logger LOG = LoggerFactory.getLogger(ReserveSpaceRequestStorage.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReserveSpaceRequestStorage.class);
 
     public static final String TABLE_NAME ="reservespacerequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
@@ -200,10 +200,10 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                     items.put(URLDecoder.decode(elements.get(0), "UTF-8"),
                             URLDecoder.decode(elements.get(1), "UTF-8"));
                 } catch (UnsupportedEncodingException e) {
-                    LOG.error("JVM does not support UTF-8", e);
+                    LOGGER.error("JVM does not support UTF-8", e);
                 }
             } else {
-                LOG.error("Skipping malformed extraInfo item: {}", item);
+                LOGGER.error("Skipping malformed extraInfo item: {}", item);
             }
         }
         return items;
@@ -278,4 +278,3 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         return TABLE_NAME;
     }
 }
-

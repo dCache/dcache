@@ -29,7 +29,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 import static org.dcache.util.TimeUtils.relativeTimestamp;
 
 public final class LsRequest extends ContainerRequest<LsFileRequest> {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(LsRequest.class);
 
         private final long offset;         // starting entry number
@@ -175,7 +175,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                                 fr.setState(state, "Changing file state because request state has changed.");
                                         }
                                 } catch(IllegalStateTransition ist) {
-                                        logger.error("Illegal State Transition : {}", ist.getMessage());
+                                        LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                                 } finally {
                                     fr.wunlock();
                                 }
@@ -365,7 +365,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                 }
                         }
                         catch (Exception e) {
-                                logger.error(e.toString());
+                                LOGGER.error(e.toString());
                                 got_exception++;
                         }
                 }
@@ -376,7 +376,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                        setState(State.DONE, "Operation completed.");
                                  }
                                  catch(IllegalStateTransition ist) {
-                                         logger.error("Illegal State Transition : {}", ist.getMessage());
+                                         LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                                  }
                          }
                          return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
@@ -406,7 +406,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                          setState(State.DONE,State.DONE.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
-                                         logger.error("Illegal State Transition : {}", ist.getMessage());
+                                         LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                                  }
                             }
                             return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
@@ -418,7 +418,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                                          setState(State.FAILED,State.FAILED.toString());
                                  }
                                  catch(IllegalStateTransition ist) {
-                                         logger.error("Illegal State Transition : {}", ist.getMessage());
+                                         LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                                  }
                             }
                             return new TReturnStatus(TStatusCode.SRM_FAILURE, "All ls requests failed in some way or another");

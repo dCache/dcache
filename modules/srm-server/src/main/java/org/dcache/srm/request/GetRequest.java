@@ -106,7 +106,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  */
 public final class GetRequest extends ContainerRequest<GetFileRequest> {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected final String[] protocols;
@@ -227,18 +227,18 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     protected void stateChanged(State oldState) {
         State state = getState();
         if(state.isFinal()) {
-            logger.debug("Get request state changed to {}.", state);
+            LOGGER.debug("Get request state changed to {}.", state);
             for (GetFileRequest request : getFileRequests()) {
                 request.wlock();
                 try {
                     State fr_state = request.getState();
                     if(!fr_state.isFinal())
                     {
-                        logger.debug("Changing fr#{} to {}.", request.getId(), state);
+                        LOGGER.debug("Changing fr#{} to {}.", request.getId(), state);
                         request.setState(state, "Changing file state because request state has changed.");
                     }
                 } catch (IllegalStateTransition ist) {
-                    logger.error(ist.getMessage());
+                    LOGGER.error(ist.getMessage());
                 } finally {
                     request.wunlock();
                 }
@@ -318,13 +318,13 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         TGetRequestFileStatus[] statusArray = getArrayOfTGetRequestFileStatus(surls);
         response.setArrayOfFileStatuses(new ArrayOfTGetRequestFileStatus(statusArray));
 
-        if (logger.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             StringBuilder s = new StringBuilder("getSrmStatusOfGetRequestResponse:");
             s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
             for (TGetRequestFileStatus fs : statusArray) {
                 s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
             }
-            logger.debug(s.toString());
+            LOGGER.debug(s.toString());
         }
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
@@ -379,7 +379,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     {
         int len = getNumOfFileRequest();
         TSURLReturnStatus[] surlReturnStatuses = new TSURLReturnStatus[len];
-        logger.debug("releaseFiles, releasing all {} files", len);
+        LOGGER.debug("releaseFiles, releasing all {} files", len);
         List<GetFileRequest> requests = getFileRequests();
         for (int i = 0; i < len; i++) {
             GetFileRequest fr = requests.get(i);
@@ -405,7 +405,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         for (int i = 0; i < len; i++) {
             org.apache.axis.types.URI surl = surls[i];
             URI uri = URI.create(surl.toString());
-            logger.debug("releaseFiles, releasing {}", surl);
+            LOGGER.debug("releaseFiles, releasing {}", surl);
             try {
                 GetFileRequest fr = getFileRequestBySurl(uri);
                 surlReturnStatuses[i] = new TSURLReturnStatus(surl, fr.release());

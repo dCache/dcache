@@ -98,7 +98,7 @@ import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 
 public class DatabaseRequestCredentialStorage implements RequestCredentialStorage {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(DatabaseRequestCredentialStorage.class);
 
    /** Creates a new instance of TestDatabaseJobStorage */
@@ -118,11 +118,11 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       File dir = new File(credentialsDirectory);
       if(!dir.exists()) {
           if(!dir.mkdir()) {
-              logger.error("failed to create directory {}", credentialsDirectory);
+              LOGGER.error("failed to create directory {}", credentialsDirectory);
           }
       }
       if(!dir.isDirectory() || !dir.canWrite()) {
-          logger.error("credential directory {} does not exist or is not writable", credentialsDirectory);
+          LOGGER.error("credential directory {} does not exist or is not writable", credentialsDirectory);
       }
       dbInit();
    }
@@ -155,7 +155,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                if (!tableRs.next()) {
                    // Table does not exist
                    try (Statement s = con.createStatement()) {
-                       logger.debug("dbInit trying {}", createRequestCredentialTable);
+                       LOGGER.debug("dbInit trying {}", createRequestCredentialTable);
                        s.executeUpdate(createRequestCredentialTable);
                    }
                }
@@ -258,7 +258,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                CredentialsUtils.saveProxyCredentials(credentialFileName, credential);
            }
        } catch (IOException e) {
-           logger.error(e.toString());
+           LOGGER.error(e.toString());
        }
    }
 
@@ -267,7 +267,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
            try {
                return new PEMCredential(fileName, (char[]) null);
            } catch (IOException | KeyStoreException | CertificateException e) {
-               logger.error("error reading the credentials from database: {}", e.toString());
+               LOGGER.error("error reading the credentials from database: {}", e.toString());
            }
        }
        return null;
@@ -351,7 +351,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             File credentialFile = new File(dir, String.valueOf(id));
 
             if (!credentialFile.exists()) {
-                logger.warn("cannot find credential file to delete it: {}",
+                LOGGER.warn("cannot find credential file to delete it: {}",
                         credentialFile.getAbsolutePath());
             }
 
@@ -359,7 +359,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                 jdbcTemplate.update(DELETE_GIVEN_ID, id);
                 hasDeletedSomething = true;
             } else {
-                logger.error("cannot delete credential file: {}",
+                LOGGER.error("cannot delete credential file: {}",
                         credentialFile.getAbsolutePath());
                 failedToDelete = true;
             }

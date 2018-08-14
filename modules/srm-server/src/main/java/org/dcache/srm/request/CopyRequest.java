@@ -133,7 +133,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         implements PropertyChangeListener, DelegatedCredentialAware
 {
-    private static final Logger LOG = LoggerFactory.getLogger(CopyRequest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CopyRequest.class);
     private static final String SFN_STRING = "?SFN=";
 
     private final Long credentialId;
@@ -207,7 +207,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         this.overwriteMode = overwriteMode;
         this.targetSpaceToken = spaceToken;
         this.credentialId = requestCredentialId;
-        LOG.debug("Request.createCopyRequest : created new request succesfully");
+        LOGGER.debug("Request.createCopyRequest : created new request succesfully");
     }
 
     /**
@@ -282,11 +282,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 setState(State.FAILED, "Request contains zero file requests.");
                 return;
             } catch (IllegalStateTransition ist) {
-                LOG.error("Illegal State Transition : {}", ist.getMessage());
+                LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
 
         }
-        LOG.debug("Processing request");
+        LOGGER.debug("Processing request");
         identify();
         getTURLs();
     }
@@ -312,7 +312,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                     !sourceSurl.getHost().equals(sourceHost) ||
                     sourceSurl.getPort() != sourcePort) {
                     String err = "Source URL " + sourceSurl + " is inconsistent with first source URL";
-                    LOG.error(err);
+                    LOGGER.error(err);
                     throw new IOException(err);
                 }
 
@@ -321,7 +321,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                     destinationSurl.getPort() != destinationPort) {
                     String err = "Destination URL " + destinationSurl +
                                  " is inconsistent with first destination URL";
-                    LOG.error(err);
+                    LOGGER.error(err);
                     throw new IOException(err);
                 }
             }
@@ -333,11 +333,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             isSourceLocal = storage.isLocalSurl(source);
             isDestinationLocal = storage.isLocalSurl(destination);
 
-            LOG.debug("src (srm={}, local={}), dest (srm={}, local={})",
+            LOGGER.debug("src (srm={}, local={}), dest (srm={}, local={})",
                       isSourceSrm, isSourceLocal, isDestinationSrm, isDestinationLocal);
 
             if (!isSourceLocal && !isDestinationLocal) {
-                LOG.error("Both source ({}) and destination ({}) URLs are remote.", source, destination);
+                LOGGER.error("Both source ({}) and destination ({}) URLs are remote.", source, destination);
                 throw new SRMInvalidRequestException("Both source and destination URLs are remote.");
             }
         } finally {
@@ -365,10 +365,10 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             getQosPlugin().addTicket(qosTicket);
             if (getQosPlugin().submit()) {
                 cfr.setQOSTicket(qosTicket);
-                LOG.debug("QOS Ticket Received {}", getQosPlugin());
+                LOGGER.debug("QOS Ticket Received {}", getQosPlugin());
             }
         } catch (Exception e) {
-            LOG.error("Could not create QOS reservation: {}", e.getMessage());
+            LOGGER.error("Could not create QOS reservation: {}", e.getMessage());
         }
     }
 
@@ -380,7 +380,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                   throw new SRMNotSupportedException("TargetFileStorageType " + getStorageType() + " is not supported");
             }
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
-            LOG.debug("obtained credential={} id={}", credential, credential.getId());
+            LOGGER.debug("obtained credential={} id={}", credential, credential.getId());
 
             for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
@@ -391,7 +391,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                         // Since source SURLs are local, we can just set the path
                         remoteSurlToFileReqIds.put(cfr.getSourceSurl().toASCIIString(), cfr.getId());
                         String path = localPathFromSurl(cfr.getDestinationSurl());
-                        LOG.debug("setting destination path to {}", path);
+                        LOGGER.debug("setting destination path to {}", path);
                         cfr.setLocalDestinationPath(path);
                         cfr.saveJob();
                     }
@@ -399,9 +399,9 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             }
             String[] remoteSurlsUniqueArray = remoteSurlToFileReqIds.keySet()
                             .toArray(new String[remoteSurlToFileReqIds.size()]);
-            if (LOG.isDebugEnabled()) {
+            if (LOGGER.isDebugEnabled()) {
                 for (int i = 0; i < remoteSurlsUniqueArray.length; ++i) {
-                    LOG.debug("remoteSurlsUniqueArray[{}]={}", i,
+                    LOGGER.debug("remoteSurlsUniqueArray[{}]={}", i,
                             remoteSurlsUniqueArray[i]);
                 }
             }
@@ -423,7 +423,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null &&
                         cfr.getLocalSourcePath() == null) {
                     String path = localPathFromSurl(cfr.getSourceSurl());
-                    LOG.debug("setting source path to {}", path);
+                    LOGGER.debug("setting source path to {}", path);
                     cfr.setLocalSourcePath(path);
                     cfr.saveJob();
                 }
@@ -434,7 +434,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
                 if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null &&
                         cfr.getSourceTurl() == null) {
-                    LOG.debug("getTurlsArrived, setting \"from\" turl to {}", cfr.getSourceSurl());
+                    LOGGER.debug("getTurlsArrived, setting \"from\" turl to {}", cfr.getSourceSurl());
                     cfr.setSourceTurl(cfr.getSourceSurl());
                     cfr.saveJob();
                 }
@@ -450,7 +450,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 CopyFileRequest cfr = getFileRequests().get(i);
                 if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null) {
                     String path = localPathFromSurl(cfr.getDestinationSurl());
-                    LOG.debug("setting local destination path to {}", path);
+                    LOGGER.debug("setting local destination path to {}", path);
                     cfr.setLocalDestinationPath(path);
                     cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
                 }
@@ -464,7 +464,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
                 if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null) {
-                    LOG.debug("setting destination to {}", cfr.getDestinationSurl());
+                    LOGGER.debug("setting destination to {}", cfr.getDestinationSurl());
                     cfr.setDestinationTurl(cfr.getDestinationSurl());
                     cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
                 }
@@ -495,7 +495,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             long id = Iterables.get(remoteSurlToFileReqIds.get(uniqueSurls[i]), 0);
             CopyFileRequest cfr = getFileRequest(id);
             sizes[i] = getStorage().getFileMetaData(getUser(), cfr.getSourceSurl(), false).size;
-            LOG.debug("local size is {}", sizes[i]);
+            LOGGER.debug("local size is {}", sizes[i]);
             cfr.setSize(sizes[i]);
             destinationSurls[i] = cfr.getDestinationSurl().toString();
             if (getQosPlugin() != null) {
@@ -527,7 +527,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             fileRequestIds = remoteSurlToFileReqIds.removeAll(surl);
         }
         if (fileRequestIds.isEmpty()) {
-            LOG.error("turlArrived for unknown SURL = {} !!!!!!!", surl);
+            LOGGER.error("turlArrived for unknown SURL = {} !!!!!!!", surl);
         } else {
             for (long id : fileRequestIds) {
                 CopyFileRequest cfr = getFileRequest(id);
@@ -555,11 +555,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                     }
                 } catch (IllegalStateException | IllegalArgumentException |
                         IllegalStateTransition | InterruptedException e) {
-                    LOG.error("failed to schedule CopyFileRequest {}: {}", cfr, e.toString());
+                    LOGGER.error("failed to schedule CopyFileRequest {}: {}", cfr, e.toString());
                     try {
                         cfr.setState(State.FAILED, "Failed to schedule request: " + e.getMessage());
                     } catch (IllegalStateTransition ist) {
-                        LOG.error("Illegal State Transition : {}", ist.getMessage());
+                        LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                     }
                 }
             }
@@ -574,17 +574,17 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             fileRequestSet = remoteSurlToFileReqIds.removeAll(surl);
         }
         if (fileRequestSet.isEmpty()) {
-            LOG.error("turlArrived for unknown SURL = {}", surl);
+            LOGGER.error("turlArrived for unknown SURL = {}", surl);
         } else {
             for (long id : fileRequestSet) {
                 CopyFileRequest cfr = getFileRequest(id);
                 try {
                     String type = isSourceSrm() && !isSourceLocal() ? "source" : "destination";
                     String error = "retrieval of " + type + " TURL failed with error " + reason;
-                    LOG.error(error);
+                    LOGGER.error(error);
                     cfr.setState(State.FAILED, error);
                 } catch (IllegalStateTransition ist) {
-                    LOG.error("Illegal State Transition : {}", ist.getMessage());
+                    LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                 }
                 cfr.saveJob();
             }
@@ -606,10 +606,10 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             try {
                 String type = isSourceSrm() && !isSourceLocal() ? "source" : "destination";
                 String error = "retrieval of " + type + " TURL failed with error " + reason;
-                LOG.error(error);
+                LOGGER.error(error);
                 cfr.setState(State.FAILED, error);
             } catch (IllegalStateTransition ist) {
-                LOG.error("Illegal State Transition : {}", ist.getMessage());
+                LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
             cfr.saveJob();
         }
@@ -636,7 +636,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                                                  clientTransport);
             }
         } catch (Exception e) {
-            LOG.error("set remote file status to done failed, surl={}, " +
+            LOGGER.error("set remote file status to done failed, surl={}, " +
                      "requestId={}, fileId={}", surl, requestId, fileId);
         }
     }
@@ -689,19 +689,19 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         if (state.isFinal()) {
             TurlGetterPutter client = getRemoteTurlClient();
             if (client != null) {
-                LOG.debug("copyRequest TURL-fetching client is non null, stopping");
+                LOGGER.debug("copyRequest TURL-fetching client is non null, stopping");
                 client.stop();
             }
-            LOG.debug("copy request state changed to {}", state);
+            LOGGER.debug("copy request state changed to {}", state);
             for (CopyFileRequest request : getFileRequests()) {
                 try {
                     State frState = request.getState();
                     if (!(frState.isFinal())) {
-                        LOG.debug("changing fr#{} to {}", request.getId(), state);
+                        LOGGER.debug("changing fr#{} to {}", request.getId(), state);
                         request.setState(state, "Request now " + state);
                     }
                 } catch (IllegalStateTransition ist) {
-                    LOG.error("Illegal State Transition : {}", ist.getMessage());
+                    LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                 }
             }
         }
@@ -710,7 +710,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
-        LOG.debug("propertyChange");
+        LOGGER.debug("propertyChange");
         try {
             if (evt instanceof TURLsArrivedEvent) {
                 TURLsArrivedEvent tae = (TURLsArrivedEvent) evt;
@@ -733,7 +733,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 turlsRetrievalFailed(reason);
             }
         } catch (Exception e) {
-            LOG.error(e.toString());
+            LOGGER.error(e.toString());
         }
     }
 
@@ -756,14 +756,14 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                     setState(State.DONE, "All transfers have completed.");
                 }
             } catch (IllegalStateTransition e) {
-                LOG.error("setting to done anyway: {}", e.toString());
+                LOGGER.error("setting to done anyway: {}", e.toString());
                 try {
                     State state = getState();
                     if (!state.isFinal()) {
                         setState(State.DONE, e.toString());
                     }
                 } catch (IllegalStateTransition ist) {
-                    LOG.error("Illegal State Transition : {}", ist.getMessage());
+                    LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                 }
             }
         }

@@ -25,7 +25,7 @@ import org.dcache.srm.util.Configuration;
 public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest<F>, F extends FileRequest<C>>
         extends DatabaseRequestStorage<C>
 {
-   private static final Logger logger =
+   private static final Logger LOGGER =
             LoggerFactory.getLogger(DatabaseContainerRequestStorage.class);
 
     @SuppressWarnings("unchecked")
@@ -93,7 +93,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
         String sqlStatementString =
                 "SELECT ID FROM " + getFileRequestsTableName() + " WHERE RequestID=" + ID;
         Statement sqlStatement = _con.createStatement();
-        logger.debug("executing statement: {}", sqlStatementString);
+        LOGGER.debug("executing statement: {}", sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         List<Long> fileIds = new ArrayList<>();
         while(fileIdsSet.next()) {
@@ -140,9 +140,9 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
             if (job != null) {
                 return fileRequestType.cast(job);
             }
-            logger.error("Job {} not found in database.", jobId);
+            LOGGER.error("Job {} not found in database.", jobId);
         } catch (DataAccessException | SQLException e) {
-            logger.error("Failed to read job {}: {}", jobId, e.toString());
+            LOGGER.error("Failed to read job {}: {}", jobId, e.toString());
         }
         return null;
     }
@@ -150,4 +150,3 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
     @Override
     public abstract String getTableName();
 }
-

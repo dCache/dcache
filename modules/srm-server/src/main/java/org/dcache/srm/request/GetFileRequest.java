@@ -104,7 +104,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @version
  */
 public final class GetFileRequest extends FileRequest<GetRequest> {
-    private static final Logger logger = LoggerFactory.getLogger(GetFileRequest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GetFileRequest.class);
 
     private final URI surl;
     private URI turl;
@@ -124,7 +124,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                           long lifetime)
     {
         super(requestId, lifetime);
-        logger.debug("GetFileRequest, requestId={} fileRequestId = {}", requestId, getId());
+        LOGGER.debug("GetFileRequest, requestId={} fileRequestId = {}", requestId, getId());
         this.surl = surl;
     }
 
@@ -249,7 +249,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         try {
              fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            logger.error(e.toString());
+            LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
         }
 
@@ -259,7 +259,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             try {
             fileStatus.setTransferURL(new org.apache.axis.types.URI(turlstring));
             } catch (org.apache.axis.types.URI.MalformedURIException e) {
-                logger.error("Generated broken TURL \"{}\": {}", turlstring, e);
+                LOGGER.error("Generated broken TURL \"{}\": {}", turlstring, e);
                 throw new SRMInvalidRequestException("wrong turl format");
             }
 
@@ -279,7 +279,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         try {
             return new TSURLReturnStatus(new org.apache.axis.types.URI(getSurlString()), getReturnStatus());
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            logger.error(e.toString());
+            LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
         }
     }
@@ -315,7 +315,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     public synchronized void run()
             throws SRMException, IllegalStateTransition
     {
-        logger.trace("run");
+        LOGGER.trace("run");
         if (!getState().isFinal()) {
             if (getPinId() == null) {
                 // [ SRM 2.2, 5.2.2, g)] The file request must fail with an error SRM_FILE_BUSY
@@ -349,7 +349,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     public void pinFile(ContainerRequest request)
     {
         URI surl = getSurl();
-        logger.info("Pinning {}", surl);
+        LOGGER.info("Pinning {}", surl);
         CheckedFuture<AbstractStorageElement.Pin,? extends SRMException> future =
                 getStorage().pinFile(
                         request.getUser(),
@@ -357,20 +357,20 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         request.getClient_host(),
                         lifetime,
                         String.valueOf(getRequestId()));
-        logger.trace("GetFileRequest: waiting async notification about pinId...");
+        LOGGER.trace("GetFileRequest: waiting async notification about pinId...");
         future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.directExecutor());
     }
 
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.debug("State changed from {} to {}", oldState, getState());
+        LOGGER.debug("State changed from {} to {}", oldState, getState());
         switch (state) {
         case READY:
             try {
                 getContainerRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
             }
             break;
 
@@ -383,20 +383,20 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 String fileId = getFileId();
                 String pinId = getPinId();
                 if (fileId != null && pinId != null) {
-                    logger.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
+                    LOGGER.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
                     CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(null, fileId, pinId);
                     future.addListener(() -> {
                         try {
-                            logger.debug("Unpinned (pinId={}).", future.checkedGet());
+                            LOGGER.debug("Unpinned (pinId={}).", future.checkedGet());
                         } catch (SRMException e) {
-                            logger.error("Unpinning failed: {}", e.getMessage());
+                            LOGGER.error("Unpinning failed: {}", e.getMessage());
                         }
                     }, MoreExecutors.directExecutor());
                 } else {
                     BringOnlineFileRequest.unpinBySURLandRequestToken(storage, user, String.valueOf(getRequestId()), getSurl());
                 }
             } catch (SRMInternalErrorException | SRMInvalidRequestException e) {
-                logger.error(e.toString()) ;
+                LOGGER.error(e.toString()) ;
             }
         }
 
@@ -583,7 +583,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 fr.wlock();
                 try {
                     AbstractStorageElement.Pin pin = future.checkedGet();
-                    logger.debug("File pinned (pinId={}).", pin.pinId);
+                    LOGGER.debug("File pinned (pinId={}).", pin.pinId);
                     State state = fr.getState();
                     if (state == State.INPROGRESS) {
                         fr.setFileId(pin.fileMetaData.fileId);
@@ -599,13 +599,13 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     fr.wunlock();
                 }
             } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
+                LOGGER.warn(e.getMessage());
             } catch (IllegalStateTransition e) {
                 if (!e.getFromState().isFinal()) {
-                    logger.error(e.getMessage());
+                    LOGGER.error(e.getMessage());
                 }
             } catch (RuntimeException e) {
-                logger.error("Criticial failure in pinning (please report to support@dcache.org).", e);
+                LOGGER.error("Criticial failure in pinning (please report to support@dcache.org).", e);
             }
         }
     }

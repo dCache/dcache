@@ -49,19 +49,18 @@ import static org.dcache.gridsite.Utilities.assertThat;
 public class InMemoryCredentialDelegationStore implements
         CredentialDelegationStore
 {
-    private static final Logger LOG =
-            LoggerFactory.getLogger(InMemoryCredentialDelegationStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryCredentialDelegationStore.class);
 
     private final RemovalListener<DelegationIdentity,CredentialDelegation>
             LOG_REMOVALS = notification -> {
                 DelegationIdentity identity = notification.getKey();
                 switch(notification.getCause()) {
                 case EXPIRED:
-                    LOG.debug("removing delegation from {}: client took" +
+                    LOGGER.debug("removing delegation from {}: client took" +
                             " too long to reply", identity.getDn());
                     break;
                 case SIZE:
-                    LOG.debug("removing delegation from {}: too many" +
+                    LOGGER.debug("removing delegation from {}: too many" +
                             " on-going delegations", identity.getDn());
                     break;
                 }

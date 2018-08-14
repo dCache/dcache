@@ -23,7 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class SrmMkdir
 {
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmMkdir.class.getName());
+            LoggerFactory.getLogger(SrmMkdir.class);
     private final AbstractStorageElement storage;
     private final SrmMkdirRequest request;
     private final SRMUser user;

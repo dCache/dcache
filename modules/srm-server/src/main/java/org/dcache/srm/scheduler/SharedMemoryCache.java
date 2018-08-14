@@ -19,7 +19,7 @@ import org.dcache.srm.request.Job;
  */
 public class SharedMemoryCache {
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(SharedMemoryCache.class);
 
     /**
@@ -95,7 +95,7 @@ public class SharedMemoryCache {
     }
 
     public Job getJob(long jobId) {
-        _log.debug("getJob ( {} ) ", jobId);
+        LOGGER.debug("getJob ( {} ) ", jobId);
        sharedMemoryReadLock.lock();
        try {
             return sharedMemoryCache.get(jobId);

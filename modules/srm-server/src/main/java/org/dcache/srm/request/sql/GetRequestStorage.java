@@ -32,7 +32,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public class GetRequestStorage extends DatabaseContainerRequestStorage<GetRequest,GetFileRequest> {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(GetRequestStorage.class);
     public static final String TABLE_NAME ="getrequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
@@ -162,7 +162,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
         String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
                 " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
-        logger.debug("executing statement: {}", sqlStatementString);
+        LOGGER.debug("executing statement: {}", sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         List<String> protocols = new ArrayList<>();
         while(fileIdsSet.next()) {

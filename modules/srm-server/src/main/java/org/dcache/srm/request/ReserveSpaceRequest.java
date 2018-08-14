@@ -108,7 +108,7 @@ import static org.dcache.util.TimeUtils.*;
  * @version
  */
 public final class ReserveSpaceRequest extends Request {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger (ReserveSpaceRequest.class);
 
     private long sizeInBytes ;
@@ -191,7 +191,7 @@ public final class ReserveSpaceRequest extends Request {
         this.spaceReservationLifetime = spaceReservationLifetime;
         this.extraInfo = extraInfo;
 
-        logger.debug("restored");
+        LOGGER.debug("restored");
     }
 
 
@@ -245,7 +245,7 @@ public final class ReserveSpaceRequest extends Request {
     @Override
     public void run() throws IllegalStateTransition
     {
-        logger.trace("run");
+        LOGGER.trace("run");
         if (!getState().isFinal()) {
             addHistoryEvent("Reserving space.");
             SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
@@ -353,16 +353,16 @@ public final class ReserveSpaceRequest extends Request {
             try {
                   request  = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
                 return;
             }
             try {
                 request.setState(State.FAILED,reason);
             } catch(IllegalStateTransition ist) {
-                logger.error("Illegal State Transition : {}", ist.getMessage());
+                LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
 
-            logger.error("ReserveSpace error: {}", reason);
+            LOGGER.error("ReserveSpace error: {}", reason);
         }
 
         @Override
@@ -371,17 +371,17 @@ public final class ReserveSpaceRequest extends Request {
             try {
                   request  = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
                 return;
             }
 
             try {
                 request.setStateAndStatusCode(State.FAILED,reason,TStatusCode.SRM_NO_FREE_SPACE);
             } catch(IllegalStateTransition ist) {
-                logger.error("Illegal State Transition : {}", ist.getMessage());
+                LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
 
-            logger.error("ReserveSpace failed (NoFreeSpace), no free space : {}", reason);
+            LOGGER.error("ReserveSpace failed (NoFreeSpace), no free space : {}", reason);
         }
 
         @Override
@@ -390,17 +390,17 @@ public final class ReserveSpaceRequest extends Request {
             try {
                   request  = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
                 return;
             }
 
             try {
                 request.setState(State.FAILED,e.getMessage());
             } catch(IllegalStateTransition ist) {
-              logger.error("Illegal State Transition : {}", ist.getMessage());
+              LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
 
-            logger.error("ReserveSpace exception: ",e);
+            LOGGER.error("ReserveSpace exception: ",e);
         }
 
         @Override
@@ -410,16 +410,16 @@ public final class ReserveSpaceRequest extends Request {
             try {
                 request = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException e) {
-                logger.warn(e.toString());
+                LOGGER.warn(e.toString());
                 return;
             }
             try {
                 request.setStateAndStatusCode(State.FAILED, reason, TStatusCode.SRM_INTERNAL_ERROR);
             } catch (IllegalStateTransition e) {
-                logger.error(e.getMessage());
+                LOGGER.error(e.getMessage());
             }
 
-            logger.error("ReserveSpace failed: {}", reason);
+            LOGGER.error("ReserveSpace failed: {}", reason);
         }
 
         @Override
@@ -428,7 +428,7 @@ public final class ReserveSpaceRequest extends Request {
             try {
                   request  = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOGGER.error(ire.toString());
                 return;
             }
             request.wlock();
@@ -441,7 +441,7 @@ public final class ReserveSpaceRequest extends Request {
                     request.setState(State.DONE,"space reservation succeeded" );
                 }
             } catch(IllegalStateTransition ist) {
-                logger.error("Illegal State Transition : {}", ist.getMessage());
+                LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             } finally {
                 wunlock();
             }

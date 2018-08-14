@@ -17,7 +17,7 @@ import org.dcache.srm.qos.QOSPlugin;
 import org.dcache.srm.qos.QOSTicket;
 
 public class LambdaStationPlugin implements QOSPlugin {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(LambdaStationPlugin.class);
 	private LambdaStationMap lambdaStationMap;
 	private String lambdaStationConf;
@@ -38,19 +38,19 @@ public class LambdaStationPlugin implements QOSPlugin {
             fis = new FileInputStream(lambdaStationConf);
         }
         catch(FileNotFoundException ex) {
-                logger.error(ex.toString());
+                LOGGER.error(ex.toString());
                 return;
         }
         try {
             properties.load(fis);
         } catch(IOException ex) {
-                logger.error("failed to load configuration ",ex);
+                LOGGER.error("failed to load configuration ",ex);
                 return;
         } finally {
             try {
                 fis.close();
             } catch (IOException ex) {
-                logger.error("failed to close "+lambdaStationConf, ex);
+                LOGGER.error("failed to close "+lambdaStationConf, ex);
             }
         }
         this.lambdaStationScript = properties.getProperty("l_station_script","/opt/d-cache/conf/l_station_script.sh");
@@ -105,7 +105,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 			LambdaStationTicket	ls_ticket = (LambdaStationTicket)qosTicket;
 			boolean sEnabled = ls_ticket.srcEnabled();
 			boolean dEnabled = ls_ticket.dstEnabled();
-			logger.debug("src enabled={} dst enabled={}", sEnabled, dEnabled);
+			LOGGER.debug("src enabled={} dst enabled={}", sEnabled, dEnabled);
 			return sEnabled && dEnabled && ls_ticket.getLocalTicketID() != 0;
 		}
 		else {
@@ -121,7 +121,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 				Date now = new Date();
 				long t = now.getTime();
 				long time_left = ls_ticket.getActualEndTime() - t/1000;
-				logger.debug("End time={} Travel Time={} now={} expires in {}", ls_ticket.getActualEndTime(), ls_ticket.TravelTime, t, time_left);
+				LOGGER.debug("End time={} Travel Time={} now={} expires in {}", ls_ticket.getActualEndTime(), ls_ticket.TravelTime, t, time_left);
 				// try to calculate transfer time assuming 1Gb local connection
 				long transfer_time = 0l;
 				long rate_MB = 100000000l; // 1Gb means 100MB
@@ -130,10 +130,10 @@ public class LambdaStationPlugin implements QOSPlugin {
 				}
 				long extend_time = Math.max(transfer_time, 600l);
 				if (time_left - extend_time < 0) {
-					logger.debug("AM: will extend end time by {}", extend_time);
+					LOGGER.debug("AM: will extend end time by {}", extend_time);
 				}
 				else {
-					logger.debug("AM: no need to extend end time");
+					LOGGER.debug("AM: no need to extend end time");
 				}
 			}
 		}

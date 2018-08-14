@@ -31,7 +31,7 @@ import org.dcache.srm.qos.QOSPlugin;
 import org.dcache.srm.qos.QOSTicket;
 
 public class TerapathsPlugin implements QOSPlugin {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(TerapathsPlugin.class);
 
 
@@ -91,18 +91,18 @@ public class TerapathsPlugin implements QOSPlugin {
 		ScheduleSlots[] ss = null;
 		long startTime = new Date().getTime();
 
-		logger.debug("Submitting qos request...");
+		LOGGER.debug("Submitting qos request...");
 
 		if (lastRetrieval==null || lastRetrieval.before(lastModification())) {
 			try {
 				properties.load(new FileInputStream(propFile));
 			}
 			catch(FileNotFoundException ex) {
-				logger.error(ex.toString());
+				LOGGER.error(ex.toString());
 				return false;
 			}
 			catch(IOException ex) {
-				logger.error(ex.toString());
+				LOGGER.error(ex.toString());
 				return false;
 			}
 
@@ -111,10 +111,10 @@ public class TerapathsPlugin implements QOSPlugin {
 				tpsAPISEIPort = tpsAPI.getTpsAPISEIPort();
 				((Stub) tpsAPISEIPort)._setProperty(Stub.ENDPOINT_ADDRESS_PROPERTY, properties.getProperty("serviceUrl", "http://198.124.220.9:8080/terapathsAPI/tpsAPI?wsdl"));
 			} catch(ServiceException ex) {
-				logger.error(ex.toString());
+				LOGGER.error(ex.toString());
 				return false;
 			} catch(Exception ex) {
-				logger.error(ex.toString());
+				LOGGER.error(ex.toString());
 				return false;
 			}
 
@@ -134,7 +134,7 @@ public class TerapathsPlugin implements QOSPlugin {
 				System.setProperty("javax.net.ssl.trustStorePassword", properties.getProperty("trustStorePassword","secret"));
 
 			} catch (Exception e) {
-				logger.error(e.toString());
+				LOGGER.error(e.toString());
 			}
 
 			username = properties.getProperty("username", "terapaths");
@@ -272,7 +272,7 @@ public class TerapathsPlugin implements QOSPlugin {
                                             .getBandwidth()
                                             .getBandwidth();
 
-                                    logger.debug("Submitted qos request {}", tpTicket.id);
+                                    LOGGER.debug("Submitted qos request {}", tpTicket.id);
                                     successFlag = true;
                                     break;
                                 }
@@ -288,10 +288,10 @@ public class TerapathsPlugin implements QOSPlugin {
                         result = false;
                     }
                 } catch (RemoteException ex) {
-                    logger.error(ex.toString());
+                    LOGGER.error(ex.toString());
                     return false;
                 } catch (Exception ex) {
-                    logger.error(ex.toString());
+                    LOGGER.error(ex.toString());
                     return false;
                 }
             }
@@ -307,15 +307,15 @@ public class TerapathsPlugin implements QOSPlugin {
 		//	Date now = new Date();
 		//	long now = now.getTime();
 		//	long timeLeft = tpTicket.endTime - now;
-		//	logger.debug("End time={}s now={}s expires in {}s", (tpTicket.endTime/1000), (now/1000), (timeLeft/1000));
+		//	LOGGER.debug("End time={}s now={}s expires in {}s", (tpTicket.endTime/1000), (now/1000), (timeLeft/1000));
 		//	long transferTimeLeft = 0;
 		//	if (tpTicket.bytes!=-1 && tpTicket.bandwidth!=-1)
 		//		transferTimeLeft = tpTicket.bytes/(tpTicket.bandwidth*8); // TODO: change bytes to remaining bytes
 		//	if (timeLeft - transferTime < 0)
-		//		logger.debug("AM: will extend end time by {}", extendTime);
+		//		LOGGER.debug("AM: will extend end time by {}", extendTime);
 		//	else
-		//		logger.debug("AM: no need to extend end time");
-		//	logger.debug("Ticket {} enabled", tpTicket.id);
+		//		LOGGER.debug("AM: no need to extend end time");
+		//	LOGGER.debug("Ticket {} enabled", tpTicket.id);
 		//}
 	}
 
