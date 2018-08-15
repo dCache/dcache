@@ -118,6 +118,7 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      */
     public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellAddressCore pool, T msg, long timeout)
     {
+        msg.setReplyRequired(true);
         long boundedTimeout = Math.min(timeout, maxPoolTimeoutUnit.toMillis(maxPoolTimeout));
         return handler.startAsync(endpoint, pool, msg, boundedTimeout);
     }
@@ -131,6 +132,7 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      */
     public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellAddressCore pool, T msg)
     {
+        msg.setReplyRequired(true);
         return handler.startAsync(endpoint, pool, msg, maxPoolTimeoutUnit.toMillis(maxPoolTimeout));
     }
 
@@ -143,6 +145,7 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      */
     public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(T msg, long timeout)
     {
+        msg.setReplyRequired(true);
         long boundedTimeout = Math.min(timeout, maxPoolManagerTimeoutUnit.toMillis(maxPoolManagerTimeout));
         return handler.sendAsync(endpoint, msg, boundedTimeout);
     }
@@ -155,6 +158,7 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      */
     public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(T msg)
     {
+        msg.setReplyRequired(true);
         return handler.sendAsync(endpoint, msg, maxPoolManagerTimeoutUnit.toMillis(maxPoolManagerTimeout));
     }
 
@@ -170,6 +174,9 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      */
     public void start(CellAddressCore pool, PoolIoFileMessage msg)
     {
+        // This method is only used by DCapDoorInterpreterV3, which is
+        // expecting a reply.
+        msg.setReplyRequired(true);
         CellMessage envelope = new CellMessage(pool);
         envelope.addSourceAddress(address);
         handler.start(endpoint, envelope, msg);
@@ -186,6 +193,9 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      */
     public void send(PoolManagerMessage msg)
     {
+        // This method is only used by DCapDoorInterpreterV3, which is
+        // expecting a reply.
+        msg.setReplyRequired(true);
         CellMessage envelope = new CellMessage();
         envelope.addSourceAddress(address);
         handler.send(endpoint, envelope, msg);
@@ -204,6 +214,9 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      */
     public void send(PoolManagerMessage msg, long timeout)
     {
+        // This method is only used by DCapDoorInterpreterV3, which is
+        // expecting a reply.
+        msg.setReplyRequired(true);
         CellMessage envelope = new CellMessage();
         envelope.addSourceAddress(address);
         envelope.setTtl(timeout);
