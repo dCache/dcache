@@ -1480,7 +1480,7 @@ public abstract class AbstractFtpDoorV1
 
         if (_settings.isKafkaEnabled()) {
             _kafkaProducer = _settings.createKafkaProducer(_settings.getKafkaBootstrapServer(),
-                                                           _settings.getInternalAddress(),
+                                                           _cellAddress.toString(),
                                                            _settings.getKafkaMaxBlockMs(),
                                                            _settings.getKafkaRetries());
         }
