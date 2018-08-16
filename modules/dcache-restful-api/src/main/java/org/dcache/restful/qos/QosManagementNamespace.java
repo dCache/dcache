@@ -44,10 +44,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
-
-import org.dcache.cells.CellStub;
-import org.dcache.poolmanager.RemotePoolMonitor;
-
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -118,6 +115,10 @@ public class QosManagementNamespace {
                     break;
                 case ONLINE:
                     response.setQoS(QosManagement.DISK);
+                    if (fileAttributes.isDefined(FileAttribute.RETENTION_POLICY)
+                            && fileAttributes.getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
+                        response.setTargetQoS(QosManagement.TAPE);
+                    }
                     break;
                 case ONLINE_AND_NEARLINE:
                     /* When the locality of the file is  NEARLINE_ONLINE and

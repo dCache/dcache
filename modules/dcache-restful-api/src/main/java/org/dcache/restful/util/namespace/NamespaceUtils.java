@@ -7,6 +7,7 @@ import javax.ws.rs.InternalServerErrorException;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -20,7 +21,6 @@ import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.vehicles.FileAttributes;
-
 /**
  * <p>Utilities for obtaining and returning file attributes and qos
  *    information.</p>
@@ -63,6 +63,10 @@ public final class NamespaceUtils {
 
             case ONLINE:
                 json.setCurrentQos(QosManagement.DISK);
+                if (attributes.isDefined(FileAttribute.RETENTION_POLICY)
+                        && attributes.getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
+                    json.setTargetQos(QosManagement.TAPE);
+                }
                 break;
 
             case ONLINE_AND_NEARLINE:
