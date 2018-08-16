@@ -137,6 +137,7 @@
     </then>
   </if>
 
+
   <appender name="resilience" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${dcache.log.dir}/${dcache.domain.name}.resilience</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -148,9 +149,44 @@
     </encoder>
   </appender>
 
+  <if condition='!"${dcache.log.level.kafka}".equals("off")'>
+    <then>
+
+      <!-- This is the kafkaAppender -->
+
+
+      <appender name="kafka" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+
+        <!-- Regardless of the level to which the remote appender is set,
+             only messages marked as ALARM are allowed through -->
+
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+          <pattern>${dcache.log.format.kafka}</pattern>
+        </encoder>
+
+        <filter class="org.dcache.alarms.logback.AlarmFilter"/>
+        <topic>${dcache.log.kafka.topic}</topic>
+        <keyingStrategy class="com.github.danielwegener.logback.kafka.keying.NoKeyKeyingStrategy"/>
+        <deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"/>
+
+        <!-- producer configs are documented here: https://kafka.apache.org/documentation.html#newproducerconfigs -->
+        <!-- bootstrap.servers is the only mandatory producerConfig -->
+        <producerConfig>bootstrap.servers=${dcache.kafka.bootstrap-servers}</producerConfig>
+
+      </appender>
+
+
+    </then>
+  </if>
+
   <root>
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
+    <if condition='!"${dcache.log.level.kafka}".equals("off")'>
+      <then>
+        <appender-ref ref="kafka" />
+      </then>
+    </if>
     <if condition='!"${dcache.log.level.remote}".equals("off")'>
       <then>
         <appender-ref ref="remote"/>
@@ -186,6 +222,11 @@
     <if condition='!"${dcache.log.level.remote}".equals("off")'>
       <then>
         <appender-ref ref="remote"/>
+      </then>
+    </if>
+    <if condition='!"${dcache.log.level.kafka}".equals("off")'>
+      <then>
+        <appender-ref ref="kafka" />
       </then>
     </if>
     <appender-ref ref="resilience"/>
@@ -266,6 +307,16 @@
           <appender>remote</appender>
           <logger>root</logger>
           <level>${dcache.log.level.remote}</level>
+        </threshold>
+      </then>
+    </if>
+
+    <if condition='!"${dcache.log.level.kafka}".equals("off")'>
+      <then>
+        <threshold>
+          <appender>kafka</appender>
+          <logger>root</logger>
+          <level>${dcache.log.level.kafka}</level>
         </threshold>
       </then>
     </if>

@@ -173,12 +173,13 @@
                 <artifactId>logback-classic</artifactId>
                 <!-- Remember to update modules/logback-test-config/pom.xml
                      when upgrading logback. -->
-                <version>1.1.4</version>
+                <version>1.2.3</version>
             </dependency>
+
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.1.4</version>
+                <version>1.2.3</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.janino</groupId>
@@ -834,7 +835,6 @@
                 </exclusions>
                 <version>2.1.1.RELEASE</version>
             </dependency>
-
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.12</artifactId>
@@ -865,6 +865,12 @@
                 </exclusions>
                 <version>2.1.0</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.danielwegener</groupId>
+                <artifactId>logback-kafka-appender</artifactId>
+                <version>0.2.0-RC1</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.hazelcast</groupId>
                 <artifactId>hazelcast</artifactId>
