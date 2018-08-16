@@ -32,7 +32,7 @@ In order to install dCache the following requirements must be met:
 
 -   dCache requires Java 8 JRE. Please use the latest patch-level and check for upgrades frequently. It is recommended to use JDK as dCache scripts can make use of some extra features that JDK provides to gather more diagnostic information (heap-dump, etc). This helps when tracking down bugs.
 
--   PostgreSQL must be installed and running. We recommend the use of PostgreSQL version 9.5 (at least PostgreSQL version 8.3 is required).
+-   PostgreSQL must be installed and running. We recommend the use of PostgreSQL version 10 (at least PostgreSQL version 8.3 is required).
 
     > **IMPORTANT**
     >
@@ -43,13 +43,9 @@ INSTALLATION OF THE dCache SOFTWARE
 
 The RPM packages may be installed right away, for example using the command:
 
-    [root] # rpm -ivh dcache-dCache-PACKAGE-VERSION.noarch.rpm
+    [root] # rpm -ivh dcache-PACKAGE-VERSION.noarch.rpm
 
-The actual sources lie at [https://www.dcache.org/downloads/IAgree.shtml](https://www.dcache.org/downloads/IAgree.shtml). To install for example Version  2.16.0-1 you would use this:
-
-    [root] # rpm -ivh https://www.dcache.org/downloads/1.9/repo/dCache-VERSION/dcache-dCache-PACKAGE-VERSION.noarch.rpm
-
-The client can be found in the download-section of the above url, too.
+The actual packages are available at [https://www.dcache.org/downloads/IAgree.shtml](https://www.dcache.org/downloads/IAgree.shtml).
 
 READYING THE POSTGRESQL SERVER FOR THE USE WITH dCache
 ------------------------------------------------
@@ -60,19 +56,18 @@ Using a PostgreSQL server with dCache places a number of requirements on the dat
 
 Install the PostgreSQL server with the tools of the operating system.
 
-Initialize the database directory (for PSQL version 9.2 this is `/var/lib/pgsql/9.2/data/`) , start the database server, and make sure that it is started at system start-up.
+Initialize the database directory (for PSQL version 10.1 this is `/var/lib/pgsql/10/data/`) , start the database server, and make sure that it is started at system start-up.
 
-    [root] # service postgresql-9.2 initdb
+    [root] # service postgresql-10 initdb
     Initializing database:                                     [  OK  ]
-    [root] # service postgresql-9.2 start
+    [root] # service postgresql-10 start
     Starting postgresql-9.2 service:                           [  OK  ]
-    [root] # chkconfig postgresql-9.2 on
 
 ### Enabling local trust
 
 Perhaps the simplest configuration is to allow password-less access to the database and the following documentation assumes this is so.
 
-To allow local users to access PSQL without requiring a password, ensure the file `pg_hba.conf`, which (for PSQL version 9.2) is located in `/var/lib/pgsql/9.2/data`, contains the following lines.
+To allow local users to access PSQL without requiring a password, ensure the file `pg_hba.conf`, which (for PSQL version 10) is located in `/var/lib/pgsql/10/data`, contains the following lines.
 
     # TYPE  DATABASE        USER            ADDRESS                 METHOD
 
@@ -92,10 +87,8 @@ To allow local users to access PSQL without requiring a password, ensure the fil
 
 If you have edited PSQL configuration files, you *must* restart PSQL for those changes to take effect. On many systems, this can be done with the following command:
 
-     [root] # service postgresql-9.2 restart
-     Stopping postgresql-9.2 service:        [  OK  ]
-     Starting postgresql-9.2 service:        [  OK  ]
-
+     [root] # # service postgresql-10 reload
+     Redirecting to /bin/systemctl reload postgresql-10.service
 
 CONFIGURING CHIMERA
 -------------------
@@ -110,27 +103,27 @@ Create the Chimera database and user.
 
     [root] # createdb -U postgres chimera  
     CREATE DATABASE  
-    [root] # createuser -U postgres --no-superuser --no-createrole --createdb --pwprompt chimera  
-    Enter password for new role:   
-    Enter it again:  
-    You do not need to enter a password.  
+    [root] # createuser -U postgres --no-superuser --no-createrole --createdb --pwprompt chimera
+    Enter password for new role:
+    Enter it again:
+    You do not need to enter a password.
 
 The dCache components will access the database server with the user srmdcache.   
 
-    [root] # createuser -U postgres --no-superuser --no-createrole --createdb --pwprompt srmdcache  
-    Enter password for new role:  
-    Enter it again:  
-    You do not need to enter a password.  
-  
+    [root] # createuser -U postgres --no-superuser --no-createrole --createdb --pwprompt dcache
+    Enter password for new role:
+    Enter it again:
+    You do not need to enter a password.
+
   Several management components running on the head node as well as the **SRM** will use the database dcache for storing their state information:  
 
-      [root] # createdb -U srmdcache dcache  
+      [root] # createdb -U dcache dcache
 
 There might be several of these on several hosts. Each is used by the dCache components running on the respective host.  
 
 Create the database used for the billing plots.  
 
-     [root] # createdb -O srmdcache -U postgres billing  
+     [root] # createdb -O dcache -U postgres billing
 
 And run the command `dcache database update`.
 
@@ -138,11 +131,11 @@ And run the command `dcache database update`.
     PnfsManager@dCacheDomain:  
     INFO  - Successfully acquired change log lock  
     INFO  - Creating database history table with name: databasechangelog  
-    INFO  - Reading from databasechangelog  
+    INFO  - Reading from databasechangelog
     many more like this...  
-      
 
-          
+
+
 Now the configuration of Chimera is done.
 
 Before the first start of dCache replace the file **/etc/dcache/gplazma.conf** with an empty file.
@@ -153,7 +146,7 @@ Before the first start of dCache replace the file **/etc/dcache/gplazma.conf** w
 
 dCache can be started now.
 
-    [ROOT] # dcache start
+    [root] # dcache start
     Starting dCacheDomain done
 
 So far, no configuration of dCache is done, so only the predefined domain is started.
@@ -179,7 +172,7 @@ The folder **/usr/share/dcache/defaults** contains the default settings of the d
 
 > **NOTE**
 >
->In this first installation of dCache your dCache will not be connected to a tape sytem. Therefore please change the values for pnfsmanager.default-retention-policy and pnfsmanager.default-access-latency in the file **/etc/dcache/dcache.conf**.
+>In this first installation of dCache your dCache will not be connected to a tape system. Therefore please change the values for pnfsmanager.default-retention-policy and pnfsmanager.default-access-latency in the file **/etc/dcache/dcache.conf**.
 
 
 >
@@ -208,21 +201,19 @@ The layout files define which domains to start and which services to put in whic
 
 A name in square brackets, *without* a forward-slash (`/`) defines a domain. A name in square brackets *with* a forward slash defines a service that is to run in a domain. Lines starting with a hash-symbol (`#`) are comments and will be ignored by dCache.
 
-There may be several layout files in the layout directory, but only one of them is read by dCache when starting up. By default it is the **single.conf**. If the dCache should be started with another layout file you will have to make this configuration in **/etc/dcache/dcache.conf**.
+There may be several layout files in the layout directory, but only one of them is read by dCache when starting up. By default it is the **${hostname}.conf**. If the dCache should be started with another layout file you will have to make this configuration in **/etc/dcache/dcache.conf**.
 
     dcache.layout=mylayout
 
 This entry in **/etc/dcache/dcache.conf** will instruct dCache to read the layout file **/etc/dcache/layouts/mylayout.conf** when starting up.
 
-These are the first lines of **/etc/dcache/layouts/single.conf**:
-
-    dcache.broker.scheme=none
+These is in example layout file available **/usr/share/dcache/examples/layouts/single.conf**. The first lines of are:
 
     [dCacheDomain]
     [dCacheDomain/admin]
     [dCacheDomain/poolmanager]
 
-[dCacheDomain] defines a domain called dCacheDomain. In this example only one domain is defined. All the services are running in that domain. Therefore no messagebroker is needed, which is the meaning of the entry messageBroker=none.
+[dCacheDomain] defines a domain called dCacheDomain. In this example only one domain is defined. All the services are running in that domain.
 [dCacheDomain/admin] declares that the admin service is to be run in the dCacheDomain domain.
 
 Example:
@@ -252,7 +243,12 @@ This is an example for the **mylayout.conf** file of a single node dCache with s
 
 > **NOTE**
 >
-> If you defined more than one domain, a messagebroker is needed, because the defined domains need to be able to communicate with each other. This means that if you use the file **single.conf** as a template for a dCache with more than one domain you need to delete the line messageBroker=none. Then the default value will be used which is messageBroker=cells, as defined in the defaults **/usr/share/dcache/defaults/dcache.properties**.
+> If you defined more than one domain, a messagebroker is needed, because the defined domains need to be able to communicate with each other.
+
+Within cell communication, there are two type of domains are possible: core and satellite. The core domains are act as message hubs and coordinate
+message communication between satellite domains. In a big installations it's recommended to have more than one core domain for redundancy.
+
+The role of the domain can be changed with **dcache.broker.scheme** property, which is described in **/usr/share/dcache/defaults/dcache.properties** file.
 
 ### Creating and configuring pools
 
@@ -290,9 +286,9 @@ Adding a pool to a configuration does not modify the pool or the data in it and 
 ### Starting dCache
 
 Restart dCache to start the newly configured components **dcache restart** and check the status of dCache with **dcache status**.
- 
+
     EXAMPLE:
-    
+
     [root] # dcache restart
     Stopping dCacheDomain 0 1 done
     Starting dCacheDomain done
