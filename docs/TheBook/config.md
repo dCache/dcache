@@ -6,6 +6,11 @@ This part contains descriptions of the components of dCache, their role, functio
 
 Table of Contents
 -----------------
+ + [ZooKeeper](config-zookeeper.md)
+ 
+      [Deployment scenarios](config-zookeeper.md#deployment-scenarios)  
+      [Configuration](config-zookeeper.md#configuration)  
+      [Inspecting ZooKeeper through dCache](config-zookeeper.md#Inspecting-ZooKeeper-through-dCache)
 
  + [4. Chimera](config-chimera.md)    
        
