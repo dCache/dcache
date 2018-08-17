@@ -10,7 +10,7 @@ Table of Contents
  
       [Deployment scenarios](config-zookeeper.md#deployment-scenarios)  
       [Configuration](config-zookeeper.md#configuration)  
-      [Inspecting ZooKeeper through dCache](config-zookeeper.md#Inspecting-ZooKeeper-through-dCache)
+      [Inspecting ZooKeeper through dCache](config-zookeeper.md#inspecting-zooKeeper-through-dcache)
 
  + [4. Chimera](config-chimera.md)    
        
