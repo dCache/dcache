@@ -1,13 +1,11 @@
-Chapter 12. dCache as NFSv4.1 Server 
-==================================== 
+dCache as NFSv4.1 Server
+====================================
 
 Table of Contents
 
 * [Setting up](#setting-up)
 * [Configuring NFSv4.1 door with GSS-API support](#configuring-nfsv4.1-door-with-gss-api-support)
 * [Configuring principal-id mapping for NFS access](#configuring-principal-id-mapping-for-nfs-access)
-
-
 
 This chapter explains how to configure dCache in order to access it via the `NFSv4.1` protocol, allowing clients to mount dCache and perform POSIX IO using standard `NFSv4.1` clients.
 
@@ -26,7 +24,7 @@ To enable the NFSv4.1 door, you have to change the layout file corresponding to 
     [<domainName>/nfs]
     nfs.version = 4.1
     ..
-    
+
 Example:
 You can just add the following lines to the layout file:
 
@@ -43,27 +41,57 @@ In addition to run an NFSv4.1 door you need to add exports to the **/etc/exports
 
 Where <options> is a comma separated combination of:
 
-**ro**  
-matching clients can access this export only in read-only mode
+- **ro**
+matching clients can access this export only in read-only mode. This is the *default* value.
 
-**rw**  
+- **rw**
 matching clients can access this export only in read-write mode
 
-**noacl**  
-dCache ACLs will be ignored; only posix access permissions will be considered. This is the default.
+- **noacl**
+dCache ACLs will be ignored; only posix access permissions will be considered. This is the *default* value.
 
-**acl**  
+- **acl**
 dCache ACLs will be respected; if present, they override posix permissions. To view the ACLs at the NFS client side, use `nfs4_getfacl` which is in EL7 package `nfs4-acl-tools`.
 
-**sec=krb5**  
-matching clients must access **NFS** using RPCSEC_GSS authentication. The Quality of Protection (QOP) is *NONE*, e.g., the data is neither encrypted nor signed when sent over the network. Nevertheless the RPC packets header still protected by checksum. 
+- **sec=sys**
+matching clients must access **NFS** using RPCSEC_SYS authentication, where client's local uid and gid is used. This is the *default* value.
 
-**sec=krb5**  
-matching clients have to access **NFS** using RPCSEC_GSS authentication. The Quality of Protection (QOP) is *INTEGRITY*. The RPC requests and response are protected by checksum. 
+- **sec=krb5**
+matching clients must access **NFS** using RPCSEC_GSS authentication. The Quality of Protection (QOP) is *NONE*, e.g., the data is neither encrypted nor signed when sent over the network. Nevertheless the RPC packets header still protected by checksum.
 
-**sec=krb5p**  
-matching clients have to access **NFS** using RPCSEC_GSS authentication. The Quality of Protection (QOP) is *PRIVACY*. The RPC requests and response are protected by encryption. 
+- **sec=krb5i**
+matching clients have to access **NFS** using RPCSEC_GSS authentication. The Quality of Protection (QOP) is *INTEGRITY*. The RPC requests and response are protected by checksum.
 
+- **sec=krb5p**
+matching clients have to access **NFS** using RPCSEC_GSS authentication. The Quality of Protection (QOP) is *PRIVACY*. The RPC requests and response are protected by encryption.
+
+- **all_squash**
+Map all uis and gids to the anonymous user.
+
+- **no_root_squash**
+Do not map requests from the root to anonymous user. This is useful for clients with administrative rights.
+
+- **anonuid** and **anongid** specify which uid and gid should be used for  anonymous user.
+
+- **dcap**
+Expose the fact, that nfs server is a dCache instance through special *dot* file. This option is useful when dcap client are used over mounted file system and preferred IO protocol is DCAP. This is the *default* value.
+
+- **no_dcap**
+The opposite of **dcap** option. Hide the fact, that nfs server is a dCache instance. This option is useful when dcap client are used over mounted file system but nfs protocol still have to be used for IO.
+
+- **pnfs**
+Enable NFSv4.1/pNFS to redirect pnfs capable clients to the dCache pools. This is the *default* value.
+
+- **no_pnfs** and **nopnfs**
+Opposite of **pnfs** option. Enforce clients to send all IO requests to NFS door event independent from client's pNFS capabilities.
+
+- **lt=**
+A colon separated ordered list of pnfs layouts that offered to the client. The valid values are:
+
+   - flex_files
+   - nfsv4_1_files
+
+For modern clients (linux kernel >= 4.10 and RHEL7.4) flex_files is recommended. Default is **nfsv4_1_files**.
 
 For example:
 
@@ -88,14 +116,14 @@ All clients, pool nodes and node running DOOR-NFS4 must have a valid kerberos co
 
     nfs/host.domain@<YOUR.REALM>
 
-The **/etc/dcache/dcache.conf** on pool nodes and node running `NFSv4.1 door` must enable kerberos and RPCSEC_GSS: 
+The **/etc/dcache/dcache.conf** on pool nodes and node running `NFSv4.1 door` must enable kerberos and RPCSEC_GSS:
 
     nfs.rpcsec_gss=true
     dcache.authn.kerberos.realm=<YOUR.REALM>
     dcache.authn.jaas.config=/etc/dcache/gss.conf
     dcache.authn.kerberos.key-distribution-center-list=your.kdc.server
 
-The **/etc/dcache/gss.conf** on pool nodes and node running `NFSv4.1` door must configure Java’s security module: 
+The **/etc/dcache/gss.conf** on pool nodes and node running `NFSv4.1` door must configure Java’s security module:
 
     com.sun.security.jgss.accept {
     com.sun.security.auth.module.Krb5LoginModule required
@@ -116,7 +144,7 @@ The `NFSv4.1` uses utf8 based strings to represent user and group names. This is
 
 Note, that nfs4 domain on clients must match nfs.domain value in **dcache.conf**.
 
-To avoid big latencies and avoiding multiple queries for the same information, like ownership of a files in a big directory, the results from `gPlazma` are cached within `NFSv4.1 door`. The default values for cache size and life time are good enough for typical installation. Nevertheless they can be overriden in **dcache.conf** or layoutfile: 
+To avoid big latencies and avoiding multiple queries for the same information, like ownership of a files in a big directory, the results from `gPlazma` are cached within `NFSv4.1 door`. The default values for cache size and life time are good enough for typical installation. Nevertheless they can be overriden in **dcache.conf** or layoutfile:
 
     ..
     # maximal number of entries in the cache
