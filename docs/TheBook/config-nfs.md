@@ -34,7 +34,7 @@ You can just add the following lines to the layout file:
     nfs.version = 4.1
     ..
 
-In addition to run an NFSv4.1 door you need to add exports to the **/etc/exports** file. The format of **/etc/exports** is similar to the one which is provided by Linux:
+In addition to run an NFSv4.1 door you need to add exports to the **exports** file. The location of exports file is controlled by **nfs.export.file** property and defaults to **/etc/exports**. The format of the file is similar to the one which is provided by Linux:
 
     #
     <path> [host [(options)]]
@@ -106,6 +106,8 @@ Multiple specifications can be declared like this:
 In this example, hosts in the dcache.org may read and write, while host externalhost.example.org may only read.
 
 If there are multiple path specifications, the shortest matching path wins. If there are multiple host/subnet specifications, the most precise specification wins.
+
+After reading exports file dCache will read the content of the directory with additional export tables. The location of directory defined by **nfs.export.dir** property and default to **/etc/exports.d**. Only files ending with *.exports* are considered. Files staring with a dot are ignored. The format of the additional export tables are the same as regular export file.
 
 Configuring NFSv4.1 door with GSS-API support
 =============================================
