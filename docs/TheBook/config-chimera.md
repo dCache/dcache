@@ -43,10 +43,6 @@ If you wish dCache to access your Chimera with a PostgreSQL user other than chim
     chimera.db.user=myuser
     chimera.db.password=secret
 
-> **IMPORTANT**
->
-> Do not update configuration values in **/usr/share/dcache/defaults/chimera.properties**, since changes to this file will be overwritten by updates.
-
 MOUNTING CHIMERA THROUGH NFS
 ============================
 
