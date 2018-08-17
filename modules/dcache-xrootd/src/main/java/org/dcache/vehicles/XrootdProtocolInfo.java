@@ -28,8 +28,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
     private final int _major;
 
-    private final InetSocketAddress _clientSocketAddress;
-
     private final CellPath _pathToDoor;
 
     private final PnfsId _pnfsId;
@@ -41,6 +39,8 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
     private final InetSocketAddress _doorAddress;
 
     private final EnumSet<Flags> _flags;
+
+    private InetSocketAddress _clientSocketAddress;
 
     public XrootdProtocolInfo(String protocol,  int major,int minor,
         InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
@@ -109,6 +109,11 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
     public InetSocketAddress getSocketAddress()
     {
         return _clientSocketAddress;
+    }
+
+    public void setSocketAddress(InetSocketAddress address)
+    {
+        _clientSocketAddress = address;
     }
 
     public EnumSet<Flags> getFlags()

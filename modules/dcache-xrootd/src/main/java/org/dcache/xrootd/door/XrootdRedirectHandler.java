@@ -265,6 +265,24 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             } else {
                 transfer = _door.read(remoteAddress, path, ioQueue,
                                 uuid, localAddress, req.getSubject(), _authz);
+
+                /*
+                 * If this is a tpc transfer, then dCache is source here.
+                 * The transfer is initiated by the destination server
+                 * (= current session).  However, we wish the doorinfo
+                 * client in billing to reflect the original user connection,
+                 * so we overwrite the transfer client address, which
+                 * is unused by the mover.
+                 */
+                String client = opaque.get("tpc.org");
+                if (client != null) {
+                    int index = client.indexOf("@");
+                    if (index != -1 && index < client.length()-1) {
+                        client = client.substring(index+1);
+                        transfer.setClientAddress(new InetSocketAddress(client,
+                                                                        0));
+                    }
+                }
             }
 
             // ok, open was successful
@@ -403,13 +421,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
          *  The request originated from the TPC client, indicating dCache
          *  is the destination.  Remove the rendezvous info (not needed),
          *  allow mover to start and redirect the client to the pool.
-         *  is the destination.  Remove the rendezvous info (not needed by door),
-         *  allow mover to start and redirect the client to the pool.
          *
          *  It is not necessary to delegate the tpc information through the
-         *  protocol, particularly the rendezvous key, because is it part of
-         * the opaque data, and if any of the opaque tpc info is missing
-         * from redirected call to the pool, the transfer will fail.
+         *  protocol, particularly the rendezvous key, because it is part of
+         *  the opaque data, and if any of the opaque tpc info is missing
+         *  from redirected call to the pool, the transfer will fail.
          */
         if (opaque.containsKey("tpc.src")) {
             _log.debug("Open request {} from client to door as destination: OK;"
