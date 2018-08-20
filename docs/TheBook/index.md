@@ -62,6 +62,9 @@ Table of contents
 
 -   [Chapter III. Cookbook](cookbook.md)
 
+    -   [High Availability with Replicable
+        Services](cookbook-ha-with-replicable-services.md)
+
     -   [dCache Clients](cookbook-clients.md)
 
     -   [Pool Operations](cookbook-pool.md)
