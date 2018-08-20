@@ -22,6 +22,8 @@ Table of contents
 
     -   [The Cell Package](config-cellpackage.md)
 
+    -   [Message passing](config-message-passing.md)
+
     -   [The replica Service (Replica Manager)](config-ReplicaManager.md)
 
     -   [The resilience Service (Resilience Manager)](config-Resilience.md)
