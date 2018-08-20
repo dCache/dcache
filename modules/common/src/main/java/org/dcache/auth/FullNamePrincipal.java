@@ -20,7 +20,8 @@ public class FullNamePrincipal implements Principal, Serializable
 
     public FullNamePrincipal(String givenName, String familyName)
     {
-        checkArgument(!givenName.isEmpty() || !familyName.isEmpty(), "No Names given");
+        checkArgument(!givenName.isEmpty(), "Missing given name");
+        checkArgument(!familyName.isEmpty(), "Missing family name");
         _fullName = Joiner.on(' ').skipNulls().join(givenName, familyName).trim();
     }
 
