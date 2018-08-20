@@ -24,6 +24,8 @@ Table of contents
 
     -   [The replica Service (Replica Manager)](config-ReplicaManager.md)
 
+    -   [The resilience Service (Resilience Manager)](config-Resilience.md)
+
     -   [The poolmanager Service](config-PoolManager.md)
 
     -   [The dCache Tertiary Storage System Interface](config-hsm.md)
