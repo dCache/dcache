@@ -56,6 +56,8 @@ Table of contents
 
     -   [Using Space Reservations without SRM](config-write-token.md)
 
+    -   [Zookeeper and dCache](config-zookeeper.md)
+
 -   [Chapter III. Cookbook](cookbook.md)
 
     -   [dCache Clients](cookbook-clients.md)
