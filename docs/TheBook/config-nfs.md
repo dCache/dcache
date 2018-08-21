@@ -142,9 +142,13 @@ Now your `NFS` client can securely access dCache.
 Configuring principal-id mapping for NFS access
 ===============================================
 
-The `NFSv4.1` uses utf8 based strings to represent user and group names. This is the case even for non-kerberos based accesses. Nevertheless UNIX based clients as well as dCache internally use numbers to represent uid and gids. A special service, called `idmapd`, takes care for principal-id mapping. On the client nodes the file **/etc/idmapd.conf** is usually responsible for consistent mapping on the client side. On the server side, in case of dCache mapping done through gplazma2. The `identity` type of plug-in required by id-mapping service. Please refer to [Chapter 10, Authorization in dCache](config-gplazma.md) for instructions about how to configure `gPlazma.
+The `NFSv4.1` uses utf8 based strings to represent user and group names:
 
-Note, that nfs4 domain on clients must match nfs.domain value in **dcache.conf**.
+   user@DOMAIN.NAME
+
+This is the case even for non-kerberos based accesses. Nevertheless UNIX based clients as well as dCache internally use numbers to represent uid and gids. A special service, called `idmapd`, takes care for principal-id mapping. On the client nodes the file **/etc/idmapd.conf** is usually responsible for consistent mapping on the client side. On the server side, in case of dCache mapping done through gplazma2. The `identity` type of plug-in required by id-mapping service. Please refer to [Chapter 10, Authorization in dCache](config-gplazma.md) for instructions about how to configure `gPlazma.
+
+For correct user id mapping nfs4 requires that server and client use the same naming scope, called nfs4domain. This implies a consistent configuration on both sides. To lower deployment overhead a special auto-discovery mechanism was introduced by SUN Microsystems - a [DNS TXT](http://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html) record. dCache supports this discovery mechanism. When `nfs.domain` property is set, it gets used. If it’s left unset, then DNS TXT record for _nfsv4idmapdomain is taken or the default localdomain is used when DNS record is absent.
 
 To avoid big latencies and avoiding multiple queries for the same information, like ownership of a files in a big directory, the results from `gPlazma` are cached within `NFSv4.1 door`. The default values for cache size and life time are good enough for typical installation. Nevertheless they can be overriden in **dcache.conf** or layoutfile:
 
