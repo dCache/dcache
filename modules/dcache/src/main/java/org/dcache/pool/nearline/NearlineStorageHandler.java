@@ -90,6 +90,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.PoolDataBeanProvider;
@@ -114,6 +115,7 @@ import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
+
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -1095,6 +1097,7 @@ public class NearlineStorageHandler
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, true);
             infoMsg.setStorageInfo(fileAttributes.getStorageInfo());
             infoMsg.setFileSize(fileAttributes.getSize());
+            infoMsg.setSubject(Subjects.ROOT);
             descriptor =
                     repository.createEntry(
                             fileAttributes,

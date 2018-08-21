@@ -101,6 +101,7 @@ import dmg.util.command.Option;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.FaultEvent;
@@ -663,6 +664,7 @@ public class PoolV4
                     new RemoveFileInfoMessage(getCellAddress(), entry.getPnfsId());
                 msg.setFileSize(entry.getReplicaSize());
                 msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
+                msg.setSubject(Subjects.ROOT);
                 _billingStub.notify(msg);
 
                 _kafkaSender.accept(msg);
