@@ -57,6 +57,7 @@ check ftp.net.listen
 check ftp.net.internal
 check ftp.mover.queue
 check ftp.root
+check -strong ftp.enable.log-aborted-transfers
 
 exec file:${dcache.paths.share}/cells/stage.fragment ftp doors
 
@@ -126,4 +127,5 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -key-cache-lifetime-unit=\"${ftp.authn.gsi.delegation.cache.lifetime.unit}\" \
    -list-format=\"${ftp.list-format}\" \
    -netmask=\"${ftp.net.allowed-subnets}\" \
+   -log-aborted-transfers=${ftp.enable.log-aborted-transfers} \
    "

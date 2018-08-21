@@ -2,10 +2,18 @@ package org.dcache.util;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.net.InetAddresses;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,10 +21,13 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.util.ByteUnit.Type.BINARY;
+import static org.dcache.util.ByteUnits.isoSymbol;
 
 /**
  *
@@ -30,6 +41,15 @@ public final class Strings {
     private static final String ANSI_ESCAPE = "\u001b[";
     private static final String[] ZERO_LENGTH_STRING_ARRAY=new String[0];
     private static final String INFINITY = "infinity";
+    private static final DecimalFormat THREE_SIG_FIG_FORMAT = new DecimalFormat("0.##E0");
+
+    static {
+        DecimalFormatSymbols symbols = THREE_SIG_FIG_FORMAT.getDecimalFormatSymbols();
+        symbols.setExponentSeparator("x10^");
+        symbols.setNaN("-");
+        THREE_SIG_FIG_FORMAT.setDecimalFormatSymbols(symbols);
+    }
+
 
     /**
      * Splits a string into an array of strings using white space as dividers
@@ -308,5 +328,79 @@ public final class Strings {
         } else {
             return second;
         }
+    }
+
+    /**
+     * Text that is split into lines, each line has a prefix and the resulting
+     * lines are combined.  The returned String does NOT end with a new-line
+     * character.
+     */
+    public static String indentLines(String indent, String text)
+    {
+        return new BufferedReader(new StringReader(text))
+                .lines()
+                .map(s -> indent + s)
+                .collect(Collectors.joining("\n"));
+    }
+
+    public static String describeBandwidthMean(SummaryStatistics bandwidth)
+    {
+        double mean = bandwidth.getMean();
+        double sem = bandwidth.getStandardDeviation() / Math.sqrt(bandwidth.getN());
+        if (sem == 0) {
+            return describeBandwidth(mean);
+        }
+
+        ByteUnit units = BINARY.unitsOf(mean);
+        double scaledMean = units.convert(mean, ByteUnit.BYTES);
+        double scaledSem = units.convert(sem, ByteUnit.BYTES);
+        return "(" + toThreeSigFig(scaledMean, 1024) + " ± " + toThreeSigFig(scaledSem, 1024)
+                + ") " + isoSymbol().of(units) + "/s";
+    }
+
+    public static String describeSize(long size)
+    {
+        ByteUnit units = BINARY.unitsOf(size);
+        if (units == ByteUnit.BYTES) {
+            return String.valueOf(size);
+        }
+
+        return size + " (" + toThreeSigFig(units.convert((double)size, ByteUnit.BYTES), 1024)
+                + " " + isoSymbol().of(units) + ")";
+    }
+
+    public static String describeBandwidth(double value)
+    {
+        ByteUnit units = BINARY.unitsOf(value);
+        return toThreeSigFig(units.convert((double)value, ByteUnit.BYTES), 1024)
+                + " " + isoSymbol().of(units) + "/s";
+    }
+
+    public static String toThreeSigFig(double value, double max)
+    {
+        if (value == 0) {
+            return "0";
+        }
+
+        if (value >= 1) {
+            if (value < 10) {
+                return String.format("%.2f", value);
+            } else if (value < 100) {
+                return String.format("%.1f", value);
+            } else if (value < max) {
+                return String.format("%.0f", value);
+            }
+        }
+        return THREE_SIG_FIG_FORMAT.format(value);
+    }
+
+    public static String describe(InetSocketAddress address)
+    {
+        return InetAddresses.toUriString(address.getAddress()) + ":" + address.getPort();
+    }
+
+    public static CharSequence describe(Optional<Instant> when)
+    {
+        return when.map(TimeUtils::relativeTimestamp).orElse("never");
     }
 }

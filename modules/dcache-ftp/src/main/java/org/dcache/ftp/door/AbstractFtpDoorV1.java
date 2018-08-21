@@ -114,6 +114,7 @@ import java.security.Principal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -161,6 +162,7 @@ import diskCacheV111.vehicles.GFtpTransferStartedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
@@ -221,8 +223,11 @@ import org.dcache.util.CDCExecutorDecorator;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
+import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.util.PortRange;
+import org.dcache.util.TimeUtils;
+import org.dcache.util.TimeUtils.TimeUnitFormat;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.list.DirectoryEntry;
@@ -244,6 +249,8 @@ import static org.dcache.namespace.FileType.LINK;
 import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.util.Exceptions.genericCheck;
 import static org.dcache.util.NetLoggerBuilder.Level.INFO;
+import static org.dcache.util.Strings.describe;
+import static org.dcache.util.Strings.describeSize;
 
 @Inherited
 @Retention(RUNTIME)
@@ -264,7 +271,10 @@ enum AnonymousPermission
     ALLOW_ANONYMOUS_USER, FORBID_ANONYMOUS_USER
 }
 
-/** Cancelling a transfer by notification. */
+/**
+ * Cancelling a transfer by some other dCache component.
+ * @see ClientAbortException
+ */
 class CancelledUploadException extends Exception
 {
 }
@@ -306,6 +316,21 @@ class FTPCommandException extends Exception
     }
 }
 
+/**
+ * An FTPCommandException that indicates some request is failing due to the
+ * client's behaviour after making the request.  This is distinct from requests
+ * that fail for dCache-internal reasons, bad syntax, etc.  An example where
+ * ClientAbortException may be used is aborting a transfer due to the client
+ * tearing down the control channel.
+ */
+class ClientAbortException extends FTPCommandException
+{
+    public ClientAbortException(int code, String reply)
+    {
+        super(code, reply);
+    }
+}
+
 public abstract class AbstractFtpDoorV1
         implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener,
         CellInfoProvider, CellMessageSender, CellIdentityAware
@@ -333,6 +358,8 @@ public abstract class AbstractFtpDoorV1
     private IdentityResolverFactory _identityResolverFactory;
     private IdentityResolver _identityResolver;
     private EnumSet<WorkAround> _activeWorkarounds = EnumSet.noneOf(WorkAround.class);
+    private String _clientInfo;
+    private boolean _logAbortedTransfers;
 
     private enum WorkAround
     {
@@ -942,7 +969,9 @@ public abstract class AbstractFtpDoorV1
         private final ProtocolFamily _protocolFamily;
         private final int _version;
         private final CommandRequest _request = AbstractFtpDoorV1.this._currentRequest;
+        private final Instant whenCreated = Instant.now();
 
+        private Optional<Instant> whenMoverStarted = Optional.empty();
         private long _offset;
         private long _size;
 
@@ -1206,6 +1235,7 @@ public abstract class AbstractFtpDoorV1
 
             setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
                       (isWrite() ? "Receiving" : "Sending"));
+            whenMoverStarted = Optional.of(Instant.now());
 
             reply(_request, "150 Opening BINARY data connection for " + _path);
 
@@ -1270,6 +1300,20 @@ public abstract class AbstractFtpDoorV1
         @Override
         protected synchronized void onFailure(Throwable t)
         {
+            if (_logAbortedTransfers && t instanceof ClientAbortException) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new LineIndentingPrintWriter(sw, "    ");
+                pw.println("Control channel: remote " + describe(_remoteSocketAddress) + "; local " + describe(_localSocketAddress));
+                pw.println("Work-arounds: " + _activeWorkarounds);
+                if (_clientInfo != null) {
+                    pw.println("Client info: " + _clientInfo);
+                }
+                getInfo(pw);
+                String info = sw.toString();
+                _log.warn("Client aborted transfer, details follow:\n{}",
+                        info.substring(0, info.length()-1)); // remove trailing '\n'
+            }
+
             if (_perfMarkerTask != null) {
                 _perfMarkerTask.stop();
             }
@@ -1333,18 +1377,52 @@ public abstract class AbstractFtpDoorV1
 
         public void getInfo(PrintWriter pw)
         {
-            pw.println( "  Data channel  : " + _mode + "; mode " + _xferMode.getLabel() + "; " + _parallel + " streams");
-            PerfMarkerTask perfMarkerTask = _perfMarkerTask;
+            pw.println("Transaction: " + getTransaction());
+            pw.println("Transfer command: " + _request);
+            pw.println("Transfer direction: " + (isWrite() ? "UPLOAD" : "DOWNLOAD"));
+            pw.println("Transfer started: " + TimeUtils.relativeTimestamp(whenCreated));
+            pw.println("Mover started: " + whenMoverStarted.map(TimeUtils::relativeTimestamp).orElse("not started"));
+            String dataChannel = _mode + "; mode " + _xferMode.getLabel() + "; ";
+            if (_mode == Mode.ACTIVE) {
+                // _parallel only has an effect if the pool is active and is not using a proxy.
+                dataChannel = dataChannel + _parallel + " stream" + (_parallel == 1 ? "" : "s") + "; connecting to";
+            } else {
+                dataChannel = dataChannel + "expecting connections from";
+            }
+            pw.println("Data channel: " + dataChannel + " " + describe(_client));
+            Pool pool = getPool();
+            if (pool != null) {
+                pw.println("Pool: " + pool.getName() + " (" + pool.getAddress() + ")");
+            }
+            Integer moverId = getMoverId();
+            if (moverId != null) {
+                pw.println("Mover ID: " + moverId);
+            }
+            String status = getStatus();
+            if (status != null) {
+                pw.println("Transfer status: " + status);
+            }
+            pw.println("Protocol version: " + _version);
+            if (_mode == Mode.PASSIVE) {
+                pw.println("IP family: " + _protocolFamily);
+                if (_delayedPassive != DelayedPassiveReply.NONE) {
+                    pw.println("Delayed passive: " + _delayedPassive);
+                }
+            }
+
             FileAttributes fileAttributes = getFileAttributes();
             if (fileAttributes.isDefined(SIZE)) {
-                pw.println("     File size  : " + fileAttributes.getSize());
+                pw.println("File size: " + describeSize(fileAttributes.getSize()));
             }
             if (!isWrite() && _size > -1 && _offset > -1) {
-                pw.println("  File segment  : " + _offset + '-' + (_offset + _size));
+                pw.println("File segment: " + _offset + '-' + (_offset + _size));
             }
-            if (perfMarkerTask != null) {
-                pw.println("   Transferred  : " + perfMarkerTask.getBytesTransferred());
+
+            if (_perfMarkerTask != null) {
+                pw.println("Performance markers:");
+                _perfMarkerTask.getInfo(new LineIndentingPrintWriter(pw, "    "));
             }
+
             ProxyAdapter adapter = _adapter;
             if (adapter != null) {
                 adapter.getInfo(pw);
@@ -1467,6 +1545,8 @@ public abstract class AbstractFtpDoorV1
         if (_settings.getPerformanceMarkerPeriod() > 0) {
             _performanceMarkerPeriod = _settings.getPerformanceMarkerPeriodUnit().toMillis(_settings.getPerformanceMarkerPeriod());
         }
+
+        _logAbortedTransfers = _settings.logAbortedTransfers();
 
         _clientDataAddress =
             new InetSocketAddress(_remoteSocketAddress.getAddress(), DEFAULT_DATA_PORT);
@@ -1655,7 +1735,7 @@ public abstract class AbstractFtpDoorV1
          */
         Transfer transfer = getTransfer();
         if (transfer instanceof FtpTransfer) {
-            ((FtpTransfer)transfer).abort(451, "Aborting transfer due to session termination");
+            ((FtpTransfer)transfer).abort(new ClientAbortException(451, "Aborting transfer due to session termination"));
         }
 
         _clientConnectionHandler.close();
@@ -1704,6 +1784,10 @@ public abstract class AbstractFtpDoorV1
         String user = getUser();
         if (user != null) {
             pw.println("          User  : " + user);
+        }
+        pw.println("Control channel : remote " + describe(_remoteSocketAddress) + "; local " + describe(_localSocketAddress));
+        if (_clientInfo != null) {
+            pw.println("   Client info  : " + _clientInfo);
         }
         pw.println("    Local Host  : " + _internalInetAddress);
         pw.println("  Last Command  : " + _lastCommand);
@@ -3046,6 +3130,8 @@ public abstract class AbstractFtpDoorV1
     public void doClientinfo(String description)
     {
         LOGGER.debug("client-info: {}", description);
+        _clientInfo = description;
+
         Map<String,String> items = splitToMap(description);
 
         // If items.get("appname") is "globusonline-fxp" then client is the
@@ -4000,7 +4086,7 @@ public abstract class AbstractFtpDoorV1
 
         Transfer transfer = getTransfer();
         if (transfer instanceof FtpTransfer) {
-            ((FtpTransfer)transfer).abort(426, "Transfer aborted");
+            ((FtpTransfer)transfer).abort(new ClientAbortException(426, "Transfer aborted"));
         }
         closeDataSocket();
         reply("226 Abort successful");
@@ -4036,6 +4122,13 @@ public abstract class AbstractFtpDoorV1
         private final CommandRequest _request;
         private final CDC _cdc;
         private boolean _stopped;
+        private int _markerSendCount;
+        private Optional<Instant> _lastMarkerSent = Optional.empty();
+        private int _querySendCount;
+        private int _queryFailCount;
+        private String _lastQueryErrorMessage;
+        private Optional<Instant> _lastQueryError = Optional.empty();
+        private Optional<Instant> _lastQuerySent = Optional.empty();
 
         public PerfMarkerTask(CommandRequest request, CellAddressCore pool, int moverId, long timeout)
         {
@@ -4090,7 +4183,15 @@ public abstract class AbstractFtpDoorV1
         {
             if (!_stopped) {
                 reply(_request, _perfMarkersBlock.markers(0).getReply());
+                _lastMarkerSent = Optional.of(Instant.now());
+                _markerSendCount++;
             }
+        }
+
+        private void recordQueryError(String message)
+        {
+            _lastQueryErrorMessage = message;
+            _lastQueryError = Optional.of(Instant.now());
         }
 
         protected synchronized void setProgressInfo(long bytes, long timeStamp)
@@ -4110,12 +4211,16 @@ public abstract class AbstractFtpDoorV1
             try (CDC ignored = _cdc.restore()) {
                 CellMessage msg = new CellMessage(_pool, "mover ls -binary " + _moverId);
                 _cellEndpoint.sendMessage(msg, this, _executor, _timeout);
+                _lastQuerySent = Optional.of(Instant.now());
+                _querySendCount++;
             }
         }
 
         @Override
         public synchronized void exceptionArrived(CellMessage request, Exception exception)
         {
+            _queryFailCount++;
+            recordQueryError("Received exception: " + exception);
             if (exception instanceof NoRouteToCellException) {
                 /* Seems we lost connectivity to the pool. This is
                  * not fatal, but we send a new marker to the
@@ -4132,6 +4237,8 @@ public abstract class AbstractFtpDoorV1
         public synchronized void answerTimedOut(CellMessage request)
         {
             sendMarker();
+            _queryFailCount++;
+            recordQueryError("Answer timed out");
         }
 
         @Override
@@ -4151,29 +4258,63 @@ public abstract class AbstractFtpDoorV1
                     sendMarker();
                 } else if (status.equals("K") || status.equals("R")) {
                     // "Killed" or "Removed" job
+                    _queryFailCount++;
+                    recordQueryError("Mover has status " + status);
                 } else if (status.equals("W") || status.equals("QUEUED")) {
                     sendMarker();
                 } else {
                     LOGGER.error("Performance marker engine received unexcepted status from mover: {}",
                             status);
+                    _queryFailCount++;
+                    recordQueryError("Mover has unknown status " + status);
                 }
             } else if (msg instanceof Exception) {
                 LOGGER.warn("Performance marker engine: {}",
                         ((Exception) msg).getMessage());
+                _queryFailCount++;
+                recordQueryError("Pool responded exceptionally: " + msg);
             } else if (msg instanceof String) {
                 /* Typically this is just an error message saying the
                  * mover is gone.
                  */
                 LOGGER.info("Performance marker engine: {}", msg);
+                _queryFailCount++;
+                recordQueryError("Pool responded with message \"" + msg + "\"");
             } else {
                 LOGGER.error("Performance marker engine: {}",
                         msg.getClass().getName());
+                _queryFailCount++;
+                recordQueryError("Unexpected pool responded: " + msg);
             }
         }
 
         public long getBytesTransferred()
         {
             return _perfMarkersBlock.getBytesTransferred();
+        }
+
+        public void getInfo(PrintWriter pw)
+        {
+            pw.println("Status: " + (_stopped ? "stopped" : "active"));
+            CharSequence period = TimeUtils.duration(_performanceMarkerPeriod, TimeUnit.MILLISECONDS, TimeUnitFormat.SHORT);
+            pw.println("Period: " + _performanceMarkerPeriod + " ms (" + period + ")");
+            pw.println("Mover status queries:");
+            pw.println("    Sent: " + _querySendCount);
+            if (_querySendCount > 0) {
+                pw.println("    Last sent: " + describe(_lastQuerySent));
+            }
+            if (_queryFailCount > 0) {
+                pw.println("    Failures: " + _queryFailCount);
+                pw.println("    Last failure: " + describe(_lastQueryError)
+                        + " " + _lastQueryErrorMessage);
+            }
+            pw.println("Markers sent to client:");
+            pw.println("    Sent: " + _markerSendCount);
+            if (_markerSendCount > 0) {
+                pw.println("    Last sent: " + describe(_lastMarkerSent));
+            }
+            pw.println("Latest marker information:");
+            _perfMarkersBlock.getInfo(new LineIndentingPrintWriter(pw, "    "));
         }
     }
 
