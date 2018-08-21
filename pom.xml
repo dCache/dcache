@@ -107,7 +107,7 @@
         <bouncycastle.version>1.50</bouncycastle.version>
         <datanucleus-core.version>4.1.8</datanucleus-core.version>
         <datanucleus.plugin.version>4.0.2</datanucleus.plugin.version>
-        <hazelcast.version>3.9.3</hazelcast.version>
+        <hazelcast.version>3.10.4</hazelcast.version>
     </properties>
 
     <prerequisites>
