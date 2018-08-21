@@ -20,19 +20,22 @@ import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.CommandException;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
 import org.dcache.pool.PoolDataBeanProvider;
+import org.dcache.pool.classic.json.HSMFlushQManagerData;
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.pool.classic.json.HSMFlushQManagerData;
 
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toCollection;
@@ -118,24 +121,24 @@ public class StorageClassContainer
         return info;
     }
 
-    private synchronized
-        void removeStorageClass(String hsmName, String storageClass)
+    private synchronized void removeStorageClass(String hsmName, String storageClass)
+            throws CommandException
     {
         StorageClassInfo info = getStorageClassInfo(hsmName, storageClass);
         if (info != null) {
             if (info.size() > 0) {
-                throw new IllegalArgumentException("Class not empty");
+                throw new CommandException(1, "Class not empty");
             }
             _storageClasses.remove(info.getFullName());
         }
     }
 
-    private synchronized
-        void suspendStorageClass(String hsmName, String storageClass, boolean suspend)
+    private synchronized void suspendStorageClass(String hsmName,
+            String storageClass, boolean suspend) throws CommandException
     {
         StorageClassInfo info = getStorageClassInfo(hsmName, storageClass);
         if (info == null) {
-            throw new IllegalArgumentException("Storage class not found : " + storageClass + "@" + hsmName);
+            throw new CommandException(1, "Storage class not found : " + storageClass + "@" + hsmName);
         }
         info.setSuspended(suspend);
     }
@@ -304,11 +307,11 @@ public class StorageClassContainer
         PnfsId pnfsId;
 
         @Override
-        public String call() throws IllegalArgumentException, CacheException
+        public String call() throws CommandException, CacheException
         {
             StorageClassInfo info = getStorageClassInfo(pnfsId);
             if (info == null) {
-                throw new IllegalArgumentException("Not found : " + pnfsId);
+                throw new CommandException(1, "Not found : " + pnfsId);
             }
             info.activate(pnfsId);
             return "";
@@ -323,18 +326,18 @@ public class StorageClassContainer
         String className;
 
         @Override
-        public String call() throws IllegalArgumentException, NoSuchElementException
+        public String call() throws CommandException, NoSuchElementException
         {
             int pos = className.indexOf('@');
             if (pos <= 0 || pos + 1 == className.length()) {
-                throw new IllegalArgumentException("Illegal storage class syntax : class@hsm");
+                throw new CommandException(1, "Illegal storage class syntax : class@hsm");
             }
             StorageClassInfo classInfo =
                     getStorageClassInfo(
                             className.substring(pos + 1),
                             className.substring(0, pos));
             if (classInfo == null) {
-                throw new IllegalArgumentException("No such storage class: " + className);
+                throw new CommandException(1, "No such storage class: " + className);
             }
             classInfo.activateAll();
             return "";
@@ -349,11 +352,11 @@ public class StorageClassContainer
         PnfsId pnfsId;
 
         @Override
-        public String call() throws IllegalArgumentException, CacheException
+        public String call() throws CommandException, CacheException
         {
             StorageClassInfo info = getStorageClassInfo(pnfsId);
             if (info == null) {
-                throw new IllegalArgumentException("Not found : " + pnfsId);
+                throw new CommandException(1, "Not found : " + pnfsId);
             }
             info.deactivate(pnfsId);
             return "";
@@ -471,7 +474,7 @@ public class StorageClassContainer
         String storageClass;
 
         @Override
-        public String call()
+        public String call() throws CommandException
         {
             removeStorageClass(hsm.toLowerCase(), storageClass);
             return "";
@@ -489,7 +492,7 @@ public class StorageClassContainer
         String storageClass;
 
         @Override
-        public String call()
+        public String call() throws CommandException
         {
             if (hsm.equals("*")) {
                 suspendStorageClasses(true);
@@ -511,7 +514,7 @@ public class StorageClassContainer
         String storageClass;
 
         @Override
-        public String call()
+        public String call() throws CommandException
         {
             if (hsm.equals("*")) {
                 suspendStorageClasses(false);
@@ -576,10 +579,10 @@ public class StorageClassContainer
         PnfsId pnfsId;
 
         @Override
-        public String call()
+        public String call() throws CommandException
         {
             if (!removeCacheEntry(pnfsId)) {
-                throw new IllegalArgumentException("Not found : " + pnfsId);
+                throw new CommandException(1, "Not found : " + pnfsId);
             }
             return "Removed : " + pnfsId;
         }
