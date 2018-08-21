@@ -19,7 +19,6 @@ package org.dcache.webdav.transfer;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
 import io.milton.http.Filter;
@@ -29,6 +28,7 @@ import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.servlet.ServletRequest;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -58,6 +58,7 @@ import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.BearerTokenCredential;
+import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdClientSecret;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
@@ -110,9 +111,7 @@ public class CopyFilter implements Filter
 
     private static final String QUERY_KEY_ASKED_TO_DELEGATE = "asked-to-delegate";
     private static final String REQUEST_HEADER_CREDENTIAL = "Credential";
-    private static final String REQUEST_HEADER_AUTHORIZATION = "Authorization";
     private static final String REQUEST_HEADER_VERIFICATION = "RequireChecksumVerification";
-    private static final String SCHEME_AUTHORIZATION_BEARER_WITH_SPACE = "BEARER ";
 
     private static final Set<AccessMask> READ_ACCESS_MASK =
             EnumSet.of(AccessMask.READ_DATA);
@@ -398,23 +397,24 @@ public class CopyFilter implements Filter
 
         if (headerValue != null) {
             source = CredentialSource.forHeaderValue(headerValue);
-        } else if (isAuthorizationHeaderBearer(request)) {
-            source = CredentialSource.OIDC;
-        } else {
-            source = type.getDefaultCredentialSource();
-        }
 
-        if (source == null) {
-            throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                    "HTTP header 'Credential' has unknown value \"" +
-                    headerValue + "\".  Valid values are: " +
-                    Joiner.on(',').join(CredentialSource.headerValues()));
+            if (source == null) {
+                throw new ErrorResponseException(Status.SC_BAD_REQUEST,
+                        "HTTP header 'Credential' has unknown value \"" +
+                        headerValue + "\".  Valid values are: " +
+                        Joiner.on(',').join(CredentialSource.headerValues()));
+            }
+        } else if (clientAuthnUsingOidc()) {
+            source = CredentialSource.OIDC;
+        } else if (clientAuthnUsingX509()) {
+            source = CredentialSource.GRIDSITE;
+        } else {
+            source = CredentialSource.NONE;
         }
 
         if (!type.isSupported(source)) {
             throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                    "HTTP header 'Credential' value \"" + headerValue + "\" is not " +
-                    "supported for transport " + type.getScheme());
+                    "Delegation " + source + " is not supported for " + type.getScheme());
         }
 
         return source;
@@ -615,16 +615,16 @@ public class CopyFilter implements Filter
         return (Restriction) servletRequest.getAttribute(AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
     }
 
-    private boolean isAuthorizationHeaderBearer(Request request)
+    private boolean clientAuthnUsingOidc()
     {
-        // Note that HttpSerlvetRequest#getHeader is case insensitive, as
-        // required by:
-        //
-        //     https://tools.ietf.org/html/rfc7230#section-3.2
-        //
-        return Strings.nullToEmpty(ServletRequest.getRequest().getHeader(REQUEST_HEADER_AUTHORIZATION))
-                      .toUpperCase()
-                      .startsWith(SCHEME_AUTHORIZATION_BEARER_WITH_SPACE);
+        return Subject.getSubject(AccessController.getContext()).getPrincipals().stream()
+                .anyMatch(OidcSubjectPrincipal.class::isInstance);
+    }
+
+    private boolean clientAuthnUsingX509()
+    {
+        return Subject.getSubject(AccessController.getContext()).getPrincipals().stream()
+                .anyMatch(GlobusPrincipal.class::isInstance);
     }
 
     private static <T> Predicate<T> not(Predicate<T> t) {
