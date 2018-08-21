@@ -19,6 +19,8 @@
 
 package org.dcache.poolmanager;
 
+import java.io.Serializable;
+
 import dmg.cells.nucleus.CellAddressCore;
 
 import org.dcache.pool.assumption.Assumption;
@@ -32,8 +34,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Encapsulates information about the pool and the assumptions under which
  * the pool was selected.
  */
-public class SelectedPool
+public class SelectedPool implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     private final PoolInfo info;
 
     private final Assumption assumption;
