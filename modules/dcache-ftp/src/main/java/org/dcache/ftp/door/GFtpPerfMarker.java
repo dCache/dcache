@@ -66,6 +66,16 @@ COPYRIGHT STATUS:
 
 package org.dcache.ftp.door;
 
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+
+import java.io.PrintWriter;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.dcache.util.Strings.*;
+
 /**
  * <p>Title: GFtpPerfMarker.java</p>
  *
@@ -93,6 +103,10 @@ public class GFtpPerfMarker {
     private long _stripeIndex;
     private long _stripeBytesTransferred;
     private long _totalStripeCount;
+    private boolean _hasBeenUpdated;
+    private Optional<Instant> _stalledSince = Optional.empty();
+    private final SummaryStatistics _bandwidth = new SummaryStatistics();
+    private Instant lastUpdated = Instant.now();
 
     /** Constructor */
     public GFtpPerfMarker( long stripeIndex, long totalStripeCount ) {
@@ -113,20 +127,54 @@ public class GFtpPerfMarker {
     /** */
     public long getStripeCount() { return _totalStripeCount; }
 
+    public Optional<Instant> stalledSince() {
+        return _stalledSince;
+    }
+
+    public Optional<Instant> lastUpdated() {
+        return _hasBeenUpdated
+                ? Optional.of(Instant.ofEpochMilli(_timeStamp))
+                : Optional.empty();
+    }
+
     // Setters
     //
     /** set Time Stamp*/
     public void setTimeStamp(long timeStamp) {
         _timeStamp = timeStamp;
+        _hasBeenUpdated = true;
     }
     /** update Time Stamp - set current time */
     public void updateTimeStamp() {
-        _timeStamp = System.currentTimeMillis();
+        setTimeStamp(System.currentTimeMillis());
     }
 
     /** */
     public void setStripeBytesTransferred(long byteCount) {
+        _bandwidth.addValue(calculateBandwidth(byteCount));
+
+        if (_stripeBytesTransferred == byteCount) {
+            if (!_stalledSince.isPresent()) {
+                _stalledSince = Optional.of(Instant.now());
+            }
+        } else {
+            _stalledSince = Optional.empty();
+        }
         _stripeBytesTransferred = byteCount;
+    }
+
+    public SummaryStatistics getBandwidthStatistics()
+    {
+        return _bandwidth.copy();
+    }
+
+    private double calculateBandwidth(long byteCount) {
+        long delta = byteCount - _stripeBytesTransferred;
+        Instant now = Instant.now();
+        Duration elapsed = Duration.between(lastUpdated, now);
+        lastUpdated = now;
+        double elapsedSeconds = (double)elapsed.getNano() / SECONDS.getDuration().toNanos() + elapsed.getSeconds();
+        return delta / elapsedSeconds;
     }
 
     // More Setters
@@ -134,20 +182,20 @@ public class GFtpPerfMarker {
 
     /** */
     public void setBytesWithTime(long byteCount, long time) {
-        _stripeBytesTransferred = byteCount;
-        _timeStamp = time;
+        setStripeBytesTransferred(byteCount);
+        setTimeStamp(time);
     }
 
     /** Set counter stripeBytesTransferred by byteCountAdd and update timestamp
      */
     public void setBytesWithTime(long byteCount) {
-        _stripeBytesTransferred = byteCount;
-        _timeStamp = System.currentTimeMillis();
+        setStripeBytesTransferred(byteCount);
+        updateTimeStamp();
     }
     /** increment counter stripeBytesTransferred by byteCountAdd and update timestamp */
     public void addBytesWithTime(long byteCountAdd ) {
-        _stripeBytesTransferred += byteCountAdd;
-        _timeStamp = System.currentTimeMillis();
+        setStripeBytesTransferred(_stripeBytesTransferred + byteCountAdd);
+        updateTimeStamp();
     }
 
     // Conversion to string
@@ -186,6 +234,22 @@ public class GFtpPerfMarker {
         return s;
     }
 
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("Transferred: " + describeSize(getstripeBytesTransferred()));
+        pw.println("Last updated: " + describe(lastUpdated()));
+        SummaryStatistics bandwidth = getBandwidthStatistics();
+        if (bandwidth.getN() > 0) {
+            pw.println("Bandwidth:"
+                    + " min. " + describeBandwidth(bandwidth.getMin())
+                    + ", mean " + describeBandwidthMean(bandwidth)
+                    + ", max. " + describeBandwidth(bandwidth.getMax()));
+        }
+        Optional<Instant> stall = stalledSince();
+        if (stall.isPresent()) {
+            pw.println("Stalled since: " + describe(stall));
+        }
+    }
 }
 
 //
