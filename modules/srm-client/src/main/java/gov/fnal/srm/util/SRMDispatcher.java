@@ -70,6 +70,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.dcache.srm.Logger;
 import org.dcache.util.URIs;
@@ -890,15 +893,20 @@ public class SRMDispatcher {
             throw new IllegalArgumentException(error);
         }
         if(configuration.getCopyjobfile() == null) {
+            Set<java.net.URI> duplicates = new HashSet<>();
             for(int i = 0; i<number_of_sources; ++i) {
-                for(int j = 0;j<number_of_sources; ++j) {
-                    if(i != j && (urls[i].getPath().equals(urls[j].getPath()))) {
-                        String error = "list of sources contains the same url twice "+
-                        "url#"+i+" is "+urls[i] + " and url#"+j+" is "+urls[j];
-                        esay(error);
-                        throw new IllegalArgumentException(error);
+                for(int j = i+1; j<number_of_sources; ++j) {
+                    if(urls[i].equals(urls[j])) {
+                        duplicates.add(urls[i]);
                     }
                 }
+            }
+            if (duplicates.size() > 0) {
+                String error = "list of sources contains duplicate path(s): "+
+                    duplicates.stream().map(Object::toString).
+                    collect(Collectors.joining(" "));
+                esay(error);
+                throw new IllegalArgumentException(error);
             }
         }
     }

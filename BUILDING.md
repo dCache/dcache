@@ -1,8 +1,8 @@
 Building dCache
 ===============
 
-To build dCache, you need Maven 3.1.1 or newer. Centos/Redhat 7 
-comes with version 3.0.5. See https://maven.apache.org/install.html 
+To build dCache, you need Maven 3.1.1 or newer. Centos/Redhat 7
+comes with version 3.0.5. See https://maven.apache.org/install.html
 on how to install a newer version.
 
 dCache uses Maven as a build system and as a repository of Maven
@@ -59,9 +59,9 @@ build.number property, e.g.:
     mvn clean package -am -pl packages/fhs -P deb -Dbuild.number=2
 
 RPM packages of the srmclient can be created by running the package
-phase with the _rpm_ profile on _modules/srmclient_ module, i.e.:
+phase with the _rpm_ profile on _modules/srm-client_ module, i.e.:
 
-    mvn clean package -am -pl modules/srmclient -P rpm
+    mvn clean package -am -pl modules/srm-client -P rpm
 
 DEB packages have not been defined for srmclient.
 
