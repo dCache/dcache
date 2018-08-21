@@ -69,6 +69,7 @@ package org.dcache.ftp.proxy;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +90,7 @@ import org.dcache.util.PortRange;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.Strings.indentLines;
 
 /**
  * The SocketAdapter relays data by listening on two server sockets.  The
@@ -778,6 +780,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
             }
             proxy.add();
         }
-        pw.println(proxy);
+        pw.println(indentLines("        ", proxy.toString()));
     }
 }
