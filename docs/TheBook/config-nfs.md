@@ -3,9 +3,10 @@ dCache as NFSv4.1 Server
 
 Table of Contents
 
-* [Setting up](#setting-up)
-* [Configuring NFSv4.1 door with GSS-API support](#configuring-nfsv4.1-door-with-gss-api-support)
-* [Configuring principal-id mapping for NFS access](#configuring-principal-id-mapping-for-nfs-access)
+- [Setting up](#setting-up)
+- [Exporting filesystem](#exporting-filesystem)
+- [Configuring NFSv4.1 door with GSS-API support](#configuring-nfsv4.1-door-with-gss-api-support)
+- [Configuring principal-id mapping for NFS access](#configuring-principal-id-mapping-for-nfs-access)
 
 This chapter explains how to configure dCache in order to access it via the `NFSv4.1` protocol, allowing clients to mount dCache and perform POSIX IO using standard `NFSv4.1` clients.
 
@@ -34,7 +35,12 @@ You can just add the following lines to the layout file:
     nfs.version = 4.1
     ..
 
-In addition to run an NFSv4.1 door you need to add exports to the **exports** file. The location of exports file is controlled by **nfs.export.file** property and defaults to **/etc/exports**. The format of the file is similar to the one which is provided by Linux:
+Exporting file system
+---------------------
+
+In addition to run an NFSv4.1 door you need to add exports to the **exports** file. The location of exports file is controlled by **nfs.export.file** property and defaults to **/etc/exports**.
+
+After reading exports file dCache will read the content of the directory with additional export tables. The location of directory defined by **nfs.export.dir** property and default to **/etc/exports.d**. Only files ending with *.exports* are considered. Files staring with a dot are ignored. The format of the export tables is similar to the one which is provided by Linux:
 
     #
     <path> [host [(options)]]
@@ -107,8 +113,6 @@ In this example, hosts in the dcache.org may read and write, while host external
 
 If there are multiple path specifications, the shortest matching path wins. If there are multiple host/subnet specifications, the most precise specification wins.
 
-After reading exports file dCache will read the content of the directory with additional export tables. The location of directory defined by **nfs.export.dir** property and default to **/etc/exports.d**. Only files ending with *.exports* are considered. Files staring with a dot are ignored. The format of the additional export tables are the same as regular export file.
-
 Configuring NFSv4.1 door with GSS-API support
 =============================================
 
@@ -148,7 +152,7 @@ The `NFSv4.1` uses utf8 based strings to represent user and group names:
 
 This is the case even for non-kerberos based accesses. Nevertheless UNIX based clients as well as dCache internally use numbers to represent uid and gids. A special service, called `idmapd`, takes care for principal-id mapping. On the client nodes the file **/etc/idmapd.conf** is usually responsible for consistent mapping on the client side. On the server side, in case of dCache mapping done through gplazma2. The `identity` type of plug-in required by id-mapping service. Please refer to [Chapter 10, Authorization in dCache](config-gplazma.md) for instructions about how to configure `gPlazma.
 
-For correct user id mapping nfs4 requires that server and client use the same naming scope, called nfs4domain. This implies a consistent configuration on both sides. To lower deployment overhead a special auto-discovery mechanism was introduced by SUN Microsystems - a [DNS TXT](http://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html) record. dCache supports this discovery mechanism. When `nfs.domain` property is set, it gets used. If it’s left unset, then DNS TXT record for _nfsv4idmapdomain is taken or the default localdomain is used when DNS record is absent.
+For correct user id mapping nfs4 requires that server and client use the same naming scope, called nfs4domain. This implies a consistent configuration on both sides. To reduce deployment overhead a special auto-discovery mechanism was introduced by SUN Microsystems - a [DNS TXT](http://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html) record. dCache supports this discovery mechanism. When `nfs.domain` property is set, it gets used. If it’s left unset, then DNS TXT record for `_nfsv4idmapdomain` is taken or the default `localdomain` is used when DNS record is absent.
 
 To avoid big latencies and avoiding multiple queries for the same information, like ownership of a files in a big directory, the results from `gPlazma` are cached within `NFSv4.1 door`. The default values for cache size and life time are good enough for typical installation. Nevertheless they can be overriden in **dcache.conf** or layoutfile:
 
@@ -164,4 +168,3 @@ To avoid big latencies and avoiding multiple queries for the same information, l
     nfs.idmap.cache.timeout.unit = SECONDS
     ..
 
-  [???]: #cf-gplazma
