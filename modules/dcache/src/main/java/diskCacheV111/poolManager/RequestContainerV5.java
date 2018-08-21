@@ -1436,7 +1436,7 @@ public class RequestContainerV5
                           suspendIfEnabled("Suspended (pool unavailable)");
                        }
                        if (_sendHitInfo && _poolCandidate == null) {
-                           sendHitMsg(_bestPool.info(), false);   //VP
+                           sendHitMsg(_bestPool == null ? null : _bestPool.info(), false);   //VP
                        }
                        //
                     }else if( rc == RequestStatusCode.NOT_PERMITTED ){
