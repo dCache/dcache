@@ -66,6 +66,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -148,6 +149,15 @@ public final class TpcWriteDescriptor extends WriteDescriptor
         if (cksum != null) {
             channel.addChecksumType(ChecksumType.getChecksumType(cksum.toUpperCase()));
         }
+
+        /*
+         * For dcache as destination, the transfer is initiated by the
+         * user client, but we want the mover billing record to reflect
+         * the source IP, so we overwrite the protocol info client (unused).
+         */
+        getChannel().getProtocolInfo()
+                    .setSocketAddress(new InetSocketAddress(info.getSrcHost(),
+                                                            info.getSrcPort()));
     }
 
     @Override
