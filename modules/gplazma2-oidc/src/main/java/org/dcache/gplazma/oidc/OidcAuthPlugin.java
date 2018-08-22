@@ -217,9 +217,9 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
         if (fullName != null && !fullName.asText().isEmpty()) {
             principals.add(new FullNamePrincipal(fullName.asText()));
-        } else {
-            principals.add(new FullNamePrincipal(givenName == null ? null : givenName.asText(),
-                    familyName == null ? null : familyName.asText()));
+        } else if (givenName != null && !givenName.asText().isEmpty()
+                && familyName != null && !familyName.asText().isEmpty()) {
+            principals.add(new FullNamePrincipal(givenName.asText(), familyName.asText()));
         }
     }
 
