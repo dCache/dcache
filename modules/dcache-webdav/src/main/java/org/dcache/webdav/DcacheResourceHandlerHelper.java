@@ -50,7 +50,14 @@ public class DcacheResourceHandlerHelper extends ResourceHandlerHelper
             /* Bypass check to see if file exists: our CopyFilter will handle the request */
             handler.processResource(manager, request, response, resource);
         } else if (request.getMethod() == Request.Method.OPTIONS) {
-            Resource resource = manager.getResourceFactory().getResource(host, url);
+            Resource resource;
+            try {
+                resource = manager.getResourceFactory().getResource(host, url);
+            } catch (WebDavException e) {
+                // Treat all errors as if there was no such file.  We should
+                // always provide a successful response to a CORS request.
+                resource = null;
+            }
             if (resource == null) {
                 // Milton ResourceHandlerHelper returns 404 for OPTIONS request
                 // targeting non-existing entity.  This breaks CORS uploads.
