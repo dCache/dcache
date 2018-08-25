@@ -165,12 +165,9 @@ Table of Contents
 
 1. [ACLs in dCache](config-acl.md)
     - [Introduction](config-acl.md#introduction)
-    - [Database configuration](config-acl.md#database-configuration)
     - [Configuring ACL support](config-acl.md#configuring-acl-support)
-    - [Enabling ACL support](config-acl.md#enabling-acl-support)
-    - [Administrating ACLs](config-acl.md#administrating-acls)
-    - [How to set ACLs](config-acl.md#how-to-set-acls)
-    - [Viewing configured ACLs](config-acl.md#viewing-configured-acls)
+    - [Setting and getting ACLs](config-acl.md#setting-and-getting-acls)
+    - [Accessing ACL over NFS mount](config-acl.md#accessing-acl-over-nfs-mount)
 
 1. [GLUE Info Provider](config-info-provider.md)
     - [Internal collection of information](config-info-provider.md#internal-collection-of-information)

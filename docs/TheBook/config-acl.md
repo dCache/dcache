@@ -1,30 +1,19 @@
-CHAPTER 18.  ACLS IN dCache
+ACLs in dCache
 ===========================
 
 Table of Contents
 -----------------
 
 * [Introduction](#introduction)
-* [Database configuration](#database-configuration)
 * [Configuring ACL support](#configuring-acl-support)
-        
-  [Enabling ACL support](#enabling-acl-support)
-        
-* [Administrating ACLs](#administrating-acls)
+* [Setting and getting ACLs](#setting-and-getting-acls)
+* [Accessing ACL over NFS mount](#accessing-acl-over-nfs-mount)
 
-  [How to set ACLs](#how-to-set-acls)
-
-* [Viewing configured ACLs](#viewing-configured-acls)
-
-dCache includes support for Access Control Lists (ACLs). This support is conforming to the [NFS version 4 Protocol specification](http://www.nfsv4-editor.org/).
+dCache includes support for Access Control Lists (ACLs). This support is conforming to the [NFS version 4 Protocol specification](https://tools.ietf.org/rfc/rfc7530.txt).
 
 This chapter provides some background information and details on configuring dCache to use ACLs and how to administer the resulting system.
 
-> **ACLS AND PNFS**
->
-> ACLs are only supported with the Chimera name space backend. Versions before 1.9.12 had partial support for ACLs with the pnfs backend, however due to the limitations of that implementation ACLs were practically useless with pnfs.
-
-INTRODUCTION
+Introduction
 ============
 
 dCache allows control over namespace operations (e.g., creating new files and directories, deleting items, renaming items) and data operations (reading data, writing data) using the standard Unix permission model. In this model, files and directories have both owner and group-owner attributes and a set of permissions that apply to the owner, permissions for users that are members of the group-owner group and permissions for other users.
@@ -49,23 +38,10 @@ Inheritance only happens when a new file or directory is created. After creation
 
 Inheritance is optional. Within a directory's ACL some ACEs may be inherited whilst others are not. New files or directories will receive only those ACEs that are configured; the remaining ACEs will not be copied.
 
-DATABASE CONFIGURATION
-======================
-
-ACL support requires database tables to store ACL and ACE information. These tables are part of the CHIMERA name space backend and for a new installation no additional steps are needed to prepare the database.
-
-Early versions of Chimera (before dCache 1.9.3) did not create the ACL table during installation. If the database is lacking the extra table then it has to be created before enabling ACL support. This is achieved by applying two SQL files:
-
-    [root] # psql chimera < /usr/share/dcache/chimera/sql/addACLtoChimeraDB.sql
-    [root] # psql chimera < /usr/share/dcache/chimera/sql/pgsql-procedures.sql
-
-CONFIGURING ACL SUPPORT
+Configuring ACL support
 =======================
 
 The **dcache.conf** and layout files contain a number of settings that may be adjusted to configure dCache's permission settings. These settings are are described in this section.
-
-ENABLING ACL SUPPORT
---------------------
 
 To enable ACL support set `pnfsmanager.enable.acl`=`true` in the layout file.
 
@@ -74,76 +50,75 @@ To enable ACL support set `pnfsmanager.enable.acl`=`true` in the layout file.
     pnfsmanager.enable.acl=true
     ..
 
-ADMINISTRATING ACLS
-===================
+As NFSv4.0 protocol specification has a native ACL support, dCache's NFS door doesn't use this option and relays on `acl` option in export configurations. See [Exporting filesystem](config-nfs.md#exporting-filesystem) for details.
+
+Setting and getting ACLs
+----------------------------
 
 Altering dCache ACL behaviour is achieved by connecting to the `PnfsManager` [well-known cell](rf-glossary.md#well-known-cell) using the administrator interface. For further details about how to use the administrator interface, see [the section called “The Admin Interface”](intouch.md#the-admin-interface).
 
-The `info` and `help` commands are available within `PnfsManager` and fulfil their usual functions.
+The `setfacl` command is used to set a new ACL. This command accepts arguments with the following form:
 
-HOW TO SET ACLS
----------------
+    setfacl <ID> <ACE> [<ACE>...]
 
-The `setfacl` command is used to set a new ACL. This command accepts arguments with the following form:  
+The *ID* argument is either a pnfs-ID or the absolute path of some file or directory in dCache. The `setfacl` command requires ordered list of one or more *ACE* separated by spaces. Any existing ACEs for that *ID* will be replaced. The format and description of these ACE values are described below.
 
-setfacl <ID> <ACE> [<ACE>...]  
+The `getfacl` is used to obtain the current ACL for objects in dCache namespace. It takes the following arguments.
 
-The <ID> argument is either a pnfs-ID or the absolute path of some file or directory in dCache. The `setfacl` command requires one or more <ACE> arguments seperated by spaces.  
+    getfacl [pnfsId] | [globalPath]
 
-The `setfacl` command creates a new ACL for the file or directory represented by <ID>. This new ACL replaces any existing ACEs for <ID>.  
+The `getfacl` command fetches the ACL information of a namespace item (a file or directory). The item may be specified by its PNFS-ID or its absolute path.
 
-An ACL has one or more ACEs. Each ACE defines permissions to access this resource for some [Subject](#the-subject). The ACEs are space-separated and the ordering is significant. The format and description of these ACE values are described below.  
+### Description of the ACE structure
 
-### Description of the ACE structure  
+The *ACE* arguments to the `setfacl` command have a specific format. This format is described below in Extended Backus-Naur Form (EBNF).
 
-The <ACE> arguments to the `setfacl` command have a specific format. This format is described below in Extended Backus-Naur Form (EBNF).
-
-[1]	ACE	::=	Subject ':' Access |   
-                        Subject ':' Access ':' Inheritance	   
-[2]	Subject	::=	'USER:' UserID |   
-'GROUP:' GroupID |   
-'OWNER@' |   
-'GROUP@' |   
-'EVERYONE@' |   
-'ANONYMOUS@' |   
-'AUTHENTICATED@'	  
-[3]	Access	::=	'+' Mask |  
-'-' Mask	  
-[4]	Mask	::=	Mask MaskItem |   
-MaskItem	   
-[5]	MaskItem	::=	'r' | 'l' | 'w' | 'f' | 's' | 'a' | 'n' | 'N' | 'x' | 'd' | 'D' | 't' | 'T' | 'c' | 'C' | 'o'	 
-[6]	Inheritance	::=	Inheritance Flag |   
-Flag	 
-[7]	Flag	::=	'f' | 'd' | 'o'	   
-[8]	UserID	::=	INTEGER	   
-[9]	GroupID	::=	INTEGER    
-The various options are described below.  
+    [1]	ACE	::=	Subject ':' Access |
+                            Subject ':' Access ':' Inheritance
+    [2]	Subject	::=	'USER:' UserID | 'GROUP:' GroupID |
+        'OWNER@' |
+        'GROUP@' |
+        'EVERYONE@' |
+        'ANONYMOUS@' |
+        'AUTHENTICATED@'
+    [3]	Access	::=	'+' Mask |
+        '-' Mask
+    [4]	Mask	::=	Mask MaskItem |
+        MaskItem
+    [5]	MaskItem	::=	'r' | 'l' | 'w' | 'f' | 's' | 'a' | 'n' | 'N' | 'x' | 'd' | 'D' | 't' | 'T' | 'c' | 'C' | 'o'
+    [6]	Inheritance	::=	Inheritance Flag | Flag
+    [7]	Flag	::=	'f' | 'd' | 'o'
+    [8]	UserID	::=	INTEGER
+    [9]	GroupID	::=	INTEGER
+The various options are described below.
 
 #### The Subject
 
 The [Subject](#the-subject) defines to which user or group of users the ACE will apply. It acts as a filter so that only those users that match the Subject will have their access rights affected.
 
 As indicated by the EBNF above, the Subject of an ACE can take one of several forms. These are described below:
- 
-**USER:**<id>  
-The `USER:` prefix indicates that the ACE applies only to the specific end-user: the dCache user with ID <id>. For example, `USER:0:+w` is an ACE that allows user 0 to write over a file's existing data.
 
-**GROUP:**<id>  
-The `GROUP:` prefix indicates that the ACE applies only to those end-users who are a member of the specific group: the dCache group with ID <id>. For example, `GROUP:20:+a` is an ACE that allows any user who is a member of group 20 to append data to the end of a file.
+**USER:id**
+The `USER:` prefix indicates that the ACE applies only to the specific end-user: the dCache user with ID *id*. For example, `USER:0:+w` is an ACE that allows user 0 to write over a file's existing data.
 
-**OWNER@**    
+**GROUP:id**
+The `GROUP:` prefix indicates that the ACE applies only to those end-users who are a member of the specific group: the dCache group with ID *id*. For example, `GROUP:20:+a` is an ACE that allows any user who is a member of group 20 to append data to the end of a file.
+
+**OWNER@**
 The `OWNER@` subject indicates that the ACE applies only to whichever end-user owns the file or directory. For example, `OWNER@:+d` is an ACE that allows the file's or directory's owner to delete it.
 
-**GROUP@**   
+**GROUP@**
 The `GROUP@` subject indicates that the ACE applies only to all users that are members of the group-owner of the file or directory. For example, `GROUP@:+l` is an ACE that allows any user that is in a directory's group-owner to list the directory's contents.
 
-**EVERYONE@**   
+**EVERYONE@**
 The `EVERYONE@` subject indicates that the ACE applies to all users. For example, `EVERYONE@:+r` is an ACE that makes a file world-readable.
 
-**ANONYMOUS@**   
+> It is important to note that "EVERYONE@" is not equivalent to the UNIX "other" entity.  This is because, by definition, UNIX "other" does not include the owner or owning group of a file. "EVERYONE@" means literally everyone, including the owner or owning group.
+
+**ANONYMOUS@**
 The `ANONYMOUS@` Subject indicates that the ACE applies to all users who have not authenticated themselves. For example, `ANONYMOUS@:-l` is an ACE that prevents unauthenticated users from listing the contents of a directory.
 
-`AUTHENTICATED@`  
+`AUTHENTICATED@`
 The `AUTHENTICATED@` Subject indicates that an ACE applies to all authenticated users. For example, `AUTHENTICATED@:+r` is an ACE that allows any authenticated user to read a file's contents.
 
 > **AUTHENTICATED OR ANONYMOUS**
@@ -172,77 +147,77 @@ The following table describes the access mask letters and the corresponding oper
 >
 > When configuring an ACL, if an ACE has an operation letter in the access mask that is not applicable to whatever the ACL is associated with then the letter is converted to an equivalent. For example, if `l` (list directory) is in the access mask of an ACE that is part of a file-ACL then it is converted to `r`. These mappings are described in the following table.
 
-**r**   
+**r**
 reading data from a file. Specifying `r` in an ACE's access mask controls whether end-users are allowed to read a file's contents. If the ACE is part of a directory-ACL then the letter is converted to `l`.
 
-**l**   
+**l**
 listing the contents of a directory. Specifying `l` in an ACE's access mask controls whether end-users are allowed to list a directory's contents. If the ACE is part of a file-ACL then the letter is converted to `r`.
 
-**w**   
+**w**
 overwriting a file's existing contents. Specifying `w` in an ACE's access mask controls whether end-users are allowed to write data anywhere within the file's current offset range. This includes the ability to write to any arbitrary offset and, as a result, to grow the file. If the ACE is part of a directory-ACL then the letter is converted to `f`.
 
-**f** 
+**f**
 creating a new file within a directory. Specifying `f` in an ACE's access mask controls whether end-users are allowed to create a new file. If the ACE is part of an file-ACL then then the letter is converted to `w`.
 
-**s**  
+**s**
 creating a subdirectory within a directory. Specifying `s` in an ACE's access mask controls whether end-users are allowed to create new subdirectories. If the ACE is part of a file-ACL then the letter is converted to `a`.
 
-**a**  
+**a**
 appending data to the end of a file. Specifying `a` in an ACE's access mask controls whether end-users are allowed to add data to the end of a file. If the ACE is part of a directory-ACL then the letter is converted to `s`.
 
-**n**    
+**n**
 reading attributes. Specifying `n` in an ACE's access mask controls whether end-users are allowed to read attributes. This letter may be specified in ACEs that are part of a file-ACL and those that are part of a directory-ACL.
 
-**N**   
+**N**
 write attributes. Specifying `N` in an ACE's access mask controls whether end-users are allowed to write attributes. This letter may be specified in ACEs that are part of a file-ACL and those that are part of a directory-ACL.
 
-**x**   
+**x**
 executing a file or entering a directory. `x` may be specified in an ACE that is part of a file-ACL or a directory-ACL; however, the operation that is authorised will be different.
 
 Specifying **x** in an ACEs access mask that is part of a file-ACL will control whether end users matching the ACE Subject are allowed to execute that file.
 
 Specifying **x** in an ACEs access mask that is part of a directory-ACL will control whether end users matching ACE Subject are allowed to search a directory for a named file or subdirectory. This operation is needed for end users to change their current working directory.
 
-**d**   
+**d**
 deleting a namespace entry. Specifying **d** in an ACE's access mask controls whether end-users are allowed to delete the file or directory the ACL is attached. The end user must be also authorised for the parent directory (see `D`).
 
-**D**  
+**D**
 deleting a child of a directory. Specifying **D** in the access mask of an ACE that is part of a directory-ACL controls whether end-users are allowed to delete items within that directory. The end user must be also authorised for the existing item (see **d**).
- 
-**t**   
+
+**t**
 reading basic attributes. Specifying `t` in the access mask of an ACE controls whether end users are allowed to read basic (i.e., non-ACL) attributes of that item.
 
-**T**   
+**T**
 altering basic attributes. Specifying `T` in an ACE's access mask controls whether end users are allowed to alter timestamps of the item the ACE's ACL is attached.
 
-**c**    
+**c**
 reading ACL information. Specifying `c` in an ACE's access mask controls whether end users are allowed to read the ACL information of the item to which the ACE's ACL is attached.
 
-**C**   
+**C**
 writing ACL information. Specifying `C` in an ACE's access mask controls whether end users are allowed to update ACL information of the item to which the ACE's ACL is attached.
 
-**o**  
+**o**
 altering owner and owner-group information. Specifying `o` controls whether end users are allowed to change ownership information of the item to which the ACE's ACL is attached.
 
 #### ACL inheritance
 
 To enable ACL inheritance, the optional [inheritance flags](#description-of-the-ace-structure) must be defined. The flag is a list of letters. There are three possible letters that may be included and the order doesn't matter.
 
-**f**   
+**f**
 This inheritance flag only affects those ACEs that form part of an directory-ACL. If the ACE is part of a file-ACL then specifying `f` has no effect.
 
 If a file is created in a directory with an ACE with `f` in inheritance flags then the ACE is copied to the newly created file's ACL. This ACE copy will not have the `f` inheritance flag.
 
 Specifying `f` in an ACE's inheritance flags does not affect whether this ACE is inherited by a newly created subdirectory. See `d` for more details.
 
-**d**    
+**d**
 This inheritance flag only affect those ACEs that form part of an directory-ACL. If the ACE is part of a file-ACL then specifying `d` has no effect.
 
 Specifying `d` in an ACE's inheritance flags does not affect whether this ACE is inherited by a newly created file. See `f` for more details.
 
 If a subdirectory is created in a directory with an ACE with `d` in the ACE's inheritance flag then the ACE is copied to the newly created subdirectory's ACL. This ACE copy will have the `d` inheritance flag specified. If the `f` inheritance flag is specified then this, too, will be copied.
 
-**o**   
+**o**
 The `o` flag may only be used when the ACE also has the `f`, `d` or both `f` and `d` inheritance flags.
 
 Specifying `o` in the inheritance flag will suppress the ACE. No user operations will be authorised or denied as a result of such an ACE.
@@ -251,13 +226,43 @@ When a file or directory inherits from an ACE with `o` in the inheritance flags 
 
 An `o` in the inheritance flag allows child files or directories to inherit authorisation behaviour that is different from the parent directory.
 
-## Examples  
+Accessing ACL over NFS mount
+-----------------------------
 
-This section gives some specific examples of how to set ACLs to achieve some specific behaviour.  
+As mentioned earlier, NFSv4.0 natively supports ACL. On linux system there are two commands to get and set ACLs - `nfs4_getfacl` and `nfs4_setfacl`. The both commands are are a part of `nfs4-acl-tools` package and available on most of the modern linux distributions.
 
-Example 18.1.   
+    $ nfs4_setfacl -­s 'A::user@domain:r' file.X
+    $ nfs4_getfacl file.X
+    A::user@domain:r
+    A::OWNER@:rwaDxtTcC
+    A::GROUP@:rwaDxtc
+    A::EVERYONE@:rxtc
 
-ACL allowing specific user to delete files in a directory 
+For other operations systems, usually ACL manipulation integrated into `setfacl` and `getfacl` commands.
+
+#### Combining UNIX permissions with ACLs
+
+When file's permission is changed with `chmod` command, then files ACL is adjusted to reflect new permissions.
+
+    $ nfs4_setfacl ­a 'A::EVERYONE@:rw' file.X
+    $ nfs4_getfacl file.X
+    A::EVERYONE@:rwtc
+    A::OWNER@:rwatTcC
+    A::GROUP@:rwatc
+    $ chmod 000 file.X    # <==­ ACL are adjusted here
+    $ nfs4_getfacl file.X
+    A::OWNER@:tTcC
+    A::GROUP@:t
+    A::EVERYONE@:t
+    $
+
+## Examples
+
+This section gives some specific examples of how to set ACLs to achieve some specific behaviour.
+
+### Example 1
+
+ACL allowing specific user to delete files in a directory
 
 This example demonstrates how to configure a directory-ACL so user 3750 can delete any file within the directory **/pnfs/example.org/data/exampleDir**.
 
@@ -272,8 +277,7 @@ The first command creates an ACL for the directory. This ACL has three ACEs. The
 
 The second and third commands creates an ACL for files that already exists within the directory. Since ACL inheritance only applies to newly created files or directories, any existing files must have an ACL explicitly set.
 
-
-Example 18.2.
+### Example 2
 
 ACL to deny a group  #
 
@@ -288,10 +292,9 @@ The second ACE allows everyone to list the directory's content. If an end user w
 
 The final ACE authorises members of group 1000 to create subdirectories. If an end user who is a member of group 1000 and group 2000 attempts to create a subdirectory then their request will match the first ACE and be denied.
 
+### Example 3
 
-Example 18.3.
-
-ACL to allow a user to delete all files and subdirectories  
+ACL to allow a user to delete all files and subdirectories
 
 This example is an extension to [Example 18.1, “ACL allowing specific user to delete files in a directory”](#example-18.1.-acl-allowing-specific-user-to-delete-files-in-a-directory). The previous example allowed deletion of the contents of a directory] but not the contents of any subdirectories. This example allows user 3750 to delete all files and subdirectories within the directory.
 
@@ -309,31 +312,16 @@ Since the second ACE has both the `d` and `f` inheritance flags, it will be inhe
 
 Subdirectories (and files) will inherit the second ACE with both `d` and `f` inheritance flags. This implies that all files and sub-subdirecties within a subdirectory of **/pnfs/example.org/data/exampleDir** will also inherit this ACE, so will also be deletable by user 3750.
 
-VIEWING CONFIGURED ACLS  
------------------------
-The `getfacl` is used to obtain the current ACL for some item in dCache namespace. It takes the following arguments.  
+### Example 4
 
-getfacl [pnfsId] | [globalPath]    
+Obtain ACL information by absolute path
 
-The `getfacl` command fetches the ACL information of a namespace item (a file or directory). The item may be specified by its PNFS-ID or its absolute path.
-
-Example 18.4.  
-
-Obtain ACL information by absolute path  
-       (PnfsManager) admin > getfacl /pnfs/example.org/data/exampleDir  
-        ACL: rsId = 00004EEFE7E59A3441198E7EB744B0D8BA54, rsType = DIR  
-        order = 0, type = A, accessMsk = lfsD, who = USER, whoID = 12457  
-        order = 1, type = A, flags = f, accessMsk = lfd, who = USER, whoID = 87552  
-        In extra format:  
-        USER:12457:+lfsD  
-        USER:87552:+lfd:f  
+       (PnfsManager) admin > getfacl /pnfs/example.org/data/exampleDir
+        ACL: rsId = 00004EEFE7E59A3441198E7EB744B0D8BA54, rsType = DIR
+        order = 0, type = A, accessMsk = lfsD, who = USER, whoID = 12457
+        order = 1, type = A, flags = f, accessMsk = lfd, who = USER, whoID = 87552
+        In extra format:
+        USER:12457:+lfsD
+        USER:87552:+lfd:f
 
 The information is provided twice. The first part gives detailed information about the ACL. The second part, after the `In extra format:` heading, provides a list of ACEs that may be used when updating the ACL using the `setfacl` command.
-
- <!--   [NFS version 4 Protocol specification]: http://www.nfsv4-editor.org/draft-25/draft-ietf-nfsv4-minorversion1-25.html
-  [???]: #intouch-admin
-  [Subject]: #ebnf.ace.subject
-  [ACE EBNF]: #ebnf.ace
-  [inheritance flags]: #ebnf.ace.inheritance
-  [example\_title]: #cf-acl-eg-delete
---!>
