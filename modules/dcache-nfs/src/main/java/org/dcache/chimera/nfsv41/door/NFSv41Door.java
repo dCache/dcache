@@ -61,6 +61,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.EnumMap;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -95,6 +97,7 @@ import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.NoMatchingLayoutException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.ServerFaultException;
+import org.dcache.nfs.status.StaleException;
 import org.dcache.nfs.status.UnknownLayoutTypeException;
 import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v3.MountServer;
@@ -535,6 +538,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
+        NFS4Client client = null;
         try {
 
             FsInode inode = _chimeraVfs.inodeFromBytes(nfsInode.getFileId());
@@ -545,7 +549,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             deviceid4[] devices;
 
-            final NFS4Client client;
             if (context.getMinorversion() == 0) {
                 /* if we need to run proxy-io with NFSv4.0 */
                 client = context.getStateHandler().getClientIdByStateId(stateid);
@@ -630,6 +633,18 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
+        } catch (FileNotFoundCacheException e) {
+            /*
+             * The file is removed before we was able to start a mover.
+             * Invalidate state as client will not send CLOSE for a stale file
+             * handle.
+             *
+             * NOTICE: according POSIX, the opened file must be still accessible
+             * after remove as long as it not closed. We violate that requirement
+             * in favor of dCache shared state simplicity.
+             */
+            Objects.requireNonNull(client).releaseState(stateid);
+            throw new StaleException("File is removed", e);
         } catch (CacheException | ChimeraFsException | TimeoutException | ExecutionException e) {
             throw asNfsException(e, LayoutTryLaterException.class);
         } catch (InterruptedException e) {
