@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.dcache</groupId>
-    <version>4.1.15-SNAPSHOT</version>
+    <version>4.1.16-SNAPSHOT</version>
     <artifactId>dcache-parent</artifactId>
     <packaging>pom</packaging>
 
@@ -72,6 +72,7 @@
         <version.xrootd4j>3.2.2</version.xrootd4j>
         <version.jersey>2.26</version.jersey>
         <version.dcache-view>1.4.4</version.dcache-view>
+        <version.dcache-view>1.4.3</version.dcache-view>
         <version.netty>4.1.10.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.1.7</version.swagger-ui>
