@@ -504,7 +504,12 @@ public class NearlineStorageHandler
         protected synchronized <T> ListenableFuture<T> register(ListenableFuture<T> future)
         {
             if (state.get() == State.CANCELED) {
-                future.cancel(true);
+                /*
+                 * do not interrupt thread as we don't know how
+                 * it will react on it (BerkeleyDB will require
+                 * to re-open db).
+                 */
+                future.cancel(false);
             } else {
                 asyncTasks.add(future);
             }
@@ -538,7 +543,12 @@ public class NearlineStorageHandler
                 storage.cancel(uuid);
                 synchronized(this) {
                     for (Future<?> task : asyncTasks) {
-                        task.cancel(true);
+                        /*
+                         * do not interrupt thread as we don't know how
+                         * it will react on it (BerkeleyDB will require
+                         * to re-open db).
+                         */
+                        task.cancel(false);
                     }
                 }
             }
