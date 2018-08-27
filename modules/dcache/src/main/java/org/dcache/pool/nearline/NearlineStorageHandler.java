@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2018 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -810,8 +810,9 @@ public class NearlineStorageHandler
         public FlushRequestImpl(NearlineStorage nearlineStorage, PnfsId pnfsId) throws CacheException, InterruptedException
         {
             super(nearlineStorage);
-            infoMsg = new StorageInfoMessage(cellAddress, pnfsId, false);
             descriptor = repository.openEntry(pnfsId, NO_FLAGS);
+            infoMsg = new StorageInfoMessage(cellAddress, pnfsId, false);
+            infoMsg.setStorageInfo(descriptor.getFileAttributes().getStorageInfo());
             String path = descriptor.getFileAttributes().getStorageInfo().getKey("path");
             if (path != null) {
                 infoMsg.setBillingPath(path);
