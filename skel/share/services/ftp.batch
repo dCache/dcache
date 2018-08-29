@@ -86,6 +86,10 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -brokerPort=${ftp.loginbroker.port} \
    -gplazma=\"${ftp.service.gplazma}\" \
    -billing=\"${ftp.service.billing}\" \
+   -kafka=\"${ftp.enable.kafka}\" \
+   -bootstrap-server-kafka=\"${ftp.kafka.bootstrap-servers}\" \
+   -max-block-ms-kafka=600\
+   -retries-kafka=0 \
    -pnfsManager=\"${ftp.service.pnfsmanager}\" \
    -pnfsTimeout=${ftp.service.pnfsmanager.timeout} \
    -pnfsTimeoutUnit=${ftp.service.pnfsmanager.timeout.unit} \
