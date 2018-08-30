@@ -117,13 +117,16 @@
         </constructor-arg>
     </bean>
 
+    <bean id="pnfs-stub"  class="org.dcache.cells.CellStub">
+        <description>PNFS manager communication stub</description>
+        <property name="destination" value="${nfs.service.pnfsmanager}"/>
+        <property name="timeout" value="${nfs.service.pnfsmanager.timeout}"/>
+        <property name="timeoutUnit" value="${nfs.service.pnfsmanager.timeout.unit}"/>
+    </bean>
+
     <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
         <description>PNFS manager client module</description>
-        <constructor-arg>
-            <bean class="dmg.cells.nucleus.CellPath">
-                <constructor-arg value="${nfs.service.pnfsmanager}"/>
-            </bean>
-        </constructor-arg>
+        <constructor-arg ref="pnfs-stub"/>
     </bean>
 
     <bean id="login-stub" class="org.dcache.cells.CellStub">
