@@ -17,6 +17,12 @@
  */
 package org.dcache.pool.statistics;
 
+import java.io.PrintWriter;
+
+import org.dcache.util.LineIndentingPrintWriter;
+
+import static org.dcache.util.Strings.toThreeSigFig;
+
 /**
  * An immutable snapshot of statistics describing the channel usage since it
  * was created.  Statistics of both read and write activity are provided;
@@ -47,5 +53,58 @@ public class IoStatistics
     public DirectedIoStatistics writes()
     {
         return writes;
+    }
+
+    public boolean hasReads()
+    {
+        return reads.statistics().requestedBytes().getN() > 0;
+    }
+
+    public boolean hasWrites()
+    {
+        return writes.statistics().requestedBytes().getN() > 0;
+    }
+
+    private static String ratioDescription(long reads, long writes)
+    {
+        if (reads <= writes) {
+            return toThreeSigFig(writes / (double)reads, 1000)
+                    + " writes for every read (on average)";
+        } else {
+            return toThreeSigFig(reads / (double)writes, 1000)
+                    + " reads for every write (on average)";
+        }
+    }
+
+    private static String percent(long n, long total)
+    {
+        return toThreeSigFig(100 * n / (double)total, 1000) + "%";
+    }
+
+    public void getInfo(PrintWriter pw)
+    {
+        long readCount = reads.statistics().requestedBytes().getN();
+        long writeCount = writes.statistics().requestedBytes().getN();
+
+        if (hasReads() && hasWrites()) {
+            long totalCount = readCount + writeCount;
+            PrintWriter indented = new LineIndentingPrintWriter(pw, "    ");
+
+            pw.println("Request ratio: " + ratioDescription(readCount, writeCount));
+
+            pw.println("Read statistics:");
+            indented.println("Requests: " + readCount + " (" + percent(readCount, totalCount) + " of all requests)");
+            reads.getInfo(indented);
+
+            pw.println("Write statistics:");
+            indented.println("Requests: " + writeCount + " (" + percent(writeCount, totalCount) + " of all requests)");
+            writes.getInfo(indented);
+        } else if (hasReads()) {
+            pw.println("Requests: " + readCount);
+            reads.getInfo(pw);
+        } else if (hasWrites()) {
+            pw.println("Requests: " + writeCount);
+            writes.getInfo(pw);
+        }
     }
 }
