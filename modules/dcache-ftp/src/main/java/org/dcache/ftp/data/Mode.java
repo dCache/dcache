@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -14,17 +15,20 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.Strings;
 
 import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.Strings.*;
 
 /**
  * Base class for FTP transfer mode implementations.
@@ -47,7 +51,7 @@ public abstract class Mode extends AbstractMultiplexerListener
 
     private   long              _size;
 
-    private   long              _fileSize;
+    protected   long              _fileSize;
 
     /** Buffer for transferTo and transferFrom. */
     private final ByteBuffer        _buffer = ByteBuffer.allocate(KiB.toBytes(8));
@@ -57,6 +61,9 @@ public abstract class Mode extends AbstractMultiplexerListener
 
     /** The channel used for incomming connections. */
     private   ServerSocketChannel _channel;
+
+    /** Local adress of _channel.  Cached to avoid ClosedChannelException. */
+    private SocketAddress _listeningOn;
 
     /** Size of send and recv buffer when larger than 0. */
     private   int               _bufferSize;
@@ -77,8 +84,12 @@ public abstract class Mode extends AbstractMultiplexerListener
     /** Number of connections that have been closed. */
     protected int               _closed;
 
-    /** Remote addresses of data channels connected by this class. */
-    private final Set<InetSocketAddress> _remoteAddresses = new HashSet<>();
+    /** Addresses of data channels.  For PASSIVE transfers (Direction.Incomming)
+     * this is a list of remote addresses; for ACTIVE transfers
+     * (Direction.Outgoing) this is a list of local transfes. */
+    private final List<InetSocketAddress> _addresses = new ArrayList<>();
+
+    private String _lastFailure;
 
     /** Constructs a new mode for outgoing connections. */
     public Mode(Role role, RepositoryChannel file, ConnectionMonitor monitor)
@@ -101,6 +112,11 @@ public abstract class Mode extends AbstractMultiplexerListener
 
         _direction = Direction.Incomming;
         _channel   = channel;
+        try {
+            _listeningOn = channel.getLocalAddress();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("ServerSocketChannel not bound: " + e, e);
+        }
     }
 
     /**
@@ -176,7 +192,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     /** Returns the remote addresses the mode connected with. */
     public Collection<InetSocketAddress> getRemoteAddresses()
     {
-        return Collections.unmodifiableCollection(_remoteAddresses);
+        return Collections.unmodifiableCollection(_addresses);
     }
 
     /**
@@ -325,6 +341,7 @@ public abstract class Mode extends AbstractMultiplexerListener
                     displayAddress = remoteAddress.toString();
                 }
                 LOGGER.warn("Problem with {}: {}", displayAddress, e.getMessage());
+                _lastFailure = e.toString();
                 _failed++;
 
                 if (allConnectionsEstablished()) {
@@ -348,7 +365,7 @@ public abstract class Mode extends AbstractMultiplexerListener
             return InetAddresses.toUriString(_address.getAddress()) + ":" + _address.getPort();
 
         case Incomming:
-            Set<String> addresses = _remoteAddresses.stream().map(a ->
+            Set<String> addresses = _addresses.stream().map(a ->
                     InetAddresses.toUriString(a.getAddress()) + ":" + a.getPort()).
                     collect(Collectors.toSet());
             return addresses.size() == 1 ? Iterables.getOnlyElement(addresses) :
@@ -409,7 +426,7 @@ public abstract class Mode extends AbstractMultiplexerListener
             Socket socket = channel.socket();
             _opened++;
             LOGGER.debug("Opened {}", socket);
-            _remoteAddresses.add((InetSocketAddress) socket.getRemoteSocketAddress());
+            _addresses.add((InetSocketAddress) socket.getRemoteSocketAddress());
             channel.configureBlocking(false);
             if (_bufferSize > 0) {
                 channel.socket().setSendBufferSize(_bufferSize);
@@ -438,10 +455,11 @@ public abstract class Mode extends AbstractMultiplexerListener
                 Socket socket = channel.socket();
                 _opened++;
                 LOGGER.debug("Opened {}", socket);
-                _remoteAddresses.add((InetSocketAddress) socket.getRemoteSocketAddress());
+                _addresses.add((InetSocketAddress) socket.getLocalSocketAddress());
                 newConnection(multiplexer, channel);
             }
         } catch (IOException e) {
+            _lastFailure = e.toString();
             _failed++;
             if (_failed == _parallelism) {
                 throw e;
@@ -539,6 +557,55 @@ public abstract class Mode extends AbstractMultiplexerListener
                                           SocketChannel channel)
         throws IOException;
 
+
+    public void getInfo(PrintWriter pw)
+    {
+        switch (_direction) {
+        case Incomming:
+            pw.println("Connection role: PASSIVE");
+            pw.println("Listening on: " + describe(_listeningOn));
+            if (_lastFailure != null) {
+                pw.println("Last failure: " + _lastFailure);
+            }
+            if (_opened > 0) {
+                pw.println("Accepted connections: " + _opened);
+                pw.println("Connected remote addresses:");
+                _addresses.stream().map(Strings::describe).forEach(a -> pw.println("    " + a));
+            }
+            break;
+
+        case Outgoing:
+            pw.println("Connection role: ACTIVE");
+            pw.println("Connecting to: " + describe(_address));
+            pw.println("Connections to establish: " + _parallelism);
+            if (_failed > 0) {
+                pw.println("Failures to establish connection: " + _failed);
+            }
+            if (_lastFailure != null) {
+                pw.println("Last failure: " + _lastFailure);
+            }
+            if (_opened > 0) {
+                pw.println("Established connections: " + _opened);
+                pw.println("Connected local addresses:");
+                _addresses.stream().map(Strings::describe).forEach(a -> pw.println("    " + a));
+            }
+            break;
+        }
+        pw.println("Closed connections: " + _closed);
+
+        if (_size > 0) {
+            if (_fileSize > 0) {
+                String percent = toThreeSigFig(100 * _size / (double)_fileSize, 1000);
+                pw.println("Desired transferred: " + describeSize(_size) + " (" + percent + "% of file)");
+            } else {
+                pw.println("Desired transferred: " + describeSize(_size));
+            }
+        }
+    }
+
+    abstract public String name();
+
+    abstract public boolean hasCompletedSuccessfully();
 }
 
 

@@ -9,12 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+
+import org.dcache.util.LineIndentingPrintWriter;
 
 /**
  * This class decorates any RepositoryChannel and updates statistics for
@@ -48,6 +52,10 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     private int concurrentReads;
     private int concurrentWrites;
     private boolean isClosed;
+    private Instant firstRead;
+    private Instant latestRead;
+    private Instant firstWrite;
+    private Instant latestWrite;
 
     public IoStatisticsChannel(RepositoryChannel channel)
     {
@@ -78,12 +86,19 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
         }
 
         return new IoStatistics(
-                new DirectedIoStatistics(readIdleNow, readActiveNow, reads),
-                new DirectedIoStatistics(writeIdleNow, writeActiveNow, writes));
+                new DirectedIoStatistics(readIdleNow, readActiveNow,
+                        firstRead, latestRead, reads),
+                new DirectedIoStatistics(writeIdleNow, writeActiveNow,
+                        firstWrite, latestWrite, writes));
     }
 
     private synchronized int writeStarted()
     {
+        Instant now = Instant.now();
+        if (firstWrite == null) {
+            firstWrite = now;
+        }
+        latestWrite = now;
         if (!isClosed && concurrentWrites == 0) {
             writeIdle.stop();
             writeActive.start();
@@ -103,6 +118,11 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
 
     private synchronized int readStarted()
     {
+        Instant now = Instant.now();
+        if (firstRead == null) {
+            firstRead = now;
+        }
+        latestRead = now;
         if (!isClosed && concurrentReads == 0) {
             readIdle.stop();
             readActive.start();
@@ -302,5 +322,21 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
         }
 
         channel.close();
+    }
+
+    public void getInfo(PrintWriter pw)
+    {
+        IoStatistics stats = getStatistics();
+
+        if (stats.hasReads() && stats.hasWrites()) {
+            pw.println("Disk IO statistics:");
+            stats.getInfo(new LineIndentingPrintWriter(pw, "    "));
+        } else if (stats.hasReads()) {
+            pw.println("Disk IO read statistics:");
+            stats.getInfo(new LineIndentingPrintWriter(pw, "    "));
+        } else if (stats.hasWrites()) {
+            pw.println("Disk IO write statistics:");
+            stats.getInfo(new LineIndentingPrintWriter(pw, "    "));
+        }
     }
 }
