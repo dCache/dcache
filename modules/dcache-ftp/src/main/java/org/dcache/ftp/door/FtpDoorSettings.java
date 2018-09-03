@@ -189,6 +189,11 @@ public class FtpDoorSettings
             description = "Root path")
     protected String root;
 
+    @Option(name = "log-aborted-transfers",
+            description = "If enabled, the state of a transfer is logged when the client aborts.",
+            defaultValue = "false")
+    protected boolean logAbortedTransfers;
+
     public PortRange getPortRange()
     {
         return portRange;
@@ -202,6 +207,11 @@ public class FtpDoorSettings
     public boolean isReadOnly()
     {
         return readOnly;
+    }
+
+    public boolean logAbortedTransfers()
+    {
+        return logAbortedTransfers;
     }
 
     public int getMaxRetries()

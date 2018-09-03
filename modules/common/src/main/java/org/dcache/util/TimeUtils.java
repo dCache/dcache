@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -432,6 +433,12 @@ public class TimeUtils
         return appendRelativeTimestamp(new StringBuilder(), when, current);
     }
 
+    public static CharSequence relativeTimestamp(Instant when)
+    {
+        return appendRelativeTimestamp(new StringBuilder(), when.toEpochMilli(),
+                System.currentTimeMillis(), TimeUnitFormat.SHORT);
+    }
+
     /**
      * Append a description of some point in time using some reference point.
      * The appended text is {@code <timestamp> <space> <open-parenth> <integer>
@@ -445,6 +452,12 @@ public class TimeUtils
     public static StringBuilder appendRelativeTimestamp(StringBuilder sb,
             long when, long current)
     {
+        return appendRelativeTimestamp(sb, when, current, TimeUnitFormat.LONG);
+    }
+
+    public static StringBuilder appendRelativeTimestamp(StringBuilder sb,
+            long when, long current, TimeUnitFormat format)
+    {
         checkArgument(when > 0);
         checkArgument(current > 0);
 
@@ -453,7 +466,7 @@ public class TimeUtils
 
         long diff = Math.abs(when - current);
         sb.append(" (");
-        appendDuration(sb, diff, MILLISECONDS, TimeUnitFormat.LONG);
+        appendDuration(sb, diff, MILLISECONDS, format);
         sb.append(' ');
         sb.append(when < current ? "ago" : "in the future");
         sb.append(')');
