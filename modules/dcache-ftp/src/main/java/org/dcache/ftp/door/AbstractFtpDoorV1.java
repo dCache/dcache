@@ -78,6 +78,8 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -867,6 +869,9 @@ public abstract class AbstractFtpDoorV1
     protected TransferRetryPolicy _readRetryPolicy;
     protected TransferRetryPolicy _writeRetryPolicy;
 
+    protected KafkaProducer _kafkaProducer;
+
+
     /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
 
@@ -977,6 +982,13 @@ public abstract class AbstractFtpDoorV1
             setPoolManagerStub(_poolManagerStub);
             setPoolStub(AbstractFtpDoorV1.this._poolStub);
             setBillingStub(_billingStub);
+
+            if(_settings.isKafkaEnabled()){
+                setKafkaSender(m -> {
+                    _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>("billing", m));
+                });
+            }
+
             setAllocation(_allo);
             setIoQueue(_settings.getIoQueueName());
 
@@ -1465,6 +1477,13 @@ public abstract class AbstractFtpDoorV1
                 : InetAddress.getByName(_settings.getInternalAddress());
 
         _billingStub = _settings.createBillingStub(_cellEndpoint);
+
+        if (_settings.isKafkaEnabled()) {
+            _kafkaProducer = _settings.createKafkaProducer(_settings.getKafkaBootstrapServer(),
+                                                           _cellAddress.toString(),
+                                                           _settings.getKafkaMaxBlockMs(),
+                                                           _settings.getKafkaRetries());
+        }
         _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint, _cellAddress, _poolManagerHandler);
         _poolStub = _settings.createPoolStub(_cellEndpoint);
         _gPlazmaStub = _settings.createGplazmaStub(_cellEndpoint);
@@ -4373,7 +4392,17 @@ public abstract class AbstractFtpDoorV1
         infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
 
         _billingStub.notify(infoRemove);
-     }
+
+        if(_settings.isKafkaEnabled()){
+            _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>("billing", infoRemove), (rm, e) -> {
+                if (e != null) {
+                    LOGGER.error("Unable to send message to topic {} on  partition {}: {}",
+                            rm.topic(), rm.partition(), e.getMessage());
+                }
+            });
+        }
+
+    }
 
     /** A short format which only includes the file name. */
     static class ShortListPrinter implements DirectoryListPrinter

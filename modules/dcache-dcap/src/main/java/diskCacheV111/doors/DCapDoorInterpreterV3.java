@@ -5,6 +5,8 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.google.common.net.InetAddresses;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,6 +173,8 @@ public class DCapDoorInterpreterV3
     private final CellStub _pinManagerStub;
     private final PoolManagerStub _poolMgrStub;
 
+    private KafkaProducer _kafkaProducer;
+
     /**
      * The client PID set through the hello command. Only used for
      * billing purposes.
@@ -225,6 +229,13 @@ public class DCapDoorInterpreterV3
         _poolMgrStub = settings.createPoolManagerStub(cell, address, poolManagerHandler);
         _pinManagerStub = settings.createPinManagerStub(cell);
         _loginStrategy = settings.createLoginStrategy(cell);
+
+        if ( _settings.isKafkaEnabled() ){
+            _kafkaProducer = settings.createKafkaProducer(_settings.getKafkaBootstrapServer(),
+                    address.toString(),
+                    _settings.getKafkaMaxBlockMs(),
+                    _settings.getKafkaRetries());
+        }
 
         _startedTS = new Date();
     }
@@ -2509,5 +2520,21 @@ public class DCapDoorInterpreterV3
 
     private void postToBilling(DoorRequestInfoMessage info) {
         _cell.sendMessage(new CellMessage(_settings.getBilling(), info));
+
+        if ( _settings.isKafkaEnabled() ){
+            sendAsynctoKafka(info);
+        }
     }
+
+    private void sendAsynctoKafka(DoorRequestInfoMessage info) {
+
+        ProducerRecord<String, DoorRequestInfoMessage> record = new ProducerRecord<String, DoorRequestInfoMessage>("billing", info);
+        _kafkaProducer.send(record, (rm, e) -> {
+            if (e != null) {
+                _log.error("Unable to send message to topic {} on  partition {}: {}",
+                        rm.topic(), rm.partition(), e.getMessage());
+            }
+        });
+    }
+
 }

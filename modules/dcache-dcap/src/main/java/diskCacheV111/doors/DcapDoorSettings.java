@@ -23,6 +23,7 @@ import com.google.common.base.Strings;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CheckStagePermission;
@@ -31,6 +32,8 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.dcache.auth.CachingLoginStrategy;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.UnionLoginStrategy;
@@ -76,6 +79,21 @@ public class DcapDoorSettings
             description = "Cell address of billing",
             defaultValue = "billing")
     protected CellPath billing;
+
+    @Option(name = "kafka",
+            description = "Kafka service enabled",
+            defaultValue = "false")
+    protected boolean isKafkaEnabled;
+
+    @Option(name = "bootstrap-server-kafka")
+    protected String kafkaBootstrapServer;
+
+    @Option(name = "max-block-ms-kafka")
+    protected String kafkaMaxBlockMs;
+
+    @Option(name = "retries-kafka")
+    protected String kafkaRetries;
+
 
     @Option(name = "hsm",
             description = "Cell address of hsm manager",
@@ -202,6 +220,47 @@ public class DcapDoorSettings
         return billing;
     }
 
+    /**
+     *  Returns Kafka service enabled
+     *  If enabled, the various dCache services, like pools and doors will publish messages to
+     *   a Kafka cluster after each transfer.
+     *
+     * @return true if the user wants to send messages to Kafka
+     */
+    public boolean isKafkaEnabled() {
+        return isKafkaEnabled;
+    }
+
+    /**
+     * Returns a list of host/port pairs (brokers) to use for establishing the initial connection to the Kafka cluster.
+     * This list is just used to discover the rest of the brokers in the cluster and should be in the form
+     * host1:port1,host2:port2,....
+     *
+     * @return    the list of  of host/port pairs
+     */
+    public String getKafkaBootstrapServer() {
+        return kafkaBootstrapServer;
+    }
+
+    /**
+     * Returns the parameter that controls how long
+     * how long the producer will block when calling send().
+     *
+     * @retrun a timeframe during which producer will block sending messages, by default set to 60000
+     */
+    public String getKafkaMaxBlockMs() {
+        return kafkaMaxBlockMs;
+    }
+
+    /**
+     * Returns the number of retries that the producer will retry sending the messages before failing it.
+     *
+     *  @return number of retries, set to 0 by default
+     */
+    public String getKafkaRetries() {
+        return kafkaRetries;
+    }
+
     public CellPath getHsmManager()
     {
         return hsmManager;
@@ -285,6 +344,24 @@ public class DcapDoorSettings
         stub.setMaximumPoolManagerTimeoutUnit(TimeUnit.MILLISECONDS);
         return stub;
     }
+
+    public KafkaProducer createKafkaProducer(String bootstrap_server,
+                                             String client_id,
+                                             String max_block_ms,
+                                             String retries)
+    {
+        Properties props = new Properties();
+
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_server);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, client_id);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.dcache.notification.DoorRequestMessageSerializer");
+        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, max_block_ms);
+        props.put(ProducerConfig.RETRIES_CONFIG, retries);
+
+        return new KafkaProducer<>(props);
+    }
+
 
     public CellStub createPinManagerStub(CellEndpoint cell)
     {
