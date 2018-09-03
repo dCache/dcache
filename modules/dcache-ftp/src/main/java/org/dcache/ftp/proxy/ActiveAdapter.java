@@ -86,6 +86,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.Strings.indentLines;
 
 /**
  * The ActiveAdapter relays data by accepting TCP connections and establishing
@@ -679,6 +680,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         pw.println("    Proxy status:");
         ProxyPrinter proxy = new ProxyPrinter();
         _tunnels.forEach(t -> proxy.client(t._sct.socket()).pool(t._scs.socket()).add());
-        pw.println(proxy);
+        pw.println(indentLines("        ", proxy.toString()));
     }
 }

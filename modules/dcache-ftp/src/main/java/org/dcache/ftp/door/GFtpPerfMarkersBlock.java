@@ -68,6 +68,10 @@ COPYRIGHT STATUS:
 
 package org.dcache.ftp.door;
 
+import java.io.PrintWriter;
+
+import org.dcache.util.LineIndentingPrintWriter;
+
 /**
  * <p>Title: GFtpPerfMarkersBlock</p>
  * <p>Description: Block of GridFtp Performance Markers</p>
@@ -159,5 +163,20 @@ public class GFtpPerfMarkersBlock {
             sum += marker.getstripeBytesTransferred();
         }
         return sum;
+    }
+
+    public void getInfo(PrintWriter pw)
+    {
+        if (getLength() == 1) {
+            markers[0].getInfo(pw);
+        } else {
+            pw.println("Total transferred: " + getBytesTransferred() + " bytes");
+            if (markers != null) {
+                for (GFtpPerfMarker marker : markers) {
+                    pw.println("Stripe: " + marker.getStripeIndex());
+                    marker.getInfo(new LineIndentingPrintWriter(pw, "    "));
+                }
+            }
+        }
     }
 }
