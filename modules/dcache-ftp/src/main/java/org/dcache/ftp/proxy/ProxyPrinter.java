@@ -104,7 +104,9 @@ public class ProxyPrinter
         if (sa instanceof InetSocketAddress) {
             InetSocketAddress isa = (InetSocketAddress)sa;
             return isa.getAddress().getHostAddress() + ":" + isa.getPort();
-        } else {
+        } else if (sa == null) {
+            return "[unknown]";
+        } else  {
             return sa.toString();
         }
     }
