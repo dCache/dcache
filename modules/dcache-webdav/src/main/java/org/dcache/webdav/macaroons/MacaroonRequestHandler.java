@@ -233,24 +233,32 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         return expiry;
     }
 
-    private MacaroonContext buildContext(String target, Request request) throws ErrorResponseException
-    {
+    private MacaroonContext buildContext(String target, Request request) throws ErrorResponseException {
+
         MacaroonContext context = new MacaroonContext();
 
         FsPath userRoot = FsPath.ROOT;
         for (LoginAttribute attr : AuthenticationHandler.getLoginAttributes(request)) {
             if (attr instanceof HomeDirectory) {
-                context.setHome(FsPath.ROOT.resolve(((HomeDirectory)attr).getHome()));
+                context.setHome(FsPath.ROOT.resolve(((HomeDirectory) attr).getHome()));
             } else if (attr instanceof RootDirectory) {
-                userRoot = FsPath.ROOT.resolve(((RootDirectory)attr).getRoot());
+                userRoot = FsPath.ROOT.resolve(((RootDirectory) attr).getRoot());
             } else if (attr instanceof Expiry) {
-                context.updateExpiry(((Expiry)attr).getExpiry());
+                context.updateExpiry(((Expiry) attr).getExpiry());
             } else if (attr instanceof DenyActivityRestriction) {
-                context.removeActivities(((DenyActivityRestriction)attr).getDenied());
+                context.removeActivities(((DenyActivityRestriction) attr).getDenied());
             } else if (attr instanceof PrefixRestriction) {
-                ImmutableSet<FsPath> paths = ((PrefixRestriction)attr).getPrefixes();
-                checkArgument(paths.size() == 1, "Cannot serialise with multiple path restrictions");
-                context.setPath(paths.iterator().next());
+                ImmutableSet<FsPath> paths = ((PrefixRestriction) attr).getPrefixes();
+                if (target.equals("/")) {
+                    checkArgument(paths.size() == 1, "Cannot serialise with multiple path restrictions");
+                    context.setPath(paths.iterator().next());
+                } else {
+                    FsPath desiredPath = _pathMapper.asDcachePath(request, target);
+                    if (!paths.stream().anyMatch(desiredPath::hasPrefix)) {
+                        throw new ErrorResponseException(SC_BAD_REQUEST, "Bad request path: Desired path not within existing path");
+                     }
+                    context.setPath(desiredPath);
+                }
             } else if (attr instanceof Restriction) {
                 throw new ErrorResponseException(SC_BAD_REQUEST, "Cannot serialise restriction " + attr.getClass().getSimpleName());
             }
@@ -260,18 +268,7 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         context.setUid(Subjects.getUid(subject));
         context.setGids(Subjects.getGids(subject));
         context.setUsername(Subjects.getUserName(subject));
-
         context.setRoot(_pathMapper.effectiveRoot(userRoot, m -> new ErrorResponseException(SC_BAD_REQUEST, m)));
-
-        try {
-            if (!target.equals("/")) {
-                FsPath desiredPath = _pathMapper.asDcachePath(request, target);
-                checkCaveat(desiredPath.hasPrefix(context.getPath().orElse(FsPath.ROOT)), "Desired path not within existing path");
-                context.setPath(desiredPath);
-            }
-        } catch (InvalidCaveatException e) {
-            throw new ErrorResponseException(SC_BAD_REQUEST, "Bad request path: " + e.getMessage());
-        }
 
         return context;
     }
