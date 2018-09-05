@@ -113,9 +113,18 @@ public class DcacheDirectoryResource
         } catch (FileNotFoundCacheException e) {
             return Collections.emptyList();
         } catch (PermissionDeniedCacheException e) {
-            throw WebDavExceptions.permissionDenied(e.getMessage(), e, this);
+            // Theoretically, we should throw NotAuthorizedException here.  The
+            // problem is that Milton reacts badly to this, and aborts the whole
+            // PROPFIND request, even if the affected directory is not the primary
+            // one.  Milton accepts a null response as equivalent to
+            // Collections.emptyList()
+            return null;
         } catch (CacheException | InterruptedException e) {
-            throw new WebDavException(e.getMessage(), e, this);
+            // We currently have no way to indicate a temporary failure for this
+            // directory and throwing any kind of exception will abort the whole
+            // PROPFIND request; therefore, we return null.  Milton accepts a
+            // null response as equivalent to Collections.emptyList()
+            return null;
         }
     }
 
