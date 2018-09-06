@@ -30,7 +30,7 @@ public class StickyRecord implements Serializable {
 		return isNonExpiring() || _expire > time;
 	}
 
-	private boolean isNonExpiring()
+	public boolean isNonExpiring()
 	{
 	    return _expire == NON_EXPIRING;
 	}
