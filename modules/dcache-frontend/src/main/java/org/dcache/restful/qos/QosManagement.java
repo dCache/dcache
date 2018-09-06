@@ -21,6 +21,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
@@ -40,6 +41,7 @@ public class QosManagement {
     public static final String DISK = "disk";
     public static final String TAPE = "tape";
     public static final String DISK_TAPE = "disk+tape";
+    public static final String VOLATILE = "volatile";
     public static final String UNAVAILABLE = "unavailable";
 
     public static List<String> cdmi_geographic_placement_provided = Arrays.asList("DE");
@@ -70,21 +72,15 @@ public class QosManagement {
 
             // query the lis of available QoS for file objects
             if ("file".equals(qosValue)) {
-
-                JSONArray list = new JSONArray(Arrays.asList(DISK, TAPE, DISK_TAPE));
+                JSONArray list = new JSONArray(Arrays.asList(DISK, TAPE, DISK_TAPE, VOLATILE));
                 json.put("name", list);
-
             }
             // query the lis of available QoS for directory objects
             else if ("directory".equals(qosValue.trim())) {
-
-                JSONArray list = new JSONArray(Arrays.asList(DISK, TAPE));
+                JSONArray list = new JSONArray(Arrays.asList(DISK, TAPE, DISK_TAPE, VOLATILE));
                 json.put("name", list);
-
-
             } else {
                 throw new NotFoundException();
-
             }
 
             json.put("status", "200");
@@ -150,6 +146,10 @@ public class QosManagement {
                 setBackendCapability(backendCapability, DISK_TAPE, Arrays.asList(TAPE), qoSMetadata);
 
             }
+            else if (VOLATILE.equals(qosValue)) {
+                QoSMetadata qoSMetadata = new QoSMetadata("0", cdmi_geographic_placement_provided, "100");
+                setBackendCapability(backendCapability, VOLATILE, Arrays.asList(DISK), qoSMetadata);
+            }
             // The QoS is not known or supported.
             else {
                 throw new NotFoundException();
@@ -209,6 +209,15 @@ public class QosManagement {
 
                 QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "600000");
                 setBackendCapability(backendCapability, TAPE, Arrays.asList(DISK), qoSMetadata);
+            }
+            // Set data and metadata for "Disk & TAPE" QoS
+            else if (DISK_TAPE.equals(qosValue)) {
+                QoSMetadata qoSMetadata = new QoSMetadata("2", cdmi_geographic_placement_provided, "100");
+                setBackendCapability(backendCapability, DISK_TAPE, Collections.emptyList(), qoSMetadata);
+            }
+            else if (VOLATILE.equals(qosValue)) {
+                QoSMetadata qoSMetadata = new QoSMetadata("0", cdmi_geographic_placement_provided, "100");
+                setBackendCapability(backendCapability, VOLATILE, Collections.emptyList(), qoSMetadata);
             }
             // The QoS is not known or supported.
             else {
