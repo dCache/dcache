@@ -197,9 +197,8 @@
               <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
               <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer"/>
               <entry key="client.id" value="${xrootd.cell.name}@${dcache.domain.name}" />
-              <!-- TODO  values for max.block.ms and retries are important for Non Blocking (Async) callback.-->
-              <!-- maximum time producer.send() will block by default set to 60000. Could be changed latter. -->
-              <entry key="max.block.ms" value="0" />
+              <entry key="max.block.ms"
+                     value="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${xrootd.kafka.maximum-block}, '${xrootd.kafka.maximum-block.unit}')}" />
               <!-- The maximum number of times to retry a call before failing it.-->
               <entry key="retries" value="0" />
             </map>

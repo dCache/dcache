@@ -88,8 +88,11 @@ public class DcapDoorSettings
     @Option(name = "bootstrap-server-kafka")
     protected String kafkaBootstrapServer;
 
-    @Option(name = "max-block-ms-kafka")
-    protected String kafkaMaxBlockMs;
+    @Option(name = "kafka-max-block", required = true)
+    protected long kafkaMaxBlock;
+
+    @Option(name = "kafka-max-block-units", required = true)
+    protected TimeUnit kafkaMaxBlockUnits;
 
     @Option(name = "retries-kafka")
     protected String kafkaRetries;
@@ -249,7 +252,7 @@ public class DcapDoorSettings
      * @retrun a timeframe during which producer will block sending messages, by default set to 60000
      */
     public String getKafkaMaxBlockMs() {
-        return kafkaMaxBlockMs;
+        return String.valueOf(TimeUnit.MILLISECONDS.convert(kafkaMaxBlock, kafkaMaxBlockUnits));
     }
 
     /**
