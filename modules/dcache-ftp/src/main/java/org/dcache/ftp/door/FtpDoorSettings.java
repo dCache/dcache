@@ -53,8 +53,11 @@ public class FtpDoorSettings
     @Option(name = "bootstrap-server-kafka")
     protected String kafkaBootstrapServer;
 
-    @Option(name = "max-block-ms-kafka")
-    protected String kafkaMaxBlockMs;
+    @Option(name = "kafka-max-block", required = true)
+    protected long kafkaMaxBlock;
+
+    @Option(name = "kafka-max-block-units", required = true)
+    protected TimeUnit kafkaMaxBlockUnits;
 
     @Option(name = "retries-kafka")
     protected String kafkaRetries;
@@ -367,7 +370,7 @@ public class FtpDoorSettings
      * @retrun a timeframe during which producer will block when calling send()
      */
     public String getKafkaMaxBlockMs() {
-        return kafkaMaxBlockMs;
+        return String.valueOf(TimeUnit.MILLISECONDS.convert(kafkaMaxBlock, kafkaMaxBlockUnits));
     }
 
     /**
