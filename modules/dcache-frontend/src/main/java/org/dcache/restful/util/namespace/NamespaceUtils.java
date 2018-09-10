@@ -3,7 +3,6 @@ package org.dcache.restful.util.namespace;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.InternalServerErrorException;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.RetentionPolicy;
@@ -16,6 +15,10 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
+import org.dcache.pool.classic.ALRPReplicaStatePolicy;
+import org.dcache.pool.classic.ReplicaStatePolicy;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
@@ -26,6 +29,19 @@ import org.dcache.vehicles.FileAttributes;
  *    information.</p>
  */
 public final class NamespaceUtils {
+
+    /*
+     * FIXME Here the code is assuming the pluggable behaviour of whichever
+     * pool a new file lands on.  Currently, pools have a hard-code policy
+     * factory (LFSReplicaStatePolicyFactory), which yields two possibilities:
+     * VolatileReplicaStatePolicy if lsf is "volatile" or "transient", or
+     * ALRPReplicaStatePolicy otherwise.
+     *
+     * In the following statement, we assume files always land on non-volatile
+     * pools.
+     */
+    private static final ReplicaStatePolicy POOL_POLICY = new ALRPReplicaStatePolicy();
+
     /**
      * <p>Add quality-of-service attributes (pinned, locality, etc.) </p>
      *
@@ -74,14 +90,7 @@ public final class NamespaceUtils {
                 break;
 
             case NONE: // NONE implies the target is a directory.
-                if (attributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
-                    json.setCurrentQos(attributes.getAccessLatency()
-                                                       == AccessLatency.ONLINE ?
-                                                       QosManagement.DISK :
-                                                       QosManagement.TAPE);
-                } else {
-                    json.setCurrentQos(QosManagement.UNAVAILABLE);
-                }
+                json.setCurrentQos(directoryQoS(attributes));
                 break;
 
             case UNAVAILABLE:
@@ -94,6 +103,18 @@ public final class NamespaceUtils {
                 // error cases
                 throw new InternalServerErrorException(
                                 "Unexpected file locality: " + locality);
+        }
+    }
+
+    private static String directoryQoS(FileAttributes attributes)
+    {
+        ReplicaState state = POOL_POLICY.getTargetState(attributes);
+        boolean isSticky = POOL_POLICY.getStickyRecords(attributes).stream()
+                .anyMatch(StickyRecord::isNonExpiring);
+        if (state == ReplicaState.PRECIOUS) {
+            return isSticky ? QosManagement.DISK_TAPE : QosManagement.TAPE;
+        } else {
+            return isSticky ? QosManagement.DISK : QosManagement.VOLATILE;
         }
     }
 
