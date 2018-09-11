@@ -132,7 +132,7 @@
 
             <properties>
                 <build.id>1</build.id>
-                <local.version />
+		<local.version>PM1</local.version>
                 <build.number>${build.id}${local.version}</build.number>
 
                 <Timestamp>${maven.build.timestamp}</Timestamp>
@@ -238,7 +238,7 @@
 
             <properties>
                 <build.id>1</build.id>
-                <local.version />
+		<local.version>PM1</local.version>
                 <revision>${build.id}${local.version}</revision>
 
                 <Version>${deb.version}-${revision}</Version>
@@ -321,7 +321,7 @@
 
             <properties>
                 <build.id>1</build.id>
-                <local.version />
+		<local.version>PM1</local.version>
                 <build.number>${build.id}${local.version}</build.number>
 
                 <Timestamp>${maven.build.timestamp}</Timestamp>
