@@ -1,11 +1,18 @@
 package org.dcache.ftp.data;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.dcache.pool.repository.RepositoryChannel;
+
+import static org.dcache.util.Exceptions.messageOrClassName;
+import static org.dcache.util.Strings.describeSize;
+import static org.dcache.util.Strings.toThreeSigFig;
 
 /**
  * Implementation of MODE E.
@@ -55,6 +62,23 @@ public class ModeE extends Mode
     private long _eodc;
 
     /**
+     * Whether the transfer has started.
+     */
+    private volatile boolean _transferStarted;
+
+    /**
+     * Number of active channels.
+     */
+    private final AtomicLong _activeDataChannels = new AtomicLong();
+
+    /**
+     * Number of channels that closed in error.
+     */
+    private final LongAdder _errorDataChannels = new LongAdder();
+
+    private String _lastError;
+
+    /**
      * Implementation of send in mode E. There will be an instance per
      * data channel. The sender repeatedly bites _blockSize bytes of
      * the file and transfers it as a single block. I.e.
@@ -100,6 +124,19 @@ public class ModeE extends Mode
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
             throws IOException, FTPException
+        {
+            try {
+                doWrite(multiplexer, key);
+            } catch (IOException | FTPException e) {
+                _activeDataChannels.decrementAndGet();
+                _errorDataChannels.increment();
+                _lastError = messageOrClassName(e);
+                throw e;
+            }
+        }
+
+        private void doWrite(Multiplexer multiplexer, SelectionKey key)
+                throws IOException, FTPException
         {
             switch (_state) {
             case PREPARE_BLOCK:
@@ -163,6 +200,7 @@ public class ModeE extends Mode
                  */
                 if (_count == 0) {
                     close(multiplexer, key, true);
+                    _activeDataChannels.decrementAndGet();
                     break;
                 }
                 _state = SEND_DATA;
@@ -223,7 +261,20 @@ public class ModeE extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-            throws IOException, FTPException, InterruptedException
+                throws IOException, FTPException
+        {
+            try {
+                doRead(multiplexer, key);
+            } catch (IOException | FTPException e) {
+                _activeDataChannels.decrementAndGet();
+                _errorDataChannels.increment();
+                _lastError = messageOrClassName(e);
+                throw e;
+            }
+        }
+
+        private void doRead(Multiplexer multiplexer, SelectionKey key)
+                throws IOException, FTPException
         {
             /* _count is zero when we have received all of the
              * previous block. We expect to read the header of the
@@ -245,6 +296,7 @@ public class ModeE extends Mode
                         throw new FTPException("Stream ended before EOD");
                     }
                     close(multiplexer, key, _opened == _eodc);
+                    _activeDataChannels.decrementAndGet();
                     return;
                 }
 
@@ -313,6 +365,7 @@ public class ModeE extends Mode
                      */
                     if ((_flags & EOD_DESCRIPTOR) != 0) {
                         close(multiplexer, key, _opened == _eodc);
+                        _activeDataChannels.decrementAndGet();
                     }
                     return;
                 }
@@ -333,6 +386,7 @@ public class ModeE extends Mode
              */
             if (_count == 0 && (_flags & EOD_DESCRIPTOR) != 0) {
                 close(multiplexer, key, _opened == _eodc);
+                _activeDataChannels.decrementAndGet();
             }
         }
     }
@@ -360,6 +414,8 @@ public class ModeE extends Mode
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
         throws IOException
     {
+        _transferStarted = true;
+        _activeDataChannels.incrementAndGet();
         switch (_role) {
         case Sender:
             multiplexer.add(new Sender(socket));
@@ -368,5 +424,44 @@ public class ModeE extends Mode
             multiplexer.add(new Receiver(socket));
             break;
         }
+    }
+
+    @Override
+    public String name()
+    {
+        return "E (Extended)";
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        super.getInfo(pw);
+
+        switch (_direction) {
+        case Incomming:
+            pw.println("EOF flag: " + (_eodc == 0 ? "not received" : "received"));
+            if (_eodc > 0) {
+                pw.println("Expected streams: " + _eodc);
+            }
+            break;
+
+        case Outgoing:
+            String percent = getSize() > 0
+                    ? (" (" + toThreeSigFig(100 * _currentCount / (double)getSize(), 1000) + "% desired transfer)")
+                    : "";
+            pw.println("Bytes still to send: " + describeSize(_currentCount) + percent);
+            pw.println("Offset of next send block: " + describeSize(_currentPosition));
+            break;
+        }
+
+        if (_lastError != null) {
+            pw.println("Last error: " + _lastError);
+        }
+    }
+
+    @Override
+    public boolean hasCompletedSuccessfully()
+    {
+        return _transferStarted && _activeDataChannels.get() == 0 && _errorDataChannels.longValue() == 0;
     }
 }

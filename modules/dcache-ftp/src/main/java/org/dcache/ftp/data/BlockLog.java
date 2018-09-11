@@ -1,8 +1,14 @@
 package org.dcache.ftp.data;
 
+import java.io.PrintWriter;
 import java.text.MessageFormat;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static org.dcache.util.Strings.humanReadableSize;
 
 /**
  * A log of transferred blocks. Adjacent blocks are merged, so for a
@@ -196,5 +202,25 @@ public class BlockLog
     {
         _limit = limit;
         notifyAll();
+    }
+
+    private Function<Map.Entry<Long,Long>,String> asHumanReadable()
+    {
+        if (_blocks.size() <= 1) {
+            return e -> humanReadableSize(e.getKey()) + "--" + humanReadableSize(e.getValue());
+        } else {
+            return e -> humanReadableSize(e.getKey()) + "--" + humanReadableSize(e.getValue())
+                        + " (" + humanReadableSize(e.getValue() - e.getKey()) + ")";
+        }
+    }
+
+    public synchronized void getInfo(PrintWriter pw)
+    {
+        pw.println("Transferred blocks: " + _blocks.entrySet().stream()
+                .map(e -> e.getKey() + "--" + e.getValue())
+                .collect(Collectors.joining(", ")));
+        pw.println("Transferred blocks: " + _blocks.entrySet().stream()
+                .map(asHumanReadable())
+                .collect(Collectors.joining(", ")));
     }
 }

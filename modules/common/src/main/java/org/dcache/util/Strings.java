@@ -3,7 +3,7 @@ package org.dcache.util;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.net.InetAddresses;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Instant;
@@ -343,30 +344,122 @@ public final class Strings {
                 .collect(Collectors.joining("\n"));
     }
 
-    public static String describeBandwidthMean(SummaryStatistics bandwidth)
+    public static String describeBandwidth(StatisticalSummary bandwidth)
     {
-        double mean = bandwidth.getMean();
-        double sem = bandwidth.getStandardDeviation() / Math.sqrt(bandwidth.getN());
-        if (sem == 0) {
-            return describeBandwidth(mean);
-        }
+        double min = bandwidth.getMin();
+        double max = bandwidth.getMax();
+        double sd = bandwidth.getStandardDeviation();
 
-        ByteUnit units = BINARY.unitsOf(mean);
-        double scaledMean = units.convert(mean, ByteUnit.BYTES);
-        double scaledSem = units.convert(sem, ByteUnit.BYTES);
-        return "(" + toThreeSigFig(scaledMean, 1024) + " ± " + toThreeSigFig(scaledSem, 1024)
-                + ") " + isoSymbol().of(units) + "/s";
+        if (min == max) {
+            return describeBandwidth(max);
+        } else {
+            double mean = bandwidth.getMean();
+            double sem = bandwidth.getStandardDeviation() / Math.sqrt(bandwidth.getN());
+            String meanDescription;
+            if (sem == 0) {
+                meanDescription = describeBandwidth(mean);
+            } else {
+                ByteUnit units = BINARY.unitsOf(mean);
+                double scaledMean = units.convert(mean, ByteUnit.BYTES);
+                double scaledSem = units.convert(sem, ByteUnit.BYTES);
+                meanDescription = "(" + toThreeSigFig(scaledMean, 1024, scaledSem) + ") "
+                        + isoSymbol().of(units) + "/s";
+            }
+
+            return "min. " + describeBandwidth(min)
+                    + ", mean " + meanDescription
+                    + ", SD " + describeBandwidth(sd)
+                    + ", max. " + describeBandwidth(max);
+        }
     }
 
-    public static String describeSize(long size)
+    public static String describeSize(StatisticalSummary size)
+    {
+        long min = Math.round(size.getMin());
+        long max = Math.round(size.getMax());
+        if (min == max) {
+            return describeSize(max);
+        } else {
+            double mean = size.getMean();
+            double sem = size.getStandardDeviation() / Math.sqrt(size.getN());
+            String meanDescription;
+            if (sem == 0) {
+                meanDescription = describeSize(Math.round(mean));
+            } else {
+                ByteUnit units = BINARY.unitsOf(mean);
+                double scaledMean = units.convert(mean, ByteUnit.BYTES);
+                double scaledSem = units.convert(sem, ByteUnit.BYTES);
+                meanDescription = "(" + toThreeSigFig(scaledMean, 1024, scaledSem) + ") " + isoSymbol().of(units);
+            }
+
+            long sd = Math.round(size.getStandardDeviation());
+            return "min. " + describeSize(min)
+                    + ", mean " + meanDescription
+                    + ", SD " + describeSize(sd)
+                    + ", max. " + describeSize(max);
+        }
+    }
+
+    public static String describeInteger(StatisticalSummary statistics)
+    {
+        long min = Math.round(statistics.getMin());
+        long max = Math.round(statistics.getMax());
+
+        if (min == max) {
+            return String.valueOf(max);
+        } else {
+            double mean = statistics.getMean();
+            double sd = statistics.getStandardDeviation();
+            double sem = sd / Math.sqrt(statistics.getN());
+
+            String meanDescription;
+            if (sem == 0) {
+                meanDescription = String.valueOf(Math.round(mean));
+            } else {
+                meanDescription = "(" + toThreeSigFig(mean, 1000, sem) + ")";
+            }
+
+            return " min. " + min
+                        + ", mean " + meanDescription
+                        + ", SD " + toThreeSigFig(sd, 1000)
+                        + ", max. " + max;
+        }
+    }
+
+    /**
+     * Provide a file/data size (in bytes) a human readable form, using binary units
+     * and ISO symbols.  For example, 10 --> "10 B",  2560 --> "2.5 KiB".
+     * @param size The size to represent.
+     * @return a String describing this value.
+     */
+    public static String humanReadableSize(long size)
     {
         ByteUnit units = BINARY.unitsOf(size);
-        if (units == ByteUnit.BYTES) {
-            return String.valueOf(size);
+        return toThreeSigFig(units.convert((double)size, ByteUnit.BYTES), 1024)
+                + " " + isoSymbol().of(units);
+    }
+
+    /**
+     * Provide a description of a file/data size (in bytes).  The output shows
+     * the exact number with units ("B").  If the value is larger than 1 KiB
+     * then the scaled value is shown in the most appropriate units.  For
+     * example 10 --> "10 B", 2560 --> "2560 B (2.5 KiB)".
+     * @param size The size to represent.
+     * @return a String describing this value.
+     */
+    public static String describeSize(long size)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(size).append(' ').append(isoSymbol().of(ByteUnit.BYTES));
+
+        ByteUnit units = BINARY.unitsOf(size);
+        if (units != ByteUnit.BYTES) {
+            sb.append(" (").append(toThreeSigFig(units.convert((double)size, ByteUnit.BYTES), 1024))
+                    .append(' ').append(isoSymbol().of(units)).append(')');
         }
 
-        return size + " (" + toThreeSigFig(units.convert((double)size, ByteUnit.BYTES), 1024)
-                + " " + isoSymbol().of(units) + ")";
+        return sb.toString();
     }
 
     public static String describeBandwidth(double value)
@@ -394,9 +487,36 @@ public final class Strings {
         return THREE_SIG_FIG_FORMAT.format(value);
     }
 
-    public static String describe(InetSocketAddress address)
+    public static String toThreeSigFig(double value, double max, double uncertainty)
     {
-        return InetAddresses.toUriString(address.getAddress()) + ":" + address.getPort();
+        if (uncertainty == 0) {
+            return toThreeSigFig(value, max);
+        }
+
+        if (value == 0) {
+            return "0 ± " + toThreeSigFig(uncertainty, max);
+        }
+
+        if (value >= 1) {
+            if (value < 10) {
+                return String.format("%.2f", value) + " ± " + String.format("%.2f", uncertainty);
+            } else if (value < 100) {
+                return String.format("%.1f", value) + " ± " + String.format("%.1f", uncertainty);
+            } else if (value < max) {
+                return String.format("%.0f", value) + " ± " + String.format("%.0f", uncertainty);
+            }
+        }
+        return THREE_SIG_FIG_FORMAT.format(value) + " ± " + THREE_SIG_FIG_FORMAT.format(uncertainty);
+    }
+
+    public static String describe(SocketAddress address)
+    {
+        if (address instanceof InetSocketAddress) {
+            InetSocketAddress inet = (InetSocketAddress) address;
+            return InetAddresses.toUriString(inet.getAddress()) + ":" + inet.getPort();
+        } else {
+            return address.toString();
+        }
     }
 
     public static CharSequence describe(Optional<Instant> when)
