@@ -19,10 +19,10 @@
 package org.dcache.gplazma.roles;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 
 import java.security.Principal;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -37,8 +37,6 @@ import org.dcache.auth.attributes.UnassertedRole;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
  * A plugin for processing a user's DesiredRole principals and, if authorised,
  * adding the corresponding Role.
@@ -48,18 +46,16 @@ public class RolesPlugin implements GPlazmaSessionPlugin
     @VisibleForTesting
     static final String ADMIN_GID_PROPERTY_NAME = "gplazma.roles.admin-gid";
 
-    private final long adminGid;
+    @VisibleForTesting
+    static final String OBSERVER_GID_PROPERTY_NAME = "gplazma.roles.observer-gid";
+
+    private final Long adminGid;
+    private final Long observerGid;
 
     public RolesPlugin(Properties properties)
     {
-        String adminGidProperty = properties.getProperty(ADMIN_GID_PROPERTY_NAME);
-        checkArgument(adminGidProperty != null, "Undefined property: " + ADMIN_GID_PROPERTY_NAME);
-        try {
-            this.adminGid = Long.parseLong(adminGidProperty, 10);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Badly formatted " +
-                    ADMIN_GID_PROPERTY_NAME + " value: " + e);
-        }
+        this.adminGid = getGidForRole(properties, ADMIN_GID_PROPERTY_NAME);
+        this.observerGid = getGidForRole(properties, OBSERVER_GID_PROPERTY_NAME);
     }
 
     @Override
@@ -94,13 +90,41 @@ public class RolesPlugin implements GPlazmaSessionPlugin
 
     private Set<Role> allAuthorizedRoles(Set<Principal> principals)
     {
-        if (principals.stream()
-                    .filter(GidPrincipal.class::isInstance)
-                    .map(GidPrincipal.class::cast)
-                    .mapToLong(GidPrincipal::getGid)
-                    .anyMatch(gid -> gid == adminGid)) {
-            return Collections.singleton(LoginAttributes.adminRole());
+        Set<Role> roles = new HashSet<>();
+
+        /*
+         *  It is possible for the admin and observer gids to be the same,
+         *  so unfortunately we need to check them separately.
+         */
+        principals.stream()
+                  .filter(GidPrincipal.class::isInstance)
+                  .map(GidPrincipal.class::cast)
+                  .map(GidPrincipal::getGid)
+                  .forEach((gid) -> {
+                      if (adminGid != null && gid == adminGid) {
+                          roles.add(LoginAttributes.adminRole());
+                      }
+
+                      if (observerGid != null && gid == observerGid) {
+                          roles.add(LoginAttributes.observerRole());
+                      }
+                  });
+
+        return roles;
+    }
+
+    private static Long getGidForRole(Properties properties, String name)
+    {
+        String property = Strings.emptyToNull(properties.getProperty(name));
+
+        if (property == null) {
+            return null;
         }
-        return Collections.emptySet();
+
+        try {
+            return Long.parseLong(property, 10);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Badly formatted " + name + " value: " + e);
+        }
     }
 }
