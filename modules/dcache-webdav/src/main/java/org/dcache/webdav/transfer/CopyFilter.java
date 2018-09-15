@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2018 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,8 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
+import eu.emi.security.authn.x509.impl.OpensslNameUtils;
+import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
 import io.milton.http.Request;
@@ -28,35 +30,35 @@ import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.servlet.ServletRequest;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.AccessController;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdClientSecret;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
-import org.dcache.cells.CellStub;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
@@ -384,7 +386,7 @@ public class CopyFilter implements Filter
             }
         } else if (clientAuthnUsingOidc()) {
             source = CredentialSource.OIDC;
-        } else if (clientAuthnUsingX509()) {
+        } else if (clientSuppliedX509Certificate()) {
             source = CredentialSource.GRIDSITE;
         } else {
             source = CredentialSource.NONE;
@@ -404,12 +406,16 @@ public class CopyFilter implements Filter
         Subject subject = Subject.getSubject(AccessController.getContext());
         switch (source) {
         case GRIDSITE:
-            String dn = Subjects.getDn(subject);
-            if (dn == null) {
-                throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
-                                                 "user must present valid X.509 certificate");
-            }
-
+            // Use the X.509 identity from TLS, even if that wasn't used to
+            // establish the user's identity.  This allows the local activity of
+            // the COPY (i.e., the ability to read a file, or create a new file)
+            // to be authorized based on some non-X.509 identity, while using a
+            // delegated X.509 credential when authenticating for the
+            // third-party copy, based on the client credential presented when
+            // establishing the TLS connection.
+            String dn = getTlsIdentity().orElseThrow(() ->
+                    new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
+                            "user must present valid X.509 certificate"));
             return _credentialService.getDelegatedCredential(
                     dn, Objects.toString(Subjects.getPrimaryFqan(subject), null),
                     20, MINUTES);
@@ -541,10 +547,31 @@ public class CopyFilter implements Filter
                 .anyMatch(OidcSubjectPrincipal.class::isInstance);
     }
 
-    private boolean clientAuthnUsingX509()
+    private Optional<X509Certificate> getTlsEndEntityCertificate()
     {
-        return Subject.getSubject(AccessController.getContext()).getPrincipals().stream()
-                .anyMatch(GlobusPrincipal.class::isInstance);
+        HttpServletRequest request = ServletRequest.getRequest();
+        return Optional.ofNullable(request.getAttribute("javax.servlet.request.X509Certificate"))
+                .filter(X509Certificate[].class::isInstance)
+                .map(X509Certificate[].class::cast)
+                .map(ProxyUtils::getEndUserCertificate)
+                .filter(Objects::nonNull);
+    }
+
+    private boolean clientSuppliedX509Certificate()
+    {
+        return getTlsEndEntityCertificate().isPresent();
+    }
+
+    /**
+     * Provide the Distinguished Name (DN) of the End-Entity Certificate (EEC)
+     * used when establishing the TLS connection.
+     */
+    private Optional<String> getTlsIdentity()
+    {
+        return getTlsEndEntityCertificate()
+                .map(X509Certificate::getSubjectX500Principal)
+                .map(X500Principal::getName)
+                .map(n -> OpensslNameUtils.convertFromRfc2253(n, true));
     }
 
     private static <T> Predicate<T> not(Predicate<T> t) {
