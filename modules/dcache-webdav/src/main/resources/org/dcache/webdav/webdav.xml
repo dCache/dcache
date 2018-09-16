@@ -123,6 +123,7 @@
   <bean id="remote-transfer-handler" class="org.dcache.webdav.transfer.RemoteTransferHandler">
       <description>Coordinate transfers</description>
 
+      <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="transferManagerStub" ref="transfer-manager-stub"/>
       <property name="performanceMarkerPeroid"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
@@ -144,7 +145,6 @@
       <description>Handles requests for 3rd-party copies</description>
 
       <property name="credentialServiceClient" ref="credential-service-client"/>
-      <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
       <property name="pathMapper" ref="path-mapper"/>
       <property name="oidClientIds" ref="oidc-client-ids"/>
