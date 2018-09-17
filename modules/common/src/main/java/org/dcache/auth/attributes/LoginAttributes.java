@@ -28,7 +28,9 @@ import diskCacheV111.util.FsPath;
 public class LoginAttributes
 {
     public static final String ADMIN_ROLE_NAME = "admin";
+    public static final String OBSERVER_ROLE_NAME = "observer";
     private static final Role ADMIN_ROLE = new Role(ADMIN_ROLE_NAME);
+    private static final Role OBSERVER_ROLE = new Role(OBSERVER_ROLE_NAME);
 
     private LoginAttributes()
     {
@@ -43,7 +45,7 @@ public class LoginAttributes
     {
         FsPath root = FsPath.ROOT;
         for (LoginAttribute attribute : attributes) {
-            if (attribute.equals(ADMIN_ROLE)) {
+            if (attribute.equals(ADMIN_ROLE) || attribute.equals(OBSERVER_ROLE)) {
                 return FsPath.ROOT;
             }
             if (attribute instanceof RootDirectory) {
@@ -58,12 +60,19 @@ public class LoginAttributes
         return ADMIN_ROLE;
     }
 
+    public static Role observerRole()
+    {
+        return OBSERVER_ROLE;
+    }
+
     public static boolean hasAdminRole(Collection<LoginAttribute> attributes)
     {
-        return attributes.stream()
-                .filter(Role.class::isInstance)
-                .map(Role.class::cast)
-                .anyMatch(r -> r.equals(ADMIN_ROLE));
+        return attributes.stream().anyMatch(ADMIN_ROLE::equals);
+    }
+
+    public static boolean hasObserverRole(Collection<LoginAttribute> attributes)
+    {
+        return attributes.stream().anyMatch(OBSERVER_ROLE::equals);
     }
 
     public static Stream<String> assertedRoles(Collection<LoginAttribute> attributes)
