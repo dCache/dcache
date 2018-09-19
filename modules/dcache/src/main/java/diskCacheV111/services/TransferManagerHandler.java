@@ -765,15 +765,11 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public void setState(int istate)
     {
         this.state = istate;
-        TransferManagerHandlerState ts = new TransferManagerHandlerState(this, null);
-        manager.persist(ts);
     }
 
     public void setState(int istate, Object errorObject)
     {
         this.state = istate;
-        TransferManagerHandlerState ts = new TransferManagerHandlerState(this, errorObject);
-        manager.persist(ts);
     }
 
     public void setMoverId(Integer moverid)
