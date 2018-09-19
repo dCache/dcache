@@ -1743,6 +1743,14 @@ public abstract class AbstractFtpDoorV1
     @Override
     public void shutdown()
     {
+        /*The producer consists of a pool of buffer space that holds records that haven't yet been
+          transmitted to the server as well as a background I/O thread
+          that is responsible for turning these records into requests and transmitting them to the cluster.
+          Failure to close the producer after use will leak these resources. Hence we need to  flush and close Kafka Producer
+         */
+        _kafkaProducer.flush();
+        _kafkaProducer.close();
+
         /* In case of failure, we may have a transfer hanging around.
          */
         Transfer transfer = getTransfer();

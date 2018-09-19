@@ -249,7 +249,7 @@
                     </constructor-arg>
                 </bean>
             </constructor-arg>
-            <constructor-arg name="autoFlush" value="false" />
+            <constructor-arg name="autoFlush" value="${nfs.kafka.autoflush}"/>
             <property name="defaultTopic" value="billing"/>
             <property name="producerListener" ref="listener"/>
         </bean>
