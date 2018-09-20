@@ -2476,6 +2476,17 @@ public class DCapDoorInterpreterV3
     }
 
     public void close() {
+
+
+        /*The producer consists of a pool of buffer space that holds records that haven't yet been
+          transmitted to the server as well as a background I/O thread
+          that is responsible for turning these records into requests and transmitting them to the cluster.
+          Failure to close the producer after use will leak these resources. Hence we need to  close Kafka Producer
+         */
+        if (_settings.isKafkaEnabled()) {
+            _kafkaProducer.close();
+        }
+
         for(SessionHandler sh: _sessions.values()) {
             try {
                 sh.removeUs();
