@@ -53,10 +53,12 @@ public class FtpDoorSettings
     @Option(name = "bootstrap-server-kafka")
     protected String kafkaBootstrapServer;
 
-    @Option(name = "kafka-max-block", required = true)
+    @Option(name = "kafka-max-block",
+            defaultValue = "1")
     protected long kafkaMaxBlock;
 
-    @Option(name = "kafka-max-block-units", required = true)
+    @Option(name = "kafka-max-block-units",
+            defaultValue = "SECONDS")
     protected TimeUnit kafkaMaxBlockUnits;
 
     @Option(name = "retries-kafka")
