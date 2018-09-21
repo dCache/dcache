@@ -59,7 +59,9 @@ public enum Activity
 
     /**
      * Create a new file within dCache.  Note that creating new directory or a
-     * new sym-link is the MANAGE Activity.
+     * new sym-link normally requires the MANAGE Activity, but UPLOAD is
+     * sufficient to create missing parent directories for an otherwise allowed
+     * upload.
      * <p>
      * There are two kinds of UPLOAD activity: a specific upload and querying
      * support for uploading.  For the former, the target is the path of the
