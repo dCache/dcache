@@ -1168,7 +1168,12 @@ public class PnfsManagerV3
             switch (type) {
             case DIR:
                 _log.info("create directory {}", path);
-                checkRestrictionOnParent(pnfsMessage, MANAGE);
+                // as a special case, if the user is allowed to upload into
+                // a child directory then they are also allowed to create this
+                // directory
+                if (!pnfsMessage.getRestriction().hasUnrestrictedChild(UPLOAD, pnfsMessage.getFsPath())) {
+                    checkRestrictionOnParent(pnfsMessage, MANAGE);
+                }
 
                 PnfsId pnfsId = _nameSpaceProvider.createDirectory(subject, path,
                         assign);

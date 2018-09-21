@@ -182,6 +182,12 @@ public class Restrictions
         }
 
         @Override
+        public boolean hasUnrestrictedChild(Activity activity, FsPath parent)
+        {
+            return !restrictions.stream().anyMatch(r -> !r.hasUnrestrictedChild(activity, parent));
+        }
+
+        @Override
         public boolean equals(Object other)
         {
             if (!(other instanceof CompositeRestriction)) {
