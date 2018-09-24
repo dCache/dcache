@@ -89,7 +89,8 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -billing=\"${ftp.service.billing}\" \
    -kafka=\"${ftp.enable.kafka}\" \
    -bootstrap-server-kafka=\"${ftp.kafka.bootstrap-servers}\" \
-   -max-block-ms-kafka=600\
+   -kafka-max-block=${ftp.kafka.maximum-block}\
+   -kafka-max-block-units=${ftp.kafka.maximum-block.unit}\
    -retries-kafka=0 \
    -pnfsManager=\"${ftp.service.pnfsmanager}\" \
    -pnfsTimeout=${ftp.service.pnfsmanager.timeout} \
