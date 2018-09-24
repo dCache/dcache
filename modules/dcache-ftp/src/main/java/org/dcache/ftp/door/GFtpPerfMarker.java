@@ -240,10 +240,7 @@ public class GFtpPerfMarker {
         pw.println("Last updated: " + describe(lastUpdated()));
         SummaryStatistics bandwidth = getBandwidthStatistics();
         if (bandwidth.getN() > 0) {
-            pw.println("Bandwidth:"
-                    + " min. " + describeBandwidth(bandwidth.getMin())
-                    + ", mean " + describeBandwidthMean(bandwidth)
-                    + ", max. " + describeBandwidth(bandwidth.getMax()));
+            pw.println("Bandwidth: " + describeBandwidth(bandwidth));
         }
         Optional<Instant> stall = stalledSince();
         if (stall.isPresent()) {
