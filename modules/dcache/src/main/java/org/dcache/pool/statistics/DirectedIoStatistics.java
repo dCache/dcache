@@ -17,7 +17,12 @@
  */
 package org.dcache.pool.statistics;
 
+import java.io.PrintWriter;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
+
+import static org.dcache.util.TimeUtils.describe;
 
 
 /**
@@ -29,19 +34,26 @@ public class DirectedIoStatistics
     private final SnapshotStatistics _statistics;
     private final Duration _idle;
     private final Duration _active;
+    private final Instant _firstAccess;
+    private final Instant _latestAccess;
 
     public DirectedIoStatistics()
     {
         _idle = Duration.ZERO;
         _active = Duration.ZERO;
+        _firstAccess = null;
+        _latestAccess = null;
         _statistics = new SnapshotStatistics();
     }
 
     public DirectedIoStatistics(Duration idle, Duration active,
+            Instant firstAccess, Instant latestAccess,
             LiveStatistics statistics)
     {
         _idle = idle;
         _active = active;
+        _firstAccess = firstAccess;
+        _latestAccess = latestAccess;
         _statistics = statistics.snapshot();
     }
 
@@ -68,5 +80,14 @@ public class DirectedIoStatistics
     public Duration active()
     {
         return _active;
+    }
+
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("First request: " + org.dcache.util.Strings.describe(Optional.ofNullable(_firstAccess)));
+        pw.println("Latest request: " + org.dcache.util.Strings.describe(Optional.ofNullable(_latestAccess)));
+        pw.println("Active: " + describe(_active).orElse("never active"));
+        pw.println("Idle: " + describe(_idle).orElse("never idle"));
+        _statistics.getInfo(pw);
     }
 }

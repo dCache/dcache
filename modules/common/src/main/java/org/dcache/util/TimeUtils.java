@@ -2,20 +2,28 @@ package org.dcache.util;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.*;
+import static org.dcache.util.Strings.toThreeSigFig;
 
 /**
  * Utility classes for dealing with time and durations, mostly with pretty-
@@ -379,44 +387,134 @@ public class TimeUtils
         Map<TimeUnit,String> unitsFormat = (unitFormat == TimeUnitFormat.SHORT)
                 ? SHORT_TIMEUNIT_NAMES : LONG_TIMEUNIT_NAMES;
 
+        TimeUnit targetUnit = displayUnitFor(duration, units);
+        return sb.append(targetUnit.convert(duration, units)).append(' ').
+                    append(unitsFormat.get(targetUnit));
+    }
+
+
+    public static TimeUnit displayUnitFor(long duration, TimeUnit units)
+    {
         if (units == NANOSECONDS && duration < MICROSECONDS.toNanos(2)) {
-            sb.append(units.toNanos(duration)).append(' ').
-                    append(unitsFormat.get(NANOSECONDS));
-            return sb;
+            return NANOSECONDS;
         }
 
-        if (units.toMicros(duration) < MILLISECONDS.toMillis(2) &&
+        if (units.toMicros(duration) < MILLISECONDS.toMicros(2) &&
                 units.compareTo(MICROSECONDS) <= 0) {
-            sb.append(units.toMicros(duration)).append(' ').
-                    append(unitsFormat.get(MICROSECONDS));
-            return sb;
+            return MICROSECONDS;
         }
 
         long durationInMillis = units.toMillis(duration);
 
         if (durationInMillis < SECONDS.toMillis(2) &&
                 units.compareTo(MILLISECONDS) <= 0) {
-            sb.append(durationInMillis).append(' ').
-                    append(unitsFormat.get(MILLISECONDS));
+            return MILLISECONDS;
         } else if (durationInMillis < MINUTES.toMillis(2) &&
                 units.compareTo(SECONDS) <= 0) {
-            sb.append(units.toSeconds(duration)).append(' ').
-                    append(unitsFormat.get(SECONDS));
+            return SECONDS;
         } else if (durationInMillis < HOURS.toMillis(2) &&
                 units.compareTo(MINUTES) <= 0) {
-            sb.append(units.toMinutes(duration)).append(' ').
-                    append(unitsFormat.get(MINUTES));
+            return MINUTES;
         } else if (durationInMillis < DAYS.toMillis(2) &&
                 units.compareTo(HOURS) <= 0) {
-            sb.append(units.toHours(duration)).append(' ').
-                    append(unitsFormat.get(HOURS));
+            return HOURS;
         } else {
-            sb.append(units.toDays(duration)).append(' ').
-                    append(unitsFormat.get(DAYS));
+            return DAYS;
+        }
+    }
+
+    private static double seconds(Duration duration)
+    {
+        return duration.getSeconds() + duration.getNano() / 1_000_000_000.0;
+    }
+
+    private static String convert(Duration duration, ChronoUnit unit, String name)
+    {
+        double value = seconds(duration) / seconds(unit.getDuration());
+        return toThreeSigFig(value, 2000) + " " + name;
+    }
+
+    private static Optional<String> inUnits(Duration duration, ChronoUnit unit, String name)
+    {
+        Duration cutoff = unit.getDuration().multipliedBy(2);
+        if (duration.compareTo(cutoff) >= 0) {
+            return Optional.of(convert(duration, unit, name));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<String> describe(Duration duration)
+    {
+        if (duration.isZero()) {
+            return Optional.empty();
         }
 
-        return sb;
+        Optional<String> value = inUnits(duration, ChronoUnit.DAYS, "days");
+        if (!value.isPresent()) {
+            value = inUnits(duration, ChronoUnit.HOURS, "hours");
+        }
+        if (!value.isPresent()) {
+            value = inUnits(duration, ChronoUnit.MINUTES, "minutes");
+        }
+        if (!value.isPresent()) {
+            value = inUnits(duration, ChronoUnit.SECONDS, "s");
+        }
+        if (!value.isPresent()) {
+            value = inUnits(duration, ChronoUnit.MILLIS, "ms");
+        }
+        if (!value.isPresent()) {
+            value = inUnits(duration, ChronoUnit.MICROS, "\u00B5s");
+        }
+        if (!value.isPresent()) {
+            value = Optional.of(convert(duration, ChronoUnit.NANOS, "ns"));
+        }
+        return value;
     }
+
+    public static String describeDuration(double duration, TimeUnit units)
+    {
+        TimeUnit targetUnits = displayUnitFor(Math.round(duration), units);
+        double scaledDuration = convert(duration, units, targetUnits);
+        return toThreeSigFig(scaledDuration, 2000) + " " + SHORT_TIMEUNIT_NAMES.get(targetUnits);
+    }
+
+    public static String describeDuration(StatisticalSummary duration, TimeUnit units)
+    {
+        double min = duration.getMin();
+        double max = duration.getMax();
+
+        if (min == max) {
+            return describeDuration(max, units);
+        } else {
+            double mean = duration.getMean();
+            double sem = duration.getStandardDeviation() / Math.sqrt(duration.getN());
+            String meanDescription;
+            if (sem == 0) {
+                meanDescription = describeDuration(mean, units);
+            } else {
+                TimeUnit targetUnits = displayUnitFor(Math.round(mean), units);
+                double scaledMean = convert(mean, units, targetUnits);
+                double scaledSem = convert(sem, units, targetUnits);
+
+                meanDescription = "(" + toThreeSigFig(scaledMean, 2000, scaledSem) + ") "
+                        + SHORT_TIMEUNIT_NAMES.get(targetUnits);
+            }
+
+            double sd = duration.getStandardDeviation();
+
+            return " min. " + describeDuration(min, units)
+                        + ", mean " + meanDescription
+                        + ", SD " + describeDuration(sd, units)
+                        + ", max. " + describeDuration(max, units);
+        }
+    }
+
+    private static double convert(double source, TimeUnit sourceUnits, TimeUnit targetUnits)
+    {
+        return source / sourceUnits.convert(1, targetUnits);
+    }
+
 
     /**
      * Returns a description of some point in time using some reference point.
