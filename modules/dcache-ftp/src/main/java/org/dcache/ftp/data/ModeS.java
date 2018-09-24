@@ -1,15 +1,22 @@
 package org.dcache.ftp.data;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 import org.dcache.pool.repository.RepositoryChannel;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 /** Implementation of MODE S. */
 public class ModeS extends Mode
 {
     private final int _blockSize;
+    private volatile boolean _transferStarted;
+    private volatile boolean _transferCompleted;
+    private volatile boolean _transferFailed;
+    private String _lastError;
 
     /* Implements MODE S send operation. */
     private class Sender extends AbstractMultiplexerListener
@@ -33,6 +40,18 @@ public class ModeS extends Mode
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
+                throws IOException, FTPException
+        {
+            try {
+                doWrite(multiplexer, key);
+            } catch (IOException | FTPException e) {
+                _transferFailed = true;
+                _lastError = messageOrClassName(e);
+                throw e;
+            }
+        }
+
+        private void doWrite(Multiplexer multiplexer, SelectionKey key)
             throws IOException, FTPException
         {
             long nbytes = transferTo(_position, _count, _socket);
@@ -46,6 +65,7 @@ public class ModeS extends Mode
              */
             if (_count == 0) {
                 close(multiplexer, key, true);
+                _transferCompleted = true;
             }
         }
     }
@@ -70,11 +90,24 @@ public class ModeS extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-            throws IOException, InterruptedException, FTPException
+                throws IOException, InterruptedException, FTPException
+        {
+            try {
+                doRead(multiplexer, key);
+            } catch (IOException | FTPException e) {
+                _transferFailed = true;
+                _lastError = messageOrClassName(e);
+                throw e;
+            }
+        }
+
+        private void doRead(Multiplexer multiplexer, SelectionKey key)
+                throws IOException, FTPException
         {
             long nbytes = transferFrom(_socket, _position, _blockSize);
             if (nbytes == -1) {
                 close(multiplexer, key, true);
+                _transferCompleted = true;
             } else {
                 _monitor.receivedBlock(_position, nbytes);
                 _position += nbytes;
@@ -94,6 +127,7 @@ public class ModeS extends Mode
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
         throws IOException
     {
+        _transferStarted = true;
         switch (_role) {
         case Sender:
             multiplexer.add(new Sender(socket));
@@ -102,5 +136,26 @@ public class ModeS extends Mode
             multiplexer.add(new Receiver(socket));
             break;
         }
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        super.getInfo(pw);
+        if (_lastError != null) {
+            pw.println("Last error: " + _lastError);
+        }
+    }
+
+    @Override
+    public String name()
+    {
+        return "S (Stream)";
+    }
+
+    @Override
+    public boolean hasCompletedSuccessfully()
+    {
+        return _transferStarted && _transferCompleted && !_transferFailed;
     }
 }
