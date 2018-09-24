@@ -50,10 +50,6 @@ public class StorageInfoMessageSerializer implements Serializer<StorageInfoMessa
 
         o.put("session", data.getTransaction());
 
-        JSONArray subject = new JSONArray();
-        data.getSubject().getPrincipals().forEach(s -> subject.put(s));
-        o.put("subject", subject);
-
         o.put("pnfsid", data.getPnfsId());
         o.put("billingPath", data.getBillingPath());
         o.put("fileSize", data.getFileSize());
