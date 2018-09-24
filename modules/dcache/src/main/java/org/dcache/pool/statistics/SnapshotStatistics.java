@@ -20,6 +20,14 @@ package org.dcache.pool.statistics;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummaryValues;
 
+import java.io.PrintWriter;
+
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static org.dcache.util.Strings.describeBandwidth;
+import static org.dcache.util.Strings.describeInteger;
+import static org.dcache.util.Strings.describeSize;
+import static org.dcache.util.TimeUtils.describeDuration;
+
 /**
  * Provides a snapshot of the information maintained within LiveStatistics.
  * This class makes use of Apache Commons Math StatisticalSummary class to hold
@@ -103,5 +111,24 @@ public class SnapshotStatistics
     public StatisticalSummary IOTime()
     {
         return _duration;
+    }
+
+    public void getInfo(PrintWriter pw)
+    {
+        if (_instantaneousBandwidth.getN() > 0) {
+            pw.println("Instantaneous bandwidth: " + describeBandwidth(_instantaneousBandwidth));
+        }
+        if (_duration.getN() > 0) {
+            pw.println("IO wait time: " + describeDuration(_duration, NANOSECONDS));
+        }
+        if (_requestedBytes.getN() > 0) {
+            pw.println("IO requested size: " + describeSize(_requestedBytes));
+        }
+        if (_transferredBytes.getN() > 0) {
+            pw.println("IO transferred size: " + describeSize(_transferredBytes));
+        }
+        if (_concurrency.getN() > 0) {
+            pw.println("Concurrency: " + describeInteger(_concurrency));
+        }
     }
 }
