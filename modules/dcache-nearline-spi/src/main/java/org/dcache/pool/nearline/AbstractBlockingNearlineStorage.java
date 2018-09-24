@@ -346,13 +346,13 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
          * Releases task from its thread. If the task was cancelled, InterruptedException
          * is thrown.
          */
-        private synchronized void release(boolean isRetrying) throws InterruptedException
+        private synchronized void release(boolean isRetrying) throws CancellationException
         {
             thread = null;
             if (isDone) {
                 /* If done it must because the task was cancelled.
                  */
-                throw new InterruptedException();
+                throw new CancellationException();
             }
             if (!isRetrying) {
                 isDone = true;
@@ -388,6 +388,15 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
                         } catch (Exception e) {
                             release(false);
                             throw e;
+                        } finally {
+                            /*
+                             * As the task is executed in a thread pool, clear interrupted flag, as
+                             * (a) thread interruption is used to break request processing,
+                             * (b) interruption of one request is independent from an other one.
+                             *
+                             * is save to do it here, as Task#release have detached thread from the task.
+                             */
+                            Thread.interrupted();
                         }
                     } catch (InProgressCacheException e) {
                         retry(this::execute);
