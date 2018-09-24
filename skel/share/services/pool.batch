@@ -47,6 +47,7 @@ check -strong pool.mover.http.port.min
 check -strong pool.mover.http.port.max
 check -strong pool.mover.ftp.port.min
 check -strong pool.mover.ftp.port.max
+check -strong pool.mover.ftp.enable.log-aborted-transfers
 check -strong pool.mover.nfs.rpcsec_gss
 check -strong pool.service.pool.timeout
 check -strong pool.service.pool.timeout.unit
