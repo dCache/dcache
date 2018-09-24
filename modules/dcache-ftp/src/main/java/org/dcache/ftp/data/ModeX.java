@@ -1,6 +1,7 @@
 package org.dcache.ftp.data;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -9,9 +10,13 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Pattern;
 
 import org.dcache.pool.repository.RepositoryChannel;
+
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Implementation of MODE X.
@@ -104,6 +109,23 @@ public class ModeX extends Mode
     private static final CharsetDecoder _decoder = StandardCharsets.US_ASCII.newDecoder();
 
     /**
+     * Whether the transfer has started.
+     */
+    private volatile boolean _transferStarted;
+
+    /**
+     * Number of active channels.
+     */
+    private final AtomicLong _activeDataChannels = new AtomicLong();
+
+    /**
+     * Number of channels that closed in error.
+     */
+    private final LongAdder _errorDataChannels = new LongAdder();
+
+    private String _lastError;
+
+    /**
      * Implementation of send in mode X. There will be an instance per
      * data channel. The sender repeatedly bites _blockSize bytes of
      * the file and transfers it as a single block. I.e.
@@ -153,7 +175,20 @@ public class ModeX extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-                throws IOException, FTPException, InterruptedException
+                throws IOException, FTPException
+        {
+            try {
+                doRead(multiplexer, key);
+            } catch (IOException | FTPException e) {
+                _activeDataChannels.decrementAndGet();
+                _errorDataChannels.increment();
+                _lastError = messageOrClassName(e);
+                throw e;
+            }
+        }
+
+        private void doRead(Multiplexer multiplexer, SelectionKey key)
+                throws IOException, FTPException
         {
             /* Protect against clients sending large commands. We
              * could enlarge the command buffer, but this would open
@@ -177,6 +212,7 @@ public class ModeX extends Mode
                      * We extend this to also cover active receivers.
                      */
                     close(multiplexer, key, _eof);
+                    _activeDataChannels.decrementAndGet();
                     return;
                 } else {
                     throw new FTPException("Lost connection");
@@ -222,6 +258,7 @@ public class ModeX extends Mode
             } else if (cmd.equals("BYE") && _state == SenderState.WAIT_BYE) {
                 // shut down
                 close(multiplexer, key, _eof);
+                _activeDataChannels.decrementAndGet();
             } else if (cmd.equals("CLOSE")) {
                 // shutdown the channel at the end of the current block
                 _closeAtNextBlock = true;
@@ -237,6 +274,18 @@ public class ModeX extends Mode
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
                 throws IOException, FTPException
+        {
+            try {
+                doWrite(key);
+            } catch (IOException | FTPException e) {
+                _activeDataChannels.decrementAndGet();
+                _errorDataChannels.increment();
+                _lastError = messageOrClassName(e);
+                throw e;
+            }
+        }
+
+        private void doWrite(SelectionKey key) throws IOException, FTPException
         {
             switch (_state) {
             case NEXT_BLOCK:
@@ -366,10 +415,24 @@ public class ModeX extends Mode
                 throws IOException
         {
             try {
+                doWrite(multiplexer, key);
+            } catch (IOException e) {
+                _activeDataChannels.decrementAndGet();
+                _errorDataChannels.increment();
+                _lastError = messageOrClassName(e);
+                throw e;
+            }
+        }
+
+        private void doWrite(Multiplexer multiplexer, SelectionKey key)
+                throws IOException
+        {
+            try {
                 _socket.write(_command);
                 if (_command.position() == _command.limit()) {
                     if (_state == ReceiverState.SEND_BYE) {
                         close(multiplexer, key, true); // TODO: Check true
+                        _activeDataChannels.decrementAndGet();
                     } else {
                         key.interestOps(SelectionKey.OP_READ);
                     }
@@ -384,6 +447,7 @@ public class ModeX extends Mode
                  */
                 if (_state == ReceiverState.SEND_BYE) {
                     close(multiplexer, key, true); // TODO: Check true
+                    _activeDataChannels.decrementAndGet();
                 } else {
                     throw e;
                 }
@@ -393,6 +457,18 @@ public class ModeX extends Mode
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
                 throws IOException, FTPException, InterruptedException
+        {
+            try {
+                doRead(key);
+            } catch (IOException | FTPException e) {
+                _activeDataChannels.decrementAndGet();
+                _errorDataChannels.increment();
+                _lastError = messageOrClassName(e);
+                throw e;
+            }
+        }
+
+        private void doRead(SelectionKey key) throws IOException, FTPException
         {
             long nbytes;
 
@@ -496,8 +572,10 @@ public class ModeX extends Mode
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
             throws IOException
     {
+        _transferStarted = true;
         switch (_role) {
         case Sender:
+            _activeDataChannels.incrementAndGet();
             multiplexer.add(new Sender(socket));
             break;
         case Receiver:
@@ -515,9 +593,32 @@ public class ModeX extends Mode
             if (_eof) {
                 socket.close();
             } else {
+                _activeDataChannels.incrementAndGet();
                 multiplexer.add(new Receiver(socket));
             }
             break;
         }
+    }
+
+    @Override
+    public String name()
+    {
+        return "X (eXtended)";
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        super.getInfo(pw);
+
+        if (_lastError != null) {
+            pw.println("Last error: " + _lastError);
+        }
+    }
+
+    @Override
+    public boolean hasCompletedSuccessfully()
+    {
+        return _transferStarted && _activeDataChannels.get() == 0 && _errorDataChannels.longValue() == 0;
     }
 }
