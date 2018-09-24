@@ -574,6 +574,8 @@
                     </bean>
                 </list>
             </property>
+            <property name="fallbackToAnonymous"
+                      value="${webdav.enable.authn.anonymous-fallback-on-failed-login}"/>
             <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
         </bean>
     </beans>
@@ -588,6 +590,8 @@
                     </bean>
                 </list>
             </property>
+            <property name="fallbackToAnonymous"
+                      value="${webdav.enable.authn.anonymous-fallback-on-failed-login}"/>
             <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
         </bean>
     </beans>
