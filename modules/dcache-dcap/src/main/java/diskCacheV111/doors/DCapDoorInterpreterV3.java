@@ -10,8 +10,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,13 +23,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import javax.security.auth.Subject;
+
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -82,13 +82,11 @@ import dmg.util.KeepAliveListener;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACLParser;
-import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -1783,20 +1781,10 @@ public class DCapDoorInterpreterV3
             PnfsId pnfsid =
                     _fileAttributes != null ? _fileAttributes.getPnfsId() : null;
 
-            try {
-                Subjects.getUid(_subject);
-            } catch (NoSuchElementException e) {
-                _subject.getPrincipals().add(new UidPrincipal(_uid));
-            }
-
-            if (Subjects.getGids(_subject).length == 0) {
-                _subject.getPrincipals().add(new GidPrincipal(_gid, true));
-            }
-
             return new IoDoorEntry(_sessionId,
                                    pnfsid,
                                    _subject,
-                                   _pool == null ? "<unknown>" : _pool.getName(),
+                                   _pool == null? "<unknown>" : _pool.getName(),
                                    _status,
                                    _statusSince,
                                    _clientSocketAddress.getAddress().getHostAddress());
