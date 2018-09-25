@@ -29,6 +29,11 @@ EOF
 
 xslt="$(getProperty storage-descriptor.xslt.path)"
 output="$(getProperty storage-descriptor.output.path)"
+if [ $# -ge 1 ]; then
+    infoUrl="$1"
+else
+    infoUrl="http://${host}:${port}/info"
+fi
 host="$(getProperty storage-descriptor.http.host)"
 port="$(getProperty storage-descriptor.http.port)"
 
@@ -38,6 +43,6 @@ trap "rm -f $entities $catalog" EXIT
 buildEntitiesFile "$entities" "$catalog"
 
 export XML_CATALOG_FILES="$catalog"
-curl -sS "http://${host}:${port}/info" | \
+curl -sS "$infoUrl" | \
     xsltproc --xinclude "$xslt" - > "$output"
 echo "JSON available at $output"
