@@ -87,6 +87,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public static final int INITIAL_STATE = 0;
     public static final int WAITING_FOR_PNFS_INFO_STATE = 1;
     public static final int RECEIVED_PNFS_INFO_STATE = 2;
+    public static final int WAITING_FOR_CREATED_FILE_INFO_STATE = 3;
+    public static final int RECEIVED_CREATED_FILE_INFO_STATE = 4;
     public static final int WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE = 5;
     public static final int RECEIVED_PNFS_ENTRY_CREATION_INFO_STATE = 6;
     public static final int WAITING_FOR_POOL_INFO_STATE = 7;
@@ -108,6 +110,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             .put(INITIAL_STATE, "initialising")
             .put(WAITING_FOR_PNFS_INFO_STATE, "querying file metadata")
             .put(RECEIVED_PNFS_INFO_STATE, "recieved file metadata")
+            .put(WAITING_FOR_CREATED_FILE_INFO_STATE, "querying created file metadata")
+            .put(RECEIVED_CREATED_FILE_INFO_STATE, "received created file metadata")
             .put(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE, "creating namespace entry")
             .put(RECEIVED_PNFS_ENTRY_CREATION_INFO_STATE, "namespace entry created")
             .put(WAITING_FOR_POOL_INFO_STATE, "selecting pool")
@@ -191,6 +195,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 new ChainedPermissionHandler(
                 new ACLPermissionHandler(),
                 new PosixPermissionHandler());
+        pnfsId = transferRequest.getPnfsId();
     }
 
     public static String describeState(int state)
@@ -211,15 +216,28 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         parentDir = pnfsPath.substring(0, last_slash_pos);
         PnfsMessage message;
         if (store) {
-            message = new PnfsCreateEntryMessage(pnfsPath, FileAttributes.ofFileType(FileType.REGULAR));
-            message.setSubject(transferRequest.getSubject());
-            message.setRestriction(transferRequest.getRestriction());
-            setState(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE);
+            if (pnfsId == null) {
+                message = new PnfsCreateEntryMessage(pnfsPath, FileAttributes.ofFileType(FileType.REGULAR));
+                message.setSubject(transferRequest.getSubject());
+                message.setRestriction(transferRequest.getRestriction());
+                setState(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE);
+            } else {
+                info.setPnfsId(pnfsId);
+                pnfsIdString = pnfsId.toString();
+                EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
+                attributes.addAll(permissionHandler.getRequiredAttributes());
+                attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+                message = new PnfsGetFileAttributes(pnfsId, attributes);
+                message.setSubject(transferRequest.getSubject());
+                message.setRestriction(transferRequest.getRestriction());
+                setState(WAITING_FOR_CREATED_FILE_INFO_STATE);
+            }
         } else {
             EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
             attributes.addAll(permissionHandler.getRequiredAttributes());
             attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-            message = new PnfsGetFileAttributes(pnfsPath, attributes);
+            message = pnfsId == null ? new PnfsGetFileAttributes(pnfsPath, attributes)
+                    : new PnfsGetFileAttributes(pnfsId, attributes);
             message.setSubject(transferRequest.getSubject());
             message.setRestriction(transferRequest.getRestriction());
             message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
@@ -248,6 +266,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 if (state == WAITING_FOR_PNFS_INFO_STATE) {
                     setState(RECEIVED_PNFS_INFO_STATE);
                     storageInfoArrived(attributesMessage);
+                    return;
+                } else if (state == WAITING_FOR_CREATED_FILE_INFO_STATE) {
+                    state = RECEIVED_CREATED_FILE_INFO_STATE;
+                    getFileAttributesArrived(attributesMessage);
                     return;
                 }
                 log.error(this.toString() + " got unexpected PnfsGetStorageInfoMessage "
@@ -306,6 +328,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             sendErrorReply(rc, "Failed to create namespace entry: " + error);
             break;
 
+        case WAITING_FOR_CREATED_FILE_INFO_STATE:
+            sendErrorReply(rc, "Failed to lookup created namespace entry: " + error);
+            break;
+
         case WAITING_FIRST_POOL_REPLY_STATE:
             // FIXME: in the case of an attempted read (pool pushing the file
             //        to some remote site), we can ask PoolManager for another
@@ -360,6 +386,19 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         info.setStorageInfo(create.getFileAttributes().getStorageInfo());
         if (create.getFileAttributes().isDefined(STORAGEINFO) && create.getFileAttributes().getStorageInfo().getKey("path") != null) {
             info.setBillingPath(create.getFileAttributes().getStorageInfo().getKey("path"));
+        }
+
+        selectPool();
+    }
+
+    public void getFileAttributesArrived(PnfsGetFileAttributes msg)
+    {
+        manager.persist(this);
+
+        fileAttributes = msg.getFileAttributes();
+        info.setStorageInfo(msg.getFileAttributes().getStorageInfo());
+        if (msg.getFileAttributes().isDefined(STORAGEINFO) && msg.getFileAttributes().getStorageInfo().getKey("path") != null) {
+            info.setBillingPath(msg.getFileAttributes().getStorageInfo().getKey("path"));
         }
 
         selectPool();
