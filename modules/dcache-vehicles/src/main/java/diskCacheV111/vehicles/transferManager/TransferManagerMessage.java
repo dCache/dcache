@@ -1,4 +1,6 @@
 package diskCacheV111.vehicles.transferManager;
+
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
 import org.dcache.auth.attributes.Restriction;
@@ -30,6 +32,7 @@ public abstract class TransferManagerMessage extends Message {
     private boolean spaceReservationStrict;
     private Long credentialId;
     private Restriction restriction;
+    private PnfsId pnfsId;
 
     public TransferManagerMessage(
             String pnfsPath,
@@ -65,6 +68,21 @@ public abstract class TransferManagerMessage extends Message {
     public Restriction getRestriction()
     {
         return restriction == null ? Restrictions.none() : restriction;
+    }
+
+    public void setPnfsId(PnfsId id)
+    {
+        pnfsId = id;
+    }
+
+    /**
+     * The ID of the local file.  May be null to indicate the
+     * TransferManagerHandler is responsible for creating the target file
+     * for pull requests.
+     */
+    public PnfsId getPnfsId()
+    {
+        return pnfsId;
     }
 
     /** Getter for property store.

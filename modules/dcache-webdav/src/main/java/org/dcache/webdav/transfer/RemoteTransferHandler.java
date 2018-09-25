@@ -43,10 +43,16 @@ import java.util.Set;
 
 import diskCacheV111.services.TransferManagerHandler;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
@@ -59,14 +65,20 @@ import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.OpenIdCredential;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.util.URIs;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
 
@@ -166,6 +178,9 @@ public class RemoteTransferHandler implements CellMessageReceiver
         REQUIRE_VERIFICATION
     }
 
+    private static final Set<AccessMask> READ_ACCESS_MASK =
+            EnumSet.of(AccessMask.READ_DATA);
+
     private static final Logger LOG =
             LoggerFactory.getLogger(RemoteTransferHandler.class);
     private static final long DUMMY_LONG = 0;
@@ -176,11 +191,18 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
     private long _performanceMarkerPeriod;
     private CellStub _transferManager;
+    private PnfsHandler _pnfs;
 
     @Required
     public void setTransferManagerStub(CellStub stub)
     {
         _transferManager = stub;
+    }
+
+    @Required
+    public void setPnfsStub(CellStub stub)
+    {
+        _pnfs = new PnfsHandler(stub);
     }
 
     @Required
@@ -196,7 +218,8 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
     public void acceptRequest(OutputStream out, Map<String,String> requestHeaders,
             Subject subject, Restriction restriction, FsPath path, URI remote,
-            Object credential, Direction direction, boolean verification)
+            Object credential, Direction direction, boolean verification,
+            boolean overwriteAllowed)
             throws ErrorResponseException, InterruptedException
     {
         checkArgument(credential == null
@@ -208,7 +231,8 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 : EnumSet.noneOf(TransferFlag.class);
         ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
         RemoteTransfer transfer = new RemoteTransfer(out, subject, restriction,
-                path, remote, credential, flags, transferHeaders, direction);
+                path, remote, credential, flags, transferHeaders, direction,
+                overwriteAllowed);
 
         long id;
 
@@ -290,20 +314,24 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private final EnumSet<TransferFlag> _flags;
         private final ImmutableMap<String,String> _transferHeaders;
         private final Direction _direction;
+        private final boolean _overwriteAllowed;
         private String _problem;
         private long _id;
         private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
 
+        private PnfsId _pnfsId;
         private boolean _finished;
+        private PnfsHandler _pnfs;
 
         public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
                 FsPath path, URI destination, @Nullable Object credential,
                 EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders,
-                Direction direction)
+                Direction direction, boolean overwriteAllowed)
                 throws ErrorResponseException
         {
             _subject = subject;
             _restriction = restriction;
+            _pnfs = new PnfsHandler(RemoteTransferHandler.this._pnfs, _subject, _restriction);
             _path = path;
             _destination = destination;
             _type = TransferType.fromScheme(destination.getScheme());
@@ -327,10 +355,69 @@ public class RemoteTransferHandler implements CellMessageReceiver
             _flags = flags;
             _transferHeaders = transferHeaders;
             _direction = direction;
+            _overwriteAllowed = overwriteAllowed;
         }
+
+
+        /**
+         * Obtain the PnfsId of the local file, creating it as necessary.
+         */
+        private PnfsId resolvePath() throws ErrorResponseException
+        {
+            try {
+                switch (_direction) {
+                case PUSH:
+                    try {
+                        FileAttributes attributes = _pnfs.getFileAttributes(_path.toString(),
+                                EnumSet.of(PNFSID, TYPE), READ_ACCESS_MASK, false);
+
+                        if (attributes.getFileType() != FileType.REGULAR) {
+                            throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST, "Not a file");
+                        }
+
+                        return attributes.getPnfsId();
+                    } catch (FileNotFoundCacheException e) {
+                        throw new ErrorResponseException(Response.Status.SC_NOT_FOUND, "no such file");
+                    }
+
+                case PULL:
+                    PnfsCreateEntryMessage msg;
+                    try {
+                        msg = _pnfs.createPnfsEntry(_path.toString(), FileAttributes.ofFileType(FileType.REGULAR));
+                    } catch (FileExistsCacheException e) {
+                        /* REVISIT: This should be moved to PnfsManager with a
+                         * flag in the PnfsCreateEntryMessage.
+                         */
+                        if (!_overwriteAllowed) {
+                            throw e;
+                        }
+                        _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(FileType.REGULAR));
+                        msg = _pnfs.createPnfsEntry(_path.toString(),  FileAttributes.ofFileType(FileType.REGULAR));
+                    }
+                    return msg.getFileAttributes().getPnfsId();
+
+                default:
+                    throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
+                            "Unexpected direction: " + _direction);
+                }
+            } catch (PermissionDeniedCacheException e) {
+                LOG.debug("Permission denied: {}", e.getMessage());
+                throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
+                        "Permission denied");
+            } catch (CacheException e) {
+                LOG.error("failed query file {} for copy request: {}", _path,
+                        e.getMessage());
+                throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
+                        "Internal problem with server");
+            }
+        }
+
+
 
         private long start() throws ErrorResponseException, InterruptedException
         {
+            _pnfsId = resolvePath();
+
             boolean isStore = _direction == Direction.PULL;
             RemoteTransferManagerMessage message =
                     new RemoteTransferManagerMessage(_destination, _path, isStore,
@@ -338,6 +425,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
             message.setSubject(_subject);
             message.setRestriction(_restriction);
+            message.setPnfsId(_pnfsId);
             try {
                 _id = _transferManager.sendAndWait(message).getId();
                 return _id;
@@ -426,6 +514,33 @@ public class RemoteTransferHandler implements CellMessageReceiver
             _problem = explanation;
             _finished = true;
             notifyAll();
+            if (_direction == Direction.PULL) {
+                try {
+                    /* There is a subtlety here: when pulling a remote file, a
+                     * user may be using a macaroon that allows the UPLOAD
+                     * activity but not the DELETE activity.  This will allow
+                     * the transfer to start, provided the file did not already
+                     * exist.
+                     *
+                     * Failed pull transfers are deleted.  However, if the
+                     * macaroon does not allow the DELETE activity then the user
+                     * cannot delete the incomplete file.
+                     *
+                     * It is better to provide consistent behaviour: that
+                     * incomplete pull transfers are deleted.  Therefore the
+                     * delete operation is make without any restriction.  To
+		     * achieve this, we create a new PnfsHandler with any
+		     * restrictions removed.
+                     */
+                    PnfsHandler pnfs = new PnfsHandler(_pnfs, null);
+                    pnfs.deletePnfsEntry(_pnfsId, _path.toString(),
+                            EnumSet.of(FileType.REGULAR), EnumSet.noneOf(FileAttribute.class));
+                } catch (CacheException e) {
+                    LOG.warn("Failed to clear up after failed transfer: {}",
+                            e.getMessage());
+                    _problem += " (failed to remove badly transferred file)";
+                }
+            }
         }
 
         public synchronized void awaitCompletion() throws InterruptedException
