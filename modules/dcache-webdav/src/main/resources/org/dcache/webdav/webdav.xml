@@ -123,6 +123,7 @@
   <bean id="remote-transfer-handler" class="org.dcache.webdav.transfer.RemoteTransferHandler">
       <description>Coordinate transfers</description>
 
+      <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="transferManagerStub" ref="transfer-manager-stub"/>
       <property name="performanceMarkerPeroid"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
@@ -144,7 +145,6 @@
       <description>Handles requests for 3rd-party copies</description>
 
       <property name="credentialServiceClient" ref="credential-service-client"/>
-      <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
       <property name="pathMapper" ref="path-mapper"/>
       <property name="oidClientIds" ref="oidc-client-ids"/>
@@ -617,9 +617,8 @@
                             <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer" />
                             <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer" />
                             <entry key="client.id" value="${webdav.cell.name}@${dcache.domain.name}" />
-                            <!-- TODO  values for max.block.ms and retries are important for Non Blocking (Async) callback.-->
-                            <!-- maximum time producer.send() will block by default set to 60000. Could be changed latter. -->
-                            <entry key="max.block.ms" value="0" />
+                            <entry key="max.block.ms"
+                                   value="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${webdav.kafka.maximum-block}, '${webdav.kafka.maximum-block.unit}')}" />
                             <!-- The maximum number of times to retry a call before failing it.-->
                             <entry key="retries" value="0" />
                         </map>

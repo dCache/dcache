@@ -76,23 +76,6 @@
 		<column name="state" jdbc-type="INTEGER"   />
             </field>
         </class>
-        <class name="TransferManagerHandlerState" detachable="true" identity-type="datastore" table="remotetransferhistory">
-	    <field name="transferid">
-                <column name="transferid" jdbc-type="BIGINT" />
-	        <index name="remotetransferhistory_transferid_idx" unique="false"/>
-            </field>
-	    <field name="state">
-                <column name="state" jdbc-type="BIGINT" />
-	        <index name="remotetransferhistory_state_idx" unique="false"/>
-            </field>
-	    <field name="transitionTime">
-                <column name="transitiontime" jdbc-type="BIGINT" />
-            </field>
-            <field name="causedByError" column="CAUSED_BY_ERROR"/>
-            <field name="description">
-		<column name="description" length="32672" jdbc-type="VARCHAR"   />
-            </field>
-        </class>
     </package>
 </jdo>
 

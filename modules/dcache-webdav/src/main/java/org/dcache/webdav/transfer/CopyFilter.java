@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2018 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,8 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
+import eu.emi.security.authn.x509.impl.OpensslNameUtils;
+import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
 import io.milton.http.Request;
@@ -35,37 +37,33 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.AccessController;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 
-import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdClientSecret;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
-import org.dcache.vehicles.FileAttributes;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
@@ -73,8 +71,6 @@ import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.TYPE;
 
 /**
  * The CopyFilter adds support for initiating third-party copies via
@@ -112,13 +108,6 @@ public class CopyFilter implements Filter
     private static final String QUERY_KEY_ASKED_TO_DELEGATE = "asked-to-delegate";
     private static final String REQUEST_HEADER_CREDENTIAL = "Credential";
     private static final String REQUEST_HEADER_VERIFICATION = "RequireChecksumVerification";
-
-    private static final Set<AccessMask> READ_ACCESS_MASK =
-            EnumSet.of(AccessMask.READ_DATA);
-    private static final Set<AccessMask> WRITE_ACCESS_MASK =
-            EnumSet.of(AccessMask.WRITE_DATA);
-    private static final Set<AccessMask> CREATE_ACCESS_MASK =
-            EnumSet.of(AccessMask.ADD_FILE);
 
     private ImmutableMap<String,String> _clientIds;
     private ImmutableMap<String,String> _clientSecrets;
@@ -171,7 +160,6 @@ public class CopyFilter implements Filter
         }
     }
 
-    private PnfsHandler _pnfs;
     private CredentialServiceClient _credentialService;
     private PathMapper _pathMapper;
     private RemoteTransferHandler _remoteTransfers;
@@ -180,12 +168,6 @@ public class CopyFilter implements Filter
     public void setPathMapper(PathMapper mapper)
     {
         _pathMapper = mapper;
-    }
-
-    @Required
-    public void setPnfsStub(CellStub stub)
-    {
-        _pnfs = new PnfsHandler(stub);
     }
 
     @Required
@@ -365,7 +347,9 @@ public class CopyFilter implements Filter
 
         FsPath path = _pathMapper.asDcachePath(ServletRequest.getRequest(),
                 request.getAbsolutePath(), m -> new ErrorResponseException(Status.SC_FORBIDDEN, m));
-        checkPath(path, direction);
+
+        // Always check any client-supplied Overwrite header, to throw an error if the value is malformed.
+        boolean overwriteAllowed = clientAllowsOverwrite();
 
         CredentialSource source = getCredentialSource(request, type);
         Object credential = fetchCredential(source);
@@ -380,7 +364,8 @@ public class CopyFilter implements Filter
         } else {
             _remoteTransfers.acceptRequest(response.getOutputStream(),
                     request.getHeaders(), getSubject(), getRestriction(), path,
-                    remote, credential, direction, isVerificationRequired());
+                    remote, credential, direction, isVerificationRequired(),
+                    overwriteAllowed);
         }
     }
 
@@ -406,7 +391,7 @@ public class CopyFilter implements Filter
             }
         } else if (clientAuthnUsingOidc()) {
             source = CredentialSource.OIDC;
-        } else if (clientAuthnUsingX509()) {
+        } else if (clientSuppliedX509Certificate()) {
             source = CredentialSource.GRIDSITE;
         } else {
             source = CredentialSource.NONE;
@@ -426,12 +411,16 @@ public class CopyFilter implements Filter
         Subject subject = Subject.getSubject(AccessController.getContext());
         switch (source) {
         case GRIDSITE:
-            String dn = Subjects.getDn(subject);
-            if (dn == null) {
-                throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
-                                                 "user must present valid X.509 certificate");
-            }
-
+            // Use the X.509 identity from TLS, even if that wasn't used to
+            // establish the user's identity.  This allows the local activity of
+            // the COPY (i.e., the ability to read a file, or create a new file)
+            // to be authorized based on some non-X.509 identity, while using a
+            // delegated X.509 credential when authenticating for the
+            // third-party copy, based on the client credential presented when
+            // establishing the TLS connection.
+            String dn = getTlsIdentity().orElseThrow(() ->
+                    new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
+                            "user must present valid X.509 certificate"));
             return _credentialService.getDelegatedCredential(
                     dn, Objects.toString(Subjects.getPrimaryFqan(subject), null),
                     20, MINUTES);
@@ -546,64 +535,6 @@ public class CopyFilter implements Filter
         return true;
     }
 
-    /**
-     * Check whether the path is allowed for this transfer.
-     */
-    private void checkPath(FsPath path, Direction direction) throws ErrorResponseException
-    {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
-
-        // Always check any client-supplied Overwrite header.
-        boolean overwriteAllowed = clientAllowsOverwrite();
-
-        Set<AccessMask> mask = direction == Direction.PUSH ? READ_ACCESS_MASK : WRITE_ACCESS_MASK;
-        FileAttributes attributes;
-        try {
-            try {
-                attributes = pnfs.getFileAttributes(path.toString(),
-                        EnumSet.of(PNFSID, TYPE), mask, false);
-
-                if (attributes.getFileType() != FileType.REGULAR) {
-                    throw new ErrorResponseException(Status.SC_BAD_REQUEST, "Not a file");
-                }
-
-                if (direction == Direction.PULL) {
-                    if (!overwriteAllowed) {
-                        throw new ErrorResponseException(Status.SC_PRECONDITION_FAILED,
-                                "File already exists");
-                    }
-
-                    // REVISIT: ideally, the transfermanager would handle
-                    // deleting existing entry.
-                    try {
-                        pnfs.deletePnfsEntry(attributes.getPnfsId(), path.toString(),
-                                EnumSet.of(FileType.REGULAR),
-                                EnumSet.noneOf(FileAttribute.class));
-                    } catch (FileNotFoundCacheException ignored) {
-                        // Ignore this: someone else deleted the file, which
-                        // suggests we might be unlucky pulling the data.
-                    }
-                }
-            } catch (FileNotFoundCacheException e) {
-                if (direction == Direction.PUSH) {
-                    throw new ErrorResponseException(Status.SC_NOT_FOUND, "no such file");
-                } else {
-                    pnfs.getFileAttributes(path.parent().toString(), Collections.emptySet(),
-                                           CREATE_ACCESS_MASK, false);
-                }
-            }
-        } catch (PermissionDeniedCacheException e) {
-            _log.debug("Permission denied: {}", e.getMessage());
-            throw new ErrorResponseException(Status.SC_UNAUTHORIZED,
-                    "Permission denied");
-        } catch (CacheException e) {
-            _log.error("failed query file {} for copy request: {}", path,
-                    e.getMessage());
-            throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
-                    "Internal problem with server");
-        }
-    }
-
     private Subject getSubject()
     {
         return Subject.getSubject(AccessController.getContext());
@@ -621,10 +552,31 @@ public class CopyFilter implements Filter
                 .anyMatch(OidcSubjectPrincipal.class::isInstance);
     }
 
-    private boolean clientAuthnUsingX509()
+    private Optional<X509Certificate> getTlsEndEntityCertificate()
     {
-        return Subject.getSubject(AccessController.getContext()).getPrincipals().stream()
-                .anyMatch(GlobusPrincipal.class::isInstance);
+        HttpServletRequest request = ServletRequest.getRequest();
+        return Optional.ofNullable(request.getAttribute("javax.servlet.request.X509Certificate"))
+                .filter(X509Certificate[].class::isInstance)
+                .map(X509Certificate[].class::cast)
+                .map(ProxyUtils::getEndUserCertificate)
+                .filter(Objects::nonNull);
+    }
+
+    private boolean clientSuppliedX509Certificate()
+    {
+        return getTlsEndEntityCertificate().isPresent();
+    }
+
+    /**
+     * Provide the Distinguished Name (DN) of the End-Entity Certificate (EEC)
+     * used when establishing the TLS connection.
+     */
+    private Optional<String> getTlsIdentity()
+    {
+        return getTlsEndEntityCertificate()
+                .map(X509Certificate::getSubjectX500Principal)
+                .map(X500Principal::getName)
+                .map(n -> OpensslNameUtils.convertFromRfc2253(n, true));
     }
 
     private static <T> Predicate<T> not(Predicate<T> t) {

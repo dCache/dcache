@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -18,7 +20,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.FileSystems;
+import java.time.Instant;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -47,16 +51,20 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.pool.statistics.IoStatisticsChannel;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
+import org.dcache.util.TimeUtils;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.util.ByteUnit.*;
+import static org.dcache.util.Strings.*;
 
 /**
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.
@@ -142,6 +150,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected final PortRange _portRange;
 
     /**
+     * Whether this mover instance should log statistics if the transfer is
+     * incomplete.
+     */
+    private final boolean _logAbortedTransfer;
+
+    /**
      * The chunk size used when transferring files.
      *
      * Large blocks will reduce the overhead. However, it case of
@@ -164,6 +178,8 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      */
     protected boolean      _inProgress;
 
+    private Mode _mode;
+
     public GFtpProtocol_2_nio(CellEndpoint cell)
     {
         _cell = cell;
@@ -174,6 +190,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         } else {
             _portRange = new PortRange(0);
         }
+
+        String logAbortedTransfers = System.getProperty("org.dcache.ftp.log-aborted-transfers");
+        _logAbortedTransfer = Boolean.valueOf(logAbortedTransfers);
     }
 
     /**
@@ -217,7 +236,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _role             = role;
         _bytesTransferred = 0;
         _blockLog         = new BlockLog();
-        _fileChannel      = fileChannel;
         _status           = "None";
 
         /* Startup the transfer. The transfer is performed on a single
@@ -275,7 +293,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
         /* Check that we receive the whole file.
          */
-        if (!_blockLog.isComplete()) {
+        if (_role == Role.Receiver && !(_blockLog.isComplete() && mode.hasCompletedSuccessfully())) {
             throw new CacheException(44, "Incomplete file detected");
         }
     }
@@ -325,6 +343,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         long   size        = gftpProtocolInfo.getSize();
         boolean passive    = gftpProtocolInfo.getPassive() && _allowPassivePool;
         ProtocolFamily protocolFamily = gftpProtocolInfo.getProtocolFamily();
+        _fileChannel = fileChannel;
 
         _log.debug("version={}, role={}, mode={}, host={} buffer={}, passive={}, parallelism={}",
                   version, role, gftpProtocolInfo.getMode(),
@@ -347,6 +366,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _lastTransferred  = _transferStarted;
 
         Mode mode = createMode(gftpProtocolInfo.getMode(), role, fileChannel);
+        _mode = mode;
         mode.setBufferSize(bufferSize);
 
         /* For GFtp/2, the FTP door expects a
@@ -457,6 +477,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         try {
             transfer(fileChannel, role, mode);
         } finally {
+            if (_logAbortedTransfer && (!_blockLog.isComplete() || !mode.hasCompletedSuccessfully() || _bytesTransferred < mode.getSize())) {
+                StringWriter sw = new StringWriter();
+                getInfo(new LineIndentingPrintWriter(sw, "    "));
+                String info = sw.toString();
+                _log.warn("Incomplete transfer; details follow:\n{}",
+                        info.substring(0, info.length()-1)); // Strip final '\n'
+            }
+
             /* Log some useful information about the transfer. This
              * will be send back to the door by the pool cell.
              */
@@ -464,9 +492,40 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             gftpProtocolInfo.setTransferTime(getTransferTime());
             if (passive) {
                 gftpProtocolInfo.setSocketAddress(
-                        Iterables.getFirst(mode.getRemoteAddresses(), gftpProtocolInfo.getSocketAddress()));
+                        Iterables.getFirst(_mode.getRemoteAddresses(), gftpProtocolInfo.getSocketAddress()));
             }
         }
+    }
+
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("Direction: " + (_role == Role.Receiver ? "UPLOAD" : "DOWNLOAD"));
+        pw.println("Mode: " + _mode.name());
+        _mode.getInfo(new LineIndentingPrintWriter(pw, "    "));
+        if (_role == Role.Sender) {
+            try {
+                long fileSize = _fileChannel.size();
+                pw.println("File size: " + describeSize(fileSize));
+                String percent = toThreeSigFig(100 * _bytesTransferred / (double)fileSize, 1000);
+                pw.println("Transferred: " + describeSize(_bytesTransferred) + " (" + percent + "% of file)");
+            } catch (IOException e) {
+                pw.println("Transferred: " + describeSize(_bytesTransferred));
+            }
+        } else {
+            pw.println("Transferred: " + describeSize(_bytesTransferred));
+        }
+        Optional<Instant> started = _transferStarted == 0
+                ? Optional.empty()
+                : Optional.of(Instant.ofEpochMilli(_transferStarted));
+        pw.println("Mover started: " + describe(started));
+        Optional<Instant> lastTransferred = _lastTransferred == _transferStarted
+                ? Optional.empty()
+                : Optional.of(Instant.ofEpochMilli(_lastTransferred));
+        pw.println("Last " + (_role == Role.Receiver ? "received" : "sent")
+                + " data: " + describe(lastTransferred));
+        _fileChannel.optionallyAs(IoStatisticsChannel.class)
+                .ifPresent(c -> c.getInfo(pw));
+        _blockLog.getInfo(pw);
     }
 
     /** Part of the MoverProtocol interface. */
