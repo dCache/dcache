@@ -1,4 +1,9 @@
 [
+ {
+    "fqan": "/fermilab/*Role=Production",
+    "mapped_uname": "production",
+    "mapped_gid": "9767"
+  },
   {
     "fqan": "/GLOW/Role=None",
     "mapped_uname": "glow",
