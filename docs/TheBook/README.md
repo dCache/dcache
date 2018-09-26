@@ -1,5 +1,5 @@
 
-Welcome to dCache. 
+Welcome to **dCache**. 
 
 dCache is a distributed storage solution for storing huge amounts of data without a hard limit, on the order of hundreds of Petabytes. It 
 can serve storage-intensive scientific experiments as well as general-purpose use cases where scalable, open source storage solutions are needed.
