@@ -69,15 +69,12 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Comparator;
@@ -101,7 +98,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.space.LinkGroupInfo;
 import org.dcache.restful.providers.space.SpaceToken;
-import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * <p>RESTful API to the SpaceManager.</p>
@@ -114,9 +110,6 @@ import org.dcache.restful.util.HttpServletRequests;
 public final class SpaceManagerResources {
     private final static String FORBIDDEN = "Spacemanager info only accessible to "
                                                 + "admin users.";
-    @Context
-    private HttpServletRequest request;
-
     @Inject
     @Named("spacemanager-stub")
     private CellStub spacemanagerStub;
@@ -124,11 +117,10 @@ public final class SpaceManagerResources {
     private boolean spaceReservationEnabled;
 
     @GET
-    @ApiOperation("Get information about link groups.  Requires admin role."
+    @ApiOperation("Get information about link groups."
                     + " Results sorted lexicographically by link group name.")
     @ApiResponses({
         @ApiResponse(code = 400, message = "Bad Request Error"),
-        @ApiResponse(code = 403, message = "Link group info only accessible to admin users."),
         @ApiResponse(code = 404, message = "DCache not configured for space management."),
         @ApiResponse(code = 500, message = "Internal Server Error")
     })
@@ -156,10 +148,6 @@ public final class SpaceManagerResources {
                                       @QueryParam("minAvailableSpace") Long minAvailableSpace) {
         if (!spaceReservationEnabled) {
             throw new NotFoundException();
-        }
-
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(FORBIDDEN);
         }
 
         Predicate<LinkGroup> filter = getLinkGroupFilter(name,
@@ -190,9 +178,8 @@ public final class SpaceManagerResources {
 
     @GET
     @ApiOperation("Get information about space tokens.  "
-                    + "Requires admin role.  Results sorted by token id.")
+                    + "Results sorted by token id.")
     @ApiResponses({
-        @ApiResponse(code = 403, message = "Space token info only accessible to admin users."),
         @ApiResponse(code = 404, message = "DCache not configured for space management."),
         @ApiResponse(code = 500, message = "Internal Server Error")
     })
@@ -218,10 +205,6 @@ public final class SpaceManagerResources {
                                               @QueryParam("minFreeSpace") Long minFreeSpace) {
         if (!spaceReservationEnabled) {
             throw new NotFoundException();
-        }
-
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(FORBIDDEN);
         }
 
         Predicate<Space> filter = getSpaceFilter(id,
