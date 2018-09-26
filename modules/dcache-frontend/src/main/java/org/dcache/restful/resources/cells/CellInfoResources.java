@@ -68,13 +68,10 @@ import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Arrays;
@@ -85,7 +82,6 @@ import diskCacheV111.util.CacheException;
 
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoService;
-import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * RESTful API to the {@link CellInfoService} service.
@@ -94,34 +90,24 @@ import org.dcache.restful.util.HttpServletRequests;
 @Api(value = "cells", authorizations = {@Authorization("basicAuth")})
 @Path("/cells")
 public final class CellInfoResources {
-
-    @Context
-    private HttpServletRequest request;
-
     @Inject
     private CellInfoService service;
 
 
     @GET
-    @ApiOperation("Get a list of current addresses for well-known cells.  "
-            + "Requires admin role.")
+    @ApiOperation("Get a list of current addresses for well-known cells.")
     @ApiResponses({
                 @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
             })
     @Path("/addresses")
     @Produces(MediaType.APPLICATION_JSON)
     public String[] getAddresses() throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Cell info service only accessible to admin users.");
-        }
         return service.getAddresses();
     }
 
 
     @GET
-    @ApiOperation("Provide information about a specific cell.  Requires admin "
-            + "role.")
+    @ApiOperation("Provide information about a specific cell.")
     @ApiResponses({
                 @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
             })
@@ -130,27 +116,18 @@ public final class CellInfoResources {
     public CellData getCellData(
                     @ApiParam(value="The cell to query", example="cell@domain")
                     @PathParam("address") String address)throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Cell info service only accessible to admin users.");
-        }
         return service.getCellData(address);
     }
 
 
     @GET
-    @ApiOperation("Provide information about all cells.  Requires admin role. "
+    @ApiOperation("Provide information about all cells. "
                     + "Results sorted lexicographically by cell name.")
     @ApiResponses({
                 @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
             })
     @Produces(MediaType.APPLICATION_JSON)
     public CellData[] getCellData()throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Cell info service only accessible to admin users.");
-        }
-
         return Arrays.stream(service.getAddresses())
                      .map(service::getCellData)
                      .collect(Collectors.toList())

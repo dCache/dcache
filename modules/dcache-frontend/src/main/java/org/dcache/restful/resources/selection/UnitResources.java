@@ -61,14 +61,11 @@ package org.dcache.restful.resources.selection;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -86,7 +83,6 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Unit;
 import org.dcache.restful.providers.selection.UnitGroup;
-import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
@@ -98,25 +94,14 @@ import org.dcache.restful.util.HttpServletRequests;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/units")
 public final class UnitResources {
-    @Context
-    private HttpServletRequest request;
-
     @Inject
     private PoolMonitor poolMonitor;
 
     @GET
-    @ApiOperation("List all units.  Requires admin role."
+    @ApiOperation("List all units."
                     + " Results sorted lexicographically by unit name.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Unit info only accessible to admin users."),
-    })
     @Produces(MediaType.APPLICATION_JSON)
     public List<Unit> getUnits() {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Unit info only accessible to admin users.");
-        }
-
         return poolMonitor.getPoolSelectionUnit().getSelectionUnits().values()
                           .stream()
                           .sorted(Comparator.comparing(SelectionUnit::getName))
@@ -126,19 +111,11 @@ public final class UnitResources {
 
 
     @GET
-    @ApiOperation("List all unitgroups.  Requires admin role."
+    @ApiOperation("List all unitgroups."
                     + " Results sorted lexicographically by unit group name.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Unit info only accessible to admin users."),
-    })
     @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
     public List<UnitGroup> getUnitGroups() {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Unit group info only accessible to admin users.");
-        }
-
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         return poolMonitor.getPoolSelectionUnit().getUnitGroups().values()

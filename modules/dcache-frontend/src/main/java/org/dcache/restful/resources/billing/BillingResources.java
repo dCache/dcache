@@ -72,7 +72,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -100,7 +99,6 @@ import org.dcache.restful.providers.billing.DoorTransferRecord;
 import org.dcache.restful.providers.billing.HSMTransferRecord;
 import org.dcache.restful.providers.billing.P2PTransferRecord;
 import org.dcache.restful.services.billing.BillingInfoService;
-import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.util.histograms.Histogram;
 
 import static org.dcache.restful.providers.PagedList.TOTAL_COUNT_HEADER;
@@ -112,9 +110,6 @@ import static org.dcache.restful.providers.PagedList.TOTAL_COUNT_HEADER;
 @Api(value = "billing", authorizations = {@Authorization("basicAuth")})
 @Path("/billing")
 public class BillingResources {
-    @Context
-    private HttpServletRequest request;
-
     @Inject
     private BillingInfoService service;
 
@@ -123,8 +118,7 @@ public class BillingResources {
 
 
     @GET
-    @ApiOperation("Provides a list of read transfers for a specific PNFS-ID.  "
-            + "Requires admin role.")
+    @ApiOperation("Provides a list of read transfers for a specific PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
@@ -154,11 +148,6 @@ public class BillingResources {
                                              @DefaultValue("date")
                                              @QueryParam("sort") String sort) {
         try {
-            if (!HttpServletRequests.isAdmin(request)) {
-                throw new ForbiddenException("Billing records are only available "
-                                                             + "to admin users.");
-            }
-
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
             PagedList<DoorTransferRecord> result = service.getReads(pnfsid,
@@ -183,8 +172,7 @@ public class BillingResources {
 
 
     @GET
-    @ApiOperation("Provides a list of write transfers for a specific PNFS-ID.  "
-            + "Requires admin role.")
+    @ApiOperation("Provides a list of write transfers for a specific PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
@@ -214,11 +202,6 @@ public class BillingResources {
                                               @DefaultValue("date")
                                               @QueryParam("sort") String sort) {
         try {
-            if (!HttpServletRequests.isAdmin(request)) {
-                throw new ForbiddenException("Billing records are only available "
-                                                             + "to admin users.");
-            }
-
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
             PagedList<DoorTransferRecord> result = service.getWrites(pnfsid,
@@ -244,7 +227,7 @@ public class BillingResources {
 
     @GET
     @ApiOperation("Provides a list of pool-to-pool transfers for a specific "
-            + "PNFS-ID.  Requires admin role.")
+            + "PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
@@ -274,11 +257,6 @@ public class BillingResources {
                                            @DefaultValue("date")
                                            @QueryParam("sort") String sort) {
         try {
-            if (!HttpServletRequests.isAdmin(request)) {
-                throw new ForbiddenException("Billing records are only available "
-                                                             + "to admin users.");
-            }
-
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
             PagedList<P2PTransferRecord> result = service.getP2ps(pnfsid,
@@ -303,8 +281,7 @@ public class BillingResources {
 
 
     @GET
-    @ApiOperation("Provides a list of tape writes for a specific PNFS-ID.  "
-            + "Requires admin role.")
+    @ApiOperation("Provides a list of tape writes for a specific PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
@@ -330,11 +307,6 @@ public class BillingResources {
                                              @DefaultValue("date")
                                              @QueryParam("sort") String sort) {
         try {
-            if (!HttpServletRequests.isAdmin(request)) {
-                throw new ForbiddenException("Billing records are only available "
-                                                             + "to admin users.");
-            }
-
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
             PagedList<HSMTransferRecord> result = service.getStores(pnfsid,
@@ -357,8 +329,7 @@ public class BillingResources {
 
 
     @GET
-    @ApiOperation("Provide a list of tape reads for a specific PNFS-ID.  "
-            + "Requires admin role.")
+    @ApiOperation("Provide a list of tape reads for a specific PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
                 @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
@@ -384,11 +355,6 @@ public class BillingResources {
                                                @DefaultValue("date")
                                                @QueryParam("sort") String sort) {
         try {
-            if (!HttpServletRequests.isAdmin(request)) {
-                throw new ForbiddenException("Billing records are only available "
-                                                             + "to admin users.");
-            }
-
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
             PagedList<HSMTransferRecord> result = service.getRestores(pnfsid,
@@ -411,8 +377,7 @@ public class BillingResources {
 
 
     @GET
-    @ApiOperation("Provide the full \"grid\" of time series data in one pass. "
-                    + "Data is sorted lexicographically by key.")
+    @ApiOperation("Provide the full \"grid\" of time series data in one pass.")
     @ApiResponses({
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
