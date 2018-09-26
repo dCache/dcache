@@ -16,7 +16,7 @@ storage-intensive scientific experiments as well as general-purpose use cases
 where scalable, open source storage solutions are needed.
 
 dCache is a joint effort between the Deutsches Elektronen-Synchrotron (DESY) in
-Hamburg, Nordic Data Grid Facility (NeIC, NDGF) based in Copenhagen, the Fermi
+Hamburg, National Earthquake Information Center (NEIC, NDGF) based in Copenhagen, the Fermi
 National Accelerator Laboratory near Chicago with significant distributions and
 support from the University of California, San Diego, INFN, Bari as well as
 Rutherford Appleton Laboratory, UK and CERN in Geneva.
@@ -35,7 +35,7 @@ There are several ways of accessing data stored in dCache:
 
 -   **GRIDFTP** (**GSI-FTP**)
 
--   xrootd
+-   **xrootd**
 
 -   **SRM** (versions 1.1 and 2.2)
 
