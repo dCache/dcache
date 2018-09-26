@@ -23,15 +23,7 @@ This part gets you all the help that you might need:
 
     	-   Developers <support@dcache.org>
 
-    -   Additional Support:
 
-        -   German support:<german-support@dcache.org>
-
-        -   UK support:<GRIDPP-STORAGE@JISCMAIL.AC.UK>
-
-        -   USA support:<osg-storage@opensciencegrid.org>
-
-        -   User Forum: <user-forum@dcache.org>
 
 -   For features that you would like to see in dCache or bugs that should be fixed: Just write an e-mail to <support@dcache.org>
 
