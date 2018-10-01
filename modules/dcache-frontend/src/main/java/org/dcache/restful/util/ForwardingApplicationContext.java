@@ -19,6 +19,7 @@ package org.dcache.restful.util;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -285,5 +286,15 @@ public class ForwardingApplicationContext implements ApplicationContext
     public ClassLoader getClassLoader()
     {
         return inner.getClassLoader();
+    }
+
+    @Override
+    public <T extends Object> ObjectProvider<T> getBeanProvider(Class<T> type) {
+        return inner.getBeanProvider(type);
+    }
+
+    @Override
+    public <T extends Object> ObjectProvider<T> getBeanProvider(ResolvableType rt) {
+        return inner.getBeanProvider(rt);
     }
 }
