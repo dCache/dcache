@@ -3,10 +3,8 @@ Preface
 
 **Table of Contents**
 
-[Who should read this book?](#who-should-read-this-book)  
 [Minimum System Requirements?](#minimum-system-requirements)  
 [What is inside?](#what-is-inside)  
-[Looking for help?](#looking-for-help)
 
 Welcome to dCache.
 
@@ -16,7 +14,7 @@ storage-intensive scientific experiments as well as general-purpose use cases
 where scalable, open source storage solutions are needed.
 
 dCache is a joint effort between the Deutsches Elektronen-Synchrotron (DESY) in
-Hamburg, National Earthquake Information Center (NEIC, NDGF) based in Copenhagen, the Fermi
+Hamburg, Nordic Data Grid Facility (NeIC, NDGF) based in Copenhagen, the Fermi
 National Accelerator Laboratory near Chicago with significant distributions and
 support from the University of California, San Diego, INFN, Bari as well as
 Rutherford Appleton Laboratory, UK and CERN in Geneva.
@@ -78,7 +76,7 @@ Other features of dCache are:
 
 -   Ensuring data integrity through checksumming.
 
-dCache / **SRM** can transparently manage data distributed among dozens of disk
+<!---dCache / **SRM** can transparently manage data distributed among dozens of disk
 storage nodes (sometimes distributed over several countries). The system has
 shown to significantly improve the efficiency of connected tape storage systems,
 by caching, gather and flush and scheduled staging techniques. Furthermore, it
@@ -90,19 +88,16 @@ disk storage components.
 Access to the data is provided by various standard protocols. Furthermore the
 software comes with an implementation of the Storage Resource Manager protocol
 (**SRM**), which is an open standard for grid middleware to communicate with
-site specific storage fabrics.
+site specific storage fabrics.-->
 
-Who should read this book?
---------------------------
 
-This book is primarily targeted at system administrators.
 
 Minimum System Requirements
 ---------------------------
 
 For a minimal test installation:
 
--   Hardware: contemporary CPU, 1 GiB of RAM , 100 MiB free harddisk space
+-   Hardware: contemporary CPU, 1 GiB of RAM , 100 MiB free hard disk space
 
 -   Software: Oracle Java or OpenJDK, Postgres SQL Server
 
@@ -131,34 +126,3 @@ but will be needed by some users depending on their requirements.
 
 Part 3, Cookbook: This part comprises guides for specific tasks a system
 administrator might want to perform.
-
-Looking for help?
------------------
-
-This part gets you all the help that you might need:
-
--   For acquiring resources:
-
-    -   The [download page](https://www.dcache.org/downloads/IAgree.shtml).
-
-    -   For getting help during installation:
-
-        -   Developers <support@dcache.org>
-
-    -   Additional Support:
-
-        -   German support:<german-support@dcache.org>
-
-        -   UK support:<GRIDPP-STORAGE@JISCMAIL.AC.UK>
-
-        -   USA support:<osg-storage@opensciencegrid.org>
-
-        -   User Forum: <user-forum@dcache.org>
-
--   For features that you would like to see in dCache or bugs that should be
-    fixed: Just write an e-mail to <support@dcache.org>
-
--   If you like to stay up-to-date about new releases you can use the RSS feeds
-    available from [our downloads
-    page](https://www.dcache.org/downloads/IAgree.shtml) or subscribe to the
-    above-mentioned user forum mailing list, where all releases are announced.

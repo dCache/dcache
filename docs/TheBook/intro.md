@@ -4,9 +4,11 @@ Chapter 1. Introduction
 Table of Contents
 ------------------
 
-[dCache architecture](#architecture)
+[dCache Architecture](#architecture)
 [Cells and Domains](#cells-and-domains)  
+[Cells Communication](#cells-communication)  
 [Protocols Supported by dCache](#protocols-supported-by-dcache)
+[Logging](#logging)
 
 dCache is a distributed storage solution. It organises storage across computers so the combined storage can be used without the end-users being aware of where their data is stored. They simply see a large amount of storage.
 
@@ -22,22 +24,70 @@ The flow of data within dCache can also be carefully controlled. This is especia
 
 dCache provides a comprehensive administrative interface for configuring the dCache instance. This is described in the later sections of this book.  
 
-### Figure 1.1. The dCache Layer Model
 
-![The dCache Layer Model](layer_model.jpg "The dCache Layer Model")
 
 The layer model shown in [The dCache Layer Model] gives an overview of the architecture of the dCache system.
 
 Architecture
 ============
 
-As a storage system dCache has two main components: namespace and pools. The namespace provides a single rooted hierarchical file system view of the store data. On an other hand, pools contain only data files identified by unique id which is given by namespace at object creation time. Such separation of data and metadata makes dCache extremely scalable, as to grow the instance only adding a new pool nodes are required.
+As it is shown in the Figure # dCache has many important components. Nonetheless  A minimal dCache instance must consist out of **namespace**, **pool**, **poolmanager** and a **door**. However, in a typical deployment additional service are recommended, like **admin** interface, **billing** or web-based **front-end**.
+
+The namespace provides a single rooted hierarchical file system view of the store data. On an other hand, pools contain only data files identified by unique id which is given by namespace at object creation time. Such separation of data and metadata makes dCache extremely scalable, as to grow the instance only adding a new pool nodes are required.
 
 In addition to namespace and pools to interact with the users a client protocol specific entry points, called **doors** are required. Though pool can serve any supported protocol, a door speak only one.
 
 The coordination of data distribution with a set of pools done by **PoolManager**. It responsible to select appropriate pool to receive the data from a clients as well as to restore offline files from tertiary storage system if required.
 
-A minimal dCache instance must consist out of **namespace**, **pool**, **poolmanager** and a **door**. However, in a typical deployment additional service are recommended, like **admin** interface, **billing** or web-based **front-end**.
+Components of dCache System
+=============================
+
+|      Services                        |Responsible for    |
+|:------------------------------------------:|:----|
+| [alarms](#config-alarms)                   | Records errors requiring more or less urgent intervention.  |
+| [billing](#config-billing)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools      |
+| [poolmanager](#config-PoolManager)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
+| [replicamanager](#config-ReplicaManager)               |   n/a in services ?  |
+| [resilience](#congif-Resilience)                      |Controls the number of replicas of a file on the pools |
+| [hoppingmanager](#config-hopping)               | ?     |
+| cleaner                      | ?    |
+| info                         | ?     |
+| missing-files                | +      |
+ |[pool](#cookbook-pool)                      | Data storage ? (cookbook)    |
+| [pnfsmanager](#config-pnfsmanager)                   | Managing the pnfs file system (hierarchy), pnfs database, meta-data    |
+| spacemanager                       | +      |
+| [srm](#config-SRM)                   | Provides dynamic space allocation and file management on shared storage components on the Grid     |
+| srmmanager                       | ?   |
+| [zookeeper](#config-zookeeper)                    |  A distributed directory and coordination service on which dCache relies on|
+| [gplazma](#config-gplazma)                      | Authentication and authorization interface to limit access to data |
+| [dCap](#config-dCap)                  | Supports all necessary file metadata and name space manipulation operations     |
+| [xrootd](#config-xrootd)                     | Allows file transfers in and out of dCache using xrootd    |
+| [webdav](#config-webdavadmin)                      | Offers additional features to admins like sending admin-commands equal to those of admin interface (CLI)     |
+| ftp                      | -     |
+| httpd                      | -     |
+| [nfs](#config-nfs)                    |  Allows clients to mount dCache and perform POSIX IO using standard NFSv4.1 clients   |
+| frontend                      | -     |
+| history                      | -     |
+| transfermanager                      | -     |
+| pinmanager                      | -     |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [Components of dCache System]: images/test2.svg
+  [figure\_title]: #fig-intro-layer-model
+
 
 Cells and Domains
 =================

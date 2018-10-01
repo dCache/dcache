@@ -1,0 +1,3 @@
+PnfsManager used by inner dCache components talk to the namespace.
+and for altering dCache ACL behaviour. For more details please check
+[Chimera](#config-chimera) and [ACLs in dCache](#config-acl).
