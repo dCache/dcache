@@ -4,7 +4,10 @@ import org.apache.kafka.common.serialization.Serializer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -19,7 +22,8 @@ public class DoorRequestMessageSerializer implements Serializer<DoorRequestInfoM
         JSONObject o = new JSONObject();
         o.put("VERSION", "1.0");
         o.put("msgType", data.getMessageType());
-        o.put("date", new Date(data.getTimestamp()));
+        o.put("date", DateTimeFormatter.ISO_OFFSET_DATE_TIME
+                .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()), ZoneId.systemDefault())));
         o.put("queuingTime", data.getTimeQueued());
         o.put("cellName", data.getCellAddress().getCellName());
         o.put("cellType", data.getCellType());
