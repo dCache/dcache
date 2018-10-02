@@ -18,6 +18,7 @@
 package org.dcache.notification;
 
 import org.apache.kafka.common.serialization.Serializer;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.time.Instant;
