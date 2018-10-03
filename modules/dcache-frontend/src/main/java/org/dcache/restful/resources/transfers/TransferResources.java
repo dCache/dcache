@@ -69,7 +69,6 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
@@ -77,7 +76,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
@@ -142,6 +140,8 @@ public final class TransferResources {
                                                    @QueryParam("gid") String gid,
                                                    @ApiParam("Select transfers initiated by a member of this vomsgroup.")
                                                    @QueryParam("vomsgroup") String vomsgroup,
+                                                   @ApiParam("Select transfers involving this path.")
+                                                   @QueryParam("path") String path,
                                                    @ApiParam("Select transfers involving this pnfsid.")
                                                    @QueryParam("pnfsid") String pnfsid,
                                                    @ApiParam("Select transfers involving this pool.")
@@ -168,12 +168,11 @@ public final class TransferResources {
                                uid,
                                gid,
                                vomsgroup,
+                               path,
                                pnfsid,
                                pool,
                                client,
                                sort);
-        } catch (NoSuchElementException e) {
-            throw new ForbiddenException("User subject must contain uid to access transfers.");
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
         }
