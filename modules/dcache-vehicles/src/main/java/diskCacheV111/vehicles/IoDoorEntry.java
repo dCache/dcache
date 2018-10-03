@@ -1,11 +1,11 @@
 package diskCacheV111.vehicles;
 
-import java.io.IOException;
-import java.io.Serializable;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
+
+import java.io.IOException;
+import java.io.Serializable;
 
 import diskCacheV111.util.PnfsId;
 
@@ -22,15 +22,17 @@ public class IoDoorEntry implements Serializable
     private final long _waitingSince;
     private final String _replyHost;
     private final Subject _subject;
+    private final String _path;
 
     private static final long serialVersionUID = 7283617314269359997L;
 
-    public IoDoorEntry(long serialId, PnfsId pnfsId, Subject subject,
-                       String pool, String status,
+    public IoDoorEntry(long serialId, PnfsId pnfsId, String path,
+                       Subject subject, String pool, String status,
                        long waitingSince, String replyHost)
     {
         _serialId = serialId;
         _pnfsId = pnfsId;
+        _path = path;
         _subject = subject;
         _pool = pool;
         _status = status;
@@ -41,6 +43,12 @@ public class IoDoorEntry implements Serializable
     public long getSerialId()
     {
         return _serialId;
+    }
+
+    @Nullable
+    public String getPath()
+    {
+        return _path;
     }
 
     @Nullable

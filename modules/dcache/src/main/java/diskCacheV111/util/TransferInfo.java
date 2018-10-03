@@ -59,12 +59,12 @@ documents or software obtained from this server.
  */
 package diskCacheV111.util;
 
+import javax.security.auth.Subject;
+
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-
-import javax.security.auth.Subject;
 
 import org.dcache.util.InvalidatableItem;
 import org.dcache.util.TimeUtils.DurationParser;
@@ -82,7 +82,7 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
     private static final String FORMAT    = "(%s %s %s)(prot %s)"
                     + "(uid %s gid %s vomsgrp %s)"
                     + "(proc %s)(%s)(pool %s)(client %s)"
-                    + "(%s)(state %s)(elapsed %s)(transferred %s)(speed %s)\n";
+                    + "(%s)(state %s)(elapsed %s)(transferred %s)(speed %s)(path %s)\n";
 
     protected static String getTimeString(long time, boolean display) {
         if (!display) {
@@ -114,19 +114,20 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
     protected String protocol      = "<unknown>";
     protected String process       = "<unknown>";
     protected String pnfsId        = "";
-    protected String pool          = "";
-    protected String replyHost     = "";
-    protected String sessionStatus = "";
-    protected long waitingSince;
-    protected MoverState moverStatus = MoverState.NOTFOUND;
-    protected Long     transferTime;
-    protected Long     bytesTransferred;
-    protected Long     moverId;
-    protected Long     moverSubmit;
-    protected Long     moverStart;
-    protected Subject  subject;
-    protected UserInfo userInfo;
-    protected boolean  valid = true;
+    protected String path          = "";
+    protected String     pool          = "";
+    protected String     replyHost     = "";
+    protected String     sessionStatus = "";
+    protected long       waitingSince;
+    protected MoverState moverStatus   = MoverState.NOTFOUND;
+    protected Long       transferTime;
+    protected Long       bytesTransferred;
+    protected Long       moverId;
+    protected Long       moverSubmit;
+    protected Long       moverStart;
+    protected Subject    subject;
+    protected UserInfo   userInfo;
+    protected boolean    valid         = true;
 
     @Override
     public int compareTo(TransferInfo o) {
@@ -192,6 +193,10 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
 
     public Long getMoverSubmit() {
         return moverSubmit;
+    }
+
+    public String getPath() {
+        return path;
     }
 
     public String getPnfsId() {
@@ -310,6 +315,10 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
         this.moverSubmit = moverSubmit;
     }
 
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     public void setPnfsId(String pnfsId) {
         this.pnfsId = pnfsId;
     }
@@ -388,7 +397,8 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
                              state,
                              getTimeWaiting(),
                              size,
-                             speed);
+                             speed,
+                             path);
     }
 
     protected String timeRunning(long now, boolean display) {
