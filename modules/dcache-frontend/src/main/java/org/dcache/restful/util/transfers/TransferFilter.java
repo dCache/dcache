@@ -78,6 +78,7 @@ public final class TransferFilter {
     private Pattern  door;
     private Pattern  domain;
     private Pattern  prot;
+    private Pattern  path;
     private Pattern  pnfsId;
     private Pattern  pool;
     private Pattern  host;
@@ -105,6 +106,10 @@ public final class TransferFilter {
         }
 
         if (!matches(prot, transferInfo.getProtocol())) {
+            return false;
+        }
+
+        if (!matches(path, transferInfo.getPath())) {
             return false;
         }
 
@@ -213,6 +218,10 @@ public final class TransferFilter {
 
     public void setHost(List<String> host) {
         this.host = compile(host);
+    }
+
+    public void setPath(List<String> path) {
+        this.path = compile(path);
     }
 
     public void setPnfsId(List<String> pnfsId) {

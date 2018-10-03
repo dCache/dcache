@@ -166,6 +166,13 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                                         + "default is all.")
         Integer[] proc = {};
 
+        @Option(name = "path",
+                        separator = ",",
+                        usage = "List only transfers matching this "
+                                        + "comma-delimited set of paths; "
+                                        + "default is all.")
+        String[] path = {};
+
         @Option(name = "pnfsId",
                         separator = ",",
                         usage = "List only transfers matching this "
@@ -234,6 +241,7 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
             filter.setGid(Arrays.asList(gid));
             filter.setVomsGroup(Arrays.asList(vomsGroup));
             filter.setHost(Arrays.asList(host));
+            filter.setPath(Arrays.asList(path));
             filter.setPnfsId(Arrays.asList(pnfsId));
             filter.setPool(Arrays.asList(pool));
             filter.setProc(Arrays.asList(proc));
@@ -249,6 +257,7 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                             = get(null,
                                   0,
                                   limit,
+                                  null,
                                   null,
                                   null,
                                   null,
@@ -316,6 +325,9 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                 case "vomsgroup":
                     comparator = Comparator.comparing(TransferInfo::getVomsGroup);
                     break;
+                case "path":
+                    comparator = Comparator.comparing(TransferInfo::getPath);
+                    break;
                 case "pnfsid":
                     comparator = Comparator.comparing(TransferInfo::getPnfsId);
                     break;
@@ -352,7 +364,8 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                                                      String state, String door,
                                                      String domain, String protocol,
                                                      String uid, String gid,
-                                                     String vomsgroup, String pnfsid,
+                                                     String vomsgroup,
+                                                     String path, String pnfsid,
                                                      String pool, String client) {
         Predicate<TransferInfo> matchesSubject =
                         (info) -> subjectUid == null
@@ -380,6 +393,9 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
         Predicate<TransferInfo> matchesVomsGroup =
                         (info) -> vomsgroup == null || Strings.nullToEmpty(info.getVomsGroup())
                                                           .contains(vomsgroup);
+        Predicate<TransferInfo> matchesPath =
+                        (info) -> path == null || Strings.nullToEmpty(info.getPath())
+                                                           .contains(path);
         Predicate<TransferInfo> matchesPnfsid =
                         (info) -> pnfsid == null || Strings.nullToEmpty(info.getPnfsId())
                                                           .contains(pnfsid);
@@ -393,7 +409,8 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
         return matchesSubject.and(matchesState).and(matchesDoor)
                              .and(matchesDomain).and(matchesProtocol)
                              .and(matchesUid).and(matchesGid).and(matchesVomsGroup)
-                             .and(matchesPnfsid).and(matchesPool).and(matchesClient);
+                             .and(matchesPath).and(matchesPnfsid)
+                             .and(matchesPool).and(matchesClient);
     }
 
     /**
@@ -425,6 +442,7 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                                           String uid,
                                           String gid,
                                           String vomsgroup,
+                                          String path,
                                           String pnfsid,
                                           String pool,
                                           String client,
@@ -432,7 +450,7 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
         Predicate<TransferInfo> filter = getFilter(suid,
                                                    state, door, domain, protocol,
                                                    uid, gid, vomsgroup,
-                                                   pnfsid, pool, client);
+                                                   path, pnfsid, pool, client);
         if (Strings.isNullOrEmpty(sort)) {
             sort = "door,waiting";
         }

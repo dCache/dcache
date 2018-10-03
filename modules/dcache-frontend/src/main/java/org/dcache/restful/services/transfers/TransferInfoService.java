@@ -117,6 +117,7 @@ public interface TransferInfoService {
                                    String uid,
                                    String gid,
                                    String vomsgroup,
+                                   String path,
                                    String pnfsid,
                                    String pool,
                                    String client,
