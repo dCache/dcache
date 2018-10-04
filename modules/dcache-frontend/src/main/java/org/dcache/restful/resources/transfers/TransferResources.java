@@ -69,6 +69,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
@@ -76,13 +77,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TransferInfo;
 
+import org.dcache.auth.Subjects;
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
+import org.dcache.restful.util.RequestUser;
 
 /**
  * <p>RESTful API to the {@link TransferInfoService} service.</p>
@@ -101,6 +105,7 @@ public final class TransferResources {
                     + "either queued or currently running.  Internal (pool-to-pool) "
                     + "transfers are excluded.")
     @ApiResponses({
+                    @ApiResponse(code = 403, message = "User subject must contain uid to access transfers."),
                     @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
@@ -147,9 +152,15 @@ public final class TransferResources {
                                                    @DefaultValue("door,waiting")
                                                    @QueryParam("sort") String sort) {
         try {
+            RequestUser.checkAuthenticated();
+
+            String suid = RequestUser.isAdmin() ? null :
+                            String.valueOf(Subjects.getUid(RequestUser.getSubject()));
+
             return service.get(token,
                                offset,
                                limit,
+                               suid,
                                state,
                                door,
                                domain,
@@ -161,6 +172,8 @@ public final class TransferResources {
                                pool,
                                client,
                                sort);
+        } catch (NoSuchElementException e) {
+            throw new ForbiddenException("User subject must contain uid to access transfers.");
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
         }

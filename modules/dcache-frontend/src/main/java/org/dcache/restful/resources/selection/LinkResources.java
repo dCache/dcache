@@ -61,18 +61,13 @@ package org.dcache.restful.resources.selection;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Comparator;
@@ -86,7 +81,6 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Link;
 import org.dcache.restful.providers.selection.LinkGroup;
-import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
@@ -98,26 +92,15 @@ import org.dcache.restful.util.HttpServletRequests;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/links")
 public final class LinkResources {
-    @Context
-    private HttpServletRequest request;
-
     @Inject
     private PoolMonitor poolMonitor;
 
 
     @GET
-    @ApiOperation("Get information about all links.  Requires admin role."
+    @ApiOperation("Get information about all links."
                     + " Results sorted lexicographically by link name.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Link info only accessible to admin users."),
-    })
     @Produces(MediaType.APPLICATION_JSON)
     public List<Link> getLinks() {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Link info only accessible to admin users.");
-        }
-
         return poolMonitor.getPoolSelectionUnit().getLinks().values()
                           .stream()
                           .sorted(Comparator.comparing(SelectionLink::getName))
@@ -126,19 +109,11 @@ public final class LinkResources {
     }
 
     @GET
-    @ApiOperation("Get information about all linkgroups.  Requires admin role."
+    @ApiOperation("Get information about all linkgroups."
                     + " Results sorted lexicographically by link group name.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Link group info only accessible to admin users."),
-    })
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/groups")
     public List<LinkGroup> getLinkGroups() {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Link group info only accessible to admin users.");
-        }
-
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         return psu.getLinkGroups().values()

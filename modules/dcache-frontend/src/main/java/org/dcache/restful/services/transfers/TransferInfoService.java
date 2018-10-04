@@ -90,6 +90,7 @@ public interface TransferInfoService {
      *                  without a token (refresh).
      * @param offset    Return transfers beginning at this index.
      * @param limit     Return at most this number of items.
+     * @param suid      Return transfers only belonging to this user (null returns all).
      * @param state     Filter on state.
      * @param door      Filter on door.
      * @param domain    Filter on domain.
@@ -108,6 +109,7 @@ public interface TransferInfoService {
     SnapshotList<TransferInfo> get(UUID token,
                                    Integer offset,
                                    Integer limit,
+                                   String suid,
                                    String state,
                                    String door,
                                    String domain,

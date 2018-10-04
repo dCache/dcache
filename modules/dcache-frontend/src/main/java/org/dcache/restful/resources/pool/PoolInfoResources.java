@@ -160,17 +160,9 @@ public final class PoolInfoResources {
 
     @GET
     @ApiOperation("Get information about all pools (name, group membership, links).  "
-                    + "Requires admin role.  Results sorted lexicographically by pool name.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Pool info only accessible to admin users."),
-    })
+                    + "Results sorted lexicographically by pool name.")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Pool> getPools() throws CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Pool info only accessible to admin users.");
-        }
-
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         return psu.getPools().values()
@@ -182,41 +174,23 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation("Get information about a specific pool (name, group membership, links). "
-                    + "Requires admin role.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Pool info only accessible to admin users."),
-    })
+    @ApiOperation("Get information about a specific pool (name, group membership, links).")
     @Path("/{pool}")
     @Produces(MediaType.APPLICATION_JSON)
     public Pool getPool(@ApiParam(value = "The pool to be described.",
                                 required = true)
                         @PathParam("pool") String pool) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Pool info only accessible to admin users.");
-        }
-
         return new Pool(pool, poolMonitor.getPoolSelectionUnit());
     }
 
 
     @GET
-    @ApiOperation("Get information about a specific pool (configuration, state, usage).  "
-                    + "Requires admin role.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Pool info only accessible to admin users."),
-    })
+    @ApiOperation("Get information about a specific pool (configuration, state, usage).")
     @Path("/{pool}/usage")
     @Produces(MediaType.APPLICATION_JSON)
     public PoolInfo getPoolUsage(@ApiParam(value = "The pool to be described.",
                                          required = true)
                                  @PathParam("pool") String pool) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Pool info only accessible to admin users.");
-        }
-
         PoolInfo info = new PoolInfo();
 
         service.getDiagnosticInfo(pool, info);
@@ -227,10 +201,7 @@ public final class PoolInfoResources {
 
     @GET
     @ApiOperation("Get information about a specific PNFS-ID usage within a "
-            + "specific pool.  Requires admin role.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Pool info only accessible to admin users."),
-    })
+            + "specific pool.")
     @Path("/{pool}/{pnfsid}")
     @Produces(MediaType.APPLICATION_JSON)
     public PoolInfo getRepositoryInfoForFile(@ApiParam(value = "The pool to be described.",
@@ -239,11 +210,6 @@ public final class PoolInfoResources {
                                              @ApiParam(value = "The PNFS-ID of the file to be described.",
                                                      required = true)
                                              @PathParam("pnfsid") PnfsId pnfsid) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Repository info for file only accessible to admin users.");
-        }
-
         PoolInfo info = new PoolInfo();
 
         service.getCacheInfo(pool, pnfsid, info);
@@ -283,16 +249,13 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation(value = "Get mover information for a specific pool.  Requires admin role.",
+    @ApiOperation(value = "Get mover information for a specific pool.",
             responseHeaders = {
                 @ResponseHeader(name = "X-Total-Count", description = "Total "
                         + "number of potential responses.  This may be greater "
                         + "than the number of response if offset or limit are "
                         + "specified")
             })
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Mover info only accessible to admin users."),
-    })
     @Path("/{pool}/movers")
     @Produces(MediaType.APPLICATION_JSON)
     public List<MoverData> getMovers(@ApiParam("The pool to be described.")
@@ -321,11 +284,6 @@ public final class PoolInfoResources {
                                      @ApiParam("How returned items should be sorted.")
                                      @DefaultValue("door,startTime")
                                      @QueryParam("sort") String sort) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Mover info only accessible to admin users.");
-        }
-
         limit = limit == null ? Integer.MAX_VALUE : limit;
 
         String[] type = typeList == null ? new String[0]:
@@ -374,11 +332,9 @@ public final class PoolInfoResources {
 
 
     @GET
-    @ApiOperation("Get nearline activity information for a specific pool.  "
-                    + "Requires admin role.")
+    @ApiOperation("Get nearline activity information for a specific pool.")
     @ApiResponses({
         @ApiResponse(code = 400, message = "unrecognized queue type"),
-        @ApiResponse(code = 403, message = "Flush info only accessible to admin users."),
         @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Path("/{pool}/nearline/queues")
@@ -402,11 +358,6 @@ public final class PoolInfoResources {
                                                 @ApiParam("How the returned values should be sorted.")
                                                 @DefaultValue("class,created")
                                                 @QueryParam("sort") String sort) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Flush info only accessible to admin users.");
-        }
-
         limit = limit == null ? Integer.MAX_VALUE : limit;
 
         List<NearlineData> list = new ArrayList<>();

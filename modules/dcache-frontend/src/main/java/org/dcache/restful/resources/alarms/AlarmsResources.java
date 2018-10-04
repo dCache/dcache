@@ -120,7 +120,7 @@ public final class AlarmsResources {
     private AlarmsInfoService service;
 
 
-    @ApiOperation(value = "General information about alarms service. Requires admin role.",
+    @ApiOperation(value = "General information about alarms service.",
             hidden = true)
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -131,10 +131,9 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation("Provides a filtered list of log entries. Requires admin role.")
+    @ApiOperation("Provides a filtered list of log entries.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
     @Path("logentries") // collection of all LogEntry.
@@ -163,11 +162,6 @@ public final class AlarmsResources {
                                     @QueryParam("info") String info,
                                     @ApiParam("A comma-seperated list of fields to sort log entries.")
                                     @QueryParam("sort") String sort) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Alarm service only accessible to admin users.");
-        }
-
         try {
             return this.service.get(offset,
                                     limit,
@@ -268,7 +262,7 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation(value = "Request for a single log entry. Requires admin role.", hidden = true)
+    @ApiOperation(value = "Request for a single log entry.", hidden = true)
     @Path("/logentries/{key}")
     @Produces(MediaType.APPLICATION_JSON)
     public LogEntry getLogEntry(@ApiParam("The log entry to provide.")
@@ -350,36 +344,20 @@ public final class AlarmsResources {
 
 
     @GET
-    @ApiOperation("Request the current mapping of all alarm types to priorities. Requires admin role.")
-    @ApiResponses({
-                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users.")
-            })
+    @ApiOperation("Request the current mapping of all alarm types to priorities.")
     @Path("/priorities")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getPriorities() {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Alarm service only accessible to admin users.");
-        }
-
         return service.getMap();
     }
 
 
     @GET
-    @ApiOperation("Request the current mapping of an alarm type to its priority. Requires admin role.")
-    @ApiResponses({
-                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users.")
-            })
+    @ApiOperation("Request the current mapping of an alarm type to its priority.")
     @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
     public String getPriority(@ApiParam("The alarm type.")
                               @PathParam("type") String type) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Alarm service only accessible to admin users.");
-        }
-
         return service.getMap().get(type);
     }
 

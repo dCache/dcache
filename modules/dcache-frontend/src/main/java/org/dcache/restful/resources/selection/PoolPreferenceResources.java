@@ -73,7 +73,6 @@ import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
@@ -93,7 +92,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.PreferenceResult;
-import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * <p>RESTful API to the {@link diskCacheV111.poolManager.PoolManagerV5}, in
@@ -105,9 +103,6 @@ import org.dcache.restful.util.HttpServletRequests;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/pool-preferences")
 public final class PoolPreferenceResources {
-    @Context
-    private HttpServletRequest request;
-
     @Inject
     private PoolMonitor poolMonitor;
 
@@ -119,7 +114,6 @@ public final class PoolPreferenceResources {
     @ApiOperation("Describe the pools selected by a particular request.")
     @ApiResponses({
         @ApiResponse(code = 400, message = "Bad Request"),
-        @ApiResponse(code = 403, message = "Pool preference info only accessible to admin users."),
         @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
@@ -142,11 +136,6 @@ public final class PoolPreferenceResources {
                                         @ApiParam("The linkgroup unit, or 'none' for a request outside of a linkgroup.")
                                         @DefaultValue("none")
                                         @QueryParam("linkGroup") String linkGroup) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Pool preference info only accessible to admin users.");
-        }
-
         try {
             String command = "psux match " + type + " " + store + " "
                             + dcache + " " + net  + " " + protocol

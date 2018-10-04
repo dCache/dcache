@@ -61,18 +61,13 @@ package org.dcache.restful.resources.selection;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Comparator;
@@ -82,7 +77,6 @@ import java.util.stream.Collectors;
 
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Partition;
-import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
@@ -94,26 +88,15 @@ import org.dcache.restful.util.HttpServletRequests;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/partitions")
 public final class PartitionResources {
-    @Context
-    private HttpServletRequest request;
-
     @Inject
     private PoolMonitor poolMonitor;
 
 
     @GET
-    @ApiOperation("Get information about all partitions.  Requires admin role."
+    @ApiOperation("Get information about all partitions."
                     + " Results sorted lexicographically by partition name.")
-    @ApiResponses({
-        @ApiResponse(code = 403, message = "Partition info only accessible to admin users."),
-    })
     @Produces(MediaType.APPLICATION_JSON)
     public List<Partition> getPartitions() {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Partition info only accessible to admin users.");
-        }
-
         return poolMonitor.getPartitionManager().getPartitions().entrySet()
                           .stream()
                           .sorted(Comparator.comparing(Entry::getKey))
