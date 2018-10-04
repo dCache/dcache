@@ -205,7 +205,6 @@
           </constructor-arg>
         </bean>
       </constructor-arg>
-      <constructor-arg name="autoFlush" value="false"/>
       <property name="defaultTopic" value="billing"/>
       <property name="producerListener" ref="listener"/>
     </bean>
