@@ -74,9 +74,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.util.Glob;
 
 /**
  * <p>In-memory version of the VO Group map file.  Loads once, and thereafter
@@ -88,6 +88,11 @@ public class FileBackedVOGroupMap {
                     = LoggerFactory.getLogger(FileBackedVOGroupMap.class);
 
     private final Map<String, VOGroupEntry> cache = new HashMap<>();
+    /**
+     * the vo group map file may contain wildcard FQAN match patterns,
+     * allow second cache for these for efficiency
+     */
+    private final Map<Glob, VOGroupEntry> globCache = new HashMap<>();
     private final File file;
     private final Path path;
     private long lastModified;
@@ -98,38 +103,52 @@ public class FileBackedVOGroupMap {
         this.file = this.path.toFile();
     }
 
-    public VOGroupEntry get(String fqan) throws AuthenticationException {
-        synchronized (cache) {
-            checkFile();
-            if (!cache.containsKey(fqan)) {
-                throw new AuthenticationException("No VO group entry matching FQAN: "
-                                                                  + fqan);
-            }
-
-            return cache.get(fqan);
+    synchronized public VOGroupEntry get(String fqan) throws AuthenticationException {
+        VOGroupEntry entry;
+        checkFile();
+        entry = cache.get(fqan);
+        if (entry == null) {
+            entry = globCache.entrySet()
+                    .stream()
+                    .filter(e -> e.getKey().matches(fqan))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (entry == null) {
+            throw new AuthenticationException("No VO group entry matching FQAN: "
+                                              + fqan);
+        } else {
+            return entry;
         }
     }
 
     @VisibleForTesting
-    long getReloadCount() {
-        synchronized (cache) {
-            return reloadCount;
-        }
+    synchronized long  getReloadCount() {
+        return reloadCount;
     }
 
-    @GuardedBy("cache")
+    @GuardedBy("this")
     private void checkFile() {
         if (!file.exists() || !file.canRead()) {
             LOGGER.error("RELOAD FAILED: Could not read {}.",
                          file.getAbsolutePath());
         } else if (lastModified < file.lastModified()) {
             cache.clear();
+            globCache.clear();
             GsonBuilder builder = new GsonBuilder();
             try (FileReader reader = new FileReader(file)) {
                 VOGroupEntry[] info = builder.create()
                                              .fromJson(reader,
                                                        VOGroupEntry[].class);
-                Stream.of(info).forEach(e -> cache.put(e.getFqan(), e));
+                for (VOGroupEntry e: info) {
+                    Glob glob = new Glob(e.getFqan());
+                    if (glob.isGlob()) {
+                        globCache.put(glob, e);
+                    } else {
+                        cache.put(e.getFqan(), e);
+                    }
+                }
                 lastModified = file.lastModified();
                 ++reloadCount;
             } catch (IOException e) {

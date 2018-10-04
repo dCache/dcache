@@ -134,6 +134,21 @@ public class VOGroupPluginTest {
     }
 
     @Test
+    public void shouldFindTheWildcardMatch()
+                    throws Exception {
+        givenFQAN(anFqanWithUnameForWildCardMatch());
+        whenMapIsCalled();
+        assertThatPluginSucceeded();
+    }
+
+    @Test
+    public void shouldFailOnNoMatch()
+        throws Exception {
+        givenFQAN(anFqanThatShouldNotMacth());
+        whenMapIsCalled();
+        assertThatPluginFailed();
+    }
+    @Test
     public void shouldNotFailIfUserNamePresent() throws Exception {
         givenFQAN(anFqanWithUname());
         whenMapIsCalled();
@@ -172,6 +187,15 @@ public class VOGroupPluginTest {
     private String anFqanWithoutUname() {
         return "/fermilab/accelerator/Role=None";
     }
+
+    private String anFqanWithUnameForWildCardMatch() {
+        return "/fermilab/cdf/Role=Production";
+    }
+
+    private String anFqanThatShouldNotMacth() {
+        return "/fermilab/Role=production";
+    }
+
 
     private void assertThatGidPrincipalWasAdded() {
         Optional<GidPrincipal> gidPrincipal
