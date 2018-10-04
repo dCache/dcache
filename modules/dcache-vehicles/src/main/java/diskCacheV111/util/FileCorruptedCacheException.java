@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2007-2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2007-2018 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -34,27 +34,27 @@ public class FileCorruptedCacheException extends CacheException
 {
     private static final long serialVersionUID = 6022529795888425409L;
 
-    private final Optional<Set<Checksum>> _expectedChecksums;
-    private final Optional<Set<Checksum>> _actualChecksums;
-    private final Optional<Long> _expectedSize;
-    private final Optional<Long> _actualSize;
+    private final Set<Checksum> _expectedChecksums;
+    private final Set<Checksum> _actualChecksums;
+    private final Long _expectedSize;
+    private final Long _actualSize;
 
     public FileCorruptedCacheException(String message)
     {
         super(FILE_CORRUPTED, message);
-        _expectedChecksums = Optional.empty();
-        _actualChecksums = Optional.empty();
-        _expectedSize = Optional.empty();
-        _actualSize = Optional.empty();
+        _expectedChecksums = null;
+        _actualChecksums = null;
+        _expectedSize = null;
+        _actualSize = null;
     }
 
     public FileCorruptedCacheException(String message, Throwable cause)
     {
         super(FILE_CORRUPTED, message, cause);
-        _expectedChecksums = Optional.empty();
-        _actualChecksums = Optional.empty();
-        _expectedSize = Optional.empty();
-        _actualSize = Optional.empty();
+        _expectedChecksums = null;
+        _actualChecksums = null;
+        _expectedSize = null;
+        _actualSize = null;
     }
 
     public FileCorruptedCacheException(Checksum expectedChecksum, Checksum actualChecksum)
@@ -65,38 +65,38 @@ public class FileCorruptedCacheException extends CacheException
     public FileCorruptedCacheException(Set<Checksum> expectedChecksums, Set<Checksum> actualChecksums)
     {
         super(FILE_CORRUPTED, "Checksum mismatch (expected=" + expectedChecksums + ", actual=" + actualChecksums + ')');
-        _expectedChecksums = Optional.of(expectedChecksums);
-        _actualChecksums = Optional.of(actualChecksums);
-        _expectedSize = Optional.empty();
-        _actualSize = Optional.empty();
+        _expectedChecksums = expectedChecksums;
+        _actualChecksums = actualChecksums;
+        _expectedSize = null;
+        _actualSize = null;
     }
 
     public FileCorruptedCacheException(long expectedSize, long actualSize)
     {
         super(FILE_CORRUPTED, "File size mismatch (expected=" + expectedSize + ", actual=" + actualSize + ')');
-        _expectedChecksums = Optional.empty();
-        _actualChecksums = Optional.empty();
-        _expectedSize = Optional.of(expectedSize);
-        _actualSize = Optional.of(actualSize);
+        _expectedChecksums = null;
+        _actualChecksums = null;
+        _expectedSize = expectedSize;
+        _actualSize = actualSize;
     }
 
     public Optional<Set<Checksum>> getExpectedChecksums()
     {
-        return _expectedChecksums;
+        return Optional.ofNullable(_expectedChecksums);
     }
 
     public Optional<Set<Checksum>> getActualChecksums()
     {
-        return _actualChecksums;
+        return Optional.ofNullable(_actualChecksums);
     }
 
     public Optional<Long> getExpectedSize()
     {
-        return _expectedSize;
+        return Optional.ofNullable(_expectedSize);
     }
 
     public Optional<Long> getActualSize()
     {
-        return _actualSize;
+        return Optional.ofNullable(_actualSize);
     }
 }
