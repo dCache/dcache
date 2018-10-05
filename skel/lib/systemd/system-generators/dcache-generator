@@ -38,6 +38,8 @@ for domain in $(getProperty dcache.domains); do
 	Environment="CLASSPATH=$CLASSPATH" "LD_LIBRARY_PATH=$JAVA_LIBRARY_PATH"
 	$( [ -z "$USER" ] || echo "User=$USER" )
 	ExecStart=${JAVA} ${JAVA_OPTIONS} "-Ddcache.home=$HOME" "-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" org.dcache.boot.BootLoader start ${domain}
+	LimitNOFILE=65535
+	LimitNPROC=infinity
 
 	[Install]
 	WantedBy=default.target
