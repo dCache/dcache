@@ -852,6 +852,18 @@ public class RequestContainerV5
         //
         public void addRequest( CellMessage message ){
 
+           PoolMgrSelectReadPoolMsg request =
+                (PoolMgrSelectReadPoolMsg)message.getMessageObject() ;
+
+            // fail-fast if state is not allowed
+            if (!request.getAllowedStates().contains(_state)) {
+                request.setFailed(CacheException.PERMISSION_DENIED, "Pool manager state not allowed");
+
+                message.revertDirection();
+                sendMessage(message);
+                return;
+            }
+
            _messages.add(message);
            _stagingDenied = false;
 
@@ -864,9 +876,6 @@ public class RequestContainerV5
            if (_poolSelector != null) {
                return;
            }
-
-           PoolMgrSelectReadPoolMsg request =
-                (PoolMgrSelectReadPoolMsg)message.getMessageObject() ;
 
            _linkGroup = request.getLinkGroup();
            _protocolInfo = request.getProtocolInfo();
