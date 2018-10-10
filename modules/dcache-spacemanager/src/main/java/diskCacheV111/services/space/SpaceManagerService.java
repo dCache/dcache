@@ -367,7 +367,36 @@ public final class SpaceManagerService
 
     private void getValidSpaceTokens(GetSpaceTokensMessage msg) throws DataAccessException
     {
-        msg.setSpaceTokenSet(db.get(db.spaces().thatNeverExpire().whereStateIsIn(SpaceState.RESERVED), null));
+        List<Space> spaces = db.get(db.spaces().thatNeverExpire().whereStateIsIn(SpaceState.RESERVED), null);
+        if (msg.isFileCountRequested()) {
+            /*
+             *  REVISIT: the database schema would support a query like:
+             *
+             *      SELECT spacereservationid,description,COUNT(*)
+             *          FROM srmspacefile f JOIN srmspace s ON s.id = f.spacereservationid
+             *          GROUP BY spacereservationid, description;
+             *
+             *  This has the advantage of being faster than querying each
+             *  reservation individually: a test on DESY ATLAS instance, with
+             *  four reservations with a combined total of 16,597,222 files,
+             *  from 29,747,983 files in srmspacefile took ~5 seconds, whereas
+             *  querying each file individually requires ~2.5 seconds per
+             *  reservation.
+             *
+             *  This approach is currently not possible, as it would require
+             *  changes to the Space class.
+             *
+             *  An alternative approach would be to update the database schema
+             *  so that the number of files in a reservation is stored in
+             *  srmspace and maintained by the stored procedure, similar to
+             *  how other metrics are done currently.
+             */
+            for (Space space : spaces) {
+                long fileCount = db.count(db.files().whereSpaceTokenIs(space.getId()).whereStateIsIn(FileState.STORED));
+                space.setNumberOfFiles(fileCount);
+            }
+        }
+        msg.setSpaceTokenSet(spaces);
     }
 
     private void getLinkGroups(GetLinkGroupsMessage msg) throws DataAccessException
