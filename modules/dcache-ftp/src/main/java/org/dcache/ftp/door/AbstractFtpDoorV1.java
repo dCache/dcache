@@ -117,6 +117,7 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
@@ -2472,7 +2473,7 @@ public abstract class AbstractFtpDoorV1
      * This method exists to allow a mock of this class to isolate itself
      * from the testing machine's network configuration.
      */
-    protected Iterable<InterfaceAddress> getLocalAddressInterfaces()
+    protected Collection<InterfaceAddress> getLocalAddressInterfaces()
             throws SocketException
     {
         return NetworkInterface.getByInetAddress(_localSocketAddress.getAddress())
