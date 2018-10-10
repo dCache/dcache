@@ -2,6 +2,7 @@ package diskCacheV111.services.space;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.OptionalLong;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -21,6 +22,7 @@ public class Space implements Serializable {
     private Long expirationTime;
     private String description;
     private SpaceState state;
+    private Long numberOfFiles;
 
     public Space(
             long id,
@@ -120,6 +122,7 @@ public class Space implements Serializable {
         sb.append("state:").append(state).append(' ');
         sb.append("used:").append(usedSizeInBytes).append(' ');
         sb.append("allocated:").append(allocatedSpaceInBytes).append(' ');
+        sb.append("files:").append(numberOfFiles);
         return sb.toString();
     }
 
@@ -174,5 +177,15 @@ public class Space implements Serializable {
     public void setExpirationTime(Long expirationTime)
     {
         this.expirationTime = expirationTime;
+    }
+
+    public void setNumberOfFiles(long count)
+    {
+        numberOfFiles = count;
+    }
+
+    public OptionalLong getNumberofFiles()
+    {
+        return numberOfFiles == null ? OptionalLong.empty() : OptionalLong.of(numberOfFiles);
     }
 }
