@@ -11,9 +11,17 @@ public class GetSpaceTokensMessage extends Message {
 	private static final long serialVersionUID = -419540669938740860L;
 
 	private Collection<Space> list = Collections.emptySet();
+	private final boolean isFileCountRequested;
 
 	public GetSpaceTokensMessage() {
 		setReplyRequired(true);
+		isFileCountRequested = false;
+	}
+
+	public GetSpaceTokensMessage(boolean isFileCountRequested)
+        {
+		setReplyRequired(true);
+		this.isFileCountRequested = isFileCountRequested;
 	}
 
 	public Collection<Space> getSpaceTokenSet() {
@@ -24,4 +32,7 @@ public class GetSpaceTokensMessage extends Message {
 		this.list = list;
 	}
 
+	public boolean isFileCountRequested() {
+		return isFileCountRequested;
+	}
 }
