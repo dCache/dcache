@@ -2,6 +2,7 @@ package org.dcache.services.info.serialisation;
 
 import org.springframework.beans.factory.annotation.Required;
 
+import java.util.Date;
 import java.util.Map;
 
 import org.dcache.services.info.base.BooleanStateValue;
@@ -136,28 +137,32 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser
     public void visitInteger(StatePath path, IntegerStateValue value)
     {
         emitLastBeginElement(false);
-        addElement(buildMetricElement(path.getLastElement(), value.getTypeName(), value.toString()));
+        addElement(buildMetricElement(path.getLastElement(), value.getTypeName(),
+                value.toString(), value.getCreationTime()));
     }
 
     @Override
     public void visitString(StatePath path, StringStateValue value)
     {
         emitLastBeginElement(false);
-        addElement(buildMetricElement(path.getLastElement(), value.getTypeName(), xmlTextMarkup(value.toString())));
+        addElement(buildMetricElement(path.getLastElement(), value.getTypeName(),
+                xmlTextMarkup(value.toString()), value.getCreationTime()));
     }
 
     @Override
     public void visitBoolean(StatePath path, BooleanStateValue value)
     {
         emitLastBeginElement(false);
-        addElement(buildMetricElement(path.getLastElement(), value.getTypeName(), value.toString()));
+        addElement(buildMetricElement(path.getLastElement(), value.getTypeName(),
+                value.toString(), value.getCreationTime()));
     }
 
     @Override
     public void visitFloatingPoint(StatePath path, FloatingPointStateValue value)
     {
         emitLastBeginElement(false);
-        addElement(buildMetricElement(path.getLastElement(), value.getTypeName(), value.toString()));
+        addElement(buildMetricElement(path.getLastElement(), value.getTypeName(),
+                value.toString(), value.getCreationTime()));
     }
 
     /**
@@ -277,13 +282,17 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser
      * @param name the name of the metric
      * @param type the type of the metric
      * @param value the value
+     * @parma created when the metric was created
      */
-    private String buildMetricElement(String name, String type, String value)
+    private String buildMetricElement(String name, String type, String value,
+            Date created)
     {
         StringBuilder sb = new StringBuilder();
-        Attribute attr[] = new Attribute[2];
-        attr[0] = new Attribute("name", name);
-        attr[1] = new Attribute("type", type);
+        Attribute attr[] = {
+            new Attribute("name", name),
+            new Attribute("type", type),
+            new Attribute("last-updated", String.valueOf(created.getTime()/1000))
+        };
 
         sb.append(beginElement("metric", attr, false));
         sb.append(value);
