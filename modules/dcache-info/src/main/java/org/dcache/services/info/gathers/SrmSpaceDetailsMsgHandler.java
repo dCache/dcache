@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.OptionalLong;
 
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;
@@ -84,6 +85,15 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler
             addLinkgroup(update, thisSpacePath, String.valueOf(space.getLinkGroupId()), String.valueOf(space.getId()), metricLifetime);
 
             addVoInfo(update, thisSpacePath.newChild("authorisation"), space.getVoGroup(), space.getVoRole(), metricLifetime);
+
+            OptionalLong fileCount = space.getNumberofFiles();
+            StatePath fileCountPath = thisSpacePath.newChild("file-count");
+            if (fileCount.isPresent()) {
+                update.appendUpdate(fileCountPath,
+                        new IntegerStateValue(fileCount.getAsLong(), metricLifetime));
+            } else {
+                update.purgeUnder(fileCountPath);
+            }
         }
 
         _sum.enqueueUpdate(update);
