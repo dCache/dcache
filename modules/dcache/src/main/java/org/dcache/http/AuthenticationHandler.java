@@ -90,25 +90,25 @@ public class AuthenticationHandler extends HandlerWrapper {
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse servletResponse)
             throws IOException, ServletException {
         if (isStarted() && !baseRequest.isHandled()) {
-            Subject subject = new Subject();
             AuthHandlerResponse response = new AuthHandlerResponse(servletResponse, request);
             try {
-                addX509ChainToSubject(request, subject);
-                addOriginToSubject(request, subject);
-                addAuthCredentialsToSubject(request, subject);
-                addSpnegoCredentialsToSubject(baseRequest, request, subject);
-                addQueryBearerTokenToSubject(request, subject);
+                Subject suppliedIdentity = new Subject();
+                addX509ChainToSubject(request, suppliedIdentity);
+                addOriginToSubject(request, suppliedIdentity);
+                addAuthCredentialsToSubject(request, suppliedIdentity);
+                addSpnegoCredentialsToSubject(baseRequest, request, suppliedIdentity);
+                addQueryBearerTokenToSubject(request, suppliedIdentity);
 
-                LoginReply login = _loginStrategy.login(subject);
-                subject = login.getSubject();
+                LoginReply login = _loginStrategy.login(suppliedIdentity);
+                Subject authnIdentity = login.getSubject();
                 Restriction restriction = Restrictions.concat(_doorRestriction, login.getRestriction());
 
-                request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, subject);
+                request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, authnIdentity);
                 request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, restriction);
                 request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, login.getLoginAttributes());
 
                 /* Process the request as the authenticated user.*/
-                Exception problem = Subject.doAs(subject, (PrivilegedAction<Exception>) () -> {
+                Exception problem = Subject.doAs(authnIdentity, (PrivilegedAction<Exception>) () -> {
                     try {
                         AuthenticationHandler.super.handle(target, baseRequest, request, response);
                     } catch (IOException | ServletException e) {
@@ -117,15 +117,14 @@ public class AuthenticationHandler extends HandlerWrapper {
                     return null;
                 });
                 if (problem != null) {
-                    Throwables.propagateIfInstanceOf(problem, IOException.class);
-                    Throwables.propagateIfInstanceOf(problem, ServletException.class);
-                    throw Throwables.propagate(problem);
+                    Throwables.throwIfInstanceOf(problem, IOException.class);
+                    Throwables.throwIfInstanceOf(problem, ServletException.class);
+                    throw new RuntimeException(problem);
                 }
             } catch (PermissionDeniedCacheException e) {
-                LOG.warn("{} for path {} and user {}", e.getMessage(), request.getPathInfo(),
-                        NetLoggerBuilder.describeSubject(subject));
-                response.sendError((Subjects.isNobody(subject)) ? HttpServletResponse.SC_UNAUTHORIZED :
-                        HttpServletResponse.SC_FORBIDDEN);
+                LOG.info("Login failed for {} on {}: {}", request.getMethod(),
+                        request.getPathInfo(), e.getMessage());
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 baseRequest.setHandled(true);
             } catch (CacheException e) {
                 LOG.error("Internal server error: {}", e);
