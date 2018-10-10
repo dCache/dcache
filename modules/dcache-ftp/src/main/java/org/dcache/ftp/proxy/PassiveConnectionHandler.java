@@ -27,6 +27,7 @@ import javax.annotation.concurrent.GuardedBy;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
@@ -43,6 +44,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,10 +53,10 @@ import java.util.function.Consumer;
 
 import org.dcache.ftp.door.AbstractFtpDoorV1.Protocol;
 import org.dcache.util.ByteUnit;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.find;
 import static java.util.Collections.synchronizedList;
 import static org.dcache.util.ByteUnit.KiB;
 
@@ -171,7 +173,7 @@ public class PassiveConnectionHandler implements Closeable
     private ServerSocketChannel _channel;
 
     @GuardedBy("this")
-    private Supplier<Iterable<InterfaceAddress>> _addressSupplier;
+    private Supplier<Collection<InterfaceAddress>> _addressSupplier;
 
     @GuardedBy("this")
     private Protocol _preferredProtocol;
@@ -197,7 +199,7 @@ public class PassiveConnectionHandler implements Closeable
         }
     }
 
-    public synchronized void setAddressSupplier(Supplier<Iterable<InterfaceAddress>> addressSupplier)
+    public synchronized void setAddressSupplier(Supplier<Collection<InterfaceAddress>> addressSupplier)
     {
         checkState(_state == State.NO_SERVER_SOCKET, "Cannot specify address supplier after socket opened.");
         _addressSupplier = addressSupplier;
@@ -248,9 +250,19 @@ public class PassiveConnectionHandler implements Closeable
         if (_state == State.NO_SERVER_SOCKET) {
             InetAddress address = _address;
             if (_preferredProtocol != null && Protocol.fromAddress(address) != _preferredProtocol) {
-                Iterable<InterfaceAddress> addresses = _addressSupplier.get();
-                address = find(addresses, a -> Protocol.fromAddress(a.getAddress()).equals(_preferredProtocol))
-                        .getAddress();
+                NetworkUtils.InetAddressScope intendedScope = NetworkUtils.InetAddressScope.of(address);
+
+                // REVISIT should be refactored to use NetworkUtils
+                address = _addressSupplier.get().stream()
+                        .map(InterfaceAddress::getAddress)
+                        .filter(a -> NetworkUtils.InetAddressScope.of(a).compareTo(intendedScope) >= 0)
+                        .filter(a -> NetworkUtils.getProtocolFamily(a) == _preferredProtocol.getProtocolFamily())
+                        .filter(a -> !a.isMulticastAddress())
+                        .sorted(Comparator.comparing(NetworkUtils.InetAddressScope::of))
+                        .findFirst()
+                        .orElseThrow(() -> new BindException("Unable to find a "
+                                + _preferredProtocol.getProtocolFamily().name()
+                                + " address for " + _address));
             }
             synchronized (_selectorLock) {
                 _channel = ServerSocketChannel.open();
