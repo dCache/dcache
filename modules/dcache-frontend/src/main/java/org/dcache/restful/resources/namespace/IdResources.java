@@ -71,8 +71,10 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -86,6 +88,7 @@ import java.util.Set;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 
@@ -97,6 +100,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.util.HandlerBuilders;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.vehicles.FileAttributes;
 
@@ -133,6 +137,8 @@ public class IdResources {
                     + "given PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad pnsfid"),
+                @ApiResponse(code = 401, message = "Unauthorized"),
+                @ApiResponse(code = 403, message = "Forbidden"),
                 @ApiResponse(code = 404, message = "Not Found"),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
@@ -181,6 +187,12 @@ public class IdResources {
             throw new BadRequestException("Bad pnsfid " + value, e);
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
+        } catch (PermissionDeniedCacheException e) {
+            if (RequestUser.isAnonymous()) {
+                throw new NotAuthorizedException(e);
+            } else {
+                throw new ForbiddenException(e);
+            }
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
             throw new InternalServerErrorException(e);
         }
