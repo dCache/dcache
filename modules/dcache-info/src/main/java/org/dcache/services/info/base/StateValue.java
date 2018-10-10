@@ -20,6 +20,7 @@ public abstract class StateValue implements StateComponent
     private static final int _granularity = 500;
     private static final int _millisecondsInSecond = 1000;
 
+    private final Date _creationTime = new Date();
     private final Date _expiryTime;
     private final boolean _isEphemeral;
 
@@ -179,5 +180,10 @@ public abstract class StateValue implements StateComponent
     public Date getEarliestChildExpiryDate()
     {
         return null; // we never have children.
+    }
+
+    public Date getCreationTime()
+    {
+        return _creationTime;
     }
 }
