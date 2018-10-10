@@ -10,6 +10,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,9 +30,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import javax.security.auth.Subject;
-
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -1779,6 +1778,7 @@ public class DCapDoorInterpreterV3
 
             return new IoDoorEntry(_sessionId,
                                    pnfsid,
+                                   _message.getPnfsPath(),
                                    _subject,
                                    _pool == null? "<unknown>" : _pool.getName(),
                                    _status,

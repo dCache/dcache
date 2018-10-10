@@ -1,6 +1,5 @@
 package org.dcache.util;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
@@ -79,9 +78,10 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.*;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.REGULAR;
 import static org.dcache.util.MathUtils.addWithInfinity;
@@ -686,6 +686,7 @@ public class Transfer implements Comparable<Transfer>
     {
         return new IoDoorEntry(_id,
                                getPnfsId(),
+                               getTransferPath(),
                                _subject,
                                _pool == null? "<unknown>" : _pool.getName(),
                                _status,

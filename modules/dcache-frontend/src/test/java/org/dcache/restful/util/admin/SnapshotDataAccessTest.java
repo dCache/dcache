@@ -127,6 +127,8 @@ public final class SnapshotDataAccessTest {
                 transferInfo.setPnfsId(
                                 getString(jsonTransfer.get("pnfsId"),
                                           null));
+                transferInfo.setPath(getString(jsonTransfer.get("path"),
+                                          null));
                 transferInfo.setPool(
                                 getString(jsonTransfer.get("pool"), null));
                 transferInfo.setReplyHost(

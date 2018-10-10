@@ -180,6 +180,7 @@ public final class TransferCollectionUtils {
 
         info.setProcess(door.getProcess());
         info.setPnfsId(Objects.toString(session.getPnfsId(), ""));
+        info.setPath(session.getPath());
         info.setPool(Objects.toString(session.getPool(), ""));
         info.setReplyHost(Objects.toString(session.getReplyHost(), ""));
         info.setSessionStatus(Objects.toString(session.getStatus(), ""));
