@@ -75,6 +75,7 @@ import org.dcache.xrootd.protocol.messages.RedirectResponse;
 import org.dcache.xrootd.protocol.messages.RmDirRequest;
 import org.dcache.xrootd.protocol.messages.RmRequest;
 import org.dcache.xrootd.protocol.messages.StatRequest;
+import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
@@ -364,20 +365,39 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      */
     @Override
     protected XrootdResponse<StatRequest> doOnStat(ChannelHandlerContext ctx, StatRequest msg)
-        throws XrootdException
+            throws XrootdException
     {
-        int fd = msg.getFhandle();
+        switch (msg.getTarget()) {
+        case PATH:
+            _log.trace("Request to stat {}; redirecting to door.", msg);
+            return redirectToDoor(ctx, msg);
 
-        if (isValidFileDescriptor(fd)) {
+        case FHANDLE:
+            int fd = msg.getFhandle();
+
+            if (!isValidFileDescriptor(fd)) {
+                _log.warn("Could not find a file descriptor for handle {}", fd);
+                throw new XrootdException(kXR_FileNotOpen,
+                                          "The file handle does not refer to an open " +
+                                          "file.");
+            }
+
             FileDescriptor descriptor = _descriptors.get(fd);
             if (descriptor instanceof TpcWriteDescriptor) {
                 _log.trace("Request to stat {} is for third-party transfer.", msg);
                 return ((TpcWriteDescriptor)descriptor).handleStat(msg);
+            } else {
+                try {
+                    _log.trace("Request to stat open file fhandle={}", fd);
+                    return new StatResponse(msg, stat(descriptor.getChannel()));
+                } catch (IOException e) {
+                    throw new XrootdException(kXR_IOError, e.getMessage());
+                }
             }
-        }
 
-        _log.trace("Request to stat {}; redirecting to door.", msg);
-        return redirectToDoor(ctx, msg);
+        default:
+            throw new XrootdException(kXR_ServerError, "Unexpected stat target");
+        }
     }
 
     @Override
