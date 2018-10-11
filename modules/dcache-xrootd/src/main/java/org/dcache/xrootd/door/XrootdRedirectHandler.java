@@ -296,7 +296,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                     req, InetAddresses.toUriString(address.getAddress()),
                     address.getPort(), opaqueString, "");
         } catch (FileNotFoundCacheException e) {
-            e.printStackTrace();  // FIXME REMOVE
             return withError(req, kXR_NotFound, "No such file");
         } catch (FileExistsCacheException e) {
             return withError(req, kXR_NotAuthorized, "File already exists");
