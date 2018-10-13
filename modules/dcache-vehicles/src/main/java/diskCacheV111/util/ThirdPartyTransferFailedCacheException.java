@@ -1,5 +1,7 @@
 package diskCacheV111.util;
 
+import org.dcache.util.Exceptions;
+
 /**
  * Some unspecified problem when transferring a file between dCache and some
  * remote, third-party storage.
@@ -7,6 +9,14 @@ package diskCacheV111.util;
 public class ThirdPartyTransferFailedCacheException extends CacheException
 {
     private static final long serialVersionUID = 1L;
+
+    public static void checkThirdPartyTransferSuccessful(boolean isSuccessful,
+            String template, Object...arguments)
+            throws ThirdPartyTransferFailedCacheException
+    {
+        Exceptions.genericCheck(isSuccessful, ThirdPartyTransferFailedCacheException::new,
+                template, arguments);
+    }
 
     public ThirdPartyTransferFailedCacheException(String message)
     {
