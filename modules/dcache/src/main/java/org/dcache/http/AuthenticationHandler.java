@@ -127,7 +127,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 baseRequest.setHandled(true);
             } catch (CacheException e) {
-                LOG.error("Internal server error: {}", e);
+                LOG.error("Internal server error: {}", e.getMessage());
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 baseRequest.setHandled(true);
             }
