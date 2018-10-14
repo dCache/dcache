@@ -94,9 +94,13 @@
         <property name="clientDNSLookup" value="${srm.enable.client-dns-lookup}"/>
     </bean>
 
-    <bean id="delegationHandler" class="org.dcache.gridsite.DelegationHandler">
-        <property name="delegationServiceStub" ref="srmManagerStub"/>
-        <property name="loginStrategy" ref="loginStrategy"/>
+    <bean id="delegationHandler" class="org.dcache.gridsite.AccessLoggerDelegation">
+        <constructor-arg>
+          <bean class="org.dcache.gridsite.DelegationHandler">
+            <property name="delegationServiceStub" ref="srmManagerStub"/>
+            <property name="loginStrategy" ref="loginStrategy"/>
+          </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="keypair-cache" class="org.dcache.gsi.KeyPairCache">
