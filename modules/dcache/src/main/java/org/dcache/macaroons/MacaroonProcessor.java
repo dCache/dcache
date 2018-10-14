@@ -22,8 +22,8 @@ import java.util.Collection;
 
 import org.dcache.util.Strings;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.macaroons.CaveatValues.*;
-import static org.dcache.macaroons.InvalidMacaroonException.checkMacaroon;
 
 /**
  * Class that acts as a facade to the Macaroon library.
@@ -127,6 +127,9 @@ public class MacaroonProcessor
 
         String macaroonId = idOfMacaroon(macaroon);
 
+        byte[] secret = _secretHandler.findSecret(macaroon.identifier);
+        checkArgument(secret != null, "Unable to find secret for macaroon [%s]", macaroonId);
+
         MacaroonsVerifier verifier = new MacaroonsVerifier(macaroon);
 
         ClientIPCaveatVerifier clientIPVerifier = new ClientIPCaveatVerifier(clientAddress);
@@ -134,9 +137,6 @@ public class MacaroonProcessor
 
         ContextExtractingCaveatVerifier contextExtractor = new ContextExtractingCaveatVerifier();
         verifier.satisfyGeneral(contextExtractor);
-
-        byte[] secret = _secretHandler.findSecret(macaroon.identifier);
-        checkMacaroon(secret != null, "Unable to find secret for macaroon [%s]", macaroonId);
 
         if (!verifier.isValid(secret)) {
             StringBuilder error = new StringBuilder("Invalid macaroon [").append(macaroonId).append(']');
