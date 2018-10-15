@@ -152,7 +152,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
      * A guess on how long to retry a GET request.  Since the file size is
      * unknown, this value may be insufficient if the file is larger.
      */
-    private static final long GET_RETRY_DURATION = maxRetryDuration(GiB.toBytes(2));
+    private static final long GET_RETRY_DURATION = maxRetryDuration(GiB.toBytes(2L));
     private static final String GET_RETRY_DURATION_DESCRIPTION = describeDuration(GET_RETRY_DURATION, MILLISECONDS);
 
     /**
