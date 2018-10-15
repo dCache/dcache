@@ -902,7 +902,7 @@ public abstract class AbstractFtpDoorV1
     protected TransferRetryPolicy _writeRetryPolicy;
 
     protected KafkaProducer _kafkaProducer;
-
+    private volatile boolean _sendToKafka;
 
     /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
@@ -1017,7 +1017,7 @@ public abstract class AbstractFtpDoorV1
             setPoolStub(AbstractFtpDoorV1.this._poolStub);
             setBillingStub(_billingStub);
 
-            if(_settings.isKafkaEnabled()){
+            if (_sendToKafka) {
                 setKafkaSender(m -> {
                     _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>("billing", m));
                 });
@@ -1571,6 +1571,8 @@ public abstract class AbstractFtpDoorV1
                                                            _cellAddress.toString(),
                                                            _settings.getKafkaMaxBlockMs(),
                                                            _settings.getKafkaRetries());
+            _sendToKafka = _settings.isKafkaEnabled();
+
         }
         _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint, _cellAddress, _poolManagerHandler);
         _poolStub = _settings.createPoolStub(_cellEndpoint);
@@ -1749,7 +1751,10 @@ public abstract class AbstractFtpDoorV1
           that is responsible for turning these records into requests and transmitting them to the cluster.
           Failure to close the producer after use will leak these resources. Hence we need to  and close Kafka Producer
          */
-        if (_settings.isKafkaEnabled()) {
+        //TODO _sendToKafka checks if the shutdown() method has been called and whether the producer has been closed or not.
+        // currently  there is no method isClosed() in kafka API
+        if (_sendToKafka) {
+            _sendToKafka = false;
             _kafkaProducer.close();
         }
 
@@ -4558,7 +4563,7 @@ public abstract class AbstractFtpDoorV1
 
         _billingStub.notify(infoRemove);
 
-        if(_settings.isKafkaEnabled()){
+        if (_sendToKafka) {
             _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>("billing", infoRemove), (rm, e) -> {
                 if (e != null) {
                     LOGGER.error("Unable to send message to topic {} on  partition {}: {}",
