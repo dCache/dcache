@@ -44,7 +44,7 @@ Components of dCache System
 
 |      Services                        |Responsible for    |
 |:------------------------------------------:|:----|
-| [alarms](#config-alarms)                   | Records errors requiring more or less urgent intervention.  |
+| [alarms](config-alarms.md)                   | Records errors requiring more or less urgent intervention.  |
 | [billing](#config-billing)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools      |
 | [poolmanager](#config-PoolManager)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
 | [replicamanager](#config-ReplicaManager)               |   n/a in services ?  |
