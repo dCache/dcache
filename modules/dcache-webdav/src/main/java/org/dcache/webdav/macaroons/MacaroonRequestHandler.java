@@ -18,6 +18,7 @@
 package org.dcache.webdav.macaroons;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.CharStreams;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import org.eclipse.jetty.server.Request;
@@ -71,6 +72,7 @@ import org.dcache.util.NDC;
 import org.dcache.http.PathMapper;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.emptyToNull;
 import static java.lang.Boolean.TRUE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -87,6 +89,9 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
     private static final String REQUEST_MIMETYPE = "application/macaroon-request";
     private static final String RESPONSE_MIMETYPE = "application/json";
 
+    private static final String MACAROON_REQUEST_ATTRIBUTE = "org.dcache.macaroon-request";
+    private static final String MACAROON_ID_ATTRIBUTE = "org.dcache.macaroon-id";
+
     private static final int JSON_RESPONSE_INDENTATION = 4;
 
     private MacaroonProcessor _processor;
@@ -94,6 +99,18 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
     private CellAddressCore _myAddress;
     private Duration _maximumLifetime;
     private Duration _defaultLifetime;
+
+    public static String getMacaroonRequest(HttpServletRequest request)
+    {
+        Object result = request.getAttribute(MACAROON_REQUEST_ATTRIBUTE);
+        return result == null ? null : String.valueOf(result);
+    }
+
+    public static String getMacaroonId(HttpServletRequest request)
+    {
+        Object result = request.getAttribute(MACAROON_ID_ATTRIBUTE);
+        return result == null ? null : String.valueOf(result);
+    }
 
     @Required
     public void setMacaroonProcessor(MacaroonProcessor processor)
@@ -299,7 +316,9 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
 
             Instant expiry = calculateExpiry(context, beforeCaveats);
 
-            return _processor.buildMacaroon(expiry, context, caveats);
+            String macaroon = _processor.buildMacaroon(expiry, context, caveats);
+            request.setAttribute(MACAROON_ID_ATTRIBUTE, MacaroonProcessor.idOfMacaroon(macaroon));
+            return macaroon;
         } catch (DateTimeParseException e) {
             throw new ErrorResponseException(SC_BAD_REQUEST, "Bad validity value: " + e.getMessage());
         } catch (InvalidCaveatException e) {
@@ -341,7 +360,9 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         MacaroonRequest macaroonRequest;
 
         try {
-            macaroonRequest = new GsonBuilder().create().fromJson(request.getReader(),
+            String requestEntity = CharStreams.toString(request.getReader());
+            request.setAttribute(MACAROON_REQUEST_ATTRIBUTE, emptyToNull(requestEntity));
+            macaroonRequest = new GsonBuilder().create().fromJson(requestEntity,
                     MacaroonRequest.class);
         } catch (IOException e) {
             throw new ErrorResponseException(SC_BAD_REQUEST, "Failed to read JSON request: " + e.getMessage());
