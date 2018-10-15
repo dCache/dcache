@@ -45,27 +45,27 @@ Components of dCache System
 |      Services                        |Responsible for    |
 |:------------------------------------------:|:----|
 | [alarms](config-alarms.md)                   | Records errors requiring more or less urgent intervention.  |
-| [billing](#config-billing)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools      |
-| [poolmanager](#config-PoolManager)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
-| [replicamanager](#config-ReplicaManager)               |   n/a in services ?  |
-| [resilience](#congif-Resilience)                      |Controls the number of replicas of a file on the pools |
-| [hoppingmanager](#config-hopping)               | ?     |
+| [billing](config-billing)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools      |
+| [poolmanager](config-PoolManager)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
+| [replicamanager](config-ReplicaManager)               |   n/a in services ?  |
+| [resilience](congif-Resilience)                      |Controls the number of replicas of a file on the pools |
+| [hoppingmanager](config-hopping)               | ?     |
 | cleaner                      | ?    |
 | info                         | ?     |
 | missing-files                | +      |
- |[pool](#cookbook-pool)                      | Data storage ? (cookbook)    |
-| [pnfsmanager](#config-pnfsmanager)                   | Managing the pnfs file system (hierarchy), pnfs database, meta-data    |
+ |[pool](cookbook-pool)                      | Data storage ? (cookbook)    |
+| [pnfsmanager](config-pnfsmanager)                   | Managing the pnfs file system (hierarchy), pnfs database, meta-data    |
 | spacemanager                       | +      |
-| [srm](#config-SRM)                   | Provides dynamic space allocation and file management on shared storage components on the Grid     |
+| [srm](config-SRM)                   | Provides dynamic space allocation and file management on shared storage components on the Grid     |
 | srmmanager                       | ?   |
-| [zookeeper](#config-zookeeper)                    |  A distributed directory and coordination service on which dCache relies on|
-| [gplazma](#config-gplazma)                      | Authentication and authorization interface to limit access to data |
-| [dCap](#config-dCap)                  | Supports all necessary file metadata and name space manipulation operations     |
-| [xrootd](#config-xrootd)                     | Allows file transfers in and out of dCache using xrootd    |
-| [webdav](#config-webdavadmin)                      | Offers additional features to admins like sending admin-commands equal to those of admin interface (CLI)     |
+| [zookeeper](config-zookeeper)                    |  A distributed directory and coordination service on which dCache relies on|
+| [gplazma](config-gplazma)                      | Authentication and authorization interface to limit access to data |
+| [dCap](config-dCap)                  | Supports all necessary file metadata and name space manipulation operations     |
+| [xrootd](config-xrootd)                     | Allows file transfers in and out of dCache using xrootd    |
+| [webdav](config-webdavadmin)                      | Offers additional features to admins like sending admin-commands equal to those of admin interface (CLI)     |
 | ftp                      | -     |
 | httpd                      | -     |
-| [nfs](#config-nfs)                    |  Allows clients to mount dCache and perform POSIX IO using standard NFSv4.1 clients   |
+| [nfs](config-nfs)                    |  Allows clients to mount dCache and perform POSIX IO using standard NFSv4.1 clients   |
 | frontend                      | -     |
 | history                      | -     |
 | transfermanager                      | -     |
