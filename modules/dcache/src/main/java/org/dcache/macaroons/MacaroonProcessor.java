@@ -131,10 +131,10 @@ public class MacaroonProcessor
         verifier.satisfyGeneral(contextExtractor);
 
         byte[] secret = _secretHandler.findSecret(macaroon.identifier);
-        checkMacaroon(secret != null, "Unable to find corresponding secret");
+        checkMacaroon(secret != null, "Unable to find secret for macaroon [%s]", macaroonId);
 
         if (!verifier.isValid(secret)) {
-            StringBuilder error = new StringBuilder("Invalid macaroon");
+            StringBuilder error = new StringBuilder("Invalid macaroon [").append(macaroonId).append(']');
 
             Strings.combine(clientIPVerifier.getError(), " and ", contextExtractor.getError())
                     .ifPresent(msg -> error.append(": ").append(msg));
