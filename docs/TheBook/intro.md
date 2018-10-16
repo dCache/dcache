@@ -4,11 +4,11 @@ Chapter 1. Introduction
 Table of Contents
 ------------------
 
-[dCache Architecture](#architecture)
-[Cells and Domains](#cells-and-domains)  
-[Cells Communication](#cells-communication)  
-[Protocols Supported by dCache](#protocols-supported-by-dcache)
-[Logging](#logging)
+-[dCache Architecture](#architecture)
+-[Cells and Domains](#cells-and-domains)  
+-[Cells Communication](#cells-communication)  
+-[Protocols Supported by dCache](#protocols-supported-by-dcache)
+-[Logging](#logging)
 
 dCache is a distributed storage solution. It organises storage across computers so the combined storage can be used without the end-users being aware of where their data is stored. They simply see a large amount of storage.
 
@@ -54,15 +54,15 @@ Components of dCache System
 | info                         | ?     |
 | missing-files                | +      |
  |[pool](cookbook-pool.md)                      | Data storage ? (cookbook)    |
-| [pnfsmanager](config-pnfsmanager.md)                   | Managing the pnfs file system (hierarchy), pnfs database, meta-data    |
+| [pnfsmanager](config-PnfsManager.md)                   | Managing the pnfs file system (hierarchy), pnfs database, meta-data    |
 | spacemanager                       | +      |
 | [srm](config-SRM.md)                   | Provides dynamic space allocation and file management on shared storage components on the Grid     |
 | srmmanager                       | ?   |
 | [zookeeper](config-zookeeper.md)                    |  A distributed directory and coordination service on which dCache relies on|
 | [gplazma](config-gplazma.md)                      | Authentication and authorization interface to limit access to data |
-| [dCap](config-dCap.md)                  | Supports all necessary file metadata and name space manipulation operations     |
+| [dCap](cookbook-dCap.md)                  | Supports all necessary file metadata and name space manipulation operations     |
 | [xrootd](config-xrootd.md)                     | Allows file transfers in and out of dCache using xrootd    |
-| [webdav](config-webdavadmin.md)                      | Offers additional features to admins like sending admin-commands equal to those of admin interface (CLI)     |
+| webdav                      | Offers additional features to admins like sending admin-commands equal to those of admin interface (CLI)     |
 | ftp                      | -     |
 | httpd                      | -     |
 | [nfs](config-nfs.md)                    |  Allows clients to mount dCache and perform POSIX IO using standard NFSv4.1 clients   |
