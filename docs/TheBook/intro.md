@@ -6,9 +6,9 @@ Table of Contents
 
 * [dCache Architecture](#architecture)
 * [Cells and Domains](#cells-and-domains)  
--[Cells Communication](#cells-communication)  
--[Protocols Supported by dCache](#protocols-supported-by-dcache)
--[Logging](#logging)
+* [Cells Communication](#cells-communication)  
+* [Protocols Supported by dCache](#protocols-supported-by-dcache)
+* [Logging](#logging)
 
 dCache is a distributed storage solution. It organises storage across computers so the combined storage can be used without the end-users being aware of where their data is stored. They simply see a large amount of storage.
 
