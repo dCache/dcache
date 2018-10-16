@@ -64,6 +64,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.util.command.Command;
@@ -133,10 +134,10 @@ public class CellInfoServiceImpl extends
     public CellData getCellData(String address) {
         CellData cached = cache.read(address);
         if (cached == null) {
+            CellAddressCore core = new CellAddressCore(address);
             cached = new CellData();
-            String[] key = address.split("@");
-            cached.setCellName(key[0]);
-            cached.setDomainName(key[1]);
+            cached.setCellName(core.getCellName());
+            cached.setDomainName(core.getCellDomainName());
             cached.setState(4); // "Unknown"
         }
         return cached;
