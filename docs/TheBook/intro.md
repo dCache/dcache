@@ -6,7 +6,7 @@ Table of Contents
 
 * [dCache Architecture](#architecture)
 * [Cells and Domains](#cells-and-domains)  
-* [Cells Communication](#cells-communication)  
+* [Cells Communication](config-message-passing.md)  
 * [Protocols Supported by dCache](#protocols-supported-by-dcache)
 * [Logging](#logging)
 
@@ -124,3 +124,6 @@ Protocols Supported by dCache
 
   [The dCache Layer Model]: images/test2.svg
   [figure\_title]: #fig-intro-layer-model
+
+
+The next chapter  describes the installation of  dCache instance [Instalation](install.md)

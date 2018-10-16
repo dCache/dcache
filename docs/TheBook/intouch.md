@@ -39,7 +39,7 @@ This section is a guide for exploring a newly installed dCache system. The confi
 CHECKING THE FUNCTIONALITY
 ==========================
 
-Reading and writing data to and from a dCache instance can be done with a number of protocols. After a standard installation, these protocols are **dCap**, **GSIdCap**, and **GridFTP**. In addition dCache comes with an implementation of the **SRM** protocol which negotiates the actual data transfer protocol.  
+Reading and writing data to and from a dCache instance can be done with a number of protocols. After a standard installation, these protocols are **WebDav**, **xrootd**, **GSIdCap**, and **GridFTP**. In addition dCache comes with an implementation of the **SRM** protocol which negotiates the actual data transfer protocol.  
 
 dCache WITHOUT MOUNTED NAMESPACE
 --------------------------------
@@ -59,7 +59,7 @@ To use **WebDAV** you need to define a **WebDAV** service in your layout file. Y
     [webdavDomain/webdav]
     webdav.authz.anonymous-operations=FULL
 
-to the file **/etc/dcache/layouts/mylayout.conf**.
+to the file **/share/defaults/webdav.properties**.
 
 > **NOTE**
 >
@@ -300,11 +300,11 @@ The initial password is “`dickerelch`” (which is German for “fat elk”) a
 
 The password can now be changed with
 
-     (local) admin > cd acm   
-     (acm) admin > create user admin  
-     (acm) admin > set passwd -user=admin <newPasswd> <newPasswd>   
-     (acm) admin > ..  
-     (local) admin > logoff  
+     (local) admin > \c acm   
+     (acm@dCacheDomain) admin  > create user admin 
+     (acm@dCacheDomain) admin  > set passwd -user=admin <newPasswd> <newPasswd>   
+     (acm@dCacheDomain) admin  > ..  
+     (acm@dCacheDomain) admin  > \q  
 
 HOW TO USE THE ADMIN INTERFACE
 ------------------------------
@@ -315,13 +315,24 @@ The command `help` lists all commands the cell knows and their parameters. Howev
 >
 > Some commands are dangerous. Executing them without understanding what they do may lead to data loss.
 
-Starting from the local prompt ((`local) admin >`) the command `cd` takes you to the specified [cell](rf-glossary.md#cell). In general the address of a cell is a concatenation of cell name @ symbol and the domain name. `cd` to a cell by:
+Starting from the local prompt (`(local) admin >`) the command `\c` takes you to the specified [cell](rf-glossary.md#cell). In general the address of a cell is a concatenation of cell name @ symbol and the domain name. `cd` to a cell by:
 
-    (local) admin > **cd <cellName>@<domainName>**
+    (local) admin > **\c <cellName>@<domainName>**
 
 > **NOTE**
 >
 > If the cells are well-known, they can be accessed without adding the domain-scope. See [Chapter 5, The Cell Package](config-cellpackage.md) for more information.
+
+To display the list of cells use `\l` command:
+
+
+    (local) admin > \l 
+    acm
+    billing
+    gPlazma
+    topo
+    ...
+
 
 The domains that are running on the dCache-instance, can be viewed in the layout-configuration (see  [Chapter 2, Installing dCache](install.md)). Additionally, there is the `topo` cell, which keeps track of the instance's domain topology. If it is running, it can be used to obtain the list of domains the following way:  
 
@@ -331,11 +342,11 @@ The domains that are running on the dCache-instance, can be viewed in the layout
 
 
 Example:  
-As the topo cell is a `well-known` cell you can `cd` to it directly by `cd topo`.    
+As the topo cell is a `well-known` cell you can `\c` to it directly by `\c topo`.    
 
 Use the command `ls` to see which domains are running.    
 
-      (local) admin > cd topo      
+      (local) admin > \c topo      
       (topo) admin > ls    
       adminDoorDomain  
       gsidcapDomain  
@@ -349,20 +360,25 @@ Use the command `ls` to see which domains are running.
       httpdDomain  
       namespaceDomain  
       poolDomain  
-      (topo) admin > ..  
-      (local) admin >  
+      (topo) admin >  
 
 
-The escape sequence `..` takes you back to the local prompt.  
 
-The command `logoff` exits the admin shell.  
+Use `\?` command to see the list of commands available for the local prompt.
+
+
+      (topo) admin >  \?
+   
+
+
+The command `\q` exits the admin shell.  
 
 If you want to find out which cells are running on a certain domain, you can issue the command `ps` in the System `cell` of the domain.  
 
 Example:  
-For example, if you want to list the cells running on the `poolDomain`, `cd` to its `System` cell and issue the `ps` command.  
+For example, if you want to list the cells running on the `poolDomain`, `\c` to its `System` cell and issue the `ps` command.  
 
-      (local) admin > cd System@poolDomain    
+      (local) admin > \c System@poolDomain    
       (System@poolDomain) admin > ps  
         Cell List  
       ------------------  
@@ -374,22 +390,22 @@ For example, if you want to list the cells running on the `poolDomain`, `cd` to 
       RoutingMgr  
       lm  
 
-The cells in the domain can be accessed using `cd` together with the cell-name scoped by the domain-name. So first, one has to   get back to the local prompt, as the `cd` command will not work otherwise.  
+The cells in the domain can be accessed using `\c` together with the cell-name scoped by the domain-name. So first, one has to   get back to the local prompt, as the `\c` command will not work otherwise.  
 
 > **NOTE**  
 >  
-> Note that `cd` only works from the local prompt. If the cell you are trying to access does not exist, the `cd` command will   complain.  
+> Note that `\c` only works from the local prompt. If the cell you are trying to access does not exist, the `\c` command will   complain.  
 >  
 >     Example:    
->     (local) admin > cd nonsense  
->     java.lang.IllegalArgumentException: Cannot cd to this cell as it doesn't exist  
-> Type `..` to return to the `(local) admin >` prompt.  
+>     (local) admin > \c nonsense  
+>     Cell as it doesn't exist  
+> 
 
-Login to the routing manager of the `dCacheDomain` to get a list of all well-known cells you can directly `cd` to without having to add the domain.  
+
+Login to the routing manager of the `dCacheDomain` to get a list of all well-known cells, you can directly `\c RoutingMgr` to without having to add the domain.  
 
     Example:  
-      (System@poolDomain) admin > ..  
-      (local) admin > cd RoutingMgr@dCacheDomain  
+      (local) admin > \c RoutingMgr@dCacheDomain  
       (RoutingMgr@dCacheDoorDomain) admin > ls  
       Our routing knowledge :  
        Local : [PoolManager, topo, LoginBroker, info]  
@@ -409,11 +425,17 @@ All cells know the commands `info` for general information about the cell and `s
 
 It is a good idea to get aquainted with the normal output in the following cells: `PoolManager, PnfsManager`, and the pool cells (e.g.,` <poolHostname>_1`).  
 
-The most useful command of the pool cells is [rep ls](reference.md#rep-ls).  To execute this command `cd` into the pool. It lists the files which are stored in the pool by their `pnfs` IDs:  
+The most useful command of the pool cells is [rep ls](reference.md#rep-ls).  To execute this command `\c` into the pool or use `\s` command. It lists the files which are stored in the pool by their `pnfs` IDs:  
 
     Example:    
 
-      (RoutingMgr@dCacheDoorDomain) admin > ..  
+      (RoutingMgr@dCacheDoorDomain) admin >  \s pool_1  rep ls
+      000100000000000000001120 <-P---------(0)[0]> 485212 si={myStore:STRING}  
+      000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING} 
+      (RoutingMgr@dCacheDoorDomain) admin >
+
+
+      (RoutingMgr@dCacheDoorDomain) admin > \c pool_1
       (pool_1) admin > rep ls  
       000100000000000000001120 <-P---------(0)[0]> 485212 si={myStore:STRING}  
       000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING}  
@@ -428,8 +450,7 @@ The most important commands in the `PoolManager` are: `rc ls` and `cm ls -r`.
 
     Example:  
     
-      (pool_1) admin > ..  
-      (local) admin > cd PoolManager  
+      (pool_1) admin > \c PoolManger  
       (PoolManager) admin > rc ls  
       000100000000000000001230@0.0.0.0/0.0.0.0 m=1 r=1 [<unknown>]  
       [Waiting 08.28 19:14:16]  
