@@ -4,8 +4,8 @@ Chapter 1. Introduction
 Table of Contents
 ------------------
 
--[dCache Architecture](#architecture)
--[Cells and Domains](#cells-and-domains)  
+* [dCache Architecture](#architecture)
+* [Cells and Domains](#cells-and-domains)  
 -[Cells Communication](#cells-communication)  
 -[Protocols Supported by dCache](#protocols-supported-by-dcache)
 -[Logging](#logging)
