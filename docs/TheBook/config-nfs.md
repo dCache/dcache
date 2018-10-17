@@ -77,6 +77,9 @@ Map all uis and gids to the anonymous user.
 - **no_root_squash**
 Do not map requests from the root to anonymous user. This is useful for clients with administrative rights.
 
+- **all_root**
+the requests from matching clients will be handles as from user root. Additionally, when a new file or directory is created, then parent directory's ownership is inherited.
+
 - **anonuid** and **anongid** specify which uid and gid should be used for  anonymous user.
 
 - **dcap**
