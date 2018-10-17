@@ -228,6 +228,15 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       }
    }
 
+    public static final String SELECT_BY_NAME_ONLY = "SELECT * FROM " + requestCredentialTableName +
+        " WHERE credentialname=? ORDER BY credentialexpiration DESC";
+
+    @Override
+    public RequestCredential getRequestCredential(String credentialName)
+            throws DataAccessException {
+        return getRequestCredentialByCondition(SELECT_BY_NAME_ONLY, credentialName);
+    }
+
     private static final String UPDATE = "UPDATE " +requestCredentialTableName +
        " SET creationtime=?, credentialname=?, role=?, " +
        " numberofusers=?, delegatedcredentials=?, credentialexpiration=? where id=? ";
