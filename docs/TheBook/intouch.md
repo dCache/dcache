@@ -53,13 +53,16 @@ Create the root of the Chimera namespace and a world-writable directory by
 WEBDAV
 ------
 
-To use **WebDAV** you need to define a **WebDAV** service in your layout file. You can define this service in an extra domain, e.g. [webdavDomain] or add it to another domain.
+To use **WebDAV** you need to define a **WebDAV** service in your layout file. You can define this service in an extra domain, e.g. [webdavDomain] or add it to another domain to the file /etc/dcache
+/layouts/mylayout.conf.
+
 
     [webdavDomain]
     [webdavDomain/webdav]
     webdav.authz.anonymous-operations=FULL
 
-to the file **/share/defaults/webdav.properties**.
+
+
 
 > **NOTE**
 >
@@ -100,11 +103,11 @@ To use curl to copy a file into your dCache you will need to set webdav.redirect
 
 Write the file `test.txt`
 
-    [root] # curl -T test.txt http://webdav-door.example.org:2880/data/world-writable/curl-testfile.txt
+    [root] # curl -T test.txt http://webdav-door.example.org:2880/data/world-writable/
 
 and read it
 
-    [root] # curl http://webdav-door.example.org:2880/data/world-writable/curl-testfile.txt
+    [root] # curl http://webdav-door.example.org:2880/data/world-writable/testfile.txt
 
 DCAP
 ----
@@ -303,7 +306,6 @@ The password can now be changed with
      (local) admin > \c acm   
      (acm@dCacheDomain) admin  > create user admin 
      (acm@dCacheDomain) admin  > set passwd -user=admin <newPasswd> <newPasswd>   
-     (acm@dCacheDomain) admin  > ..  
      (acm@dCacheDomain) admin  > \q  
 
 HOW TO USE THE ADMIN INTERFACE
@@ -485,7 +487,7 @@ To create a new user, <new-user> and set a new password for the user `cd` from t
 
 (local) admin > cd acm  
 
-    (local) admin > cd acm  
+    (local) admin > \c acm  
     (acm) admin > create user <new-user>  
     (acm) admin > set passwd -user=<new-user> <newPasswd> <newPasswd>  
 
@@ -503,10 +505,12 @@ Give the new user access to the PnfsManager.
 
 Example:  
 Give the new user access to the PnfsManager.  
+
       (acm) admin > create acl cell.PnfsManager.execute  
       (acm) admin > add access -allowed cell.PnfsManager.execute <new-user>  
       
 Now you can check the permissions by:  
+
       (acm) admin > check cell.PnfsManager.execute <new-user>  
       Allowed  
       (acm) admin > show acl cell.PnfsManager.execute  
@@ -575,10 +579,10 @@ In scripts, one can use a “Here Document” to list the commands, or supply th
     outfile=/tmp/$(basename $0).$$.out
 
     ssh -c blowfish -p 22223 admin@adminNode > $outfile << EOF
-    cd PoolManager
+    \c PoolManager
     cm ls -r
     (more commands here)
-    logoff
+    \q
     EOF
 
 or, the equivalent as stdin.

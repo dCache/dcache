@@ -56,7 +56,7 @@ Using a PostgreSQL server with dCache places a number of requirements on the dat
 
 Install the PostgreSQL server with the tools of the operating system.
 
-Initialize the database directory (for PSQL version 10.1 this is `/var/lib/pgsql/10/data/`) , start the database server, and make sure that it is started at system start-up.
+Initialize the database directory (for PSQL version 10.1 this is `/var/lib/pgsql/10/data/ `) , start the database server, and make sure that it is started at system start-up.
 
     [root] # service postgresql-10 initdb
     Initializing database:                                     [  OK  ]
@@ -205,6 +205,13 @@ There may be several layout files in the layout directory, but only one of them 
 
     dcache.layout=mylayout
 
+In the same file you may specifiy the logging level:
+
+
+    dcache.log.level.events=info
+
+
+
 This entry in **/etc/dcache/dcache.conf** will instruct dCache to read the layout file **/etc/dcache/layouts/mylayout.conf** when starting up.
 
 These is in example layout file available **/usr/share/dcache/examples/layouts/single.conf**. The first lines of are:
@@ -277,7 +284,7 @@ In this example we create a pool called pool1 in the directory **`/srv/dcache/p1
 >
 >The default gap for poolsizes is 4GiB. This means you should make a bigger pool than 4GiB otherwise you would have to change this gap in the dCache admin tool. See the example below. See also [the section called “The Admin Interface”.](intouch.md#the-admin-interface)
 >
->       (local) admin > cd <poolname>
+>       (local) admin > \c <poolname>
 >       (<poolname>) admin > set gap 2G
 >       (<poolname>) admin > save
 
