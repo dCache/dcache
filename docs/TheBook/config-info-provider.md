@@ -6,7 +6,6 @@ Table of Contents
 + [Internal collection of information](#internal-collection-of-information)
 + [Configuring the info service](#configuring-the-info-service)
 + [Testing the info provider](#testing-the-info-provider)
-+ [Decommissioning the old info provider](#decommissioning-the-old-info-provider)
 + [Publishing dCache information](#publishing-dcache-information)
 + [Troubleshooting BDII problems](#troubleshooting-bdii-problems)
 + [Updating information](#updating-information)
@@ -209,27 +208,6 @@ If you see error messages (which may be repeated several times) of the form:
     Failure reading http://localhost:2288/info: no more input
 
 then it is likely that either the `httpd` or `info` service has not been started. Use the above `wget` test to check that both services are running. You can also see which services are available by running the `dcache services` and `dcache status` commands.
-
-DECOMMISSIONING THE OLD INFO PROVIDER
-=====================================
-
-Sites that were using the old (pre-1.9.5) info provider should ensure that there are no remnants of this old info-provider on their machine. Although the old info-provider has been removed from dCache, it relied on static LDIF files, which might still exist. If so, then BDII will obtain some information from the current info-provider and some out-of-date information from the static LDIF files. BDII will then attempt to merge the two sources of information. The merged information may provide a confusing description of your dCache instance, which may prevent clients from working correctly.
-
-The old info provider had two static LDIF files and a symbolic link for BDII. These are:
-
--   The file `lcg-info-static-SE.ldif`,
-
--   The file: `lcg-info-static-dSE.ldif`,
-
--   The symbolic link `/opt/glite/etc/gip/plugin`, which points to `/opt/d-cache/jobs/infoDynamicSE-plugin-dcache`.
-
-The two files (**lcg-info-static-SE.ldif** and **lcg-info-static-dSE.ldif**) appear in the **/opt/lcg/var/gip/ldif** directory; however, it is possible to alter the location BDII will use. In BDII v4, the directory is controlled by the `static_dir` variable (see **/opt/glite/etc/gip/glite-info-generic.conf** or **/opt/lcg/etc/lcg-info-generic.conf**). For BDII v5, the `BDII_LDIF_DIR` variable (defined in `/opt/bdii/etc/bdii.conf`) controls this behaviour.
-
-You must delete the above three entries: **lcg-info-static-SE.ldif**, **lcg-info-static-dSE.ldif** and the **plugin** symbolic link.
-
-The directory with the static LDIF, **/opt/lcg/var/gip/ldif** or **/opt/glite/etc/gip/ldif** by default, may contain other static LDIF entries that are relics of previous info-providers. These may have filenames like **static-file-SE.ldif**.
-
-Delete any static LDIF file that contain information about dCache. With the info-provider, all LDIF information comes from the info-provider; there should be no static LDIF files. Be careful not to delete any static LDIF files that come as part of BDII; for example, the **default.ldif**file, if present.
 
 PUBLISHING dCache INFORMATION
 =============================
