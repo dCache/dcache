@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
@@ -70,6 +71,8 @@ public class AuthenticationHandler extends HandlerWrapper {
             "org.dcache.restriction";
     public static final String DCACHE_LOGIN_ATTRIBUTES =
             "org.dcache.login";
+    private static final String AUTH_HANDLER_ATTRIBUTE = "org.dcache.authentication-handler";
+    private static final String X509_SUBJECT_ATTRIBUTE = "org.dcache.x509-subject";
     public static final String BEARER_TOKEN_QUERY_KEY = "authz";
 
     private static final InetAddress UNKNOWN_ADDRESS = InetAddresses.forString("0.0.0.0");
@@ -84,6 +87,50 @@ public class AuthenticationHandler extends HandlerWrapper {
 
     public static Set<LoginAttribute> getLoginAttributes(HttpServletRequest request) {
         return (Set<LoginAttribute>) request.getAttribute(DCACHE_LOGIN_ATTRIBUTES);
+    }
+
+    /**
+     * Provide the identity of the user, based solely on their X.509 certificate
+     * (if supplied).  If the user was already authenticated based on their
+     * X.509 certificate then this method simply returned that existing Subject,
+     * otherwise the X.509 certificate chain is authenticated and that result
+     * returned.
+     * @param request the HTTP request to process
+     * @throws PermissionDeniedCacheException if the user could not be logged in
+     * @throws CacheException some other problem with the X.509-based login
+     * @throws IllegalArgumentException X.509 authentication is not supported
+     * @return a Subject based on the users X.509 certificate or null if the
+     * user provided no X.509 certificate
+     */
+    public static Subject getX509Identity(HttpServletRequest request)
+            throws CacheException
+    {
+        Subject dCacheUser = Subject.getSubject(AccessController.getContext());
+        if (dCacheUser != null && Subjects.getDn(dCacheUser) != null) {
+            return dCacheUser;
+        }
+
+        if (!(request.getAttribute(X509_CERTIFICATE_ATTRIBUTE) instanceof X509Certificate[])) {
+            return null;
+        }
+
+        Object existingX509Subject = request.getAttribute(X509_SUBJECT_ATTRIBUTE);
+        if (existingX509Subject instanceof Subject) {
+            return (Subject)existingX509Subject;
+        }
+
+        AuthenticationHandler handler = (AuthenticationHandler)request.getAttribute(AUTH_HANDLER_ATTRIBUTE);
+        Subject x509Subject = handler.x509Login(request);
+        request.setAttribute(X509_SUBJECT_ATTRIBUTE, x509Subject);
+        return x509Subject;
+    }
+
+    private Subject x509Login(HttpServletRequest request) throws CacheException
+    {
+        Subject suppliedIdentity = new Subject();
+        addX509ChainToSubject(request, suppliedIdentity);
+        addOriginToSubject(request, suppliedIdentity);
+        return _loginStrategy.login(suppliedIdentity).getSubject();
     }
 
     @Override
@@ -106,6 +153,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, authnIdentity);
                 request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, restriction);
                 request.setAttribute(DCACHE_LOGIN_ATTRIBUTES, login.getLoginAttributes());
+                request.setAttribute(AUTH_HANDLER_ATTRIBUTE, this);
 
                 /* Process the request as the authenticated user.*/
                 Exception problem = Subject.doAs(authnIdentity, (PrivilegedAction<Exception>) () -> {
