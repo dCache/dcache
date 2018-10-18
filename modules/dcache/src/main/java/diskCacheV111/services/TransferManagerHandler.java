@@ -210,6 +210,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 message = new PnfsGetFileAttributes(pnfsId, attributes);
                 message.setSubject(transferRequest.getSubject());
                 message.setRestriction(transferRequest.getRestriction());
+                message.setPnfsPath(pnfsPath);
                 setState(WAITING_FOR_CREATED_FILE_INFO_STATE);
             }
         } else {
@@ -221,6 +222,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             message.setSubject(transferRequest.getSubject());
             message.setRestriction(transferRequest.getRestriction());
             message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
+            message.setPnfsPath(pnfsPath);
             setState(WAITING_FOR_PNFS_INFO_STATE);
         }
         manager.persist(this);
