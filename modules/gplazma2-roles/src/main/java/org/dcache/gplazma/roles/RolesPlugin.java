@@ -101,11 +101,11 @@ public class RolesPlugin implements GPlazmaSessionPlugin
                   .map(GidPrincipal.class::cast)
                   .map(GidPrincipal::getGid)
                   .forEach((gid) -> {
-                      if (adminGid != null && gid == adminGid) {
+                      if (adminGid != null && gid == adminGid.longValue()) {
                           roles.add(LoginAttributes.adminRole());
                       }
 
-                      if (observerGid != null && gid == observerGid) {
+                      if (observerGid != null && gid == observerGid.longValue()) {
                           roles.add(LoginAttributes.observerRole());
                       }
                   });
