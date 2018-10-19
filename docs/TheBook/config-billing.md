@@ -4,14 +4,10 @@ CHAPTER 15. THE BILLING SERVICE
 Table of Contents
 -----------------
 
-
-* [The billing log files](#the-billing-log-files)
-* [The billing database](#the-billing-database)
-
-
-     [Customizing the database](#customizing-the-database)
-
-* [Generating and Displaying Billing Plots](#generating-and-displaying-billing-plots)
+* [The Billing Log Files](#the-billing-log-files)
+* [The Billing Database](#the-billing-database)
+* [Billing Histogram Data](#billing-histogram-data)
+* [Billing Records](#billing-records)
 * [Upgrading a Previous Installation](#upgrading-a-previous-installation)
 
 dCache has built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools. There are two options for how this data can be represented and stored:
@@ -79,7 +75,9 @@ THE BILLING DATABASE
 
 In order to enable the database, the following steps must be taken.
 
-1.  If the billing database does not already exist (see further below on migrating from an existing one), create it (we assume PSQL here):
+1.  If the billing database does not already exist 
+(see further below on migrating from an existing one), 
+create it (we assume PSQL here):
 
         [root] # createdb -O dcache -U postgres billing
 
@@ -87,32 +85,20 @@ In order to enable the database, the following steps must be taken.
 
         [root] # createlang -U dcache plpgsql billing
 
-    No further manual preparation is needed, as the necessary tables, indices, functions and triggers will automatically be generated when you (re)start the domain with the billing database logging turned on (see below).
+    No further manual preparation is needed, as the necessary tables, indices, 
+    functions and triggers will automatically be generated when you (re)start 
+    the domain with the billing database logging turned on (see below).
 
-2.  The property `billing.enable.db` controls whether the billing cell sends billing messages to the database. By default the option is disabled. To activate, set the value to `true` and restart the domain in which the HTTPD service is running.
-CUSTOMIZING THE DATABASE
-
-    > **NOTE**
-    >
-    > Please take care to define the `billing` service before the `httpd`service in your layout file. If the `billing` service is defined in a separate domain, this domain should be defined before the domain in which the `httpd` service is running.
-
-Example:  
-    Extract from the layout file:
-
-        [httpdDomain]
-             billing.enable.db=true
-        [httpdDomain/billing]
-        [httpdDomain/httpd]
-        ...
-
-        [root] # dcache restart httpdDomain
-        Stopping httpdDomain 0 1 done
-        Starting httpdDomain done
+2.  The property `billing.enable.db` controls whether the billing cell sends 
+billing messages to the database. By default the option is disabled. 
+To activate, set the value to `true` and restart the domain.
 
 CUSTOMIZING THE DATABASE
 ------------------------
 
-In most cases, the billing service will be run out-of-the-box; nevertheless, the administrator does have control, if this is desired, over the database configuration.
+In most cases, the billing service will be run out-of-the-box; 
+nevertheless, the administrator does have control, if this is desired, 
+over the database configuration.
 
 -   Database name, host, user, and password can be easily modified using the properties:
 
@@ -127,20 +113,13 @@ In most cases, the billing service will be run out-of-the-box; nevertheless, the
         DOMAIN          CELL        DATABASE HOST      USER      MANAGEABLE AUTO  
         namespaceDomain PnfsManager chimera  localhost dcache    Yes        Yes  
         namespaceDomain cleaner     chimera  localhost dcache    No         No  
-        httpdDomain     billing     billing  localhost dcache   Yes        Yes  
+        billingDomain   billing     billing  localhost dcache   Yes        Yes  
 
--   Database inserts are batched for performance. Since 2.8, improvements have been made to the way the billing service handles these inserts. As a consequence, the older in-memory caching threshold properties are now obsolete:
-
-    -   billing.db.inserts.max-before-commit
-        (defaults to
-        10000
-        )
-    -   billing.db.inserts.timeout-before-commit
-        (defaults to
-        5
-        )
-
-    Inserts can now be tuned by adjusting the queue sizes (there are four of them, each mapped to the four main tables: billinginfo, storageinfo, doorinfo, hitinfo), and the maximum database batch size.
+-   Database inserts are batched for performance. Since 2.8, improvements 
+have been made to the way the billing service handles these inserts, which can 
+now be tuned by adjusting the queue sizes (there are four of them, each mapped 
+to the four main tables: billinginfo, storageinfo, doorinfo, hitinfo), 
+and the maximum database batch size.
 
     -   billing.db.inserts.max-queue-size
         (defaults to
@@ -151,74 +130,44 @@ In most cases, the billing service will be run out-of-the-box; nevertheless, the
         1000
         )
 
-    There is further the option as to whether to drop messages (default is true) or block when the queue maximum is exceeded.
+    There is further the option as to whether to drop messages (default is true) 
+    or block when the queue maximum is exceeded.
 
     -   billing.db.inserts.drop-messages-at-limit
         (defaults to
         true
         )
 
-    The property which sets the delegate class is merely there for potentially future use; currently there is only one option.
-
-    -   billing.db.inserts.queue-delegate.type
-        (defaults to
-        org.dcache.services.billing.db.impl.DirectQueueDelegate
-        )
-
     The default settings should usually be sufficient.
 
-    You can now obtain statistics (printed to the billing log and pinboard) via the dcache admin command: `display insert statistics <on/off>` command. Activating this command logs the following once a minute:
+    You can now obtain statistics (printed to the billing log and pinboard) 
+    via the dcache admin command: `display insert statistics <on/off>` command. 
+    Activating this command logs the following once a minute:
 
                     insert queue (last 0, current 0, change 0/minute)
                     commits (last 0, current 0, change 0/minute)
                     dropped (last 0, current 0, change 0/minute)
                     total memory 505282560; free memory 482253512
                 
-
-    "insert queue" refers to how many messages actually were put on the queue; "commits" are the number of messages committed to the database; "dropped" are the number of lost messages. "last" refers to the figures at the last iteration. For insert queue, this is the actual size of the queue; for commits and dropped, these are cumulative totals.
+    "insert queue" refers to how many messages actually were put on the queue; 
+    "commits" are the number of messages committed to the database; 
+    "dropped" are the number of lost messages. 
+    "last" refers to the figures at the last iteration. 
+    For insert queue, this is the actual size of the queue; 
+    for commits and dropped, these are cumulative totals.
 
     You can also generate a Java thread dump by issuing the `"dump threads"` command.
 
--   Should finer control over the DataNucleus layer (which talks to the database) be needed, then a new **datanucleus.properties** file must be provided. The path to this file, which will override the internal settings, should be indicated using:
-
-    -   billing.db.config.path
-        (defaults to
-        ""
-        )
-
-    Changing this configuration requires an understanding of [DataNucleus](http://www.datanucleus.org/), and we expect it will be rather uncommon to utilize this option (it is suggested that the administrator in this case consult with a member of the dCache team).
-
--   Changing the database type (which defaults to PSQL) to something else would entail the above-mentioned necessary modification of the **datanucleus.properties** as well as changing the `billing.db.driver` and `billing.db.url` properties appropriately. This is not a recommended procedure, though in certain exceptional circumstances, it may be desirable or necessary. Once again, consultation with the dCache team is suggested in this case.
-
-GENERATING AND DISPLAYING BILLING PLOTS
+BILLING HISTOGRAM DATA
 =======================================
 
-If you have selected to store billing messages to the database, it is also possible to generate and display a set of histograms from the data in these tables. To turn on plot generation, set the property `httpd.enable.plots.billing` to `true` and restart the domain in which the HTTPD is running.
+If the database has been enabled, dCache's frontend will regularly collect
+histograms from it, and make these available via several RESTful API
+calls.  Please refer to the frontend documentation for further infomartion.
 
-Example:  
-Extract from the layout file:
-
-    [httpdDomain]
-         billing.enable.db=true
-         httpd.enable.plots.billing=true
-    [httpdDomain/httpd]
-    [httpdDomain/billing]
-    ...
-
-The frequency of plot refreshing and the type of plot produced can be controlled by:
-
--   `billingPlotsTimeoutInMins`
-    (defaults to
-    30
-    )
--   `httpd.plots.billing.type`
-    (defaults to
-    `png`
-    and can be set to
-    `gif`
-    )
-
-The plots provide aggregate views of the data for 24-hour, 7-day, 30-day and 365-day periods.
+Similarly, dCache-View (the web interface) includes a publicly available
+tab for plots generated from this data. These provide aggregate views of 
+the data for 24-hour, 7-day, 30-day and 365-day periods.
 
 The plot types are:
 
@@ -236,7 +185,12 @@ The plot types are:
     >
     >     poolmanager.enable.cache-hit-message=true
 
-Each individual plot can be magnified by clicking on it.
+BILLING RECORDS
+=======================================
+
+The frontend also provides an API for viewing the billing records for a given
+file.  This data is also available through dCache-View.  Once again, please
+consult those parts of the documentation for further information.
 
 UPGRADING A PREVIOUS INSTALLATION
 =================================

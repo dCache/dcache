@@ -1,202 +1,7 @@
-The New Resilience Service
+The Resilience Service
 --------------------------
 
-With version 2.16, dCache introduced a new service for creating and managing
-multiple permanent copies of a file. This **resilience** service is intended to
-replace the **replica (manager)** service (see the [dCache Book, Chapter
-II.6](config-ReplicaManager.md)). While the latter continues to remain available
-in 2.16, it is considered deprecated. Users are encouraged to adopt the
-resilience service as soon as possible, as the replica service will eventually
-be eliminated.
-
-For migration from the replica manager to resilience, see
-[below](https://github.com/dCache/dcache/wiki/Resilience#migrating-from-the-old-replica-manager-to-the-new-service).
-
-### The (original) Replica Manager: history and limitations
-
-From early on in its development, dCache has sought to provide for file
-durability and availability in the absence of a tertiary storage system. The
-replica manager, or replica service, was created for this purpose. It used
-pool-to-pool (`p2p`) copying to guarantee that the number of locations, or
-"replicas", for new files met at least a default minimum (2). It would maintain
-this minimum by creating additional copies should one or more pools containing
-that file become unreadable, and by eliminating redundant replicas when the old
-locations once again became accessible. The manager relied on a special pool
-group in order to distinguish pools under its control from the rest of the
-dCache installation; thanks to this partitioning, dCache could be run in what
-was referred to as "hybrid" mode, with replication coexisting alongside back-end
-storage and retrieval.
-
-While improvements and fixes have been applied to the Replica Manager, there has
-been no significant modification since 2007. In particular, this service
-utilizes a rather heavyweight set of database tables; with the subsequent
-adoption of Chimera, much of the data stored by the Replica Manager now ends up
-duplicating what is stored in the namespace. Moreover, the Replica Manager's
-tables are populated by querying the pool repositories, which is not as reliable
-a source of information.
-
-The manager handled only `precious` files (only these are considered "countable"
-replicas); to prevent such files from becoming `cached`, it further required the
-setting `lfs=precious` on all pools in the "resilient" pool group under its
-control. This pool setting, however, has now been superseded by the
-`RetentionPolicy` and `AccessLatency` concepts. It is thus a legacy option and
-replication should not be based on it; furthermore, defining replication in
-terms of pool configuration is intrinsically incorrect to begin with.
-
-Finally, there is a certain brittleness both in the way the manager views
-replication requirements, and in its ability to satisfy them. First, replication
-is determined by a global range (minimum \<= N \<= maximum) for *all* files in
-the pool group. Second, the manager does not handle more than one such group. To
-simulate the existence of multiple such groups, it is necessary to run as many
-managers as the pool groups one wishes to make resilient.
-
-### Resilience: A complete redesign
-
-Since there continues to be a need to provide for file replication inside of
-dCache, and to situate it within a broader quality-of-service framework, it was
-deemed desirable to re-evaluate how replication should be defined and managed.
-These considerations led to the decision to re-implement this service from
-scratch. In order to distinguish it from the older service, we call it simply
-"Resilience".
-
-#### Principal Features
-
-1.  There is no database to maintain.
-
-2.  A single Resilience instance handles multiple sets of resilience
-    constraints.
-
-3.  No special pool configuration (other than including a pool in a resilient
-    pool group) is needed.
-
-    1.  pools do not require `lfs=precious` to work.
-
-    2.  replicas are required to be `ONLINE`, not `precious`, and are not
-        prohibited from being written to pools which are also backed by a
-        tertiary storage system.
-
-These three features fundamentally distinguish the new resilience service from
-the old Replica Manager.
-
-The new service continues to exercise the same vigilance over file location
-accessibility as before:
-
-#### Retained Features
-
-1.  New files are handled by intercepting cache location messages relayed by
-    PnfsManager.
-
-2.  Pool status changes trigger either the creation of missing copies or the
-    removal of redundant ones.
-
-3.  The pools in the resilient groups are periodically scanned in order to
-    assure replica consistency and to retry copying of any files which may not
-    have been replicated previously.
-
-4.  In-flight or queued file operations are recoverable if the service itself
-    goes offline and is then restarted.
-
-5.  Pools can be temporarily excluded from resilience counts and handling (see
-    further below on this feature).
-
-6.  now takes place by comparing the new state of the PoolMonitor, pushed to the
-    resilience service by the PoolManager every 30 seconds, with the previous
-    one.
-
-The following features are either extensions or refinements of old ones:
-
-#### Extended Features
-
-1.  Resilience constraints are now defined in terms of **storage units**, not
-    pool groups:
-
-    1.  The `required` attribute is used to establish the number of copies for
-        all files in that unit.
-
-    2.  The `onlyOneCopyPer` attribute is used to partition copies among pools
-        on the basis of pool tags.
-
-2.  Resilience constraints, along with pool membership in resilient groups, can
-    be redefined without requiring a service restart.
-
-3.  Broken or corrupt replicas are handled by removal and recopying when this is
-    possible.
-
-4.  An alarm is raised when there is a fatal replication error.
-
-5.  Copies resulting in non-fatal failures can be retried (this is
-    configurable).
-
-6.  A rich set of admin commands for monitoring and diagnostics, as well as for
-    manually adjusting replicas or initiating pool scans, is provided.
-
-The first point is treated in more detail below; (1.ii) is a generalization of
-the Replica Manager's global property for disallowing multiple copies of a file
-on the same host. With regard to (2), changes in the composition of pool groups
-or to the constraints expressed for a storage unit will trigger a re-scan of the
-pools involved in the change (unless those pools are marked `EXCLUDED`). If
-changes to (1.ii) are made, this may also trigger a redistribution of files in
-the storage unit. Retrying of failed copies is best-effort, and is repeated
-during periodic pool scanning should the original retry also fail.
-
-#### Some remarks on implementation
-
-As before, Resilience is a self-contained dCache cell or service which may be
-run in the same domain as other services, or by itself in a separate domain. It
-can also be disabled and re-enabled via an admin command without stopping and
-restarting the entire domain.
-
-The new service is more fully integrated with other dCache services. As noted
-above, it now has access to the entire PoolManager state through periodic
-updates from that service. It also accesses the namespace (Chimera) database
-directly for information on file locations. For `p2p` copying, it makes use of
-the full-featured support furnished by the migration module which runs on the
-pools. Running Resilience does not, however, affect the performance of other
-services such as PnfsManager and PoolManager, whose efficiency is crucial to the
-normal functioning of a dCache installation.
-
-In re-implementing this service, scalability has been a foremost concern,
-particularly since it now keeps all state in memory. The service has been
-repeatedly stress tested on an installation of approximately 100 pools, with the
-number of files on each reaching more than 1 million, and ingest rates exceeding
-600HZ. With the increase in number of operations, performance has not been
-observed to degrade due to internal factors, though it is susceptible, as would
-be expected, to such things as the size of the namespace, load on the pools and
-network latency.
-
-We have also paid some attention to questions of fairness and anti-starvation.
-For a large system, a pool scan can queue up millions of operations. We have
-attempted to balance work between the handling of these scanned files and newly
-created ones, such that some progress is always being made on both. We have also
-adopted the policy of preferring the availability of at least two copies,
-promoting to the head of the waiting list operations on files with currently
-only one replica, and re-queueing the operation for any additional copies
-required.
-
-Since state is maintained in memory, we have implemented periodic check-pointing
-of the main operation table to a file which can be read back in at startup. To
-avoid costly locking, this check-pointing is not guaranteed to be "lossless",
-but this is compensated for by the periodic verification done on the pools.
-
-##### Operation concurrency
-
-1.  File operations of course run concurrently; however, operations are
-    serialized with respect to logical file (`pnfsid`) – that is, only one copy
-    or remove for a given file id is running at a given time.
-
-2.  Pool scans also run concurrently. When separate pool scans request
-    operations on the same file, the operation count for that file is simply
-    incremented. File information and pool information is refreshed for each
-    pass of the operation, so the operation will only run as many times as is
-    necessary to fulfill the resilience requirements for that file.
-
-3.  For both file and pool operations, there are obviously diminishing returns
-    on performance if the concurrency is set too high. An explanation of the
-    relevant parameters is given in the `resilience.properties` file, should
-    further tuning be necessary or desirable (defaults are already set based on
-    the benchmark testing we have conducted).
-
-### Configuring the new resilience service
+### Configuring the resilience service
 
 #### Activating resilience
 
@@ -672,6 +477,46 @@ remain available to service both Chimera operations and Resilience operations,
 and that these be properly matched to the number of threads responsible for the
 various operations, in order to avoid contention (see again, the explanation in
 the default properties file).
+
+### Resilience's View of Pool Status
+
+In order to allow for flexibility in configuring door access to pools, the
+`disabled` state on a pool is interpreted this way:
+
+-  `\s <pool> pool disable -p2p-client` means no p2p can be written to this pool; 
+Resilience will not use this pool to make copies, though doors can still write
+new files there.
+
+-  `\s <pool> pool disable -store` means doors cannot write new copies to the 
+pool, though it is still available for p2p; hence Resilience can still use this
+pool to make copies.
+
+-  `\s <pool> pool disable -rdonly` means the pool cannot be written to either
+by doors or Resilience. 
+
+-  `\s <pool> pool disable -strict` indicates not only that the pool is disabled
+for write, but also for read; is the pool is resilient, Resilience will schedule
+it for a scan so that the resilient files it contains can be replicated elsewhere.
+
+### Automatic Staging of Missing CUSTODIAL Replicas
+
+Files whose `retention policy` is `CUSTODIAL` and whose `access latency` is `ONLINE`
+will be handled by Resilience when their replicas are found in a resilient
+pool group and their `required` property is defined.   
+
+Such files constitute a special case for the purposes of recovery.  For instance,
+if a normal resilient file with 2 copies on disk becomes inaccessible because
+both pools containing those two copies went offline at about the same time (not
+permitting Resilience time to react to make another replica), then an alarm
+concerning this file's current inaccessibility is raised.  If this file is also
+`CUSTODIAL` and has a copy on tertiary storage, resilience will first attempt to
+restage it before considering it inaccessible.  
+
+There is no special configuration setup to enable this.  Resilience has been 
+tested for restaging of this sort even with a setup where there are special 
+staging pools from which the staged-in replica is then to be p2p'd to a resilient 
+pool group, and works normally in this case (i.e., provided the proper link 
+selection preferences are set).
 
 ### Some typical scenarios part 1: what happens when ...?
 
@@ -1291,272 +1136,3 @@ Without the `-strict` flag, `disable` stops the message handling, passing off
 the incoming messages to a file cache; when re-enabled, the messages are read
 back in. This may help to determine if, for instance, pool scanning is making
 any progress by itself.
-
-### Migrating from the old Replica Manager to the new service
-
-The best way to illustrate what needs to be done is to start with a simple
-(single replica manager) setup. The diagram below shows the differences between
-the original hybrid (tape + replicas) system and the way it should look under
-the Resilience service.
-
-![Migration Example](https://github.com/alrossi/dcache-miscellany/blob/master/docs/rm_migration.png)
-
-There are three steps to the migration process:
-
--   Change `AccessLatency` and `RetentionPolicy` on current files and
-    directories belonging to the resilient (disk-only) pools.
-
--   Change the metadata for existing files on the resilient pools.
-
--   Configure the `poolmanager.conf` with the necessary resilience attributes.
-
-If there are multiple replica managers involved, then there is an additional
-step to follow if these each had different minimum/maximum settings for the
-number of required copies:
-
--   Either adapt existing storage units or create new ones to capture the files
-    which would be in each of the resilient pool groups and set the resilience
-    attributes accordingly on them. This will also mean that appropriate storage
-    class tags need to be added to the directories linked to these groups if
-    they do not already exist.
-
->   This procedure can usually be accomplished on a live dCache system (see
->   below for the one case which will require a pool restart), but the **new
->   resilience service as well as the old replica manager MUST NOT be running**.
-
-#### Changing `AccessLatency` and `RetentionPolicy`
-
-dCache provides a python script
-(`/var/lib/dcache/migration/migrate_from_repman_to_resilience.py`) which will
-make all the necessary changes to the namespace directly. These include marking
-all the appropriate files as `REPLICA ONLINE` and changing the corresponding
-tags on the appropriate directories so that future files have the correct
-storage attributes.
-
-The script is run (by default) on the host where the `chimera` database is
-located; it takes as input a file containing a new-line separated list of the
-pools in the old resilient pool group. Given that under the old replica manager
-it was not possible to write both replicas and files needing to go to tape on
-the same pool, the script simply changes the attributes for all files it finds
-at each location. The script also records the directories in which those
-replicas are found, and searches for the ancestors with the controlling
-`AccessLatency` and `RetentionPolicy` tags, changing them there (so that they
-propagate downward to the sub-directories which are supposed to inherit them).
-Finally, the script outputs the list of parent directories for these files;
-*this is for convenience, in case storage unit tags need to be added (fourth
-step above for multiple replica manager systems)*.
-
-#### Changes on the resilient pools
-
-There are two separate issues to be addressed on the pools. The first involves
-the `sticky` bits for permanent replicas and is the most important. The second
-concerns `precious` files, and only becomes important if an original pool is to
-be re-purposed for sharing between resilient and non-resilient files.
-
-##### (A) Ensure that all files have the sticky bit set.
-
-Under the old replica manager a pool could not hold original copies of files
-that were supposed to go to tape; this was because original replicated files
-were written as `precious`, and the pool itself was configured not to try to
-write these files to tape and subsequently change their state to `cached` when
-they were flushed. This means that replicas on these pools were either
-`precious` (the original) or `cached+sticky` (the copies). If files which were
-`cached` but lacked the system `sticky` bit existed on these pools, it was
-because they got there by some other means (hot replication, for instance). The
-old replica manager ignored these `cached` copies in its count of existing valid
-permanent copies.
-
-With the new resilience service, things are a bit different. The state of the
-file in the pool repository is not checked; a policy is enforced up front that
-any file that is `cached` without the `sticky` bit is only allowed onto the pool
-if it is a temporary copy of a non-resilient (i.e., `CUSTODIAL NEARLINE`) file.
-While `cached` copies of resilient replicas should not exist on such pools, they
-may on the old pools.
-
-If such copies are allowed to exist after migration, this could lead to data
-loss, because the new resilience service will count them as legitimate replicas,
-and may remove a copy which is `sticky`, leaving what it considered to be a
-permanent replica in a state susceptible to being swept and removed.
-
-It is thus necessary to set the sticky bit on all the files on the pool before
-engaging the new resilience service. The replicas which are in excess will
-eventually be detected and removed by the periodic pool checks.
-
-Hence, for each pool in the resilient pool group, use the admin command:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-rep set sticky -all
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-##### (B) Dealing with the precious files.
-
-If you continue to use the original pool for resilient storage only, there is
-nothing further you need to do. The new resilience service is indifferent to
-whether the file is classified as `precious` or `cached` on the pool. What
-counts for it is that the file's `AccessLatency` is `ONLINE`. We already took
-care of this in step one above.
-
->   In this case, you should **NOT** remove `lfs=precious` (as instructed for
->   the second case below). Otherwise, your logs will probably fill up with
->   error messages about not being able to flush the `precious` files to tape,
->   since there is presumably no HSM handler script running on this pool.
-
-If, on the other hand, you intend to use this pool to store both resilient and
-non-resilient files, then there are two things which need to be done. First, a
-migration job should be run which changes the `precious` state to
-`cached+sticky`, so that we can allow truly `precious` files written to the pool
-to be distinguished from the old resilient files. This is a copy operation which
-is run as follows using the admin command on the pool:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-migration copy -state=precious -smode=cached+system -tmode=cached+system -target=pgroup <pgroupname>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Don't let the 'copy' here deceive: the operation works such that it will change
-metadata on the source and only make a copy if it can't find one, which should
-be a rare occurrence.
-
-When the migration job has completed, you will also need to remove the setting
-which stops `precious` files from being flushed to tape.
-
-In the layout file, find the pool stanza and remove the line with the "lfs"
-assignment:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[resilient1Domain]
-...
-[resilient1Domain/pool]
-pool.name=resilient1
-pool.path=/diskd/res-pool-1
-pool.wait-for-files=${pool.path}/setup
-pool.lfs=precious                      <<<<<<<<<<<<<<<<<<<<<<< REMOVE THIS LINE
-pool.tags=hostname=server1.example.org
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Finally, you will need to restart the pool(s) for this last change to take
-effect.
-
-After you are done applying one or both of these changes, you might wish to
-verify that the changes have taken place using the admin shell:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-\s resilient1 rep ls
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Entries should all look similar to this:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0000D0C444CD3E7B4F2381380CED9B7F7157 <C-------X--L(0)[0]> 1181 si={...}
-0000896FC0AF172C4F0B8BCC52305BC1BA2C <C-------X--L(0)[0]> 1181 si={...}
-OR
-0000896FC0AF172C4F0B8BCC52305BC1BA2C <P-------X--L(0)[0]> 1181 si={...}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you did not apply the second change, you will still see `precious` files on
-the pool, but they will have the sticky bit set as well (as a consequence of the
-bulk operation on the repository).
-
-#### Changes to `poolmanager.conf` and (possibly) to directory tags
-
-There are several different scenarios here, depending on the target setup.
-
-##### (a) Entirely disk-only with only one resilience requirement
-
-This monolithic case is the easiest to handle.
-
--   In `poolmanager.conf`, give the default storage unit the desired resilience
-    setting.
-
->   Note: due to an oversight in the original version of resilience, support for
->   defining resilience on the globbed global and class units was not included.
->   This situation has been rectified in 2.16.17 and is indeed available in
->   3.0.0, so be sure to upgrade to those versions in order to use this feature.
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-psu set storage unit *@* -required=<number of copies>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--   Give all pool groups the -resilient flag:
-
->   This would include the default group.
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-psu create pgroup <name1> -resilient
-psu create pgroup <name2> -resilient
-...
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When the changes are complete, you will need to do (`\sp` = the `PoolManager`):
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-\sp reload -yes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--   Finally, (optionally) set the default `AccessLatency` and `RetentionPolicy`
-    properties (this would require a restart, though):
-
->   Either in the `dcache.conf` or layout file, add:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pnfsmanager.default-access-latency   = ONLINE
-pnfsmanager.default-retention-policy = REPLICA
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-##### (b) The disk-only part has only one resilience requirement, but the system also has files which are written to tape.
-
-In this case, depending on what the relative proportions of tape-backed to
-disk-only storage are, you may wish to leave the default properties above at
-`NEARLINE CUSTODIAL`, or change them to `ONLINE REPLICA`.
-
-In any case, one will need to distinguish minimally between two pool groups, and
-there will be the need for at least one storage unit to be defined. Again,
-depending on what makes sense, you could make the default storage unit resilient
-or you could create a special resilient storage unit. In the latter case, the
-tags corresponding to the storage information extraction for the underlying HSM
-will need to be set on the appropriate directories.
-
-As an example, the following makes the default non-resilient, and defines a
-resilient group and storage unit, using the standard tags needed by the
-`org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor`:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-psu create pgroup resilient -resilient
-psu create unit -store resilient:production@osm
-psu set storage unit resilient:production@osm -required=2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You will then need to link up in the usual manner this new unit to the new pool
-group, and then in the directories where files of this type will be written,
-define the tags:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo "production" > ".(tag)(sGroup)"
-echo "resilient" > ".(tag)(OSMTemplate)"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If, on the other hand, you wish the default to remain the resilient group, you
-would do something like:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-psu set storage unit *@* -required=2
-psu create pgroup tape
-psu create unit -store tape:production@osm
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-again, linking the new tape group to the new tape storage class, and then on the
-directories used to store files on tape, doing:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-echo "production" > ".(tag)(sGroup)"
-echo "tape" > ".(tag)(OSMTemplate)"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-##### (c) Multiple classes of resilience and/or tape storage
-
-The procedures are identical to those above, except that additional storage
-class definitions and tags will be required. More than two pool groups may or
-may not be necessary, depending on whether there are other pool or network
-characteristics on which the pool groupings are based.
-
-After you have completed the entire set of changes, the resilience service may
-be started.

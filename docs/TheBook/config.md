@@ -24,15 +24,15 @@ Table of Contents
 
 1. [The Cell Package](config-cellpackage.md#the-cell-package)
 
-1. [The replica Service (Replica Manager)](config-ReplicaManager.md)
-    - [The Basic Setup](config-ReplicaManager.md#the-basic-setup)
-    - [Define a poolgroup for resilient pools](config-ReplicaManager.md#define-a-poolgroup-for-resilient-pools)
-    - [Operation](config-ReplicaManager.md#operation)
-    - [Pool States](config-ReplicaManager.md#pool-states)
-    - [Startup](config-ReplicaManager.md#startup)
-    - [Avoid replicas on the same host](config-ReplicaManager.md#avoid-replicas-on-the-same-host)
-    - [Hybrid dCache](config-ReplicaManager.md-hybrid-dcache)(config-ReplicaManager.md#commands-for-the-admin-interface)
-    - [Properties of the replica service](config-ReplicaManager.md#properties-of-the-replica-service)
+1. [The Resilience Service](config-resilience.md)
+    - [Configuring the Resilience Service](config-resilience.md#configuring-the-resilience-service)
+    - [Resilience Home](config-resilience.md#resilience-home)
+    - [Admin Commands](config-resilience.md#admin-commands)
+    - [Tuning](config-resilience.md#tuning)
+    - [Resilience's View of Pool Status](config-resilience.md#resilience-s-view-of-pool-status)
+    - [Automatic Staging of Missing CUSTODIAL Replicas](config-resilience.md#automatic-staging-of-missing-custoidial-replicas)
+    - [Some typical scenarios part 1: what happens when ...?](config-resilience.md#some-typical-scenarios-part-1--what-happens-when-?)
+    - [Some typical scenarios part 2: how do I ...?](config-resilience.md#some-typical-scenarios-part-2--how do i-?)
 
 1. [The poolmanager Service](config-PoolManager.md)
     - [The Pool Selection Mechanism](config-PoolManager.md#the-pool-selection-mechanism)
@@ -143,8 +143,8 @@ Table of Contents
 1. [The billing Service](config-billing.md)
     - [The billing log files](config-billing.md#the-billing-log-files)
     - [The billing database](config-billing.md#the-billing-database)
-    - [Customizing the database](config-billing.md#customizing-the-database)
-    - [Generating and Displaying Billing Plots](config-billing.md#generating-and-displaying-billing-plots)
+    - [Billing Histogram Data](config-billing.md#billing-histogram-data)
+    - [Billing Records](config-billing.md#billing-records)
     - [Upgrading a Previous Installation](config-billing.md#upgrading-a-previous-installation)
 
 1. [The alarms Service](config-alarms.md)
@@ -154,12 +154,10 @@ Table of Contents
     - [Alarm Priority](config-alarms.md#alarm-priority)
     - [Working with Alarms: Shell Commands](config-alarms.md#working-with-alarms-shell-commands)
     - [Working with Alarms: Admin Commands](config-alarms.md#working-with-alarms-admin-commands)
-    - [Working with Alarms: The Webadmin Alarms Page](config-alarms.md#working-with-alarms-the-webadmin-alarms-page)
     - [Advanced Service Configuration: Enabling Automatic Cleanup](config-alarms.md#advanced-service-configuration-enabling-automatic-cleanup)
     - [Advanced Service Configuration: Enabling Email Alerts](config-alarms.md#advanced-service-configuration-enabling-email-alerts)
-    - [Advanced Service Configuration: Custom Alarm Definitions](config-alarms.md#advanced-service-configuration-custom-alarm-definitions)
     - [Miscellaneous Properties of the alarms Service](config-alarms.md#miscellaneous-properties-of-the-alarms-service)
-
+    - [Alarms SPI](config-alarms.md#alarms-spi--service-provider-interface-)-
 1. [dCache Webadmin Interface](config-webadmin.md)
     - [Installation](config-webadmin.md#installation)
 

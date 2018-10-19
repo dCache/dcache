@@ -182,9 +182,17 @@ Cached Replica
 ---------------
 A cached [replica](#replica) is a replica that should not be stored on tape.
 
-Replica Manager
+Resilience
 ----------------
-The replica manager keeps track of the number of [replicas](#replica) of each file within a certain subset of pools and makes sure this number is always within a specified range. This way, the system makes sure that enough versions of each file are present and accessible at all times. This is especially useful to ensure resilience of the dCache system, even if the hardware is not reliable. The replica manager cannot be used when the system is connected to a [tertiary storage system](#tertiary-storage-system). The activation and configuration of the replica manager is described [in Chapter 6, The replica Service (Replica Manager)](config-ReplicaManager.md).
+Resilience has to do with file preservation and availabilitykeeps.  The Resilience
+service or manager tracks the number of [replicas](#replica) 
+of files within defined subsets of pools (marked as resilient) and makes 
+sure this number is always as specified by the storage class of the file. 
+This is especially useful to ensure the existence or readability of the file, 
+even if the hardware is not reliable, if a high volume of access to such 
+files is foreseen, or if the file should be permanent but not reside on 
+tertiary storage. The activation and configuration of resilience is described
+[in Chapter 6, The Resilience Service](config-Resilience.md).
 
 Storage Resource Manager (SRM)
 ------------------------------
