@@ -276,14 +276,10 @@ The pool 'setup' file is the file **$poolHomeDir/$poolName/setup**. It mainly de
 
 Define the `executable` and Set the maximum number of concurrent `PUT` and `GET` operations:
 
-    hsm set <hsmType> [<hsmInstanceName>] [-command=</path/to/executable>] [-key=<value>]
+   hsm create [-key[=value]] ... type [instance] [provider] 
 
-    hsm create osm osm -hsmBase=var/pools/tape/ -hsmInstance=osm -command=share/lib/hsmcp.rb -c:puts=1 -c:gets=1 -c:removes=1
-
-    hsm create [-key[=value]] ... type [instance] [provider] 
-
-    hsm set [-key[=value]] ... instance 
-
+    hsm create osm osm -hsmBase=var/pools/tape/ -hsmInstance=osm
+     -command=share/lib/hsmcp.rb -c:puts=1 -c:gets=1 -c:removes=1
 
     #
     #  PUT operations
@@ -317,8 +313,8 @@ Login to the Admin Interface to change the entry of the pool 'setup' file for a 
     (pool_1) admin > hsm set osm osm
     (pool_1) admin > hsm set osm -command=/usr/share/dcache/lib/hsmscript.sh
     (pool_1) admin > hsm set osm -hsmBase=/hsmTape
-    (pool_1) admin > st set max active 5
-    (pool_1) admin > rh set max active 5
+    (pool_1) admin > st set timeout  5
+    (pool_1) admin > rh set timeout 5
     (pool_1) admin > save
 
 ### The namespace layout

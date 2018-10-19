@@ -578,10 +578,9 @@ In scripts, one can use a “Here Document” to list the commands, or supply th
 
     outfile=/tmp/$(basename $0).$$.out
 
-    ssh -c blowfish -p 22223 admin@adminNode > $outfile << EOF
+    ssh -p 22224 admin@adminNode  > $outfile << EOF
     \c PoolManager
     cm ls -r
-    (more commands here)
     \q
     EOF
 
@@ -592,7 +591,7 @@ or, the equivalent as stdin.
     #   Script to automate dCache administrative activity.
 
     echo -e '\c pool_1\nrep ls\n(more commands here)\n\q' \
-      | ssh -c blowfish -p 22223 admin@adminNode \
+      | ssh -p 22224 admin@adminNode \
       | tr -d '\r' > rep_ls.out
       
       
