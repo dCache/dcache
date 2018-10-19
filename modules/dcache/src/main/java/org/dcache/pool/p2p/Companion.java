@@ -62,6 +62,7 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
+import org.dcache.util.Exceptions;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
@@ -568,11 +569,15 @@ class Companion
         }
 
         if (_error != null) {
-            if (_error instanceof RuntimeException || _error instanceof Error) {
-                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error),
-                           (Throwable) _error);
+            if (_error instanceof Error) {
+                _log.error("P2P for {} failed due to a serious problem in the JVM.",
+                        _pnfsId, _error);
+                throw (Error)_error; // We should not attempt to recover from this!
+            } else if (_error instanceof RuntimeException) {
+                _log.error("P2P for {} failed due to a bug.  Please report"
+                        + " this to <support@dCache.org>", _pnfsId, _error);
             } else {
-                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error));
+                _log.error("P2P for {} failed: {}", _pnfsId, _error.toString());
             }
         } else {
             _log.info(String.format("P2P for %s completed", _pnfsId));
