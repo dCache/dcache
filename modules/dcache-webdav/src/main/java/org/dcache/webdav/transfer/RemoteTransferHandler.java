@@ -39,6 +39,7 @@ import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.services.TransferManagerHandler;
@@ -216,7 +217,11 @@ public class RemoteTransferHandler implements CellMessageReceiver
         return _performanceMarkerPeriod;
     }
 
-    public void acceptRequest(OutputStream out, Map<String,String> requestHeaders,
+    /**
+     * Start a transfer and block until that transfer is complete.
+     * @return a description of the error, if there was a problem.
+     */
+    public Optional<String> acceptRequest(OutputStream out, Map<String,String> requestHeaders,
             Subject subject, Restriction restriction, FsPath path, URI remote,
             Object credential, Direction direction, boolean verification,
             boolean overwriteAllowed)
@@ -248,6 +253,8 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 _transfers.remove(id);
             }
         }
+
+        return Optional.ofNullable(transfer._problem);
     }
 
     private ImmutableMap<String,String> buildTransferHeaders(Map<String,String> requestHeaders)
