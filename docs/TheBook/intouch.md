@@ -591,7 +591,7 @@ or, the equivalent as stdin.
     #
     #   Script to automate dCache administrative activity.
 
-    echo -e 'cd pool_1\nrep ls\n(more commands here)\nlogoff' \
+    echo -e '\c pool_1\nrep ls\n(more commands here)\n\q' \
       | ssh -c blowfish -p 22223 admin@adminNode \
       | tr -d '\r' > rep_ls.out
       

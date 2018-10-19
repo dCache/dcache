@@ -78,7 +78,7 @@ Some tape systems provide a simple PUT, GET, REMOVE interface. Typically, a copy
 How dCache interacts with a Tertiary Storage System
 ===================================================
 
-Whenever dCache decides to copy a file from disk to tertiary storage a user-provided [executable](#example-of-an-executable -to-simulate-a-tape-backend) which can be either a script or a binary is automatically started on the pool where the file is located. That `executable` is expected to write the file into the Backend Storage System and to return a URI, uniquely identifying the file within that storage system. The format of the URI as well as the arguments to the `executable`, are described later in this document. The unique part of the URI can either be provided by the storage element, in return of the `STORE FILE` operation, or can be taken from dCache. A non-error return code from the `executable` lets dCache assume that the file has been successfully stored and, depending on the properties of the file, dCache can decide to remove the disk copy if space is running short on that pool. On a non-zero return from the `executable`, the file doesn't change its state and the operation is retried or an error flag is set on the file, depending on the error [return code](#summary-of-return-codes) from the `executable`.
+Whenever dCache decides to copy a file from disk to tertiary storage a user-provided [executable](#example-of-an-executable-to-simulate-a-tape-backend) which can be either a script or a binary is automatically started on the pool where the file is located. That `executable` is expected to write the file into the Backend Storage System and to return a URI, uniquely identifying the file within that storage system. The format of the URI as well as the arguments to the `executable`, are described later in this document. The unique part of the URI can either be provided by the storage element, in return of the `STORE FILE` operation, or can be taken from dCache. A non-error return code from the `executable` lets dCache assume that the file has been successfully stored and, depending on the properties of the file, dCache can decide to remove the disk copy if space is running short on that pool. On a non-zero return from the `executable`, the file doesn't change its state and the operation is retried or an error flag is set on the file, depending on the error [return code](#summary-of-return-codes) from the `executable`.
 
 If dCache needs to restore a file to disk the same `executable` is launched with a different set of arguments, including the URI, provided when the file was written to tape. It is in the responsibility of the `executable` to fetch the file back from tape based on the provided URI and to return `0` if the `FETCH FILE` operation was successful or non-zero otherwise. In case of a failure the pool retries the operation or dCache decides to fetch the file from tape using a different pool.
 
@@ -208,7 +208,7 @@ The following arguments are given to the executable of a FETCH FILE operation on
 
 **get**  pnfsID filename -si= storage-information-uri= storage-uri more options
 
-Details on the meaning of certain arguments are described in [the section called “Summary of command line options”](#summary-of-command-line-options). For return codes see [the section called “Summary of return codes”](#summary-of-return-codes) 
+Details on the meaning of certain arguments are described in [the section called “Summary of command line options”](#summary-of-command-line-options). For return codes see [the section called “Summary of return codes”](#summary-of-return-codes). 
 
 The EXECUTABLE and the REMOVE FILE operation
 -------------------------------------------
@@ -246,7 +246,7 @@ The dCache layout files
 
 To be able to read a file from the tape in case the cached file has been deleted from all pools, enable the restore-option. The best way to do this is to log in to the Admin Interface and run the following commands:
 
-    [example.dcache.org] (local) admin > cd PoolManager
+    [example.dcache.org] (local) admin > \c PoolManager
     [example.dcache.org] (PoolManager) admin > pm set -stage-allowed=yes
     [example.dcache.org] (PoolManager) admin > save
 
@@ -278,6 +278,13 @@ Define the `executable` and Set the maximum number of concurrent `PUT` and `GET`
 
     hsm set <hsmType> [<hsmInstanceName>] [-command=</path/to/executable>] [-key=<value>]
 
+    hsm create osm osm -hsmBase=var/pools/tape/ -hsmInstance=osm -command=share/lib/hsmcp.rb -c:puts=1 -c:gets=1 -c:removes=1
+
+    hsm create [-key[=value]] ... type [instance] [provider] 
+
+    hsm set [-key[=value]] ... instance 
+
+
     #
     #  PUT operations
     # set the maximum number of active PUT operations >= 1
@@ -306,7 +313,7 @@ We provide a [script](#example-of-an-executable-to-simulate-a-tape-backend) to s
 
 Login to the Admin Interface to change the entry of the pool 'setup' file for a pool named pool\_1.
 
-    (local) admin > cd pool_1
+    (local) admin > \c pool_1
     (pool_1) admin > hsm set osm osm
     (pool_1) admin > hsm set osm -command=/usr/share/dcache/lib/hsmscript.sh
     (pool_1) admin > hsm set osm -hsmBase=/hsmTape
@@ -449,7 +456,7 @@ Example:
 
 Login into the dCache Command Line Admin Interface and increase the log level of a particular service, for instance for the `poolmanager` service:  
 
-    [example.dcache.org] (local) admin > cd PoolManager  
+    [example.dcache.org] (local) admin > \c PoolManager  
     [example.dcache.org] (PoolManager) admin > log set stdout ROOT INFO  
     [example.dcache.org] (PoolManager) admin > log ls  
     stdout:  
@@ -475,7 +482,7 @@ Check the pinboard of a service, here the POOLMNGR service.
 
 Example:  
 
-    [example.dcache.org] (local) admin > cd PoolManager  
+    [example.dcache.org] (local) admin > \c PoolManager  
     [example.dcache.org] (PoolManager) admin > show pinboard 100   
     08.30.45  [Thread-7] [pool_1 PoolManagerPoolUp] sendPoolStatusRelay: ...  
     08.30.59  [writeHandler] [NFSv41-dcachetogo PoolMgrSelectWritePool ...   
@@ -493,7 +500,7 @@ Request the file `test.root`
 
 Check the PoolManager Restore Queue:   
 
-    [example.dcache.org] (local) admin > cd PoolManager   
+    [example.dcache.org] (local) admin > \c PoolManager   
     [example.dcache.org] (PoolManager) admin > rc ls  
     0000AB1260F474554142BA976D0ADAF78C6C@0.0.0.0/0.0.0.0-*/* m=1 r=0 [pool_1] [Staging 08.15 17:52:16] {0,}  
 
@@ -501,7 +508,7 @@ Example:
 
 **The Pool Collector Queue.**  
 
-  [example.dcache.org] (local) admin > cd pool_1    
+  [example.dcache.org] (local) admin > \c pool_1    
   [example.dcache.org] (pool_1) admin > queue ls -l queue    
                        Name: chimera:alpha    
                   Class@Hsm: chimera:alpha@osm  
@@ -512,7 +519,7 @@ Example:
       00001BC6D76570A74534969FD72220C31D5D  
 
 
-    [example.dcache.org] (local) admin > cd pool_1
+    [example.dcache.org] (local) admin > \c pool_1
     Class                 Active   Error  Last/min  Requests    Failed  
     dteam:STATIC@osm           0       0         0         1         0  
 
@@ -520,7 +527,7 @@ Example:
 
 **The pool STORE FILE Queue.**  
 
-    [example.dcache.org] (local) admin > cd pool_1  
+    [example.dcache.org] (local) admin > \c pool_1  
     [example.dcache.org] (pool_1) admin > st ls  
     0000EC3A4BFCA8E14755AE4E3B5639B155F9  1   Fri Aug 12 15:35:58 CEST 2011    
 
@@ -528,7 +535,7 @@ Example:
 
 **The pool FETCH FILE Queue.**  
 
-    [example.dcache.org] (local) admin > cd pool_1  
+    [example.dcache.org] (local) admin > \c pool_1  
     [example.dcache.org] (pool_1) admin >  rh ls  
     0000B56B7AFE71C14BDA9426BBF1384CA4B0  0   Fri Aug 12 15:38:33 CEST 2011  
 
