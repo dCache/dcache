@@ -7,11 +7,13 @@ import com.github.nitram509.jmacaroons.MacaroonsVerifier;
 import com.github.nitram509.jmacaroons.NotDeSerializableException;
 import com.google.common.base.Throwables;
 import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
@@ -116,6 +118,10 @@ public class MacaroonProcessor
 
         Macaroon macaroon = MacaroonsBuilder.deserialize(serialisedMacaroon);
 
+        // Use the first 6 bytes of signature as an ID for this macaroon
+        byte[] rawId = BaseEncoding.base16().lowerCase().decode(macaroon.signature.substring(0, 12));
+        String macaroonId = new String(Base64.getEncoder().encode(rawId), StandardCharsets.US_ASCII);
+
         MacaroonsVerifier verifier = new MacaroonsVerifier(macaroon);
 
         ClientIPCaveatVerifier clientIPVerifier = new ClientIPCaveatVerifier(clientAddress);
@@ -137,7 +143,7 @@ public class MacaroonProcessor
         }
 
         MacaroonContext context = contextExtractor.getContext();
-        context.setId(macaroon.identifier);
+        context.setId(macaroonId);
         return context;
     }
 
