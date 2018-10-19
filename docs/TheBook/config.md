@@ -10,6 +10,7 @@ Table of Contents
     - [Deployment scenarios](config-zookeeper.md#deployment-scenarios)
     - [Configuration](config-zookeeper.md#configuration)
     - [Inspecting ZooKeeper through dCache](config-zookeeper.md#inspecting-zooKeeper-through-dcache)
+
 1. [Chimera](config-chimera.md)
     - [Mounting Chimera through NFS](config-chimera.md#mounting-chimera-through-nfs)
     - [Using dCap with a mounted file system](config-chimera.md#using-dcap-with-a-mounted-file-system)
@@ -105,6 +106,7 @@ Table of Contents
     - [Strong authentication](config-xrootd.md#strong-authentication)
     - [Precedence of security mechanisms](config-xrootd.md#precedence-of-security-mechanisms)
     - [Other configuration options](config-xrootd.md#other-configuration-options)
+    - [Third-party transfer](config-xrootd.md#xrootd-third-party-transfer)
 
 1. [dCache as NFSv4.1 Server](config-nfs.md)
     - [Setting up](config-nfs.md#setting-up)
@@ -158,9 +160,11 @@ Table of Contents
     - [Advanced Service Configuration: Enabling Email Alerts](config-alarms.md#advanced-service-configuration-enabling-email-alerts)
     - [Miscellaneous Properties of the alarms Service](config-alarms.md#miscellaneous-properties-of-the-alarms-service)
     - [Alarms SPI](config-alarms.md#alarms-spi--service-provider-interface-)-
-1. [dCache Webadmin Interface](config-webadmin.md)
-    - [Installation](config-webadmin.md#installation)
 
+1. [dCache Frontend Service](config-frontend.md)
+   
+1. [dCache History Service](config-history.md)
+   
 1. [ACLs in dCache](config-acl.md)
     - [Introduction](config-acl.md#introduction)
     - [Configuring ACL support](config-acl.md#configuring-acl-support)

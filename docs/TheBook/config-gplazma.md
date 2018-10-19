@@ -917,41 +917,8 @@ Some file access examples:
 
     wget --user=tanja --password=dickerelch http://webdav-door.example.org:2880/pnfs/
 
-gPlazma config example to work with authenticated webadmin
-----------------------------------------------------------
-
-This section describes how to configure gplazma to enable the webadmin servlet in authenticated mode with a grid certificate as well as with a username/password and how to give a user administrator access.
-
-Example:
-In this example for the **/etc/dcache/gplazma.conf ** file the GP2-X509 plugin is used for the authentication step with the grid certificate and the GP2-KPWD plugin is used for the authentication step with username/password.
-
-    auth optional x509
-    auth optional kpwd
-    map requisite kpwd
-    session requisite kpwd
-
-The following example will show how to set up the **/etc/dcache/dcache.kpwd** file:
-
-    version 2.1
-
-    mapping "/C=DE/O=ExampleOrganisation/OU=EXAMPLE/CN=John Doe" john
-    # the following are the user auth records
-    login john read-write 1700 1000 / / /
-    /C=DE/O=ExampleOrganisation/OU=EXAMPLE/CN=John Doe
-
-    # set pwd
-    passwd john 8402480 read-write 1700 1000 / / /
-
-This maps the DN of a grid certificate `subject=/C=DE/O=ExampleOrganisation/OU=EXAMPLE/CN=John Doe` to the user john and the entry
-
-    login john read-write 1700 1000 / / /
-      /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-
-applies unix-like values to john, most important is the `1000`, because it is the assigned GID. This must match the value of the `httpd.authz.admin-gid` configured in your webadmin. This is sufficient for login using a certificate. The entry:
-
-    passwd john 8402480 read-write 1700 1000 / / /
-
-enables username/password login, such as a valid login would be user `john` with some password. The password is encrypted with the kpwd-algorithm (also see [the section called “The kpwd plug-in”](#the-kpwd-plug-in) and then stored in the file. Again the 1000 here is the assigned GID. 
+Roles
+--------------------------------------------
 
 <!--  [vorolemap]: #cf-gplazma-plug-inconfig-vorolemap-gridvorolemap
   [section\_title]: #cf-gplazma-plug-inconfig-voauth

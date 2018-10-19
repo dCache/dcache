@@ -435,7 +435,7 @@ You can now copy a file into that space token.
 
    [user] $ srmcp file:////bin/sh srm://<dcache.example.org>:8443/data/world-writable/space-token-test-file -space_token=110000
 
-Now you can check via the [Webadmin Interface](config-webadmin.md) or the [Web Interface](intouch.md#the-web-interface-for-monitoring-dcache) that the file has been copied to the pool `spacemanager-pool`.
+Now you can check via the [Webadmin Interface](config-frontend.md) or the [Web Interface](intouch.md#the-web-interface-for-monitoring-dcache) that the file has been copied to the pool `spacemanager-pool`.
 
 There are several parameters to be specified for a space reservation.
 

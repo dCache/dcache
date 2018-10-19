@@ -28,13 +28,13 @@ Table of contents
 
         -   The dcap service
 
-        -   The frontend service
+        -   [The frontend service](config-frontend.md)
 
         -   The ftp service
 
         -   [The gplazma service](config-gplazma.md)
 
-        -   The history service
+        -   [The history service](config-history.md)
 
         -   [The hoppingmanager service](config-hopping/#file-hopping-managed-by-the-hoppingmanager)
 
@@ -54,7 +54,7 @@ Table of contents
 
         -   [The poolmanager service](config-PoolManager.md)
 
-        -   [The resilience service (Resilience Manager)](config-Resilience.md)
+        -   [The resilience service](config-Resilience.md)
 
         -   The spacemanager service
 
@@ -94,7 +94,7 @@ Table of contents
 
         -   [dCache Storage Resource Manager (SRM)](config-SRM.md)
 
-        -   [dCache Webadmin interface](config-webadmin.md)
+        -   [dCache Frontend Service](config-frontend.md)
 
         -   [ACLs in dCache](config-acl.md)
 
@@ -128,5 +128,7 @@ Table of contents
     -   [dCache Cell Commands](rf-cc-common.md)
 
     -   [dCache Default Port Values](rf-ports.md)
+    
+    -   [dCache NFS Dot Commands](rf-dot-commands.md)
 
     -   [Glossary](rf-glossary.md)

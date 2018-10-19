@@ -45,9 +45,9 @@ Components of dCache System
 |      Services                        |Responsible for    |
 |:------------------------------------------:|:----|
 | [alarms](config-alarms.md)                   | Records errors requiring more or less urgent intervention.  |
-| [billing](config-billing.md)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools      |
+| [billing](config-billing.md)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools.  |
 | [poolmanager](config-PoolManager.md)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
-| [resilience](congif-Resilience.md)                      |Controls the number of replicas of a file on the pools |
+| [resilience](config-Resilience.md)                      |Controls the number of replicas of a file on the pools |
 | [hoppingmanager](config-hopping.md)               | ?     |
 | cleaner                      | ?    |
 | info                         | ?     |
@@ -63,10 +63,9 @@ Components of dCache System
 | [xrootd](config-xrootd.md)                     | Allows file transfers in and out of dCache using xrootd    |
 | webdav                      | Offers additional features to admins like sending admin-commands equal to those of admin interface (CLI)     |
 | ftp                      | -     |
-| httpd                      | -     |
+| [frontend](config-frontend.md)                      | - An HTTP container service delivering the dCache RESTful API as well as the Polymer web components (dCache-View)   |
 | [nfs](config-nfs.md)                    |  Allows clients to mount dCache and perform POSIX IO using standard NFSv4.1 clients   |
-| frontend                      | -     |
-| history                      | -     |
+| [history](config-history.md)                      | -  A 'collector' service responsible for gathering and caching monitoring and state information from various dCache backend services and pools. |
 | transfermanager                      | -     |
 | pinmanager                      | -     |
 
