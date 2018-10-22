@@ -4,14 +4,9 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,6 +41,7 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
@@ -1361,25 +1357,17 @@ public class CellShell extends CommandInterpreter
                if (cell instanceof EnvironmentAware) {
                    ((EnvironmentAware) cell).setEnvironment(Collections.unmodifiableMap(_environment));
                }
-               ListenableFuture<Void> startup = cell.start();
+               CompletableFuture<Void> startup = cell.start();
                if (!isAsync) {
                    startup.get();
                } else {
-                   Futures.addCallback(startup,
-                                       new FutureCallback<Void>()
-                                       {
-                                           @Override
-                                           public void onSuccess(@Nullable Void result)
-                                           {
-                                               _log.info("created: {}", cellName);
-                                           }
-
-                                           @Override
-                                           public void onFailure(Throwable t)
-                                           {
-                                               _log.error("failed create {}: {}", cellName, t.toString());
-                                           }
-                                       });
+                   startup.whenComplete((r, t) -> {
+                       if (t != null) {
+                           _log.error("failed create {}: {}", cellName, t.toString());
+                       } else {
+                           _log.info("created: {}", cellName);
+                       }
+                   });
                }
                return "created : " + cell;
            } catch (CancellationException e) {

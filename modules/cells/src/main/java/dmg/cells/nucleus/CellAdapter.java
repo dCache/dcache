@@ -3,7 +3,6 @@ package dmg.cells.nucleus;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -43,6 +43,7 @@ import org.dcache.util.Args;
 import org.dcache.util.Version;
 import org.dcache.util.cli.CommandExecutor;
 
+import static org.dcache.util.CompletableFutures.fromListenableFuture;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
@@ -203,9 +204,9 @@ public class CellAdapter
      * Failures to start the cell due to external influences are indicated by
      * a CommandException; all other exceptions are treated as bugs.
      */
-    public ListenableFuture<Void> start()
+    public CompletableFuture<Void> start()
     {
-        return _nucleus.start();
+        return fromListenableFuture(_nucleus.start());
     }
 
     public void addCommandListener(Object commandListener)
