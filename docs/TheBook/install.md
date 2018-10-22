@@ -3,14 +3,14 @@ Chapter 2. Installing dCache
 
 **Table of Contents**
 
-+  [Installing a dCache instance](#installing-a-dcache-instance)  
++  [Installing a dCache instance](#installing-a-dcache-instance)
 
-     [Prerequisites](#prerequisites)  
-     [Installation of the dCache Software](#installation-of-the-dCache-software)  
-     [Readying the PostgreSQL server for the use with dCache](#readying-the-postgresql-server-for-the-use-with-dcache)  
-     [Configuring Chimera](#configuring-chimera)  
-     [Configuring dCache](#configuring-dcache)  
-     [Installing dCache on several nodes](#installing-dcache-on-several-nodes)  
+     [Prerequisites](#prerequisites)
+     [Installation of the dCache Software](#installation-of-the-dCache-software)
+     [Readying the PostgreSQL server for the use with dCache](#readying-the-postgresql-server-for-the-use-with-dcache)
+     [Configuring Chimera](#configuring-chimera)
+     [Configuring dCache](#configuring-dcache)
+     [Installing dCache on several nodes](#installing-dcache-on-several-nodes)
 
 
 +  [Securiting your dCache installation](#securiting-your-dcache-installation)
@@ -32,7 +32,7 @@ In order to install dCache the following requirements must be met:
 
 -   dCache requires Java 8 JRE. Please use the latest patch-level and check for upgrades frequently. It is recommended to use JDK as dCache scripts can make use of some extra features that JDK provides to gather more diagnostic information (heap-dump, etc). This helps when tracking down bugs.
 
--   PostgreSQL must be installed and running. We recommend the use of PostgreSQL version 10 (at least PostgreSQL version 8.3 is required).
+-   PostgreSQL must be installed and running. We recommend the use of PostgreSQL version 10 (at least PostgreSQL version 9.2 is required).
 
     > **IMPORTANT**
     >
@@ -80,7 +80,7 @@ To allow local users to access PSQL without requiring a password, ensure the fil
 
 > **NOTE**
 >
-> Please note it is also possible to run dCache with all PSQL accounts requiring passwords. See [the section called “Configuring Access to PostgreSQL”](cookbook-postgres.md#configuring-access-to-postgresql) for more advice on the configuration of PSQL.  
+> Please note it is also possible to run dCache with all PSQL accounts requiring passwords. See [the section called “Configuring Access to PostgreSQL”](cookbook-postgres.md#configuring-access-to-postgresql) for more advice on the configuration of PSQL.
 
 
 **RESTARTING POSTGRESQL**
@@ -97,42 +97,42 @@ Chimera is a library providing a hierarchical name space with associated meta da
 
 
 
-### Creating users and databases for dCache  
+### Creating users and databases for dCache
 
-Create the Chimera database and user.  
+Create the Chimera database and user.
 
-    [root] # createdb -U postgres chimera  
-    CREATE DATABASE  
+    [root] # createdb -U postgres chimera
+    CREATE DATABASE
     [root] # createuser -U postgres --no-superuser --no-createrole --createdb --pwprompt chimera
     Enter password for new role:
     Enter it again:
     You do not need to enter a password.
 
-The dCache components will access the database server with the user srmdcache.   
+The dCache components will access the database server with the user srmdcache.
 
     [root] # createuser -U postgres --no-superuser --no-createrole --createdb --pwprompt dcache
     Enter password for new role:
     Enter it again:
     You do not need to enter a password.
 
-  Several management components running on the head node as well as the **SRM** will use the database dcache for storing their state information:  
+  Several management components running on the head node as well as the **SRM** will use the database dcache for storing their state information:
 
       [root] # createdb -U dcache dcache
 
-There might be several of these on several hosts. Each is used by the dCache components running on the respective host.  
+There might be several of these on several hosts. Each is used by the dCache components running on the respective host.
 
-Create the database used for the billing plots.  
+Create the database used for the billing plots.
 
      [root] # createdb -O dcache -U postgres billing
 
 And run the command `dcache database update`.
 
-    [root] # dcache database update  
-    PnfsManager@dCacheDomain:  
-    INFO  - Successfully acquired change log lock  
-    INFO  - Creating database history table with name: databasechangelog  
+    [root] # dcache database update
+    PnfsManager@dCacheDomain:
+    INFO  - Successfully acquired change log lock
+    INFO  - Creating database history table with name: databasechangelog
     INFO  - Reading from databasechangelog
-    many more like this...  
+    many more like this...
 
 
 
@@ -315,7 +315,7 @@ Restart dCache to start the newly configured components **dcache restart** and c
     gPlazmaDomain     running 17744 dcache
     poolDomain        running 17798 dcache
 
-Now you can have a look at your dCache via The Web Interface, see [the section called “The Web Interface for Monitoring dCache”:](intouch.md#the-web-interface-for-monitoring-dcache) http://<httpd.example.org>:2288/, where <httpd.example.org> is the node on which your httpd service is running. For a single node dCache this is the machine on which your dCache is running.  
+Now you can have a look at your dCache via The Web Interface, see [the section called “The Web Interface for Monitoring dCache”:](intouch.md#the-web-interface-for-monitoring-dcache) http://<httpd.example.org>:2288/, where <httpd.example.org> is the node on which your httpd service is running. For a single node dCache this is the machine on which your dCache is running.
 
 
 ### JAVA heap size
