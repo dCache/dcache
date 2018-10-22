@@ -28,7 +28,7 @@ PREREQUISITES
 
 In order to install dCache the following requirements must be met:
 
--   An RPM-based Linux distribution is required for the following procedure. For Debian derived systems we provide Debian packages and for Solaris the Solaris packages or the tarball.
+-   An RPM-based Linux distribution is required for the following procedure. For Debian derived systems we provide Debian packages and for all other operating systems a tarball is available..
 
 -   dCache requires Java 8 JRE. Please use the latest patch-level and check for upgrades frequently. It is recommended to use JDK as dCache scripts can make use of some extra features that JDK provides to gather more diagnostic information (heap-dump, etc). This helps when tracking down bugs.
 
