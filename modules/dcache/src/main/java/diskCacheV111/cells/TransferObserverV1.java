@@ -181,6 +181,7 @@ public class TransferObserverV1
             }
             process = transfer.door().getProcess();
             pnfsId = Objects.toString(transfer.session().getPnfsId(), "");
+            path = transfer.session().getPath();
             pool = Objects.toString(transfer.session().getPool(), "");
             replyHost = Objects.toString(transfer.session().getReplyHost(), "");
             sessionStatus = Objects.toString(transfer.session().getStatus(), "");
