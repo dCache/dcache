@@ -66,6 +66,12 @@ public class PrefixRestriction implements Restriction
     }
 
     @Override
+    public boolean hasUnrestrictedChild(Activity activity, FsPath parent)
+    {
+        return prefixes.stream().anyMatch(p -> p.hasPrefix(parent) && !p.equals(parent));
+    }
+
+    @Override
     public int hashCode()
     {
         return PrefixRestriction.class.hashCode() ^ prefixes.hashCode();
