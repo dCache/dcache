@@ -21,6 +21,8 @@ import static org.hamcrest.CoreMatchers.*;
 
 import org.junit.Test;
 
+import java.util.EnumSet;
+
 import diskCacheV111.util.FsPath;
 
 import static org.dcache.auth.attributes.Activity.*;
@@ -259,4 +261,42 @@ public class RestrictionsTests
         assertThat(concat.isRestricted(UPDATE_METADATA, path), is(equalTo(false)));
     }
 
+    @Test
+    public void shouldCombinePathAndActivityRestrictions()
+    {
+        Restriction onlyUpload = new DenyActivityRestriction(EnumSet.complementOf(EnumSet.of(UPLOAD)));
+        Restriction pathRestriction = new PrefixRestriction(FsPath.create("/foo/bar/latest-results.dat"));
+
+        Restriction concat = Restrictions.concat(onlyUpload, pathRestriction);
+
+        assertThat(concat.isRestricted(UPLOAD, FsPath.ROOT), is(equalTo(true)));
+        assertThat(concat.isRestricted(DOWNLOAD, FsPath.ROOT), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.ROOT), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.ROOT), is(equalTo(false)));
+
+        assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo")), is(equalTo(true)));
+        assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo")), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo")), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo")), is(equalTo(false)));
+
+        assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo/bar")), is(equalTo(true)));
+        assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo/bar")), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/bar")), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/bar")), is(equalTo(false)));
+
+        assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo/bar/latest-results.dat")), is(equalTo(false)));
+        assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo/bar/latest-results.dat")), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/bar/latest-results.dat")), is(equalTo(false)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/bar/latest-results.dat")), is(equalTo(false)));
+
+        assertThat(concat.isRestricted(UPLOAD, FsPath.create("/baz")), is(equalTo(true)));
+        assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/baz")), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/baz")), is(equalTo(false)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/baz")), is(equalTo(false)));
+
+        assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo/baz")), is(equalTo(true)));
+        assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo/baz")), is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/baz")), is(equalTo(false)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/baz")), is(equalTo(false)));
+    }
 }

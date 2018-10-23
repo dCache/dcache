@@ -74,6 +74,12 @@ public class DenyActivityRestriction implements Restriction
     }
 
     @Override
+    public boolean hasUnrestrictedChild(Activity activity, FsPath parent)
+    {
+        return !denied.contains(activity);
+    }
+
+    @Override
     public int hashCode()
     {
         return denied.hashCode();
