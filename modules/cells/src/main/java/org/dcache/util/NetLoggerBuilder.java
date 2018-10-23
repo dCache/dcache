@@ -275,10 +275,23 @@ public class NetLoggerBuilder
         return add(name, String.valueOf(value));
     }
 
+    public NetLoggerBuilder add(String name, Exception e)
+    {
+        return add(name+".class", e.getClass().getSimpleName())
+                .add(name+".message", e.getMessage());
+    }
+
     @Override
     public String toString()
     {
         return s.toString();
+    }
+
+    public NetLoggerBuilder withLevel(Level level)
+    {
+        checkState(this.level == null, "Level is already set");
+        this.level = level;
+        return add("level", level);
     }
 
     public void toLogger(Logger logger)
