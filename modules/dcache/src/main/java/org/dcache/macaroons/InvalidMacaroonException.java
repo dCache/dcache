@@ -27,10 +27,10 @@ public class InvalidMacaroonException extends Exception
     /**
      * A utility method similar to Guava check* methods.
      */
-    public static void checkMacaroon(boolean isOK, String message)
+    public static void checkMacaroon(boolean isOK, String message, Object... arguments)
             throws InvalidMacaroonException
     {
-        genericCheck(isOK, InvalidMacaroonException::new, message);
+        genericCheck(isOK, InvalidMacaroonException::new, message, arguments);
     }
 
     public InvalidMacaroonException(String message) {
