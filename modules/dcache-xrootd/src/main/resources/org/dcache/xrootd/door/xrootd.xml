@@ -207,23 +207,27 @@
 
   <beans profile="kafka-true">
 
+
     <bean id="listener" class="org.dcache.kafka.LoggingProducerListener"/>
+
+    <bean id="kafka-configs"
+          class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+      <property name="prefix" value="xrootd.kafka.producer.configs"/>
+      <property name="staticEnvironment" >
+        <map>
+          <entry key="bootstrap.servers" value="${xrootd.kafka.producer.bootstrap.servers}"/>
+          <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+          <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer"/>
+          <entry key="client.id" value="${xrootd.cell.name}@${dcache.domain.name}"/>
+        </map>
+      </property>
+
+    </bean>
 
     <bean id="billing-template" class="org.springframework.kafka.core.KafkaTemplate">
       <constructor-arg>
         <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
-          <constructor-arg>
-            <map>
-              <entry key="bootstrap.servers" value="${xrootd.kafka.bootstrap-servers}"/>
-              <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
-              <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer"/>
-              <entry key="client.id" value="${xrootd.cell.name}@${dcache.domain.name}" />
-              <entry key="max.block.ms"
-                     value="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${xrootd.kafka.maximum-block}, '${xrootd.kafka.maximum-block.unit}')}" />
-              <!-- The maximum number of times to retry a call before failing it.-->
-              <entry key="retries" value="0" />
-            </map>
-          </constructor-arg>
+            <constructor-arg name="configs" ref ="kafka-configs"/>
         </bean>
       </constructor-arg>
       <property name="defaultTopic" value="${xrootd.kafka.topic}"/>

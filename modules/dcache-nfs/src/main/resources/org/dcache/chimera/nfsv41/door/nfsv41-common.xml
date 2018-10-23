@@ -228,25 +228,32 @@
         <bean id="rpcbind" class="java.lang.Object"/>
 
     </beans>
-    <beans profile="kafka-true">
+
+
+    <beans profile="kafka-true" >
+
 
         <bean id="listener" class="org.dcache.kafka.LoggingProducerListener"/>
 
-        <bean id="transfer-template" class="org.springframework.kafka.core.KafkaTemplate">
+        <bean id="kafka-configs"
+              class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+            <property name="prefix" value="nfs.kafka.producer.configs"/>
+            <property name="staticEnvironment" >
+                <map>
+                    <entry key="bootstrap.servers" value="${nfs.kafka.producer.bootstrap.servers}"/>
+                    <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+                    <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer"/>
+                    <entry key="client.id" value="${nfs.cell.name}@${dcache.domain.name}"/>
+                </map>
+            </property>
+
+        </bean>
+
+
+    <bean id="transfer-template" class="org.springframework.kafka.core.KafkaTemplate">
             <constructor-arg>
                 <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
-                    <constructor-arg>
-                        <map>
-                            <entry key="bootstrap.servers" value="${nfs.kafka.bootstrap-servers}"/>
-                            <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer" />
-                            <entry key="value.serializer" value="org.dcache.notification.DoorRequestMessageSerializer" />
-                            <entry key="client.id" value="${nfs.cell.name}@${dcache.domain.name}" />
-                            <entry key="max.block.ms"
-                                   value="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${nfs.kafka.maximum-block}, '${nfs.kafka.maximum-block.unit}')}" />
-                            <!-- The maximum number of times to retry a call before failing it.-->
-                            <entry key="retries" value="0" />
-                        </map>
-                    </constructor-arg>
+                    <constructor-arg name="configs" ref ="kafka-configs"/>
                 </bean>
             </constructor-arg>
             <constructor-arg name="autoFlush" value="false" />

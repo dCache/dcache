@@ -3,22 +3,16 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:task="http://www.springframework.org/schema/task"
-       xmlns:int="http://www.springframework.org/schema/integration"
-       xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
-       xmlns:util="http://www.springframework.org/schema/util"
+
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context
            http://www.springframework.org/schema/context/spring-context.xsd
            http://www.springframework.org/schema/task
-           http://www.springframework.org/schema/task/spring-task.xsd
-           http://www.springframework.org/schema/integration/kafka
-           http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd
-           http://www.springframework.org/schema/integration
-           http://www.springframework.org/schema/integration/spring-integration.xsd
-           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+           http://www.springframework.org/schema/task/spring-task.xsd">
 
-  <context:property-placeholder/>
+
+    <context:property-placeholder/>
   <context:annotation-config/>
 
     <!--
@@ -576,74 +570,85 @@
 
        <bean id="listener" class="org.dcache.kafka.LoggingProducerListener"/>
 
-       <bean id="billing-template-remove"  class="org.springframework.kafka.core.KafkaTemplate">
-           <qualifier value="remove"/>
-           <constructor-arg>
-               <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
-                   <constructor-arg>
-                       <map>
-                           <entry key="bootstrap.servers" value="${pool.kafka.bootstrap-servers}"/>
-                           <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
-                           <entry key="value.serializer" value="org.dcache.notification.RemoveFileInfoMessageSerializer"/>
-                           <entry key="client.id" value="${pool.cell.name}@${dcache.domain.name}-remove"/>
-                           <entry key="max.block.ms"
-				  value="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${pool.kafka.maximum-block}, '${pool.kafka.maximum-block.unit}')}" />
-                           <!-- The maximum number of times to retry a call before failing it.-->
-                           <entry key="retries" value="0" />
-                       </map>
-                   </constructor-arg>
-               </bean>
-           </constructor-arg>
-           <property name="defaultTopic" value="${pool.kafka.topic}"/>
-           <property name="producerListener" ref="listener"/>
-       </bean>
+
+        <bean id="kafka-configs-remove" class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+            <property name="prefix" value="pool.kafka.producer.configs"/>
+            <property name="staticEnvironment">
+                <map>
+                    <entry key="bootstrap.servers" value="${pool.kafka.producer.bootstrap.servers}"/>
+                    <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+                    <entry key="value.serializer" value="org.dcache.notification.RemoveFileInfoMessageSerializer"/>
+                    <entry key="client.id" value="${pool.cell.name}@${dcache.domain.name}-remove"/>
+                </map>
+            </property>
+        </bean>
+
+
+
+        <bean id="billing-template-remove"  class="org.springframework.kafka.core.KafkaTemplate">
+            <qualifier value="remove"/>
+            <constructor-arg>
+                <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+                    <constructor-arg name="configs" ref ="kafka-configs-remove"/>
+                </bean>
+            </constructor-arg>
+            <property name="defaultTopic" value="${pool.kafka.topic}"/>
+            <property name="producerListener" ref="listener"/>
+        </bean>
+
+
+        <bean id="kafka-configs-hsm" class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+            <property name="prefix" value="pool.kafka.producer.configs"/>
+            <property name="staticEnvironment">
+                <map>
+                    <entry key="bootstrap.servers" value="${pool.kafka.producer.bootstrap.servers}"/>
+                    <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+                    <entry key="value.serializer" value="org.dcache.notification.StorageInfoMessageSerializer"/>
+                    <entry key="client.id" value="${pool.cell.name}@${dcache.domain.name}-hsm"/>
+                </map>
+            </property>
+        </bean>
+
 
 
         <bean id="billing-template-hsm"  class="org.springframework.kafka.core.KafkaTemplate">
             <qualifier value="hsm"/>
             <constructor-arg>
                 <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
-                    <constructor-arg>
-                        <map>
-                            <entry key="bootstrap.servers" value="${pool.kafka.bootstrap-servers}"/>
-                            <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
-                            <entry key="value.serializer" value="org.dcache.notification.StorageInfoMessageSerializer"/>
-                            <entry key="client.id" value="${pool.cell.name}@${dcache.domain.name}-hsm"/>
-                           <entry key="max.block.ms"
-				  value="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${pool.kafka.maximum-block}, '${pool.kafka.maximum-block.unit}')}" />
-                            <!-- The maximum number of times to retry a call before failing it.-->
-                            <entry key="retries" value="0" />
-                        </map>
-                    </constructor-arg>
+                    <constructor-arg name="configs" ref ="kafka-configs-hsm"/>
                 </bean>
             </constructor-arg>
             <property name="defaultTopic" value="${pool.kafka.topic}"/>
             <property name="producerListener" ref="listener"/>
         </bean>
+
+
+        <bean id="kafka-configs-transfer" class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+            <property name="prefix" value="pool.kafka.producer.configs"/>
+            <property name="staticEnvironment">
+                <map>
+                    <entry key="bootstrap.servers" value="${pool.kafka.producer.bootstrap.servers}"/>
+                    <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+                    <entry key="value.serializer" value="org.dcache.notification.BillingMessageSerializer"/>
+                    <entry key="client.id" value="${pool.cell.name}@${dcache.domain.name}-transfer"/>
+                </map>
+            </property>
+        </bean>
+
 
 
         <bean id="billing-template-transfer"  class="org.springframework.kafka.core.KafkaTemplate">
             <qualifier value="transfer"/>
             <constructor-arg>
                 <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
-                    <constructor-arg>
-                        <map>
-                            <entry key="bootstrap.servers" value="${pool.kafka.bootstrap-servers}"/>
-                            <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
-                            <entry key="value.serializer" value="org.dcache.notification.BillingMessageSerializer"/>
-                            <entry key="client.id" value="${pool.cell.name}@${dcache.domain.name}-transfer"/>
-                           <entry key="max.block.ms"
-				  value="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${pool.kafka.maximum-block}, '${pool.kafka.maximum-block.unit}')}" />
-                            <!-- The maximum number of times to retry a call before failing it.-->
-                            <entry key="retries" value="0" />
-                        </map>
-                    </constructor-arg>
+                    <constructor-arg name="configs" ref ="kafka-configs-transfer"/>
                 </bean>
             </constructor-arg>
             <constructor-arg name="autoFlush" value="false" />
             <property name="defaultTopic" value="${pool.kafka.topic}"/>
             <property name="producerListener" ref="listener"/>
         </bean>
+
     </beans>
 
     <beans profile="httpsredirect-false">
