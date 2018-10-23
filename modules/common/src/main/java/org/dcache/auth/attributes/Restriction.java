@@ -123,6 +123,12 @@ public interface Restriction extends LoginAttribute, Serializable
     boolean isRestricted(Activity activity, FsPath directory, String child);
 
     /**
+     * Return true iff there is a child of the supplied path whether the
+     * activity is not restricted.
+     */
+    boolean hasUnrestrictedChild(Activity activity, FsPath parent);
+
+    /**
      * Whether another object is an equivalent restriction.
      * @param other The object to compare
      * @return true iff {@literal other} implements {@literal Restriction}
