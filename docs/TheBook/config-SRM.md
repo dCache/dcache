@@ -320,7 +320,6 @@ Define a pool in your layout file, add it to your pool directory and restart the
 
 In the admin interface, `\c` to the CELL-POOLMNGR and create a pool group, a link and a link group.
 
-    (SrmSpaceManager) admin > ..
     (local) admin > \c PoolManager
     (PoolManager) admin > psu create pgroup spacemanager_poolGroup
     (PoolManager) admin > psu addto pgroup spacemanager_poolGroup spacemanager-pool
@@ -335,7 +334,6 @@ In the admin interface, `\c` to the CELL-POOLMNGR and create a pool group, a lin
     (PoolManager) admin > psu set linkGroup onlineAllowed spacemanager_WriteLinkGroup true
     (PoolManager) admin > psu addto linkGroup spacemanager_WriteLinkGroup spacemanager_WriteLink
     (PoolManager) admin > save
-    (PoolManager) admin > ..
 	
  	
 Check whether the link group is available. Note that this can take several minutes to propagate to SPACEMNGR.

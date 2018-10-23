@@ -26,9 +26,9 @@ Space reservations are made for link groups. The file [`LinkGroupAuthorization.c
 Example:  
 
 
-In this example we will create the link group `WriteTokenLinkGroup`. Login to the [admin interface](intouch.md#the-admin-interface), `cd` to the `SrmSpaceManager` and list the current space reservations.
+In this example we will create the link group `WriteTokenLinkGroup`. Login to the [admin interface](intouch.md#the-admin-interface), `\c` to the `SrmSpaceManager` and list the current space reservations.
 
-    (local) admin > cd SrmSpaceManager
+    (local) admin > \c SrmSpaceManager
     (SrmSpaceManager) admin > ls
     Reservations:
     total number of reservations: 0
@@ -42,8 +42,7 @@ In this example we will create the link group `WriteTokenLinkGroup`. Login to th
 
 Currently there are no space reservations and no link groups. We create the link group `WriteTokenLinkGroup`.
 
-    (SrmSpaceManager) admin > ..
-    (local) admin > cd PoolManager
+    (SrmSpaceManager) admin > \c PoolManager
     (PoolManager) admin > psu create pgroup WriteToken_poolGroup
     (PoolManager) admin > psu addto pgroup WriteToken_poolGroup pool1
     (PoolManager) admin > psu removefrom pgroup default pool1
@@ -57,10 +56,9 @@ Currently there are no space reservations and no link groups. We create the link
     (PoolManager) admin > psu set linkGroup onlineAllowed WriteToken_LinkGroup true
     (PoolManager) admin > psu addto linkGroup WriteToken_LinkGroup WriteToken_Link
     (PoolManager) admin > save
-    (PoolManager) admin > ..
-    (local) admin >
+  
 
-    (local) admin >cd SrmSpaceManager
+    (local) admin >\c SrmSpaceManager
     (SrmSpaceManager) admin > ls
     Reservations:
     total number of reservations: 0
