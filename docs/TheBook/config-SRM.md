@@ -292,7 +292,7 @@ Now that the `SRM SpaceManager` is activated you can make a space reservation. A
 Login to the [admin interface](intouch.md#the-admin-interface) and `cd` to the cell `SrmSpaceManager`.
 
     [user] $ ssh -p 22224 -l admin admin.example.org
-    (local) admin > cd SrmSpaceManager
+    (local) admin > \c SrmSpaceManager
 
 Type `ls link groups` to get information about link groups.
 
@@ -318,10 +318,10 @@ Define a pool in your layout file, add it to your pool directory and restart the
     [root] # mkdir -p /srv/dcache/spacemanager-pool
     [root] # /usr/bin/dcache restart
 
-In the admin interface, `cd` to the CELL-POOLMNGR and create a pool group, a link and a link group.
+In the admin interface, `\c` to the CELL-POOLMNGR and create a pool group, a link and a link group.
 
     (SrmSpaceManager) admin > ..
-    (local) admin > cd PoolManager
+    (local) admin > \c PoolManager
     (PoolManager) admin > psu create pgroup spacemanager_poolGroup
     (PoolManager) admin > psu addto pgroup spacemanager_poolGroup spacemanager-pool
     (PoolManager) admin > psu removefrom pgroup default spacemanager-pool
@@ -340,7 +340,7 @@ In the admin interface, `cd` to the CELL-POOLMNGR and create a pool group, a lin
  	
 Check whether the link group is available. Note that this can take several minutes to propagate to SPACEMNGR.
 
-    (local) admin > cd SrmSpaceManager
+    (local) admin > \c SrmSpaceManager
     (SrmSpaceManager) admin > ls link groups
     FLAGS CNT RESVD        AVAIL         FREE             UPDATED NAME
     --rc:no 0     0 + 7278624768 = 7278624768 2011-11-28 12:12:51 spacemanager_WriteLinkGroup
