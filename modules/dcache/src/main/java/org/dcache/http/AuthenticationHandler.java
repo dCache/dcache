@@ -125,7 +125,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 LOG.warn("{} for path {} and user {}", e.getMessage(), request.getPathInfo(),
                         NetLoggerBuilder.describeSubject(subject));
                 response.sendError((Subjects.isNobody(subject)) ? HttpServletResponse.SC_UNAUTHORIZED :
-                        HttpServletResponse.SC_FORBIDDEN);
+                        HttpServletResponse.SC_FORBIDDEN, e.getMessage());
                 baseRequest.setHandled(true);
             } catch (CacheException e) {
                 LOG.error("Internal server error: {}", e.getMessage());
