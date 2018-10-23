@@ -692,7 +692,9 @@ public class Transfer implements Comparable<Transfer>
                                _pool == null? "<unknown>" : _pool.getName(),
                                _status,
                                _startedAt,
-                               _clientAddresses.get(0).getHostString());
+                               _clientAddresses.get(0)
+                                               .getAddress()
+                                               .getHostAddress());
     }
 
     /**
