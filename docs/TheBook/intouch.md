@@ -317,7 +317,7 @@ The command `help` lists all commands the cell knows and their parameters. Howev
 >
 > Some commands are dangerous. Executing them without understanding what they do may lead to data loss.
 
-Starting from the local prompt (`(local) admin >`) the command `\c` takes you to the specified [cell](rf-glossary.md#cell). In general the address of a cell is a concatenation of cell name @ symbol and the domain name. `cd` to a cell by:
+Starting from the local prompt (`(local) admin >`) the command `\c` takes you to the specified [cell](rf-glossary.md#cell). In general the address of a cell is a concatenation of cell name @ symbol and the domain name. `\c` to a cell by:
 
     (local) admin > **\c <cellName>@<domainName>**
 
@@ -483,9 +483,8 @@ While the first line for each pool gives the information stored in the cache of 
 CREATE A NEW USER
 -----------------
 
-To create a new user, <new-user> and set a new password for the user `cd` from the local prompt `((local) admin >)` to the acm, the access control manager, and run following command sequence:   
+To create a new user, <new-user> and set a new password for the user `\c` from the local prompt `((local) admin >)` to the acm, the access control manager, and run following command sequence:   
 
-(local) admin > cd acm  
 
     (local) admin > \c acm  
     (acm) admin > create user <new-user>  
