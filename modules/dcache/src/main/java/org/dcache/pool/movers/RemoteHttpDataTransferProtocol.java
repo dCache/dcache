@@ -6,6 +6,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
@@ -53,8 +54,12 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Maps.uniqueIndex;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
+import static org.dcache.util.ByteUnit.GiB;
 import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.util.Exceptions.genericCheck;
+import static org.dcache.util.TimeUtils.describeDuration;
+import static diskCacheV111.util.ThirdPartyTransferFailedCacheException.checkThirdPartyTransferSuccessful;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * This class implements transfers of data between a pool and some remote
@@ -150,6 +155,13 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private static final long DELAY_BETWEEN_REQUESTS = 5_000;
 
     /**
+     * A guess on how long to retry a GET request.  Since the file size is
+     * unknown, this value may be insufficient if the file is larger.
+     */
+    private static final long GET_RETRY_DURATION = maxRetryDuration(GiB.toBytes(2L));
+    private static final String GET_RETRY_DURATION_DESCRIPTION = describeDuration(GET_RETRY_DURATION, MILLISECONDS);
+
+    /**
      * Maximum number of redirections to follow.
      * Note that, although RFC 2068 section 10.3 recommends a maximum of 5,
      * both firefox and webkit currently limit (by default) to 20 redirections.
@@ -224,9 +236,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private void receiveFile(final RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
-        HttpGet get = buildGetRequest(info);
-
-        try (CloseableHttpResponse response = _client.execute(get)) {
+        try (CloseableHttpResponse response = doGet(info)) {
             StatusLine statusLine = response.getStatusLine();
             if (statusLine.getStatusCode() >= 300) {
                 throw new ThirdPartyTransferFailedCacheException("remote " +
@@ -263,6 +273,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             entity.writeTo(Channels.newOutputStream(to));
         } catch (IOException e) {
             throw new ThirdPartyTransferFailedCacheException(e.toString(), e);
+        } catch (InterruptedException e) {
+            throw new ThirdPartyTransferFailedCacheException("pool is shutting down", e);
         }
 
         if (_remoteSuppliedChecksum != null) {
@@ -278,7 +290,9 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
     }
 
-    private HttpGet buildGetRequest(RemoteHttpDataTransferProtocolInfo info) {
+    private CloseableHttpResponse doGet(final RemoteHttpDataTransferProtocolInfo info)
+            throws IOException, ThirdPartyTransferFailedCacheException, InterruptedException
+    {
         HttpGet get = new HttpGet(info.getUri());
         get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
         addHeadersToRequest(info, get);
@@ -286,7 +300,45 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                               .setConnectTimeout(CONNECTION_TIMEOUT)
                               .setSocketTimeout(SOCKET_TIMEOUT)
                               .build());
-        return get;
+
+        CloseableHttpResponse response = _client.execute(get);
+
+        boolean isSuccessful = false;
+        try {
+            long deadline = System.currentTimeMillis() + GET_RETRY_DURATION;
+            while (shouldRetry(response) && System.currentTimeMillis() < deadline) {
+                Thread.sleep(DELAY_BETWEEN_REQUESTS);
+
+                response.close();
+                response = _client.execute(get);
+            }
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String reason = response.getStatusLine().getReasonPhrase();
+
+            checkThirdPartyTransferSuccessful(!shouldRetry(response),
+                    "remote server not ready for GET request after %s: %d %s",
+                    GET_RETRY_DURATION_DESCRIPTION, statusCode, reason);
+
+            checkThirdPartyTransferSuccessful(statusCode == HttpStatus.SC_OK,
+                    "remote server rejected GET: %d %s", statusCode, reason);
+
+            isSuccessful = true;
+        } finally {
+            if (!isSuccessful) {
+                response.close();
+            }
+        }
+
+        return response;
+    }
+
+
+    private static boolean shouldRetry(HttpResponse response)
+    {
+        // DPM will return 202 for GET or HEAD with Want-Digest if it's still
+        // calculating the checksum.
+        return response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED;
     }
 
     private RepositoryChannel decorateForChecksumCalculation(RepositoryChannel
@@ -399,12 +451,13 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         return put;
     }
 
-    private void verifyRemoteFile(RemoteHttpDataTransferProtocolInfo info)
-            throws ThirdPartyTransferFailedCacheException
+    /**
+     * How long to retry a GET or HEAD request for a file with given size.
+     * @param fileSize The file's size, in bytes.
+     * @return the maximum retry duration, in milliseconds.
+     */
+    private static long maxRetryDuration(long fileSize)
     {
-        FileAttributes attributes = _channel.getFileAttributes();
-        boolean isFirstAttempt = true;
-
         /*
          * We estimate how long any post-processing will take based on a
          * linear model.  The model is:
@@ -415,8 +468,16 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
          * S is the file's size,  alpha is the fixed time that all files require
          * and beta is the effective IO bandwidth within the remote server.
          */
-        long t_max = POST_PROCESSING_OFFSET +
-                (long)(attributes.getSize() / POST_PROCESSING_BANDWIDTH);
+        return POST_PROCESSING_OFFSET + (long)(fileSize / POST_PROCESSING_BANDWIDTH);
+    }
+
+    private void verifyRemoteFile(RemoteHttpDataTransferProtocolInfo info)
+            throws ThirdPartyTransferFailedCacheException
+    {
+        FileAttributes attributes = _channel.getFileAttributes();
+        boolean isFirstAttempt = true;
+
+        long t_max = maxRetryDuration(attributes.getSize());
         long deadline = System.currentTimeMillis() + t_max;
 
         try {
@@ -438,8 +499,18 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                                 " " + status.getReasonPhrase());
                     }
 
+                    if (shouldRetry(response)) {
+                        continue;
+                    }
+
                     Long length = getContentLength(response);
 
+                    // REVISIT This is to support pre-2.12 dCache, which could
+                    // give a '201 Created' response to a PUT request before
+                    // post-processing (including checksum calculation) was
+                    // completed and the final details registered in the
+                    // namespace.  This problem is fixed with dCache v2.12 or
+                    // later.
                     if (length == null || (attributes.getSize() != 0 && length == 0)) {
                         continue;
                     }
@@ -463,7 +534,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
 
         throw new ThirdPartyTransferFailedCacheException("remote server failed " +
-                "to provide length after " + (t_max / 1_000) + "s");
+                "to provide length after " + describeDuration(GET_RETRY_DURATION, MILLISECONDS));
     }
 
     private HttpHead buildHeadRequest(RemoteHttpDataTransferProtocolInfo info)
