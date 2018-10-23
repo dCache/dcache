@@ -5,10 +5,10 @@ Some users, specifically those with medical data, may have data channel encrypti
 
 To make sure data is safely encrypted during transfer, one should:
 
-    1 Use the WebDAV protocol
-    1 Configure dCache WebDAV doors not to redirect transfers (because currently it redirects to HTTP and not HTTPS)
-    1 Have a well configured certificate or chain in each WebDAV door
-    1 Have a well configured Java 8 or better
+1. Use the WebDAV protocol
+2. Configure dCache WebDAV doors not to redirect transfers (because currently it redirects to HTTP and not HTTPS)
+3. Have a well configured certificate or chain in each WebDAV door
+4. Have a well configured Java 8 or better
 
 Please note, that IT security is an ever changing field. Make sure you follow the latest developments. If security in dCache is a priority for you, be sure to follow the dCache user mailinglist.
 
@@ -77,7 +77,7 @@ As of October 2018, this should be sufficient to get an A rating in the Qualys S
 Configuring java.security settings per dCache domain
 ----------------------------------------------------
 
-The java.security settings control all Java processes; so the disables algorithms apply to all incoming and outgoing connections. There may be cases where different settings are needed for different Java processes. Examples:
+The java.security settings control all Java processes; so the disabled algorithms apply to all incoming and outgoing connections. There may be cases where different settings are needed for different Java processes. Examples:
 
 * gPlazma may need to connect to an LDAP server that does not have the latest ciphers yet
 * GridFTP doors may need to support older ciphers to support some outdated clients
