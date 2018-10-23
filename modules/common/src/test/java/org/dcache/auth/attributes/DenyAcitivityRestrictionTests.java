@@ -93,4 +93,21 @@ public class DenyAcitivityRestrictionTests
         assertThat(r.isRestricted(DELETE, path), is(equalTo(true)));
         assertThat(r.isRestricted(MANAGE, path), is(equalTo(true)));
     }
+
+    @Test
+    public void shouldHaveUnrestrictedChild()
+    {
+        FsPath path = FsPath.create("/some/arbitrary/path");
+
+        Restriction r = new DenyActivityRestriction(DELETE, MANAGE);
+
+        assertThat(r.hasUnrestrictedChild(DOWNLOAD, path), is(equalTo(true)));
+        assertThat(r.hasUnrestrictedChild(LIST, path), is(equalTo(true)));
+        assertThat(r.hasUnrestrictedChild(READ_METADATA, path), is(equalTo(true)));
+        assertThat(r.hasUnrestrictedChild(UPDATE_METADATA, path), is(equalTo(true)));
+        assertThat(r.hasUnrestrictedChild(UPLOAD, path), is(equalTo(true)));
+
+        assertThat(r.hasUnrestrictedChild(DELETE, path), is(equalTo(false)));
+        assertThat(r.hasUnrestrictedChild(MANAGE, path), is(equalTo(false)));
+    }
 }
