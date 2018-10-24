@@ -52,7 +52,9 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.OidcSubjectPrincipal;
@@ -406,19 +408,30 @@ public class CopyFilter implements Filter
         Subject subject = Subject.getSubject(AccessController.getContext());
         switch (source) {
         case GRIDSITE:
-            // Use the X.509 identity from TLS, even if that wasn't used to
-            // establish the user's identity.  This allows the local activity of
-            // the COPY (i.e., the ability to read a file, or create a new file)
-            // to be authorized based on some non-X.509 identity, while using a
-            // delegated X.509 credential when authenticating for the
-            // third-party copy, based on the client credential presented when
-            // establishing the TLS connection.
-            String dn = getTlsIdentity().orElseThrow(() ->
-                    new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
-                            "user must present valid X.509 certificate"));
-            return _credentialService.getDelegatedCredential(
-                    dn, Objects.toString(Subjects.getPrimaryFqan(subject), null),
-                    20, MINUTES);
+            try {
+                // Use the X.509 identity from TLS, even if that wasn't used to
+                // establish the user's identity.  This allows the local activity of
+                // the COPY (i.e., the ability to read a file, or create a new file)
+                // to be authorized based on some non-X.509 identity, while using a
+                // delegated X.509 credential when authenticating for the
+                // third-party copy, based on the client credential presented when
+                // establishing the TLS connection.
+                Subject x509Subject = AuthenticationHandler.getX509Identity(ServletRequest.getRequest());
+                String dn = x509Subject == null ? null : Subjects.getDn(x509Subject);
+                if (dn == null) {
+                    throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
+                            "user must present valid X.509 certificate");
+                }
+                String fqan = Objects.toString(Subjects.getPrimaryFqan(x509Subject), null);
+                return _credentialService.getDelegatedCredential(dn, fqan,
+                        20, MINUTES);
+            } catch (PermissionDeniedCacheException e) {
+                throw new ErrorResponseException(Status.SC_UNAUTHORIZED,
+                        "Presented X.509 certificate not valid");
+            } catch (CacheException e) {
+                throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
+                        "Internal problem: " + e.getMessage());
+            }
 
         case OIDC:
             BearerTokenCredential bearer = subject.getPrivateCredentials()
@@ -547,31 +560,12 @@ public class CopyFilter implements Filter
                 .anyMatch(OidcSubjectPrincipal.class::isInstance);
     }
 
-    private Optional<X509Certificate> getTlsEndEntityCertificate()
+    private boolean clientSuppliedX509Certificate()
     {
         HttpServletRequest request = ServletRequest.getRequest();
         return Optional.ofNullable(request.getAttribute("javax.servlet.request.X509Certificate"))
                 .filter(X509Certificate[].class::isInstance)
-                .map(X509Certificate[].class::cast)
-                .map(ProxyUtils::getEndUserCertificate)
-                .filter(Objects::nonNull);
-    }
-
-    private boolean clientSuppliedX509Certificate()
-    {
-        return getTlsEndEntityCertificate().isPresent();
-    }
-
-    /**
-     * Provide the Distinguished Name (DN) of the End-Entity Certificate (EEC)
-     * used when establishing the TLS connection.
-     */
-    private Optional<String> getTlsIdentity()
-    {
-        return getTlsEndEntityCertificate()
-                .map(X509Certificate::getSubjectX500Principal)
-                .map(X500Principal::getName)
-                .map(n -> OpensslNameUtils.convertFromRfc2253(n, true));
+                .isPresent();
     }
 
     private static <T> Predicate<T> not(Predicate<T> t) {
