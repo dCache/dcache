@@ -668,10 +668,13 @@ public class RequestContainerV5
         ProtocolInfo protocolInfo = request.getProtocolInfo() ;
         EnumSet<RequestState> allowedStates = request.getAllowedStates();
 
-        String  hostName    =
-               protocolInfo instanceof IpProtocolInfo ?
-               ((IpProtocolInfo)protocolInfo).getSocketAddress().getAddress().getHostAddress() :
-               "NoSuchHost" ;
+        String hostName;
+        if (protocolInfo instanceof IpProtocolInfo) {
+            InetSocketAddress target = ((IpProtocolInfo)protocolInfo).getSocketAddress();
+            hostName = target.isUnresolved() ? target.getHostString() : target.getAddress().getHostAddress();
+        } else {
+            hostName = "NoSuchHost";
+        }
 
         String netName      = _selectionUnit.getNetIdentifier(hostName);
         String protocolNameFromInfo = protocolInfo.getProtocol()+"/"+protocolInfo.getMajorVersion() ;
