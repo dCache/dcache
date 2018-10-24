@@ -19,13 +19,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-import diskCacheV111.util.FsPath;
-
-import org.dcache.auth.attributes.Activity;
 import org.dcache.util.Strings;
 
 import static org.dcache.macaroons.CaveatValues.*;
@@ -111,6 +105,18 @@ public class MacaroonProcessor
         return builder.getMacaroon().serialize();
     }
 
+    public static String idOfMacaroon(String macaroon)
+    {
+        return idOfMacaroon(MacaroonsBuilder.deserialize(macaroon));
+    }
+
+    private static String idOfMacaroon(Macaroon macaroon)
+    {
+        // Use the first 6 bytes of signature as an ID for this macaroon
+        byte[] rawId = BaseEncoding.base16().lowerCase().decode(macaroon.signature.substring(0, 12));
+        return new String(Base64.getEncoder().encode(rawId), StandardCharsets.US_ASCII);
+    }
+
     public MacaroonContext expandMacaroon(String serialisedMacaroon, InetAddress clientAddress)
             throws InvalidMacaroonException
     {
@@ -118,9 +124,7 @@ public class MacaroonProcessor
 
         Macaroon macaroon = MacaroonsBuilder.deserialize(serialisedMacaroon);
 
-        // Use the first 6 bytes of signature as an ID for this macaroon
-        byte[] rawId = BaseEncoding.base16().lowerCase().decode(macaroon.signature.substring(0, 12));
-        String macaroonId = new String(Base64.getEncoder().encode(rawId), StandardCharsets.US_ASCII);
+        String macaroonId = idOfMacaroon(macaroon);
 
         MacaroonsVerifier verifier = new MacaroonsVerifier(macaroon);
 
