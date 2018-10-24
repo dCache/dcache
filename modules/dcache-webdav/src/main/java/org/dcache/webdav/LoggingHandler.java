@@ -1,8 +1,6 @@
 package org.dcache.webdav;
 
 import com.google.common.net.InetAddresses;
-import dmg.cells.nucleus.CDC;
-import org.dcache.util.NetLoggerBuilder;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
@@ -14,10 +12,16 @@ import javax.security.auth.Subject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
+
+import dmg.cells.nucleus.CDC;
+
+import org.dcache.util.NetLoggerBuilder;
+import org.dcache.webdav.macaroons.MacaroonRequestHandler;
 
 import static org.dcache.http.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
 import static org.dcache.webdav.DcacheResourceFactory.TRANSACTION_ATTRIBUTE;
@@ -45,8 +49,10 @@ public class LoggingHandler extends HandlerWrapper {
             log.add("transaction", getTransaction(request));
             log.add("request.method", request.getMethod());
             log.add("request.url", request.getRequestURL());
+            log.add("request.macaroon-request", MacaroonRequestHandler.getMacaroonRequest(request));
             log.add("response.code", statusCode);
             log.add("response.reason", getReason(response));
+            log.add("response.macaroon-id", MacaroonRequestHandler.getMacaroonId(request));
             log.add("location", response.getHeader("Location"));
             InetAddress addr = InetAddresses.forString(request.getRemoteAddr());
             log.add("socket.remote", new InetSocketAddress(addr, request.getRemotePort()));
