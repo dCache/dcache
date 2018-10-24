@@ -104,13 +104,7 @@
                1.43     bcprov-jdk16    JDK v1.6; used by JGlobus-1.8.x
          -->
         <bouncycastle.bcprov>bcprov-jdk15on</bouncycastle.bcprov>
-	<!--
-	   Use a private BC 1.50 release that provides for
-	   JSSE compatible handling of key agreement secret
-           generation. This support is available in BC starting
-	   version 1.54
-	-->
-        <bouncycastle.version>dcache-1.50</bouncycastle.version>
+        <bouncycastle.version>1.50</bouncycastle.version>
         <datanucleus-core.version>4.1.8</datanucleus-core.version>
         <datanucleus.plugin.version>4.0.2</datanucleus.plugin.version>
         <hazelcast.version>3.9.3</hazelcast.version>
