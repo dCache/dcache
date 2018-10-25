@@ -638,8 +638,25 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         _log.info("Trying to rename {} to {}", req.getSourcePath(), req.getTargetPath());
 
         try {
+            /*
+             * We have observed kXR_mv requests with a source path like:
+             *
+             *     //foo/my-file?xrd.gsiusrpxy=/opt/domatests/x509up&xrd.wantprot=gsi,unix
+             *
+             * It currently isn't clear whether this is valid.  The xrootd
+             * protocol documentation does not document it as valid:
+             *
+	     *     https://github.com/xrootd/xrootd/issues/850
+             *
+             * However, the SLAC xrootd server accepts such requests and
+	     * strips off the query part.  Since xrootd clients exist that
+	     * expect this behaviour, we do the same (at least for now).
+             */
+            String srcWithQuery = req.getSourcePath();
+            int queryIndex = srcWithQuery.indexOf('?');
+            String src = queryIndex == -1 ? srcWithQuery : srcWithQuery.substring(0, queryIndex);
             _door.moveFile(
-                    createFullPath(req.getSourcePath()),
+                    createFullPath(src),
                     createFullPath(req.getTargetPath()),
                     req.getSubject(),
                     _authz);
