@@ -281,6 +281,36 @@ Example:
 
 In this example two access methods are considered: grid based and kerberos based. If user comes with grid certificate and VOMS role: extract user’s DN (1), extract and verify VOMS attributes (2), map DN+Role to a local account (3). If user comes with `Kerberos` ticket: extract local account (4). After this point in both cases we talk to `NIS` to get uid and gids for a local account (5) and, finally, adding users home directory (6).
 
+#### mutator
+
+The `mutator` plugin is used to convert principal returned by third-party plugin into a principal, which is understood by gplazma plugins. For example, when the `jaas` plugin is configured to be used with an _ActiveMQ_ server, then login module specific principal is returned.
+
+Example:
+
+    # use activemq + mutator + authdb
+    auth jaas gplazma.jaas.name=ActiveMQ
+    map optional mutator gplazma.mutator.accept=org.apache.activemq.jaas.UserPrincipal gplazma.mutator.produce=username
+    map requisite authzdb
+
+Properties
+
+**gplazma.mutator.accept**
+
+  The fully qualified java class names of principal that have to the converted.
+
+  **gplazma.mutator.produce**
+
+  The gplazma internal principal short-hand name into which provided principal should be converted. The supported short-hand names:
+
+  | Short name| Produced Principal | Description |
+  |-----------|--------------------|-------------|
+  | dn | GlobusPrincipal| To be consumed by Grid specific plugins|
+  |kerberos| KerberosPrincipal | To be consumed bu Kerberos specific plugins|
+  |fqan| FQANPrincipal | To be consumed by Grid-VO specific plugins|
+  |name| LoginNamePrincipal| Login name which requires an aditional mapping to username|
+  |username| UserNamePrincipal|Principal which is associated with final login step|
+
+
 ### account Plug-ins
 
 #### argus
