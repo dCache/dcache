@@ -117,13 +117,27 @@ public class PgSQLFsSqlDriver extends FsSqlDriver {
      * @return
      */
     @Override
-    String inode2path(FsInode inode, FsInode startFrom) {
-        if (inode.equals(startFrom)) {
+    protected String inode2path(long inode, long startFrom) {
+        if (inode == startFrom) {
             return "/";
         }
         return _jdbc.query("SELECT inumber2path(?)",
-                           ps -> ps.setLong(1, inode.ino()),
+                           ps -> ps.setLong(1, inode),
                            rs -> rs.next() ? rs.getString(1) : null);
+    }
+
+    @Override
+    public List<OriginTag> findTags(String name)
+    {
+        return _jdbc.query("SELECT inumber2path(inumber),ivalue"
+                + " FROM t_tags t JOIN t_tags_inodes i ON t.itagid = i.itagid"
+                + " WHERE itagname=? AND isorign=1",
+                ps -> ps.setString(1, name),
+                (rs,row) -> {
+                    String inumber2Path = rs.getString(1);
+                    String path = inumber2Path.isEmpty() ? "/" : inumber2Path; // Work around bug in inumber2path
+                    return new OriginTag(path, rs.getBytes(2));
+                });
     }
 
     /**
