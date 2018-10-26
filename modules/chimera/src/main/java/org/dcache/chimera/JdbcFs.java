@@ -1229,6 +1229,13 @@ public class JdbcFs implements FileSystemProvider {
         });
     }
 
+    @Override
+    public List<OriginTag> findTags(String tagName) throws ChimeraFsException {
+        return inTransaction(status -> _sqlDriver.findTags(tagName));
+    }
+
+
+
     ///////////////////////////////////////////////////////////////
     //
     // Id and Co.
