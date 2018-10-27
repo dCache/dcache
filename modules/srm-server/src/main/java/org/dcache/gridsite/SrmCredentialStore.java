@@ -18,6 +18,8 @@
 package org.dcache.gridsite;
 
 import eu.emi.security.authn.x509.X509Credential;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
@@ -31,6 +33,7 @@ import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
+import org.dcache.util.Exceptions;
 import org.dcache.util.SqlGlob;
 
 import static org.dcache.gridsite.Utilities.assertThat;
@@ -41,6 +44,8 @@ import static org.dcache.gridsite.Utilities.assertThat;
  */
 public class SrmCredentialStore implements CredentialStore
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SrmCredentialStore.class);
+
     private RequestCredentialStorage _store;
 
     @Required
@@ -67,7 +72,8 @@ public class SrmCredentialStore implements CredentialStore
                     new RequestCredential(nameFromId(id), Objects.toString(primaryFqan, null), credential, _store);
             _store.saveRequestCredential(srmCredential);
         } catch (RuntimeException e) {
-            throw new DelegationException("failed to save credential: " + e.getMessage());
+            LOGGER.warn("Bug detected please report to <support@dcache.org>: ", e);
+            throw new DelegationException("failed to save credential: " + Exceptions.messageOrClassName(e));
         }
     }
 
@@ -79,7 +85,7 @@ public class SrmCredentialStore implements CredentialStore
         try {
             isSuccessful = _store.deleteRequestCredential(nameFromId(id), null);
         } catch (IOException e) {
-            throw new DelegationException("internal problem: " + e.getMessage());
+            throw new DelegationException("internal problem: " + Exceptions.messageOrClassName(e));
         }
 
         assertThat(isSuccessful, "no credential", id);
@@ -91,7 +97,7 @@ public class SrmCredentialStore implements CredentialStore
         try {
             return _store.hasRequestCredential(nameFromId(id), null);
         } catch (IOException e) {
-            throw new DelegationException("internal problem: " + e.getMessage());
+            throw new DelegationException("internal problem: " + Exceptions.messageOrClassName(e));
         }
     }
 
