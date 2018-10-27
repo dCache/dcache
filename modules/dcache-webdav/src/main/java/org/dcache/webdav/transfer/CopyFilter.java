@@ -476,6 +476,7 @@ public class CopyFilter implements Filter
         switch (source) {
         case GRIDSITE:
             try {
+                HttpServletRequest request = ServletRequest.getRequest();
                 // Use the X.509 identity from TLS, even if that wasn't used to
                 // establish the user's identity.  This allows the local activity of
                 // the COPY (i.e., the ability to read a file, or create a new file)
@@ -483,15 +484,23 @@ public class CopyFilter implements Filter
                 // delegated X.509 credential when authenticating for the
                 // third-party copy, based on the client credential presented when
                 // establishing the TLS connection.
-                Subject x509Subject = AuthenticationHandler.getX509Identity(ServletRequest.getRequest());
+                Subject x509Subject = AuthenticationHandler.getX509Identity(request);
                 String dn = x509Subject == null ? null : Subjects.getDn(x509Subject);
                 if (dn == null) {
                     throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
                             "user must present valid X.509 certificate");
                 }
                 String fqan = Objects.toString(Subjects.getPrimaryFqan(x509Subject), null);
+
+                /* If delegation has been requested and declined then
+                 * potentially use the existing delegated credential.  We don't
+                 * want to artifically fail requests that might otherwise
+                 * succeed.
+                 */
+                int minLifetimeInMinutes = hasClientAlreadyBeenRedirected(request)
+                        ? 2 : 20;
                 return _credentialService.getDelegatedCredential(dn, fqan,
-                        20, MINUTES);
+                        minLifetimeInMinutes, MINUTES);
             } catch (PermissionDeniedCacheException e) {
                 throw new ErrorResponseException(Status.SC_UNAUTHORIZED,
                         "Presented X.509 certificate not valid");
