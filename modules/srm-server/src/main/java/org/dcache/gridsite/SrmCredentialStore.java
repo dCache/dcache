@@ -23,14 +23,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
-import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
+import org.dcache.security.util.X509Credentials;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.util.Exceptions;
@@ -147,9 +146,8 @@ public class SrmCredentialStore implements CredentialStore
 
     private static Date expiryDateFor(X509Credential credential)
     {
-        return Stream.of(credential.getCertificateChain())
-                .map(X509Certificate::getNotAfter)
-                .min(Date::compareTo)
+        return X509Credentials.calculateExpiry(credential)
+                .map(Date::from)
                 .orElseThrow(() -> new IllegalArgumentException("Certificate chain is empty."));
     }
 
