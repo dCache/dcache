@@ -47,10 +47,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -69,6 +72,7 @@ import org.dcache.auth.OpenIdClientSecret;
 import org.dcache.auth.StaticOpenIdCredential;
 import org.dcache.auth.StaticOpenIdCredential.Builder;
 import org.dcache.cells.CellStub;
+import org.dcache.security.util.X509Credentials;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -113,24 +117,25 @@ public class CredentialServiceClient
     public X509Credential getDelegatedCredential(String dn, String primaryFqan,
             int minimumValidity, TimeUnit units) throws InterruptedException, ErrorResponseException
     {
-        long bestRemainingLifetime = 0;
-        X509Credential bestCredential = null;
+        Instant deadline = Instant.now().plus(Duration.ofMillis(units.toMillis(minimumValidity)));
 
+        Optional<X509Credential> bestCredential = Optional.empty();
+        Optional<Instant> bestExpiry = Optional.empty();
         for (CellAddressCore address : cache.asMap().keySet()) {
             CellPath path = new CellPath(address);
             SrmRequestCredentialMessage msg = new SrmRequestCredentialMessage(dn, primaryFqan);
             try {
                 msg = topic.sendAndWait(path, msg);
 
-                if (!msg.hasCredential()) {
-                    continue;
-                }
+                if (msg.hasCredential()) {
+                    X509Credential credential = new KeyAndCertCredential(msg.getPrivateKey(), msg.getCertificateChain());
+                    Optional<Instant> expiry = X509Credentials.calculateExpiry(credential);
 
-                X509Certificate[] certificates = msg.getCertificateChain();
-                long lifetime = calculateRemainingLifetime(certificates);
-                if (lifetime > bestRemainingLifetime) {
-                    bestCredential = new KeyAndCertCredential(msg.getPrivateKey(), certificates);
-                    bestRemainingLifetime = lifetime;
+                    if (!bestExpiry.isPresent()
+                            || (expiry.isPresent() && expiry.get().isAfter(bestExpiry.get()))) {
+                        bestExpiry = expiry;
+                        bestCredential = Optional.of(credential);
+                    }
                 }
             } catch (CacheException | NoRouteToCellException e) {
                 LOGGER.debug("failed to contact {} querying for {}, {}: {}",
@@ -141,7 +146,11 @@ public class CredentialServiceClient
             }
         }
 
-        return bestRemainingLifetime < units.toMillis(minimumValidity) ? null : bestCredential;
+        if (bestExpiry.isPresent() && bestExpiry.get().isBefore(deadline)) {
+            bestCredential = Optional.empty();
+        }
+
+        return bestCredential.orElse(null);
     }
 
     public StaticOpenIdCredential getDelegatedCredential(String token,
