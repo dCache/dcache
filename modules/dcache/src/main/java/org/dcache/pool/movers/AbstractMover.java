@@ -273,7 +273,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                     setTransferStatus(CacheException.RESOURCE, "Insufficient capacity: " + e.getMessage());
                 } catch (Exception e) {
                     LOGGER.error("Transfer failed: {}", e.toString());
-                    setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "General problem: " + e.getMessage());
+                    setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "General problem: " + Exceptions.messageOrClassName(e));
                 } catch (Throwable e) {
                     LOGGER.error("Transfer failed:", e);
                     Thread thread = Thread.currentThread();
