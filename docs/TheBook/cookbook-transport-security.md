@@ -36,7 +36,7 @@ Apart from that, there is an additional setting that is needed to improve securi
 
     dcache.authn.ciphers = DISABLE_RC4
 
-This disables RC4, which is considered unsafe. If the value contains `DISABLE_EC`, it's best to remove that, because the EC ciphers support Perfect Foreward Secrecy, which is considered best practice. But if you plan on removing `DISABLE_EC`, make sure to test it first, especially if you still use Java 7 (which you shouldn't).
+This disables RC4, which is considered unsafe. If the value contains `DISABLE_EC`, it's best to remove that, because the EC ciphers support Perfect Forward Secrecy, which is considered best practice. But if you plan on removing `DISABLE_EC`, make sure to test it first, especially if you still use Java 7 (which you shouldn't).
 
 
 
