@@ -405,6 +405,8 @@
                     <property name="readOnly" value="${frontend.authz.readonly}"/>
                     <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
                     <property name="realm" value="${frontend.authn.realm}"/>
+                    <property name="acceptBearerTokenUnencrypted"
+                              value="${frontend.macaroons.accept-over-unencrypted-channel}"/>
                 </bean>
             </list>
         </property>
