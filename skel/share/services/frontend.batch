@@ -84,6 +84,8 @@ check frontend.static!dcache-view.oidc-authz-endpoint-list
 
 check frontend.authn.ciphers
 
+check -strong frontend.macaroons.accept-over-unencrypted-channel
+
 onerror continue
 test -f ${frontend.authn.keystore}
 set env have_keystore ${rc}

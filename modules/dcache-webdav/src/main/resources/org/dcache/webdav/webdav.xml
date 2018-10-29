@@ -347,6 +347,8 @@
         <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
         <property name="enableSpnegoAuthentication" value="${webdav.authn.spnego}"/>
         <property name="realm" value="${webdav.authn.realm}"/>
+        <property name="acceptBearerTokenUnencrypted"
+                  value="${webdav.macaroons.accept-over-unencrypted-channel}"/>
     </bean>
 
     <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
