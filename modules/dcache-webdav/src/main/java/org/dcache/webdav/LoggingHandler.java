@@ -22,6 +22,7 @@ import dmg.cells.nucleus.CDC;
 
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.webdav.macaroons.MacaroonRequestHandler;
+import org.dcache.webdav.transfer.CopyFilter;
 
 import static org.dcache.http.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
 import static org.dcache.webdav.DcacheResourceFactory.TRANSACTION_ATTRIBUTE;
@@ -41,22 +42,25 @@ public class LoggingHandler extends HandlerWrapper {
         if (isStarted() && !baseRequest.isHandled()) {
             super.handle(target, baseRequest, request, response);
 
-            int statusCode = response.getStatus();
-
-            NetLoggerBuilder log = new NetLoggerBuilder(logLevel(statusCode),
+            NetLoggerBuilder log = new NetLoggerBuilder(logLevel(request, response),
                     "org.dcache.webdav.request").omitNullValues();
             log.add("session", CDC.getSession());
             log.add("transaction", getTransaction(request));
             log.add("request.method", request.getMethod());
             log.add("request.url", request.getRequestURL());
             log.add("request.macaroon-request", MacaroonRequestHandler.getMacaroonRequest(request));
-            log.add("response.code", statusCode);
+            log.add("response.code", response.getStatus());
             log.add("response.reason", getReason(response));
             log.add("response.macaroon-id", MacaroonRequestHandler.getMacaroonId(request));
             log.add("location", response.getHeader("Location"));
             InetAddress addr = InetAddresses.forString(request.getRemoteAddr());
             log.add("socket.remote", new InetSocketAddress(addr, request.getRemotePort()));
             log.add("user-agent", request.getHeader("User-Agent"));
+            log.add("tpc.credential", CopyFilter.getTpcCredential(request));
+            log.add("tpc.error", CopyFilter.getTpcError(request));
+            log.add("tpc.require-checksum", CopyFilter.getTpcRequireChecksumVerification(request));
+            log.add("tpc.source", CopyFilter.getTpcSource(request));
+            log.add("tpc.destination", CopyFilter.getTpcDestination(request));
 
             log.add("user.dn", getCertificateName(request));
             log.add("user.mapped", getSubject(request));
@@ -73,10 +77,13 @@ public class LoggingHandler extends HandlerWrapper {
         }
     }
 
-    private static NetLoggerBuilder.Level logLevel(int code) {
+    private static NetLoggerBuilder.Level logLevel(HttpServletRequest request,
+            HttpServletResponse response)
+    {
+        int code = response.getStatus();
         if (code >= 500) {
             return NetLoggerBuilder.Level.ERROR;
-        } else if (code >= 400) {
+        } else if (code >= 400 || CopyFilter.getTpcError(request) != null) {
             return NetLoggerBuilder.Level.WARN;
         } else {
             return NetLoggerBuilder.Level.INFO;
