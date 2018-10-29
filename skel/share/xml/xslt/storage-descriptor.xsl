@@ -257,13 +257,49 @@
   <xsl:variable name="description" select="d:metric[@name='description']"/>
   <xsl:variable name="total" select="d:space/d:metric[@name='total']"/>
   <xsl:variable name="used" select="d:space/d:metric[@name='used']"/>
+  <xsl:variable name="filecount" select="d:metric[@name='file-count']"/>
+  <xsl:variable name="timestamp">
+    <xsl:choose>
+      <xsl:when test="d:space/d:metric[@name='total']/@last-updated">
+	<xsl:value-of select="d:space/d:metric[@name='total']/@last-updated"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="date:seconds()"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+  <xsl:variable name="vo-no-start-slash">
+    <xsl:choose>
+      <xsl:when test="starts-with(d:authorisation/d:metric[@name='FQAN'],'/')">
+	<xsl:value-of select="substring(d:authorisation/d:metric[@name='FQAN'],2)"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="d:authorisation/d:metric[@name='FQAN']"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+  <xsl:variable name="vo">
+    <xsl:choose>
+      <xsl:when test="contains($vo-no-start-slash,'/')">
+	<xsl:value-of select="substring-before($vo-no-start-slash,'/')"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="$vo-no-start-slash"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
   <xsl:variable name="have-subsequent" select="position() != last()"/>
 
   <xsl:text>        {&#xa;</xsl:text>
-  <xsl:value-of select="concat('            &quot;capacity_id&quot;: &quot;',$description, '&quot;,&#xa;')"/>
-  <xsl:value-of select="concat('            &quot;total_space&quot;: &quot;',$total, '&quot;,&#xa;')"/>
-  <xsl:value-of select="concat('            &quot;used_space&quot;: &quot;',$used, '&quot;&#xa;')"/>
-
+  <xsl:value-of select="concat('            &quot;name&quot;: &quot;',$description, '&quot;,&#xa;')"/>
+  <xsl:value-of select="concat('            &quot;totalsize&quot;: ',$total, ',&#xa;')"/>
+  <xsl:value-of select="concat('            &quot;usedsize&quot;: ',$used, ',&#xa;')"/>
+  <xsl:if test="$filecount">
+    <xsl:value-of select="concat('            &quot;numberoffiles&quot;: ',$filecount,',&#x0a;')"/>
+  </xsl:if>
+  <xsl:value-of select="concat('            &quot;timestamp&quot;: ',$timestamp,',&#x0a;')"/>
+  <xsl:value-of select="concat('            &quot;vos&quot;: [&quot;',$vo,'&quot;],&#x0a;')"/>
+  <xsl:text>            "assignedendpoints": ["all"]&#x0a;</xsl:text>
   <xsl:text>        }</xsl:text>
   <xsl:if test="$have-subsequent">
     <xsl:text>,</xsl:text>
