@@ -105,6 +105,11 @@ public class CopyFilter implements Filter
     private static final String QUERY_KEY_ASKED_TO_DELEGATE = "asked-to-delegate";
     private static final String REQUEST_HEADER_CREDENTIAL = "Credential";
     private static final String REQUEST_HEADER_VERIFICATION = "RequireChecksumVerification";
+    private static final String TPC_ERROR_ATTRIBUTE = "org.dcache.tpc-error";
+    private static final String TPC_CREDENTIAL_ATTRIBUTE = "org.dcache.tpc-credential";
+    private static final String TPC_REQUIRE_CHECKSUM_VERIFICATION_ATTRIBUTE = "org.dcache.tpc-require-checksum-verify";
+    private static final String TPC_SOURCE_ATTRIBUTE = "org.dcache.tpc-source";
+    private static final String TPC_DESTINATION_ATTRIBUTE = "org.dcache.tpc-destination";
 
     private ImmutableMap<String,String> _clientIds;
     private ImmutableMap<String,String> _clientSecrets;
@@ -160,6 +165,41 @@ public class CopyFilter implements Filter
     private CredentialServiceClient _credentialService;
     private PathMapper _pathMapper;
     private RemoteTransferHandler _remoteTransfers;
+
+    /**
+     * Provide a description of why the TPC failed, or null if the transfer
+     * has not (yet) failed.
+     */
+    public static String getTpcError(HttpServletRequest request)
+    {
+        return (String) request.getAttribute(TPC_ERROR_ATTRIBUTE);
+    }
+
+    /**
+     * Provide the credential type used for the TPC.
+     */
+    public static String getTpcCredential(HttpServletRequest request)
+    {
+        return (String) request.getAttribute(TPC_CREDENTIAL_ATTRIBUTE);
+    }
+
+    /**
+     * Whether checksum verification is required.
+     */
+    public static String getTpcRequireChecksumVerification(HttpServletRequest request)
+    {
+        return (String) request.getAttribute(TPC_REQUIRE_CHECKSUM_VERIFICATION_ATTRIBUTE);
+    }
+
+    public static URI getTpcSource(HttpServletRequest request)
+    {
+        return (URI) request.getAttribute(TPC_SOURCE_ATTRIBUTE);
+    }
+
+    public static URI getTpcDestination(HttpServletRequest request)
+    {
+        return (URI) request.getAttribute(TPC_DESTINATION_ATTRIBUTE);
+    }
 
     @Required
     public void setPathMapper(PathMapper mapper)
@@ -329,6 +369,8 @@ public class CopyFilter implements Filter
         Direction direction = getDirection();
         URI remote = getRemoteLocation();
 
+        setRemoteUrlAttribute(direction, remote);
+
         TransferType type = TransferType.fromScheme(remote.getScheme());
         if (type == null) {
             throw new ErrorResponseException(Status.SC_BAD_REQUEST,
@@ -359,12 +401,28 @@ public class CopyFilter implements Filter
                                    "Error performing OpenId Connect Token Exchange");
             }
         } else {
-            _remoteTransfers.acceptRequest(response.getOutputStream(),
+            Optional<String> error =_remoteTransfers.acceptRequest(response.getOutputStream(),
                     request.getHeaders(), getSubject(), getRestriction(), path,
                     remote, credential, direction, isVerificationRequired(),
                     overwriteAllowed);
+            error.ifPresent(e -> ServletRequest.getRequest().setAttribute(TPC_ERROR_ATTRIBUTE, e));
         }
     }
+
+    private void setRemoteUrlAttribute(Direction direction, URI remote)
+    {
+        HttpServletRequest request = ServletRequest.getRequest();
+
+        switch (direction) {
+        case PULL:
+            request.setAttribute(TPC_SOURCE_ATTRIBUTE, remote);
+            break;
+        case PUSH:
+            request.setAttribute(TPC_DESTINATION_ATTRIBUTE, remote);
+            break;
+        }
+    }
+
 
     private CredentialSource getCredentialSource(Request request, TransferType type)
             throws ErrorResponseException
@@ -386,12 +444,16 @@ public class CopyFilter implements Filter
                         headerValue + "\".  Valid values are: " +
                         Joiner.on(',').join(CredentialSource.headerValues()));
             }
+            setCredentialAttribute(headerValue);
         } else if (clientAuthnUsingOidc()) {
             source = CredentialSource.OIDC;
+            setCredentialAttribute("(oidc)");
         } else if (clientSuppliedX509Certificate()) {
             source = CredentialSource.GRIDSITE;
+            setCredentialAttribute("(gridsite)");
         } else {
             source = CredentialSource.NONE;
+            setCredentialAttribute("(none)");
         }
 
         if (!type.isSupported(source)) {
@@ -451,6 +513,12 @@ public class CopyFilter implements Filter
         default:
             throw new RuntimeException("Unsupported source " + source);
         }
+    }
+
+
+    private void setCredentialAttribute(String value)
+    {
+        ServletRequest.getRequest().setAttribute(TPC_CREDENTIAL_ATTRIBUTE, value);
     }
 
 
@@ -582,13 +650,16 @@ public class CopyFilter implements Filter
         String header = ServletRequest.getRequest().getHeader(REQUEST_HEADER_VERIFICATION);
 
         if (header == null) {
+            setRequireChecksumVerificationAttribute(_defaultVerification ? "(true)" : "(false)");
             return _defaultVerification;
         }
 
         switch (header) {
         case "true":
+            setRequireChecksumVerificationAttribute("true");
             return true;
         case "false":
+            setRequireChecksumVerificationAttribute("false");
             return false;
         default:
             throw new ErrorResponseException(Status.SC_BAD_REQUEST,
@@ -596,5 +667,10 @@ public class CopyFilter implements Filter
                             "has unknown value \"" + header + "\": " +
                             "valid values are true or false");
         }
+    }
+
+    private void setRequireChecksumVerificationAttribute(String value)
+    {
+        ServletRequest.getRequest().setAttribute(TPC_REQUIRE_CHECKSUM_VERIFICATION_ATTRIBUTE, value);
     }
 }
