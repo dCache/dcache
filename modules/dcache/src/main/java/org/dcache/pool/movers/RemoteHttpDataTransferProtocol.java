@@ -144,6 +144,13 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private static final int SOCKET_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
 
     /**
+     * Maximum time to wait for next packet from remote server for GET requests.
+     * This needs to be longer as DPM can block on GET requests while calculating
+     * the checksum.
+     */
+    private static final int GET_SOCKET_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(20);
+
+    /**
      * Expected maximum delay all post-processing files will experience,
      * in milliseconds.
      */
@@ -311,7 +318,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         addHeadersToRequest(info, get);
         get.setConfig(RequestConfig.custom()
                               .setConnectTimeout(CONNECTION_TIMEOUT)
-                              .setSocketTimeout(SOCKET_TIMEOUT)
+                              .setSocketTimeout(GET_SOCKET_TIMEOUT)
                               .build());
 
         CloseableHttpResponse response = _client.execute(get);
