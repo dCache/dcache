@@ -759,27 +759,31 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         pw.println("    Listening on:");
         pw.println("        Client: " + _clientConnectionHandler.getLocalAddress());
         pw.println("        Pool: " + _poolConnectionHandler.getLocalAddress());
-        pw.println("    Proxy status:");
-        ProxyPrinter proxy = new ProxyPrinter();
-        Socket out = _output.socket();
-        boolean isFirstRow = true;
-        for (Redirector redirector : _redirectors) {
-            if (isFirstRow) {
-                if (_clientToPool) {
-                    proxy.pool(out);
-                } else {
-                    proxy.client(out);
+        if (_output == null) {
+            pw.println("    Proxy status: not connected");
+        } else {
+            pw.println("    Proxy status:");
+            ProxyPrinter proxy = new ProxyPrinter();
+            Socket out = _output.socket();
+            boolean isFirstRow = true;
+            for (Redirector redirector : _redirectors) {
+                if (isFirstRow) {
+                    if (_clientToPool) {
+                        proxy.pool(out);
+                    } else {
+                        proxy.client(out);
+                    }
+                    isFirstRow = false;
                 }
-                isFirstRow = false;
+                Socket in = redirector._input.socket();
+                if (_clientToPool) {
+                    proxy.client(in);
+                } else {
+                    proxy.pool(in);
+                }
+                proxy.add();
             }
-            Socket in = redirector._input.socket();
-            if (_clientToPool) {
-                proxy.client(in);
-            } else {
-                proxy.pool(in);
-            }
-            proxy.add();
+            pw.println(indentLines("        ", proxy.toString()));
         }
-        pw.println(indentLines("        ", proxy.toString()));
     }
 }
