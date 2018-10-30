@@ -473,6 +473,11 @@ public class RemoteTransferHandler implements CellMessageReceiver
             InetSocketAddress address = new InetSocketAddress(_destination.getHost(),
                     URIs.portWithDefault(_destination));
 
+            if (address.isUnresolved()) {
+                String target = _direction == Direction.PULL ? "source" : "destination";
+                throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST, "Unknown " + target + " hostname");
+            }
+
             switch (_type) {
             case GSIFTP:
                 return new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
