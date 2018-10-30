@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.channels.Channels;
 import java.nio.file.OpenOption;
@@ -49,6 +51,7 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
+import org.dcache.util.Exceptions;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 
@@ -59,7 +62,9 @@ import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.util.Exceptions.genericCheck;
 import static org.dcache.util.TimeUtils.describeDuration;
 import static diskCacheV111.util.ThirdPartyTransferFailedCacheException.checkThirdPartyTransferSuccessful;
+import static dmg.util.Exceptions.getMessageWithCauses;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * This class implements transfers of data between a pool and some remote
@@ -271,6 +276,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             }
 
             entity.writeTo(Channels.newOutputStream(to));
+        } catch (SocketTimeoutException e) {
+            String message = "socket timeout (received "
+                    + _channel.getBytesTransferred() + " bytes; "
+                    + e.bytesTransferred + " pending)";
+            if (e.getMessage() != null) {
+                message += ": " + e.getMessage();
+            }
+            throw new ThirdPartyTransferFailedCacheException(message, e);
         } catch (IOException e) {
             throw new ThirdPartyTransferFailedCacheException(e.toString(), e);
         } catch (InterruptedException e) {
@@ -422,10 +435,13 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                             "server rejected PUT: " + status.getStatusCode() +
                             " " + status.getReasonPhrase());
                 }
-            } catch (IOException e) {
-                _log.error("problem connecting: {}", e.toString());
+            } catch (ConnectException e) {
                 throw new ThirdPartyTransferFailedCacheException("failed to " +
-                        "connect to server: " + e.toString(), e);
+                        "connect to server: " + messageOrClassName(e), e);
+            } catch (ClientProtocolException e) {
+                throw new ThirdPartyTransferFailedCacheException("HTTP protocol failure: " + getMessageWithCauses(e), e);
+            } catch (IOException e) {
+                throw new ThirdPartyTransferFailedCacheException("problem sending data: " + messageOrClassName(e), e);
             }
         }
 
