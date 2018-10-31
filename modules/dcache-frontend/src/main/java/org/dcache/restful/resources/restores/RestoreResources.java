@@ -65,10 +65,12 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
@@ -83,6 +85,7 @@ import diskCacheV111.util.CacheException;
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
+import org.dcache.restful.util.RequestUser;
 
 /**
  * <p>RESTful API to the {@link RestoresInfoService} service.</p>
@@ -96,10 +99,13 @@ public final class RestoreResources {
     @Inject
     private RestoresInfoService service;
 
+    private boolean unlimitedOperationVisibility;
+
     @GET
     @ApiOperation("Obtain a (potentially partial) list of restore operations "
             + "from some snapshot, along with a token that identifies the snapshot.")
     @ApiResponses({
+                @ApiResponse(code = 403, message = "Restores can only be accessed by admin users."),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
     @Produces(MediaType.APPLICATION_JSON)
@@ -134,6 +140,12 @@ public final class RestoreResources {
                                                  @DefaultValue("pool,started")
                                                  @QueryParam("sort") String sort) {
         try {
+            RequestUser.checkAuthenticated();
+
+            if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
+                throw new ForbiddenException("Restores can only be accessed by admin users.");
+            }
+
             return service.get(token,
                                offset,
                                limit,
@@ -145,5 +157,10 @@ public final class RestoreResources {
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
         }
+    }
+
+    @Required
+    public void setUnlimitedOperationVisibility(boolean visibility) {
+        unlimitedOperationVisibility = visibility;
     }
 }
