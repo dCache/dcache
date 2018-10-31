@@ -183,10 +183,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     private static final long NFS_REQUEST_BLOCKING = TimeUnit.SECONDS.toMillis(3);
 
     /**
-     * Given that the timeout is pretty short, the retry period has to
-     * be rather small too.
+     * A time diration that Transfer class will wait before retrying a request to
+     * a pool or pool manager.
      */
-    private static final long NFS_RETRY_PERIOD = 500; // In millis
+    private static final long NFS_RETRY_PERIOD = TimeUnit.SECONDS.toMillis(10);
 
     /**
      * How long stage request can hang around. As the tape system can be broken,
