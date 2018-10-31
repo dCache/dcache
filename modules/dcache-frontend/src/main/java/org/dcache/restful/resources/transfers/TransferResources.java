@@ -81,7 +81,6 @@ import java.util.UUID;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TransferInfo;
 
-import org.dcache.auth.Subjects;
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
@@ -97,6 +96,7 @@ import org.dcache.restful.util.RequestUser;
 public final class TransferResources {
     @Inject
     private TransferInfoService service;
+    private boolean unlimitedOperationVisibility;
 
     @GET
     @ApiOperation("Provide a list of all client-initiated transfers that are "
@@ -154,13 +154,12 @@ public final class TransferResources {
         try {
             RequestUser.checkAuthenticated();
 
-            String suid = RequestUser.isAdmin() ? null :
-                            String.valueOf(Subjects.getUid(RequestUser.getSubject()));
+            Long suid = RequestUser.getSubjectUidForFileOperations(unlimitedOperationVisibility);
 
             return service.get(token,
                                offset,
                                limit,
-                               suid,
+                               String.valueOf(suid),
                                state,
                                door,
                                domain,
@@ -176,5 +175,9 @@ public final class TransferResources {
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
         }
+    }
+
+    public void setUnlimitedOperationVisibility(boolean visibility) {
+        unlimitedOperationVisibility = visibility;
     }
 }

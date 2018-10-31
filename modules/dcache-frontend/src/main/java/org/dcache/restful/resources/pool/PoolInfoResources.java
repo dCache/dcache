@@ -68,6 +68,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.ResponseHeader;
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -118,7 +119,7 @@ import org.dcache.restful.providers.pool.PoolModeUpdate;
 import org.dcache.restful.providers.selection.Pool;
 import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.services.transfers.TransferInfoService;
-import org.dcache.restful.util.HttpServletRequests;
+import org.dcache.restful.util.RequestUser;
 
 import static org.dcache.restful.providers.ErrorResponseProvider.NOT_IMPLEMENTED;
 import static org.dcache.restful.providers.PagedList.TOTAL_COUNT_HEADER;
@@ -157,6 +158,8 @@ public final class PoolInfoResources {
     @Inject
     @Named("pool-stub")
     private CellStub poolStub;
+
+    private boolean unlimitedOperationVisibility;
 
     @GET
     @ApiOperation("Get information about all pools (name, group membership, links).  "
@@ -256,6 +259,10 @@ public final class PoolInfoResources {
                         + "than the number of response if offset or limit are "
                         + "specified")
             })
+    @ApiResponses({
+                    @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
+                    @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("/{pool}/movers")
     @Produces(MediaType.APPLICATION_JSON)
     public List<MoverData> getMovers(@ApiParam("The pool to be described.")
@@ -284,6 +291,10 @@ public final class PoolInfoResources {
                                      @ApiParam("How returned items should be sorted.")
                                      @DefaultValue("door,startTime")
                                      @QueryParam("sort") String sort) {
+        if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
+
         limit = limit == null ? Integer.MAX_VALUE : limit;
 
         String[] type = typeList == null ? new String[0]:
@@ -335,6 +346,7 @@ public final class PoolInfoResources {
     @ApiOperation("Get nearline activity information for a specific pool.")
     @ApiResponses({
         @ApiResponse(code = 400, message = "unrecognized queue type"),
+        @ApiResponse(code = 403, message = "Pool command only accessible to admin users."),
         @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Path("/{pool}/nearline/queues")
@@ -358,6 +370,10 @@ public final class PoolInfoResources {
                                                 @ApiParam("How the returned values should be sorted.")
                                                 @DefaultValue("class,created")
                                                 @QueryParam("sort") String sort) {
+        if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
+        }
+
         limit = limit == null ? Integer.MAX_VALUE : limit;
 
         List<NearlineData> list = new ArrayList<>();
@@ -431,9 +447,8 @@ public final class PoolInfoResources {
                                @ApiParam(value = "The id of the mover to be killed.",
                                        required = true)
                                @PathParam("id") int id ) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Pool command only accessible to admin users.");
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
         }
 
         try {
@@ -456,6 +471,10 @@ public final class PoolInfoResources {
         return successfulResponse(Response.Status.OK);
     }
 
+    @Required
+    public void setUnlimitedOperationVisibility(boolean visibility) {
+        unlimitedOperationVisibility = visibility;
+    }
 
     @PATCH
     @ApiOperation("Modify a pool's mode.  Requires admin role.")
@@ -475,9 +494,8 @@ public final class PoolInfoResources {
                                                + "(Corresponds to PoolModeUpdate.)",
                                        required = true)
                                String requestPayload) {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Pool command only accessible to admin users.");
+        if (!RequestUser.isAdmin()) {
+            throw new ForbiddenException("Pool command only accessible to admin users.");
         }
 
         try {
