@@ -24,9 +24,9 @@ Table of Contents
     
 * [xrootd third-party transfer](#xrootd-third-party-transfer)
 
-    [Changes to dCache configuration for authenticated (GSI) transfers](#changes-to-dcache-configuration-for-authenticated-gsi-transfers)
+    [Changes to dCache configuration for authenticated (GSI) transfers](#changes-to-dcache-configuration-for-authenticated-gsi-transfers) 
     
-    [Incompatibilities](#incompatibilities)
+    [Signed Hash Verification Support](#signed-hash-verification-support)
 
 This chapter explains how to configure dCache in order to access it via the `xrootd` protocol, allowing `xrootd`-Clients like ROOT’s TXNetfile and xrdcp to do file operations against a dCache instance in a transparent manner. dCache implements version 2.1.6 of `xrootd` protocol.
 
@@ -269,73 +269,92 @@ One can also try third party and fail over to one-hop two-party (through the cli
 
                 xrdcp --tpc first <source> <destination>
                 
+### TPC from dCache to another xrootd server
+
+Very few changes in the dCache door were needed to accomplish this. 
+If dCache is merely to serve as file source, then all that is needed 
+is to update to version 4.2+ on the nodes running the xrootd doors.
+
+### TPC from another xrootd server to dCache, or between dCache instances 
+
+As per the protocol, the destination pulls/reads the file from the source and 
+writes it locally to a selected pool. This is achieved by an embedded third-party 
+client which runs on the pool. Hence, using dCache as destination means the pools 
+must also be running dCache 4.2+.
+
+Pools without the additional functionality provided by 4.2+ will not be able 
+to act as destination in a third-party transfer and a "tpc not supported" error 
+will be reported if `--tpc only` is specified. 
+                
 
 Changes to dCache configuration for authenticated (GSI) transfers
 -----------------------------------------------------------------
 
-Because authentication is enforced between the source and destination servers 
-(even though they are both holding a rendezvous token), the following must be done:
+ For dCache as source, gPlazma configuration is identical to that needed for 
+ normal two-party reads and writes, with the caveat that the necessary destination 
+ DNs must be mapped on the dCache end. This will depend upon the nature of the 
+ proxy credential being used by the source.
 
-* all dCache xrootd doors, but also write pools serving xrootd transfers, 
-must have a valid host certificate and  set of CA CRLS.
+To use dCache as TPC destination, some additional steps need to be taken.
 
-* all dCache write pools serving xrootd transfers must be configured for the 
-gsi client plugin; this means defining the following property, 
-either in the `dcache.conf` or layout file:
+First, for all pools that will receive files through xrootd TPC, the GSI service 
+provider plugin must be loaded by including this in the configuration or layout: 
 
                pool.mover.xrootd.tpc-authn-plugins=gsi
 
-* a proxy certificate must be made available to any SLAC xrootd server 
-being used as destination (see the documentation at [the XrootD site](http://xrootd.org/docs.html) 
-on how to configure the server for this).  This is the certificate that the
-server's xrdcp client will use to authenticate to the dCache door.
+Second, until the generally agreed upon solution for proxy delegation is adopted 
+and implemented, there are two ways of providing authentication 
+capability to these pools. 
 
-* the DNs for all the certificates communicating with dCache 
-(e.g., proxy certs for SLAC server nodes) must be mapped in gPlazma.  If
-dCache-to-dCache TPC is also contemplated, then DNs host certs for dCache door 
-nodes and pool nodes must also be mapped.
+* Generate a proxy from a credential that will be recognized by the source, 
+and arrange to have it placed (and periodically refreshed) on each pool that 
+may be the recipient of files transfered via xrootd TPC. The proxy path must 
+be indicated to dCache by setting this property:
 
-* the DNs for each pool which can serve as the destination of the 
-third-party copy should be mapped in the grid-mapfile used by any SLAC
-xrootd server that acts as file source for dCache.
+              xrootd.gsi.tpc.proxy.path={path-to-proxy}
 
-The dCache GSI xrootd plugin automatically generates a proxy from the host certificate, 
-but the SLAC server (which uses the SLAC client to read-write the file from 
-the source when it is destination) needs the certificate to be 
-generated (and renewed) externally (a common solution for this is to set up a cron job).
+* If this property is left undefined, dCache will auto-generate a proxy from 
+the `hostcert.pem` / `hostkey.pem` of the node on which the pool is running. 
+While this solution means no cron job is necessary to keep the proxy up to date, 
+it is also rather clunky in that it requires the hostcert DNs of all the pools 
+to be mapped on the source server end. 
 
-#### NOTE
 
-The current situation is admittedly very clunky; however, discussion is currently 
-underway concerning how best to handle this point-to-point GSI authentication setup.
-Very likely some sort of proxy delegation will be supported, in which case, 
-mapping of host cert DNs will not longer be necessary on either end.
+Signed hash verification support 
+---------------------------------------------
 
-As an intermediate solution (pending SLAC's full solution), we are also
-working on making use of the dCache delegation service (like WebDav and SRM).
-This would be for third-party-copies where dCache is the destination.
-Once that is implemented, then it should not be necessary to map pool host
-DNs in the SLAC server's grid-mapfile, though the DNs of those servers will
-still need to be mapped in dCache's gPlazma configuration.
+ The embedded third-party client will honor signed hash verification if the 
+ source server indicates it must be observed.
 
-Incompatibilities
------------------
+Starting with dCache 5.0, the dCache door/server will also provide the option 
+to enable signed hash verification.
 
-In order to allow the dCache door to act as source in a third-party copy, 
-only a few modifications of the code were necessary.  If all that is desired 
-is to transfer files from dCache to a vanilla/SLAC server, then only the door 
-version needs to be upgraded to 4.2+.
+However, there is a caveat here. Since dCache redirects reads from the door 
+to a selected pool, and since the subsequent connection to the pool is 
+unauthenticated (this has always been the case; the connection fails if the 
+opaque id token dCache gives back to the client is missing), the only way to 
+get signed hash verification on the destination-to-pool connection is to set 
+the kXR_secOFrce flag. This means that the pool will then require unix 
+authentication from the destination and that it will expect unencrypted hashes.
 
-If, however, one wishes to write to dCache from an external (SLAC) server, 
-or even write from one dCache xrootd door to another, then the pools must 
-also be at version 4.2+. 
+While the usefulness of unencrypted signed hash verification is disputable, 
+the specification nevertheless provides for it, and this was the only way, 
+short of encumbering our pool interactions with yet another GSI handshake, 
+to allow for sigver on the dCache end at all, since the main subsequent 
+requests (open, read, etc.) are made to the pool, not the door.
 
-This is because the xrootd protocol requires the destination to pull the 
-file from the source.  The dCache xrootd transfer service active on the pool 
-thus needs to have an embedded client which can read and then write to the pool.  
-Pools without this additional functionality will not be able to act as 
-destination in a third-party transfer and a "tpc not supported" error 
-will be reported if `--tpc only` is specified.
+dCache 5.0 will provide the following properties to control security level 
+and force unencrypted signing: 
+
+            dcache.xrootd.security.level={0-4}
+            dcache.xrootd.security.force-signing={true,false} 
+
+In the case that the latter is set to true, and one anticipates there will be 
+xrootd TPC transfers between two dCache instances or two dCache doors, one 
+also would need to include the unix service provider plugin in all the relevant 
+pool configurations:
+
+            pool.mover.xrootd.tpc-authn-plugins=gsi,unix                    
 
 <!--  [???]: #intouch-web
   []: http://people.web.psi.ch/feichtinger/doc/authz.pdf
