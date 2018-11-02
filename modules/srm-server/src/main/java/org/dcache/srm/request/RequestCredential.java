@@ -70,18 +70,17 @@ import com.google.common.collect.MapMaker;
 import eu.emi.security.authn.x509.X509Credential;
 import org.springframework.dao.DataAccessException;
 
-import java.security.cert.X509Certificate;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Stream;
 
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.dcache.security.util.X509Credentials.calculateExpiry;
 
 public class RequestCredential
 {
@@ -213,11 +212,7 @@ public class RequestCredential
 
     private static long expiryDateFor(X509Credential credential)
     {
-        return Stream.of(credential.getCertificateChain())
-                        .map(X509Certificate::getNotAfter)
-                        .min(Date::compareTo)
-                        .map(Date::getTime)
-                        .orElse(0L);
+        return calculateExpiry(credential).map(Instant::toEpochMilli).orElse(0L);
     }
 
     private void updateCredential(X509Credential credential)
