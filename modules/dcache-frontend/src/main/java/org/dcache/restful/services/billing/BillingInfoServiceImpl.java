@@ -70,6 +70,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
@@ -90,6 +91,7 @@ import org.dcache.restful.providers.billing.HSMTransferRecord;
 import org.dcache.restful.providers.billing.P2PTransferRecord;
 import org.dcache.restful.util.billing.BillingInfoCollectionUtils;
 import org.dcache.restful.util.billing.BillingInfoCollector;
+import org.dcache.services.billing.db.data.TransferRecord;
 import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.util.histograms.Histogram;
 import org.dcache.util.histograms.HistogramModel;
@@ -146,7 +148,7 @@ public class BillingInfoServiceImpl
             switch (type) {
                 case READ:
                     list = getReads(pnfsid, before, after,
-                                    null, 0, null,
+                                    null, 0, null, null,
                                     null, null, null);
                     builder.append("\nREADS ").append(list.total).append("\n");
                     list.contents.stream().forEach(
@@ -154,7 +156,7 @@ public class BillingInfoServiceImpl
                     break;
                 case WRITE:
                     list = getWrites(pnfsid, before, after,
-                                     null, 0, null,
+                                     null, 0, null, null,
                                      null, null, null);
                     builder.append("\nWRITES ").append(list.total).append("\n");
                     list.contents.stream().forEach(
@@ -302,14 +304,16 @@ public class BillingInfoServiceImpl
     @Override
     public PagedList<DoorTransferRecord> getReads(PnfsId pnfsid, String before,
                                                   String after, Integer limit,
-                                                  int offset, String pool,
+                                                  int offset,
+                                                  Long suid,
+                                                  String pool,
                                                   String door, String client,
                                                   String sort)
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
         return getDoorTransfers(Type.READ, pnfsid, before, after,
-                                limit, offset, door, pool, client, sort);
+                                limit, offset, door, pool, client, sort, suid);
     }
 
     @Override
@@ -339,14 +343,16 @@ public class BillingInfoServiceImpl
     @Override
     public PagedList<DoorTransferRecord> getWrites(PnfsId pnfsid, String before,
                                                    String after, Integer limit,
-                                                   int offset, String pool,
+                                                   int offset,
+                                                   Long suid,
+                                                   String pool,
                                                    String door, String client,
                                                    String sort)
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
         return getDoorTransfers(Type.WRITE, pnfsid, before, after,
-                                limit, offset, door, pool, client, sort);
+                                limit, offset, door, pool, client, sort, suid);
     }
 
     @Override
@@ -388,7 +394,8 @@ public class BillingInfoServiceImpl
                                                            String door,
                                                            String pool,
                                                            String client,
-                                                           String sort)
+                                                           String sort,
+                                                           Long suid)
                     throws FileNotFoundCacheException, ParseException,
                     CacheException, NoRouteToCellException,
                     InterruptedException {
@@ -409,8 +416,15 @@ public class BillingInfoServiceImpl
                                                            offset,
                                                            sort);
         message = collector.sendRecordRequest(message);
+
+        Predicate<TransferRecord> matchesSubject = r -> suid == null
+                        || r.getMappedUid() == null
+                        || suid.intValue() == r.getMappedUid();
+
         List<DoorTransferRecord> list = message.getRecords()
-                                               .stream().map(DoorTransferRecord::new)
+                                               .stream()
+                                               .filter(matchesSubject)
+                                               .map(DoorTransferRecord::new)
                                                .collect(Collectors.toList());
         return new PagedList<>(list, list.size());
     }

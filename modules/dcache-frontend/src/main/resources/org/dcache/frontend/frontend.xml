@@ -521,14 +521,20 @@
     <bean class="org.dcache.restful.qos.QosManagementNamespace" scope="request"/>
     <bean class="org.dcache.restful.qos.QosManagement" scope="request"/>
     <bean class="org.dcache.restful.resources.alarms.AlarmsResources" scope="request"/>
-    <bean class="org.dcache.restful.resources.billing.BillingResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.billing.BillingResources" scope="request">
+      <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
+    </bean>
     <bean class="org.dcache.restful.resources.cells.CellInfoResources" scope="request"/>
     <bean class="org.dcache.restful.resources.identity.UserResource" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.FileResources" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolGroupInfoResources" scope="request"/>
-    <bean class="org.dcache.restful.resources.pool.PoolInfoResources" scope="request"/>
-    <bean class="org.dcache.restful.resources.restores.RestoreResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.pool.PoolInfoResources" scope="request">
+      <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
+    </bean>
+    <bean class="org.dcache.restful.resources.restores.RestoreResources" scope="request">
+      <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
+    </bean>
     <bean class="org.dcache.restful.resources.selection.LinkResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.UnitResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.PartitionResources" scope="request"/>
@@ -536,7 +542,9 @@
     <bean class="org.dcache.restful.resources.space.SpaceManagerResources" scope="request">
         <property name="spaceReservationEnabled" value="${frontend.enable.space-reservation}"/>
     </bean>
-    <bean class="org.dcache.restful.resources.transfers.TransferResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.transfers.TransferResources" scope="request">
+        <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
+    </bean>
     <bean class="org.dcache.restful.resources.EventResources" scope="request">
         <property name="maximumDisconnectTimeout"
 		  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(

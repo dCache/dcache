@@ -65,13 +65,14 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -99,6 +100,7 @@ import org.dcache.restful.providers.billing.DoorTransferRecord;
 import org.dcache.restful.providers.billing.HSMTransferRecord;
 import org.dcache.restful.providers.billing.P2PTransferRecord;
 import org.dcache.restful.services.billing.BillingInfoService;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.util.histograms.Histogram;
 
 import static org.dcache.restful.providers.PagedList.TOTAL_COUNT_HEADER;
@@ -115,13 +117,12 @@ public class BillingResources {
 
     @Context
     private HttpServletResponse response;
-
+    private boolean unlimitedOperationVisibility;
 
     @GET
     @ApiOperation("Provides a list of read transfers for a specific PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
                 @ApiResponse(code = 404, message = "Not Found"),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
@@ -150,11 +151,14 @@ public class BillingResources {
         try {
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
+            Long suid = RequestUser.getSubjectUidForFileOperations(unlimitedOperationVisibility);
+
             PagedList<DoorTransferRecord> result = service.getReads(pnfsid,
                                                                     before,
                                                                     after,
                                                                     limit,
                                                                     offset,
+                                                                    suid,
                                                                     pool,
                                                                     door,
                                                                     client,
@@ -175,7 +179,6 @@ public class BillingResources {
     @ApiOperation("Provides a list of write transfers for a specific PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
                 @ApiResponse(code = 404, message = "Not Found"),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
@@ -204,11 +207,14 @@ public class BillingResources {
         try {
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
+            Long suid = RequestUser.getSubjectUidForFileOperations(unlimitedOperationVisibility);
+
             PagedList<DoorTransferRecord> result = service.getWrites(pnfsid,
                                                                      before,
                                                                      after,
                                                                      limit,
                                                                      offset,
+                                                                     suid,
                                                                      pool,
                                                                      door,
                                                                      client,
@@ -230,7 +236,7 @@ public class BillingResources {
             + "PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
+                @ApiResponse(code = 403, message = "p2p records are only available to admin users."),
                 @ApiResponse(code = 404, message = "Not Found"),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
@@ -256,6 +262,10 @@ public class BillingResources {
                                            @ApiParam("How to sort responses.")
                                            @DefaultValue("date")
                                            @QueryParam("sort") String sort) {
+        if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
+            throw new ForbiddenException("P2p records are only available to admin users.");
+        }
+
         try {
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
@@ -284,7 +294,7 @@ public class BillingResources {
     @ApiOperation("Provides a list of tape writes for a specific PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
+                @ApiResponse(code = 403, message = "store records are only available to admin users."),
                 @ApiResponse(code = 404, message = "Not Found"),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
@@ -306,6 +316,10 @@ public class BillingResources {
                                              @ApiParam("How to sort responses.")
                                              @DefaultValue("date")
                                              @QueryParam("sort") String sort) {
+        if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
+            throw new ForbiddenException("Store records are only available to admin users.");
+        }
+
         try {
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
@@ -332,7 +346,7 @@ public class BillingResources {
     @ApiOperation("Provide a list of tape reads for a specific PNFS-ID.")
     @ApiResponses({
                 @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Billing records are only available to admin users."),
+                @ApiResponse(code = 403, message = "restore records are only available to admin users."),
                 @ApiResponse(code = 404, message = "Not Found"),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
@@ -354,6 +368,10 @@ public class BillingResources {
                                                @ApiParam("How to sort responses.")
                                                @DefaultValue("date")
                                                @QueryParam("sort") String sort) {
+        if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
+            throw new ForbiddenException("Restore records are only available to admin users.");
+        }
+
         try {
             limit = limit == null ? Integer.MAX_VALUE: limit;
 
@@ -461,5 +479,10 @@ public class BillingResources {
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
         }
+    }
+
+    @Required
+    public void setUnlimitedOperationVisibility(boolean visibility) {
+       unlimitedOperationVisibility = visibility;
     }
 }

@@ -17,9 +17,6 @@
  */
 package org.dcache.restful.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.inject.Inject;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -78,6 +75,17 @@ public class RequestUser implements ContainerRequestFilter, ContainerResponseFil
         Boolean isAdmin = IS_ADMIN.get();
         checkState(isAdmin != null, "RequestUser#isAdmin called outside of REST request");
         return isAdmin;
+    }
+
+    public static boolean canViewFileOperations(boolean isUnlimitedVisibility)
+    {
+        return RequestUser.isAdmin() || isUnlimitedVisibility;
+    }
+
+    public static Long getSubjectUidForFileOperations(boolean isUnlimitedVisibility)
+    {
+        return canViewFileOperations(isUnlimitedVisibility) ?
+                        null : Subjects.getUid(getSubject());
     }
 
     public static void checkAuthenticated() throws NotAuthorizedException
