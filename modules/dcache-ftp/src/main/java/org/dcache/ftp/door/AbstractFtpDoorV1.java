@@ -4225,10 +4225,14 @@ public abstract class AbstractFtpDoorV1
         public synchronized void run()
         {
             try (CDC ignored = _cdc.restore()) {
-                CellMessage msg = new CellMessage(_pool, "mover ls -binary " + _moverId);
-                _cellEndpoint.sendMessage(msg, this, _executor, _timeout);
-                _lastQuerySent = Optional.of(Instant.now());
-                _querySendCount++;
+                try {
+                    CellMessage msg = new CellMessage(_pool, "mover ls -binary " + _moverId);
+                    _cellEndpoint.sendMessage(msg, this, _executor, _timeout);
+                    _lastQuerySent = Optional.of(Instant.now());
+                    _querySendCount++;
+                } catch (RuntimeException e) {
+                    LOGGER.error("Bug detected, please report this to <support@dcache.org>", e);
+                }
             }
         }
 
