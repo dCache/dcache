@@ -109,6 +109,32 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="7.1" author="tigran" dbms="postgresql">
+        <comment>Update f_create_inode stored procedure to return inumber for postgres 9.5+</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_create_inode_95(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS bigint AS $$
+            DECLARE
+                newid bigint;
+                ignored bigint;
+            BEGIN
+                INSERT INTO t_inodes VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0) RETURNING inumber INTO newid;
+                INSERT INTO t_dirs VALUES (parent, newid, name) ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING RETURNING ichild INTO ignored;
+                IF foo IS NULL
+                THEN
+                    RETURN NULL;
+                ELSE
+                    UPDATE t_inodes SET inlink=inlink+1,imtime=now,ictime=now,igeneration=igeneration+1 WHERE inumber = parent;
+                    RETURN newid;
+                END IF;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+
+        <rollback >
+            <dropProcedure procedureName="f_create_inode_95"/>
+        </rollback>
+    </changeSet>
+
     <changeSet id="8" author="behrmann">
         <comment>Rewrite t_tags to use inumber as foreign key</comment>
 
