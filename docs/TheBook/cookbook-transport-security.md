@@ -258,3 +258,21 @@ Troubleshooting security headers
 --------------------------------
 
 A good way to test whether your security headers are blocking operation of a WebDAV door or a dCache View portal, is to use the Web Console in Firefox or the DevTools in Chrome. These will show all items that are blocked because of policy headers.
+
+
+
+DNS CAA records
+===============
+
+CAA records indicate which CA (certificate authority) is allowed to sign certificates for a specific host name or domain. Here is an example:
+
+{{{
+webdav	IN	CAA     0 issue "Digicert.com"
+webdav	IN	CAA     0 iodef "mailto:helpdesk@example.org"
+}}}
+
+CAA records indicate that for the host webdav(.example.org), only Digicert is allowed to sign certificates. If an outsider asks another CA to sign a certificate for the same host, the other CA should check whether there is a CAA record, and refuse to sign the certificate when the CAA record does not authorize them. 
+
+In general CAA records are a good idea, however, Grid certificate authorities don't follow this standard (yet). So, CAA records will only stop commercial CAs, and not Grid CAs, from signing rogue certificates.
+
+CAA records can be easily generated with this generator: https://sslmate.com/caa/. This can also generate the legacy notation that is required for older Bind clients.
