@@ -1746,33 +1746,36 @@ public abstract class AbstractFtpDoorV1
     @Override
     public void shutdown()
     {
-        /*The producer consists of a pool of buffer space that holds records that haven't yet been
-          transmitted to the server as well as a background I/O thread
-          that is responsible for turning these records into requests and transmitting them to the cluster.
-          Failure to close the producer after use will leak these resources. Hence we need to  and close Kafka Producer
-         */
-        //TODO _sendToKafka checks if the shutdown() method has been called and whether the producer has been closed or not.
-        // currently  there is no method isClosed() in kafka API
-        if (_sendToKafka) {
-            _sendToKafka = false;
-            _kafkaProducer.close();
-        }
+        try {
+            /* In case of failure, we may have a transfer hanging around.
+             */
+            Transfer transfer = getTransfer();
+            if (transfer instanceof FtpTransfer) {
+                ((FtpTransfer)transfer).abort(new ClientAbortException(451, "Aborting transfer due to session termination"));
+            }
 
-        /* In case of failure, we may have a transfer hanging around.
-         */
-        Transfer transfer = getTransfer();
-        if (transfer instanceof FtpTransfer) {
-            ((FtpTransfer)transfer).abort(new ClientAbortException(451, "Aborting transfer due to session termination"));
-        }
+            /*The producer consists of a pool of buffer space that holds records that haven't yet been
+              transmitted to the server as well as a background I/O thread
+              that is responsible for turning these records into requests and transmitting them to the cluster.
+              Failure to close the producer after use will leak these resources. Hence we need to  and close Kafka Producer
+             */
+            //TODO _sendToKafka checks if the shutdown() method has been called and whether the producer has been closed or not.
+            // currently  there is no method isClosed() in kafka API
+            if (_sendToKafka) {
+                _sendToKafka = false;
+                _kafkaProducer.close();
+            }
 
-        _clientConnectionHandler.close();
-        _sessionAllPassive = false; // REVISIT see RFC 2428 Section 4.
+        } finally {
+            _clientConnectionHandler.close();
+            _sessionAllPassive = false; // REVISIT see RFC 2428 Section 4.
 
-        if (ACCESS_LOGGER.isInfoEnabled()) {
-            NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.ftp.disconnect").omitNullValues();
-            log.add("host.remote", _remoteSocketAddress);
-            log.add("session", CDC.getSession());
-            log.toLogger(ACCESS_LOGGER);
+            if (ACCESS_LOGGER.isInfoEnabled()) {
+                NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.ftp.disconnect").omitNullValues();
+                log.add("host.remote", _remoteSocketAddress);
+                log.add("session", CDC.getSession());
+                log.toLogger(ACCESS_LOGGER);
+            }
         }
     }
 
