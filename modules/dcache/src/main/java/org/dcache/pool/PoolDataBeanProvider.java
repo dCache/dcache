@@ -72,5 +72,5 @@ public interface PoolDataBeanProvider<T extends Serializable> {
      * @return the populated bean to be composed into a
      * {@link PoolData} object.
      */
-    T getDataObject();
+    T getDataObject() throws InterruptedException;
 }

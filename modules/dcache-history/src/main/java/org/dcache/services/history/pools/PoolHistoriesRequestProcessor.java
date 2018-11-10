@@ -69,6 +69,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -205,6 +206,18 @@ public final class PoolHistoriesRequestProcessor extends
         }
 
         long timestamp = System.currentTimeMillis();
+
+        Serializable errorObject = data.getErrorObject();
+
+        if (errorObject != null) {
+            LOGGER.warn("Problem with retrieval of live pool data for {}: {}.",
+                        key, errorObject.toString());
+            PoolData poolData = new PoolData();
+            PoolDataDetails details = new PoolDataDetails();
+            poolData.setDetailsData(details);
+            info.setInfo(poolData);
+            return info;
+        }
 
         PoolCostData poolCostData = data.getPoolCostData();
 

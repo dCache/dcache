@@ -289,7 +289,7 @@ public class SpaceSweeper2
     }
 
     @Override
-    public SweeperData getDataObject() {
+    public SweeperData getDataObject() throws InterruptedException {
         SweeperData info = new SweeperData();
         info.setLabel("Space Sweeper v2");
 
@@ -312,9 +312,6 @@ public class SpaceSweeper2
                 fileLifetime.add(lvalue.doubleValue());
             } catch (FileNotInCacheException e) {
                 // Ignored
-            } catch (InterruptedException e) {
-                // should exit
-                return null;
             } catch (CacheException e) {
                 // Continue trying
             }
