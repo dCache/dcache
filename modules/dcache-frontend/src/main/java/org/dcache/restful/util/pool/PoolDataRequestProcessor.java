@@ -61,9 +61,13 @@ package org.dcache.restful.util.pool;
 
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.Serializable;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
+
 import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.cells.json.CellData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolInfoWrapper;
@@ -123,11 +127,19 @@ public final class PoolDataRequestProcessor
         PoolInfoWrapper info = new PoolInfoWrapper();
         info.setKey(key);
 
+        Serializable errorObject = message.getErrorObject();
+
         /*
          *  NB:  the counts histogram is already part of the sweeper
          *  data object (data.getSweeperData().getLastAccessHistogram()).
          */
         info.setInfo(poolData);
+
+        if (errorObject != null) {
+            LOGGER.warn("Problem with retrieval of pool data for {}: {}.",
+                        key, errorObject.toString());
+            return info;
+        }
 
         try {
             handler.addHistoricalData(info);

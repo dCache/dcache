@@ -60,6 +60,8 @@ documents or software obtained from this server.
 package org.dcache.pool;
 
 import org.springframework.beans.factory.annotation.Required;
+
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -68,15 +70,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import diskCacheV111.pools.json.PoolCostData;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.Reply;
-
-import diskCacheV111.pools.json.PoolCostData;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
 
 import org.dcache.cells.MessageReply;
 import org.dcache.cells.json.CellData;
@@ -243,8 +245,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 request.setDetailsData(pool.getDataObject());
                 request.setCsmData(checksumModule.getDataObject());
                 request.setFlushData(flushController.getDataObject());
-                request.setHsmFlushQMData(
-                                hsmFlushQueueManager.getDataObject());
+                request.setHsmFlushQMData(hsmFlushQueueManager.getDataObject());
                 request.setJtmData(jobTimeoutManager.getDataObject());
                 MigrationData client = migrationClient.getDataObject();
                 MigrationData service = migrationServer.getDataObject();
@@ -259,7 +260,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 message.setData(request);
                 reply.reply(message);
             } catch (Exception e) {
-                reply.fail(message, e);
+                reply.fail(message, handleRuntimeException(e));
             }
         });
         return reply;
@@ -273,7 +274,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 message.setSweeperData(sweeper.getDataObject());
                 reply.reply(message);
             } catch (Exception e) {
-                reply.fail(message, e);
+                reply.fail(message, handleRuntimeException(e));
             }
         });
         return reply;
@@ -293,7 +294,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                                 message.getPnfsId()));
                 reply.reply(message);
             } catch (Exception e) {
-                reply.fail(message, e);
+                reply.fail(message, handleRuntimeException(e));
             }
         });
         return reply;
@@ -328,7 +329,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                                  .collect(Collectors.toList()));
                 reply.reply(info);
             } catch (Exception e) {
-                reply.fail(info, e);
+                reply.fail(info, handleRuntimeException(e));
             }
         });
         return reply;
@@ -380,7 +381,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 info.setData(data);
                 reply.reply(info);
             } catch (Exception e) {
-                reply.fail(info, e);
+                reply.fail(info, handleRuntimeException(e));
             }
         });
         return reply;
@@ -408,7 +409,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                                  .collect(Collectors.toList()));
                 reply.reply(info);
             } catch (Exception e) {
-                reply.fail(info, e);
+                reply.fail(info, handleRuntimeException(e));
             }
         });
         return reply;
@@ -436,7 +437,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                                  .collect(Collectors.toList()));
                 reply.reply(info);
             } catch (Exception e) {
-                reply.fail(info, e);
+                reply.fail(info, handleRuntimeException(e));
             }
         });
         return reply;
@@ -464,7 +465,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                                  .collect(Collectors.toList()));
                 reply.reply(info);
             } catch (Exception e) {
-                reply.fail(info, e);
+                reply.fail(info, handleRuntimeException(e));
             }
         });
         return reply;
@@ -568,5 +569,15 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         request.setState(info.getState());
         request.setThreadCount(info.getThreadCount());
         return request;
+    }
+
+    private Exception handleRuntimeException(Exception e) {
+        if (e instanceof RuntimeException) {
+            Thread thisThread = Thread.currentThread();
+            UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+            ueh.uncaughtException(thisThread, e);
+        }
+
+        return e;
     }
 }
