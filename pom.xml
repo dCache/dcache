@@ -1108,6 +1108,11 @@
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>0.8.2</version>
                 </plugin>
+                <plugin>
+                    <groupId>com.ruleoftech</groupId>
+                    <artifactId>markdown-page-generator-plugin</artifactId>
+                    <version>2.1.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1295,6 +1300,7 @@
         <module>modules/chimera</module>
         <module>modules/missingfiles-semsg</module>
         <module>plugins</module>
+        <module>docs</module>
         <module>packages</module>
         <module>archetypes</module>
     </modules>

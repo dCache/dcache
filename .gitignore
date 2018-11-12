@@ -2,6 +2,7 @@
 /modules/*/target/
 /packages/*/target/
 /plugins/*/target/
+/docs/*/target/
 
 ## Ignore Eclipse-generated files and directories
 ## The globbed version does not work on Mac OS X.9.
