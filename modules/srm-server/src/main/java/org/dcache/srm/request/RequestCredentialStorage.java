@@ -94,6 +94,14 @@ public interface RequestCredentialStorage {
     RequestCredential getRequestCredential(String name, String role);
 
     /**
+     * Return the credential with the longest remaining lifetime that
+     * matches the given name.  The returned credential may have any primary
+     * FQAN or have no primary FQAN at all.  If there is no match then null is
+     * returned.
+     */
+    RequestCredential getRequestCredential(String name);
+
+    /**
      * Search for the credential with the longest remaining lifetime that matches
      * the name and role Globs.  If role is null then only a credential with
      * no primary FQAN is returned.  If role is specified then only a credential

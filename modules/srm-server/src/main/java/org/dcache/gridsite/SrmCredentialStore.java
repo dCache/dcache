@@ -56,8 +56,7 @@ public class SrmCredentialStore implements CredentialStore
     @Override
     public X509Credential get(DelegationIdentity id) throws DelegationException
     {
-        RequestCredential credential =
-                _store.getRequestCredential(nameFromId(id), null);
+        RequestCredential credential = _store.getRequestCredential(nameFromId(id));
         assertThat(credential != null, "no stored credential", id);
         return credential.getDelegatedCredential();
     }
@@ -103,8 +102,7 @@ public class SrmCredentialStore implements CredentialStore
     @Override
     public Calendar getExpiry(DelegationIdentity id) throws DelegationException
     {
-        RequestCredential credential =
-                _store.getRequestCredential(nameFromId(id), null);
+        RequestCredential credential = _store.getRequestCredential(nameFromId(id));
 
         assertThat(credential != null, "no credential", id);
 
