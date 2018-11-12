@@ -157,6 +157,12 @@ public class HashtableRequestCredentialStorage
     }
 
     @Override
+    public RequestCredential getRequestCredential(String name)
+    {
+        return Iterables.find(store.values(), c -> c.getCredentialName().equals(name), null);
+    }
+
+    @Override
     public boolean hasRequestCredential(String name, String role)
     {
         return getRequestCredential(name, role) != null;
