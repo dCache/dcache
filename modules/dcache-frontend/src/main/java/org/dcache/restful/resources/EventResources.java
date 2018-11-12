@@ -474,7 +474,7 @@ public class EventResources
                 @ApiResponse(code = 404, message = "No such channel"),
             })
     @Path("/channels/{id}")
-    public void delete(@NotNull @PathParam("id") String id) throws IOException
+    public void deleteChannel(@NotNull @PathParam("id") String id) throws IOException
     {
         channelForId(id).close();
     }
@@ -598,7 +598,7 @@ public class EventResources
                 @ApiResponse(code = 404, message = "Not Found"),
             })
     @Path("/channels/{channel_id}/subscriptions/{type}/{subscription_id}")
-    public void delete(@NotNull @PathParam("channel_id") String channelId,
+    public void deleteSubscription(@NotNull @PathParam("channel_id") String channelId,
             @NotNull @PathParam("type") String eventType,
             @NotNull @PathParam("subscription_id") String subscriptionId) throws IOException
     {
