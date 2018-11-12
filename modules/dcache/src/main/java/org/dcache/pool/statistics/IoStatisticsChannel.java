@@ -99,17 +99,26 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
             firstWrite = now;
         }
         latestWrite = now;
-        if (!isClosed && concurrentWrites == 0) {
-            writeIdle.stop();
-            writeActive.start();
+
+        if (concurrentWrites++ == 0) {
+            if (writeIdle.isRunning()) {
+                writeIdle.stop();
+            }
+
+            if (!isClosed) {
+                writeActive.start();
+            }
         }
-        return ++concurrentWrites;
+        return concurrentWrites;
     }
 
     private synchronized void writeCompleted()
     {
         if (--concurrentWrites == 0) {
-            writeActive.stop();
+            if (writeActive.isRunning()) {
+                writeActive.stop();
+            }
+
             if (!isClosed) {
                 writeIdle.start();
             }
@@ -123,17 +132,26 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
             firstRead = now;
         }
         latestRead = now;
-        if (!isClosed && concurrentReads == 0) {
-            readIdle.stop();
-            readActive.start();
+
+        if (concurrentReads++ == 0) {
+            if (readIdle.isRunning()) {
+                readIdle.stop();
+            }
+
+            if (!isClosed) {
+                readActive.start();
+            }
         }
-        return ++concurrentReads;
+        return concurrentReads;
     }
 
     private synchronized void readCompleted()
     {
         if (--concurrentReads == 0) {
-            readActive.stop();
+            if (readActive.isRunning()) {
+                readActive.stop();
+            }
+
             if (!isClosed) {
                 readIdle.start();
             }
@@ -310,13 +328,15 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
                 if (concurrentReads == 0) {
                     readIdle.stop();
                 } else {
-                    LOGGER.debug("close called with in-flight read request");
+                    LOGGER.warn("close called with in-flight read request");
+                    // allow in-flight read request(s) to stop readActive stopwatch.
                 }
 
                 if (concurrentWrites == 0) {
                     writeIdle.stop();
                 } else {
-                    LOGGER.debug("close called with in-flight write request");
+                    LOGGER.warn("close called with in-flight write request");
+                    // allow in-flight write request(s) to stop writeActive stopwatch.
                 }
             }
         }
