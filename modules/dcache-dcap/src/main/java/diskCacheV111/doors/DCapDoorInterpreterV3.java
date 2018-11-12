@@ -2548,7 +2548,7 @@ public class DCapDoorInterpreterV3
         _kafkaProducer.send(record, (rm, e) -> {
             if (e != null) {
                 _log.error("Unable to send message to topic {} on  partition {}: {}",
-                        rm.topic(), rm.partition(), e.getMessage());
+                        record.topic(), record.partition(), e.getMessage());
             }
         });
     }
