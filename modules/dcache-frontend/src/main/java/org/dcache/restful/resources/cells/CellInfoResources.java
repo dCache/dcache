@@ -113,7 +113,7 @@ public final class CellInfoResources {
             })
     @Path("/{address}")
     @Produces(MediaType.APPLICATION_JSON)
-    public CellData getCellData(
+    public CellData getCell(
                     @ApiParam(value="The cell to query", example="cell@domain")
                     @PathParam("address") String address)throws CacheException {
         return service.getCellData(address);
@@ -127,7 +127,7 @@ public final class CellInfoResources {
                 @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
             })
     @Produces(MediaType.APPLICATION_JSON)
-    public CellData[] getCellData()throws CacheException {
+    public CellData[] getCells()throws CacheException {
         return Arrays.stream(service.getAddresses())
                      .map(service::getCellData)
                      .collect(Collectors.toList())
