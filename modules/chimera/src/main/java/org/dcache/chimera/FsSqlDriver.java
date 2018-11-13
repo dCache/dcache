@@ -83,6 +83,31 @@ import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 public class FsSqlDriver {
 
     /**
+     * Simple class to hold a tag assignment's directory inumber and its value.
+     */
+    private class LocatedPrimaryTag
+    {
+        private final long inumber;
+        private final byte[] value;
+
+        LocatedPrimaryTag(long inumber, byte[] value)
+        {
+            this.inumber = inumber;
+            this.value = value;
+        }
+
+        public long getInumber()
+        {
+            return inumber;
+        }
+
+        public byte[] getValue()
+        {
+            return value;
+        }
+    }
+
+    /**
      * logger
      */
     private static final Logger _log = LoggerFactory.getLogger(FsSqlDriver.class);
@@ -528,14 +553,16 @@ public class FsSqlDriver {
      * @return
      */
     String inode2path(FsInode inode, FsInode startFrom) {
-        if (inode.equals(startFrom)) {
+        return inode2path(inode.ino(), startFrom.ino());
+    }
+
+    protected String inode2path(long elementId, long root) {
+        if (elementId == root) {
             return "/";
         }
 
         try {
             List<String> pList = new ArrayList<>();
-            long root = startFrom.ino();
-            long elementId = inode.ino();
             do {
                 Map<String, Object> map = _jdbc.queryForMap(
                         "SELECT iparent, iname FROM t_dirs WHERE ichild=?", elementId);
@@ -1189,6 +1216,24 @@ public class FsSqlDriver {
 
         return len;
 
+    }
+
+    /**
+     * Find all origin tags that have a specific name.
+     * @param name the tag name to search
+     * @return the locations and values of those tags.
+     */
+    public List<OriginTag> findTags(String name)
+    {
+        List<LocatedPrimaryTag> tags = _jdbc.query("SELECT inumber,ivalue"
+                + " FROM t_tags t JOIN t_tags_inodes i ON t.itagid = i.itagid"
+                + " WHERE t.itagname=? AND t.isorign=1",
+                ps -> ps.setString(1, name),
+                (rs,row) -> new LocatedPrimaryTag(rs.getLong(1), rs.getBytes(2)));
+
+        return tags.stream()
+                .map(t -> new OriginTag(inode2path(t.getInumber(), _root), t.getValue()))
+                .collect(Collectors.toList());
     }
 
     void incTagNlink(long tagId) {

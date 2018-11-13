@@ -289,6 +289,16 @@ public interface FileSystemProvider extends Closeable {
 
     void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException;
 
+    /**
+     * Find a list of origin tags that have the supplied name.  Origin tags are
+     * those tags explicitly created in the namespace.  Tags that are inherited
+     * automatically are not origin tags and are not include in the response.
+     * @param tagName The name of the origin tag.
+     * @return a list of origin tags
+     * @throws ChimeraFsException if there is any problem
+     */
+    List<OriginTag> findTags(String tagName) throws ChimeraFsException;
+
     int getFsId();
 
     void setStorageInfo(FsInode inode,

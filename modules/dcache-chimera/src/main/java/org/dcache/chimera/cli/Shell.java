@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -55,6 +56,7 @@ import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.NotDirChimeraException;
+import org.dcache.chimera.OriginTag;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
 import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
@@ -604,6 +606,40 @@ public class Shell extends ShellApplication
             }
             fs.remove(inode);
             return null;
+        }
+    }
+
+    @Command(name = "findtags", hint = "find origin tags in the filesystem",
+            description = "Search chimera for all origin tags with the given"
+                    + " tag name.  An origin tag is one that is created"
+                    + " explicitly, with a specific value.  Tags that are"
+                    + " inherited, and so created automatically, are not"
+                    + " included in the output.\n"
+                    + "\n"
+                    + "The output consists of the directory path in which the"
+                    + " tag is defined followed by the value of the tag.")
+    public class FindTagsCommand implements Callable<Serializable>
+    {
+        @Argument(index = 0)
+        String name;
+
+        @Override
+        public Serializable call() throws ChimeraFsException
+        {
+            List<OriginTag> tags = fs.findTags(name);
+
+            StringBuilder sb = new StringBuilder();
+            for (OriginTag tag : tags) {
+                if (sb.length() != 0) {
+                    sb.append('\n');
+                }
+                sb.append(tag.getPath()).append('\n');
+                String tagValue = new String(tag.getValue(), StandardCharsets.UTF_8);
+                for (String line : tagValue.split("\\r?\\n")) {
+                    sb.append("    ").append(line).append('\n');
+                }
+            }
+            return sb.toString();
         }
     }
 
