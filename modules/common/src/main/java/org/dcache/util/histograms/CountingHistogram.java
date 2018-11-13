@@ -126,7 +126,7 @@ public class CountingHistogram extends HistogramModel {
         long[] histogram = new long[binCount];
 
         for (Double d : data) {
-            ++histogram[(int) FastMath.round(d / binSize)];
+            ++histogram[(int) FastMath.floor(d / binSize)];
         }
 
         data = new ArrayList<>();
