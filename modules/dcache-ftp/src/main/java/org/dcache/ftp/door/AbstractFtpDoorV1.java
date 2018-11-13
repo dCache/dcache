@@ -1711,20 +1711,23 @@ public abstract class AbstractFtpDoorV1
     @Override
     public void shutdown()
     {
-        /* In case of failure, we may have a transfer hanging around.
-         */
-        Transfer transfer = getTransfer();
-        if (transfer instanceof FtpTransfer) {
-            ((FtpTransfer)transfer).abort(new ClientAbortException(451, "Aborting transfer due to session termination"));
-        }
+        try {
+            /* In case of failure, we may have a transfer hanging around.
+             */
+            Transfer transfer = getTransfer();
+            if (transfer instanceof FtpTransfer) {
+                ((FtpTransfer)transfer).abort(new ClientAbortException(451, "Aborting transfer due to session termination"));
+            }
 
-        closePassiveModeServerSocket();
+        } finally {
+            closePassiveModeServerSocket();
 
-        if (ACCESS_LOGGER.isInfoEnabled()) {
-            NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.ftp.disconnect").omitNullValues();
-            log.add("host.remote", _remoteSocketAddress);
-            log.add("session", CDC.getSession());
-            log.toLogger(ACCESS_LOGGER);
+            if (ACCESS_LOGGER.isInfoEnabled()) {
+                NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.ftp.disconnect").omitNullValues();
+                log.add("host.remote", _remoteSocketAddress);
+                log.add("session", CDC.getSession());
+                log.toLogger(ACCESS_LOGGER);
+            }
         }
     }
 
