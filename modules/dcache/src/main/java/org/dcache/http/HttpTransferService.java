@@ -22,6 +22,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.cors.CorsConfig;
+import io.netty.handler.codec.http.cors.CorsConfigBuilder;
+import io.netty.handler.codec.http.cors.CorsHandler;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -45,6 +48,9 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.util.NetworkUtils;
+
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpMethod.*;
 
 /**
  * Netty-based HTTP transfer service.
@@ -167,6 +173,14 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
         if (!customHeaders.isEmpty()) {
             pipeline.addLast("custom-headers", new CustomResponseHeadersHandler(customHeaders));
         }
+
+        CorsConfig corsConfig = CorsConfigBuilder.forAnyOrigin()
+                .allowNullOrigin()
+                .allowedRequestMethods(GET, PUT, HEAD)
+                .allowedRequestHeaders(CONTENT_TYPE, AUTHORIZATION, CONTENT_MD5,
+                        "Want-Digest", "suppress-www-authenticate")
+                .build();
+        pipeline.addLast("cors", new CorsHandler(corsConfig));
 
         pipeline.addLast("transfer", new HttpPoolRequestHandler(this, chunkSize));
     }
