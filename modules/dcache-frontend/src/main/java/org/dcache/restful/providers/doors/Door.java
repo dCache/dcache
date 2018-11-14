@@ -1,12 +1,14 @@
 package org.dcache.restful.providers.doors;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.common.net.InetAddresses;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import dmg.cells.services.login.LoginBrokerInfo;
 
@@ -66,7 +68,9 @@ public final class Door
         protocol = info.getProtocolFamily();
         version = info.getProtocolVersion();
         root = info.getRoot();
-        addresses = info.getAddresses();
+        addresses = info.getAddresses().stream()
+                .filter(a -> !InetAddresses.isInetAddress(a.getHostName()))
+                .collect(Collectors.toList());
         port = info.getPort();
         load = info.getLoad();
         tags = info.getTags();
