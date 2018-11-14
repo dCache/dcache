@@ -1,6 +1,7 @@
 package org.dcache.gplazma.plugins;
 
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
+import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -13,10 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.security.Principal;
-import java.security.cert.CRLException;
-import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
+import java.security.cert.CertPath;
+import java.security.cert.CRLException;
+import java.security.cert.X509Certificate;
+import java.security.Principal;
 import java.util.Base64;
 import java.util.List;
 import java.util.Properties;
@@ -100,7 +102,13 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
                         random.nextBytes(rawId);
                         String id = Base64.getEncoder().withoutPadding().encodeToString(rawId);
                         String message = buildErrorMessage(result.getValidationErrors());
-                        LOG.warn("Validation failure {}: {}", id, message);
+                        X509Certificate[] chain = CertPaths.getX509Certificates((CertPath) credential);
+                        X509Certificate eec = ProxyUtils.getEndUserCertificate(chain);
+                        if (eec == null) {
+                            LOG.warn("Validation failure {}: {}", id, message);
+                        } else {
+                            LOG.warn("Validation failure {} for DN \"{}\": {}", id, eec.getSubjectX500Principal().getName(), message);
+                        }
                         if (ids == null) {
                             ids = id;
                         } else {
