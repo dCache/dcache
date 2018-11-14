@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2018 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,6 +28,7 @@ import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
@@ -320,9 +321,13 @@ public class AccessLogAwareOperationFactory extends MDSOperationFactory {
 
             int status = nfsstat.NFS_OK;
             try {
-                FsInode cInode = _jdbcFs.inodeOf(cParentInode, name, FileSystemProvider.StatCacheOption.NO_STAT);
+                try {
+                    FsInode cInode = _jdbcFs.inodeOf(cParentInode, name, FileSystemProvider.StatCacheOption.NO_STAT);
+                    nl.add("obj.id", cInode.getId());
+                } catch (ChimeraFsException e) {
+                    // swallow non runtime exceptions and len nfs to fail properly
+                }
                 super.process(context, result);
-                nl.add("obj.id", cInode.getId());
             } catch (ChimeraNFSException e) {
                 status = e.getStatus();
                 throw e;
