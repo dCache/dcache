@@ -28,13 +28,12 @@ import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
-import org.dcache.nfs.status.NoEntException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.MDSOperationFactory;
@@ -322,15 +321,16 @@ public class AccessLogAwareOperationFactory extends MDSOperationFactory {
 
             int status = nfsstat.NFS_OK;
             try {
-                FsInode cInode = _jdbcFs.inodeOf(cParentInode, name, FileSystemProvider.StatCacheOption.NO_STAT);
+                try {
+                    FsInode cInode = _jdbcFs.inodeOf(cParentInode, name, FileSystemProvider.StatCacheOption.NO_STAT);
+                    nl.add("obj.id", cInode.getId());
+                } catch (ChimeraFsException e) {
+                    // swallow non runtime exceptions and len nfs to fail properly
+                }
                 super.process(context, result);
-                nl.add("obj.id", cInode.getId());
             } catch (ChimeraNFSException e) {
                 status = e.getStatus();
                 throw e;
-            } catch (FileNotFoundHimeraFsException e) {
-                status = nfsstat.NFSERR_NOENT;
-                throw new NoEntException("not found: " + name, e);
             } finally {
                 nl.add("nfs.status", nfsstat.toString(status));
                 nl.log();
