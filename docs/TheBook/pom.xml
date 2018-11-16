@@ -29,9 +29,11 @@
 	  <configuration>
             <inputDirectory>${basedir}/src/main/markdown</inputDirectory>
             <outputDirectory>${basedir}/target/html</outputDirectory>
+	    <headerHtmlFile>${basedir}/src/main/html-fragments/header.html</headerHtmlFile>
+	    <footerHtmlFile>${basedir}/src/main/html-fragments/footer.html</footerHtmlFile>
 	    <transformRelativeMarkdownLinks>true</transformRelativeMarkdownLinks>
 	    <pegdownExtensions>SMARTYPANTS,HARDWRAPS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS</pegdownExtensions>
-	    <copyDirectories>images</copyDirectories>
+	    <copyDirectories>css,images</copyDirectories>
 	  </configuration>
       </plugin>
     </plugins>
