@@ -63,6 +63,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -1016,16 +1017,17 @@ public class NFSv41Door extends AbstractCellComponent implements
                 status = "idle";
             }
 
-            return String.format("    %s : %s : %s %s@%s, OS=%s, cl=[%s], status=[%s]",
+            return String.format("    %s : %s : %s %s@%s, OS=%s, cl=[%s], status=[%s], redirected=%b",
                     DateTimeFormatter.ISO_OFFSET_DATE_TIME
                             .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(getCreationTime()), timeZone)),
                     getPnfsId(),
                     isWrite() ? "WRITE" : "READ",
                     getMoverId(),
-                    getPool(),
+                    Optional.ofNullable(getPool()).map(Pool::getName).orElse("N/A"),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress(),
-                    status);
+                    status,
+                    getRedirect() != null);
         }
 
         Inode getInode() {
@@ -1257,14 +1259,18 @@ public class NFSv41Door extends AbstractCellComponent implements
          */
         void recallLayout(ScheduledExecutorService executorService) {
 
-            if (getRedirect() == null) {
-                // client don't have a layout at all
-                return;
-            }
-
             ChimeraNFSException e = isWrite() ? POISON : DELAY;
             if (!enforceErrorIfRunning(e)) {
                 // alredy recalled
+                return;
+            }
+
+            /**
+             * pool selection complete, but no mover or redirect. Forget transfer.
+             */
+            if (getMoverId() == null || getRedirect() == null) {
+                _log.info("Forgeting transfer {}", this);
+                cleanup();
                 return;
             }
 
@@ -1278,6 +1284,20 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             _log.info("Recalling layout from {}", _client);
             executorService.submit(new FireAndForgetTask(new LayoutRecallTask(this, executorService)));
+        }
+
+        /**
+         * clean all internal states to simulate a new transfer
+         */
+        private void cleanup() {
+
+            // writes should stay poisoned to fail on client retry.
+            if (!isWrite()) {
+                _ioMessages.remove(_openStateid.stateid());
+            }
+            killMover(0, "layout recall on pool down");
+            // keep NFSTransfer#shutdown happy
+            finished((CacheException) null);
         }
     }
 
