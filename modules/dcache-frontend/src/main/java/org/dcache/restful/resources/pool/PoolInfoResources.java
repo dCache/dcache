@@ -77,22 +77,24 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -178,12 +180,21 @@ public final class PoolInfoResources {
 
     @GET
     @ApiOperation("Get information about a specific pool (name, group membership, links).")
+    @ApiResponses({
+                @ApiResponse(code = 404, message = "Not Found"),
+                @ApiResponse(code = 500, message = "Internal Server Error"),
+            })
     @Path("/{pool}")
     @Produces(MediaType.APPLICATION_JSON)
     public Pool getPool(@ApiParam(value = "The pool to be described.",
                                 required = true)
                         @PathParam("pool") String pool) {
-        return new Pool(pool, poolMonitor.getPoolSelectionUnit());
+        try {
+            return new Pool(pool, poolMonitor.getPoolSelectionUnit());
+        }
+        catch (NoSuchElementException e) {
+             throw new NotFoundException(e);
+        }
     }
 
 
