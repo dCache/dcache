@@ -17,9 +17,13 @@
  */
 package org.dcache.http;
 
+import com.google.common.net.InetAddresses;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.HttpProtocolInfo;
+
 import dmg.cells.nucleus.CDC;
+
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import io.netty.channel.ChannelPipeline;
@@ -28,10 +32,13 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -80,9 +87,19 @@ public class HttpsTransferService extends HttpTransferService {
             throws SocketException, CacheException, URISyntaxException {
 
         URI plainUrl = super.getUri(protocolInfo, port, uuid);
+        String host = plainUrl.getHost();
+        try {
+            if (InetAddresses.isInetAddress(host)) {
+                // An IP address is unlikely to be in the X.509 host credential.
+                host = InetAddress.getByName(host).getCanonicalHostName();
+            }
+        } catch (UnknownHostException e) {
+            // This should not happen as getByName should never throw this
+            // exception for a valid IP address
+        }
         return new URI(PROTOCOL_HTTPS,
                 plainUrl.getUserInfo(),
-                plainUrl.getHost(),
+                host,
                 plainUrl.getPort(),
                 plainUrl.getPath(),
                 plainUrl.getQuery(),
