@@ -63,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,6 +87,7 @@ import org.dcache.util.collector.pools.PoolInfoAggregator;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.histograms.CountingHistogram;
 import org.dcache.util.histograms.TimeseriesHistogram;
+import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
 
@@ -146,6 +148,48 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
                         timeseries.get(TimeseriesType.FILE_LIFETIME_STDDEV));
     }
 
+    /*
+     *  First try to fetch the stored aggregate histogram.
+     *  Failing that, do the aggregation here.
+     */
+    public CountingHistogram getAggregateFileLifetime(String poolGroup,
+                                                      List<PoolInfoWrapper> pools){
+        AggregateFileLifetimeRequestMessage message
+                        = new AggregateFileLifetimeRequestMessage(poolGroup);
+
+        try {
+            message = historyService.sendAndWait(message,
+                                                 historyService.getTimeoutInMillis(),
+                                                 RETRY_ON_NO_ROUTE_TO_CELL);
+        } catch (NoRouteToCellException | InterruptedException | TimeoutCacheException e) {
+            LOGGER.debug("Could not fetch aggregated lifetime data for {}: {}.",
+                         poolGroup, e.getMessage());
+        } catch (CacheException e) {
+            LOGGER.warn("Could not fetch aggregated lifetime data for {}: {}.",
+                        poolGroup, e.getMessage());
+        }
+
+        Serializable error = message.getErrorObject();
+
+        if (error != null) {
+            LOGGER.warn("Could not fetch aggregated lifetime data for {}: {}.",
+                         message.getPoolGroup(), error);
+        }
+
+        CountingHistogram histogram = message.getAggregateLifetime();
+
+        /*
+         *  If missing, try to merge here.
+         */
+        if (histogram == null) {
+            LOGGER.info("Fetch of aggregated lifetime histogram unsuccessful; "
+                                        + "merging data here.");
+            histogram = PoolInfoCollectorUtils.mergeLastAccess(pools);
+        }
+
+        return histogram;
+    }
+
     @Override
     public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String pool,
                                                                   Set<TimeseriesType> types)
@@ -200,16 +244,16 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
              .filter(Objects::nonNull)
              .forEach(groupSpace::aggregateData);
 
-        CountingHistogram model = PoolInfoCollectorUtils.mergeLastAccess(pools);
-
         PoolData poolData = new PoolData();
         PoolDataDetails details = new PoolDataDetails();
         poolData.setDetailsData(details);
         details.setCostData(groupCost);
+        group.setInfo(poolData);
+
+        CountingHistogram model = getAggregateFileLifetime(group.getKey(), pools);
         SweeperData sweeperData = new SweeperData();
         sweeperData.setLastAccessHistogram(model);
         poolData.setSweeperData(sweeperData);
-        group.setInfo(poolData);
 
         try {
             addHistoricalData(group);

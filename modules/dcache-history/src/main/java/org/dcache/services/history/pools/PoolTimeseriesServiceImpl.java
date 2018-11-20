@@ -70,8 +70,10 @@ import java.util.concurrent.Executor;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.vehicles.Message;
+
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
+
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.poolmanager.PoolMonitor;
@@ -80,6 +82,7 @@ import org.dcache.util.collector.ListenableFutureWrapper;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.collector.pools.PoolLiveDataCollector;
 import org.dcache.util.histograms.TimeseriesHistogram;
+import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
 import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
@@ -183,6 +186,22 @@ public final class PoolTimeseriesServiceImpl extends
             try {
                 message.setHistogramMap(getTimeseries(message.getPool(),
                                                       message.getKeys()));
+                reply.reply(message);
+            } catch (Exception e) {
+                reply.fail(message, e);
+            }
+        });
+        return reply;
+    }
+
+    public Reply messageArrived(AggregateFileLifetimeRequestMessage message) {
+        MessageReply<Message> reply = new MessageReply<>();
+        executor.execute(() -> {
+            try {
+                message.setAggregateLifetime(getWrapper(message.getPoolGroup())
+                                                               .getInfo()
+                                                               .getSweeperData()
+                                                               .getLastAccessHistogram());
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
