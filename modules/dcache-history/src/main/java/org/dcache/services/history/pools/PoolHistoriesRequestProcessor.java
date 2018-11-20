@@ -197,6 +197,14 @@ public final class PoolHistoriesRequestProcessor extends
     protected PoolInfoWrapper process(String key,
                                       PoolLiveDataForHistoriesMessage data,
                                       long sent) {
+        Serializable errorObject = data.getErrorObject();
+
+        if (errorObject != null) {
+            LOGGER.warn("Problem with retrieval of live pool data for {}: {}.",
+                        key, errorObject.toString());
+            return null;
+        }
+
         PoolInfoWrapper info = service.getWrapper(key);
 
         if (info == null) {

@@ -112,6 +112,13 @@ public final class PoolDataRequestProcessor
     protected PoolInfoWrapper process(String key,
                                       PoolDataRequestMessage message,
                                       long sent) {
+        Serializable errorObject = message.getErrorObject();
+        if (errorObject != null) {
+            LOGGER.warn("Problem with retrieval of pool data for {}: {}.",
+                        key, errorObject.toString());
+            return null;
+        }
+
         PoolData poolData = message.getData();
 
         CellData cellData = poolData == null ? null : poolData.getCellData();
