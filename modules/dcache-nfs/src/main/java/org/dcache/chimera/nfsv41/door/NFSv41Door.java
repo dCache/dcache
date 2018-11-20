@@ -1056,7 +1056,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 throw  error;
             }
 
-            if (_redirectFuture == null) {
+            boolean isFirstAttempt = _redirectFuture == null;
+            if (isFirstAttempt) {
 
                 readNameSpaceEntry(_ioMode == layoutiomode4.LAYOUTIOMODE4_RW);
 
@@ -1110,12 +1111,12 @@ public class NFSv41Door extends AbstractCellComponent implements
             }
 
             /*
-             * If we wait for offline file, then there is no need to block.
-             * The async reply will update _redirectFuture when it's timed out or
-             * ready.
+             * If already have triggered selection process, then there are no
+             * reasons to block. The async reply will update _redirectFuture when
+             * it's timed out or ready.
              */
-            if (!isWrite() && !getOnlineFilesOnly() && !_redirectFuture.isDone()) {
-                throw new LayoutTryLaterException("Wating for file to become online.");
+            if (!isFirstAttempt && !_redirectFuture.isDone()) {
+                throw new LayoutTryLaterException("Waiting for pool to become ready.");
             }
 
             try {
