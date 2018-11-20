@@ -10,13 +10,18 @@ Table of Contents
 * [Protocols Supported by dCache](#protocols-supported-by-dcache)
 * [Logging](#logging)
 
-dCache is a distributed storage solution. It organises storage across computers so the combined storage can be used without the end-users being aware of where their data is stored. They simply see a large amount of storage.
+dCache is a distributed storage system providing location independent access to data.
+The data are stored across multiple data servers as complete files presented to end-user via single rooted namespace. 
 
-Because end-users do not need to know on which computer their data is stored, it can be migrated from one computer to another without any interruption of service. As a consequence, (new) servers may be added to or taken away from the dCache storage cluster at any time.
+As physical location of the data are not exposed to user it can be migrated from one data server to another without 
+interruption of service. Therefore the system can be expanded or contracted by adding / removing data servers at any time.
 
-dCache supports requesting data from a tertiary storage system. Such systems typically store data on magnetic tapes instead of disks, which must be loaded and unloaded using a tape robot. The main reason for using tertiary storage is the better cost-efficiency, archiving a very large amount of data on rather inexpensive hardware. In turn the access latency for archived data is significantly higher.
+dCache supports requesting data from a tertiary storage system. Such systems typically store data on magnetic tapes instead of disks, which must be loaded and unloaded using a tape robot. The main reason for using tertiary storage is cost-efficiency 
+of archiving a very large amount of data on less expensive hardware. Slower media or limited resources (like number of tape drives) 
+of tertiary storage systems lend themselves to significantly higher access latency for archived data.
 
-dCache also supports many transfer protocols (allowing users to read and write to data). These have a modular deployment, allowing dCache to support expanded capacity by providing additional front-end machines.
+dCache supports many data transfer protocols (allowing users to read and write to data). These protocols are implemented as 
+services that have modular deployment, allowing dCache to support expanded capacity by providing additional front-end machines.
 
 Another performance feature of dCache is hot-spot data migration. In this process, dCache will detect when files are requested very often. If this happens, dCache can generate duplicates of the popular files on other computers. This allows the load to be spread across multiple machines, so increasing throughput.
 

@@ -1,5 +1,5 @@
-Chapter 3. Getting in Touch with dCache
-=======================================
+Chapter 3. Getting to know dCache
+=================================
 
 Table of Contents
 ------------------
@@ -171,38 +171,56 @@ THE ADMIN INTERFACE
 FIRST STEPS
 -----------
 
-dCache has a powerful administration interface. It can be accessed with the **ssh1** or with the **ssh2** protocol. The server is part of the **adminDoor** domain.
+dCache has a powerful administration interface. It can be accessed with **ssh** protocol. 
+The server is part of the **adminDoor** domain.
 
-It is useful to define the admin service in a seperate domain. This allowes to restart the admin service seperatly from other services. In the example in [the section called “Installing a dCache instance”](install.md) this domain was called adminDoorDomain.
+It is useful to define the admin service in a seperate domain. This allows to restart the admin service separately from 
+other services. In the example in [the section called “Installing a dCache instance”](install.md) this domain was called 
+adminDoorDomain.
 
 > EXAMPLE:
     [adminDoorDomain]  
     [adminDoorDomain/admin]  
-
-> **NOTE**
->
-> The admin interface is using **ssh2**. It used to be available using `ssh1`, which is insecure and therefore discouraged. If you want to run the admin service with ssh1 you need to define the ssh1 service.
->
->     [adminDoorDomain]
->     [adminDoorDomain/ssh1]
->
-
-ACCESS WITH SSH2
-----------------
-
-There are two ways of authorizing administrators to access the dCache `ssh2` admin interface. The preferred method authorizes users through their public key. The second method employs `gPlazma2` and the **dcache.kpwd** file. Thereby authorization mechanisms can be added later by deploying another `gPlazma2` plugin. The configuration of both authorization mechanisms is described in the following.
-
-
-
+   
 > **Note**
 >
 > All configurable values of the ssh2 admin interface can be found in the **/usr/share/dcache/defaults/admin.properties** file. Please do NOT change any value in this file. Instead enter the key value combination in the **/etc/dcache/dcache.conf**.
 
 
+ACCESS WITH SSH
+---------------
+
+`admin` service embeds `ssh` server listening on port 22224 (configurable) and supports the following authentication mechanisms :
+
+- kerberos 
+- password 
+- public key authentication. 
+
+The mechanisms can be enabled by setting the following variable:
+
+```
+   admin.ssh.authn.enabled = password,publickey,kerberos
+
+```
+(comma separated mechanism names). By default `publickey` and `password` are enabled.  To enable `kerberos` it needs to be added to the
+list. To complete `kerberos` setup the following variable needs to be defined:
+```
+   dcache.authn.kerberos.realm=EXAMPLE.ORG
+
+``` 
+and `admin.ssh.authn.kerberos.keytab-file` should point existing keytab file. Default is `/etc/krb5.keytab`.
+
+There are two ways of authorizing administrators to access the dCache `ssh` admin interface. 
+The preferred method authorizes users through their public key. 
+The second method uses `gPlazma` `kpwd` plugin. 
+The configuration of both authorization mechanisms is described in below. 
+
 
 ### Public Key Authorization
 
-To authorize administrators through their public key just insert it into the file **authorized_keys2** which should by default be in the directory **/etc/dcache/admin** as specified in the file **/usr/share/dcache/defaults/admin.properties** under admin.paths.authorized-keys=. Keys have to be in one line and should have a standard format, such as:
+To authorize administrators through their public key just insert it into the file **authorized_keys2** which should by 
+default be in the directory **/etc/dcache/admin** as specified in the file **/usr/share/dcache/defaults/admin.properties** 
+under `admin.paths.authorized-keys`. Keys have to be in one line and should have a standard format, such as:
 
     ssh-dss AAAAB3....GWvM= /Users/JohnDoe/.ssh/id_dsa
 
@@ -214,20 +232,22 @@ To authorize administrators through their public key just insert it into the fil
 >
 > You may omit the part behind the equal sign as it is just a comment and not used by dCache.
 
-Key-based authorization will always be the default. In case the user key can not be found in the file **authorized_keys2** or the file does not exist, ssh2Admin will fall back to authorizing the user via `gPlazma2` and the **dcache.kpwd** file.
-
+Key-based authorization is default with fallback to `gPlazma` `kpwd` plugin. 
 
 
 Now you can login to the admin interface by
+```
 
-    [user] $ ssh -l admin -p 22224 headnode.example.org
+      [user] $ ssh -p 22224 -l admin headnode.example.org
+      dCache (<version>)
+      Type "\?" for help.
 
-         dCache Admin (VII) (user=admin)
+      [headnode] (local) admin > 
+```
 
 
-    (local) admin >
 
-### Access via **gPlazma2** and the **dcache.kpwd** File
+### Access via **gPlazma** and the **dcache.kpwd** File
 
 To use `gPlazma` make sure that you defined a `gPlazmaDomain` in your layout file.
 
@@ -236,21 +256,15 @@ To use `gPlazma` make sure that you defined a `gPlazmaDomain` in your layout fil
 >   
 >    <gplazma-${host.name}>Domain    
 >    <gplazma-${host.name}>Domain/gplazma    
+  
+  
+`gPlazma` configuration file **/etc/dcache/gplazma.conf** has to look like:
 
-To use gPlazma2 you need to specify it in the **/etc/dcache/dcache.conf** file:    
-
->     This is the main configuration file of dCache.  
->      
->    ...  
->      
->     use gPlazma2  
->    gplazma.version=2   
-
-Moreover, you need to create the file **/etc/dcache/gplazma.conf** with the content  
-
->    auth optional kpwd "kpwd=etc/dcache/dcache.kpwd"   
->    map optional kpwd "kpwd=etc/dcache/dcache.kpwd"   
->    session optional kpwd "kpwd=etc/dcache/dcache.kpwd"   
+```
+auth    sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
+map     sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
+session sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
+```
 
 and add the user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dcache` script.  
 
@@ -265,20 +279,35 @@ and add the user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dc
 
 adds this to the **/etc/dcache/dcache.kpwd** file:  
 
->    # set pwd    
->    passwd admin 4091aba7 read-write 12345 1000 / /  
+```
+   # set pwd    
+   passwd admin 4091aba7 read-write 12345 1000 / /  
 
-Edit the file **/etc/dcache/dcachesrm-gplazma.policy** to switch on the `kpwd-plugin`. For more information about `gPlazma` see [Chapter 10, Authorization in dCache](config-plazma.md).
+```
+
+For more information about `gPlazma` see [Chapter 10, Authorization in dCache](config-plazma.md).
 
 Now the user `admin` can login to the admin interface with his password `password` by:
 
+```
     [user] $ ssh -l admin -p 22224 headnode.example.org  
     admin@headnode.example.org's password:  
+    dCache (<version>)
+      Type "\?" for help.
 
-        dCache Admin (VII) (user=admin)  
+    [headnode] (local) admin > 
 
+```
 
-    (local) admin >   
+To utilize kerberos authentication mechanism the following lines need to be added to     **/etc/dcache/dcache.kpwd** file: 
+
+```
+   mapping "johndoe@EXAMPLE.ORG" admin
+   
+   login admin read-write 0 0 / / /
+      johndoe@EXAMPLE.ORG 
+
+``` 
 
 To allow other users access to the admin interface add them to the `/etc/dcache/dcache.kpwd` file as described above.
 
@@ -286,27 +315,6 @@ Just adding a user in the **dcache.kpwd** file is not sufficient. The generated 
 
 See [the section called “Create a new user”](#create-a-new-user) to learn how to create the user in the admin interface and set the rights.
 
-Access with SSH1
-----------------
-
-Connect to the server using `ssh1` with:
-
-    [user] $ ssh -c blowfish -p 22223 -l admin headnode.example.org
-
-
-The initial password is “`dickerelch`” (which is German for “fat elk”) and you will be greeted by the prompt
-
-       dCache Admin (VII) (user=admin)
-
-
-    (local) admin >
-
-The password can now be changed with
-
-     (local) admin > \c acm   
-     (acm@dCacheDomain) admin  > create user admin 
-     (acm@dCacheDomain) admin  > set passwd -user=admin <newPasswd> <newPasswd>   
-     (acm@dCacheDomain) admin  > \q  
 
 HOW TO USE THE ADMIN INTERFACE
 ------------------------------

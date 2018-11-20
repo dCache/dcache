@@ -8,11 +8,12 @@ Preface
 
 Welcome to dCache.
 
-dCache is a distributed storage solution for storing huge amounts of data
-without a hard limit, on the order of hundreds of Petabytes. It can serve
-storage-intensive scientific experiments as well as general-purpose use cases
-where scalable, open source storage solutions are needed.
-
+dCache is a distributed storage system proven to scale to hundreds of Petabytes. 
+Originally conceived as a disk cache (hence the name) in front of a tertiary storage to
+provide efficient data access for data intensive scientific experiments in the field of High
+Energy Physics (HEP) it has evolved into highly scalable general-purpose open source
+storage solution.   
+ 
 dCache is a joint effort between the Deutsches Elektronen-Synchrotron (DESY) in
 Hamburg, Nordic Data Grid Facility (NeIC, NDGF) based in Copenhagen, the Fermi
 National Accelerator Laboratory near Chicago with significant distributions and
@@ -25,56 +26,54 @@ increase resilience and availability. It also supplies advanced control systems
 to manage data as well as data flows. Normal Linux filesystems (btrfs, ext4,
 XFS, ZFS) are used to store data on storage nodes.
 
-There are several ways of accessing data stored in dCache:
+dCache supports the following I/O (and data management) protocols:
 
--   **NFS** v4.1 (CHIMERA)
+-   **dCap** 
 
--   **HTTP** and **WEBDAV**
+-   **FTP** (including **GridFTP**)
 
--   **GRIDFTP** (**GSI-FTP**)
+-   **HTTP** (end **WEBDAV**)
+ 
+-   **NFS** 
 
--   **xrootd**
+-   **SRM** 
 
--   **SRM** (versions 1.1 and 2.2)
+-   **XRootD**
 
--   **dCap** and **GSIdCap**
 
-dCache supports certificate based authentication through the Grid Security
-Infrastructure used in **GSI-FTP**, **GSIdCap** transfer protocols and the
-**SRM** management protocol. Certificate authentication is also available for
-**HTTP** and **WEBDAV**. Classical username/password style authentication and
-LDAP connectors are also available.
+dCache supports X.509 certificate based authentication through the Grid Security
+Infrastructure used as well as username/password authentication and LDAP.
 
-dCache also supports fine-grain authorization with support for POSIX file
-permissions and **NFS**-style access control lists.
+dCache provides fine-grained POSIX and **NFS**-style access control list (ACLs) 
+based file/directory authorization. 
 
 Other features of dCache are:
 
--   Resilience and high availability can be implemented in different ways by
-    having multiple replicas of the same files.
+-   Resilience and high availability can be configured by enabled multiple 
+    file replicas and flexible variety of replica placement policies. 
 
 -   Easy migration of data via the migration module.
 
 -   A powerful cost calculation system that allows to control the data flow
-    (reading and writing from/to pools, between pools and also between pools and
-    tape).
+    (reading and writing from/to data servers, between data servers and 
+    also between data servers and tape).
 
 -   Load balancing and performance tuning by hot pool replication (via cost
     calculation and replicas created by pool-to-pool-transfers).
 
 -   Space management and support for space tokens.
 
--   Garbage collection of replicas, depending on their flags, age, et cetera.
+-   Garbage collection of replicas, depending on their flags, age and other criteria.
 
 -   Detailed logging and debugging as well as accounting and statistics.
 
--   XML information provider with detailed live information about the cluster.
+-   XML information provider with detailed live information about the system.
 
 -   Scriptable adminstration interface with a terminal-based front-end.
 
 -   Web-interface with live information of the most important information.
 
--   Ensuring data integrity through checksumming.
+-   Automatic checksumming for data integrity.
 
 <!---dCache / **SRM** can transparently manage data distributed among dozens of disk
 storage nodes (sometimes distributed over several countries). The system has
