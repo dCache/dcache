@@ -198,6 +198,14 @@ public final class PoolHistoriesRequestProcessor extends
     protected PoolInfoWrapper process(String key,
                                       PoolLiveDataForHistoriesMessage data,
                                       long sent) {
+        Serializable errorObject = data.getErrorObject();
+
+        if (errorObject != null) {
+            LOGGER.warn("Problem with retrieval of live pool data for {}: {}.",
+                        key, errorObject.toString());
+            return null;
+        }
+
         PoolInfoWrapper info = service.getWrapper(key);
 
         if (info == null) {
@@ -206,18 +214,6 @@ public final class PoolHistoriesRequestProcessor extends
         }
 
         long timestamp = System.currentTimeMillis();
-
-        Serializable errorObject = data.getErrorObject();
-
-        if (errorObject != null) {
-            LOGGER.warn("Problem with retrieval of live pool data for {}: {}.",
-                        key, errorObject.toString());
-            PoolData poolData = new PoolData();
-            PoolDataDetails details = new PoolDataDetails();
-            poolData.setDetailsData(details);
-            info.setInfo(poolData);
-            return info;
-        }
 
         PoolCostData poolCostData = data.getPoolCostData();
 

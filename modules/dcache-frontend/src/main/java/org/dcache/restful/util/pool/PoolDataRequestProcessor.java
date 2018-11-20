@@ -116,6 +116,13 @@ public final class PoolDataRequestProcessor
     protected PoolInfoWrapper process(String key,
                                       PoolDataRequestMessage message,
                                       long sent) {
+        Serializable errorObject = message.getErrorObject();
+        if (errorObject != null) {
+            LOGGER.warn("Problem with retrieval of pool data for {}: {}.",
+                        key, errorObject.toString());
+            return null;
+        }
+
         PoolData poolData = message.getData();
 
         CellData cellData = poolData == null ? null : poolData.getCellData();
@@ -127,19 +134,11 @@ public final class PoolDataRequestProcessor
         PoolInfoWrapper info = new PoolInfoWrapper();
         info.setKey(key);
 
-        Serializable errorObject = message.getErrorObject();
-
         /*
          *  NB:  the counts histogram is already part of the sweeper
          *  data object (data.getSweeperData().getLastAccessHistogram()).
          */
         info.setInfo(poolData);
-
-        if (errorObject != null) {
-            LOGGER.warn("Problem with retrieval of pool data for {}: {}.",
-                        key, errorObject.toString());
-            return info;
-        }
 
         try {
             handler.addHistoricalData(info);
