@@ -188,7 +188,7 @@ public final class HistogramMetadata implements Serializable {
 
         if (metadata.minValue != null) {
             minValue = minValue == null ? metadata.minValue :
-                            FastMath.max(minValue, metadata.minValue);
+                            FastMath.min(minValue, metadata.minValue);
         }
 
         return this;
