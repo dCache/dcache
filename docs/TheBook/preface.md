@@ -32,7 +32,7 @@ dCache supports the following I/O (and data management) protocols:
 
 -   **FTP** (including **GridFTP**)
 
--   **HTTP** (end **WEBDAV**)
+-   **HTTP** (and **WEBDAV**)
  
 -   **NFS** 
 
