@@ -172,8 +172,8 @@ FIRST STEPS
 
 dCache has a powerful administration interface. It can be accessed with **ssh** protocol.
 
-It is useful to run the admin service in is own seperate domain. In the example in [the section called “Installing a dCache instance”](install.md)
-this domain was called  adminDoorDomain:
+It is useful to run the admin service in is own separate domain. In the example of [the section called “Installing a dCache instance”](install.md)
+this domain is called  adminDoorDomain:
 
 ```
     [adminDoorDomain]
