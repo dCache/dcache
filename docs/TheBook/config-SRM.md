@@ -41,28 +41,49 @@ Table of Contents
 Introduction
 ============
 
-Storage Resource Managers (SRMs) are middleware components whose function is to provide dynamic space allocation and file management on shared storage components on the Grid. SRMs support protocol negotiation and a reliable replication mechanism. The [SRM specification](https://sdm.lbl.gov/srm-wg/doc/SRM.v2.2.html) standardizes the interface, thus allowing for a uniform access to heterogeneous storage elements.
+Storage Resource Managers (SRMs) are middleware components whose function is to 
+provide dynamic space allocation and file management on shared storage components on the Grid. 
+SRMs support protocol negotiation and a reliable replication mechanism. 
+The [SRM specification](https://sdm.lbl.gov/srm-wg/doc/SRM.v2.2.html) standardizes the interface, 
+thus allowing for a uniform access to heterogeneous storage elements.
 
-The SRM utilizes the Grid Security Infrastructure (GSI) for authentication. The SRM is a Web Service implementing a published WSDL document. Please visit the [SRM Working Group Page](https://sdm.lbl.gov/srm-wg/) to see the SRM Version 1.1 and SRM Version 2.2 protocol specification documents.
+The SRM utilizes the Grid Security Infrastructure (GSI) for authentication. 
+The SRM is a Web Service implementing a published WSDL document. 
+Please visit the [SRM Working Group Page](https://sdm.lbl.gov/srm-wg/) 
+to  check out SRM Version 2.2 protocol specification documents.
 
-The SRM protocol uses HTTP over GSI as a transport. The dCache SRM implementation added HTTPS as a transport layer option. The main benefits of using HTTPS rather than HTTP over GSI is that HTTPS is a standard protocol and has support for sessions, improving latency in case a client needs to connect to the same server multiple times. The current implementation does not offer a delegation service. Hence `srmCopy` will not work with SRM over HTTPS. A separate delegation service will be added in a later release.
+The SRM protocol uses HTTP over GSI as a transport. 
+The dCache SRM implementation added HTTPS as a transport layer option. 
+The main benefits of using HTTPS rather than HTTP over GSI is that HTTPS is a standard protocol 
+and has support for sessions, improving latency in case a client needs to connect to the 
+same server multiple times. 
 
 CONFIGURING THE SRM SERVICE
 ============================
 
-THE BASIC SETUP
+BASIC SETUP
 ---------------
+
+The SRM service is split between a front end `srm`  and a backend `smrmanager` for scalability. To instantiate 
+SRM service both cells need to be started. Not necessarily on the same host.  
 
 Like other services, the srm service can be enabled in the layout file **/etc/dcache/layouts/mylayout** of your dCache installation. For an overview of the layout file format, please see [the section called “Defining domains and services”](install.md#defining-domains-and-services).
 
 Example:  
 
-To enable SRM in a separate <srm-${host.name}Domain> in dCache, add the following lines to your layout file:
+To enable SRM in dCache, add the following lines to your layout file:
 
     [<srm-${host.name}Domain>]
     [<srm-${host.name}Domain>/srm]
+    
+    [srmmanager-${host.name}Domain]
+    [srmmanager-${host.name}Domain/srmmanager]
+    [srmmanager-${host.name}Domain/transfermanagers]
 
-The use of the srm service requires an authentication setup, see [Chapter 10, Authorization in dCache](config-gplazma.md) for a general description or the [section called “Authentication and Authorization in dCache”](intouch.md#authentication-and-authorization-in-dcache) for an example setup with X.509 certificates.
+The additional `transfermanagers` service is required to perform 3rd party copy transfers initiated by SRM or WebDAV. 
+This service is not required to be co-located with SRM service (domain or host). 
+
+Srm service requires an authentication setup, see [Chapter 10, Authorization in dCache](config-gplazma.md) for a general description or the [section called “Authentication and Authorization in dCache”](intouch.md#authentication-and-authorization-in-dcache) for an example setup with X.509 certificates.
 
 You can now copy a file into your dCache using the SRM,
 
@@ -83,7 +104,8 @@ and delete it
 IMPORTANT SRM CONFIGURATION OPTIONS
 ----------------------------------------
 
-The defaults for the following configuration parameters can be found in the **.properties** files in the directory **/usr/share/dcache/defaults**.
+The defaults for the following configuration parameters can be found in the **srmmanager.properties**  and **srm.properties** ]
+**transfermanagers.properties*** files located in the directory **/usr/share/dcache/defaults**.
 
 If you want to modify parameters, copy them to **/etc/dcache/dcache.conf** or to your layout file **/etc/dcache/layouts/mylayout** and update their value.
 
@@ -92,8 +114,8 @@ Example:
 Change the value for `srm.db.host` in the layout file.
 
     [srm-${host.name}Domain]
-    [srm-${host.name}Domain/srm]
-    srm.db.host=hostname
+    [srm-${host.name}Domain/srmmanager]
+    srmmanager.db.host=hostname
 
 The property `srm.request.copy.threads` controls number of copy requests in the running state. Copy requests are 3-rd party srm transfers and therefore the property `transfermanagers.limits.external-transfers` is best to be set to the same value as shown below.
 
@@ -116,16 +138,15 @@ US-CMS T1 has:
     srm.request.copy.threads=2000
     transfermanagers.limits.external-transfers=2000
 
-> **NOTE**
->
-> `SRM` might produce a lot of log entries, especially if it runs in debug mode. It is recommended to make sure that logs are redirected into a file on a large disk.
-
 UTILIZATION OF SPACE RESERVATIONS FOR DATA STORAGE
 ==================================================
 
-`SRM` version 2.2 introduced a concept of space reservation. Space reservation guarantees that the requested amount of storage space of a specified type is made available by the storage system for a specified amount of time.
+`SRM` version 2.2 introduced a concept of space reservation. Space reservation guarantees that the 
+requested amount of storage space of a specified type is made available by the storage system for a 
+specified amount of time.
 
-Users can create space reservations using an appropriate `SRM` client, although it is more common for the dCache administrator to make space reservations for VOs (see [the section called “SpaceManager configuration”](#spacemanager-configuration). Each space reservation has an associated ID (or space token). VOs then can copy directly into space tokens assigned to them by the dCache administrator.
+Users can create space reservations using an appropriate `SRM` client, although it is more common for 
+the dCache administrator to make space reservations for VOs (see [the section called “SpaceManager configuration”](#spacemanager-configuration). Each space reservation has an associated ID (or space token). VOs then can copy directly into space tokens assigned to them by the dCache administrator.
 
 When a file is about to be transferred to a storage system, the space available in the space reservation is checked if it can accomodate the entire file. If yes, this chunk of space is marked as allocated, so that it can not be taken by another, concurrently transferred file. If the file is transferred successfully the allocated space becomes used space within the space reservation, else the allocated space is released back to the space reservation as free space.
 
@@ -151,18 +172,16 @@ The values of retention policy supported by dCache are `REPLICA` and `CUSTODIAL`
 
 Once a file is written into a given space reservation, it inherits the reservation's retention policy.
 
-If the space reservation request does not specify a retention policy, we will assign a value given by `spacemanager.default-retention-policy`. The default value is `CUSTODIAL`.
+If the space reservation request does not specify a retention policy, we will assign a value given 
+by `dcache.default-retention-policy`. The default value is `CUSTODIAL`.
 
 Edit the file **/etc/dcache/dcache.conf** to change the default value.
 
 Example:  
 Change the default value to `REPLICA`.
 
-    spacemanager.default-retention-policy=REPLICA
+    dcache.default-retention-policy=REPLICA
 
-> **NOTE**
->
-> `spacemanager.default-retention-policy` merely specifies to value to use while allocating space reservations when no value was given by the client or dCache admin. It is not to be confused with `pnfsmanager.default-retention-policy` which specifies the default retention policy of files uploaded outside of any space reservation.
 
 **Access latency**  
 The two values allowed for access latency are `NEARLINE` and `ONLINE`.
@@ -173,22 +192,15 @@ The two values allowed for access latency are `NEARLINE` and `ONLINE`.
 
 In case of dCache `ONLINE` means that there will always be a copy of the file on disk, while `NEARLINE` does not provide such guarantee. As with retention policy, once a file is written into a given space reservation, it inherits the reservation's access latency.
 
-If a space reservation request does not specify an access latency, we will assign a value given by `spacemanager.default-access-latency`. The default value is `NEARLINE`.
+If a space reservation request does not specify an access latency, we will assign a value given by `dcache.default-access-latency`. The default value is `NEARLINE`.
 
 Edit the file **/etc/dcache/dcache.conf** to change the default value.
 
 Example:
 Change the default value to `ONLINE`.
 
-    spacemanager.default-access-latency=ONLINE
+    dcache.default-access-latency=ONLINE
 
-> **NOTE**
->
-> `spacemanager.default-access-latency` merely specifies to value to use while allocating space reservations when no value was given by the client or dCache admin. It is not to be confused with `pnfsmanager.default-access-latency` which specifies the default retention policy of files uploaded outside of any space reservation.
-
-> **IMPORTANT**
->
-> Please make sure to use capital letters for `REPLICA`, `CUSTODIAL`, `ONLINE` and `NEARLINE` otherwise you will receive an error message.
 
 dCache SPECIFIC CONCEPTS
 ========================
@@ -202,12 +214,6 @@ In order to enable the `SRM SpaceManager` you need to add the `spacemanager` ser
    [dCacheDomain/spacemanager]
 
 Unless you have reason not to, we recommend placing the `spacemanager` service in the same domain as the `poolmanager` service.
-
-In order to use the just defined service, add the following definition in the file **/etc/dcache/dcache.conf**
-
-    dcache.enable.space-reservation=true
-
-followed by a restart of the domain containing the SRM service as well as all active doors.
 
 
 EXPLICIT AND IMPLICIT SPACE RESERVATIONS FOR DATA STORAGE IN dCache

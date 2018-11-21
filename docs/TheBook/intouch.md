@@ -170,9 +170,12 @@ THE ADMIN INTERFACE
 FIRST STEPS
 -----------
 
-dCache has a powerful administration interface. It can be accessed with **ssh** protocol.
+dCache has a powerful administration interface.  Administration protocol is implemented as `admin` cell that 
+embeds `ssh` server. Once logged to admin interface an administrator can connect or send commands to other cells 
+in the system. 
 
-It is useful to run the admin service in is own separate domain. In the example of [the section called “Installing a dCache instance”](install.md)
+It is useful to run the admin service in its own separate domain. 
+In the example of [the section called “Installing a dCache instance”](install.md) 
 this domain is called  adminDoorDomain:
 
 ```
@@ -188,7 +191,7 @@ this domain is called  adminDoorDomain:
 ACCESS WITH SSH
 ---------------
 
-`admin` service embeds `ssh` server listening on port 22224 (configurable) and supports the following authentication mechanisms :
+The `admin` service embeds `ssh` server listening on port 22224 (configurable) and supports the following authentication mechanisms :
 
 - kerberos
 - password
@@ -200,27 +203,29 @@ The mechanisms can be enabled by setting the following variable:
    admin.ssh.authn.enabled = password,publickey,kerberos
 
 ```
-(comma separated mechanism names). By default `publickey` and `password` are enabled.  To enable `kerberos` it needs to be added to the
-list. To complete `kerberos` setup the following variable needs to be defined:
+(that is comma separated mechanism names). By default `publickey` and `password` are enabled.  
+To enable `kerberos` it needs to be added to the list. 
+To complete `kerberos` setup the following variable needs to be defined:
 ```
    dcache.authn.kerberos.realm=EXAMPLE.ORG
 
 ```
 and `admin.ssh.authn.kerberos.keytab-file` should point existing keytab file. Default is `/etc/krb5.keytab`.
 
-There are two ways of authorizing administrators to access the dCache `ssh` admin interface.
-The preferred method authorizes users through their public key.
-The second method uses `gPlazma` `kpwd` plugin.
-The configuration of both authorization mechanisms is described in below.
+There are two ways of authorizing administrators to access the dCache `ssh` admin interface - public key based
+authorization and `gPlazma` based authorization.  The configuration of both authorization mechanisms is 
+described in below.
 
 
 ### Public Key Authorization
 
-To authorize administrators through their public key just insert it into the file **authorized_keys2** which should by
-default be in the directory **/etc/dcache/admin** as specified in the file **/usr/share/dcache/defaults/admin.properties**
-under `admin.paths.authorized-keys`. Keys have to be in one line and should have a standard format, such as:
+To authorize administrators by their public key insert the key into the file **authorized_keys2** which should 
+be placed in the directory **/etc/dcache/admin** as specified in the file **/usr/share/dcache/defaults/admin.properties**
+under `admin.paths.authorized-keys`. Each key has to be one line (no line break) and should have a standard format, 
+such as:
 
     ssh-dss AAAAB3....GWvM= /Users/JohnDoe/.ssh/id_dsa
+    
 
 > **IMPORTANT**
 >
@@ -229,9 +234,6 @@ under `admin.paths.authorized-keys`. Keys have to be in one line and should have
 > **NOTE**
 >
 > You may omit the part behind the equal sign as it is just a comment and not used by dCache.
-
-Key-based authorization is default with fallback to `gPlazma` `kpwd` plugin.
-
 
 Now you can login to the admin interface by
 ```
@@ -243,20 +245,19 @@ Now you can login to the admin interface by
       [headnode] (local) admin >
 ```
 
+Public key based authorization is default with a fallback to `gPlazma` `kpwd` plugin.
 
 
 ### Access via **gPlazma** and the **dcache.kpwd** File
 
-To use `gPlazma` make sure that you defined a `gPlazmaDomain` in your layout file.
+To use `gPlazma` make sure that you added it to your layout file :
 
->   Example:
->   Part of the layout file in **/etc/dcache/layouts**:
->
->    <gplazma-${host.name}>Domain
->    <gplazma-${host.name}>Domain/gplazma
+```
+        [gplazmaDomain]
+        [gplazmaDomain/gplazma]
+```
 
-
-`gPlazma` configuration file **/etc/dcache/gplazma.conf** has to look like:
+The `gPlazma` configuration file **/etc/dcache/gplazma.conf** has to look like:
 
 ```
 auth    sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
@@ -264,7 +265,7 @@ map     sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
 session sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
 ```
 
-and add the user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dcache` script.
+Add a user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dcache` script.
 
 >    Example:
 >    [user] $ dcache kpwd dcuseradd admin -u 12345 -g 1000 -h / -r / -f / -w read-write -p password
@@ -275,7 +276,7 @@ and add the user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dc
 >
 >    [user] $
 
-adds this to the **/etc/dcache/dcache.kpwd** file:
+After you ran the above command the following like appears in **/etc/dcache/dcache.kpwd** file:
 
 ```
    # set pwd
@@ -307,6 +308,18 @@ To utilize kerberos authentication mechanism the following lines need to be adde
 
 ```
 
+Then, you can access dCache having obtained kerberos ticket:
+
+```
+   [user] $ kinit johndoe@EXAMPLE.ORG
+   [user] $ ssh -l admin -p 22224 headnode.example.org
+   dCache (<version>)
+     Type "\?" for help.
+     
+   [headnode] (local) admin >
+```
+ 
+
 To allow other users access to the admin interface add them to the `/etc/dcache/dcache.kpwd` file as described above.
 
 Just adding a user in the **dcache.kpwd** file is not sufficient. The generated user also needs access priileges that can only be set within the admin interface itself.
@@ -316,6 +329,8 @@ See [the section called “Create a new user”](#create-a-new-user) to learn ho
 
 HOW TO USE THE ADMIN INTERFACE
 ------------------------------
+
+
 
 The command `help` lists all commands the cell knows and their parameters. However, many of the commands are only used for debugging and development purposes.
 
