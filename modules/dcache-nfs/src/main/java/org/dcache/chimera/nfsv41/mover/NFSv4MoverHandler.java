@@ -220,7 +220,10 @@ public class NFSv4MoverHandler {
             boolean withGss, String serverId, CellStub door, long bootVerifier)
             throws IOException , GSSException, OncRpcException {
 
-        _embededDS = new NFSServerV41(_operationFactory, null, _fs, null);
+        _embededDS = new NFSServerV41.Builder()
+                .withOperationFactory(_operationFactory)
+                .withVfs(_fs)
+                .build();
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
                 .withMinPort(portRange.getLower())

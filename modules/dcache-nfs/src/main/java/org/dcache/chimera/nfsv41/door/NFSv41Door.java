@@ -386,9 +386,21 @@ public class NFSv41Door extends AbstractCellComponent implements
                 case V41:
                     final NFSv41DeviceManager _dm = this;
                     _proxyIoFactory = new NfsProxyIoFactory(_dm);
-                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory,
-                            new AccessLogAwareOperationFactory(_chimeraVfs, _fileFileSystemProvider, _accessLogMode)),
-                            _dm, _vfs, _exportFile);
+                    _nfs4 = new NFSServerV41.Builder()
+                            .withDeviceManager(_dm)
+                            .withExportFile(_exportFile)
+                            .withVfs(_vfs)
+                            .withOperationFactory(
+                                    new ProxyIoMdsOpFactory(
+                                            _proxyIoFactory,
+                                            new AccessLogAwareOperationFactory(
+                                                    _chimeraVfs,
+                                                    _fileFileSystemProvider,
+                                                    _accessLogMode)
+                                    )
+                            )
+                            .build();
+
                     oncRpcSvcBuilder.withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     updateLbPaths();
                     break;
