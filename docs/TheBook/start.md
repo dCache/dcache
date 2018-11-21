@@ -21,10 +21,10 @@ This part is intended for people who are new to dCache. It gives an introduction
     - [Configuring Chimera](install.md#configuring-chimera)
     - [Configuring dCache](install.md#configuring-chimera)
     - [Installing dCache on several nodes](install.md#installing-dcache-on-several-nodes)
-    - [Securiting your dCache installation](install.md#securiting-your-dcache-installation)
+    - [Securing your dCache installation](install.md#securiting-your-dcache-installation)
     - [Upgrading a dCache Instance](install.md#upgrading-a-dcache-instance)
 
-1. [Getting in Touch with dCache](intouch.md)
+1. [Getting to know your dCache](intouch.md)
 
     - [Checking the Functionality](intouch.md#checking-the-functionality)
     - [dCache without mounted namespace](intouch.md#dcache-without-mounted-namespace)
@@ -36,8 +36,7 @@ This part is intended for people who are new to dCache. It gives an introduction
 1. [The Admin Interface](intouch.md#the-admin-interface)
 
     - [First steps](intouch.md#first-steps)
-    - [Access with **ssh2**](intouch.md#ssh2)
-    - [Access with **ssh1**](intouch.md#ssh1)
+    - [Access with **ssh**](intouch.md#ssh2)
     - [How to use the Admin Interface](intouch.md#how-to-use-the-admin-interface)
     - [Create a new user](intouch.md#create-a-new-user)
     - [Use of the **ssh** Admin Interface by scripts](intouch.md#use-of-the-ssh-admin-interface-by-scripts)

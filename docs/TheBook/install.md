@@ -13,7 +13,7 @@ Chapter 2. Installing dCache
      [Installing dCache on several nodes](#installing-dcache-on-several-nodes)
 
 
-+  [Securiting your dCache installation](#securiting-your-dcache-installation)
++  [Securing your dCache installation](#securiting-your-dcache-installation)
 +  [Upgrading a dCache Instance](#upgrading-a-dcache-instance)
 
 The first section describes the installation of a fresh dCache instance using RPM files downloaded from [the dCache home-page]. It is followed by a guide to upgrading an existing installation. In both cases we assume standard requirements of a small to medium sized dCache instance without an attached [tertiary storage system](rf-glossary.md#tertiary-storage-system). The third section contains some pointers on extended features.
@@ -394,4 +394,4 @@ Now dCache needs to be started again.
   [3]: #intouch-web
   [section\_title]: #in-install-layout
   -->
-Once you have installed dCache now it is time to [Getting in touch with dCache](intouch.md).
+Once you have installed dCache now it is time to [Getting to know your dCache](intouch.md).

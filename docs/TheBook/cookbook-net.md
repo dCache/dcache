@@ -13,7 +13,7 @@ Table of Contents
 + [GridFTP with Pools in a Private Subnet](#gridftp-with-pools-in-a-private-subnet)  
 
 
-This chapter contains solutions for several non-trivial network configurations. The first section discusses the interoperation of dCache with firewalls and does not require any background knowledge about dCache other than what is given in the installation guide ([Chapter 2, Installing dCache](install.md)) and the first steps tutorial ([Chapter 3, Getting in Touch with dCache](intouch.md). The following sections will deal with more complex network topologies, e.g. private subnets. Even though not every case is covered, these cases might help solve other problems, as well. Intermediate knowledge about dCache is required. 
+This chapter contains solutions for several non-trivial network configurations. The first section discusses the interoperation of dCache with firewalls and does not require any background knowledge about dCache other than what is given in the installation guide ([Chapter 2, Installing dCache](install.md)) and the first steps tutorial ([Chapter 3, Getting to know your dCache](intouch.md). The following sections will deal with more complex network topologies, e.g. private subnets. Even though not every case is covered, these cases might help solve other problems, as well. Intermediate knowledge about dCache is required. 
 
 > **Warning**
 >

@@ -12,7 +12,7 @@ Table of contents
 
     -   [Installing dCache](install.md)
 
-    -   [Getting in Touch with dCache](intouch.md)
+    -   [Getting to know your dCache](intouch.md)
 
 -   [Chapter II. Configuration of dCache](config.md)
 
