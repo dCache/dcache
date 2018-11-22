@@ -12,6 +12,13 @@
 
   <name>dCache, the Book</name>
 
+  <properties>
+      <html-header.path>${basedir}/src/main/html-fragments/header.html</html-header.path>
+      <html-footer.path>${basedir}/src/main/html-fragments/footer.html</html-footer.path>
+      <raw-html-target.path>${project.build.directory}/intermediate-html</raw-html-target.path>
+      <filtered-html-target.path>${project.build.directory}/html</filtered-html-target.path>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
@@ -26,16 +33,114 @@
               </execution>
           </executions>
 
-	  <configuration>
+          <configuration>
             <inputDirectory>${basedir}/src/main/markdown</inputDirectory>
-            <outputDirectory>${basedir}/target/html</outputDirectory>
-	    <headerHtmlFile>${basedir}/src/main/html-fragments/header.html</headerHtmlFile>
-	    <footerHtmlFile>${basedir}/src/main/html-fragments/footer.html</footerHtmlFile>
-	    <transformRelativeMarkdownLinks>true</transformRelativeMarkdownLinks>
-	    <pegdownExtensions>SMARTYPANTS,HARDWRAPS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS</pegdownExtensions>
-	    <copyDirectories>css,images</copyDirectories>
-	  </configuration>
+            <outputDirectory>${raw-html-target.path}</outputDirectory>
+            <headerHtmlFile>${html-header.path}</headerHtmlFile>
+            <footerHtmlFile>${html-footer.path}</footerHtmlFile>
+            <transformRelativeMarkdownLinks>true</transformRelativeMarkdownLinks>
+            <pegdownExtensions>SMARTYPANTS,HARDWRAPS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS</pegdownExtensions>
+            <copyDirectories>css,images</copyDirectories>
+          </configuration>
+      </plugin>
+
+      <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <executions>
+              <execution>
+                  <!-- We need to be able to substitute information
+                       like the dCache version into the output.
+
+                       The assembly plugin however only supports ${}
+                       substitution and that conflicts with shell
+                       variables and dCache configuration properties.
+
+                       Therefore we use the resource plugin to make a
+                       filtered copy of the skel and use those files
+                       in the assembly whenever we need a filtered
+                       file. -->
+                  <id>copy-resources</id>
+                  <phase>prepare-package</phase>
+                  <goals>
+                      <goal>copy-resources</goal>
+                  </goals>
+                  <configuration>
+                      <outputDirectory>${filtered-html-target.path}</outputDirectory>
+                      <resources>
+                          <resource>
+                              <directory>${raw-html-target.path}</directory>
+                              <filtering>true</filtering>
+                          </resource>
+                      </resources>
+                      <delimiters>
+                          <delimiter>@</delimiter>
+                      </delimiters>
+                      <useDefaultDelimiters>false</useDefaultDelimiters>
+                      <nonFilteredFileExtensions>
+                          <nonFilteredFileExtension>css</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>jpg</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>png</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>pdf</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>svg</nonFilteredFileExtension>
+                      </nonFilteredFileExtensions>
+                  </configuration>
+              </execution>
+          </executions>
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+      <profile>
+          <id>dcache.org</id>
+
+          <properties>
+              <html-header.path>${basedir}/src/main/html-fragments/dcacheorg-header.html</html-header.path>
+              <html-footer.path>${basedir}/src/main/html-fragments/dcacheorg-footer.html</html-footer.path>
+          </properties>
+
+          <build>
+            <plugins>
+              <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <id>parse-version</id>
+                    <goals>
+                      <goal>parse-version</goal>
+                    </goals>
+                  </execution>
+                </executions>
+              </plugin>
+
+              <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <phase>process-resources</phase>
+                    <configuration>
+                      <target>
+                        <replaceregexp byline="true">
+                          <regexp pattern='href="([^/"][^"]*)\.html([^"]*)"'/>
+                          <substitution expression='href="\1.shtml\2"'/>
+                          <fileset dir="${raw-html-target.path}" includes="**/*.html"/>
+                        </replaceregexp>
+
+                        <move todir="${raw-html-target.path}" includeemptydirs="false">
+                          <fileset dir="${raw-html-target.path}"/>
+                          <mapper type="glob" from="*.html" to="*.shtml"/>
+                        </move>
+                      </target>
+                    </configuration>
+                    <goals>
+                      <goal>run</goal>
+                    </goals>
+                  </execution>
+                </executions>
+              </plugin>
+            </plugins>
+          </build>
+      </profile>
+  </profiles>
 </project>
