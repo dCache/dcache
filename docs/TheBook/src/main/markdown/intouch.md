@@ -284,7 +284,7 @@ After you ran the above command the following like appears in **/etc/dcache/dcac
 
 ```
 
-For more information about `gPlazma` see [Chapter 10, Authorization in dCache](config-plazma.md).
+For more information about `gPlazma` see [Chapter 10, Authorization in dCache](config-gplazma.md).
 
 Now the user `admin` can login to the admin interface with his password `password` by:
 

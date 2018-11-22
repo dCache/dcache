@@ -54,7 +54,7 @@ Table of contents
 
         -   [The poolmanager service](config-PoolManager.md)
 
-        -   [The resilience service](config-Resilience.md)
+        -   [The resilience service](config-resilience.md)
 
         -   The spacemanager service
 

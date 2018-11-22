@@ -75,7 +75,7 @@ Components of dCache System
 | [alarms](config-alarms.md)                   | Records errors requiring more or less urgent intervention.  |
 | [billing](config-billing.md)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools.  |
 | [poolmanager](config-PoolManager.md)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
-| [resilience](config-Resilience.md)                      |Controls the number of replicas of a file on the pools |
+| [resilience](config-resilience.md)                      |Controls the number of replicas of a file on the pools |
 | [hoppingmanager](config-hopping.md)               | ?     |
 | cleaner                      | ?    |
 | info                         | ?     |

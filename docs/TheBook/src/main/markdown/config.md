@@ -42,7 +42,7 @@ Table of Contents
     - [The Partition Manager](config-PoolManager.md#the-partition-manager)
     - [Overview](config-PoolManager.md#overview)
     - [Managing Partitions](config-PoolManager.md#managing-partitions)
-    - [Using Partitions](config-PoolManager.md-using-partitions)
+    - [Using Partitions](config-PoolManager.md#using-partitions)
     - [Classic Partitions](config-PoolManager.md#classic-partitions)
     - [Link Groups](config-PoolManager.md#link-groups)
 
@@ -133,7 +133,7 @@ Table of Contents
     - [The SRM service](config-SRM.md#the-srm-service)
     - [Space Management Functions](config-SRM.md#space-management-functions)
     - [Data Transfer Functions](config-SRM.md#data-transfer-functions)
-    - [Request Status Functions](config-SRM.md-request-status-functions)
+    - [Request Status Functions](config-SRM.md#request-status-functions)
     - [Directory Functions](config-SRM.md#directory-functions)
     - [Permission functions](config-SRM.md#permission-functions)
 

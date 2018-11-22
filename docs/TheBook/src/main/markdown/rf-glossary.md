@@ -192,7 +192,7 @@ This is especially useful to ensure the existence or readability of the file,
 even if the hardware is not reliable, if a high volume of access to such 
 files is foreseen, or if the file should be permanent but not reside on 
 tertiary storage. The activation and configuration of resilience is described
-[in Chapter 6, The Resilience Service](config-Resilience.md).
+[in Chapter 6, The Resilience Service](config-resilience.md).
 
 Storage Resource Manager (SRM)
 ------------------------------
@@ -240,7 +240,7 @@ The HSM sweeper, if enabled, is a component that is responsible for removing fil
 
 cost
 -----
-The pool manager determines the pool used for storing a file by calculating a cost value for each available pool. The pool with the lowest cost is used. The costs are calculated by the cost module as described in [the section called “Classic Partitions”](config-PoolManager.md'classic-partitions). The total cost is a linear combination of the performance cost and the space cost. I.e.,
+The pool manager determines the pool used for storing a file by calculating a cost value for each available pool. The pool with the lowest cost is used. The costs are calculated by the cost module as described in [the section called “Classic Partitions”](config-PoolManager.md#classic-partitions). The total cost is a linear combination of the performance cost and the space cost. I.e.,
 
     	cost = ccf * performance_cost + scf * space_cost
 
