@@ -373,7 +373,7 @@ using `\c cell[@domain]` and execute command or send command to the cell using `
    [headnode] (local) enstore >
 ```
 
-The `\l' command executed without arguments lists all well-known cells in the system. In general cells are
+The `\l` command executed without arguments lists all well-known cells in the system. In general cells are
 addressed by their full name `<name>@<domainName>`. For well-known cells the `@<domainName>` part can be omitted.
 Executing `\l *@*` will list everything running in your dCache system.
 
