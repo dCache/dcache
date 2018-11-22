@@ -170,12 +170,12 @@ THE ADMIN INTERFACE
 FIRST STEPS
 -----------
 
-dCache has a powerful administration interface.  Administration protocol is implemented as `admin` cell that 
-embeds `ssh` server. Once logged to admin interface an administrator can connect or send commands to other cells 
-in the system. 
+dCache has a powerful administration interface.  Administration protocol is implemented as `admin` cell that
+embeds `ssh` server. Once logged to admin interface an administrator can connect or send commands to other cells
+in the system.
 
-It is useful to run the admin service in its own separate domain. 
-In the example of [the section called “Installing a dCache instance”](install.md) 
+It is useful to run the admin service in its own separate domain.
+In the example of [the section called “Installing a dCache instance”](install.md)
 this domain is called  adminDoorDomain:
 
 ```
@@ -203,8 +203,8 @@ The mechanisms can be enabled by setting the following variable:
    admin.ssh.authn.enabled = password,publickey,kerberos
 
 ```
-(that is comma separated mechanism names). By default `publickey` and `password` are enabled.  
-To enable `kerberos` it needs to be added to the list. 
+(that is comma separated mechanism names). By default `publickey` and `password` are enabled.
+To enable `kerberos` it needs to be added to the list.
 To complete `kerberos` setup the following variable needs to be defined:
 ```
    dcache.authn.kerberos.realm=EXAMPLE.ORG
@@ -213,19 +213,19 @@ To complete `kerberos` setup the following variable needs to be defined:
 and `admin.ssh.authn.kerberos.keytab-file` should point existing keytab file. Default is `/etc/krb5.keytab`.
 
 There are two ways of authorizing administrators to access the dCache `ssh` admin interface - public key based
-authorization and `gPlazma` based authorization.  The configuration of both authorization mechanisms is 
-described in below.
+authorization and `gPlazma` based authorization.  The configuration of both authorization mechanisms is
+described below.
 
 
 ### Public Key Authorization
 
-To authorize administrators by their public key insert the key into the file **authorized_keys2** which should 
+To authorize administrators by their public key insert the key into the file **authorized_keys2** which should
 be placed in the directory **/etc/dcache/admin** as specified in the file **/usr/share/dcache/defaults/admin.properties**
-under `admin.paths.authorized-keys`. Each key has to be one line (no line break) and should have a standard format, 
+under `admin.paths.authorized-keys`. Each key has to be one line (no line breaks) and should have a standard format,
 such as:
 
     ssh-dss AAAAB3....GWvM= /Users/JohnDoe/.ssh/id_dsa
-    
+
 
 > **IMPORTANT**
 >
@@ -315,10 +315,10 @@ Then, you can access dCache having obtained kerberos ticket:
    [user] $ ssh -l admin -p 22224 headnode.example.org
    dCache (<version>)
      Type "\?" for help.
-     
+
    [headnode] (local) admin >
 ```
- 
+
 
 To allow other users access to the admin interface add them to the `/etc/dcache/dcache.kpwd` file as described above.
 
@@ -330,68 +330,80 @@ See [the section called “Create a new user”](#create-a-new-user) to learn ho
 HOW TO USE THE ADMIN INTERFACE
 ------------------------------
 
+Admin interface allows you to execute shell commands, connect to other cells and execute their supported commands or
+send supported cell commands to other cells. Once logged in you are prompted to use help `Type "\?" for help`.
 
+```
+   [headnode] (local) admin > \?
+   \? [command]...  # display help for shell commands
+   \c cell[@domain] [user]  # connect to cell
+   \exception [trace]  # controls display of stack traces
+   \h [command]...  # display help for cell commands
+   \l [cell[@domain]|pool/poolgroup]...  # list cells
+   \q # quit
+   \s [OPTIONS] (cell[@domain]|pool/poolgroup)[,(cell[@domain]|pool/poolgroup)]... command...  # send command
+   \sl [options] pnfsid|path command...  # send to locations
+   \sn [options] command...  # send pnfsmanager command
+   \sp [options] command...  # send poolmanager command
+   \timeout [seconds]  # sets the command timeout
 
-The command `help` lists all commands the cell knows and their parameters. However, many of the commands are only used for debugging and development purposes.
+   [headnode] (local) admin >
+```
 
-> **WARNING**
->
-> Some commands are dangerous. Executing them without understanding what they do may lead to data loss.
+Shell commands are always available at command prompt, whereas in order to execute cell commands you have to either connect to the cell
+using `\c cell[@domain]` and execute command or send command to the cell using `\s [OPTIONS] (cell[@domain]|pool/poolgroup)[,(cell[@domain]|pool/poolgroup)]... command...`. For instance:
 
-Starting from the local prompt (`(local) admin >`) the command `\c` takes you to the specified [cell](rf-glossary.md#cell). In general the address of a cell is a concatenation of cell name @ symbol and the domain name. `\c` to a cell by:
+```
+   [headnode] (local) enstore > \? \c
+   NAME
+          \c -- connect to cell
 
-    (local) admin > **\c <cellName>@<domainName>**
+   SYNOPSIS
+          \c cell[@domain] [user]
+
+   DESCRIPTION
+          Connect to new cell. May optionally switch to another user.
+
+   ARGUMENTS
+          cell[@domain]
+                 Well known or fully qualified cell name.
+          user
+                 Account to connect with.
+
+   [headnode] (local) enstore >
+```
+
+The `\l' command executed without arguments lists all well-known cells in the system. In general cells are
+addressed by their full name `<name>@<domainName>`. For well-known cells the `@<domainName>` part can be omitted.
+Executing `\l *@*` will list everything running in your dCache system.
 
 > **NOTE**
 >
 > If the cells are well-known, they can be accessed without adding the domain-scope. See [Chapter 5, The Cell Package](config-cellpackage.md) for more information.
 
-To display the list of cells use `\l` command:
 
+Each cell implements `help [command]` (also aliased as `\h [command]`) which, when executed
+without parameters,  displays a set of commands supported by the cell. When provided with command name as an argument
+it shows that command syntax like so:
 
-    (local) admin > \l
-    acm
-    billing
-    gPlazma
-    topo
-    ...
-
-
-The domains that are running on the dCache-instance, can be viewed in the layout-configuration (see  [Chapter 2, Installing dCache](install.md)). Additionally, there is the `topo` cell, which keeps track of the instance's domain topology. If it is running, it can be used to obtain the list of domains the following way:
+```
+   [headnode] (local) admin > \s pool_1 help log set
+   Sets the log level of <appender>.
+```
 
 > **NOTE**
 >
-> The topo cell rescans every five minutes which domains are running, so it can take some time until `ls` displays the full   domain list.
+> You can send (`\s`) `help` command to a cell but you can't send `\h` command to a cell. The `\h` command can be executed only after connecting to a cell using `\c` command:
 
+```
+   [headnode] (local) admin > \c pool_1
+   [headnode] (pool_1@poolDomain) admin > \h log set
+   Sets the log level of <appender>.
+```
 
-Example:
-As the topo cell is a `well-known` cell you can `\c` to it directly by `\c topo`.
-
-Use the command `ls` to see which domains are running.
-
-      (local) admin > \c topo
-      (topo) admin > ls
-      adminDoorDomain
-      gsidcapDomain
-      dcapDomain
-      utilityDomain
-      gPlazmaDomain
-      webdavDomain
-      gridftpDomain
-      srmDomain
-      dCacheDomain
-      httpdDomain
-      namespaceDomain
-      poolDomain
-      (topo) admin >
-
-
-
-Use `\?` command to see the list of commands available for the local prompt.
-
-
-      (topo) admin >  \?
-
+> **WARNING**
+>
+> Some commands are dangerous. Executing them without understanding what they do may lead to data loss.
 
 
 The command `\q` exits the admin shell.
@@ -425,7 +437,8 @@ The cells in the domain can be accessed using `\c` together with the cell-name s
 >
 
 
-Login to the routing manager of the `dCacheDomain` to get a list of all well-known cells, you can directly `\c RoutingMgr` to without having to add the domain.
+Connect to the routing manager of the `dCacheDomain` and use `ls` command to get a list of all well-known cells, running in
+each domain:
 
     Example:
       (local) admin > \c RoutingMgr@dCacheDomain
@@ -444,25 +457,27 @@ Login to the routing manager of the `dCacheDomain` to get a list of all well-kno
       poolDomain : [pool_2, pool_1]
        namespaceDomain : [PnfsManager, dirLookupPool, cleaner]
 
-All cells know the commands `info` for general information about the cell and `show pinboard` for listing the last lines of the [pinboard](rf-glossary.md#pinboard) of the cell. The output of these commands contains useful information for solving problems.
+All cells implement the `info` command to display  general information about the cell and `show pinboard` command
+for listing the last lines of the [pinboard](rf-glossary.md#pinboard) of the cell. The output of these commands contains useful information
+for troubleshooting.
 
-It is a good idea to get aquainted with the normal output in the following cells: `PoolManager, PnfsManager`, and the pool cells (e.g.,` <poolHostname>_1`).
+The most useful command of the pool cells is [rep ls](reference.md#rep-ls). It lists the file replicas
+ which are stored in the pool by their `pnfs` IDs:
 
-The most useful command of the pool cells is [rep ls](reference.md#rep-ls).  To execute this command `\c` into the pool or use `\s` command. It lists the files which are stored in the pool by their `pnfs` IDs:
-
-    Example:
-
-      (RoutingMgr@dCacheDoorDomain) admin >  \s pool_1  rep ls
-      000100000000000000001120 <-P---------(0)[0]> 485212 si={myStore:STRING}
-      000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING}
-      (RoutingMgr@dCacheDoorDomain) admin >
+```
+   (RoutingMgr@dCacheDoorDomain) admin >  \s pool_1  rep ls
+   000100000000000000001120 <-P---------(0)[0]> 485212 si={myStore:STRING}
+   000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING}
+   (RoutingMgr@dCacheDoorDomain) admin >
 
 
-      (RoutingMgr@dCacheDoorDomain) admin > \c pool_1
-      (pool_1) admin > rep ls
-      000100000000000000001120 <-P---------(0)[0]> 485212 si={myStore:STRING}
-      000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING}
-  Each file in a pool has one of the 4 primary states: “cached” (<C---), “precious” (<-P--), “from client” (<--C-), and        “from store” (<---S).
+   (RoutingMgr@dCacheDoorDomain) admin > \c pool_1
+   (pool_1) admin > rep ls
+   000100000000000000001120 <-P---------(0)[0]> 485212 si={myStore:STRING}
+   000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING}
+```
+
+Each file replica  in a pool has one of the 4 primary states: “cached” (<C---), “precious” (<-P--), “from client” (<--C-), and        “from store” (<---S).
 
 
 See [the section called “How to Store-/Restore files via the Admin Interface”](config-hsm.md#how-to-store-restore-files-via-the-admin-interface) for more information about `rep ls`.
@@ -471,16 +486,16 @@ The most important commands in the `PoolManager` are: `rc ls` and `cm ls -r`.
 
 `rc ls` lists the requests currently handled by the `PoolManager`. A typical line of output for a read request with an error condition is (all in one line):
 
-    Example:
+```
+   (pool_1) admin > \c PoolManger
+   (PoolManager) admin > rc ls
+   000100000000000000001230@0.0.0.0/0.0.0.0 m=1 r=1 [<unknown>]
+   [Waiting 08.28 19:14:16]
+   {149,No pool candidates available or configured for 'staging'}
+```
 
-      (pool_1) admin > \c PoolManger
-      (PoolManager) admin > rc ls
-      000100000000000000001230@0.0.0.0/0.0.0.0 m=1 r=1 [<unknown>]
-      [Waiting 08.28 19:14:16]
-      {149,No pool candidates available or configured for 'staging'}
-
-As the error message at the end of the line indicates, no pool was found containing the file and no pool could be used for staging the file from a tertiary storage system.
-
+As the error message at the end of the line indicates, no pool was found containing the file replica
+ and no pool could be used for staging the file from a tertiary storage system.
 
 
 
@@ -488,15 +503,15 @@ See [the section called “Obtain information via the dCache Command Line Admin 
 
 Finally, [cm ls](reference.md#cm-ls) with the option `-r` gives the information about the pools currently stored in the cost module of the pool manager. A typical output is:
 
-    Example:
-
-      (PoolManager) admin > cm ls -r
-      pool_1={R={a=0;m=2;q=0};S={a=0;m=2;q=0};M={a=0;m=100;q=0};PS={a=0;m=20;q=0};PC={a=0;m=20;q=0};
-          (...continues...)   SP={t=2147483648;f=924711076;p=1222772572;r=0;lru=0;{g=20000000;b=0.5}}}
-      pool_1={Tag={{hostname=example.org}};size=0;SC=0.16221282938326134;CC=0.0;}
-      pool_2={R={a=0;m=2;q=0};S={a=0;m=2;q=0};M={a=0;m=100;q=0};PS={a=0;m=20;q=0};PC={a=0;m=20;q=0};
-          (...continues...)   SP={t=2147483648;f=2147483648;p=0;r=0;lru=0;{g=4294967296;b=250.0}}}
-      pool_2={Tag={{hostname=example.org}};size=0;SC=2.7939677238464355E-4;CC=0.0;}
+```
+   (PoolManager) admin > cm ls -r
+   pool_1={R={a=0;m=2;q=0};S={a=0;m=2;q=0};M={a=0;m=100;q=0};PS={a=0;m=20;q=0};PC={a=0;m=20;q=0};
+       (...continues...)   SP={t=2147483648;f=924711076;p=1222772572;r=0;lru=0;{g=20000000;b=0.5}}}
+   pool_1={Tag={{hostname=example.org}};size=0;SC=0.16221282938326134;CC=0.0;}
+   pool_2={R={a=0;m=2;q=0};S={a=0;m=2;q=0};M={a=0;m=100;q=0};PS={a=0;m=20;q=0};PC={a=0;m=20;q=0};
+       (...continues...)   SP={t=2147483648;f=2147483648;p=0;r=0;lru=0;{g=4294967296;b=250.0}}}
+   pool_2={Tag={{hostname=example.org}};size=0;SC=2.7939677238464355E-4;CC=0.0;}
+```
 
 
 While the first line for each pool gives the information stored in the cache of the cost module, the second line gives the    costs (SC: [space cost](rf-glossary.md#space-cost), CC: [performance cost](rf-glossary.md#performance-cost)) calculated for a (hypothetical) file of zero size. For details on how these are calculated and their meaning, see [the section called “Classic Partitions”](#config-poolmanager.md#classic-partitions).
@@ -506,13 +521,13 @@ CREATE A NEW USER
 
 To create a new user, <new-user> and set a new password for the user `\c` from the local prompt `((local) admin >)` to the acm, the access control manager, and run following command sequence:
 
-
+```
     (local) admin > \c acm
     (acm) admin > create user <new-user>
     (acm) admin > set passwd -user=<new-user> <newPasswd> <newPasswd>
+```
 
-
-For the new created users there will be an entry in the directory **/etc/dcache/admin/users/meta.**
+For the newly created users there will be an entry in the directory **/etc/dcache/admin/users/meta.**
 
 > **NOTE**
 >
@@ -520,33 +535,43 @@ For the new created users there will be an entry in the directory **/etc/dcache/
 
 Give the new user access to the PnfsManager.
 
+```
       (acm) admin > create acl cell.<cellName>.execute
       (acm) admin > add access -allowed cell.<cellName>.execute <new-user>
+```
 
 Example:
 Give the new user access to the PnfsManager.
 
+```
       (acm) admin > create acl cell.PnfsManager.execute
       (acm) admin > add access -allowed cell.PnfsManager.execute <new-user>
+```
 
 Now you can check the permissions by:
 
+```
       (acm) admin > check cell.PnfsManager.execute <new-user>
       Allowed
       (acm) admin > show acl cell.PnfsManager.execute
       <noinheritance>
       <new-user> -> true
+```
 
 The following commands allow access to every cell for a user <new-user>:
 
+```
     (acm) admin > create acl cell.*.execute
     (acm) admin > add access -allowed cell.*.execute <new-user>
+```
 
 
 The following command makes a user as powerful as admin (dCache’s equivalent to the root user):
 
+```
     (acm) admin > create acl *.*.*
     (acm) admin > add access -allowed *.*.* <new-user>
+```
 
 
 USE OF THE SSH ADMIN INTERFACE BY SCRIPTS
@@ -554,6 +579,7 @@ USE OF THE SSH ADMIN INTERFACE BY SCRIPTS
 
 In scripts, one can use a “Here Document” to list the commands, or supply them to `ssh` as standard-input (stdin). The following demonstrates using a Here Document:
 
+```
     #!/bin/sh
     #
     #  Script to automate dCache administrative activity
@@ -565,9 +591,9 @@ In scripts, one can use a “Here Document” to list the commands, or supply th
     cm ls -r
     \q
     EOF
-
+```
 or, the equivalent as stdin.
-
+```
     #!/bin/bash
     #
     #   Script to automate dCache administrative activity.
@@ -575,7 +601,7 @@ or, the equivalent as stdin.
     echo -e '\c pool_1\nrep ls\n(more commands here)\n\q' \
       | ssh -p 22224 admin@adminNode \
       | tr -d '\r' > rep_ls.out
-
+```
 
 
 AUTHENTICATION AND AUTHORIZATION IN dCache
