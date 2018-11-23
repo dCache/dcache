@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main">
+    <taskdef resource="net/sf/antcontrib/antlib.xml"/>
+
+    <target name="main">
+        <foreach param="fileName" target="substituteFilename">
+            <path>
+                <fileset dir="${raw-html-target.path}"
+                         casesensitive="yes">
+                    <include name="**/*.html"/>
+                </fileset>
+            </path>
+        </foreach>
+    </target>
+
+    <target name="substituteFilename">
+        <basename property='baseName'
+                  file='${fileName}'
+                  suffix='.html'/>
+        <replace file='${fileName}'
+                 token='##SOURCE_FILENAME##'
+                 value='${baseName}.md'/>
+    </target>
+</project>

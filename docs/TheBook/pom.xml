@@ -20,6 +20,8 @@
   </properties>
 
   <build>
+    <sourceDirectory>${project.basedir}/src/main/markdown</sourceDirectory>
+
     <plugins>
       <plugin>
           <groupId>com.ruleoftech</groupId>
@@ -34,7 +36,7 @@
           </executions>
 
           <configuration>
-            <inputDirectory>${basedir}/src/main/markdown</inputDirectory>
+            <inputDirectory>${project.build.sourceDirectory}</inputDirectory>
             <outputDirectory>${raw-html-target.path}</outputDirectory>
             <headerHtmlFile>${html-header.path}</headerHtmlFile>
             <footerHtmlFile>${html-footer.path}</footerHtmlFile>
@@ -134,12 +136,42 @@
               </plugin>
 
               <plugin>
+                  <groupId>org.codehaus.gmaven</groupId>
+                  <artifactId>groovy-maven-plugin</artifactId>
+                  <executions>
+                      <execution>
+                          <phase>process-resources</phase>
+                              <goals>
+                                  <goal>execute</goal>
+                              </goals>
+                              <configuration>
+                                  <bindPropertiesToSeparateVariables>false</bindPropertiesToSeparateVariables>
+                                  <source>
+                                      def (remoteName, branch) = 'git rev-parse --abbrev-ref --symbolic-full-name @{u}'.execute().text.trim().tokenize('/')
+                                      def remoteUrl = "git config --get remote.${remoteName}.url".execute().text.trim()
+                                      def projectAndRepo = remoteUrl.startsWith('git@github.com:') ? remoteUrl.substring(15).minus('.git')
+                                              : remoteUrl.startsWith('https://github.com') ? remoteUrl.substring(18).minus('.git')
+                                              : null
+                                      def srcRelPath = "${project.build.sourceDirectory}" - "${maven.multiModuleProjectDirectory}/"
+                                      def prefix = "https://github.com/${projectAndRepo}/blob/${branch}/${srcRelPath}"
+                                      println "GitHub URL prefix: $prefix"
+                                      project.properties.setProperty('github.url-prefix', prefix)
+                                  </source>
+                              </configuration>
+                      </execution>
+                  </executions>
+              </plugin>
+
+              <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                   <execution>
                     <phase>process-resources</phase>
                     <configuration>
                       <target>
+                        <!-- Maven does not support defining more than one target -->
+                        <ant antfile="${basedir}/src/main/antruns/substituteFilename.xml"/>
+
                         <replaceregexp byline="true">
                           <regexp pattern='href="([^/"][^"]*)\.html([^"]*)"'/>
                           <substitution expression='href="\1.shtml\2"'/>
@@ -157,6 +189,19 @@
                     </goals>
                   </execution>
                 </executions>
+                <dependencies>
+                  <dependency>
+                    <groupId>ant-contrib</groupId>
+                    <artifactId>ant-contrib</artifactId>
+                    <version>1.0b3</version>
+                    <exclusions>
+                      <exclusion>
+                        <artifactId>ant</artifactId>
+                        <groupId>ant</groupId>
+                      </exclusion>
+                    </exclusions>
+                  </dependency>
+                </dependencies>
               </plugin>
             </plugins>
           </build>
