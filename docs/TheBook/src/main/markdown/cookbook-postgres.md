@@ -11,7 +11,7 @@ Table of Contents
 
 PostgreSQL is used for various things in a dCache system: The [SRM](rf-glossary.md#storage-resource-manager-srm), the [pin manager](rf-glossary.md#pin-manager), the [space manager](rf-glossary.md#space-manager), the [replica manager](rf-glossary.md#replica-manager), the [billing](rf-glossary.md#billing), and the pnfs server might make use of one or more databases in a single or several separate PostgreSQL servers.
 
-The `SRM`, the pin manager, the space manager and the replica manager will use the PostgreSQL database as configured at cell start-up in the corresponding batch files. The `billing` will only write the accounting information into a database if it is configured with the option `-useSQL`. The `pnfs` server will use a PostgreSQL server if the `pnfs-posgresql` version is used. It will use several databases in the PostgreSQL server. 
+The `SRM`, the pin manager, the space manager and the replica manager will use the PostgreSQL database as configured at cell start-up in the corresponding batch files. The `billing` will only write the accounting information into a database if it is configured with the option `-useSQL`. The `pnfs` server will use a PostgreSQL server if the `pnfs-posgresql` version is used. It will use several databases in the PostgreSQL server.
 
 Installing a PSQL Server
 ========================
@@ -78,7 +78,7 @@ On small systems it should never be a problem to use one single PSQL server for 
 
 Whenever the PostgreSQL server is going to be used for another functionality, the impact on performance should be checked carefully. To improve the performance, the functionality should be installed on a separate host. Generally, a PSQL server for a specific funcionality should be on the same host as the dCache cell accessing that PSQL server, and the PSQL server containing the databases for CHIMERA should run on the same host as CHIMERA and the PnfsManager cell of the dCache system accessing it.
 
-It is especially useful to use a separate PostgreSQL server for the `billing` cell. 
+It is especially useful to use a separate PostgreSQL server for the `billing` cell.
 
 > **Note**
 >

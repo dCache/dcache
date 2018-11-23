@@ -1,4 +1,4 @@
-Chapter 29. dCache Default Port Values 
+Chapter 29. dCache Default Port Values
 ======================================
 
 You can use the command `dcache ports` to get the list of ports used by dCache.

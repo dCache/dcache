@@ -3,17 +3,17 @@ Preface
 
 #### Table of Contents
 
-[Minimum System Requirements](#minimum-system-requirements)  
-[Structure of this book](#structure-of-this-book)  
+[Minimum System Requirements](#minimum-system-requirements)
+[Structure of this book](#structure-of-this-book)
 
 Welcome to dCache.
 
-dCache is a distributed storage system proven to scale to hundreds of Petabytes. 
+dCache is a distributed storage system proven to scale to hundreds of Petabytes.
 Originally conceived as a disk cache (hence the name) in front of a tertiary storage to
 provide efficient data access for data intensive scientific experiments in the field of High
 Energy Physics (HEP) it has evolved into highly scalable general-purpose open source
-storage solution.   
- 
+storage solution.
+
 dCache is a joint effort between the Deutsches Elektronen-Synchrotron (DESY) in
 Hamburg, Nordic Data Grid Facility (NeIC, NDGF) based in Copenhagen, the Fermi
 National Accelerator Laboratory near Chicago with significant distributions and
@@ -25,31 +25,31 @@ Rutherford Appleton Laboratory, UK and CERN in Geneva.
 ### Usable storage backends
 
 A dCache instance will generally consist of many storage (or "pool") nodes.
-On those nodes, normal Linux filesystems (btrfs, ext4, XFS, ZFS) are used 
-to store data. 
+On those nodes, normal Linux filesystems (btrfs, ext4, XFS, ZFS) are used
+to store data.
 
 Alternatively, dCache pools can use storage space provided by a Ceph object
 storage system.
 
 In addition to those possibilities, dCache can use its hierarchical storage
-management capabilities to transparently use  storage systems with different characteristics (like tape libraries for lower-cost, but higher-latency 
+management capabilities to transparently use  storage systems with different characteristics (like tape libraries for lower-cost, but higher-latency
 storage). Built-in mechanisms can be used to increase performance and balance loads,
 increase resilience and availability. dCache also supplies advanced control systems
-to manage data as well as data flows. 
+to manage data as well as data flows.
 
 ### Data access protocols
 
 dCache supports the following I/O (and data management) protocols:
 
--   **dCap** 
+-   **dCap**
 
 -   **FTP** (including **GridFTP**)
 
 -   **HTTP** (and **WEBDAV**)
- 
+
 -   **NFS** (parallel NFSv4)
 
--   **SRM** 
+-   **SRM**
 
 -   **XRootD**
 
@@ -59,19 +59,19 @@ dCache supports **X.509** certificate based authentication through the Grid Secu
 Infrastructure used as well as **username/password** authentication and **LDAP**. For
 some workloads, users can also authenticate using **macaroons** or **OpenID Connect**.
 
-dCache provides fine-grained POSIX and **NFS**-style access control list (ACLs) 
-based file/directory authorization. 
+dCache provides fine-grained POSIX and **NFS**-style access control list (ACLs)
+based file/directory authorization.
 
 ### Other features
 
--   Resilience and high availability can be configured by enabling multiple 
-    file replicas and flexible variety of replica placement policies. 
+-   Resilience and high availability can be configured by enabling multiple
+    file replicas and flexible variety of replica placement policies.
 
 -   Easy migration of data via the migration module.
 
--   The "billing" system provides a  powerful cost calculation system 
+-   The "billing" system provides a  powerful cost calculation system
     that allows to control the data flow
-    (reading and writing from/to data servers, between data servers and 
+    (reading and writing from/to data servers, between data servers and
     also between data servers and tape).
 
 -   Load balancing and performance tuning by hot pool replication (via cost

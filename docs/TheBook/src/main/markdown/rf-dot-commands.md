@@ -33,7 +33,7 @@ There are no guarantees concerning future availability of the file; in particula
 
 #### GET CHECKSUM(S)
 
-Get checksum types and checksums for a given file. 
+Get checksum types and checksums for a given file.
 
 ##### USAGE:
 
@@ -63,7 +63,7 @@ Allows users to pin or stage files.
 ``operation`` can be replaced by:
 
 * ``pin``
-* ``stage`` 
+* ``stage``
 * ``bringonline``
 
 These are equivalent options.
@@ -72,9 +72,9 @@ These are equivalent options.
 
 ``unit`` can be replaced by:
 
-* ``SECONDS`` 
-* ``MINUTES`` 
-* ``HOURS`` 
+* ``SECONDS``
+* ``MINUTES``
+* ``HOURS``
 * ``DAYS``
 
 This argument is optional and defaults to ``SECONDS``.
@@ -125,7 +125,7 @@ Stores, retrieves and modifies the URI string(s) which define an HSM/tape locati
        origdrive=localhost:/dev/tmp/tps0d0n:1487271284&crc=813392028&original_name=/pnfs/fs/usr/test/arossi/000/data001"
        > ".(suri)(data001)"
 
-    $ cat ".(suri)(data001)" 
+    $ cat ".(suri)(data001)"
     $ enstore://enstore/?volume=VOL001&location_cookie=0000_000000000_0000002&size=234653&file_family=standard&map_file=&
        pnfsid_file=0000464E839DEAFC428E8CF52D8028455141&pnfsid_map=&bfid=c085615502758c8bb54db4c30081626f&
        origdrive=localhost:/dev/tmp/tps0d0n:1487271284&crc=813392028&original_name=/pnfs/fs/usr/test/arossi/000/data001
@@ -148,10 +148,10 @@ Stores, retrieves and modifies the URI string(s) which define an HSM/tape locati
     ### remove [as root]
 
     $ echo -n "" > ".(suri)(data001)"
-    
+
     $ cat ".(suri)(data001)"
     $
-    
+
 ##### NOTES:
 
 We record here a peculiar problem concerning permission error reporting using bash built-in 'echo'.

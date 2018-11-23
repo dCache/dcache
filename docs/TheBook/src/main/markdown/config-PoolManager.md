@@ -4,19 +4,19 @@ THE POOLMANAGER SERVICE
 Table of Contents
 ------------------
 
-* [The Pool Selection Mechanism](#the-pool-selection-mechanism)  
+* [The Pool Selection Mechanism](#the-pool-selection-mechanism)
 
-     [Links](#links)   
-     [Examples](#examples)  
+     [Links](#links)
+     [Examples](#examples)
 
-* [The Partition Manager](#the-partition-manager)  
+* [The Partition Manager](#the-partition-manager)
 
-     [Overview](#overview)  
-     [Managing Partitions](#managing-partitions)  
-     [Using Partitions](#using-partitions)  
-     [Classic Partitions](#classic-partitions)  
+     [Overview](#overview)
+     [Managing Partitions](#managing-partitions)
+     [Using Partitions](#using-partitions)
+     [Classic Partitions](#classic-partitions)
 
-* [Link Groups](#link-groups)  
+* [Link Groups](#link-groups)
 
 The heart of a dCache System is the `poolmanager`. When a user performs an action on a file - reading or writing - a `transfer request` is sent to the dCache system. The `poolmanager` then decides how to handle this request.
 
@@ -67,13 +67,13 @@ The location of the file in the file system is not used directly. Each file has 
 
 -   **Cache Class.** The cache class is a string with essentially the same functionality as the storage class, except that it is not used by a tertiary storage system. It is used in cases, where the storage class does not provide enough flexibility. It should only be used, if an existing configuration using storage classes does not provide sufficient flexibility.
 
-**IP Address**  
+**IP Address**
 The IP address of the requesting host.
 
-**Protocol / Type of Door**  
+**Protocol / Type of Door**
 The protocol respectively the type of door used by the transfer.
 
-**Type of Transfer**   
+**Type of Transfer**
 The type of transfer is either read, write, p2p request or cache.
 
 A request for reading a file which is not on a read pool will trigger a p2p request and a subsequent read request. These will be treated as two separate requests.
@@ -90,28 +90,28 @@ For each transfer at most one of each of the four unit types will match. If more
 
 The unit that matches is selected from all units defined in dCache, not just those for a particular unit group. This means that, if a unit group has a unit that could match a request but this request also matches a more restrictive unit defined elsewhere then the less restrictive unit will not match.
 
-**Network Unit**  
+**Network Unit**
 A *network unit* consists of an IP address and a net mask written as <IP-address>/<net mask>, say 111.111.111.0/255.255.255.0. It is satisfied, if the request is coming from a host with IP address within the subnet given by the address/netmask pair.
 
     psu create ugroup <name-of-unitgroup>
     psu create unit -net <IP-address>/<net mask>
     psu addto ugroup <name-of-unitgroup> <IP-address>/<net mask>
 
-**Protocol Unit**   
+**Protocol Unit**
 A *protocol unit* consists of the name of the protocol and the version number written as protocol-name/version-number, e.g., `xrootd/3`.
 
     psu create ugroup <name-of-unitgroup>
     psu create unit -protocol <protocol-name>/<version-number>
     psu addto ugroup <name-of-unitgroup> <protocol-name>/<version-number>
 
-**Storage Class Unit**  
+**Storage Class Unit**
 A *storage class* unit is given by a storage class. It is satisfied if the requested file has this storage class. Simple wild cards are allowed: for this it is important to know that a storage class must always contain exactly one @-symbol as will be explained in [the section called “Storage Classes”](#storage-classes). In a storage class unit, either the part before the @-symbol or both parts may be replaced by a *-symbol; for example, *@osm and *@* are both valid storage class units whereas `something@*` is invalid. The *-symbol represents a limited wildcard: any string that doesn’t contain an @-symbol will match.
 
     psu create ugroup <name-of-unitgroup>
     psu create unit -store <StoreName>:<StorageGroup>@<type-of-storage-system>
     psu addto ugroup <name-of-unitgroup> <StoreName>:<StorageGroup>@<type-of-storage-system>
 
-**Cache Class Unit**  
+**Cache Class Unit**
 A *cache class unit* is given by a cache class. It is satisfied, if the cache class of the requested file agrees with it.
 
     psu create ugroup <name-of-unitgroup>
@@ -138,23 +138,23 @@ Pools can be grouped together to pool groups.
     psu create pool <name-of-pool>
     psu addto pgroup <name-of-poolgroup> <name-of-pool>
 
-Example:  
+Example:
 
 Consider a host `pool1` with two pools, `pool1_1` and `pool1_2`, and a host `pool2` with one pool `pool2_1`. If you want to treat them in the same way, you would create a pool group and put all of them in it:
 
-    psu create pgroup normal-pools  
-    psu create pool pool1_1  
-    psu addto pgroup normal-pools pool1_1  
-    psu create pool pool1_2  
-    psu addto pgroup normal-pools pool1_2  
-    psu create pool pool2_1  
-    psu addto pgroup normal-pools pool2_1  
+    psu create pgroup normal-pools
+    psu create pool pool1_1
+    psu addto pgroup normal-pools pool1_1
+    psu create pool pool1_2
+    psu addto pgroup normal-pools pool1_2
+    psu create pool pool2_1
+    psu addto pgroup normal-pools pool2_1
 
 If you later want to treat `pool1_2` differently from the others, you would remove it from this pool group and add it to a new one:
 
-    psu removefrom pgroup normal-pools pool1_2  
-    psu create pgroup special-pools  
-    psu addto pgroup special-pools pool1_2  
+    psu removefrom pgroup normal-pools pool1_2
+    psu create pgroup special-pools
+    psu addto pgroup special-pools pool1_2
 
 In the following, we will assume that the necessary pool groups already exist. All names ending with `-pools` will denote pool groups.
 
@@ -166,21 +166,21 @@ The storage class is a string of the form `StoreName:StorageGroup@type-of-storag
 
 Consider for example the following setup:
 
-    Example:    
+    Example:
 
-    [root] # /usr/bin/chimera lstag /data/experiment-a  
-    Total: 2  
-    OSMTemplate  
-    sGroup  
-    [root] # /usr/bin/chimera readtag /data/experiment-a OSMTemplate  
-    StoreName myStore  
-    [root] # /usr/bin/chimera readtag /data/experiment-a sGroup  
-    STRING  
+    [root] # /usr/bin/chimera lstag /data/experiment-a
+    Total: 2
+    OSMTemplate
+    sGroup
+    [root] # /usr/bin/chimera readtag /data/experiment-a OSMTemplate
+    StoreName myStore
+    [root] # /usr/bin/chimera readtag /data/experiment-a sGroup
+    STRING
 
 This is the setup after a fresh installation and it will lead to the storage class `myStore:STRING@osm`. An adjustment to more sensible values will look like
 
-    [root] # /usr/bin/chimera writetag /data/experiment-a OSMTemplate "StoreName exp-a"  
-    [root] # /usr/bin/chimera writetag /data/experiment-a sGroup "run2010"  
+    [root] # /usr/bin/chimera writetag /data/experiment-a OSMTemplate "StoreName exp-a"
+    [root] # /usr/bin/chimera writetag /data/experiment-a sGroup "run2010"
 
 and will result in the storage class `exp-a:run2010@osm` for any data stored in the `/data/experiment-a` directory.
 
@@ -194,21 +194,21 @@ Consider for example a situation, where data produced by an experiment always ha
 
 The cache class of a directory is set by the tag `cacheClass` as follows:
 
-    Example:  
+    Example:
 
-    [root] # /usr/bin/chimera writetag /data/experiment-a cacheClass "metaData"  
+    [root] # /usr/bin/chimera writetag /data/experiment-a cacheClass "metaData"
 
-    In this example the meta-data is stored in directories which are tagged in this way.  
+    In this example the meta-data is stored in directories which are tagged in this way.
 
-Check the existing tags of a directory and their content by:  
+Check the existing tags of a directory and their content by:
 
-    [root] # /usr/bin/chimera lstag /path/to/directory    
-    Total: numberOfTags    
-    tag1  
-    tag2  
-    ...  
-    [root] # /usr/bin/chimera readtag /path/to/directory tag1  
-    contentOfTag1  
+    [root] # /usr/bin/chimera lstag /path/to/directory
+    Total: numberOfTags
+    tag1
+    tag2
+    ...
+    [root] # /usr/bin/chimera readtag /path/to/directory tag1
+    contentOfTag1
 
 > **NOTE**
 >
@@ -241,7 +241,7 @@ Find some examples for the configuration of the PSU below.
 
 The dCache we are going to configure receives data from a running experiment, stores the data onto a tertiary storage system, and serves as a read cache for users who want to analyze the data. While the new data from the experiment should be stored on highly reliable and therefore expensive systems, the cache functionality may be provided by inexpensive hardware. It is therefore desirable to have a set of pools dedicated for writing the new data and a separate set for reading.
 
-Example:  
+Example:
 
 The simplest configuration for such a setup would consist of two links “write-link” and “read-link”. The configuration is as follows:
 
@@ -318,9 +318,9 @@ Assume, the experiment data is copied into the cache from the hosts with IP `111
 
 If pools are financed by one experimental group, they probably do not like it if they are also used by another group. The best way to restrict data belonging to one experiment to a set of pools is with the help of storage class conditions. If more flexibility is needed, cache class conditions can be used for the same purpose.
 
-Example:  
+Example:
 
-Assume, data of experiment A obtained in 2010 is written into subdirectories in the namespace tree which are tagged with the storage class `exp-a:run2010@osm`, and similarly for the other years. (How this is done is described in [the section called “Storage Classes”](#storage-classes).) Experiment B uses the storage class `exp-b:alldata@osm` for all its data. Especially important data is tagged with the cache class `important`. (This is described in [the section called “Cache Class”](#cache-class).) A suitable setup would be:   
+Assume, data of experiment A obtained in 2010 is written into subdirectories in the namespace tree which are tagged with the storage class `exp-a:run2010@osm`, and similarly for the other years. (How this is done is described in [the section called “Storage Classes”](#storage-classes).) Experiment B uses the storage class `exp-b:alldata@osm` for all its data. Especially important data is tagged with the cache class `important`. (This is described in [the section called “Cache Class”](#cache-class).) A suitable setup would be:
 
 
 
@@ -358,9 +358,9 @@ Assume, data of experiment A obtained in 2010 is written into subdirectories in 
       psu create unit -dcache important
       psu addto ugroup imp-cond important
 
-      psu create link exp-b-link allnet-cond exp-b-cond  
-      psu set link exp-b-link -readpref=10 -writepref=10 -cachepref=10  
-      psu add link exp-b-link exp-b-pools  
+      psu create link exp-b-link allnet-cond exp-b-cond
+      psu set link exp-b-link -readpref=10 -writepref=10 -cachepref=10
+      psu add link exp-b-link exp-b-pools
 
       psu create link exp-b-imp-link allnet-cond exp-b-cond imp-cond
       psu set link exp-b-imp-link -readpref=20 -writepref=20 -cachepref=20
@@ -373,15 +373,15 @@ Note again that these will never be used otherwise. Not even, if all pools in `e
 
 The central IT department might also want to set up a few pools, which are used as fall-back, if none of the pools of the experiments are functioning. These will also be used for internal testing. The following would have to be added to the previous setup:
 
-Example:  
+Example:
 
-    psu create pgroup it-pools  
-    psu create pool pool_it  
-    psu addto pgroup it-pools pool_it  
+    psu create pgroup it-pools
+    psu create pool pool_it
+    psu addto pgroup it-pools pool_it
 
-    psu create link fallback-link allnet-cond  
-    psu set link fallback-link -readpref=5 -writepref=5 -cachepref=5  
-    psu add link fallback-link it-pools  
+    psu create link fallback-link allnet-cond
+    psu set link fallback-link -readpref=5 -writepref=5 -cachepref=5
+    psu add link fallback-link it-pools
 
 Note again that these will only be used, if none of the experiments pools can be reached, or if the storage class is not of the form `exp-a:run2009@osm`, `exp-a:run2010@osm`, or `exp-b:alldata@osm`. If the administrator fails to create the unit `exp-a:run2005@osm` and add it to the unit group `exp-a-cond`, the fall-back pools will be used eventually.
 
@@ -412,16 +412,16 @@ For each partition you can choose the load balancing policy. You do this by chos
 
 Currently four different partition types are supported:
 
-**classic**:    
+**classic**:
 This is the pool selection algorithm used in the versions of dCache prior to version 2.0. See [the section called “Classic Partitions”](#classic-partitions) for a detailed description.
 
-**random**:  
+**random**:
 This pool selection algorithm selects a pool randomly from the set of available pools.
 
-**lru**:  
+**lru**:
 This pool selection algorithm selects the pool that has not been used the longest.
 
-**wass**:  
+**wass**:
 This pool selection algorithm selects pools randomly weighted by available space, while incorporating age and amount of garbage collectible files and information about load.
 
 This is the partition type of the default partition. See [How to Pick a Pool](https://www.dcache.org/articles/wass.html) for more details.
@@ -468,13 +468,13 @@ Whenever this link is chosen for pool selection, the associated parameters of th
 
 In the [Web Interface](intouch.md#the-web-interface-for-monitoring-dcache) you can find a web page listing partitions and more information. You will find a page summarizing the partition status of the system. This is essentially the output of the command `pm ls -l`.
 
-Example:  
+Example:
 
 For your dCache on dcache.example.org the address is
 http://dcache.example.org:2288/poolInfo/parameterHandler/set/matrix/*
 
 
-### Examples   
+### Examples
 
 For the subsequent examples we assume a basic poolmanager setup :
 
@@ -538,7 +538,7 @@ For a special set of pools, where we only allow the xrootd protocol, we don't wa
     psu add    link xrootd-link special-pools
     psu set    link xrootd-link -readpref=10 -cachepref=10 -writepref=0
     psu set    link xrootd-link -section=xrootd-section
-    #        
+    #
 
 #### Choosing pools randomly for incoming traffic only
 
@@ -569,7 +569,7 @@ CLASSIC PARTITIONS
 
 The `classic` partition type implements the load balancing policy known from dCache releases before version 2.0. This partition type is still the default. This section describes this load balancing policy and the available configuration parameters.
 
-Example:   
+Example:
 
 To create a classic partition use the command: `pm create` -type=classic  <partitionName>
 
@@ -654,21 +654,21 @@ The space cost is calculated as follows:
 
 where the variable names have the following meanings:
 
-freeSpace  
+freeSpace
 The free space left on the pool
 
-newFileSize  
+newFileSize
 The size of the file to be written to one of the pools, and at least 50MB.
 
-lruAge  
+lruAge
 The age of the [least recently used file](rf-glossary.md#least-recently-used-lru-file) on the pool.
 
-gapPara  
+gapPara
 The gap parameter. Default is 4 GiB. The size of free space below which it will be assumed that the pool is full and consequently the least recently used file has to be removed. If, on the other hand, the free space is greater than `gapPara`, it will be expensive to store a file on the pool which exceeds the free space.
 
 It can be set per pool with the [set gap](reference.md#set-gap) command. This has to be done in the pool cell and not in the pool manager cell. Nevertheless it only influences the cost calculation scheme within the pool manager and not the bahaviour of the pool itself.
 
-costForMinute  
+costForMinute
 A parameter which fixes the space cost of a one-minute-old LRU file to (1 + costForMinute). It can be set with the [set breakeven](reference.md#set-breakeven), where
 
 costForMinute = breakeven \* 7 \* 24 \* 60.
@@ -700,11 +700,11 @@ The total cost is a linear combination of the [performance](rf-glossary.md#perfo
 
 will give the [space cost](rf-glossary.md#space-cost) three times the weight of the [performance cost](rf-glossary.md#performance-cost).
 
-### Parameters of Classic Partitions  
+### Parameters of Classic Partitions
 
 Classic partitions have a large number of tunable parameters. These parameters are set using the `pm set` command.
 
-Example:  
+Example:
 
 To set the space cost factor on the `default` partition to `0.3`, use the following command:
 
@@ -713,72 +713,72 @@ To set the space cost factor on the `default` partition to `0.3`, use the follow
 
 | Command                                       | Meaning                                                                                                                                                                                                                                                                                                                 | Type    |
 |-----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| `pm set` partitionName -spacecostfactor=scf   | Sets the `space cost factor` for the partition.                                                                                                                                                                                                                                                                         
+| `pm set` partitionName -spacecostfactor=scf   | Sets the `space cost factor` for the partition.
 
                                                  The default value is `1.0`.                                                                                                                                                                                                                                                                                              | float   |
-| `pm set` partitionName -cpucostfactor=ccf     | Sets the cpu cost factor for the partition.                                                                                                                                                                                                                                                                             
+| `pm set` partitionName -cpucostfactor=ccf     | Sets the cpu cost factor for the partition.
 
                                                  The default value is `1.0`.                                                                                                                                                                                                                                                                                              | float   |
-| `pm set` partitionName -idle=idle-value       | The concept of the idle value will be turned on if idle-value &gt; `0.0`.                                                                                                                                                                                                                                               
+| `pm set` partitionName -idle=idle-value       | The concept of the idle value will be turned on if idle-value &gt; `0.0`.
 
-                                                 A pool is idle if its performance cost is smaller than the idle-value. Otherwise it is not idle.                                                                                                                                                                                                                         
+                                                 A pool is idle if its performance cost is smaller than the idle-value. Otherwise it is not idle.
 
-                                                 If one or more pools that satisfy the read request are idle then only one of them is chosen for a particular file irrespective of total cost. I.e. if the same file is requested more than once it will always be taken from the same pool. This allowes the copies on the other pools to age and be garbage collected.  
-
-                                                 The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
-| `pm set` partitionName -p2p=p2p-value         | Sets the static replication threshold for the partition.                                                                                                                                                                                                                                                                
-
-                                                 If the performance cost on the best pool exceeds p2p-value and the value for [slope] = `0.0` then this pool is called hot and a pool to pool replication may be triggered.                                                                                                                                               
+                                                 If one or more pools that satisfy the read request are idle then only one of them is chosen for a particular file irrespective of total cost. I.e. if the same file is requested more than once it will always be taken from the same pool. This allowes the copies on the other pools to age and be garbage collected.
 
                                                  The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
-| `pm set` partitionName -alert=value           | Sets the alert value for the partition.                                                                                                                                                                                                                                                                                 
+| `pm set` partitionName -p2p=p2p-value         | Sets the static replication threshold for the partition.
 
-                                                 If the best pool's performance cost exceeds the p2p value and the alert value then no pool to pool copy is triggered and a message will be logged stating that no pool to pool copy will be made.                                                                                                                        
-
-                                                 The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
-| `pm set` partitionName -panic=value           | Sets the panic cost cut level for the partition.                                                                                                                                                                                                                                                                        
-
-                                                 If the performance cost of the best pool exceeds the panic cost cut level the request will fail.                                                                                                                                                                                                                         
+                                                 If the performance cost on the best pool exceeds p2p-value and the value for [slope] = `0.0` then this pool is called hot and a pool to pool replication may be triggered.
 
                                                  The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
-| `pm set` partitionName -fallback=value        | Sets the fallback cost cut level for the partition.                                                                                                                                                                                                                                                                     
+| `pm set` partitionName -alert=value           | Sets the alert value for the partition.
 
-                                                 If the best pool's performance cost exceeds the fallback cost cut level then a pool of the next level will be chosen. This means for example that instead of choosing a pool with `readpref` = 20 a pool with `readpref` &lt; 20 will be chosen.                                                                         
-
-                                                 The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
-| `pm set` partitionName -slope=slope           | Sets the dynamic replication threshold value for the partition.                                                                                                                                                                                                                                                         
-
-                                                 If slope&gt; `0.01` then the product of best pool's performance cost and slope is used as threshold for pool to pool replication.                                                                                                                                                                                        
-
-                                                 If the performance cost on the best pool exceeds this threshold then this pool is called hot.                                                                                                                                                                                                                            
+                                                 If the best pool's performance cost exceeds the p2p value and the alert value then no pool to pool copy is triggered and a message will be logged stating that no pool to pool copy will be made.
 
                                                  The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
-| `pm set` partitionName -p2p-allowed=value     | This value can be specified if an HSM is attached to the dCache.                                                                                                                                                                                                                                                        
+| `pm set` partitionName -panic=value           | Sets the panic cost cut level for the partition.
 
-                                                 If a partition has no HSM connected, then this option is overridden. This means that no matter which value is set for `p2p-allowed` the pool to pool replication will always be allowed.                                                                                                                                 
+                                                 If the performance cost of the best pool exceeds the panic cost cut level the request will fail.
 
-                                                 By setting value = `off` the values for `p2p-allowed`, `p2p-oncost` and `p2p-fortransfer` will take over the value of the default partition.                                                                                                                                                                             
+                                                 The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
+| `pm set` partitionName -fallback=value        | Sets the fallback cost cut level for the partition.
 
-                                                 If value = `yes` then pool to pool replication is allowed.                                                                                                                                                                                                                                                               
+                                                 If the best pool's performance cost exceeds the fallback cost cut level then a pool of the next level will be chosen. This means for example that instead of choosing a pool with `readpref` = 20 a pool with `readpref` &lt; 20 will be chosen.
 
-                                                 As a side effect of setting value = `no` the values for `p2p-oncost` and `p2p-fortransfer` will also be set to `no`.                                                                                                                                                                                                     
+                                                 The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
+| `pm set` partitionName -slope=slope           | Sets the dynamic replication threshold value for the partition.
+
+                                                 If slope&gt; `0.01` then the product of best pool's performance cost and slope is used as threshold for pool to pool replication.
+
+                                                 If the performance cost on the best pool exceeds this threshold then this pool is called hot.
+
+                                                 The default value is `0.0`, which disables this feature.                                                                                                                                                                                                                                                                 | float   |
+| `pm set` partitionName -p2p-allowed=value     | This value can be specified if an HSM is attached to the dCache.
+
+                                                 If a partition has no HSM connected, then this option is overridden. This means that no matter which value is set for `p2p-allowed` the pool to pool replication will always be allowed.
+
+                                                 By setting value = `off` the values for `p2p-allowed`, `p2p-oncost` and `p2p-fortransfer` will take over the value of the default partition.
+
+                                                 If value = `yes` then pool to pool replication is allowed.
+
+                                                 As a side effect of setting value = `no` the values for `p2p-oncost` and `p2p-fortransfer` will also be set to `no`.
 
                                                  The default value is `yes`.                                                                                                                                                                                                                                                                                              | boolean |
-| `pm set` partitionName -p2p-oncost=value      | Determines whether pool to pool replication is allowed if the best pool for a read request is hot.                                                                                                                                                                                                                      
+| `pm set` partitionName -p2p-oncost=value      | Determines whether pool to pool replication is allowed if the best pool for a read request is hot.
 
                                                  The default value is `no`.                                                                                                                                                                                                                                                                                               | boolean |
-| `pm set` partitionName -p2p-fortransfer=value | If the best pool is hot and the requested file will be copied either from the hot pool or from tape to another pool, then the requested file will be read from the pool where it just had been copied to if value = `yes`. If value = `no` then the requested file will be read from the hot pool.                      
+| `pm set` partitionName -p2p-fortransfer=value | If the best pool is hot and the requested file will be copied either from the hot pool or from tape to another pool, then the requested file will be read from the pool where it just had been copied to if value = `yes`. If value = `no` then the requested file will be read from the hot pool.
 
                                                  The default value is `no`.                                                                                                                                                                                                                                                                                               | boolean |
-| `pm set` partitionName -stage-allowed=value   | Set the stage allowed value to `yes` if a tape system is connected and to `no` otherwise.                                                                                                                                                                                                                               
+| `pm set` partitionName -stage-allowed=value   | Set the stage allowed value to `yes` if a tape system is connected and to `no` otherwise.
 
-                                                 As a side effect, setting the value for `stage-allowed` to `no` changes the value for `stage-oncost` to `no`.                                                                                                                                                                                                            
-
-                                                 The default value is `no`.                                                                                                                                                                                                                                                                                               | boolean |
-| `pm set` partitionName -stage-oncost=value    | If the best pool is hot, p2p-oncost is disabled and an HSM is connected to a pool then this parameter determines whether to stage the requested file to a different pool.                                                                                                                                               
+                                                 As a side effect, setting the value for `stage-allowed` to `no` changes the value for `stage-oncost` to `no`.
 
                                                  The default value is `no`.                                                                                                                                                                                                                                                                                               | boolean |
-| `pm set` partitionName -max-copies=copies     | Sets the maximal number of replicas of one file. If the maximum is reached no more replicas will be created.                                                                                                                                                                                                            
+| `pm set` partitionName -stage-oncost=value    | If the best pool is hot, p2p-oncost is disabled and an HSM is connected to a pool then this parameter determines whether to stage the requested file to a different pool.
+
+                                                 The default value is `no`.                                                                                                                                                                                                                                                                                               | boolean |
+| `pm set` partitionName -max-copies=copies     | Sets the maximal number of replicas of one file. If the maximum is reached no more replicas will be created.
 
                                                  The default value is `500`.                                                                                                                                                                                                                                                                                              | integer |
 

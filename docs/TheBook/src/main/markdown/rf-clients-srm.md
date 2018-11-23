@@ -4,13 +4,13 @@ Chapter 27. dCache Clients
 Table of Contents
 -----------------
 
-+ [The SRM Client Suite](#the-srm-client-suite)  
++ [The SRM Client Suite](#the-srm-client-suite)
 
-  [srmcp](#srmcp) — Copy a file from or to an SRM or between two SRMs.  
-  [srmstage](#srmstage) — Request staging of a file.  
+  [srmcp](#srmcp) — Copy a file from or to an SRM or between two SRMs.
+  [srmstage](#srmstage) — Request staging of a file.
 
-+ [dccp](#dccp)  
-  [dccp](#dccp) — Copy a file from or to a dCache server.  
++ [dccp](#dccp)
+  [dccp](#dccp) — Copy a file from or to a dCache server.
 
 
 The SRM Client Suite
@@ -28,10 +28,10 @@ synopsis
 srmcp|option...|sourceUrl destUrl
 
 Arguments
-  sourceUrl  
+  sourceUrl
     The URL of the source file.
 
-destUrl  
+destUrl
     The URL of the destination file.
 
 Options
@@ -53,7 +53,7 @@ To enable the user to specify a range of ports open for tcp connections as a pai
 This takes care of compute nodes that are behind firewall.
 
 Example:
-`globus_tcp_port_range=40000:50000` 
+`globus_tcp_port_range=40000:50000`
 
     [user] $ srmcp --globus_tcp_port_range=minVal:maxVal sourceUrl destinationUrl
 
@@ -64,7 +64,7 @@ To enable the user to specify the number of streams to be used for data transfer
 Example:
     [user] $  srmcp --streams_num=1 sourceUrl destinationUrl
 
-**server_mode**  
+**server_mode**
 To enable the user to set the (gridftp) server mode for data transfer. Can be `active` or `passive`, `passive` by default.
 
 This option will have effect only if transfer is performed in a stream mode (see `streams_num`)
@@ -84,7 +84,7 @@ synopsis
 srmstage[srmUrl]
 
 Arguments
-srmUrl  
+srmUrl
 The URL of the file which should be staged.
 
 Description
@@ -106,13 +106,13 @@ Arguments
 
 The following arguments are required:
 
-**sourceUrl**  
+**sourceUrl**
 
-    The URL of the source file. 
+    The URL of the source file.
 
 **destUrl**
 
-    The URL of the destination file. 
+    The URL of the destination file.
 
 Description
 ------------
@@ -124,19 +124,19 @@ The following arguments are optional:
 
 **-a**
 
-    Enable read-ahead functionality. 
+    Enable read-ahead functionality.
 
 **-b <bufferSize>**
 
-    Set read-ahead buffer size. The default value is 1048570 Bytes. To disable the buffer this can be set to any value below the default. dccp will attempt to allocate the buffer size so very large values should be used with care. 
+    Set read-ahead buffer size. The default value is 1048570 Bytes. To disable the buffer this can be set to any value below the default. dccp will attempt to allocate the buffer size so very large values should be used with care.
 
 **-B <bufferSize>**
 
-    Set buffer size. The size of the buffer is requested in each request, larger buffers will be needed to saturate higher bandwidth connections. The optimum value is network dependent. Too large a value will lead to excessive memory usage, too small a value will lead to excessive network communication. 
+    Set buffer size. The size of the buffer is requested in each request, larger buffers will be needed to saturate higher bandwidth connections. The optimum value is network dependent. Too large a value will lead to excessive memory usage, too small a value will lead to excessive network communication.
 -d <debug level>
 
     Set the debug level. <debug level> is a integer between 0 and 127. If the value is 0 then no output is generated, otherwise the value is formed by adding together one or more of the following values:
-    
+
 **Value	Enabled output**
   1	    Error messages
   2	    Info messages
@@ -149,35 +149,35 @@ The following arguments are optional:
 
 **-h <replyHostName>**
 
-    Bind the callback connection to the specific hostname interface. 
+    Bind the callback connection to the specific hostname interface.
 
 **-i**
 
-    Secure mode. Do not overwrite the existing files. 
+    Secure mode. Do not overwrite the existing files.
 
 **-l <location>**
 
-    Set location for pre-stage. if the location is not specified, the local host of the door will be used. This option must be used with the -P option. 
+    Set location for pre-stage. if the location is not specified, the local host of the door will be used. This option must be used with the -P option.
 
 **-p <first_port>:<last_port>**
 
-    Bind the callback data connection to the specified TCP port/rangeSet port range. Delimited by the ’:’ character, the <first_port> is required but the <last_port> is optional. 
+    Bind the callback data connection to the specified TCP port/rangeSet port range. Delimited by the ’:’ character, the <first_port> is required but the <last_port> is optional.
 
 **-P**
 
-    Pre-stage. Do not copy the file to a local host but make sure the file is on disk on the dCache server. 
+    Pre-stage. Do not copy the file to a local host but make sure the file is on disk on the dCache server.
 
 **-r <bufferSize>**
 
-    TCP receive buffer size. The default is 256K. Setting to 0 uses the system default value. Memory useage will increase with higher values, but performance better. 
+    TCP receive buffer size. The default is 256K. Setting to 0 uses the system default value. Memory useage will increase with higher values, but performance better.
 
 **-s <bufferSize>**
 
-    TCP send buffer size. The default is 256K. Setting to 0 uses the system default value. 
+    TCP send buffer size. The default is 256K. Setting to 0 uses the system default value.
 
 **-t <time>**
 
-    Stage timeout in seconds. This option must be used with the -P option. 
+    Stage timeout in seconds. This option must be used with the -P option.
 
 Examples:
 ---------
@@ -200,10 +200,10 @@ stdin:
 
 stdout:
 
-[user] $ dccp /acs/user_space/data_arch.tar - | tar xf - 
+[user] $ dccp /acs/user_space/data_arch.tar - | tar xf -
 
 See also
 --------
 
-cp 
+cp
 

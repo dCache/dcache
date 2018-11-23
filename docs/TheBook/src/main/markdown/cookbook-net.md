@@ -3,17 +3,17 @@ Chapter 25. Complex Network Configuration
 
 Table of Contents
 
-+ [Firewall Configuration](#firewall-configuration)  
++ [Firewall Configuration](#firewall-configuration)
 
-    [Basic Installation](#basic-installations)  
-    [Multi-Node with Firewalls](#multi-node-with-firewalls)  
+    [Basic Installation](#basic-installations)
+    [Multi-Node with Firewalls](#multi-node-with-firewalls)
 
-+ [GridFTP Connections via two or more Network Interfaces](#gridftp-connections-cia-two-or-more-network-interfaces)  
++ [GridFTP Connections via two or more Network Interfaces](#gridftp-connections-cia-two-or-more-network-interfaces)
 
-+ [GridFTP with Pools in a Private Subnet](#gridftp-with-pools-in-a-private-subnet)  
++ [GridFTP with Pools in a Private Subnet](#gridftp-with-pools-in-a-private-subnet)
 
 
-This chapter contains solutions for several non-trivial network configurations. The first section discusses the interoperation of dCache with firewalls and does not require any background knowledge about dCache other than what is given in the installation guide ([Chapter 2, Installing dCache](install.md)) and the first steps tutorial ([Chapter 3, Getting to know your dCache](intouch.md). The following sections will deal with more complex network topologies, e.g. private subnets. Even though not every case is covered, these cases might help solve other problems, as well. Intermediate knowledge about dCache is required. 
+This chapter contains solutions for several non-trivial network configurations. The first section discusses the interoperation of dCache with firewalls and does not require any background knowledge about dCache other than what is given in the installation guide ([Chapter 2, Installing dCache](install.md)) and the first steps tutorial ([Chapter 3, Getting to know your dCache](intouch.md). The following sections will deal with more complex network topologies, e.g. private subnets. Even though not every case is covered, these cases might help solve other problems, as well. Intermediate knowledge about dCache is required.
 
 > **Warning**
 >
@@ -50,9 +50,9 @@ Multinode setup with firewalls on the nodes.
 
 **dCache internal.**
 
--   The `LocationManager` server runs in the `dCacheDomain`. By default it is listening on UDP port `11111`. Hence, on the head node port `11111` needs to be opened in the firewall to allow connections to the `LocationManager`. Remember to limit this so that only other dCache nodes are allowed access. 
+-   The `LocationManager` server runs in the `dCacheDomain`. By default it is listening on UDP port `11111`. Hence, on the head node port `11111` needs to be opened in the firewall to allow connections to the `LocationManager`. Remember to limit this so that only other dCache nodes are allowed access.
 
--   On the pool nodes the LAN range ports need to be opened to allow pool to pool communication. By default these are ports `33115-33145` (set by the properties `dcache.net.lan.port.min` and `dcache.net.lan.port.max`). 
+-   On the pool nodes the LAN range ports need to be opened to allow pool to pool communication. By default these are ports `33115-33145` (set by the properties `dcache.net.lan.port.min` and `dcache.net.lan.port.max`).
 
 **dCache communication with client.**
 

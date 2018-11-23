@@ -4,36 +4,36 @@ CHAPTER 22. dCache CLIENTS.
 Table of Contents
 -----------------
 
-+ [GSI-FTP](#gsi-ftp)  
++ [GSI-FTP](#gsi-ftp)
 
-    [Listing a directory](#listing-a-directory)   
-    [Checking a file exists](#checking-a-file-exists)  
-    [Deleting files](#deleting-files)  
-    [Copying files](#copying-files)  
+    [Listing a directory](#listing-a-directory)
+    [Checking a file exists](#checking-a-file-exists)
+    [Deleting files](#deleting-files)
+    [Copying files](#copying-files)
 
-+ [dCap](#dcap)  
++ [dCap](#dcap)
 
-    [dccp](#dccp)  
-    [Using the dCache client interposition library.](#using-the-dcache-client-interposition-library.)  
+    [dccp](#dccp)
+    [Using the dCache client interposition library.](#using-the-dcache-client-interposition-library.)
 
-+ [SRM](#srm)  
++ [SRM](#srm)
 
-    [Creating a new directory.](#creating-a-new-directory)  
-    [Removing files from dCache](#removing-files-from-dcache)  
-    [Removing empty directories from dCache](#removing-empty-directories-from-dcache)  
-    [srmcp for SRM v1](#srmcp-for-srm-v1)  
-    [srmcp for SRM v2.2](#srmcp-for-srm-v2.2)  
+    [Creating a new directory.](#creating-a-new-directory)
+    [Removing files from dCache](#removing-files-from-dcache)
+    [Removing empty directories from dCache](#removing-empty-directories-from-dcache)
+    [srmcp for SRM v1](#srmcp-for-srm-v1)
+    [srmcp for SRM v2.2](#srmcp-for-srm-v2.2)
 
-+ [ldap](#ldap)  
-+ [Using the LCG commands with dCache](#using-the-lcg-commands-with-dcache)  
++ [ldap](#ldap)
++ [Using the LCG commands with dCache](#using-the-lcg-commands-with-dcache)
 
-    [The lcg-gt Application](#the-lcg-gt-application)  
-    [The lcg-sd Application](#the-lcg-sd-application)  
+    [The lcg-gt Application](#the-lcg-gt-application)
+    [The lcg-sd Application](#the-lcg-sd-application)
 
-There are many client tools for dCache. These can most easily be classified by communication protocol. 
+There are many client tools for dCache. These can most easily be classified by communication protocol.
 
 
-As can be seen from above even a single node standard install of dCache returns a considerable number of lines and for this reason we have not included the output, in this case 205 lines where written. 
+As can be seen from above even a single node standard install of dCache returns a considerable number of lines and for this reason we have not included the output, in this case 205 lines where written.
 
 
 GSI-FTP
@@ -82,7 +82,7 @@ Copying files
 globus-url-copy
 \[command line options\]
 [<srcUrl>]
-[<destinationUrl>] 
+[<destinationUrl>]
 ...
 Copying file with `globus-url-copy` follows the syntax source, destination.
 
@@ -103,14 +103,14 @@ When using `dccp` client or using the interposition library the errors `Command 
 DCCP
 ----
 
-The following example shows `dccp` being used to copy the file **/etc/group** into dCache as the the file **/pnfs/example.org/data/dteam/test6**. The `dccp` program will connect to dCache without authenticating. 
+The following example shows `dccp` being used to copy the file **/etc/group** into dCache as the the file **/pnfs/example.org/data/dteam/test6**. The `dccp` program will connect to dCache without authenticating.
 
      [user] $ /opt/d-cache/dcap/bin/dccp /etc/group dcap://dcap-door.example.org:22125/pnfs/example.org/data/dteam/test6
      Command failed!
      Server error message for [1]: "path /pnfs/example.org/data/dteam/test6 not found" (errno 10001).
      597 bytes in 0 seconds
 
-The following example shows `dccp` being used to upload the file **/etc/group**. In this example, dccp will authenticate with dCache using the GSI protocol. 
+The following example shows `dccp` being used to upload the file **/etc/group**. In this example, dccp will authenticate with dCache using the GSI protocol.
 
     [user] $ /opt/d-cache/dcap/bin/dccp /etc/group gsidcap://gsidcap-door.example.org:22128/pnfs/example.org/data/dteam/test5
     Command failed!
@@ -221,7 +221,7 @@ The following session demonstrates copying a file into dCache, checking the file
     daemon:x:1:
     bin:x:2:
     [user] $ rm gsidcap://gsidcap-door.example.org:22128/pnfs/example.org/data/dteam/MyFile
-    
+
 SRM
 ===
 
@@ -270,8 +270,8 @@ Usage:
 Examples:
 
     [user] $ srmrmdir srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/myDir
-    
-Examples:    
+
+Examples:
 
     [user] $ srmrmdir -recursive=true srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/myDir
 
@@ -407,7 +407,7 @@ Possible result:
 
 #### Writing to a Space Token
 
-Usage: 
+Usage:
 
     srmcp \[command line options\] source(s) destination
 
@@ -451,7 +451,7 @@ SRM version 2.2 has a much richer set of file listing commands.
 
 Usage:
 
-    srmls [command line options] srmUrl... 
+    srmls [command line options] srmUrl...
 
 Example 22.3. Using srmls -l:
     [user] $ srmls srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/testdir  -2
@@ -562,14 +562,14 @@ Each command line application operates on a different method of the SRM interfac
 `lcg-gt` queries the BDII information server. This adds an additional requirement that the BDII information server can be found by `lcg-gt`, please only attempt to contact servers found on your user interface using.
 
     [user] $ lcg-infosites --vo dteam se
-    
-    
+
+
 The `lcg-gt` Application
 ------------------------
 
 `SRM` provides a protocol negotiating interface, and returns a TURL (transfer URL). The protocol specified by the client will be returned by the server if the server supports the requested protocol.
 
-To read a file from dCache using `lcg-gt` you must specify two parameters the SURL (storage URL), and the protcol (`GSIdCap` or `GSI-FTP`) you wish to use to access the file. 
+To read a file from dCache using `lcg-gt` you must specify two parameters the SURL (storage URL), and the protcol (`GSIdCap` or `GSI-FTP`) you wish to use to access the file.
 
     [user] $ lcg-gt srm://srm-door.example.org/pnfs/example.org/data/dteam/group gsidcap
      gsidcap://gsidcap-door.example.org:22128/pnfs/example.org/data/dteam/group
@@ -588,7 +588,7 @@ Each of the above three lines contains different information. These are explaine
 
 > **Remember to return your Request Id**
 >
-> dCache limits the number of Request Ids a user may have. All Request Ids should be returned to dCache using the command `lcg-sd`. 
+> dCache limits the number of Request Ids a user may have. All Request Ids should be returned to dCache using the command `lcg-sd`.
 
 If you use `lcg-gt` to request a file with a protocol that is not supported by dCache the command will block for some time as dCache's SRM interface times out after approximately 10 minutes.
 

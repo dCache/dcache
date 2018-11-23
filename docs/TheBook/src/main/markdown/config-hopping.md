@@ -4,18 +4,18 @@ CHAPTER 9. FILE HOPPING
 
 Table of Contents
 
-* [File Hopping on arrival from outside dCache](#file-hopping-on-arrival-from-outside-dcache)  
+* [File Hopping on arrival from outside dCache](#file-hopping-on-arrival-from-outside-dcache)
 
-    [File mode of replicated files](#file-mode-of-replicated-files)  
-    [File Hopping managed by the PoolManager](#file-hopping-managed-by-the-poolmanager)  
-    [File Hopping managed by the HoppingManager](#file-hopping-managed-by-the-hoppingmanager)  
+    [File mode of replicated files](#file-mode-of-replicated-files)
+    [File Hopping managed by the PoolManager](#file-hopping-managed-by-the-poolmanager)
+    [File Hopping managed by the HoppingManager](#file-hopping-managed-by-the-hoppingmanager)
 
 
 File hopping is a collective term in dCache, summarizing the possibility of having files being transferred between dCache pools triggered by a variety of conditions. The most prominent examples are:
 
 -   If a file is requested by a client but the file resides on a pool from which this client, by configuration, is not allowed to read data, the dataset is transferred to an “allowed” pool first.
 
--   If a pool encounters a steady high load, the system may, if configured, decide to replicate files to other pools to achieve an equal load distribution.  
+-   If a pool encounters a steady high load, the system may, if configured, decide to replicate files to other pools to achieve an equal load distribution.
 
 -   HSM restore operations may be split into two steps. The first one reads data from tertiary storage to an “HSM connected” pool and the second step takes care that the file is replicated to a general read pool. Under some conditions this separation of HSM and non-HSM pools might become necessary for performance reasons.
 
@@ -69,7 +69,7 @@ It is possible to configure the CELL-POOLMNGR such that files are replicated fro
 Example:
 Assume that we want to have all files, arriving on pool `ocean` to be immediately replicated to a subset of read pools. This subset of pools is described by the poolgroup `ocean-copies`. No other pool is member of the poolgroup `ocean-copies`.
 Other than that, files arriving at the pool `mountain` should be replicated to all read pools from which farm nodes on the `131.169.10.0/24` subnet are allowed to read.
-The layout file defining the pools `ocean` and `mountain` should read like this: 
+The layout file defining the pools `ocean` and `mountain` should read like this:
 
     [exampleDomain]
     [exampleDomain/pool]
@@ -245,31 +245,31 @@ or for several pools in the **/etc/dcache/dcache.conf** file.
                   -protMinor=<minorProtocolVersion>
                   -protMajor=<majorProtocolVersion>
 
-**name**  
+**name**
 This is the name of the hopping rule. Rules are checked in alphabetic order concerning their names.
 
-**pattern**   
+**pattern**
 `pattern` is a [storage class](config-PoolManager.md#storage-classes) pattern. If the incoming storage class matches this pattern, this rule is processed.
 
-**precious|cached|keep**  
+**precious|cached|keep**
 `precious|cached|keep` determines the mode of the replicated file. With `keep` the mode of the file will be determined by the mode of the destination pool.
 
-**-destination**  
+**-destination**
 This defines which `cell` to use for the pool to pool transfer. By default this is the CELL-POOLMNGR and this should not be changed.
 
-**-overwrite**  
+**-overwrite**
 In case, a rule with the same name already exists, it is overwritten.
 
-**-continue**  
+**-continue**
 If a rule has been triggered and the corresponding action has been performed, no other rules are checked. If the `continue` option is specified, rule checking continues. This is for debugging purposes only.
 
-**-source**  
+**-source**
 `-source` defines the event on the pool which has triggered the hopping. Possible values are `restore` and `write`. `restore` means that the rule should be triggered if the file was restored from a tape and `write` means that it should be triggered if the file was written by a client.
 
 **-host**
 Choose the id of a node of the farm of worker-nodes that should be allowed to access the file. Configure the POOLMNGR respectively.
 
-**-protType, -protMajor, -protMinor**  
+**-protType, -protMajor, -protMinor**
 Specify the protocol which should be used to access the replicated files.
 
 ### HoppingManager configuration examples

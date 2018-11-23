@@ -12,7 +12,7 @@ If you are using space reservations, i.e. you set
 
     dcache.enable.space-reservation=true
 
-in your configuration file and all of your pools are in [link groups](config-PoolManager.md#link-groups), then you can only write into dCache if a link group is available for your transfer. Using the `SRM` you can specify the link group to write into. If you want to use another protocol like `curl` or `xrootd` you cannot specify a link group. In this case you need to use the `WriteToken` directory tag. 
+in your configuration file and all of your pools are in [link groups](config-PoolManager.md#link-groups), then you can only write into dCache if a link group is available for your transfer. Using the `SRM` you can specify the link group to write into. If you want to use another protocol like `curl` or `xrootd` you cannot specify a link group. In this case you need to use the `WriteToken` directory tag.
 
 The Space Reservation
 =====================
@@ -23,7 +23,7 @@ Space reservations are made for link groups. The file [`LinkGroupAuthorization.c
 
     spacemanager.authz.link-group-file-name=/etc/dcache/LinkGroupAuthorization.conf
 
-Example:  
+Example:
 
 
 In this example we will create the link group `WriteTokenLinkGroup`. Login to the [admin interface](intouch.md#the-admin-interface), `\c` to the `SrmSpaceManager` and list the current space reservations.
@@ -56,7 +56,7 @@ Currently there are no space reservations and no link groups. We create the link
     (PoolManager) admin > psu set linkGroup onlineAllowed WriteToken_LinkGroup true
     (PoolManager) admin > psu addto linkGroup WriteToken_LinkGroup WriteToken_Link
     (PoolManager) admin > save
-  
+
 
     (local) admin >\c SrmSpaceManager
     (SrmSpaceManager) admin > ls
@@ -71,7 +71,7 @@ Currently there are no space reservations and no link groups. We create the link
     total number of bytes reserved  : 0
     last time all link groups were updated: Wed Aug 07 15:42:03 CEST 2013(1375882923234)
 
-A space reservation can only be made, when there is a link group in the **LinkGroupAuthorization.conf** that can be used for the space reservation. Therefore, we configure the **LinkGroupAuthorization.conf** such that the link group `WriteToken_LinkGroup` can be used.  
+A space reservation can only be made, when there is a link group in the **LinkGroupAuthorization.conf** that can be used for the space reservation. Therefore, we configure the **LinkGroupAuthorization.conf** such that the link group `WriteToken_LinkGroup` can be used.
 
     #SpaceManagerLinkGroupAuthorizationFile
     # this is comment and is ignored
@@ -79,14 +79,14 @@ A space reservation can only be made, when there is a link group in the **LinkGr
     LinkGroup WriteToken_LinkGroup
     */Role=*
 
-Now we can make a space reservation for that link group.  
+Now we can make a space reservation for that link group.
 
     (SrmSpaceManager) admin > reserve -desc=WriteToken 6000000 10000
-    10000 voGroup:null voRole:null retentionPolicy:CUSTODIAL accessLatency:ONLINE linkGroupId:0 size:6000000 created:Fri Aug 09     12:28:18 CEST 2013 lifetime:10000000ms expiration:Fri Aug 09 15:14:58 CEST 2013 description:WriteToken state:RESERVED used:0 allocated:0 
+    10000 voGroup:null voRole:null retentionPolicy:CUSTODIAL accessLatency:ONLINE linkGroupId:0 size:6000000 created:Fri Aug 09     12:28:18 CEST 2013 lifetime:10000000ms expiration:Fri Aug 09 15:14:58 CEST 2013 description:WriteToken state:RESERVED used:0 allocated:0
 
     (SrmSpaceManager) admin > ls
     Reservations:
-    10000 voGroup:null voRole:null retentionPolicy:CUSTODIAL accessLatency:ONLINE linkGroupId:0 size:6000000 created:Fri Aug 09     12:26:26 CEST 2013 lifetime:10000000ms expiration:Fri Aug 09 15:13:06 CEST 2013 description:WriteToken state:RESERVED used:0 allocated:0 
+    10000 voGroup:null voRole:null retentionPolicy:CUSTODIAL accessLatency:ONLINE linkGroupId:0 size:6000000 created:Fri Aug 09     12:26:26 CEST 2013 lifetime:10000000ms expiration:Fri Aug 09 15:13:06 CEST 2013 description:WriteToken state:RESERVED used:0 allocated:0
     total number of reservations: 1
     total number of bytes reserved: 6000000
 
@@ -94,7 +94,7 @@ Now we can make a space reservation for that link group.
     0 Name:WriteToken_LinkGroup FreeSpace:6917849088 ReservedSpace:6000000 AvailableSpace:6911849088 VOs:{*:*} onlineAllowed:true   nearlineAllowed:true replicaAllowed:true custodialAllowed:true outputAllowed:true UpdateTime:Fri Aug 09 12:25:57 CEST 2013(1376043957179)
     total number of linkGroups: 1
     total number of bytes reservable: 6911849088
-    total number of bytes reserved  : 6000000 
+    total number of bytes reserved  : 6000000
     (SrmSpaceManager) admin >
 
 The `WriteToken` Tag
@@ -104,7 +104,7 @@ The `WriteToken` tag is a [directory tag](config-chimera.md#directory-tag). Crea
 
     [root] # /usr/bin/chimera writetag <directory> WriteToken [<IdOfSpaceReservation>]
 
-Example:  
+Example:
 
 In the beginning of the Book we created the directory **/data** and the subdirectory **/data/world-writable**.
 
@@ -128,14 +128,14 @@ Now, we create the directory **data/write-token** into which we want to write
 and echo the space reservation into the WriteToken tag.
 
     [root] # /usr/bin/chimera writetag /data/write-token WriteToken [10000]
-    
-    
+
+
 Copy a File into the `WriteToken`
 =================================
 
 Given that you have a `WriteToken` tag which contains the id of a valid space reseravtion, you can copy a file into a space reservation even if you are using a protocol that does not support space reservation.
 
-Example:  
+Example:
 
 In the above example we echoed the id of a space reservation into the `WriteToken` tag. We can now copy a file into this space reservation.
 

@@ -4,9 +4,9 @@ CHAPTER 14. THE STATISTICS SERVICE
 Table of Contents
 ------------------
 
-[The Basic Setup](#the-basic-setup)  
-[The Statistics Web Page](#the-statistics-web-page)  
-[Explanation of the File Format of the xxx.raw Files](#explanation-of-the-file-format-of-the-xxxraw-files)  
+[The Basic Setup](#the-basic-setup)
+[The Statistics Web Page](#the-statistics-web-page)
+[Explanation of the File Format of the xxx.raw Files](#explanation-of-the-file-format-of-the-xxxraw-files)
 
 
 The `statistics` service collects information on the amount of data stored on all pools and the total data flow including streams from and to tertiary storage systems.
@@ -87,12 +87,12 @@ EXPLANATION OF THE FILE FORMAT OF THE XXX.RAW FILES
 
 The file formats of the **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw** and the **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-day.raw** files are similar. The file **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw** does not contain columns 2 and 3 as these are related to the day and not to the hour.
 
-Example:  
+Example:
 
 The file format of the **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-day.raw** files:
 
     #
-    # timestamp=1361364900897 
+    # timestamp=1361364900897
     # date=Wed Feb 20 13:55:00 CET 2013
     #
     pool1 StoreA:GroupB@osm 21307929 10155 2466935 10155 0 925 0  0   0   0   85362 0

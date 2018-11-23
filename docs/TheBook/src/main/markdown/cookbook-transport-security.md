@@ -117,12 +117,12 @@ nmap
     Nmap scan report for example.org (93.184.216.34)
     Host is up (0.090s latency).
     Other addresses for example.org (not scanned): 2606:2800:220:1:248:1893:25c8:1946
-     
+
     PORT    STATE SERVICE
     443/tcp open  https
-    | ssl-enum-ciphers: 
-    |   TLSv1.0: 
-    |     ciphers: 
+    | ssl-enum-ciphers:
+    |   TLSv1.0:
+    |     ciphers:
     |       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA (secp256r1) - A
     |       TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA (secp256r1) - A
     |       TLS_RSA_WITH_AES_256_CBC_SHA (rsa 2048) - A
@@ -130,11 +130,11 @@ nmap
     |       TLS_RSA_WITH_AES_128_CBC_SHA (rsa 2048) - A
     |       TLS_RSA_WITH_CAMELLIA_128_CBC_SHA (rsa 2048) - A
     |       TLS_RSA_WITH_SEED_CBC_SHA (rsa 2048) - A
-    |     compressors: 
+    |     compressors:
     |       NULL
     |     cipher preference: server
-    |   TLSv1.1: 
-    |     ciphers: 
+    |   TLSv1.1:
+    |     ciphers:
     |       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA (secp256r1) - A
     |       TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA (secp256r1) - A
     |       TLS_RSA_WITH_AES_256_CBC_SHA (rsa 2048) - A
@@ -142,11 +142,11 @@ nmap
     |       TLS_RSA_WITH_AES_128_CBC_SHA (rsa 2048) - A
     |       TLS_RSA_WITH_CAMELLIA_128_CBC_SHA (rsa 2048) - A
     |       TLS_RSA_WITH_SEED_CBC_SHA (rsa 2048) - A
-    |     compressors: 
+    |     compressors:
     |       NULL
     |     cipher preference: server
-    |   TLSv1.2: 
-    |     ciphers: 
+    |   TLSv1.2:
+    |     ciphers:
     |       TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (secp256r1) - A
     |       TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (secp256r1) - A
     |       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 (secp256r1) - A
@@ -159,11 +159,11 @@ nmap
     |       TLS_RSA_WITH_AES_128_CBC_SHA (rsa 2048) - A
     |       TLS_RSA_WITH_CAMELLIA_128_CBC_SHA (rsa 2048) - A
     |       TLS_RSA_WITH_SEED_CBC_SHA (rsa 2048) - A
-    |     compressors: 
+    |     compressors:
     |       NULL
     |     cipher preference: server
     |_  least strength: A
-     
+
     Nmap done: 1 IP address (1 host up) scanned in 7.49 seconds
 
 
@@ -269,7 +269,7 @@ CAA records indicate which CA (certificate authority) is allowed to sign certifi
     webdav	IN	CAA     0 issue "Digicert.com"
     webdav	IN	CAA     0 iodef "mailto:helpdesk@example.org"
 
-These CAA records indicate that for the host webdav(.example.org), only Digicert is allowed to sign certificates. If an outsider asks another CA to sign a certificate for the same host, the other CA should check whether there is a CAA record, and refuse to sign the certificate when the CAA record does not authorize them. 
+These CAA records indicate that for the host webdav(.example.org), only Digicert is allowed to sign certificates. If an outsider asks another CA to sign a certificate for the same host, the other CA should check whether there is a CAA record, and refuse to sign the certificate when the CAA record does not authorize them.
 
 In general CAA records are a good idea, however, Grid certificate authorities don't follow this standard (yet). So, CAA records will only stop commercial CAs, and not Grid CAs, from signing rogue certificates.
 

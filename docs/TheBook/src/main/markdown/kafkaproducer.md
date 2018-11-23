@@ -15,12 +15,12 @@ What do you need to download to enable Kafka in dCache?
 
 * ZooKeeper Framework
 
-* Apache Kafka 
+* Apache Kafka
 
 Apache Kafka Installation.
 =======================
 
-1. Download 
+1. Download
 ------------
 
 
@@ -35,14 +35,14 @@ Extract the tar file
     cd kafka_2.11.0.9.0.0
 
 
-2. Enable kafka in dCache. 
+2. Enable kafka in dCache.
 ------------
 
 
     (one-of?true|false)dcache.enable.kafka = true
 
 
-Set the broker address, or list of broker addresses 
+Set the broker address, or list of broker addresses
 
     (one-of?true|false)dcache.enable.kafka = true
     dcache.kafka.bootstrap-servers = localhost:9092
@@ -52,7 +52,7 @@ Set the broker address, or list of broker addresses
 
 
 
-3. Start Server 
+3. Start Server
 ------------
 
 

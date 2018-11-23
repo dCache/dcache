@@ -84,17 +84,17 @@ location for an additional copy, it does so from within the resilient pool group
 of the file's source location.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-WARNING:  Be careful when redefining a pool group by removing its resilient flag.  
-          (This is not possible, as a safety precaution, using an admin command; 
-          it requires manual modification and reloading of the poolmanager 
-          configuration file.)  Doing so makes all files on all pools in that 
-          group no longer considered to be resilient;  they will, however, remain 
-          indefinitely "pinned" or sticky, and thus not susceptible to garbage 
+WARNING:  Be careful when redefining a pool group by removing its resilient flag.
+          (This is not possible, as a safety precaution, using an admin command;
+          it requires manual modification and reloading of the poolmanager
+          configuration file.)  Doing so makes all files on all pools in that
+          group no longer considered to be resilient;  they will, however, remain
+          indefinitely "pinned" or sticky, and thus not susceptible to garbage
           collection.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-BEST PRACTICE:  Drain pools in a resilient pool group before removing the 
+BEST PRACTICE:  Drain pools in a resilient pool group before removing the
                 group's resilience flag.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -191,9 +191,9 @@ otherwise the counting procedure it utilizes to maintain the correct number of
 replicas for a file would be rendered less efficient.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-BEST PRACTICE:  Hot replication should be turned off on resilient pools.   
-                The required number of replicas for files of a resilient  
-                storage unit should reflect the estimated average usage 
+BEST PRACTICE:  Hot replication should be turned off on resilient pools.
+                The required number of replicas for files of a resilient
+                storage unit should reflect the estimated average usage
                 as well as the available space.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -370,16 +370,16 @@ OPERATION                            completed   ops/sec       failed
     POOL_SCAN_ACTIVE                       228         0            0
 
 TRANSFERS BY POOL                   from              to          failed         size             removed          failed         size
-dmsdca15-1                        959166          962097               0    939.55 KB                 0               0           0 
-dmsdca15-1.1                      972972          973463               0    950.65 KB                 0               0           0 
-dmsdca15-2                        967710          970284               1    947.54 KB                 0               0           0 
-dmsdca15-2.1                      968995          972802               0    950.00 KB                 0               0           0 
-dmsdca15-3                        956909          963618               1    941.03 KB                 0               0           0 
-dmsdca15-3.1                      970977          973876               0    951.05 KB                 0               0           0 
-dmsdca15-4                        959851          959739               0    937.25 KB                 0               0           0 
-dmsdca15-4.1                      926010          926611               0    904.89 KB                 0               0           0 
+dmsdca15-1                        959166          962097               0    939.55 KB                 0               0           0
+dmsdca15-1.1                      972972          973463               0    950.65 KB                 0               0           0
+dmsdca15-2                        967710          970284               1    947.54 KB                 0               0           0
+dmsdca15-2.1                      968995          972802               0    950.00 KB                 0               0           0
+dmsdca15-3                        956909          963618               1    941.03 KB                 0               0           0
+dmsdca15-3.1                      970977          973876               0    951.05 KB                 0               0           0
+dmsdca15-4                        959851          959739               0    937.25 KB                 0               0           0
+dmsdca15-4.1                      926010          926611               0    904.89 KB                 0               0           0
 ...
-TOTALS                          67901908        67901908              22     64.76 MB                 0               0           0 
+TOTALS                          67901908        67901908              22     64.76 MB                 0               0           0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Along with basic uptime information and operation tracking, the pool expression
@@ -431,10 +431,10 @@ scan operations:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [fndcatemp2] (Resilience@resilienceDomain) admin > pool ls dmsdca17
- dmsdca17-2 (completed: 0 / 0 : ?%) – (updated: Mon Jun 06 14:47:33 CDT 2016)(scanned: Mon Jun 06 14:47:33 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE) 
- dmsdca17-1 (completed: 0 / 0 : ?%) – (updated: Mon Jun 06 15:01:55 CDT 2016)(scanned: Mon Jun 06 15:01:55 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE) 
- dmsdca17-1.1   (completed: 0 / 0 : ?%) – (updated: Mon Jun 06 15:20:32 CDT 2016)(scanned: Mon Jun 06 15:20:32 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE) 
- dmsdca17-2.1   (completed: 0 / 0 : ?%) – (updated: Mon Jun 06 17:53:23 CDT 2016)(scanned: Mon Jun 06 17:53:23 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE) 
+ dmsdca17-2 (completed: 0 / 0 : ?%) – (updated: Mon Jun 06 14:47:33 CDT 2016)(scanned: Mon Jun 06 14:47:33 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
+ dmsdca17-1 (completed: 0 / 0 : ?%) – (updated: Mon Jun 06 15:01:55 CDT 2016)(scanned: Mon Jun 06 15:01:55 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
+ dmsdca17-1.1   (completed: 0 / 0 : ?%) – (updated: Mon Jun 06 15:20:32 CDT 2016)(scanned: Mon Jun 06 15:20:32 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
+ dmsdca17-2.1   (completed: 0 / 0 : ?%) – (updated: Mon Jun 06 17:53:23 CDT 2016)(scanned: Mon Jun 06 17:53:23 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For each operation, the timestamps of the last update (change in status) and of
@@ -483,16 +483,16 @@ the default properties file).
 In order to allow for flexibility in configuring door access to pools, the
 `disabled` state on a pool is interpreted this way:
 
--  `\s <pool> pool disable -p2p-client` means no p2p can be written to this pool; 
+-  `\s <pool> pool disable -p2p-client` means no p2p can be written to this pool;
 Resilience will not use this pool to make copies, though doors can still write
 new files there.
 
--  `\s <pool> pool disable -store` means doors cannot write new copies to the 
+-  `\s <pool> pool disable -store` means doors cannot write new copies to the
 pool, though it is still available for p2p; hence Resilience can still use this
 pool to make copies.
 
 -  `\s <pool> pool disable -rdonly` means the pool cannot be written to either
-by doors or Resilience. 
+by doors or Resilience.
 
 -  `\s <pool> pool disable -strict` indicates not only that the pool is disabled
 for write, but also for read; is the pool is resilient, Resilience will schedule
@@ -502,7 +502,7 @@ it for a scan so that the resilient files it contains can be replicated elsewher
 
 Files whose `retention policy` is `CUSTODIAL` and whose `access latency` is `ONLINE`
 will be handled by Resilience when their replicas are found in a resilient
-pool group and their `required` property is defined.   
+pool group and their `required` property is defined.
 
 Such files constitute a special case for the purposes of recovery.  For instance,
 if a normal resilient file with 2 copies on disk becomes inaccessible because
@@ -510,12 +510,12 @@ both pools containing those two copies went offline at about the same time (not
 permitting Resilience time to react to make another replica), then an alarm
 concerning this file's current inaccessibility is raised.  If this file is also
 `CUSTODIAL` and has a copy on tertiary storage, resilience will first attempt to
-restage it before considering it inaccessible.  
+restage it before considering it inaccessible.
 
-There is no special configuration setup to enable this.  Resilience has been 
-tested for restaging of this sort even with a setup where there are special 
-staging pools from which the staged-in replica is then to be p2p'd to a resilient 
-pool group, and works normally in this case (i.e., provided the proper link 
+There is no special configuration setup to enable this.  Resilience has been
+tested for restaging of this sort even with a setup where there are special
+staging pools from which the staged-in replica is then to be p2p'd to a resilient
+pool group, and works normally in this case (i.e., provided the proper link
 selection preferences are set).
 
 ### Some typical scenarios part 1: what happens when ...?
@@ -681,7 +681,7 @@ psu create pool rw-dmsdca24-1 -disabled
 We can then start the pool on the host. It should then appear enabled:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[fndcatemp2] (PoolManager@dCacheDomain) admin > psu ls -a  pool rw-dmsdca24-1 
+[fndcatemp2] (PoolManager@dCacheDomain) admin > psu ls -a  pool rw-dmsdca24-1
 rw-dmsdca24-1  (enabled=false;active=15;rdOnly=false;links=0;pgroups=0;hsm=[];mode=enabled)
   linkList   :
   pGroupList :
@@ -696,7 +696,7 @@ resilient pool group.
 [fndcatemp2] (Resilience@resilienceDomain) admin > \sp psu ls -a pool rw-dmsdca24-1
 rw-dmsdca24-1  (enabled=false;active=19;rdOnly=false;links=0;pgroups=1;hsm=[];mode=enabled)
   linkList   :
-  pGroupList : 
+  pGroupList :
     res-group(links=1; pools=35; resilient=true)
 
 [fndcatemp2] (PoolManager@dCacheDomain) admin > psu ls -a pgroup res-group
@@ -724,7 +724,7 @@ status        ENABLED
 last update   Thu Jun 16 09:24:21 CDT 2016
 
 [fndcatemp2] (Resilience@resilienceDomain) admin > pool ls rw-dmsdca24-1
-rw-dmsdca24-1   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 09:25:42 CDT 2016)(scanned: Thu Jun 16 09:25:42 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE) 
+rw-dmsdca24-1   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 09:25:42 CDT 2016)(scanned: Thu Jun 16 09:25:42 CDT 2016)(prev ENABLED)(curr ENABLED)(IDLE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the pool is added, a scan is scheduled for it, provided it is in an
@@ -749,8 +749,8 @@ We observe the pool has been queued for a scan:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [fndcatemp2] (Resilience@resilienceDomain) admin > pool ls rw-
-rw-dmsdca24-2   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:17:09 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(WAITING) 
-rw-dmsdca24-3   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE) 
+rw-dmsdca24-2   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:17:09 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(WAITING)
+rw-dmsdca24-3   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
 rw-dmsdca24-4   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -762,14 +762,14 @@ sleeping watchdog:
 Forced watchdog scan.
 
 [fndcatemp2] (Resilience@resilienceDomain) admin > pool ls rw-dmsdca24-2
-rw-dmsdca24-2   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:17:19 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(RUNNING) 
+rw-dmsdca24-2   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:17:19 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(RUNNING)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Shortly thereafter, we can see it is doing some work:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [fndcatemp2] (Resilience@resilienceDomain) admin > pool ls rw-dmsdca24-2
-rw-dmsdca24-2   (completed: 491 / ? : ?%) – (updated: Thu Jun 16 17:17:19 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(RUNNING) 
+rw-dmsdca24-2   (completed: 491 / ? : ?%) – (updated: Thu Jun 16 17:17:19 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev ENABLED)(curr ENABLED)(RUNNING)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Because this is a demo pool, there aren't many files, so the scan completes
@@ -782,8 +782,8 @@ other two "rw-" pools still appear:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [fndcatemp2] (Resilience@resilienceDomain) admin > pool ls rw-
-rw-dmsdca24-3   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE) 
-rw-dmsdca24-4   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE) 
+rw-dmsdca24-3   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
+rw-dmsdca24-4   (completed: 0 / 0 : ?%) – (updated: Thu Jun 16 17:14:33 CDT 2016)(scanned: Thu Jun 16 17:14:33 CDT 2016)(prev UNINITIALIZED)(curr ENABLED)(IDLE)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now, just to spot check that everything is right with the world, let's examine
@@ -792,7 +792,7 @@ the recent operations, pick a `pnfsid`, and find its locations (replicas).
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  [fndcatemp2] (Resilience@resilienceDomain) admin > history
  … [many other files]
- Thu Jun 16 17:17:23 CDT 2016 (00008F22B12729CE458596DE47E00411D68C REPLICA)(COPY DONE)(parent 20, retried 0) 
+ Thu Jun 16 17:17:23 CDT 2016 (00008F22B12729CE458596DE47E00411D68C REPLICA)(COPY DONE)(parent 20, retried 0)
  … [many other files]
 
  [fndcatemp2] (Resilience@resilienceDomain) admin > \sn cacheinfoof 00008F22B12729CE458596DE47E00411D68C
@@ -807,14 +807,14 @@ happens to require three copies; there are indeed three, plus the no-longer
 valid location which we just removed from resilience handling.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-NOTE:     removing a pool from a resilient pool group will not automatically 
+NOTE:     removing a pool from a resilient pool group will not automatically
           delete the files it contains from the pool, nor will it remove
           the system-owned sticky bits for these files (such behavior
           would be unsafe).
 
-WARNING:  if a pool is moved from one resilient pool group to another, the 
+WARNING:  if a pool is moved from one resilient pool group to another, the
           replica counts for the added files will be seen in the context
-          of the new group, leading to the creation of the required number of              
+          of the new group, leading to the creation of the required number of
           copies on the pools of the new group (without affecting the previous copies).
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -824,9 +824,9 @@ keeps connecting (i.e., it has not been stopped), its entry will continue to
 appear in the PoolMonitor, and thus also in the internal resilience table.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-WARNING:  do NOT remove the pool from the psu using 'psu remove pool <name>' 
-          until the scan of the pool has completed. Otherwise, its reference 
-          will no longer be visible to Resilience, and the scan will partially 
+WARNING:  do NOT remove the pool from the psu using 'psu remove pool <name>'
+          until the scan of the pool has completed. Otherwise, its reference
+          will no longer be visible to Resilience, and the scan will partially
           or completely fail.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -906,8 +906,8 @@ use in the wrong circumstances may easily lead to inconsistent state.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 WARNING:  Only use 'pool exclude' for temporary situations where the intention
-          is eventually to restore the excluded location(s) to resilience management; 
-          or when the locations on those pools are actually being migrated or 
+          is eventually to restore the excluded location(s) to resilience management;
+          or when the locations on those pools are actually being migrated or
           deleted from the namespace.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -959,12 +959,12 @@ automatically for a scan, so if you wish to scan these pools before the periodic
 window elapses, a manual scan is required.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-BEST PRACTICE:  Disable resilience on the potential source and target pools 
-                by setting them to EXCLUDED before doing a rebalance 
-                or migration.  
-                
-                An alternative to this would be to remove all the pools 
-                from the pool group(s) in question, and then add them back 
+BEST PRACTICE:  Disable resilience on the potential source and target pools
+                by setting them to EXCLUDED before doing a rebalance
+                or migration.
+
+                An alternative to this would be to remove all the pools
+                from the pool group(s) in question, and then add them back
                 afterwards.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -5,37 +5,37 @@ Table of Contents
 ------------------
 
 * [dCache Architecture](#architecture)
-* [Cells and Domains](#cells-and-domains)  
-* [Cells Communication](config-message-passing.md)  
+* [Cells and Domains](#cells-and-domains)
+* [Cells Communication](config-message-passing.md)
 * [Protocols Supported by dCache](#protocols-supported-by-dcache)
 * [Logging](#logging)
 
 dCache is a distributed storage system providing location independent access to data.
-The data are stored across multiple data servers as complete files presented to end-user via single rooted namespace. 
+The data are stored across multiple data servers as complete files presented to end-user via single rooted namespace.
 
-As physical location of the data are not exposed to user it can be migrated from one data server to another without 
+As physical location of the data are not exposed to user it can be migrated from one data server to another without
 interruption of service. Therefore the system can be expanded or contracted by adding / removing data servers at any time.
 
-dCache can be configured to work as fast disk cache in front of tertiary storage systems. Such systems typically store data on magnetic tapes instead of disks, which must be loaded and unloaded using a tape robot. The main reason for using tertiary storage is cost-efficiency 
-of archiving a very large amount of data on less expensive hardware. Slower media or limited resources (like number of tape drives) 
+dCache can be configured to work as fast disk cache in front of tertiary storage systems. Such systems typically store data on magnetic tapes instead of disks, which must be loaded and unloaded using a tape robot. The main reason for using tertiary storage is cost-efficiency
+of archiving a very large amount of data on less expensive hardware. Slower media or limited resources (like number of tape drives)
 of tertiary storage systems lend themselves to significantly higher access latency for archived data.
 
-dCache supports multiple data transfer protocols. The protocols are implemented as 
+dCache supports multiple data transfer protocols. The protocols are implemented as
 services that have modular deployment, allowing horizontal scaling by
-adding front-end machines without service interruption. 
+adding front-end machines without service interruption.
 
 Another performance feature of dCache is hot-spot data migration.
-In a situation when a rate of requests to read a file or a group of files 
-is high resulting in a single data server or a group of data servers becoming 
-"hot". If this happens dCache detects the condition and attempts to spread the load 
-by distributing popular files to other, less busy, data servers. 
-  
+In a situation when a rate of requests to read a file or a group of files
+is high resulting in a single data server or a group of data servers becoming
+"hot". If this happens dCache detects the condition and attempts to spread the load
+by distributing popular files to other, less busy, data servers.
 
-The flow of data within dCache can also be carefully controlled. 
-This is especially important for large sites as chaotic movement of data 
+
+The flow of data within dCache can also be carefully controlled.
+This is especially important for large sites as chaotic movement of data
 may lead to suboptimal usage. Instead, incoming and outgoing data can be marshaled so they use designated resources guaranteeing better throughput and improving end-user experience.
 
-dCache provides a comprehensive administrative interface for configuring the dCache instance. This is described in the later sections of this book.  
+dCache provides a comprehensive administrative interface for configuring the dCache instance. This is described in the later sections of this book.
 
 
 
@@ -47,25 +47,25 @@ Architecture
 As it is shown in the Figure # dCache has many important components. A minimal dCache instance must have:
 - **door**
 - **namespace**
-- **pool** 
-- **poolmanager** 
-- **zookeepr** 
+- **pool**
+- **poolmanager**
+- **zookeepr**
 
-A typical deployment includes additional services, like **admin** interface, 
+A typical deployment includes additional services, like **admin** interface,
 **billing** or web-based **front-end**.
 
-The namespace provides a single rooted hierarchical file system view of the stored data. 
-The pools contain only data files identified by unique id which is given by 
-namespace at object creation time. This separation of data and metadata makes dCache extremely scalable. 
+The namespace provides a single rooted hierarchical file system view of the stored data.
+The pools contain only data files identified by unique id which is given by
+namespace at object creation time. This separation of data and metadata makes dCache extremely scalable.
 To grow the instance only addition of new pool nodes is required.
 
-In order to interact with the data a protocol specific entry point called **door** is required. A **door** is a protocol 
-converter that translates protocol instructions to sequence of internal dCache message based call sequences. 
-Each door implements only one protocol. The system supports running multiple doors of the same protocol for scalability.  
+In order to interact with the data a protocol specific entry point called **door** is required. A **door** is a protocol
+converter that translates protocol instructions to sequence of internal dCache message based call sequences.
+Each door implements only one protocol. The system supports running multiple doors of the same protocol for scalability.
 
-The **PoolManager** is the heart of dCache system it manages all the pools in the system. It's main 
-task is data dispatch based on data selection rules, relative pool cost and availability of tertiary system 
-support. 
+The **PoolManager** is the heart of dCache system it manages all the pools in the system. It's main
+task is data dispatch based on data selection rules, relative pool cost and availability of tertiary system
+support.
 
 Components of dCache System
 =============================

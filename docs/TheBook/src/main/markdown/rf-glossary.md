@@ -185,12 +185,12 @@ A cached [replica](#replica) is a replica that should not be stored on tape.
 Resilience
 ----------------
 Resilience has to do with file preservation and availabilitykeeps.  The Resilience
-service or manager tracks the number of [replicas](#replica) 
-of files within defined subsets of pools (marked as resilient) and makes 
-sure this number is always as specified by the storage class of the file. 
-This is especially useful to ensure the existence or readability of the file, 
-even if the hardware is not reliable, if a high volume of access to such 
-files is foreseen, or if the file should be permanent but not reside on 
+service or manager tracks the number of [replicas](#replica)
+of files within defined subsets of pools (marked as resilient) and makes
+sure this number is always as specified by the storage class of the file.
+This is especially useful to ensure the existence or readability of the file,
+even if the hardware is not reliable, if a high volume of access to such
+files is foreseen, or if the file should be permanent but not reside on
 tertiary storage. The activation and configuration of resilience is described
 [in Chapter 6, The Resilience Service](config-resilience.md).
 

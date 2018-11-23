@@ -13,10 +13,10 @@ Arguments
 
 The following arguments are required:
 
-`sourceUrl`  
+`sourceUrl`
 The URL of the source file.
 
-`destUrl`  
+`destUrl`
 The URL of the destination file.
 
 Description
@@ -29,16 +29,16 @@ Options
 
 The following arguments are optional:
 
-`-a`  
+`-a`
 Enable read-ahead functionality.
 
-`-b` bufferSize  
+`-b` bufferSize
 Set read-ahead buffer size. The default value is `1048570` Bytes. To disable the buffer this can be set to any value below the default. dccp will attempt to allocate the buffer size so very large values should be used with care.
 
-`-B` bufferSize  
+`-B` bufferSize
 Set buffer size. The size of the buffer is requested in each request, larger buffers will be needed to saturate higher bandwidth connections. The optimum value is network dependent. Too large a value will lead to excessive memory usage, too small a value will lead to excessive network communication.
 
-`-d` debug level  
+`-d` debug level
 Set the debug level. debug level is a integer between `0` and `127`. If the value is `0` then no output is generated, otherwise the value is formed by adding together one or more of the following values:
 **Value:** 1
 **Enabled output:** Error messages
@@ -57,28 +57,28 @@ Set the debug level. debug level is a integer between `0` and `127`. If the valu
 **Value:** 64
 **Enabled output:** Thread information
 
-`-h` replyHostName  
+`-h` replyHostName
 Bind the callback connection to the specific hostname interface.
 
-`-i`  
+`-i`
 Secure mode. Do not overwrite the existing files.
 
-`-l` location  
+`-l` location
 Set location for pre-stage. if the location is not specified, the local host of the door will be used. This option must be used with the -P option.
 
-`-p` first\_port:last\_port  
+`-p` first\_port:last\_port
 Bind the callback data connection to the specified TCP port/rangeSet port range. Delimited by the ':' character, the first\_port is required but the last\_port is optional.
 
-`-P`  
+`-P`
 Pre-stage. Do not copy the file to a local host but make sure the file is on disk on the dCache server.
 
-`-r` bufferSize  
+`-r` bufferSize
 TCP receive buffer size. The default is `256K`. Setting to `0` uses the system default value. Memory useage will increase with higher values, but performance better.
 
-`-s` bufferSize  
+`-s` bufferSize
 TCP send buffer size. The default is `256K`. Setting to `0` uses the system default value.
 
-`-t` time  
+`-t` time
 Stage timeout in seconds. This option must be used with the `-P` option.
 
 Examples:
@@ -102,7 +102,7 @@ stdin:
 
 stdout:
 
-    PROMPT-USER dccp /acs/user_space/data_arch.tar - | tar xf - 
+    PROMPT-USER dccp /acs/user_space/data_arch.tar - | tar xf -
 
 See also
 ========

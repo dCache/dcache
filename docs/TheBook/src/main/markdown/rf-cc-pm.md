@@ -24,13 +24,13 @@ synopsis
 ---------
 cm ls [-r] [-d] [-s] [<fileSize>]
 
-**-r ** 
+**-r **
 Also list the tags, the space cost, and performance cost as calculated by the cost module for a file of size fileSize (or zero)
 
-**-d**  
+**-d**
 Also list the space cost and performance cost as calculated by the cost module for a file of size fileSize (or zero)
 
-**-t ** 
+**-t **
 Also list the time since the last update of the cached information in milliseconds.
 
 Description
@@ -57,13 +57,13 @@ synopsis
 ----------
 set pool decision [-spacecostfactor=<scf>] [-cpucostfactor=<ccf>] [-costcut=<cc>]
 
-scf  
+scf
 The factor (strength) with which the space cost will be included in the total cost.
 
-ccf  
+ccf
 The factor (strength) with which the performance cost will be included in the total cost.
 
-cc  
+cc
 Deprecated since version 5 of the pool manager.
 
 Description

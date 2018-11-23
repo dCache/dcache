@@ -3,18 +3,18 @@ Chapter 23. Pool OperationsPool Operations
 
 Table of Contents
 
-+ [Checksums](#checksums)  
++ [Checksums](#checksums)
 
-    [How to configure checksum calculation](#how-to-configure-checksum-calculation)  
+    [How to configure checksum calculation](#how-to-configure-checksum-calculation)
 
-+ [Migration Module](#migration-module)    
++ [Migration Module](#migration-module)
 
-    [Overview and Terminology](#overview-and-terminology)  
-    [Command Summary](#command-summary)  
-    [Examples](#examples)  
+    [Overview and Terminology](#overview-and-terminology)
+    [Command Summary](#command-summary)
+    [Examples](#examples)
 
-+ [Renaming a Pool](#renaming-a-pool)  
-+ [Pinning Files to a Pool](#pinning-files-to-a-pool)  
++ [Renaming a Pool](#renaming-a-pool)
++ [Pinning Files to a Pool](#pinning-files-to-a-pool)
 
 Checksums
 =========
@@ -27,7 +27,7 @@ In dCache the storage of a checksum is part of a successful transfer.
 
 -   For data that is flushed to or restored from tape a checksum can be calculated before flushed to tape or after restored from tape, respectively.
 
-Client Checksum  
+Client Checksum
 
 The client calculates the checksum before or while the data is sent to dCache. The checksum value, depending on when it has been calculated, may be sent together with the open request to the door and stored into CHIMERA before the data transfer begins or it may be sent with the close operation after the data has been transferred.
 
@@ -36,18 +36,18 @@ The `dCap` protocol provides both methods, but the `dCap` clients use the latter
 The `FTP` protocol does not provide a mechanism to send a checksum. Nevertheless, some `FTP` clients can (mis-)use the “`site`” command to send the checksum prior to the actual data transfer.
 
 
-Transfer Checksum 
+Transfer Checksum
 
 While data is coming in, the server data mover may calculate the checksum on the fly.
 
 
-Server File Checksum  
+Server File Checksum
 
 After all the file data has been received by the dCache server and the file has been fully written to disk, the server may calculate the checksum, based on the disk file.
 
 The default configuration is that a checksum is calculated on write, i.e. a Server File Checksum.
 
-How to configure checksum calculation 
+How to configure checksum calculation
 -------------------------------------
 
 Configure the calculation of checksums in the [admin interface](https://www.dcache.org/manuals/Book-2.16/start/intouch-admin-fhs.shtml). The configuration has to be done for each pool separately.
@@ -55,7 +55,7 @@ Configure the calculation of checksums in the [admin interface](https://www.dcac
     (local) admin > cd <poolname>
     (<poolname>) admin > csm set policy -<option>=<on/off>
     (<poolname>) admin > save
-    
+
 The configuration will be saved in the file **<path/to/pool>/<nameOfPooldirectory>/setup**.
 
 Use the command `csm info` to see the checksum policy of the pool.
@@ -70,7 +70,7 @@ Use the command `csm info` to see the checksum policy of the pool.
         enforce crc : true
       getcrcfromhsm : false
               scrub : false
-          
+
 
 The default configuration is to check checksums on write.
 
@@ -81,26 +81,26 @@ The syntax of the command `csm set policy` is `csm set policy` ` [-<option>=on [
 
 OPTIONS
 
-**ontransfer** 
+**ontransfer**
 If supported by the protocol, the checksum is calculated during file transfer.
 
-**onwrite**  
+**onwrite**
 The checksum is calculated after the file has been written to disk.
 
-**onrestore**  
+**onrestore**
 The checksum is calculated after data has been restored from tape.
 
-**onflush**  
+**onflush**
 The checksum is calculated before data is flushed to tape.
 
-**getcrcfromhsm**  
+**getcrcfromhsm**
 If the HSM script supports it, the `<pnfsid>.crcval` file is read and stored in CHIMERA.
 
-**scrub** 
+**scrub**
 Pool data will periodically be veryfied against checksums. Use the command `help csm set
 	      policy` to see the configuration options.
 
-**enforcecrc**  
+**enforcecrc**
 If no checksum has been calculated after or during the transfer, this option ensures that a checksum is calculated and stored in CHIMERA.
 
 The option `onread` has not yet been implemented.
@@ -167,11 +167,11 @@ Login to the [admin interface](https://www.dcache.org/manuals/Book-2.16/start/in
     migration move [OPTIONS] TARGET...
     migration resume JOB
     migration suspend JOB
-          
 
-The commands `migration copy`, `migration cache` and `migration move` create new migration jobs. These commands are used to copy files to other pools. Unless filter options are specified, all files on the source pool are copied. The syntax for these commands is the same; example `migration copy`: 
 
-`migration <copy> [<option>] <target>` 
+The commands `migration copy`, `migration cache` and `migration move` create new migration jobs. These commands are used to copy files to other pools. Unless filter options are specified, all files on the source pool are copied. The syntax for these commands is the same; example `migration copy`:
+
+`migration <copy> [<option>] <target>`
 
 There are four different types of options. The filter options, transfer options, target options and lifetime options. Please run the command `help migration copy` for a detailed description of the various options.
 
@@ -179,7 +179,7 @@ The commands `migration copy`, `migration move` and `migration
 	cache` take the same options and only differ in default values.
 
 
-migration move  
+migration move
 
 The command `migration move` does the same as the command `migration copy` with the options:
 
@@ -202,7 +202,7 @@ The command `migration move` does the same as the command `migration copy` with 
 
 additionally it uses the option `-verify`.
 
-migration cache  
+migration cache
 The command `migration cache` does the same as the command `migration copy` with the option:
 
 -   -tmode
@@ -252,7 +252,7 @@ A migration job can be suspended and resumed with the commands `migration suspen
     Running tasks:
     (<poolname>) admin > migration ls
     [1] FINISHED     migration copy 000060D40698B4BF4BE284666ED29CC826C7 pool2
-    	
+
 
 A migration job can be cancelled with the command `migration cancel `.
 
@@ -261,7 +261,7 @@ A migration job can be cancelled with the command `migration cancel `.
     [1] INITIALIZING migration copy 0000D194FBD450A44D3EA606D0434D6D88CD pool2
     (<poolname>) admin > migration cancel 1
     [1] CANCELLED    migration copy -pnfsid=0000D194FBD450A44D3EA606D0434D6D88CD pool2
-	
+
 
 And terminated jobs can be cleared with the command `migration clear`.
 
@@ -273,8 +273,8 @@ And terminated jobs can be cleared with the command `migration clear`.
     [4] FINISHED     migration move -pnfsid=00007C75C2E635CD472C8A75F5A90E4960D3 pool2
     (<poolname>) admin > migration clear
     (<poolname>) admin > migration ls
-	
-    	
+
+
 
 Except for the number of concurrent tasks, transfer parameters of existing jobs cannot be changed. This is by design to ensure idempotency of jobs. The concurrency can be altered through the `migration concurrency` command.
 
@@ -289,8 +289,8 @@ Except for the number of concurrent tasks, transfer parameters of existing jobs 
     Total      : 20976068 bytes
     Concurrency: 2
     Running tasks:
-      
-          
+
+
 
 Examples
 --------
@@ -370,7 +370,7 @@ Now the files on the pools have to be unregistered on the namespace server with
 
 > **Note**
 >
-> Do not get confused that the commands **pnfs unregister** and **pnfs register** contain `pnfs` in their names. They also apply to dCache > instances with Chimera and are named like that for legacy reasons. 
+> Do not get confused that the commands **pnfs unregister** and **pnfs register** contain `pnfs` in their names. They also apply to dCache > instances with Chimera and are named like that for legacy reasons.
 
 Even if the pool contains precious files, this is no problem, since we will register them again in a moment. The files might not be available for a short moment, though. Log out of the pool, and stop the domain running the pool:
 

@@ -41,30 +41,30 @@ Example:
 
 The log files may contain information about the time, the pool, the pnfsID and size of the transferred file, the storage class, the actual number of bytes transferred, the number of milliseconds the transfer took, the protocol, the subject (identity of the user given as a collection of principals), the data transfer listen port, the return status and a possible error message. The logged information depends on the protocol.
 
-A log entry for a write operation has the default format:  
+A log entry for a write operation has the default format:
 
-    <MM.dd> <HH:mm:ss> [pool:<pool-name>:transfer]  
-    [<pnfsId>,<filesize>] [<path>]  
-    <StoreName>:<StorageGroup>@<type-of-storage-system>  
-    <transferred-bytes>  <connectionTime> <true/false> {<protocol>}  
-    <initiator>  {<return-status>:"<error-message>"}  
+    <MM.dd> <HH:mm:ss> [pool:<pool-name>:transfer]
+    [<pnfsId>,<filesize>] [<path>]
+    <StoreName>:<StorageGroup>@<type-of-storage-system>
+    <transferred-bytes>  <connectionTime> <true/false> {<protocol>}
+    <initiator>  {<return-status>:"<error-message>"}
 
-Example:  
-A typical logging entry would look like this for writing. In the log file each entry is in one line. For readability we split it into separate lines in this documentation.:  
+Example:
+A typical logging entry would look like this for writing. In the log file each entry is in one line. For readability we split it into separate lines in this documentation.:
 
-    12.10 14:19:42 [pool:pool2@poolDomain-1:transfer]  
-    [0000062774D07847475BA78AC99C60F2C2FC,10475] [Unknown]  
-    <Unknown>:<Unknown>@osm 10475 40 true {GFtp-1.0 131.169.72.103 37850}  
-    [door:WebDAV-example.org@webdavDomain:1355145582248-1355145582485] {0:""}  
+    12.10 14:19:42 [pool:pool2@poolDomain-1:transfer]
+    [0000062774D07847475BA78AC99C60F2C2FC,10475] [Unknown]
+    <Unknown>:<Unknown>@osm 10475 40 true {GFtp-1.0 131.169.72.103 37850}
+    [door:WebDAV-example.org@webdavDomain:1355145582248-1355145582485] {0:""}
 
-The formatting of the log messages can be customized by redefining the  
-<billing.format.someInfoMessage> properties in the layout configuration, where  
+The formatting of the log messages can be customized by redefining the
+<billing.format.someInfoMessage> properties in the layout configuration, where
 <billing.format.someInfoMessage> can be replaced by
 
--   billing.text.format.mover-info-message  
--   billing.text.format.remove-file-info-message  
--   billing.text.format.door-request-info-message  
--   billing.text.format.storage-info-message  
+-   billing.text.format.mover-info-message
+-   billing.text.format.remove-file-info-message
+-   billing.text.format.door-request-info-message
+-   billing.text.format.storage-info-message
 
 A full explanation of the formatting is given in the **/usr/share/dcache/defaults/billing.properties** file. For syntax questions please consult [StringTemplate v3 documentation](http://www.antlr.org/wiki/display/ST/StringTemplate+3+Documentation) or the [cheat sheet](http://www.antlr.org/wiki/display/ST/StringTemplate+cheat+sheet).
 
@@ -75,8 +75,8 @@ THE BILLING DATABASE
 
 In order to enable the database, the following steps must be taken.
 
-1.  If the billing database does not already exist 
-(see further below on migrating from an existing one), 
+1.  If the billing database does not already exist
+(see further below on migrating from an existing one),
 create it (we assume PSQL here):
 
         [root] # createdb -O dcache -U postgres billing
@@ -85,19 +85,19 @@ create it (we assume PSQL here):
 
         [root] # createlang -U dcache plpgsql billing
 
-    No further manual preparation is needed, as the necessary tables, indices, 
-    functions and triggers will automatically be generated when you (re)start 
+    No further manual preparation is needed, as the necessary tables, indices,
+    functions and triggers will automatically be generated when you (re)start
     the domain with the billing database logging turned on (see below).
 
-2.  The property `billing.enable.db` controls whether the billing cell sends 
-billing messages to the database. By default the option is disabled. 
+2.  The property `billing.enable.db` controls whether the billing cell sends
+billing messages to the database. By default the option is disabled.
 To activate, set the value to `true` and restart the domain.
 
 CUSTOMIZING THE DATABASE
 ------------------------
 
-In most cases, the billing service will be run out-of-the-box; 
-nevertheless, the administrator does have control, if this is desired, 
+In most cases, the billing service will be run out-of-the-box;
+nevertheless, the administrator does have control, if this is desired,
 over the database configuration.
 
 -   Database name, host, user, and password can be easily modified using the properties:
@@ -107,18 +107,18 @@ over the database configuration.
     -   billing.db.user
     -   billing.db.password
 
-    The current database values can be checked with the `dcache database ls` command.  
+    The current database values can be checked with the `dcache database ls` command.
 
         # dcache database ls
-        DOMAIN          CELL        DATABASE HOST      USER      MANAGEABLE AUTO  
-        namespaceDomain PnfsManager chimera  localhost dcache    Yes        Yes  
-        namespaceDomain cleaner     chimera  localhost dcache    No         No  
-        billingDomain   billing     billing  localhost dcache   Yes        Yes  
+        DOMAIN          CELL        DATABASE HOST      USER      MANAGEABLE AUTO
+        namespaceDomain PnfsManager chimera  localhost dcache    Yes        Yes
+        namespaceDomain cleaner     chimera  localhost dcache    No         No
+        billingDomain   billing     billing  localhost dcache   Yes        Yes
 
--   Database inserts are batched for performance. Since 2.8, improvements 
-have been made to the way the billing service handles these inserts, which can 
-now be tuned by adjusting the queue sizes (there are four of them, each mapped 
-to the four main tables: billinginfo, storageinfo, doorinfo, hitinfo), 
+-   Database inserts are batched for performance. Since 2.8, improvements
+have been made to the way the billing service handles these inserts, which can
+now be tuned by adjusting the queue sizes (there are four of them, each mapped
+to the four main tables: billinginfo, storageinfo, doorinfo, hitinfo),
 and the maximum database batch size.
 
     -   billing.db.inserts.max-queue-size
@@ -130,7 +130,7 @@ and the maximum database batch size.
         1000
         )
 
-    There is further the option as to whether to drop messages (default is true) 
+    There is further the option as to whether to drop messages (default is true)
     or block when the queue maximum is exceeded.
 
     -   billing.db.inserts.drop-messages-at-limit
@@ -140,20 +140,20 @@ and the maximum database batch size.
 
     The default settings should usually be sufficient.
 
-    You can now obtain statistics (printed to the billing log and pinboard) 
-    via the dcache admin command: `display insert statistics <on/off>` command. 
+    You can now obtain statistics (printed to the billing log and pinboard)
+    via the dcache admin command: `display insert statistics <on/off>` command.
     Activating this command logs the following once a minute:
 
                     insert queue (last 0, current 0, change 0/minute)
                     commits (last 0, current 0, change 0/minute)
                     dropped (last 0, current 0, change 0/minute)
                     total memory 505282560; free memory 482253512
-                
-    "insert queue" refers to how many messages actually were put on the queue; 
-    "commits" are the number of messages committed to the database; 
-    "dropped" are the number of lost messages. 
-    "last" refers to the figures at the last iteration. 
-    For insert queue, this is the actual size of the queue; 
+
+    "insert queue" refers to how many messages actually were put on the queue;
+    "commits" are the number of messages committed to the database;
+    "dropped" are the number of lost messages.
+    "last" refers to the figures at the last iteration.
+    For insert queue, this is the actual size of the queue;
     for commits and dropped, these are cumulative totals.
 
     You can also generate a Java thread dump by issuing the `"dump threads"` command.
@@ -166,7 +166,7 @@ histograms from it, and make these available via several RESTful API
 calls.  Please refer to the frontend documentation for further infomartion.
 
 Similarly, dCache-View (the web interface) includes a publicly available
-tab for plots generated from this data. These provide aggregate views of 
+tab for plots generated from this data. These provide aggregate views of
 the data for 24-hour, 7-day, 30-day and 365-day periods.
 
 The plot types are:
@@ -199,50 +199,50 @@ Because it is possible that the newer version may be deployed over an existing i
 
 If you start the domain containing the `billing` service over a pre-existing installation of the billing database, depending on what was already there, you may observe some messages like the following in the domain log having to do with the logic governing table initialization.
 
-Example:  
+Example:
 
 
-       INFO 8/23/12 10:35 AM:liquibase: Successfully acquired change log lock  
-       INFO 8/23/12 10:35 AM:liquibase: Reading from databasechangelog  
-       INFO 8/23/12 10:35 AM:liquibase: Reading from databasechangelog  
-       INFO 8/23/12 10:35 AM:liquibase: Successfully released change log lock  
-       INFO 8/23/12 10:35 AM:liquibase: Successfully released change log lock  
-       INFO 8/23/12 10:35 AM:liquibase: Successfully acquired change log lock  
-       INFO 8/23/12 10:35 AM:liquibase: Reading from databasechangelog  
-       INFO 8/23/12 10:35 AM:liquibase: Reading from databasechangelog  
-       INFO 8/23/12 10:35 AM:liquibase: ChangeSet org/dcache/services/billing/  
-       db/sql/billing.changelog-1.9.13.xml::4.1.7::arossi ran successfully in 264ms  
-       INFO 8/23/12 10:35 AM:liquibase: Marking ChangeSet: org/dcache/services/  
-       billing/db/sql/billing.changelog-1.9.13.xml::4.1.8::arossi::(Checksum:  
-       3:faff07731c4ac867864824ca31e8ae81) ran despite precondition failure due  
-       to onFail='MARK_RAN': classpath:org/dcache/services/billing/db/sql/  
-       billing.changelog-master.xml : SQL Precondition failed. Expected '0' got '1'  
-       INFO 8/23/12 10:35 AM:liquibase: ChangeSet org/dcache/services/billing/db/sql/  
-       billing.changelog-1.9.13.xml::4.1.9::arossi ran successfully in 14ms  
-       INFO 8/23/12 10:35 AM:liquibase: Successfully released change log lock  
-       INFO 8/23/12 10:35 AM:liquibase: Successfully released change log lock  
+       INFO 8/23/12 10:35 AM:liquibase: Successfully acquired change log lock
+       INFO 8/23/12 10:35 AM:liquibase: Reading from databasechangelog
+       INFO 8/23/12 10:35 AM:liquibase: Reading from databasechangelog
+       INFO 8/23/12 10:35 AM:liquibase: Successfully released change log lock
+       INFO 8/23/12 10:35 AM:liquibase: Successfully released change log lock
+       INFO 8/23/12 10:35 AM:liquibase: Successfully acquired change log lock
+       INFO 8/23/12 10:35 AM:liquibase: Reading from databasechangelog
+       INFO 8/23/12 10:35 AM:liquibase: Reading from databasechangelog
+       INFO 8/23/12 10:35 AM:liquibase: ChangeSet org/dcache/services/billing/
+       db/sql/billing.changelog-1.9.13.xml::4.1.7::arossi ran successfully in 264ms
+       INFO 8/23/12 10:35 AM:liquibase: Marking ChangeSet: org/dcache/services/
+       billing/db/sql/billing.changelog-1.9.13.xml::4.1.8::arossi::(Checksum:
+       3:faff07731c4ac867864824ca31e8ae81) ran despite precondition failure due
+       to onFail='MARK_RAN': classpath:org/dcache/services/billing/db/sql/
+       billing.changelog-master.xml : SQL Precondition failed. Expected '0' got '1'
+       INFO 8/23/12 10:35 AM:liquibase: ChangeSet org/dcache/services/billing/db/sql/
+       billing.changelog-1.9.13.xml::4.1.9::arossi ran successfully in 14ms
+       INFO 8/23/12 10:35 AM:liquibase: Successfully released change log lock
+       INFO 8/23/12 10:35 AM:liquibase: Successfully released change log lock
 
-Anything logged at a level lower than `ERROR` is usually entirely normal. Liquibase regularly reports when the preconditions determining whether it needs to do something are not met. All this means is that the update step was not necessary and it will be skipped in the future.  
+Anything logged at a level lower than `ERROR` is usually entirely normal. Liquibase regularly reports when the preconditions determining whether it needs to do something are not met. All this means is that the update step was not necessary and it will be skipped in the future.
 
-If, on the other hand, there is an `ERROR` logged by Liquibase, it is possible there may be some other conflict resulting from the upgrade (this should be rare). Such an error will block the domain from starting. One remedy which often works in this case is to do a clean re-initialization by dropping the Liquibase tables from the database:  
+If, on the other hand, there is an `ERROR` logged by Liquibase, it is possible there may be some other conflict resulting from the upgrade (this should be rare). Such an error will block the domain from starting. One remedy which often works in this case is to do a clean re-initialization by dropping the Liquibase tables from the database:
 
-    [root] # psql -U dcache billing  
+    [root] # psql -U dcache billing
 
-    billing=> drop table databasechangelog  
-    billing=> drop table databasechangeloglock  
-    billing-> \q  
+    billing=> drop table databasechangelog
+    billing=> drop table databasechangeloglock
+    billing-> \q
     [root] #
-  
-and then restarting the domain.  
 
-> **NOTE**  
+and then restarting the domain.
+
+> **NOTE**
 >
-> If the billing database already exists, but contains tables other than the following:  
+> If the billing database already exists, but contains tables other than the following:
 >
->     [root] # psql -U dcache billing  
->     billing=> \dt  
->                          List of relations  
->      Schema	|         Name          | Type  |   Owner  
+>     [root] # psql -U dcache billing
+>     billing=> \dt
+>                          List of relations
+>      Schema	|         Name          | Type  |   Owner
 >      -------+-----------------------+-------+-----------
 >      public	| billinginfo           | table | dcache
 >      public	| billinginfo_rd_daily  | table | dcache
@@ -257,13 +257,13 @@ and then restarting the domain.
 >      public	| storageinfo_rd_daily  | table | dcache
 >      public	| storageinfo_wr_daily  | table | dcache
 >
->     billing-> \q  
->     PROMPT-ROOT  
+>     billing-> \q
+>     PROMPT-ROOT
 >
-> that is, if it has been previously modified by hand or out-of-band to include custom tables not used directly by dCache, the existence of such extraneous tables should not impede dCache from working correctly, provided those other tables are `READ`-accessible by the database user for billing, which by default is `dcache`. This is a requirement imposed by the use of Liquibase. You thus may need explicitly to grant `READ` privileges to the billing database user on any such tables if they are owned by another database user.  
+> that is, if it has been previously modified by hand or out-of-band to include custom tables not used directly by dCache, the existence of such extraneous tables should not impede dCache from working correctly, provided those other tables are `READ`-accessible by the database user for billing, which by default is `dcache`. This is a requirement imposed by the use of Liquibase. You thus may need explicitly to grant `READ` privileges to the billing database user on any such tables if they are owned by another database user.
 
 <!-- [Installing dCache]: #in
-  [StringTemplate v3 documentation]: 
+  [StringTemplate v3 documentation]:
          http://www.antlr.org/wiki/display/ST/StringTemplate+3+Documentation
   [cheat sheet]: http://www.antlr.org/wiki/display/ST/StringTemplate+cheat+sheet
   [DataNucleus]: http://www.datanucleus.org --!>

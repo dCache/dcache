@@ -4,18 +4,18 @@ CHAPTER 26. ADVANCED TUNING
 Table of Contents
 -----------------
 
-+ [Multiple Queues for Movers in each Pool](#multiple-queues-for-movers-in-each-pool) 
++ [Multiple Queues for Movers in each Pool](#multiple-queues-for-movers-in-each-pool)
 
-     [Description](#description)  
-     [Solution](#solution)  
-     [Configuration](#configuration)  
-     [Tunable Properties for Multiple Queues](#tunable-properties-for-multiple-queues)  
-    
+     [Description](#description)
+     [Solution](#solution)
+     [Configuration](#configuration)
+     [Tunable Properties for Multiple Queues](#tunable-properties-for-multiple-queues)
+
 + [Tunable Properties](#tunable-properties)
 
-     [dCap](#dcap)  
-     [GridFTP](#gridftp)  
-     [SRM](#srm)  
+     [dCap](#dcap)
+     [GridFTP](#gridftp)
+     [SRM](#srm)
 
 
 The use cases described in this chapter are only relevant for large-scale dCache instances which require special tuning according to a longer experience with client behaviour.
@@ -43,9 +43,9 @@ Solution
 
 A finer grained queue selection mechanism based on, e.g. the `IP` address of the client or the file which has been requested, is not possible with this mechanism. However, the [pool selection unit (PSU)](rf-glossary.md#pool-selection-unit) may provide a separation onto separate pools using those criteria.
 
-In the above example, two separate queues for fast `GridFTP`  transfers and slow `dCap` library access would solve the problem. The maximum number of active movers for the `GridFTP`  queue should be set to a lower value compared to the `dCap` queue since the fast `GridFTP` transfers will put a high load on the system while the `dCap` requests will be mostly idle. 
+In the above example, two separate queues for fast `GridFTP`  transfers and slow `dCap` library access would solve the problem. The maximum number of active movers for the `GridFTP`  queue should be set to a lower value compared to the `dCap` queue since the fast `GridFTP` transfers will put a high load on the system while the `dCap` requests will be mostly idle.
 
-Configuration 
+Configuration
 -------------
 
 For a multi mover queue setup, the pools have to be told to start several queues and the doors have to be configured to use one of these. It makes sense to create the same queues on all pools. This is done by the following change to the file **/etc/dcache/dcache.conf: **
@@ -93,7 +93,7 @@ There is always a default queue called `regular`. Transfers not requesting a par
 
 The pool cell commands [mover ls](reference.md#mover-ls) and [mover set max active ](reference.md#mover-set-max-active) have a `-queue` option to select the mover queue to operate on. Without this option, [mover set max active](reference.md#mover-set-max-active) will act on the default queue while [mover ls](reference.md#mover-ls) will list all active and waiting client transfer requests.
 
-For the `dCap` protocol, it is possible to allow the client to choose another queue name than the one defined in the file **dcache.conf**. To achieve this the property `dcap.authz.mover-queue-overwrite` needs to be set to allowed. 
+For the `dCap` protocol, it is possible to allow the client to choose another queue name than the one defined in the file **dcache.conf**. To achieve this the property `dcap.authz.mover-queue-overwrite` needs to be set to allowed.
 
 Example:
 
@@ -107,7 +107,7 @@ With the `dccp` command the queue can now be specified as follows:
 
     [user] $ dccp -X-io-queue=queue_dccp <source> <destination>
 
-Since `dccp` requests may be quite different from other requests with the `dCap` protocol, this feature may be used to use separate queues for `dccp`  requests and other dCap library requests. Therefore, the `dccp`  command may be changed in future releases to request a special `dccp` -queue by default. 
+Since `dccp` requests may be quite different from other requests with the `dCap` protocol, this feature may be used to use separate queues for `dccp`  requests and other dCap library requests. Therefore, the `dccp`  command may be changed in future releases to request a special `dccp` -queue by default.
 
 Tunable Properties for Multiple Queues
 --------------------------------------

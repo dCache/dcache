@@ -11,7 +11,7 @@ We assume, that dCache is installed and configured.( [???]). To be on the safe s
 
 -   for each file in the classic SE an entry in PNFS has to be created. then the file has to be moved to data directory in the pool control directory and the owner, group and size must be set in PNFS. To avoid mistakes we recomend to use a script developed and tested by the dCache developers. Run the script for each file which goes into dCache:
 
-        PROMPT-ROOTfind . -type f -exec file2dcache.sh {} /pnfs/desy.de/data/fromSE /pool/pool1 \; 
+        PROMPT-ROOTfind . -type f -exec file2dcache.sh {} /pnfs/desy.de/data/fromSE /pool/pool1 \;
 
 -   start the pool. Since the pool has to recreate the inventory, the start up time will be longer than usually..
 
@@ -21,7 +21,7 @@ We assume, that dCache is installed and configured.( [???]). To be on the safe s
               pnfs register
               ..
               logoff
-              
+
 
 The newly migrated files shall be available already.
 

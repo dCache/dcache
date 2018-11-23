@@ -162,9 +162,9 @@ Table of Contents
     - [Alarms SPI](config-alarms.md#alarms-spi--service-provider-interface-)-
 
 1. [dCache Frontend Service](config-frontend.md)
-   
+
 1. [dCache History Service](config-history.md)
-   
+
 1. [ACLs in dCache](config-acl.md)
     - [Introduction](config-acl.md#introduction)
     - [Configuring ACL support](config-acl.md#configuring-acl-support)
