@@ -191,7 +191,9 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
 
             if (received != null) {
                 T toStore = process(key, received, wrapper.getSent());
-                next.put(key, toStore);
+                if (toStore != null) {
+                    next.put(key, toStore);
+                }
             }
 
             remove(key);
