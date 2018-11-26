@@ -616,6 +616,17 @@ public class RepositorySubsystemTest
         assertSpaceRecord(3072, 0, 1024, 1024);
     }
 
+    @Test
+    public void testGetConfiguredSize()
+        throws IOException, CacheException, InterruptedException
+    {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
+        assertEquals(repoSize, repository.getDataObject().getRuntimeConfiguredMax().longValue());
+    }
+
     @Test(expected=IllegalArgumentException.class)
     public void testSetSizeNegative()
         throws IOException, CacheException, InterruptedException
