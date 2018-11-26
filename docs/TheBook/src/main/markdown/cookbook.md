@@ -35,6 +35,7 @@ Table of Contents
     - [Examples](cookbook-pool.md#examples)
     - [Renaming a Pool](cookbook-pool.md#renaming-a-pool)
     - [Pinning Files to a Pool](cookbook-pool.md#pinning-files-to-a-pool)
+    - [Running pool with CEPH backend](cookbook-pool.md#running-pool-with-ceph-backend)
 
 1. [PostgreSQL and dCache](cookbook-postgres.md)
     - [Installing a PostgreSQL Server](cookbook-postgres.md)

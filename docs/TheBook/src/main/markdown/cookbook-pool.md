@@ -15,6 +15,7 @@ Table of Contents
 
 + [Renaming a Pool](#renaming-a-pool)
 + [Pinning Files to a Pool](#pinning-files-to-a-pool)
++ [Running pool with CEPH backend](#running-pool-with-ceph-backend)
 
 Checksums
 =========
@@ -429,6 +430,33 @@ This command does:
 2.  Will go to all pools where it finds the file and will flag it `sticky` in the pools.
 
 3.  All new copies of the file will become `sticky`.
+
+Running pool with CEPH backend
+==============================
+
+dCache pools can be configured to store files on locally mounted file system or use CEPH as a back-end. The property `pool.backend` is used to control which back-end should be used:
+
+    pool.backend = ceph
+
+dCache uses CEPH's block devices interface, know as `RBD` to store data. The dCache pools one-to-one mapped to CEPH pools. The CEPH pool must be manually created and, if required, configured before dCache can use it.
+
+    $ rados mkpool <pool-name>
+
+By default, CEPH pool name expected to match dCache pool name. This can be change as
+
+    pool.backend.ceph.pool-name = ceph-pool-to-use
+
+dCache uses locally configured ceph client to operate. The location to client configuration files is controlled by `pool.backend.ceph.config` property and defaults to _/etc/ceph/ceph.conf_.
+
+In order to support HSM with CEPH-backended pools, the HSM script interface provides URI-like syntax to pass file location to the HSM script:
+
+    rbd://<ceph-pool>/<pnfsid>
+
+for instance:
+
+    rbd://dcache-pool-A/00000051ADCB3BA14799844556CD3AF0A9DF
+
+The HSM script is responsible to read, write and delete RBD image on GET, PUT and DELETE.
 
   [admin interface]: #intouch-admin
   [???]: #in-install-layout
