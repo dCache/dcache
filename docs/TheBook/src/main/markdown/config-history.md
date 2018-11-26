@@ -22,10 +22,13 @@ on the file system local to the node running the service.  This location, along
 with the collection intervals, can be configured from properties;
 see **/usr/share/dcache/defaults/history.properties**.
 
-Running this service is essential for the delivery of admin data from the
-frontend.  It can usually be run out of the box with no special properties
+Running this service is essential for the delivery of histogram data from the
+frontend.  It can be run out of the box with no special properties
 set:
 
     [historyDomain]
     [historyDomain/history]
 
+While it is not required to run this service in its own domain, it is usually
+good practice to isolate a non-essential service this way, allowing 
+a restart which does not affect other services, should that be necessary.

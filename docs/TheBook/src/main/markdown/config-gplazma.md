@@ -984,6 +984,33 @@ Some file access examples:
 Roles
 --------------------------------------------
 
+Roles are a way of describing what capabilities a given user has.  They constitute
+a set of operations defined either explicitly or implicitly which the user who
+is assigned that role is permitted to exercise.  
+
+Roles further allow users to act in more than one capacity without having to 
+change their basic identity. For instance, a "superuser" may wish to act as _janedoe_ 
+for some things, but as an administrator for other, without having to reauthenticate.
+
+While the role framework in dCache is intended to be configurable, there 
+currently exists only one recognized role, that of _admin_.  
+
+To activate the use of the _admin_ role, the following steps are necessary.
+
+1) Define the admin role using the property:  
+
+    gplazma.roles.admin-gid=<gid>
+    
+2) Add the _admin_ gid to the set of gids for any user who should have this capability.
+
+3) Add the roles plugin to your gPlazma configuration (usually 'requisite' is sufficient):  
+
+    session requisite roles
+
+Roles are currently used by the [dCache Frontend Service](config-frontend.md)
+to distinguish between regular and admin access.  Please refer to that part of
+this document for further instructions.
+
 <!--  [vorolemap]: #cf-gplazma-plug-inconfig-vorolemap-gridvorolemap
   [section\_title]: #cf-gplazma-plug-inconfig-voauth
   []: http://operations-portal.egi.eu/vo
