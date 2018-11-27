@@ -58,7 +58,7 @@ The statistics data needs to be collected for a day before it will appear on the
 > Create data and the web page by logging in to the admin interface and running the commands `create
 > 	stat` and `create html`.
 >
->     (local) admin > cd PoolStatistics@<httpdDomain>
+>     (local) admin > \c PoolStatistics@<httpdDomain>
 >     (PoolStatistics@)<httpdDomain> admin > create stat
 >     Thread started for internal run
 >     (PoolStatistics@)<httpdDomain> admin > create html
