@@ -42,7 +42,7 @@ Table of contents
 
         -   [The info service](config-info-provider.md)
 
-        -   The missing-files service
+        -   [The missing-files service](config-missing-files.md)
 
         -   [The nfs service](config-nfs.md)
 
