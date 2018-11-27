@@ -19,16 +19,16 @@ specific protocols, data in dCache can be accessed via __NFSv4.1
 Contributors
 ============
 dCache is a joined effort between
-[Deutsches Elektronen-Synchrotron DESY] (http://www.desy.de),
-[Fermi National Accelerator Laboratory] (http://www.fnal.gov)
-and [Nordic DataGrid Facility] (http://www.ndgf.org).
+[Deutsches Elektronen-Synchrotron DESY](http://www.desy.de),
+[Fermi National Accelerator Laboratory](http://www.fnal.gov)
+and [Nordic DataGrid Facility](http://www.ndgf.org).
 
 License
 =======
 
 The project is licensed under __AGPL v3__. Some parts licensed under __BSD__ and __LGPL__. See the source code for details.
 
-#### For more info, check official [dCache.ORG] (http://www.dcache.org) web page.####
+For more info, check the official [dCache.ORG](http://www.dcache.org) web page.
 
 Getting Started
 ===============
