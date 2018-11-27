@@ -36,7 +36,7 @@ Table of contents
 
         -   [The history service](config-history.md)
 
-        -   [The hoppingmanager service](config-hopping/#file-hopping-managed-by-the-hoppingmanager)
+        -   [The hoppingmanager service](config-hopping.md)
 
         -   The httpd service
 
