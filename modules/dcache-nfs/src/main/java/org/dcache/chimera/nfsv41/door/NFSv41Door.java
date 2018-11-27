@@ -51,6 +51,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerPublisher;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
+import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
@@ -106,6 +107,7 @@ import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
 import org.dcache.nfs.v3.xdr.nfs3_prot;
+import org.dcache.nfs.v4.ClientCB;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.FlexFileLayoutDriver;
 import org.dcache.nfs.v4.Layout;
@@ -162,6 +164,7 @@ import diskCacheV111.namespace.EventNotifier;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 
+import static dmg.util.CommandException.checkCommand;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 public class NFSv41Door extends AbstractCellComponent implements
@@ -1382,14 +1385,36 @@ public class NFSv41Door extends AbstractCellComponent implements
         @Argument(metaVar = "pool")
         String pool;
 
+        @Option (name = "recall", usage = "recall layouts pointing to this device.")
+        boolean recall;
+
         @Override
-        public String call() {
+        public String call() throws CommandException {
+
             PoolDS ds = _poolDeviceMap.remove(pool);
-            if (ds != null) {
-                return "Pools " + pool + " as: " + ds + " removed.";
-            } else {
-                return "pool " + pool + " Not Found.";
+            checkCommand(ds != null, "Pool %s not found", pool);
+
+            deviceid4 dev = ds.getDeviceId();
+
+            // FIXME: we should wait for all inuse layouts being released
+            if (recall) {
+                _ioMessages.values().stream()
+                        .filter(t -> t.getRedirect() != null)
+                        .filter(t -> pool.equals(t.getPool().getName()))
+                        .forEach(t -> t.recallLayout(_callbackExecutor));
             }
+
+            _nfs4.getStateHandler().getClients().forEach(c -> {
+                try {
+                    ClientCB bc = c.getCB();
+                    if (bc != null) {
+                        c.getCB().cbDeleteDevice(dev);
+                    }
+                } catch (IOException e) {
+                    _log.error("Failed to issue remove device callback: {}", e.toString());
+                }
+            });
+            return "Pool " + pool + " as " + dev + " removed.";
         }
     }
 
