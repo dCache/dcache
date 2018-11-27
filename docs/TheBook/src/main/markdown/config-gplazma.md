@@ -990,9 +990,9 @@ is assigned that role is permitted to exercise.
 
 Roles further allow users to act in more than one capacity without having to 
 change their basic identity. For instance, a "superuser" may wish to act as _janedoe_ 
-for some things, but as an administrator for other, without having to reauthenticate.
+for some things, but as an administrator for others, without having to reauthenticate.
 
-While the role framework in dCache is intended to be configurable, there 
+While the role framework in dCache is designed to be extensible, there 
 currently exists only one recognized role, that of _admin_.  
 
 To activate the use of the _admin_ role, the following steps are necessary.
@@ -1008,8 +1008,8 @@ To activate the use of the _admin_ role, the following steps are necessary.
     session requisite roles
 
 Roles are currently used by the [dCache Frontend Service](config-frontend.md)
-to distinguish between regular and admin access.  Please refer to that part of
-this document for further instructions.
+to distinguish between regular and admin access.  Please refer to that section of
+this document for further information.
 
 <!--  [vorolemap]: #cf-gplazma-plug-inconfig-vorolemap-gridvorolemap
   [section\_title]: #cf-gplazma-plug-inconfig-voauth
