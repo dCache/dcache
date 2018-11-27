@@ -53,7 +53,7 @@ How to configure checksum calculation
 
 Configure the calculation of checksums in the [admin interface](https://www.dcache.org/manuals/Book-2.16/start/intouch-admin-fhs.shtml). The configuration has to be done for each pool separately.
 
-    (local) admin > cd <poolname>
+    (local) admin > \c <poolname>
     (<poolname>) admin > csm set policy -<option>=<on/off>
     (<poolname>) admin > save
 
@@ -156,7 +156,7 @@ Command Summary
 
 Login to the [admin interface](https://www.dcache.org/manuals/Book-2.16/start/intouch-admin-fhs.shtml) and `cd` to a pool to use the `migration` commands. Use the command `help migration` to view the possiblities.
 
-    (local) admin > cd <poolname>
+    (local) admin > \c <poolname>
     (<poolname>) admin > help migration
     migration cache [OPTIONS] TARGET...
     migration cancel [-force] JOB
@@ -220,7 +220,7 @@ Example:
 
 A migration job can be suspended and resumed with the commands `migration suspend ` and `migration resume` respectively.
 
-    (local) admin > cd <poolname>
+    (local) admin > \c <poolname>
     (<poolname>) admin > migration copy -pnfsid=000060D40698B4BF4BE284666ED29CC826C7 pool2
     [1] INITIALIZING migration copy 000060D40698B4BF4BE284666ED29CC826C7 pool2
     [1] SLEEPING     migration copy 000060D40698B4BF4BE284666ED29CC826C7 pool2
@@ -257,7 +257,7 @@ A migration job can be suspended and resumed with the commands `migration suspen
 
 A migration job can be cancelled with the command `migration cancel `.
 
-    (local) admin > cd <poolname>
+    (local) admin > \c <poolname>
     (<poolname>) admin > migration copy -pnfsid=0000D194FBD450A44D3EA606D0434D6D88CD pool2
     [1] INITIALIZING migration copy 0000D194FBD450A44D3EA606D0434D6D88CD pool2
     (<poolname>) admin > migration cancel 1
