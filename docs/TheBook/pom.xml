@@ -41,7 +41,7 @@
             <headerHtmlFile>${html-header.path}</headerHtmlFile>
             <footerHtmlFile>${html-footer.path}</footerHtmlFile>
             <transformRelativeMarkdownLinks>true</transformRelativeMarkdownLinks>
-            <pegdownExtensions>SMARTYPANTS,HARDWRAPS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS</pegdownExtensions>
+            <pegdownExtensions>SMARTYPANTS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS</pegdownExtensions>
             <copyDirectories>css,images</copyDirectories>
           </configuration>
       </plugin>
