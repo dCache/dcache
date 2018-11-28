@@ -147,15 +147,34 @@
                               <configuration>
                                   <bindPropertiesToSeparateVariables>false</bindPropertiesToSeparateVariables>
                                   <source>
-                                      def (remoteName, branch) = 'git rev-parse --abbrev-ref --symbolic-full-name @{u}'.execute().text.trim().tokenize('/')
-                                      def remoteUrl = "git config --get remote.${remoteName}.url".execute().text.trim()
-                                      def projectAndRepo = remoteUrl.startsWith('git@github.com:') ? remoteUrl.substring(15).minus('.git')
-                                              : remoteUrl.startsWith('https://github.com') ? remoteUrl.substring(18).minus('.git')
+                                      ref = null
+                                      /* Detect if git checkout is on a branch or is a detached head */
+                                      p = 'git symbolic-ref -q HEAD'.execute()
+                                      p.waitFor()
+                                      if (p.exitValue() == 0) { // git checkout is on a branch
+                                          ref = 'git rev-parse --abbrev-ref --symbolic-full-name @{u}'.execute().text.trim()
+                                      } else { // git checkout is a detached HEAD or not a git repo
+                                          // Check each remote branch (if multiple, last one wins)
+                                          fer = 'git for-each-ref --format=%(refname:short) refs/remotes'.execute().text.eachLine { remoteRef ->
+                                              p = "git merge-base --is-ancestor HEAD $remoteRef".execute()
+                                              p.waitFor()
+                                              if (p.exitValue() == 0) {
+                                                  ref = remoteRef
+                                              }
+                                          }
+                                      }
+
+                                      if (ref != null) {
+                                          def (remoteName, branch) = ref.tokenize('/')
+                                          def remoteUrl = "git config --get remote.${remoteName}.url".execute().text.trim()
+                                          def projectAndRepo = remoteUrl.startsWith('git@github.com:') ? remoteUrl.substring(15).minus('.git')
+                                              : remoteUrl.startsWith('https://github.com') ? remoteUrl.substring(19).minus('.git')
                                               : null
-                                      def srcRelPath = "${project.build.sourceDirectory}" - "${maven.multiModuleProjectDirectory}/"
-                                      def prefix = "https://github.com/${projectAndRepo}/blob/${branch}/${srcRelPath}"
-                                      println "GitHub URL prefix: $prefix"
-                                      project.properties.setProperty('github.url-prefix', prefix)
+                                          def srcRelPath = "${project.build.sourceDirectory}" - "${maven.multiModuleProjectDirectory}/"
+                                          def prefix = "https://github.com/${projectAndRepo}/blob/${branch}/${srcRelPath}"
+                                          println "GitHub URL prefix: $prefix"
+                                          project.properties.setProperty('github.url-prefix', prefix)
+                                      }
                                   </source>
                               </configuration>
                       </execution>
