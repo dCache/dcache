@@ -887,7 +887,9 @@ public class XrootdDoor
         }
 
         public synchronized void cancelTimeout() {
-            _executionInstance.cancel(false);
+            if (_executionInstance != null) {
+                _executionInstance.cancel(false);
+            }
         }
     }
 
