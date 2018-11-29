@@ -60,3 +60,5 @@ Table of Contents
       - [dCap](cookbook-advanced.md#dcap)
       - [GridFTP](cookbook-advanced.md#gridftp)
       - [SRM](cookbook-advanced.md#srm)
+
+    - [Writing HSM Plugins](cookbook-writing-hsm-plugins.md)
