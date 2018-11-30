@@ -1,5 +1,5 @@
-The dCache Book
-===============
+dCache Book
+===========
 
 Table of contents
 -----------------
@@ -18,71 +18,71 @@ Table of contents
 
     -   Individual services
 
-        -   The admin service
+        -   [admin service](config-admin.md)
 
-        -   [The alarms service](config-alarms.md)
+        -   [alarms service](config-alarms.md)
 
-        -   [The billing service](config-billing.md)
+        -   [billing service](config-billing.md)
 
-        -   The cleaner service
+        -   cleaner service
 
-        -   The dcap service
+        -   dcap service
 
-        -   [The frontend service](config-frontend.md)
+        -   [frontend service](config-frontend.md)
 
-        -   The ftp service
+        -   ftp service
 
-        -   [The gplazma service](config-gplazma.md)
+        -   [gplazma service](config-gplazma.md)
 
-        -   [The history service](config-history.md)
+        -   [history service](config-history.md)
 
-        -   [The hoppingmanager service](config-hopping.md)
+        -   [hoppingmanager service](config-hopping.md)
 
-        -   The httpd service
+        -   httpd service
 
-        -   [The info service](config-info-provider.md)
+        -   [info service](config-info-provider.md)
 
-        -   [The missing-files service](config-missing-files.md)
+        -   [missing-files service](config-missing-files.md)
 
-        -   [The nfs service](config-nfs.md)
+        -   [nfs service](config-nfs.md)
 
-        -   The pinmanager service
+        -   pinmanager service
 
-        -   The pnfsmanager service
+        -   pnfsmanager service
 
-        -   The pool service
+        -   pool service
 
-        -   [The poolmanager service](config-PoolManager.md)
+        -   [poolmanager service](config-PoolManager.md)
 
-        -   [The resilience service](config-resilience.md)
+        -   [resilience service](config-resilience.md)
 
-        -   The spacemanager service
+        -   spacemanager service
 
-        -   [The srm service](config-SRM.md)
+        -   [srm service](config-SRM.md)
 
-        -   The srmmanager service
+        -   srmmanager service
 
-        -   [The statistics service](config-statistics.md)
+        -   [statistics service](config-statistics.md)
 
-        -   The topo service
+        -   topo service
 
-        -   The transfermanagers service
+        -   transfermanagers service
 
-        -   The webdav service
+        -   webdav service
 
-        -   [The xrootd service](config-xrootd.md)
+        -   [xrootd service](config-xrootd.md)
 
-        -   [The zookeeper service](config-zookeeper.md)
+        -   [zookeeper service](config-zookeeper.md)
 
     -   Overarching concepts
 
         -   [Chimera](config-chimera.md)
 
-        -   [The Cell Package](config-cellpackage.md)
+        -   [Cell Package](config-cellpackage.md)
 
         -   [Message passing](config-message-passing.md)
 
-        -   [The dCache Tertiary Storage System Interface](config-hsm.md)
+        -   [dCache Tertiary Storage System Interface](config-hsm.md)
 
         -   [File Hopping](config-hopping.md)
 
