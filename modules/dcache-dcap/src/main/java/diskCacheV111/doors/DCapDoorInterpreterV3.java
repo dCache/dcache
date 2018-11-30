@@ -1502,7 +1502,11 @@ public class DCapDoorInterpreterV3
         public boolean fileAttributesNotAvailable() throws CacheException
         {
             String path = _message.getPnfsPath();
-            FileAttributes attributes = FileAttributes.ofFileType(DIR);
+            FileAttributes attributes = FileAttributes.of()
+                    .mode(getMode(0700))
+                    .fileType(DIR)
+                    .build();
+
             int uid = getUid();
             if (uid != UNDEFINED) {
                 attributes.setOwner(uid);
@@ -1514,7 +1518,7 @@ public class DCapDoorInterpreterV3
 
             if (_vargs.hasOption("acl")) {
                 String acl = _vargs.getOption("acl");
-                attributes.setAcl(ACLParser.parseLinuxAcl(RsType.FILE, acl));
+                attributes.setAcl(ACLParser.parseLinuxAcl(RsType.DIR, acl));
             }
 
             _pnfs.createPnfsDirectory(path, attributes);
@@ -1823,7 +1827,13 @@ public class DCapDoorInterpreterV3
             _log.debug("Creating file. parent = new File(path).getParent()  -> parent = {}", parent);
             _log.info("Creating file {}", path);
 
-            FileAttributes attributes = FileAttributes.of().uid(getUid()).gid(getGid()).fileType(REGULAR).build();
+            FileAttributes attributes = FileAttributes.of()
+                    .uid(getUid())
+                    .gid(getGid())
+                    .fileType(REGULAR)
+                    .mode(getMode(0600))
+                    .build();
+
             if (_vargs.hasOption("acl")) {
                 String acl = _vargs.getOption("acl");
                 attributes.setAcl(ACLParser.parseLinuxAcl(RsType.FILE, acl));
