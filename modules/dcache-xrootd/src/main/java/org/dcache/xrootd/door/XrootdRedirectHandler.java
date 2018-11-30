@@ -712,6 +712,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                      */
                     s.append(XrootdProtocol.PROTOCOL_VERSION);
                     break;
+                case "tpcdlg":
+                    //TODO NOT YET SUPPORTED
                 default:
                     s.append(_queryConfig.getOrDefault(name, name));
                     break;
