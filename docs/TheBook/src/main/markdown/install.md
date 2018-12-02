@@ -61,7 +61,7 @@ Initialize the database directory (for PSQL version 10.1 this is `/var/lib/pgsql
     [root] # service postgresql-10 initdb
     Initializing database:                                     [  OK  ]
     [root] # service postgresql-10 start
-    Starting postgresql-9.2 service:                           [  OK  ]
+    Starting postgresql-10 service:                           [  OK  ]
 
 ### Enabling local trust
 
