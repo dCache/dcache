@@ -20,8 +20,7 @@ Services in each of these groups are described separately in the following.
 Before considering redundancy of high level services, it is essential that the
 low level communication infrastructure used by dCache is redundant. This
 involves setting up a [ZooKeeper cluster](config-zookeeper.md) of at least three
-nodes, as well as using a multipath topology for [message
-passing](config-message-passing.md).
+nodes, as well as using a multipath topology for [Cell Message passing](config-message-passing.md).
 
 Pools
 -----
