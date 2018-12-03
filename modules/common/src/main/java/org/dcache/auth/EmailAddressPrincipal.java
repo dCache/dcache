@@ -57,8 +57,6 @@ public class EmailAddressPrincipal implements Principal, Serializable
     @Override
     public String toString()
     {
-        return "EmailAddressPrincipal[" +
-                "email='" + _email +
-                ']';
+        return "EmailAddressPrincipal[" + _email + ']';
     }
 }
