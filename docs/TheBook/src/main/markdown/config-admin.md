@@ -217,7 +217,7 @@ Executing `\l *@*` will list everything running in your dCache system.
 
 > **NOTE**
 >
-> If the cells are well-known, they can be accessed without adding the domain-scope. See [Chapter 5, The Cell Package](config-cellpackage.md) for more information.
+> If the cells are well-known, they can be accessed without adding the domain-scope. See [Cell Message passing](config-config-message-passing.md) for more information.
 
 
 Each cell implements `help [command]` (also aliased as `\h [command]`) which, when executed

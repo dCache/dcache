@@ -78,9 +78,7 @@ Table of contents
 
         -   [Chimera](config-chimera.md)
 
-        -   [Cell Package](config-cellpackage.md)
-
-        -   [Message passing](config-message-passing.md)
+        -   [Cell Message passing](config-message-passing.md)
 
         -   [dCache Tertiary Storage System Interface](config-hsm.md)
 

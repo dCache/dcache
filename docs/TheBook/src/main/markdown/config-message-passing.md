@@ -1,10 +1,17 @@
 Message passing
 ===============
 
-dCache relies heavily on an in-house message passing system called cells.
-Services in dCache are implemented as cells. Cells run inside domains and cells
-communicate by passing messages to each other. Domains are connected through
-cell tunnels which exchange messages over TCP.
+The dCache system is divided into cells which communicate with each other via messages. Cells run inside domains and cells communicate by passing messages to each other. Domains are connected through cell tunnels which exchange messages over TCP.
+
+Each domain runs in a separate Java virtual machine and each cell is run as a separate thread therein. Domain names have to be unique. The domains communicate with each other via `TCP` using connections that are established at start-up. The topology is controlled by the location manager service. When configured, all domains connect with a core domains, which routes all messages to the appropriate domains. This forms a star topology.
+
+> **ONLY FOR MESSAGE COMMUNICATION**
+>
+> The `TCP` communication controlled by the location manager service is for the short control messages sent between cells. Any transfer of the data stored within dCache does not use these connections; instead, dedicated `TCP` connections are established as needed.
+
+Within this framework, cells send messages to other cells addressing them in the form cellName@domainName. This way, cells can communicate without knowledge about the host they run on. Some cells are [well known](rf-glossary.md#well-known-cell), i.e. they can be addressed just by their name without @domainName. Evidently, this can only work properly if the name of the cell is unique throughout the whole system. If two well known cells with the same name are present, the system will behave in an undefined way. Therefore it is wise to take care when starting, naming, or renaming the well known cells. In particular this is true for pools, which are well known cells.
+
+A domain is started with a shell script **bin/dcache start** domainName. The routing manager and location manager cells are started in each domain and are part of the underlying cell package structure. Each domain will contain at least one cell in addition to them.
 
 Naming and addressing
 ---------------------

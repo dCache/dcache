@@ -23,7 +23,7 @@ Table of Contents
     - [Directory Tags for dCache](config-chimera.md#directory-tags-for-dcache)
     - [Storage Class and Directory Tags](config-chimera.md#storage-class-and-directory)
 
-1. [The Cell Package](config-cellpackage.md#the-cell-package)
+1. [Cell Message passing](config-message-passing.md#the-cell-package)
 
 1. [The Resilience Service](config-resilience.md)
     - [Configuring the Resilience Service](config-resilience.md#configuring-the-resilience-service)

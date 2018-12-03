@@ -379,7 +379,7 @@ Executing `\l *@*` will list everything running in your dCache system.
 
 > **NOTE**
 >
-> If the cells are well-known, they can be accessed without adding the domain-scope. See [Chapter 5, The Cell Package](config-cellpackage.md) for more information.
+> If the cells are well-known, they can be accessed without adding the domain-scope. See [Cell Message passing](config-message-passing.md) for more information.
 
 
 Each cell implements `help [command]` (also aliased as `\h [command]`) which, when executed
@@ -852,7 +852,7 @@ The dCache software is installed in various directories according to the Filesys
 
 Log files of domains are by default stored in **/var/log/dcache/<domainName>.log.**
 
-More details about domains and cells can be found in [Chapter 5, The Cell Package.](config-cellpackage.md)
+More details about domains and cells can be found in [Cell Message passing.](config-message-passing.md)
 
 The most central component of a dCache instance is the PoolManager cell. It reads additional configuration information from the file **/var/lib/dcache/config/poolmanager.conf** at start-up. However, it is not necessary to restart the domain when changing the file. We will see an example of this below.
 
