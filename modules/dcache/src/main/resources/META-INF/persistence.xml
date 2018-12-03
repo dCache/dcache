@@ -7,6 +7,10 @@
 
     <persistence-unit name="AlarmsXML">
       <mapping-file>org/dcache/alarms/dao/package.jdo</mapping-file>
+        <properties>
+            <property name="datanucleus.detachAllOnCommit" value="false"/>
+            <property name="javax.jdo.option.RetainValues" value="true"/>
+        </properties>
     </persistence-unit>
 
     <persistence-unit name="AlarmsRDBMS">
