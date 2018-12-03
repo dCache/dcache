@@ -295,7 +295,7 @@ Now that the `SRM SpaceManager` is activated you can make a space reservation. A
 
 ### Prerequisites for Space Reservations
 
-Login to the [admin interface](intouch.md#the-admin-interface) and `cd` to the cell `SrmSpaceManager`.
+Login to the [admin interface](intouch.md#the-admin-interface) and connect to the cell `SrmSpaceManager`.
 
     [user] $ ssh -p 22224 -l admin admin.example.org
     (local) admin > \c SrmSpaceManager
