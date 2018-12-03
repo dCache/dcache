@@ -9,7 +9,7 @@ cell tunnels which exchange messages over TCP.
 Naming and addressing
 ---------------------
 
-Domains have a name unique through the dCache installation. Each cell has a
+Domains must have a name unique through the dCache installation. Each cell has a
 unique name within the domain in which it is running. A fully qualified cell
 address is formed by combining the cell name and the domain name with an
 at-sign, e.g. `PoolManager@dCacheDomain`. Unqualified addresses either do not
@@ -45,7 +45,7 @@ domain route is removed.
 
 ### Core and satellite domains
 
-dCache domains are either designated as either core domains or satellite domains
+dCache domains are either designated as either `core` domains or `satellite` domains
 in the configuration. Core domains act as message hubs, forwarding messages on
 behalf of satellite domains.
 
@@ -153,29 +153,16 @@ routed along one of the queue routes chosen at random.
 Configuration
 -------------
 
-### Default topology
-
-*2.16 and older*
-
-The default topology is a simple star topology in which dCacheDomain is a core
-domain and all other domains are satellite domains. Satellite domains locate
-this core domain through [[ZooKeeper]].
-
-This behavior is defined by the `dcache.broker.scheme` property, which defaults
-to `cells`.
-
-*3.0 and beyond*
-
 All domains default to being satellite domains. Unless some domain is explicitly
 marked as a core domain, domains will be disconnected from each other.
+
+In a mulit-domain (and multi node) deployments at least one of the domains **must** be configured as `core` domain.
 
 ### Explicit configuration of the core domain
 
 One may alter the default behavior by setting `dcache.broker.scheme` to either
 `core` or `satellite` to designate the domain as either a core or satellite
-domain. When this is done there is no longer anything special about the domain
-name `dCacheDomain` and the core domain can be called whatever fits local naming
-conventions.
+domain.
 
 ### Multipath cell communication
 
