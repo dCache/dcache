@@ -674,6 +674,15 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 case "version":
                     s.append("dCache ").append(Version.of(XrootdPoolRequestHandler.class).getVersion());
                     break;
+                 case "tpc":
+                     /**
+                      * Indicate support for third-party copy by responding
+                      * with the protocol version.
+                      */
+                     s.append(XrootdProtocol.PROTOCOL_VERSION);
+                     break;
+                case "tpcdlg":
+                    //TODO NOT YET SUPPORTED
                 default:
                     s.append(_queryConfig.getOrDefault(name, name));
                     break;
