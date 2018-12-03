@@ -347,6 +347,7 @@ The output will have the following format:
 
 -   PNFSID: The pnfsID of the file
 -   MODE-BITS:
+
            CPCScsRDXEL
            |||||||||||
            ||||||||||+--  (L) File is locked (currently in use)
@@ -367,6 +368,7 @@ The output will have the following format:
 -   STORAGE-CLASS: The storage class of this file.
 
 Example:
+
     [example.dcache.org] (pool_1) admin > rep ls
     00008F276A952099472FAD619548F47EF972 <-P---------L(0)[0]> 291910 si={dteam:STATIC}
     00002A9282C2D7A147C68A327208173B81A6 <-P---------L(0)[0]> 2011264 si={dteam:STATIC}
@@ -394,6 +396,7 @@ To remove such a file from the repository run the command `rep rm`.
    [example.dcache.org] (<poolname>) admin > rep rm <pnfsid>
 
 Example:
+
     [example.dcache.org] (pool_1) admin > rep rm  00002A9282C2D7A147C68A327208173B81A6
 Removed 00002A9282C2D7A147C68A327208173B81A6
 
