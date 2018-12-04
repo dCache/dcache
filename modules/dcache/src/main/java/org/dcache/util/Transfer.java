@@ -917,7 +917,7 @@ public class Transfer implements Comparable<Transfer>
         try {
             setStatus("PnfsManager: Setting checksum");
             FileAttributes attr = FileAttributes.ofChecksum(checksum);
-            _pnfs.setFileAttributes(getPnfsId(), attr);
+            _pnfs.setFileAttributes(_path, attr);
             synchronized (this) {
                 _fileAttributes.getChecksums().add(checksum);
             }
