@@ -1350,8 +1350,13 @@ public class DCapDoorInterpreterV3
         public void fileAttributesAvailable()
         {
             try {
-                _pnfs.setFileAttributes(_fileAttributes.getPnfsId(),
-                        FileAttributes.ofMode(_permission));
+                if (_path == null) {
+                    _pnfs.setFileAttributes(_fileAttributes.getPnfsId(),
+                            FileAttributes.ofMode(_permission));
+                } else {
+                    _pnfs.setFileAttributes(FsPath.create(_path),
+                            FileAttributes.ofMode(_permission));
+                }
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
                 sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
@@ -1394,7 +1399,11 @@ public class DCapDoorInterpreterV3
                     attributes.setGroup(_group);
                 }
 
-                _pnfs.setFileAttributes(_fileAttributes.getPnfsId(), attributes);
+                if (_path == null) {
+                    _pnfs.setFileAttributes(_fileAttributes.getPnfsId(), attributes);
+                } else {
+                    _pnfs.setFileAttributes(FsPath.create(_path), attributes);
+                }
 
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
@@ -1425,8 +1434,13 @@ public class DCapDoorInterpreterV3
 
             try {
                 if (_group >= 0) {
-                    _pnfs.setFileAttributes(_fileAttributes.getPnfsId(),
-                            FileAttributes.ofGid(_group));
+                    if (_path == null) {
+                        _pnfs.setFileAttributes(_fileAttributes.getPnfsId(),
+                                FileAttributes.ofGid(_group));
+                    } else {
+                        _pnfs.setFileAttributes(FsPath.create(_path),
+                                FileAttributes.ofGid(_group));
+                    }
                 }
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
