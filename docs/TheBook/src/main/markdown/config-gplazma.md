@@ -554,6 +554,12 @@ Default: `/`
 
 As a session plugin the GP2-LDAP assigns two directories to the user's session: the root directory and the home directory. The root directory is the root of the directory hierarchy visible to the user, while the home directory is the directory the user starts his session in. In default mode, the root directory is set to `/` and the home directory is set to `%homeDirectory%`, thus the user starts his session in the home directory, as it is stored on the LDAP server, and is able to go up in the directory hierarchy to `/`. For a different use-case, for example if dCache is used as a cloud storage, it may be desireable for the users to see only their own storage space. For this use case `home-dir` can be set to `/` and `root-dir` be set to `%homeDirectory%`. In both path properties any `%val%` expression will be expanded to the the value of the attribute with the name `val` as it is stored in the user record on the LDAP server.
 
+**gplazma.ldap.try-uid-mapping**
+
+Default: `false`
+
+Allow the ldap plugin to use the user's (numerical) uid to identify the user if no username is known. If enabled, the plugin uses the `uidNumber` attribute in LDAP to establish the username for such login attempts.
+
 ### identity Plug-ins
 
 #### nsswitch
