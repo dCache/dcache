@@ -76,15 +76,15 @@ Components of dCache System
 | [billing](config-billing.md)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools.  |
 | [poolmanager](config-PoolManager.md)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
 | [resilience](config-resilience.md)                      |Controls the number of replicas of a file on the pools |
-| [hoppingmanager](config-hopping.md)               | ?     |
-| cleaner                      | Service that orchestrates file replica distribution across the pools triggered by variety of conditions.   |
-| info                         | ?     |
+| [hoppingmanager](config-hopping.md)               | Service that orchestrates file replica distribution across the pools triggered by variety of conditions.     |
+| cleaner                      | Service that periodically cleans (removes) deleted files' replicas from the pools. |
+| [info](config-info-provider.md)         | Provides the information about the dCache instance in a standard format called GLUE. |
 | [missing-files](config-missing-files.md)                | A component designed to react to requests to retrieve missing files.      |
  |[pool](cookbook-pool.md)                      | Data storage ? (cookbook)    |
 | [pnfsmanager](config-PnfsManager.md)                   | Managing the pnfs file system (hierarchy), pnfs database, meta-data    |
-| spacemanager                       | +      |
-| [srm](config-SRM.md)                   | Front-end to Storage Resource Manager (SRM). Client entry point ot SRM sub-system (see below) |
-| [srmmanager](config-SRM.md)                      | SRM Back-end. Provides dynamic space allocation and file management on shared storage components on the Grid     |
+| [srmmanager](config-SRM.md)                      | Storage Resource Manager (SRM) back-end. Provides dynamic space allocation and file management on shared storage components on the Grid.     |
+| [srm](config-SRM.md)                   | Front-end to SRM. Provides client entry point to SRM sub-system (see above). |
+| [spacemanager](config-SRM.md)                        |  A component of SRM responsible for dynamic space allocation and management.  |
 | [zookeeper](config-zookeeper.md)                    |  A distributed directory and coordination service on which dCache relies on|
 | [gplazma](config-gplazma.md)                      | Authentication and authorization interface to limit access to data |
 | [dCap](cookbook-dCap.md)                  | Supports all necessary file metadata and name space manipulation operations     |
