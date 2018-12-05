@@ -77,14 +77,14 @@ Components of dCache System
 | [poolmanager](config-PoolManager.md)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
 | [resilience](config-resilience.md)                      |Controls the number of replicas of a file on the pools |
 | [hoppingmanager](config-hopping.md)               | ?     |
-| cleaner                      | ?    |
+| cleaner                      | Service that orchestrates file replica distribution across the pools triggered by variety of conditions.   |
 | info                         | ?     |
-| missing-files                | +      |
+| [missing-files](config-missing-files.md)                | A component designed to react to requests to retrieve missing files.      |
  |[pool](cookbook-pool.md)                      | Data storage ? (cookbook)    |
 | [pnfsmanager](config-PnfsManager.md)                   | Managing the pnfs file system (hierarchy), pnfs database, meta-data    |
 | spacemanager                       | +      |
-| [srm](config-SRM.md)                   | Provides dynamic space allocation and file management on shared storage components on the Grid     |
-| srmmanager                       | ?   |
+| [srm](config-SRM.md)                   | Front-end to Storage Resource Manager (SRM). Client entry point ot SRM sub-system (see below) |
+| [srmmanager](config-SRM.md)                      | SRM Back-end. Provides dynamic space allocation and file management on shared storage components on the Grid     |
 | [zookeeper](config-zookeeper.md)                    |  A distributed directory and coordination service on which dCache relies on|
 | [gplazma](config-gplazma.md)                      | Authentication and authorization interface to limit access to data |
 | [dCap](cookbook-dCap.md)                  | Supports all necessary file metadata and name space manipulation operations     |
