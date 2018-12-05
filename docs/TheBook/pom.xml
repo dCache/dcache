@@ -13,8 +13,9 @@
   <name>dCache, the Book</name>
 
   <properties>
-      <html-header.path>${basedir}/src/main/html-fragments/header.html</html-header.path>
-      <html-footer.path>${basedir}/src/main/html-fragments/footer.html</html-footer.path>
+      <html-fragments.path>${basedir}/src/main/html-fragments</html-fragments.path>
+      <html-header.path>${html-fragments.path}/header.html</html-header.path>
+      <html-footer.path>${html-fragments.path}/footer.html</html-footer.path>
       <raw-html-target.path>${project.build.directory}/intermediate-html</raw-html-target.path>
       <filtered-html-target.path>${project.build.directory}/html</filtered-html-target.path>
   </properties>
@@ -116,8 +117,8 @@
           <id>dcache.org</id>
 
           <properties>
-              <html-header.path>${basedir}/src/main/html-fragments/dcacheorg-header.html</html-header.path>
-              <html-footer.path>${basedir}/src/main/html-fragments/dcacheorg-footer.html</html-footer.path>
+              <html-header.path>${html-fragments.path}/dcacheorg-header.html</html-header.path>
+              <html-footer.path>${html-fragments.path}/dcacheorg-footer.html</html-footer.path>
           </properties>
 
           <build>

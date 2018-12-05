@@ -3,7 +3,7 @@
     <taskdef resource="net/sf/antcontrib/antlib.xml"/>
 
     <target name="main">
-        <foreach param="fileName" target="substituteFilename">
+        <foreach param="fileName" target="substituteFilename" inheritall="true">
             <path>
                 <fileset dir="${raw-html-target.path}"
                          casesensitive="yes">
@@ -17,6 +17,23 @@
         <basename property='baseName'
                   file='${fileName}'
                   suffix='.html'/>
+
+        <if>
+            <available file="${html-fragments.path}/navigation-${baseName}.html"/>
+            <then>
+                <loadfile property='navigation'
+                          srcFile="${html-fragments.path}/navigation-${baseName}.html"/>
+            </then>
+            <else>
+                <loadfile property='navigation'
+                          srcFile="${html-fragments.path}/navigation.html"/>
+            </else>
+        </if>
+
+        <replace file='${fileName}'
+                 token='##NAVIGATION##'
+                 value='${navigation}'/>
+
         <replace file='${fileName}'
                  token='##SOURCE_FILENAME##'
                  value='${baseName}.md'/>
