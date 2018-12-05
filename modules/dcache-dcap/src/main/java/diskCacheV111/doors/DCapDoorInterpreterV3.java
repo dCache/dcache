@@ -2256,7 +2256,12 @@ public class DCapDoorInterpreterV3
                     if (_strictSize && _ioMode.contains("w")) {
                         for( int count = 0 ; count < 10 ; count++  ){
                             try{
-                                FileAttributes attributes = _pnfs.getFileAttributes(_fileAttributes.getPnfsId(), EnumSet.of(SIZE));
+                                FileAttributes attributes;
+                                if (_path == null) {
+                                    attributes = _pnfs.getFileAttributes(_fileAttributes.getPnfsId(), EnumSet.of(SIZE));
+                                } else {
+                                    attributes = _pnfs.getFileAttributes(_path, EnumSet.of(SIZE));
+                                }
                                 if (attributes.isDefined(SIZE)) {
                                     _log.info("doorTransferArrived : Size of {}: {}", _fileAttributes.getPnfsId(), attributes.getSize());
                                     break;
