@@ -72,6 +72,7 @@ Components of dCache System
 
 |      Services                        |Responsible for    |
 |:------------------------------------------:|:----|
+| [admin](config-admin.md)                   | Admin shell service. Allows to interact with all dCache components..  |
 | [alarms](config-alarms.md)                   | Records errors requiring more or less urgent intervention.  |
 | [billing](config-billing.md)                 |  Built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools.  |
 | [poolmanager](config-PoolManager.md)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
