@@ -15,6 +15,8 @@ Table of Contents
     [Host Certificate](#host-certificates)
     [VOMS Proxy Certificate](#voms-proxy-certificate)
 
++ [Using OpenID Connect](#using-openid-connect)
+
 + [Configuration files](#configuration-files)
 
     [storage-authzdb](#storage-authzdb)
@@ -754,6 +756,83 @@ Use the command **voms-proxy-destroy** to destroy your VOMS proxy.
     [user] $ voms-proxy-info
 
     Couldn't find a valid proxy.
+
+
+Using OpenID Connect
+====================
+
+dCache also supports the use of OpenID Connect bearer tokens as a means of authentication. 
+
+OpenID Connect is a federated identity system.  The dCache users see federated identity as a way to use their existing username & password safely.  From a dCache admin's point-of-view, this involves "outsourcing" responsibility for checking users identities to some external service: you must trust that the service is doing a good job.
+
+> OpenID Connect is a simple identity layer on top of the OAuth 2.0 protocol. It enables Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server, as well as to obtain basic profile information about the End-User in an interoperable and REST-like manner.
+>
+> --<cite>http://openid.net/specs/openid-connect-core-1_0.html<cite>
+
+Common examples of Authorisation servers are Google, Indigo-IAM, Cern-Single-Signon etc.
+
+As of version 2.16, dCache is able to perform authentication based on [OpendID Connect](http://openid.net/specs/openid-connect-core-1_0.html) credentials on its HTTP end-points. In this document, we outline the configurations necessary to enable this support for OpenID Connect. 
+
+OpenID Connect credentials are sent to dCache with Authorisation HTTP Header as follows 
+`Authorization: Bearer  <yaMMeexxx........>`. This bearer token is extracted, validated and verified against a **Trusted Authorisation Server** (Issue of the bearer token) and is used later to fetch additional user identity information from the corresponding Authorisation Server.
+
+## Steps for configuration 
+
+In order to configure the OpenID Connect support, we need to 
+
+1. configure the gplazma plugins providing the support for authentication using OpenID credentials and mapping a verified OpenID credential to dCache specific `username`, `uid` and `gid`.
+2. enabling the plugins in gplazma 
+
+## Gplazma Plugins for OpenId Connect
+
+The support for OpenID Connect in Cache is achieved with the help of two gplazma plugins.
+
+### OpenID Authenticate Plugin (oidc)
+It takes the extracted OpenID connect credentials (Bearer Token) from the HTTP requests and validates it against a OpenID Provider end-point. The admins need to obtain this information from their trusted OpenID Provider such as Google.
+
+In case of Google, the provider end-point can be obtained from the url of its [Discovery Document](http://openid.net/specs/openid-connect-core-1_0.html#OpenID.Discovery), e.g. https://accounts.google.com/.well-known/openid-configuration. Hence, the provider end-point in this case would be **accounts.google.com**. 
+
+This end-point has to be appended to the gplazma property **gplazma.oidc.hostnames**, which should be added to the layouts file. Multiple trusted OpenID providers can be added with space separated list as below.
+
+`gplazma.oidc.hostnames = accounts.google.com iam-test.indigo-datacloud.eu`
+
+### MultiMap plugin (multimap)
+
+dCache requires that authenticated credentials be mapped to posix style `username`, `uid` and `gid`. In case of OpenID credentials, it can be achieved through the new gplazma multimap plugin. This plugin is able to take a verified OpenID credentials in the form of OpenID Subject or the corresponding Email address, and map it to a username, uid, gid etc.
+
+For example,
+
+> oidc:9889-1231-2999-12312       username:kermit
+
+> email:kermit.the.frog@email.com     username:thefrog
+
+In this example, it is assumed there is an additional mapping from username to uid, gid etc in files like storage-autzdb.
+
+This mapping as shown above can be stored in a gplazma multi-map configuration file. The location of the multimap configuration file can be specified with another gplazma property **gplazma.multimap.file**. By default it is configured to be located in /etc/dcache/multi-mapfile.
+
+### Enable the gplazma plugins
+
+The two plugins above must be enabled in the gplazma.conf.
+
+> auth optional oidc
+
+> map optional  multimap 
+
+Restart dCache and check that there are no errors in loading these gplazma plugins.
+
+### Third-Party Transfer with OpenID Connect Credentials
+
+Third-party transfer with OpenID Connect Credentials are also possible. dCache performs a token-exchange with the OpenID provider in order and obtain a new delegated bearer token for itself, which it can use (and refresh) to perform Third-party transfer.
+
+In order to perform a token-exchange, it requires the id and secret of a client registered to the OpenID Provider same as that of the bearer token (that was received with the COPY request).
+
+The client-id and client-secret of such a client can be set in the webdav properties as follows,
+
+> webdav.oidc.client.ids!provider.hostname : id of a client registered to an OpenId Provider
+
+> webdav.oidc.client.secrets!provider.hostname : client-secret corresponding the client-id specified above
+
+Here, **provider.hostname** must be replaced with a supported OpenID provider like accounts.google.com.
 
 Configuration files
 ===================
