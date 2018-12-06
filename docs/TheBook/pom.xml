@@ -95,7 +95,7 @@
           <artifactId>maven-assembly-plugin</artifactId>
           <configuration>
               <descriptors>
-                  <descriptor>src/assembly/html.xml</descriptor>
+                  <descriptor>src/main/assembly/html.xml</descriptor>
               </descriptors>
               <finalName>TheBook-${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${git.commit.id.abbrev}</finalName>
               <appendAssemblyId>false</appendAssemblyId>
