@@ -92,6 +92,19 @@
       </plugin>
 
       <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <executions>
+              <execution>
+                  <id>parse-version</id>
+                  <goals>
+                      <goal>parse-version</goal>
+                  </goals>
+              </execution>
+          </executions>
+      </plugin>
+
+      <plugin>
           <artifactId>maven-assembly-plugin</artifactId>
           <configuration>
               <descriptors>
@@ -123,19 +136,6 @@
 
           <build>
             <plugins>
-              <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
-                  <execution>
-                    <id>parse-version</id>
-                    <goals>
-                      <goal>parse-version</goal>
-                    </goals>
-                  </execution>
-                </executions>
-              </plugin>
-
               <plugin>
                   <groupId>org.codehaus.gmaven</groupId>
                   <artifactId>groovy-maven-plugin</artifactId>
