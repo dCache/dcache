@@ -16,19 +16,10 @@ are performed automatically and invisibly to the user. Beside HEP
 specific protocols, data in dCache can be accessed via __NFSv4.1
 (pNFS)__, __FTP__ as well as through __WebDav__.
 
-Contributors
-============
-dCache is a joined effort between
-[Deutsches Elektronen-Synchrotron DESY](http://www.desy.de),
-[Fermi National Accelerator Laboratory](http://www.fnal.gov)
-and [Nordic DataGrid Facility](http://www.ndgf.org).
+Documentation
+=============
 
-License
-=======
-
-The project is licensed under __AGPL v3__. Some parts licensed under __BSD__ and __LGPL__. See the source code for details.
-
-For more info, check the official [dCache.ORG](http://www.dcache.org) web page.
+[The dCache book](docs/TheBook/src/main/markdown/index.md)
 
 Getting Started
 ===============
@@ -42,6 +33,20 @@ system-test requires no special privileges and all the generated files
 reside within the code-base.
 
 There are also packages of stable releases at https://www.dcache.org/downloads/1.9/.
+
+License
+=======
+
+The project is licensed under __AGPL v3__. Some parts licensed under __BSD__ and __LGPL__. See the source code for details.
+
+For more info, check the official [dCache.ORG](http://www.dcache.org) web page.
+
+Contributors
+============
+dCache is a joinet effort between
+[Deutsches Elektronen-Synchrotron DESY](http://www.desy.de),
+[Fermi National Accelerator Laboratory](http://www.fnal.gov)
+and [Nordic DataGrid Facility](http://www.ndgf.org).
 
 How to contribute
 =================
