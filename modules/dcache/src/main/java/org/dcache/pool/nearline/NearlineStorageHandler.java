@@ -1195,10 +1195,21 @@ public class NearlineStorageHandler
             }
         }
 
+        /**
+         * Deallocate space. Used only when handling stage failure.
+         */
+        private synchronized void deallocateSpace()
+        {
+            if (allocationFuture != null && !allocationFuture.cancel(false)) {
+                allocator.free(getFileAttributes().getSize());
+            }
+        }
+
         private void done(Throwable cause)
         {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
             if (cause != null) {
+                deallocateSpace();
                 if (cause instanceof InterruptedException || cause instanceof CancellationException) {
                     cause = new TimeoutCacheException("Stage was cancelled.", cause);
                 }
