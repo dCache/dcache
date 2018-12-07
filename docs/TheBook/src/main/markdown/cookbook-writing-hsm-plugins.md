@@ -136,7 +136,7 @@ as a starting point for writing nearline storage plugins for dCache. To
 instantiate the archetype, run
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ mvn archetype:generate -DarchetypeCatalog=https://download.dcache.org/nexus/content/repositories/releases/
+$ mvn archetype:generate 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maven will prompt you to select an archetype from a list. Select
@@ -157,7 +157,7 @@ different versions of dCache (we provide no guarantees though!).
 Example:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ mvn archetype:generate -DarchetypeCatalog=https://download.dcache.org/nexus/content/repositories/releases/
+$ mvn archetype:generate 
 [INFO] Scanning for projects...
 [INFO]                                                                         
 [INFO] ------------------------------------------------------------------------
