@@ -168,9 +168,16 @@
     <property name="user" value="${xrootd.authz.user}"/>
   </bean>
 
-  <bean id="loginstrategy" class="org.dcache.services.login.RemoteLoginStrategy">
+  <bean id="loginstrategy" class="org.dcache.auth.UnionLoginStrategy">
     <description>Login strategy suitable for GSI</description>
-    <property name="cellStub" ref="gPlazma-stub" />
+    <property name="loginStrategies">
+      <list>
+	<bean class="org.dcache.services.login.RemoteLoginStrategy">
+	  <property name="cellStub" ref="gPlazma-stub" />
+	</bean>
+      </list>
+    </property>
+    <property name="anonymousAccess" value="${xrootd.authz.anonymous-operations}"/>
   </bean>
 
   <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
