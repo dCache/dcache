@@ -278,6 +278,11 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private static final ChimeraNFSException POISON = new NfsIoException("Mover finished, EIO");
 
+    /**
+     * If true, door will query gplazma to overcome 16 sub-group limit by AUTH_SYS.
+     */
+    private boolean _manageGids;
+
     public void setEnableRpcsecGss(boolean enable) {
         _enableRpcsecGss = enable;
     }
@@ -342,6 +347,11 @@ public class NFSv41Door extends AbstractCellComponent implements
        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
+    @Autowired(required = false)
+    public void setManageGroups(boolean manageGids) {
+        _manageGids = manageGids;
+    }
+
     public void init() throws Exception {
 
         _chimeraVfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
@@ -369,9 +379,23 @@ public class NFSv41Door extends AbstractCellComponent implements
                 case V41:
                     final NFSv41DeviceManager _dm = this;
                     _proxyIoFactory = new NfsProxyIoFactory(_dm);
-                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory,
-                            new AccessLogAwareOperationFactory(_chimeraVfs, _fileFileSystemProvider, _accessLogMode)),
-                            _dm, _vfs, _exportFile);
+                    _nfs4 = new NFSServerV41.Builder()
+                            .withDeviceManager(_dm)
+                            .withExportFile(_exportFile)
+                            .withVfs(_vfs)
+                            .withOperationFactory(
+                                    new ProxyIoMdsOpFactory(
+                                            _proxyIoFactory,
+                                            new AccessLogAwareOperationFactory(
+                                                    _chimeraVfs,
+                                                    _fileFileSystemProvider,
+                                                    _accessLogMode),
+                                            _manageGids ? Optional.of(_idMapper)
+                                                    : Optional.empty()
+                                    )
+                            )
+                            .build();
+
                     oncRpcSvcBuilder.withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     updateLbPaths();
                     break;
