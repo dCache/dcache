@@ -37,6 +37,7 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.nfs.v4.NfsIdMapping;
 import org.dcache.oncrpc4j.rpc.RpcLoginService;
 import org.dcache.oncrpc4j.rpc.RpcTransport;
+import org.dcache.utils.SubjectHolder;
 
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
@@ -186,6 +187,16 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
             LOGGER.debug("Failed to login for : {} : {}", gssc, e.toString());
         }
         return Subjects.NOBODY;
+    }
+
+    public Subject login(Subject in) {
+
+        try {
+            return _remoteLoginStrategy.login(in).getSubject();
+        } catch (CacheException e) {
+            LOGGER.debug("Failed to login for : {} : {}", new SubjectHolder(in),  e.toString());
+        }
+        return in;
     }
 
     /**

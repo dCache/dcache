@@ -284,6 +284,11 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private static final ChimeraNFSException POISON = new NfsIoException("Mover finished, EIO");
 
+    /**
+     * If true, door will query gplazma to overcome 16 sub-group limit by AUTH_SYS.
+     */
+    private boolean _manageGids;
+
     public void setEventNotifier(EventNotifier notifier) {
         _eventNotifier = notifier;
     }
@@ -352,6 +357,11 @@ public class NFSv41Door extends AbstractCellComponent implements
        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
+    @Autowired(required = false)
+    public void setManageGroups(boolean manageGids) {
+        _manageGids = manageGids;
+    }
+
     public VirtualFileSystem wrapWithMonitoring(VirtualFileSystem inner) {
         MonitoringVfs monitor = new MonitoringVfs();
         monitor.setInner(inner);
@@ -399,7 +409,9 @@ public class NFSv41Door extends AbstractCellComponent implements
                                             new AccessLogAwareOperationFactory(
                                                     _chimeraVfs,
                                                     _fileFileSystemProvider,
-                                                    _accessLogMode)
+                                                    _accessLogMode),
+                                            _manageGids ? Optional.of(_idMapper)
+                                                    : Optional.empty()
                                     )
                             )
                             .build();

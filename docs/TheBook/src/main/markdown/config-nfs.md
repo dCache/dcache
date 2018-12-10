@@ -7,6 +7,7 @@ Table of Contents
 - [Exporting filesystem](#exporting-filesystem)
 - [Configuring NFSv4.1 door with GSS-API support](#configuring-nfsv4.1-door-with-gss-api-support)
 - [Configuring principal-id mapping for NFS access](#configuring-principal-id-mapping-for-nfs-access)
+- [Managing group ids](#managing-group-ids)
 
 This chapter explains how to configure dCache in order to access it via the `NFSv4.1` protocol, allowing clients to mount dCache and perform POSIX IO using standard `NFSv4.1` clients.
 
@@ -171,3 +172,21 @@ To avoid big latencies and avoiding multiple queries for the same information, l
     nfs.idmap.cache.timeout.unit = SECONDS
     ..
 
+Managing group ids
+==================
+
+The remote procedure call v2 (RPC) that used by nfs protocol defines different
+mechanisms for user authentication. One of them is AUTH_SYS, which majority of
+deployments are using. Dispire it's popularity, the one downside of using AUTH_SYS
+is the sixteen groups limit. To overcome this limitation dCache nfs server can
+query gplazma to discover additional groups that the client might have.
+To enable it the `nfs.idmap.manage-gids` property can be used.
+
+```
+nfs.idmap.manage-gids = true
+```
+
+As enabling it might have negative effects on the performance, the default value
+it false.
+
+> NOTICE: currently only [ldap](config-gplazma.md#ldap) plugin supports group mapping by uid.
