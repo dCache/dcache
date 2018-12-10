@@ -1165,7 +1165,7 @@ public class NearlineStorageHandler
         private synchronized void deallocateSpace()
         {
             if (allocationFuture != null && !allocationFuture.cancel(false)) {
-                allocator.free(getFileAttributes().getSize());
+                descriptor.free(descriptor.getFileAttributes().getSize());
             }
         }
 
