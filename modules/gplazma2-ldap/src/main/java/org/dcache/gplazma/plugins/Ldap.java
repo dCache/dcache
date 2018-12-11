@@ -116,6 +116,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     public static final String LDAP_USER_HOME = "gplazma.ldap.home-dir";
     public static final String LDAP_USER_ROOT = "gplazma.ldap.root-dir";
     public static final String LDAP_GROUP_MEMBER = "gplazma.ldap.group-member";
+    public static final String LDAP_TRY_UID_MAPPING = "gplazma.ldap.try-uid-mapping";
 
     public static final String LDAP_BINDDN = "gplazma.ldap.binddn";
     public static final String LDAP_BINDPW = "gplazma.ldap.bindpw";
@@ -139,7 +140,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     /**
      * Search control to retrieve uidNumber attribute.
      */
-    private static final SearchControls SC_UID_GID_NUMBER = buildSearchControls(UID_NUMBER_ATTRIBUTE, GID_NUMBER_ATTRIBUTE);
+    private static final SearchControls SC_UID_GID_NUMBER = buildSearchControls(USER_ID_ATTRIBUTE, UID_NUMBER_ATTRIBUTE, GID_NUMBER_ATTRIBUTE);
 
     /**
      * Search control to retrieve all attribute.
@@ -236,7 +237,6 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     }
 
     /**
-<<<<<<< HEAD
      * The ldap connection url.
      */
     private final String ldapUrl;
@@ -292,12 +292,19 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     private final Map<String, Object> globalLoginOptions;
 
     /**
+     * If true, then map stage will try to use uidNUmber field if UidPrincipal is
+     * present.
+     */
+    private final boolean tryUidMapping;
+
+    /**
      * Create a Ldap identity plugin.
      *
      * @param properties plugin configuration properties.
      */
     public Ldap(Properties properties) {
 
+        tryUidMapping = Boolean.parseBoolean(properties.getProperty(LDAP_TRY_UID_MAPPING));
         ldapUrl = properties.getProperty(LDAP_URL);
         String organization = properties.getProperty(LDAP_ORG);
         String peopleTree = properties.getProperty(LDAP_PEOPLE_TREE);
@@ -400,7 +407,17 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
     @Override
     public void map(Set<Principal> principals) throws AuthenticationException {
+
+        // always try to use gplazma configured filter first
+        String filter = userFilter;
+        boolean isUsernameMissing = false;
+
         Optional<Principal> principal = findFirst(principals, UserNamePrincipal.class::isInstance);
+        if (!principal.isPresent() && tryUidMapping) {
+            principal = findFirst(principals, UidPrincipal.class::isInstance);
+            filter = "(uidNumber=%s)";
+            isUsernameMissing = true;
+        }
 
         if (principal.isPresent()) {
 
@@ -412,15 +429,23 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
             try (AutoCloseableLdapContext ctx = new AutoCloseableLdapContext()) {
                 NamingEnumeration<SearchResult> sResult = ctx.search(peopleOU,
-                        String.format(userFilter, principal.get().getName()),
+                        String.format(filter, principal.get().getName()),
                         SC_UID_GID_NUMBER);
 
                 if (sResult.hasMore()) {
                     Attributes userAttr = sResult.next().getAttributes();
-                    principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
-                    principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), !hasPrimaryGid));
 
-                    principals.addAll(getGroupsByUid.searchGroup(ctx, principal.get(), peopleOU, groupOU));
+                    Principal usernamePrincipal;
+                    if (isUsernameMissing) {
+                        usernamePrincipal = new UserNamePrincipal((String) userAttr.get(USER_ID_ATTRIBUTE).get());
+                        principals.add(usernamePrincipal);
+                    } else {
+                        usernamePrincipal = principal.get();
+                        principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
+                    }
+
+                    principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), !hasPrimaryGid));
+                    principals.addAll(getGroupsByUid.searchGroup(ctx, usernamePrincipal, peopleOU, groupOU));
                 }
             } catch (NamingException e) {
                 LOGGER.warn("Failed to get mapping: {}", e.toString());

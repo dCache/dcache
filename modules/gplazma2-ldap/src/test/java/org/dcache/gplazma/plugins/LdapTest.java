@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2017 - 2018 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -44,10 +44,8 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.ldap4testing.EmbeddedServer;
-import org.dcache.util.PrincipalSetMaker;
 
 import static org.dcache.gplazma.plugins.Ldap.*;
-import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
@@ -93,6 +91,7 @@ public class LdapTest {
         properties.put(LDAP_USER_HOME, "/home/%uid%");
         properties.put(LDAP_USER_ROOT, "/");
         properties.put(LDAP_GROUP_MEMBER, "uniqueMember");
+        properties.put(LDAP_TRY_UID_MAPPING, "true");
 
         properties.put(LDAP_AUTH, "simple");
         properties.put(LDAP_BINDDN, "uid=kermit,ou=people,o=dcache,c=org");
@@ -104,6 +103,19 @@ public class LdapTest {
     @Test
     public void shouldReturnMatchingUidGid() throws AuthenticationException {
         Set<Principal> principals = Sets.newHashSet(KERMIT_PRINCIPAL);
+
+        plugin.map(principals);
+
+        assertThat("unexpected number of returned principals", principals, hasSize(4));
+        assertThat("expected USERNAME not found", principals, hasItem(KERMIT_PRINCIPAL));
+        assertThat("expected UID not found", principals, hasItem(KERMIT_UID_PRINCIPAL));
+        assertThat("expected GID not found", principals, hasItem(KERMIT_PRIMARY_GID_PRINCIPAL));
+        assertThat("expected GID not found", principals, hasItem(ACTOR_GID_PRINCIPAL));
+    }
+
+    @Test
+    public void shouldReturnMatchingUidGidByUid() throws AuthenticationException {
+        Set<Principal> principals = Sets.newHashSet(KERMIT_UID_PRINCIPAL);
 
         plugin.map(principals);
 
