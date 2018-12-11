@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.EnstoreStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -86,6 +87,9 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
         ExtendedInode dirInode;
         if (!inode.isDirectory()) {
             dirInode = inode.getParent();
+            if (dirInode == null) {
+                throw new FileNotFoundCacheException("file unlinked");
+            }
         }
         else {
             dirInode = inode;
