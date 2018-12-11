@@ -46,9 +46,9 @@ import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 @ChannelHandler.Sharable
 public class ProxyAccessLogHandler extends AccessLogHandler
 {
-    private final AccessLogHandler handler;
+    private final ChannelHandler handler;
 
-    public ProxyAccessLogHandler(Logger logger, AccessLogHandler handler)
+    public ProxyAccessLogHandler(Logger logger, ChannelHandler handler)
     {
         super(logger);
         this.handler = handler;

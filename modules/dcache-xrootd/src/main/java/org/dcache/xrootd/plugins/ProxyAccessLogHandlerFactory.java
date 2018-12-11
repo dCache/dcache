@@ -20,9 +20,11 @@ package org.dcache.xrootd.plugins;
 
 import io.netty.channel.ChannelHandler;
 
+import org.dcache.util.ChannelCdcSessionHandlerWrapper;
+
 public class ProxyAccessLogHandlerFactory extends AccessLogHandlerFactory
 {
-    private final ProxyAccessLogHandler proxyAccessLogHandler = new ProxyAccessLogHandler(accessLogger, handler);
+    private final ChannelHandler proxyAccessLogHandler = new ChannelCdcSessionHandlerWrapper(new ProxyAccessLogHandler(accessLogger, handler));
 
     @Override
     public ChannelHandler createHandler()

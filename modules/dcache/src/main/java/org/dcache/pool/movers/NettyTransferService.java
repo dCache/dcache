@@ -57,6 +57,8 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -67,6 +69,7 @@ import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.CDCThreadFactory;
+import org.dcache.util.ChannelCdcSessionHandlerWrapper;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.NettyPortRange;
@@ -84,7 +87,7 @@ import static com.google.common.base.Preconditions.checkState;
  * the Netty channel to close.
  */
 public abstract class NettyTransferService<P extends ProtocolInfo>
-    implements TransferService<NettyMover<P>>, MoverFactory
+    implements TransferService<NettyMover<P>>, MoverFactory, CellIdentityAware
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(NettyTransferService.class);
@@ -136,6 +139,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     /** Communication stub for talking to doors. */
     protected CellStub doorStub;
 
+    private CellAddressCore address;
+
     public NettyTransferService(String name)
     {
         this.name = name;
@@ -151,6 +156,12 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     public void setThreads(int threads)
     {
         this.threads = threads;
+    }
+
+    @Override
+    public void setCellAddress(CellAddressCore address)
+    {
+        this.address = address;
     }
 
     @Required
@@ -259,6 +270,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                         protected void initChannel(Channel ch) throws Exception
                         {
                             NettyTransferService.this.initChannel(ch);
+                            ChannelCdcSessionHandlerWrapper.bindSessionToChannel(ch,
+                                    "pool:" + address + ":" + name + ":" + ch.id());
                         }
                     });
 

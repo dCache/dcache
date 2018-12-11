@@ -21,11 +21,13 @@ import io.netty.channel.ChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.util.ChannelCdcSessionHandlerWrapper;
+
 public class AccessLogHandlerFactory implements ChannelHandlerFactory
 {
     protected final Logger accessLogger = LoggerFactory.getLogger("org.dcache.access.xrootd");
 
-    protected final AccessLogHandler handler = new AccessLogHandler(accessLogger);
+    protected final ChannelHandler handler = new ChannelCdcSessionHandlerWrapper(new AccessLogHandler(accessLogger));
 
     @Override
     public String getName()
