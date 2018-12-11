@@ -17,6 +17,7 @@
  */
 package org.dcache.xrootd.plugins;
 
+import com.google.common.base.Strings;
 import com.google.common.net.HostAndPort;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
@@ -38,6 +39,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.xrootd.door.LoginEvent;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.EndSessionRequest;
 import org.dcache.xrootd.protocol.messages.ErrorResponse;
 import org.dcache.xrootd.protocol.messages.LocateRequest;
@@ -53,8 +55,11 @@ import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.dcache.xrootd.protocol.messages.RedirectResponse;
 import org.dcache.xrootd.protocol.messages.SetRequest;
+import org.dcache.xrootd.protocol.messages.StatRequest;
+import org.dcache.xrootd.protocol.messages.StatRequest.Target;
 import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.StatxRequest;
+import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.XrootdRequest;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
@@ -131,7 +136,8 @@ public class AccessLogHandler extends ChannelDuplexHandler
                 log.add("request", getRequestId(request));
 
                 if (request instanceof PathRequest) {
-                    log.add("path", ((PathRequest) request).getPath());
+                    log.add("path", (Strings.emptyToNull(((PathRequest) request).getPath())));
+                    log.add("opaque", (Strings.emptyToNull(((PathRequest) request).getOpaque())));
                     if (request instanceof OpenRequest) {
                         if (!((OpenRequest) request).isReadOnly()) {
                             int mode = ((OpenRequest) request).getUMask();
@@ -146,7 +152,14 @@ public class AccessLogHandler extends ChannelDuplexHandler
                         log.add("options", "0x" + Integer.toHexString(((LocateRequest) request).getOptions()));
                     } else if (request instanceof MkDirRequest) {
                         log.add("options", "0x" + Integer.toHexString(((MkDirRequest) request).getOptions()));
+                    } else if (request instanceof StatRequest) {
+                        if (((StatRequest) request).getTarget() == Target.FHANDLE) {
+                            log.add("handle", ((StatRequest)request).getFhandle());
+                        }
+                        log.add("vfs", ((StatRequest)request).isVfsSet());
                     }
+                } else if (request instanceof CloseRequest) {
+                    log.add("handle", ((CloseRequest)request).getFileHandle());
                 } else if (request instanceof LoginRequest) {
                     log.add("username", ((LoginRequest) request).getUserName());
                     log.add("capver", ((LoginRequest) request).getClientProtocolVersion());
@@ -180,6 +193,8 @@ public class AccessLogHandler extends ChannelDuplexHandler
                     }
                 } else if (request instanceof EndSessionRequest) {
                     log.add("sessionId", ((EndSessionRequest) request).getSessionId());
+                } else if (request instanceof SyncRequest) {
+                    log.add("handle", ((SyncRequest)request).getFileHandle());
                 }
 
                 log.add("response", getStatusCode(response));
@@ -199,6 +214,7 @@ public class AccessLogHandler extends ChannelDuplexHandler
                     log.add("sessionId", ((LoginResponse) response).getSessionId());
                     log.add("sec", emptyToNull(((LoginResponse) response).getSec()));
                 } else if (response instanceof OpenResponse) {
+                    log.add("handle", ((OpenResponse) response).getFileHandle());
                     FileStatus fs = ((OpenResponse) response).getFileStatus();
                     if (fs != null) {
                         log.add("flags", fs.getFlags());
