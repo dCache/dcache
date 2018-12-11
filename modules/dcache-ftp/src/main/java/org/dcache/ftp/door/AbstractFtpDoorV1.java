@@ -2927,7 +2927,7 @@ public abstract class AbstractFtpDoorV1
             }
             ChecksumType type = ChecksumType.getChecksumType(algo);
             FileAttributes attributes =
-                _pnfs.getFileAttributes(absPath, EnumSet.of(PNFSID, CHECKSUM));
+                _pnfs.getFileAttributes(absPath, EnumSet.of(CHECKSUM));
             Checksum checksum = attributes.getChecksums().stream()
                     .filter(c -> c.getType() == type)
                     .findFirst()
@@ -2959,7 +2959,7 @@ public abstract class AbstractFtpDoorV1
                     }
                     setTransfer(null);
                 }
-                _pnfs.setFileAttributes(attributes.getPnfsId(), FileAttributes.ofChecksum(checksum));
+                _pnfs.setFileAttributes(absPath, FileAttributes.ofChecksum(checksum));
             }
 
             reply("213 " + checksum.getValue());
@@ -3015,14 +3015,14 @@ public abstract class AbstractFtpDoorV1
             // Assume octal regardless of string
             int newperms = Integer.parseInt(permstring, 8);
 
+            FsPath absPath = absolutePath(path);
             attributes =
-                _pnfs.getFileAttributes(absolutePath(path), EnumSet.of(PNFSID, TYPE));
+                _pnfs.getFileAttributes(absPath, EnumSet.of(TYPE));
 
             checkFTPCommand(attributes.getFileType() != FileType.LINK,
                     502, "chmod of symbolic links is not yet supported.");
 
-            _pnfs.setFileAttributes(attributes.getPnfsId(),
-                    FileAttributes.ofMode(newperms));
+            _pnfs.setFileAttributes(absPath, FileAttributes.ofMode(newperms));
 
             reply("250 OK");
         } catch (NumberFormatException ex) {
@@ -3067,12 +3067,13 @@ public abstract class AbstractFtpDoorV1
 
         FileAttributes attributes;
         try {
-            attributes = _pnfs.getFileAttributes(absolutePath(path), EnumSet.of(PNFSID, TYPE));
+            FsPath absPath = absolutePath(path);
+            attributes = _pnfs.getFileAttributes(absPath, EnumSet.of(TYPE));
 
             checkFTPCommand(attributes.getFileType() != FileType.LINK,
                     504, "chgrp of symbolic links is not yet supported.");
 
-            _pnfs.setFileAttributes(attributes.getPnfsId(), FileAttributes.ofGid(gid));
+            _pnfs.setFileAttributes(absPath, FileAttributes.ofGid(gid));
 
             reply("250 OK");
         } catch (PermissionDeniedCacheException e) {
