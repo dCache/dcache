@@ -39,6 +39,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -50,6 +51,7 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.util.HttpException;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.util.Checksum;
@@ -134,6 +136,15 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             return contentMd5.map(Checksums::parseContentMd5);
         } catch (IllegalArgumentException e) {
             throw new HttpException(BAD_REQUEST.code(), "Bad " + CONTENT_MD5 + " header: " + e);
+        }
+    }
+
+    private static OptionalLong contentLength(HttpRequest request) throws HttpException {
+        try {
+            Optional<String> contentLenght = Optional.ofNullable(request.headers().get(CONTENT_LENGTH));
+            return OptionalLong.of(Long.parseLong(contentLenght.get()));
+        } catch (NumberFormatException e) {
+            throw new HttpException(BAD_REQUEST.code(), "Bad " + CONTENT_LENGTH + " header: " + e);
         }
     }
 
@@ -384,6 +395,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
             contentMd5Checksum(request).ifPresent(file::addChecksum);
 
+            OptionalLong contentLength = contentLength(request);
+            if (contentLength.isPresent()) {
+                file.truncate(contentLength.getAsLong());
+            } else if (file.getFileAttributes().isDefined(FileAttribute.SIZE)) {
+                file.truncate(file.getFileAttributes().getSize());
+            }
+
             file.getProtocolInfo().getWantedChecksum().ifPresent(file::addChecksumType);
             _wantedDigest = wantDigest(request).flatMap(Checksums::parseWantDigest);
             _wantedDigest.ifPresent(file::addChecksumType);
@@ -406,7 +424,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         } catch (IllegalArgumentException e) {
             exception = e;
             return context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
-        } catch (RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             exception = e;
             return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         } finally {
