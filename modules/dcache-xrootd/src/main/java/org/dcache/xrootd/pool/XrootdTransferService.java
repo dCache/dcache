@@ -35,6 +35,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -100,6 +101,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
 
     private int                               maxFrameSize;
     private List<ChannelHandlerFactory>       plugins;
+    private List<ChannelHandlerFactory>       accessLogPlugins;
     private List<ChannelHandlerFactory>       tpcClientPlugins;
     private Map<String, String>               queryConfig;
     private NioEventLoopGroup                 thirdPartyClientGroup;
@@ -128,6 +130,12 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                         .setNameFormat("xrootd-tpc-client-%d")
                         .build();
         thirdPartyClientGroup = new NioEventLoopGroup(0, new CDCThreadFactory(factory));
+    }
+
+    @Required
+    public void setAccessLogPlugins(List<ChannelHandlerFactory> plugins)
+    {
+        this.accessLogPlugins = plugins;
     }
 
     @Required
@@ -217,6 +225,19 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         if (LOGGER.isDebugEnabled()) {
             pipeline.addLast("logger", new LoggingHandler());
         }
+
+        /*
+         *  This needs to precede the other plugins in order for
+         *  the logging to be captured on the arriving requests.
+         */
+        Optional<ChannelHandlerFactory> accessLogHandlerFactory =
+                        accessLogPlugins.stream().findFirst();
+        if (accessLogHandlerFactory.isPresent()) {
+            ChannelHandlerFactory factory = accessLogHandlerFactory.get();
+            pipeline.addLast("plugin:" + factory.getName(),
+                             factory.createHandler());
+        }
+
         for (ChannelHandlerFactory plugin: plugins) {
             pipeline.addLast("plugin:" + plugin.getName(),
                              plugin.createHandler());

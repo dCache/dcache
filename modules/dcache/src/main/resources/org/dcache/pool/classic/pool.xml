@@ -361,6 +361,11 @@
       <property name="connectTimeout" value="${pool.mover.xrootd.timeout.connect}"/>
       <property name="connectTimeoutUnit" value="${pool.mover.xrootd.timeout.connect.unit}"/>
       <property name="maxFrameSize" value="${pool.mover.xrootd.frame-size}"/>
+      <property name="accessLogPlugins">
+        <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
+          <property name="plugins" value="access-log"/>
+        </bean>
+      </property>
       <property name="plugins">
           <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
               <property name="plugins" value="${pool.mover.xrootd.plugins}"/>

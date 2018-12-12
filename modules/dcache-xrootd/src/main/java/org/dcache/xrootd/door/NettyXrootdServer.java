@@ -26,6 +26,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -63,6 +64,7 @@ public class NettyXrootdServer implements CellIdentityAware
     private XrootdDoor _door;
     private ConnectionTracker _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
+    private List<ChannelHandlerFactory> _accessLogHandlerFactories;
     private FsPath _rootPath;
     private InetAddress _address;
     private String sessionPrefix;
@@ -137,6 +139,13 @@ public class NettyXrootdServer implements CellIdentityAware
         _channelHandlerFactories = channelHandlerFactories;
     }
 
+    @Required
+    public void setAccessLogHandlerFactories(
+                    List<ChannelHandlerFactory> channelHandlerFactories)
+    {
+        _accessLogHandlerFactories = channelHandlerFactories;
+    }
+
     /**
      * Sets the root path of the name space exported by this xrootd door.
      */
@@ -209,6 +218,19 @@ public class NettyXrootdServer implements CellIdentityAware
                         if (_log.isDebugEnabled()) {
                             pipeline.addLast("logger", new LoggingHandler(NettyXrootdServer.class));
                         }
+
+                        /*
+                         *  This needs to precede the other plugins in order for
+                         *  the logging to be captured on the arriving requests.
+                         */
+                        Optional<ChannelHandlerFactory> accessLogHandlerFactory =
+                                        _accessLogHandlerFactories.stream().findFirst();
+                        if (accessLogHandlerFactory.isPresent()) {
+                            ChannelHandlerFactory factory = accessLogHandlerFactory.get();
+                            pipeline.addLast("plugin:" + factory.getName(),
+                                             factory.createHandler());
+                        }
+
                         for (ChannelHandlerFactory factory: _channelHandlerFactories) {
                             pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
                         }

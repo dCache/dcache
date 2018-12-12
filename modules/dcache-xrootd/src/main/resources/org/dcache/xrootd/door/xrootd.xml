@@ -96,6 +96,7 @@
     <property name="connectionTracker" ref="connection-tracker"/>
     <property name="door" ref="door"/>
     <property name="channelHandlerFactories" ref="channelhandler-factories"/>
+    <property name="accessLogHandlerFactories" ref="accesslog-factories"/>
     <property name="rootPath" value="${xrootd.root}"/>
     <property name="queryConfig">
         <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
@@ -117,6 +118,12 @@
         <constructor-arg value="${xrootd.service.pnfsmanager}"/>
       </bean>
     </constructor-arg>
+  </bean>
+
+  <bean id="accesslog-factories"
+        class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
+    <description>Factory for access log handler</description>
+    <property name="plugins" value="access-log"/>
   </bean>
 
   <bean id="channelhandler-factories"
