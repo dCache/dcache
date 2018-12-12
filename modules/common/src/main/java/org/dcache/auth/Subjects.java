@@ -1,6 +1,8 @@
 package org.dcache.auth;
 
 import com.google.common.net.InetAddresses;
+import eu.emi.security.authn.x509.impl.OpensslNameUtils;
+import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import javax.security.auth.Subject;
@@ -9,8 +11,9 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
+import java.security.cert.CertPath;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,7 +22,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 
 
 public class Subjects
@@ -510,6 +512,155 @@ public class Subjects
             principals.add(principal);
         }
         return principals;
+    }
+
+    /**
+     * Provide a one-line description of argument.  This is obstensibly the
+     * same job as Subject#toString.  In contrast, this method never includes
+     * any line-break characters, provides a better description for X.509 proxy
+     * chains, and uses a more terse format.
+     * <p>
+     * Note: the resulting line may be quite long.
+     * @param subject the identity to print
+     * @return a single line describing that identity
+     */
+    public static String toString(Subject subject)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for (Object credential : subject.getPublicCredentials()) {
+            appendComma(sb);
+            if (credential instanceof CertPath) {
+                List<X509Certificate> certificates = (List<X509Certificate>) ((CertPath) credential).getCertificates();
+                X509Certificate[] chain = certificates.toArray(new X509Certificate[certificates.size()]);
+                appendX509Array(sb, chain);
+            } else if (credential instanceof X509Certificate[]) {
+                appendX509Array(sb, (X509Certificate[])credential);
+            } else {
+                appendOptionallyInQuotes(sb, credential.toString());
+            }
+        }
+
+        for (Object credential : subject.getPrivateCredentials()) {
+            appendComma(sb);
+            if (credential instanceof PasswordCredential) {
+                String username = ((PasswordCredential) credential).getUsername();
+                sb.append("username-with-password:");
+                appendOptionallyInQuotes(sb, username);
+            } else if (credential instanceof BearerTokenCredential) {
+                String token = ((BearerTokenCredential)credential).getToken();
+                sb.append("bearer-token:");
+                appendOptionallyInQuotes(sb, token);
+            } else {
+                appendOptionallyInQuotes(sb, credential.toString());
+            }
+        }
+
+        for (Principal principal : subject.getPrincipals()) {
+            appendComma(sb);
+            if (principal instanceof GlobusPrincipal) {
+                sb.append("dn:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof KerberosPrincipal) {
+                sb.append("kerberos:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof FQANPrincipal) {
+                sb.append("fqan:");
+                String label = ((FQANPrincipal)principal).isPrimaryGroup()
+                        ? "!" + principal.getName()
+                        : principal.getName();
+                appendOptionallyInQuotes(sb, label);
+            } else if (principal instanceof LoginNamePrincipal) {
+                sb.append("desired-username:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof Origin) {
+                sb.append("origin:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof OidcSubjectPrincipal) {
+                sb.append("oidc:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof EmailAddressPrincipal) {
+                sb.append("email:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof UserNamePrincipal) {
+                sb.append("user:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof GroupNamePrincipal) {
+                sb.append("group:");
+                String label = ((GroupNamePrincipal)principal).isPrimaryGroup()
+                        ? "!" + principal.getName()
+                        : principal.getName();
+                appendOptionallyInQuotes(sb, label);
+            } else if (principal instanceof UidPrincipal) {
+                sb.append("uid:").append(((UidPrincipal) principal).getUid());
+            } else if (principal instanceof GidPrincipal) {
+                sb.append("gid:");
+                if (((GidPrincipal)principal).isPrimaryGroup()) {
+                    sb.append('!');
+                }
+                sb.append(principal.getName());
+            } else if (principal instanceof DesiredRole) {
+                sb.append("desired-role:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof EntityDefinitionPrincipal) {
+                sb.append("entity-defn:").append(principal.getName());
+            } else if (principal instanceof FullNamePrincipal) {
+                sb.append("full-name:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof IGTFPolicyPrincipal) {
+                sb.append("IGTF-policy:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof IGTFStatusPrincipal) {
+                sb.append("IGTF-status:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof LoAPrincipal) {
+                sb.append("LoA:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof LoginGidPrincipal) {
+                sb.append("desired-gid:").append(((LoginGidPrincipal) principal).getGid());
+            } else if (principal instanceof LoginUidPrincipal) {
+                sb.append("desired-uid:").append(((LoginUidPrincipal) principal).getUid());
+            } else if (principal instanceof MacaroonPrincipal) {
+                sb.append("macaroon:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof OpenIdGroupPrincipal) {
+                sb.append("oidc-group:");
+                appendOptionallyInQuotes(sb, principal.getName());
+            } else if (principal instanceof Origin) {
+                sb.append("origin:").append(principal.getName());
+            } else {
+                sb.append(principal.getClass().getSimpleName()).append(':');
+                appendOptionallyInQuotes(sb, principal.getName());
+            }
+        }
+        return "{" + sb + "}";
+    }
+
+    private static StringBuilder appendX509Array(StringBuilder sb, X509Certificate[] chain)
+    {
+        X509Certificate eec = ProxyUtils.getEndUserCertificate(chain);
+        String dn = OpensslNameUtils.convertFromRfc2253(eec.getSubjectX500Principal().getName(), true);
+        sb.append(ProxyUtils.isProxy(chain) ? "proxy" : "x509").append("-chain:");
+        appendOptionallyInQuotes(sb, dn);
+        return sb;
+    }
+
+    private static StringBuilder appendComma(StringBuilder sb)
+    {
+        if (sb.length() > 0) {
+            sb.append(", ");
+        }
+        return sb;
+    }
+
+    private static StringBuilder appendOptionallyInQuotes(StringBuilder sb, String argument)
+    {
+        if (argument.contains(" ")) {
+            sb.append('"').append(argument).append('"');
+        } else {
+            sb.append(argument);
+        }
+        return sb;
     }
 
     // Returned Subject must NOT be readOnly.

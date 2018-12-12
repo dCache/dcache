@@ -20,6 +20,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
+import org.dcache.auth.Subjects;
 import org.dcache.util.CertificateFactories;
 import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdException;
@@ -62,11 +63,11 @@ public class LoginAuthenticationHandler
             return reply.getSubject();
         } catch (PermissionDeniedCacheException e) {
             _log.warn("Authorization denied for {}: {}",
-                    subject, e.getMessage());
+                    Subjects.toString(subject), e.getMessage());
             throw new XrootdException(kXR_NotAuthorized, e.getMessage());
         } catch (CacheException | CertificateException e) {
             _log.error("Authorization failed for {}: {}",
-                       subject, e.getMessage());
+                       Subjects.toString(subject), e.getMessage());
             throw new XrootdException(kXR_ServerError, e.getMessage());
         }
     }
