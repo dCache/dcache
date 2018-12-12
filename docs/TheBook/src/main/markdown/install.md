@@ -108,14 +108,14 @@ Create the Chimera database and user.
     Enter it again:
     You do not need to enter a password.
 
-The dCache components will access the database server with the user srmdcache.
+The dCache components will access the database server with the user _dcache_.
 
     [root] # createuser -U postgres --no-superuser --no-createrole --createdb --pwprompt dcache
     Enter password for new role:
     Enter it again:
     You do not need to enter a password.
 
-  Several management components running on the head node as well as the **SRM** will use the database dcache for storing their state information:
+Several management components running on the head node as well as the **SRM** will use the database dcache for storing their state information:
 
       [root] # createdb -U dcache dcache
 
@@ -156,9 +156,11 @@ CONFIGURING dCache
 
 ### Terminology
 
-dCache consists of one or more domains. A domain in dCache is a Java Virtual Machine hosting one or more dCache *cells*. Each domain must have a name which is unique throughout the dCache instance and a cell must have a unique name within the domain hosting the cell.
+dCache consists of one or more *domains*. A domain in dCache is a Java Virtual Machine hosting one or more dCache *cells*. Each domain must have a name which is unique throughout the dCache instance and a cell must have a unique name within the domain hosting the cell.
 
-A *service* is an abstraction used in the dCache configuration to describe atomic units to add to a domain. It is typically implemented through one or more cells. dCache keeps lists of the domains and the services that are to be run within these domains in the *layout files*. The layout file may contain domain- and service- specific configuration values. A pool is a cell providing physical data storage services.
+A *service* is an abstraction used in the dCache configuration to describe atomic units to add to a domain. It is typically implemented through one or more cells. dCache keeps lists of the domains and the services that are to be run within these domains in the *layout files*. The layout file may contain domain- and service- specific configuration values. 
+
+A *pool* is a cell providing physical data storage services. A *door* provides access to the data on the pools by implementing a specific data transfer protocol like FTP or NFS.
 
 ### Configuration files
 
@@ -205,16 +207,14 @@ There may be several layout files in the layout directory, but only one of them 
 
     dcache.layout=mylayout
 
-In the same file you may specifiy the logging level:
+This entry in **/etc/dcache/dcache.conf** will instruct dCache to read the layout file **/etc/dcache/layouts/mylayout.conf** when starting up.
 
+
+In the same file you may specifiy the logging level:
 
     dcache.log.level.events=info
 
-
-
-This entry in **/etc/dcache/dcache.conf** will instruct dCache to read the layout file **/etc/dcache/layouts/mylayout.conf** when starting up.
-
-These is in example layout file available **/usr/share/dcache/examples/layouts/single.conf**. The first lines of are:
+There is an example layout file available at **/usr/share/dcache/examples/layouts/single.conf**. Looking at its first lines can serve as an example for the notation defined above:
 
     [dCacheDomain]
     [dCacheDomain/admin]
