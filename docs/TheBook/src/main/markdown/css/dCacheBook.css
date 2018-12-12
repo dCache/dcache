@@ -653,7 +653,7 @@ pre code {
   max-width: auto;
   padding: 0;
   margin: 0;
-  overflow: visible;
+  overflow: auto;
   line-height: inherit;
   word-wrap: normal;
   background-color: transparent;
