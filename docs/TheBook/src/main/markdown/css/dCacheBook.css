@@ -627,6 +627,7 @@ pre>code {
   white-space: pre;
   background: transparent;
   border: 0;
+  overflow: auto;
 }
 
 .highlight {
@@ -650,7 +651,7 @@ pre {
 
 pre code {
   display: inline;
-  max-width: auto;
+  max-width: inherit;
   padding: 0;
   margin: 0;
   overflow: auto;
