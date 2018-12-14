@@ -231,9 +231,9 @@ public class FTPServerFacade
             ClientException,
             IOException
     {
-        if (logger.isDebugEnabled()) {
-            logger.debug("hostport: {} {}", hp.getHost(), hp.getPort());
-        }
+//        if (logger.isDebugEnabled()) {
+//            logger.debug("hostport: {} {}", hp.getHost(), hp.getPort());
+//        }
         session.serverMode = Session.SERVER_ACTIVE;
         this.remoteServerAddress = hp;
     }

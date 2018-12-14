@@ -78,9 +78,9 @@ public class SimpleSpaceManagerAuthorizationPolicy
                 FQAN fqan = principal.getFqan();
 
                 if (voInfo.match(fqan.getGroup(), fqan.getRole())) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Subject with FQAN {} has permission to reserve {}", fqan, linkGroup);
-                    }
+//                    if (logger.isDebugEnabled()) {
+//                        logger.debug("Subject with FQAN {} has permission to reserve {}", fqan, linkGroup);
+//                    }
                     return new VOInfo(fqan.getGroup(), fqan.getRole());
                 }
             }

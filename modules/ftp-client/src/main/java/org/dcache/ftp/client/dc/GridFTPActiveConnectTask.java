@@ -62,10 +62,10 @@ public class GridFTPActiveConnectTask extends Task
     {
         Socket mySocket = null;
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("connecting new socket to: {} {}",
-                         hostPort.getHost(), hostPort.getPort());
-        }
+//        if (logger.isDebugEnabled()) {
+//            logger.debug("connecting new socket to: {} {}",
+//                         hostPort.getHost(), hostPort.getPort());
+//        }
 
         try {
             mySocket = SocketChannel.open(new InetSocketAddress(hostPort.getHost(), hostPort.getPort())).socket();

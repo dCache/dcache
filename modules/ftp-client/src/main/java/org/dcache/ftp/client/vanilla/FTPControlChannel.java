@@ -344,9 +344,9 @@ public class FTPControlChannel extends BasicClientControlChannel
 
         Reply reply = new Reply(ftpIn);
         //System.out.println("FTP IN string "+reply.toString());
-        if (logger.isDebugEnabled()) {
-            logger.debug("Control channel received: {}", reply);
-        }
+//        if (logger.isDebugEnabled()) {
+//            logger.debug("Control channel received: {}", reply);
+//        }
         lastReply = reply;
         return reply;
     }
@@ -370,9 +370,9 @@ public class FTPControlChannel extends BasicClientControlChannel
         if (cmd == null) {
             throw new IllegalArgumentException("null argument: cmd");
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Control channel sending: {}", cmd);
-        }
+//        if (logger.isDebugEnabled()) {
+//            logger.debug("Control channel sending: {}", cmd);
+//        }
         ftpOut.write(cmd.toString().getBytes(StandardCharsets.US_ASCII));
         ftpOut.flush();
     }

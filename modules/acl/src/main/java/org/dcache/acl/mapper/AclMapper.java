@@ -43,9 +43,9 @@ public class AclMapper {
         try {
             if ( Subjects.isRoot(subject) ) {
                 permACL.setAll();
-                if ( logger.isDebugEnabled() ) {
-                    logger.debug("ROOT has an access to everything.");
-                }
+//                if ( logger.isDebugEnabled() ) {
+//                    logger.debug("ROOT has an access to everything.");
+//                }
                 return permACL;
             }
 
@@ -77,12 +77,13 @@ public class AclMapper {
 
         } catch (ACLException e) {
             logger.error(e.getMessage());
-        } finally {
-            if ( logger.isDebugEnabled() ) {
-                logger.debug("Getted Permission: {}", (rsType == null ? permACL
-                        .toString() : permACL.asString(rsType)));
-            }
         }
+//        finally {
+//            if ( logger.isDebugEnabled() ) {
+//                logger.debug("Getted Permission: {}", (rsType == null ? permACL
+//                        .toString() : permACL.asString(rsType)));
+//            }
+//        }
         return permACL;
     }
 

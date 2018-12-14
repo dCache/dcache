@@ -73,9 +73,9 @@ public class EBlockImageDCReader
         boolean eof = (desc & EOF) != 0;
         boolean eod = (desc & EOD) != 0;
 
-        if (logger.isDebugEnabled()) {
-            logger.debug(desc + " " + size + " " + offset);
-        }
+//        if (logger.isDebugEnabled()) {
+//            logger.debug(desc + " " + size + " " + offset);
+//        }
 
         // if closing flag not yet received,
         // check this buffer for closing flag
@@ -87,22 +87,22 @@ public class EBlockImageDCReader
         if (eod) {
             this.eodReceived = true;
             context.eodTransferred();
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        "Received EOD. Still expecting: {}",
-                        ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
-                           ? "?"
-                           : Integer.toString(
-                                context.eodsTotal - context.eodsTransferred)));
-            }
+//            if (logger.isDebugEnabled()) {
+//                logger.debug(
+//                        "Received EOD. Still expecting: {}",
+//                        ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
+//                           ? "?"
+//                           : Integer.toString(
+//                                context.eodsTotal - context.eodsTransferred)));
+//            }
         }
 
         if (eof) {
             context.setEodsTotal((int) offset);
-            if (logger.isDebugEnabled()) {
-                logger.debug("Received EODC. Expecting total EODs: {}",
-                        context.getEodsTotal());
-            }
+//            if (logger.isDebugEnabled()) {
+//                logger.debug("Received EODC. Expecting total EODs: {}",
+//                        context.getEodsTotal());
+//            }
             return null;
 
         } else {
