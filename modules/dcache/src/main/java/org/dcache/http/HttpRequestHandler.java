@@ -43,15 +43,15 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
             HttpRequest request = (HttpRequest) msg;
 
             ChannelFuture future;
-            if (request.getMethod() == HttpMethod.GET) {
+            if (request.method() == HttpMethod.GET) {
                 future = doOnGet(ctx, request);
-            } else if (request.getMethod() == HttpMethod.PUT) {
+            } else if (request.method() == HttpMethod.PUT) {
                 future = doOnPut(ctx, request);
-            } else if (request.getMethod() == HttpMethod.POST) {
+            } else if (request.method() == HttpMethod.POST) {
                 future = doOnPost(ctx, request);
-            } else if (request.getMethod() == HttpMethod.DELETE) {
+            } else if (request.method() == HttpMethod.DELETE) {
                 future = doOnDelete(ctx, request);
-            } else if (request.getMethod() == HttpMethod.HEAD) {
+            } else if (request.method() == HttpMethod.HEAD) {
                 future = doOnHead(ctx, request);
             } else {
                 future = unsupported(ctx);
