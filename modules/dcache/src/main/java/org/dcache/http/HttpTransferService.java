@@ -156,7 +156,8 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
 
     protected void addChannelHandlers(ChannelPipeline pipeline)
     {
-        pipeline.addLast("decoder", new HttpRequestDecoder());
+        // construct HttpRequestDecoder as netty defaults, except configurable chunk size
+        pipeline.addLast("decoder", new HttpRequestDecoder(4096, 8192, getChunkSize(), true));
         pipeline.addLast("encoder", new HttpResponseEncoder());
 
         if (LOGGER.isDebugEnabled()) {
