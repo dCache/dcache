@@ -157,6 +157,11 @@ public class FtpDoorSettings
             defaultValue = "")
     protected String stageConfigurationFilePath;
 
+    @Option(name = "allowAnonymousStaging",
+            description = "Whether anonymous users are allowed to stage files",
+            defaultValue = "true")
+    protected boolean allowAnonymousStaging;
+
     /**
      * transferTimeout (in seconds)
      * <p>
@@ -301,6 +306,11 @@ public class FtpDoorSettings
     public String getStageConfigurationFilePath()
     {
         return stageConfigurationFilePath;
+    }
+
+    public boolean isAnonymousStagingAllowed()
+    {
+        return allowAnonymousStaging;
     }
 
     public boolean isOverwrite()

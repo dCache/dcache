@@ -135,6 +135,9 @@ public class DcapDoorSettings
     @Option(name = "stageConfigurationFilePath")
     protected String stageConfigurationFilePath;
 
+    @Option(name = "allowAnonymousStaging")
+    protected boolean allowAnonymousStaging;
+
     /**
      * If true, then the Subject of the request must have a UID and
      * GID. If false, then a Subject without a UID and GID (i.e. a
@@ -191,6 +194,7 @@ public class DcapDoorSettings
         doorRestriction = isReadOnly ? Restrictions.readOnly() : Restrictions.none();
 
         checkStagePermission = new CheckStagePermission(stageConfigurationFilePath);
+        checkStagePermission.setAllowAnonymousStaging(allowAnonymousStaging);
     }
 
     public boolean isAuthorizationRequired()

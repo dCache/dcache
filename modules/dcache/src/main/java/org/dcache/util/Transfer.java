@@ -177,6 +177,7 @@ public class Transfer implements Comparable<Transfer>
         _id = _sessionCounter.next();
         _session = CDC.getSession();
         _checkStagePermission = new CheckStagePermission(null);
+        _checkStagePermission.setAllowAnonymousStaging(true);
     }
 
     /**

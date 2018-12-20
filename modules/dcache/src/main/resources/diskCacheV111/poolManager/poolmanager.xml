@@ -102,6 +102,8 @@
     <property name="partitionManager" ref="pm"/>
     <property name="executor" ref="rc-pool"/>
     <property name="stageConfigurationFile" value="${poolmanager.authz.staging}"/>
+    <property name="allowAnonymousStaging"
+	      value="${poolmanager.authz.anonymous-staging}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="hitInfoMessages" value="${poolmanager.enable.cache-hit-message}"/>
     <property name="billing" ref="billing-stub"/>

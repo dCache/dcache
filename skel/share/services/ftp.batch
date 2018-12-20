@@ -110,6 +110,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -deleteOnConnectionClosed=${ftp.enable.delete-on-failure} \
    -io-queue=${ftp.mover.queue} \
    -stageConfigurationFilePath=${ftp.authz.staging} \
+   -allowAnonymousStaging=${ftp.authz.anonymous-staging} \
    -ftp-adapter-internal-interface=${ftp.net.internal} \
    -overwrite=${ftp.enable.overwrite} \
    -proxyPassive=${ftp.proxy.on-passive} \

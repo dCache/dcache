@@ -747,5 +747,11 @@ public class Subjects
             haveFqan = true;
             return this;
         }
+
+        public Builder username(String name)
+        {
+            add(new UserNamePrincipal(name));
+            return this;
+        }
     }
 }

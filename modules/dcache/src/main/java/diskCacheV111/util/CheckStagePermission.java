@@ -30,6 +30,7 @@ public class CheckStagePermission {
     private long _lastTimeReadingStageConfigFile;
     private List<Pattern[]> _regexList;
     private final boolean _isEnabled;
+    private boolean _allowAnonymousStaging;
 
     private final ReadWriteLock _fileReadWriteLock = new ReentrantReadWriteLock();
     private final Lock _fileReadLock = _fileReadWriteLock.readLock();
@@ -45,6 +46,11 @@ public class CheckStagePermission {
         _isEnabled = true;
     }
 
+    public void setAllowAnonymousStaging(boolean isAllowed)
+    {
+        _allowAnonymousStaging = isAllowed;
+    }
+
     /**
      * Check whether staging is allowed for a particular subject on a particular object.
      *
@@ -58,7 +64,15 @@ public class CheckStagePermission {
                                      ProtocolInfo protocolInfo)
         throws PatternSyntaxException, IOException
     {
-        if (!_isEnabled || Subjects.isRoot(subject)) {
+        if (Subjects.isRoot(subject)) {
+            return true;
+        }
+
+        if (!_allowAnonymousStaging && Subjects.isNobody(subject)) {
+            return false;
+        }
+
+        if (!_isEnabled) {
             return true;
         }
 

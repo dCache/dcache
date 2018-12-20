@@ -1595,6 +1595,7 @@ public abstract class AbstractFtpDoorV1
             new TransferRetryPolicy(MAX_RETRIES_WRITE, 0, Long.MAX_VALUE);
 
         _checkStagePermission = new CheckStagePermission(_settings.getStageConfigurationFilePath());
+        _checkStagePermission.setAllowAnonymousStaging(_settings.isAnonymousStagingAllowed());
         buildClientConnectionHandler();
 
         reply("220 " + _ftpDoorName + " door ready");

@@ -114,6 +114,7 @@ public class RequestContainerV5
     private int         _maxRestore    = -1 ;
 
     private CheckStagePermission _stagePolicyDecisionPoint;
+    private boolean _allowAnonymousStaging;
 
     private boolean     _sendHitInfo;
 
@@ -2117,6 +2118,15 @@ public class RequestContainerV5
     public void setStageConfigurationFile(String path)
     {
         _stagePolicyDecisionPoint = new CheckStagePermission(path);
+        _stagePolicyDecisionPoint.setAllowAnonymousStaging(_allowAnonymousStaging);
+    }
+
+    public void setAllowAnonymousStaging(boolean isAllowed)
+    {
+        _allowAnonymousStaging = isAllowed;
+        if (_stagePolicyDecisionPoint != null) {
+            _stagePolicyDecisionPoint.setAllowAnonymousStaging(isAllowed);
+        }
     }
 
     private class PoolPingThread extends Thread
