@@ -139,10 +139,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
     }
 
-    private static OptionalLong contentLength(HttpRequest request) throws HttpException {
+    private static OptionalLong contentLength(HttpRequest request) throws HttpException
+    {
         try {
-            Optional<String> contentLenght = Optional.ofNullable(request.headers().get(CONTENT_LENGTH));
-            return OptionalLong.of(Long.parseLong(contentLenght.get()));
+            String contentLength = request.headers().get(CONTENT_LENGTH);
+            return contentLength == null
+                    ? OptionalLong.empty()
+                    : OptionalLong.of(Long.parseLong(contentLength));
         } catch (NumberFormatException e) {
             throw new HttpException(BAD_REQUEST.code(), "Bad " + CONTENT_LENGTH + " header: " + e);
         }
