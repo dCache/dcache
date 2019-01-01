@@ -330,9 +330,9 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
 
             Instant expiry = calculateExpiry(context, beforeCaveats);
 
-            String macaroon = _processor.buildMacaroon(expiry, context, caveats);
-            request.setAttribute(MACAROON_ID_ATTRIBUTE, MacaroonProcessor.idOfMacaroon(macaroon));
-            return macaroon;
+            MacaroonProcessor.MacaroonBuildResult result = _processor.buildMacaroon(expiry, context, caveats);
+            request.setAttribute(MACAROON_ID_ATTRIBUTE, result.getId());
+            return result.getMacaroon();
         } catch (DateTimeParseException e) {
             throw new ErrorResponseException(SC_BAD_REQUEST, "Bad validity value: " + e.getMessage());
         } catch (InvalidCaveatException e) {

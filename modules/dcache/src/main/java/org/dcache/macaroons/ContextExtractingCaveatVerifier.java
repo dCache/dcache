@@ -24,6 +24,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
 import static org.dcache.macaroons.CaveatValues.*;
+import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
 /**
  * Extract context information from caveats.  Fails if those caveats are
@@ -34,61 +35,74 @@ public class ContextExtractingCaveatVerifier implements GeneralCaveatVerifier
     private final MacaroonContext context = new MacaroonContext();
 
     private String error;
+    private boolean haveCaveats;
 
     @Override
     public boolean verifyCaveat(String serialised)
     {
         try {
             Caveat caveat = new Caveat(serialised);
-            String value = caveat.getValue();
-
-            switch (caveat.getType()) {
-            case HOME:
-                context.updateHome(value);
-                return true;
-
-            case ROOT:
-                context.updateRoot(value);
-                return true;
-
-            case PATH:
-                context.updatePath(value);
-                return true;
-
-            case IDENTITY:
-                parseIdentityCaveatValue(context, value);
-                return true;
-
-            case ACTIVITY:
-                context.updateAllowedActivities(parseActivityCaveatValue(value));
-                return true;
-
-            case BEFORE:
-                try {
-                    Instant expiry = Instant.parse(value);
-                    if (Instant.now().isAfter(expiry)) {
-                        throw new InvalidCaveatException("expired");
-                    }
-                    context.updateExpiry(expiry);
-                    return true;
-                } catch (DateTimeParseException e) {
-                    throw InvalidCaveatException.wrap("Bad ISO 8601 timestamp", e);
-                }
-
-            case MAX_UPLOAD:
-                try {
-                    long maxUpload = Long.parseLong(value);
-                    context.updateMaxUpload(maxUpload);
-                    return true;
-                } catch (NumberFormatException e) {
-                    throw InvalidCaveatException.wrap("Bad " + CaveatType.MAX_UPLOAD.getLabel(), e);
-                }
-            }
+            acceptCaveat(caveat);
+            haveCaveats = true;
+            return true;
         } catch (InvalidCaveatException e) {
             error = e.getMessage() + ": " + serialised;
+            return false;
         }
+    }
 
-        return false;
+    private void acceptCaveat(Caveat caveat) throws InvalidCaveatException
+    {
+        String value = caveat.getValue();
+
+        switch (caveat.getType()) {
+        case HOME:
+            context.updateHome(value);
+            break;
+
+        case ROOT:
+            context.updateRoot(value);
+            break;
+
+        case PATH:
+            context.updatePath(value);
+            break;
+
+        case IDENTITY:
+            parseIdentityCaveatValue(context, value);
+            break;
+
+        case ACTIVITY:
+            context.updateAllowedActivities(parseActivityCaveatValue(value));
+            break;
+
+        case BEFORE:
+            try {
+                Instant expiry = Instant.parse(value);
+                if (Instant.now().isAfter(expiry)) {
+                    throw new InvalidCaveatException("expired");
+                }
+                context.updateExpiry(expiry);
+            } catch (DateTimeParseException e) {
+                throw InvalidCaveatException.wrap("Bad ISO 8601 timestamp", e);
+            }
+            break;
+
+        case MAX_UPLOAD:
+            try {
+                long maxUpload = Long.parseLong(value);
+                context.updateMaxUpload(maxUpload);
+            } catch (NumberFormatException e) {
+                throw InvalidCaveatException.wrap("Bad " + CaveatType.MAX_UPLOAD.getLabel(), e);
+            }
+            break;
+
+        case ISSUE_ID:
+            checkCaveat(context.getIssueId() == null, "Multiple %s", CaveatType.ISSUE_ID.getLabel());
+            checkCaveat(!haveCaveats, "%s not first caveat", CaveatType.ISSUE_ID.getLabel());
+            context.updateIssueId(value);
+            break;
+        }
     }
 
     public MacaroonContext getContext()

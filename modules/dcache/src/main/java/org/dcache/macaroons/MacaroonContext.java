@@ -17,11 +17,14 @@
  */
 package org.dcache.macaroons;
 
+import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -52,8 +55,9 @@ public class MacaroonContext
     private long uid = -1;
     private long[] gids;
     private EnumSet<Activity> activities = EnumSet.allOf(Activity.class);
-    private String id;
+    private String signature; // The macaroon's signature, if known.
     private Optional<Instant> expiry = Optional.empty();
+    private String issueId;
 
     public void updateHome(String directory) throws InvalidCaveatException
     {
@@ -213,17 +217,6 @@ public class MacaroonContext
         }
     }
 
-    public void setId(String id)
-    {
-        this.id = requireNonNull(id);
-    }
-
-    public String getId()
-    {
-        checkState(id != null, "Missing identifier");
-        return id;
-    }
-
     public void updateExpiry(Instant newExpiry)
     {
         requireNonNull(newExpiry);
@@ -249,5 +242,40 @@ public class MacaroonContext
     public OptionalLong getMaxUpload()
     {
         return maxUpload;
+    }
+
+    /**
+     * Hexadecimal encoded macaroon signature.
+     * @param signature
+     */
+    public void setSignature(String signature)
+    {
+        this.signature = requireNonNull(signature);
+
+    }
+
+    public String getId()
+    {
+        checkState(signature != null, "Missing signature");
+        return buildId(signature, issueId);
+    }
+
+    public static String buildId(String signature, String issueId)
+    {
+        // 6 bytes -> 48 bit: collision p=0.01 after 2.4x10^6 values, p=0.5 after 2x10^7.
+        byte[] rawId = BaseEncoding.base16().lowerCase().decode(signature.substring(0, 12));
+        String partialSignature = new String(Base64.getEncoder().encode(rawId), StandardCharsets.US_ASCII);
+
+        return issueId == null ? partialSignature : issueId + ":" + partialSignature;
+    }
+
+    public void updateIssueId(String value)
+    {
+        issueId = requireNonNull(value);
+    }
+
+    public String getIssueId()
+    {
+        return issueId;
     }
 }

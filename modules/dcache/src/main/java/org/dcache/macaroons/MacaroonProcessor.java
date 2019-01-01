@@ -35,6 +35,9 @@ public class MacaroonProcessor
     // In Base64, every 3 bytes is represented as 4 characters.
     private static final int SECRET_ID_LENGTH_BYTES = SECRET_ID_LENGTH * 3 / 4;
 
+    // 48 bit: collision p=0.01 after 2.4x10^6 values, p=0.5 after 2x10^7.
+    private static final int ISSUE_ID_LENGTH_BYTES = 6;
+
     private final SecureRandom random = new SecureRandom();
 
     private SecretHandler _secretHandler;
@@ -57,6 +60,28 @@ public class MacaroonProcessor
         }
     }
 
+    public class MacaroonBuildResult
+    {
+        private final String macaroon;
+        private final String id;
+
+        public MacaroonBuildResult(Macaroon macaroon, String id)
+        {
+            this.macaroon = macaroon.serialize();
+            this.id = id;
+        }
+
+        public String getMacaroon()
+        {
+            return macaroon;
+        }
+
+        public String getId()
+        {
+            return id;
+        }
+    }
+
     @Required
     public void setSecretHandler(SecretHandler supplier)
     {
@@ -74,7 +99,14 @@ public class MacaroonProcessor
         return new IdentifiedSecret(identifier, secret);
     }
 
-    public String buildMacaroon(Instant expiry, MacaroonContext identity,
+    private String newIssueId()
+    {
+        byte[] raw = new byte[ISSUE_ID_LENGTH_BYTES];
+        random.nextBytes(raw);
+        return Base64.getMimeEncoder().withoutPadding().encodeToString(raw);
+    }
+
+    public MacaroonBuildResult buildMacaroon(Instant expiry, MacaroonContext identity,
             Collection<Caveat> userSuppliedCaveats) throws InvalidCaveatException, InternalErrorException
     {
         IdentifiedSecret secret;
@@ -89,6 +121,8 @@ public class MacaroonProcessor
         CaveatMacaroonsBuilder builder = new CaveatMacaroonsBuilder(identity.getPath().toString(),
                 secret.getSecret(), secret.getIdentifier());
 
+        String issueId = newIssueId();
+        builder.addCaveat(CaveatType.ISSUE_ID, issueId);
         builder.addCaveat(CaveatType.IDENTITY, asIdentityCaveatValue(identity));
         builder.addCaveat(CaveatType.BEFORE, expiry);
 
@@ -103,19 +137,9 @@ public class MacaroonProcessor
 
         userSuppliedCaveats.stream().forEach(builder::addCaveat);
 
-        return builder.getMacaroon().serialize();
-    }
-
-    public static String idOfMacaroon(String macaroon)
-    {
-        return idOfMacaroon(MacaroonsBuilder.deserialize(macaroon));
-    }
-
-    private static String idOfMacaroon(Macaroon macaroon)
-    {
-        // Use the first 6 bytes of signature as an ID for this macaroon
-        byte[] rawId = BaseEncoding.base16().lowerCase().decode(macaroon.signature.substring(0, 12));
-        return new String(Base64.getEncoder().encode(rawId), StandardCharsets.US_ASCII);
+        Macaroon macaroon = builder.getMacaroon();
+        String id = MacaroonContext.buildId(macaroon.signature, issueId);
+        return new MacaroonBuildResult(macaroon, id);
     }
 
     public MacaroonContext expandMacaroon(String serialisedMacaroon, InetAddress clientAddress)
@@ -125,10 +149,9 @@ public class MacaroonProcessor
 
         Macaroon macaroon = MacaroonsBuilder.deserialize(serialisedMacaroon);
 
-        String macaroonId = idOfMacaroon(macaroon);
-
         byte[] secret = _secretHandler.findSecret(macaroon.identifier);
-        checkArgument(secret != null, "Unable to find secret for macaroon [%s]", macaroonId);
+        checkArgument(secret != null, "Unable to find secret for macaroon [%s]",
+                MacaroonContext.buildId(macaroon.signature, "-"));
 
         MacaroonsVerifier verifier = new MacaroonsVerifier(macaroon);
 
@@ -139,7 +162,9 @@ public class MacaroonProcessor
         verifier.satisfyGeneral(contextExtractor);
 
         if (!verifier.isValid(secret)) {
-            StringBuilder error = new StringBuilder("Invalid macaroon [").append(macaroonId).append(']');
+            StringBuilder error = new StringBuilder("Invalid macaroon [")
+                    .append(MacaroonContext.buildId(macaroon.signature, "-"))
+                    .append(']');
 
             Strings.combine(clientIPVerifier.getError(), " and ", contextExtractor.getError())
                     .ifPresent(msg -> error.append(": ").append(msg));
@@ -148,7 +173,7 @@ public class MacaroonProcessor
         }
 
         MacaroonContext context = contextExtractor.getContext();
-        context.setId(macaroonId);
+        context.setSignature(macaroon.signature);
         return context;
     }
 
