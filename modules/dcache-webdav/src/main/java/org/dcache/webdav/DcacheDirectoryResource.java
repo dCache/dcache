@@ -223,10 +223,46 @@ public class DcacheDirectoryResource
 
     @Override
     public CollectionResource createCollection(String newName)
-        throws NotAuthorizedException, ConflictException
+        throws NotAuthorizedException, ConflictException, BadRequestException
     {
         try {
             return _factory.makeDirectory(_attributes, _path.child(newName));
+        } catch (FileExistsCacheException e) {
+            /* Milton tries to prevent this from happening by checking if the
+             * desired child collection already exists; however, this process
+             * is racy.  See:
+             *
+             *    https://github.com/miltonio/milton2/issues/114
+             *
+             * The work-around is somewhat complicated.
+             *
+             * If this method is called as part of a MKCOL request then we must
+             * fail the request with 405 Method Not Allowed.  This is not
+             * supported by Milton API, so we use a work-around.
+             *
+             * If this method is called as part of a PUT request then we pretend
+             * the DcacheResourceFactory#makeDirectory call was successful, if
+             * there is a directory with that name, otherwise indicate a
+             * conflict.
+             */
+            String httpMethod = ServletRequest.getRequest().getMethod();
+            switch (httpMethod) {
+            case "MKCOL":
+                throw new MethodNotAllowedException("collection already exists", e, this);
+
+            case "PUT":
+                Resource child = child(newName);
+                if (!(child instanceof CollectionResource)) {
+                    // This thread lost the race (in Milton), and the winning
+                    // thread created something other than a directory.
+                    throw new ConflictException(this);
+                }
+                return (CollectionResource)child;
+
+            default:
+                LOG.error("createCollection called processing unexpected HTTP method: {}", httpMethod);
+                throw new WebDavException("Unexpected method", e, this);
+            }
         } catch (PermissionDeniedCacheException e) {
             throw WebDavExceptions.permissionDenied(this);
         } catch (CacheException e) {
