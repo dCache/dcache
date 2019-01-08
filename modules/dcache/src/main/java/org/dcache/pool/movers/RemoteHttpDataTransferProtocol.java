@@ -13,9 +13,11 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +28,10 @@ import java.net.URI;
 import java.nio.channels.Channels;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -45,7 +50,7 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
-import org.dcache.util.Exceptions;
+import org.dcache.util.Strings;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 
@@ -59,6 +64,8 @@ import static diskCacheV111.util.ThirdPartyTransferFailedCacheException.checkThi
 import static dmg.util.Exceptions.getMessageWithCauses;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.util.Exceptions.messageOrClassName;
+import static org.dcache.util.Strings.describeSize;
+import static org.dcache.util.Strings.toThreeSigFig;
 
 /**
  * This class implements transfers of data between a pool and some remote
@@ -243,46 +250,50 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private void receiveFile(final RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
-        try (CloseableHttpResponse response = doGet(info)) {
-            StatusLine statusLine = response.getStatusLine();
-            if (statusLine.getStatusCode() >= 300) {
-                throw new ThirdPartyTransferFailedCacheException("remote " +
-                        "server rejected GET: " + statusLine.getStatusCode() +
-                        " " + statusLine.getReasonPhrase());
-            }
+        HttpClientContext context = new HttpClientContext();
+        try {
+            try (CloseableHttpResponse response = doGet(info, context)) {
+                String rfc3230 = headerValue(response, "Digest");
+                Set<Checksum> checksums = Checksums.decodeRfc3230(rfc3230);
+                checksums.forEach(_integrityChecker);
 
-            String rfc3230 = headerValue(response, "Digest");
-            Set<Checksum> checksums = Checksums.decodeRfc3230(rfc3230);
-            checksums.forEach(_integrityChecker);
+                if (checksums.isEmpty() && info.isVerificationRequired()) {
+                    throw new ThirdPartyTransferFailedCacheException("no useful checksum in GET response: " +
+                                                      (rfc3230 == null ? "(none sent)" : rfc3230));
+                }
 
-            if (checksums.isEmpty() && info.isVerificationRequired()) {
-                throw new ClientProtocolException("failed to verify transfer: " +
-                                                  "server sent no useful checksum: " +
-                                                  (rfc3230 == null ? "(none sent)" : rfc3230));
+                HttpEntity entity = response.getEntity();
+                if (entity == null) {
+                    throw new ThirdPartyTransferFailedCacheException("GET response contains no content");
+                }
+                entity.writeTo(Channels.newOutputStream(_channel));
+            } catch (SocketTimeoutException e) {
+                String message = "socket timeout on GET (received "
+                        + describeSize(_channel.getBytesTransferred()) + " of data; "
+                        + describeSize(e.bytesTransferred) + " pending)";
+                if (e.getMessage() != null) {
+                    message += ": " + e.getMessage();
+                }
+                throw new ThirdPartyTransferFailedCacheException(message, e);
+            } catch (IOException e) {
+                throw new ThirdPartyTransferFailedCacheException(messageOrClassName(e), e);
+            } catch (InterruptedException e) {
+                throw new ThirdPartyTransferFailedCacheException("pool is shutting down", e);
             }
-
-            HttpEntity entity = response.getEntity();
-            if (entity == null) {
-                throw new ClientProtocolException("Response contains no content");
+        } catch (ThirdPartyTransferFailedCacheException e) {
+            List<URI> redirections = context.getRedirectLocations();
+            if (redirections != null && !redirections.isEmpty()) {
+                StringBuilder message = new StringBuilder(e.getMessage());
+                message.append("; redirects ").append(redirections);
+                throw new ThirdPartyTransferFailedCacheException(message.toString(), e.getCause());
+            } else {
+                throw e;
             }
-            entity.writeTo(Channels.newOutputStream(_channel));
-        } catch (SocketTimeoutException e) {
-            String message = "socket timeout (received "
-                    + _channel.getBytesTransferred() + " bytes; "
-                    + e.bytesTransferred + " pending)";
-            if (e.getMessage() != null) {
-                message += ": " + e.getMessage();
-            }
-            throw new ThirdPartyTransferFailedCacheException(message, e);
-        } catch (IOException e) {
-            throw new ThirdPartyTransferFailedCacheException(e.toString(), e);
-        } catch (InterruptedException e) {
-            throw new ThirdPartyTransferFailedCacheException("pool is shutting down", e);
         }
     }
 
-    private CloseableHttpResponse doGet(final RemoteHttpDataTransferProtocolInfo info)
-            throws IOException, ThirdPartyTransferFailedCacheException, InterruptedException
+    private CloseableHttpResponse doGet(final RemoteHttpDataTransferProtocolInfo info,
+            HttpContext context) throws IOException, ThirdPartyTransferFailedCacheException, InterruptedException
     {
         HttpGet get = new HttpGet(info.getUri());
         get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
@@ -292,7 +303,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                               .setSocketTimeout(GET_SOCKET_TIMEOUT)
                               .build());
 
-        CloseableHttpResponse response = _client.execute(get);
+        CloseableHttpResponse response = _client.execute(get, context);
 
         boolean isSuccessful = false;
         try {
@@ -312,7 +323,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                     GET_RETRY_DURATION_DESCRIPTION, statusCode, reason);
 
             checkThirdPartyTransferSuccessful(statusCode == HttpStatus.SC_OK,
-                    "remote server rejected GET: %d %s", statusCode, reason);
+                    "rejected GET: %d %s", statusCode, reason);
 
             isSuccessful = true;
         } finally {
@@ -350,59 +361,84 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             throws ThirdPartyTransferFailedCacheException
     {
         URI location = info.getUri();
+        List<URI> redirections = null;
 
-        for (int attempt = 0; attempt < MAX_REDIRECTIONS; attempt++) {
-            HttpPut put = buildPutRequest(info, location, length);
+        try {
+            for (int attempt = 0; attempt < MAX_REDIRECTIONS; attempt++) {
+                HttpPut put = buildPutRequest(info, location, length);
 
-            try (CloseableHttpResponse response = _client.execute(put)) {
-                StatusLine status = response.getStatusLine();
-                switch (status.getStatusCode()) {
-                case 200: /* OK (not actually a valid response from PUT) */
-                case 201: /* Created */
-                    return;
+                try (CloseableHttpResponse response = _client.execute(put)) {
+                    StatusLine status = response.getStatusLine();
+                    switch (status.getStatusCode()) {
+                    case 200: /* OK (not actually a valid response from PUT) */
+                    case 201: /* Created */
+                        return;
 
-                case 300: /* Multiple Choice */
-                case 301: /* Moved Permanently */
-                case 302: /* Found (REVISIT: should we treat this as an error?) */
-                case 307: /* Temporary Redirect */
-                case 308: /* Permanent Redirect */
-                    String locationHeader = response.getFirstHeader("Location").getValue();
-                    if (locationHeader == null) {
-                        throw new ThirdPartyTransferFailedCacheException("remote " +
-                                "server replied " + status.getStatusCode() +
-                                " (" + status.getReasonPhrase() + ") without a " +
-                                "Location header");
+                    case 300: /* Multiple Choice */
+                    case 301: /* Moved Permanently */
+                    case 302: /* Found (REVISIT: should we treat this as an error?) */
+                    case 307: /* Temporary Redirect */
+                    case 308: /* Permanent Redirect */
+                        String locationHeader = response.getFirstHeader("Location").getValue();
+                        if (locationHeader == null) {
+                            throw new ThirdPartyTransferFailedCacheException("missing Location in PUT response "
+                                    + status.getStatusCode() + " " + status.getReasonPhrase());
+                        }
+
+
+                        try {
+                            location = URI.create(locationHeader);
+                        } catch (IllegalArgumentException e) {
+                            throw new ThirdPartyTransferFailedCacheException("invalid Location " +
+                                    locationHeader + " in PUT response "
+                                    + status.getStatusCode() + " " + status.getReasonPhrase()
+                                    + ": " + e.getMessage());
+                        }
+                        if (redirections == null) {
+                            redirections = new ArrayList<>();
+                        }
+                        redirections.add(location);
+                        break;
+
+                    /* Treat all other responses as a failure. */
+                    default:
+                        throw new ThirdPartyTransferFailedCacheException("rejected PUT: "
+                                + status.getStatusCode() + " " + status.getReasonPhrase());
                     }
-
-
-                    try {
-                        location = URI.create(locationHeader);
-                    } catch (IllegalArgumentException e) {
-                        throw new ThirdPartyTransferFailedCacheException("remote " +
-                                "server redirected to invalid URL '" +
-                                locationHeader + "': " + e.getMessage());
+                } catch (ConnectException e) {
+                    throw new ThirdPartyTransferFailedCacheException("connection failed for PUT: "
+                            + messageOrClassName(e), e);
+                } catch (ClientProtocolException e) {
+                    // Sometimes the real error is wrapped within a ClientProtocolException,
+                    // which adds no useful information.  This we skip here.
+                    Throwable t = e.getMessage() == null && e.getCause() != null ? e.getCause() : e;
+                    StringBuilder message = new StringBuilder("failed to send PUT request: ")
+                            .append(getMessageWithCauses(t));
+                    if (_channel.getBytesTransferred() != 0) {
+                        message.append("; after sending ").append(describeSize(_channel.getBytesTransferred()));
+                        try {
+                            String percent = toThreeSigFig(100 * _channel.getBytesTransferred() / (double)_channel.size(), 1000);
+                            message.append(" (").append(percent).append("%)");
+                        } catch (IOException io) {
+                            _log.warn("failed to discover file size: {}", messageOrClassName(io));
+                        }
                     }
-                    break;
-
-                /* Treat all other responses as a failure. */
-                default:
-                    throw new ThirdPartyTransferFailedCacheException("remote " +
-                            "server rejected PUT: " + status.getStatusCode() +
-                            " " + status.getReasonPhrase());
+                    throw new ThirdPartyTransferFailedCacheException(message.toString(), e);
+                } catch (IOException e) {
+                    throw new ThirdPartyTransferFailedCacheException("problem sending data: " + messageOrClassName(e), e);
                 }
-            } catch (ConnectException e) {
-                throw new ThirdPartyTransferFailedCacheException("failed to " +
-                        "connect to server: " + messageOrClassName(e), e);
-            } catch (ClientProtocolException e) {
-                throw new ThirdPartyTransferFailedCacheException("HTTP protocol failure: " + getMessageWithCauses(e), e);
-            } catch (IOException e) {
-                throw new ThirdPartyTransferFailedCacheException("problem sending data: " + messageOrClassName(e), e);
+            }
+        } catch (ThirdPartyTransferFailedCacheException e) {
+            if (redirections != null) {
+                throw new ThirdPartyTransferFailedCacheException(e.getMessage()
+                        + "; redirections " + redirections, e.getCause());
+            } else {
+                throw e;
             }
         }
 
-        _log.error("too many redirects, last location was: {}", location);
-        throw new ThirdPartyTransferFailedCacheException("exceeded maximum " +
-                "number of redirections; last location was " + location);
+        throw new ThirdPartyTransferFailedCacheException("exceeded maximum"
+                + " number of redirections: " + redirections);
     }
 
     private HttpPut buildPutRequest(RemoteHttpDataTransferProtocolInfo info,
@@ -460,44 +496,54 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 }
                 isFirstAttempt = false;
 
+                HttpClientContext context = new HttpClientContext();
                 HttpHead head = buildHeadRequest(info);
-                try (CloseableHttpResponse response = _client.execute(head)) {
-                    StatusLine status = response.getStatusLine();
+                try {
+                    try (CloseableHttpResponse response = _client.execute(head, context)) {
+                        StatusLine status = response.getStatusLine();
 
-                    if (status.getStatusCode() >= 300) {
-                        throw new ThirdPartyTransferFailedCacheException("remote " +
-                                "server rejected HEAD: " + status.getStatusCode() +
-                                " " + status.getReasonPhrase());
+                        if (status.getStatusCode() >= 300) {
+                            throw new ThirdPartyTransferFailedCacheException("rejected HEAD: "
+                                    + status.getStatusCode() + " " + status.getReasonPhrase());
+                        }
+
+                        if (shouldRetry(response)) {
+                            continue;
+                        }
+
+                        Long length = getContentLength(response);
+
+                        // REVISIT This is to support pre-2.12 dCache, which could
+                        // give a '201 Created' response to a PUT request before
+                        // post-processing (including checksum calculation) was
+                        // completed and the final details registered in the
+                        // namespace.  This problem is fixed with dCache v2.12 or
+                        // later.
+                        if (length == null || (attributes.getSize() != 0 && length == 0)) {
+                            continue;
+                        }
+
+                        if (attributes.getSize() != length) {
+                            throw new ThirdPartyTransferFailedCacheException(
+                                    String.format("wrong Content-Length in HEAD response (%d != %d)",
+                                    length, attributes.getSize()));
+                        }
+
+                        String rfc3230 = headerValue(response, "Digest");
+                        checkChecksums(info, rfc3230, attributes.getChecksumsIfPresent());
+                        return;
+                    } catch (IOException e) {
+                        throw new ThirdPartyTransferFailedCacheException("failed to " +
+                                "connect to server: " + e.toString(), e);
+                    }
+                } catch (ThirdPartyTransferFailedCacheException e) {
+                    List<URI> redirections = context.getRedirectLocations();
+                    if (redirections != null && !redirections.isEmpty()) {
+                        throw new ThirdPartyTransferFailedCacheException(e.getMessage() + "; redirections " + redirections, e.getCause());
+                    } else {
+                        throw e;
                     }
 
-                    if (shouldRetry(response)) {
-                        continue;
-                    }
-
-                    Long length = getContentLength(response);
-
-                    // REVISIT This is to support pre-2.12 dCache, which could
-                    // give a '201 Created' response to a PUT request before
-                    // post-processing (including checksum calculation) was
-                    // completed and the final details registered in the
-                    // namespace.  This problem is fixed with dCache v2.12 or
-                    // later.
-                    if (length == null || (attributes.getSize() != 0 && length == 0)) {
-                        continue;
-                    }
-
-                    if (attributes.getSize() != length) {
-                        throw new ThirdPartyTransferFailedCacheException(
-                                String.format("server reported wrong file size (%d != %d)",
-                                length, attributes.getSize()));
-                    }
-
-                    String rfc3230 = headerValue(response, "Digest");
-                    checkChecksums(info, rfc3230, attributes.getChecksumsIfPresent());
-                    return;
-                } catch (IOException e) {
-                    throw new ThirdPartyTransferFailedCacheException("failed to " +
-                            "connect to server: " + e.toString(), e);
                 }
             }
         } catch (InterruptedException e) {
@@ -540,7 +586,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
 
         if (info.isVerificationRequired() && !verified) {
-            throw new ThirdPartyTransferFailedCacheException("server sent no useful checksum: " +
+            throw new ThirdPartyTransferFailedCacheException("no useful checksum in HEAD response: " +
                                                              (rfc3230 == null ? "(none sent)" : rfc3230));
         }
     }
@@ -591,9 +637,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             StatusLine status = response.getStatusLine();
 
             if (status.getStatusCode() >= 300) {
-                throw new ThirdPartyTransferFailedCacheException("remote " +
-                        "server rejected DELETE: " + status.getStatusCode() +
-                        " " + status.getReasonPhrase());
+                throw new ThirdPartyTransferFailedCacheException("rejected DELETE: "
+                        + status.getStatusCode() + " " + status.getReasonPhrase());
             }
         } catch (CacheException e) {
             throw new ThirdPartyTransferFailedCacheException("delete of " +
