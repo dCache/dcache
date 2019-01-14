@@ -7,6 +7,7 @@ import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.PolicyInformation;
@@ -131,7 +132,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         listPolicies(eec).stream()
                 .map(PolicyInformation::getInstance)
                 .map(PolicyInformation::getPolicyIdentifier)
-                .map(ASN1ObjectIdentifier::getId)
+                .map(DERObjectIdentifier::getId)
                 .map(X509Plugin::asPrincipal)
                 .filter(Objects::nonNull)
                 .forEach(principals::add);
