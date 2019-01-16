@@ -33,7 +33,7 @@ import org.dcache.gplazma.util.CertPaths;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
-
+import static org.dcache.util.TimeUtils.getMillis;
 /**
  * Validates and extracts FQANs from any X509Certificate certificate chain in
  * the public credentials.
@@ -44,8 +44,10 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
 
     private static final String CADIR = "gplazma.vomsdir.ca";
     private static final String VOMSDIR = "gplazma.vomsdir.dir";
+    private static final String TRUST_ANCHORS_REFRESH_INTERVAL = "gplazma.vomsdir.refresh-interval";
     private final String caDir;
     private final String vomsDir;
+    private final long trustAnchorsUpdateInterval;
     private VOMSACValidator validator;
     private final Random random = new Random();
 
@@ -54,15 +56,24 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
     {
         caDir = properties.getProperty(CADIR);
         vomsDir = properties.getProperty(VOMSDIR);
+        trustAnchorsUpdateInterval = getMillis(properties,TRUST_ANCHORS_REFRESH_INTERVAL);
+
         checkArgument(caDir != null, "Undefined property: " + CADIR);
         checkArgument(vomsDir != null, "Undefined property: " + VOMSDIR);
+        checkArgument(trustAnchorsUpdateInterval > 0,
+                      TRUST_ANCHORS_REFRESH_INTERVAL + " has to be positive non-zero integer, specified: "
+                      + trustAnchorsUpdateInterval);
     }
 
     @Override
     public void start()
     {
         VOMSTrustStore vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
-        X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
+        X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder()
+            .lazyAnchorsLoading(false)
+            .trustAnchorsUpdateInterval(trustAnchorsUpdateInterval)
+            .trustAnchorsDir(caDir)
+            .build();
         validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
     }
 
