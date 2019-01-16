@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -570,4 +571,11 @@ public class TimeUtils
         sb.append(')');
         return sb;
     }
+
+    public static long getMillis(Properties properties, String key)
+    {
+        return TimeUnit.valueOf(properties.getProperty(key + ".unit")).toMillis(
+                Long.parseLong(properties.getProperty(key)));
+    }
+
 }
