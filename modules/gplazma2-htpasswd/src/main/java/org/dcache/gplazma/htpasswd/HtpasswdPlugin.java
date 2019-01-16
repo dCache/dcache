@@ -28,6 +28,7 @@ import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
 import static java.util.stream.Collectors.*;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import static org.dcache.util.TimeUtils.getMillis;
 
 public class HtpasswdPlugin implements GPlazmaAuthenticationPlugin
 {
@@ -108,11 +109,5 @@ public class HtpasswdPlugin implements GPlazmaAuthenticationPlugin
             }
             return lines;
         }
-    }
-
-    private static long getMillis(Properties properties, String key)
-    {
-        return TimeUnit.valueOf(properties.getProperty(key + ".unit")).toMillis(
-                Long.parseLong(properties.getProperty(key)));
     }
 }
