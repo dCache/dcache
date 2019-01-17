@@ -406,7 +406,7 @@ public class CopyFilter implements Filter
                                    "Error performing OpenId Connect Token Exchange");
             }
         } else {
-            Optional<String> error =_remoteTransfers.acceptRequest(response.getOutputStream(),
+            Optional<String> error =_remoteTransfers.acceptRequest(response,
                     request.getHeaders(), getSubject(), getRestriction(), path,
                     remote, credential, direction, isVerificationRequired(),
                     overwriteAllowed);

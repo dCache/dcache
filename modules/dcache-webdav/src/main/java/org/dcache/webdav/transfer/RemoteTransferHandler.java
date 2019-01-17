@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 import eu.emi.security.authn.x509.X509Credential;
 import io.milton.http.Response;
+import io.milton.http.Response.Status;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.HttpConnection;
 import org.slf4j.Logger;
@@ -221,7 +222,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
      * Start a transfer and block until that transfer is complete.
      * @return a description of the error, if there was a problem.
      */
-    public Optional<String> acceptRequest(OutputStream out, Map<String,String> requestHeaders,
+    public Optional<String> acceptRequest(Response response, Map<String,String> requestHeaders,
             Subject subject, Restriction restriction, FsPath path, URI remote,
             Object credential, Direction direction, boolean verification,
             boolean overwriteAllowed)
@@ -235,7 +236,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 ? EnumSet.of(TransferFlag.REQUIRE_VERIFICATION)
                 : EnumSet.noneOf(TransferFlag.class);
         ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
-        RemoteTransfer transfer = new RemoteTransfer(out, subject, restriction,
+        RemoteTransfer transfer = new RemoteTransfer(response.getOutputStream(), subject, restriction,
                 path, remote, credential, flags, transferHeaders, direction,
                 overwriteAllowed);
 
@@ -243,6 +244,8 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
         synchronized (_transfers) {
             id = transfer.start();
+            response.setStatus(Status.SC_ACCEPTED);
+            response.setContentTypeHeader("text/perf-marker-stream");
             _transfers.put(id, transfer);
         }
 
@@ -334,7 +337,6 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 FsPath path, URI destination, @Nullable Object credential,
                 EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders,
                 Direction direction, boolean overwriteAllowed)
-                throws ErrorResponseException
         {
             _subject = subject;
             _restriction = restriction;
