@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -368,6 +369,17 @@ public class CopyFilter implements Filter
         }
     }
 
+    private static Optional<String> getWantDigest(HttpServletRequest request)
+    {
+        List<String> wantDigests = Collections.list(request.getHeaders("Want-Digest"));
+        return wantDigests.isEmpty()
+                ? Optional.empty()
+                : Optional.of(wantDigests.stream()
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.joining(",")));
+
+    }
+
     private void processThirdPartyCopy(Request request, Response response)
             throws BadRequestException, InterruptedException, ErrorResponseException
     {
@@ -395,6 +407,8 @@ public class CopyFilter implements Filter
         // Always check any client-supplied Overwrite header, to throw an error if the value is malformed.
         boolean overwriteAllowed = clientAllowsOverwrite();
 
+        Optional<String> wantDigest = getWantDigest(ServletRequest.getRequest());
+
         CredentialSource source = getCredentialSource(request, type);
         Object credential = fetchCredential(source);
         if (source != CredentialSource.NONE && credential == null) {
@@ -409,7 +423,7 @@ public class CopyFilter implements Filter
             Optional<String> error =_remoteTransfers.acceptRequest(response,
                     request.getHeaders(), getSubject(), getRestriction(), path,
                     remote, credential, direction, isVerificationRequired(),
-                    overwriteAllowed);
+                    overwriteAllowed, wantDigest);
             error.ifPresent(e -> ServletRequest.getRequest().setAttribute(TPC_ERROR_ATTRIBUTE, e));
         }
     }

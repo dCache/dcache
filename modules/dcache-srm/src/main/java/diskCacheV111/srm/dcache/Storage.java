@@ -1762,7 +1762,8 @@ public final class Storage
                             getCellDomainName(),
                             config.getBuffer_size(),
                             config.getTcp_buffer_size(),
-                            credential);
+                            credential,
+                            Optional.empty());
             gsiftpProtocolInfo.setEmode(true);
             gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());
             protocolInfo = gsiftpProtocolInfo;
@@ -1774,14 +1775,16 @@ public final class Storage
                     1, 1, remoteAddr,
                     remoteTURL.toString(), isVerifyRequired(extraInfo),
                     httpHeaders(extraInfo),
-                    credential);
+                    credential,
+                    Optional.empty());
             break;
 
         case "http":
             protocolInfo = new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
                     1, 1, remoteAddr,
                     remoteTURL.toString(), isVerifyRequired(extraInfo),
-                    httpHeaders(extraInfo));
+                    httpHeaders(extraInfo),
+                    Optional.empty());
             break;
 
         default:

@@ -22,6 +22,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import eu.emi.security.authn.x509.X509Credential;
 import io.milton.http.Response;
 import io.milton.http.Response.Status;
+import io.milton.servlet.ServletRequest;
+import io.milton.servlet.ServletResponse;
+import org.apache.curator.shaded.com.google.common.base.Splitter;
+import org.eclipse.jetty.http.HttpFields;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.HttpConnection;
 import org.slf4j.Logger;
@@ -30,6 +35,8 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
+import javax.servlet.ServletResponseWrapper;
+import javax.servlet.http.HttpServletResponse;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -39,6 +46,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -73,14 +81,15 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.util.ChecksumType;
+import org.dcache.util.Checksums;
 import org.dcache.util.URIs;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.TYPE;
+import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
 
@@ -225,7 +234,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
     public Optional<String> acceptRequest(Response response, Map<String,String> requestHeaders,
             Subject subject, Restriction restriction, FsPath path, URI remote,
             Object credential, Direction direction, boolean verification,
-            boolean overwriteAllowed)
+            boolean overwriteAllowed, Optional<String> wantDigest)
             throws ErrorResponseException, InterruptedException
     {
         checkArgument(credential == null
@@ -238,7 +247,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
         ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
         RemoteTransfer transfer = new RemoteTransfer(response.getOutputStream(), subject, restriction,
                 path, remote, credential, flags, transferHeaders, direction,
-                overwriteAllowed);
+                overwriteAllowed, wantDigest);
 
         long id;
 
@@ -325,18 +334,21 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private final ImmutableMap<String,String> _transferHeaders;
         private final Direction _direction;
         private final boolean _overwriteAllowed;
+        private final Optional<String> _wantDigest;
+        private final PnfsHandler _pnfs;
         private String _problem;
         private long _id;
         private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
 
         private PnfsId _pnfsId;
         private boolean _finished;
-        private PnfsHandler _pnfs;
+        private Optional<String> _digestValue;
 
         public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
                 FsPath path, URI destination, @Nullable Object credential,
                 EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders,
-                Direction direction, boolean overwriteAllowed)
+                Direction direction, boolean overwriteAllowed, Optional<String> wantDigest)
+                throws ErrorResponseException
         {
             _subject = subject;
             _restriction = restriction;
@@ -365,26 +377,30 @@ public class RemoteTransferHandler implements CellMessageReceiver
             _transferHeaders = transferHeaders;
             _direction = direction;
             _overwriteAllowed = overwriteAllowed;
+            _wantDigest = wantDigest;
         }
 
 
         /**
          * Obtain the PnfsId of the local file, creating it as necessary.
          */
-        private PnfsId resolvePath() throws ErrorResponseException
+        private FileAttributes resolvePath() throws ErrorResponseException
         {
             try {
                 switch (_direction) {
                 case PUSH:
+                    EnumSet<FileAttribute> desired = _wantDigest.isPresent()
+                            ? EnumSet.of(PNFSID, TYPE, CHECKSUM)
+                            : EnumSet.of(PNFSID, TYPE);
                     try {
                         FileAttributes attributes = _pnfs.getFileAttributes(_path.toString(),
-                                EnumSet.of(PNFSID, TYPE), READ_ACCESS_MASK, false);
+                                desired, READ_ACCESS_MASK, false);
 
                         if (attributes.getFileType() != FileType.REGULAR) {
                             throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST, "Not a file");
                         }
 
-                        return attributes.getPnfsId();
+                        return attributes;
                     } catch (FileNotFoundCacheException e) {
                         throw new ErrorResponseException(Response.Status.SC_NOT_FOUND, "no such file");
                     }
@@ -403,7 +419,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                         _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(FileType.REGULAR));
                         msg = _pnfs.createPnfsEntry(_path.toString(),  FileAttributes.ofFileType(FileType.REGULAR));
                     }
-                    return msg.getFileAttributes().getPnfsId();
+                    return msg.getFileAttributes();
 
                 default:
                     throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
@@ -425,7 +441,8 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
         private long start() throws ErrorResponseException, InterruptedException
         {
-            _pnfsId = resolvePath();
+            FileAttributes attributes = resolvePath();
+            _pnfsId = attributes.getPnfsId();
 
             boolean isStore = _direction == Direction.PULL;
             RemoteTransferManagerMessage message =
@@ -437,6 +454,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
             message.setPnfsId(_pnfsId);
             try {
                 _id = _transferManager.sendAndWait(message).getId();
+                addDigestResponseHeader(attributes);
                 return _id;
             } catch (NoRouteToCellException | TimeoutCacheException e) {
                 LOG.error("Failed to send request to transfer manager: {}", e.getMessage());
@@ -487,33 +505,108 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST, "Unknown " + target + " hostname");
             }
 
+            Optional<ChecksumType> desiredChecksum = _wantDigest.flatMap(Checksums::parseWantDigest);
+
             switch (_type) {
             case GSIFTP:
                 return new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
                         1, 1, address, _destination.toASCIIString(), null,
-                        null, buffer, MiB.toBytes(1), _privateKey, _certificateChain, null);
+                        null, buffer, MiB.toBytes(1), _privateKey, _certificateChain,
+                        null, desiredChecksum);
 
             case HTTP:
                 return new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
                         1, 1, address, _destination.toASCIIString(),
                         _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
-                        _transferHeaders);
+                        _transferHeaders, desiredChecksum);
 
             case HTTPS:
                 if (_source == CredentialSource.OIDC) {
                     return new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
                             1, 1, address, _destination.toASCIIString(),
                             _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
-                            _transferHeaders, _oidCredential);
+                            _transferHeaders, desiredChecksum, _oidCredential);
                 } else {
                     return new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
                             1, 1, address, _destination.toASCIIString(),
                             _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
-                            _transferHeaders, _privateKey, _certificateChain);
+                            _transferHeaders, _privateKey, _certificateChain,
+                            desiredChecksum);
                 }
             }
 
             throw new RuntimeException("Unexpected TransferType: " + _type);
+        }
+
+        /**
+         * Provide the trailers (headers that appear after the request).
+         */
+        private HttpFields getTrailers()
+        {
+            return _digestValue.map(v -> {
+                                HttpFields fields = new HttpFields();
+                                fields.put("Digest", v);
+                                return fields;
+                            })
+                    .orElse(null);
+        }
+
+        private void fetchChecksums()
+        {
+            Optional<String> empty = Optional.empty();
+            _digestValue = _wantDigest.map(h -> {
+                        try {
+                            FileAttributes attributes = _pnfs.getFileAttributes(_path, EnumSet.of(CHECKSUM));
+                            return Checksums.digestHeader(h, attributes);
+                        } catch (CacheException e) {
+                            LOG.warn("Failed to acquire checksum of fetched file: {}", e.getMessage());
+                            return empty;
+                        }
+                    }).orElse(empty);
+        }
+
+        private void addTrailerCallback()
+        {
+            /*
+             * According to RFC 7230, we should only return trailers if the
+             * client indicates (with the TE header) that it can understand
+             * them.
+             *
+             * Jetty currently doesn't do this, so we must, instead.
+             */
+            String te = ServletRequest.getRequest().getHeader("TE");
+            if (te != null && Splitter.on(',').omitEmptyStrings().trimResults().splitToList(te).stream()
+                    .anyMatch(v -> v.equals("trailers") || v.startsWith("trailers;q="))) {
+
+                /* REVISIT: trailers are available with Servlet v4.0; however
+                 * support for Servlet v4.0 is only scheduled for Jetty v10.
+                 * Jetty does support trailers but with a prioprietary interface,
+                 * requiring the following ugly code.
+                 */
+                HttpServletResponse response = ServletResponse.getResponse();
+                while (response instanceof ServletResponseWrapper) {
+                    response = (HttpServletResponse)((ServletResponseWrapper)response).getResponse();
+                }
+                ((org.eclipse.jetty.server.Response)response).setTrailers(this::getTrailers);
+            }
+        }
+
+        private void addDigestResponseHeader(FileAttributes attributes)
+        {
+            HttpServletResponse response = ServletResponse.getResponse();
+
+            switch (_direction) {
+            case PULL:
+                if (_wantDigest.isPresent()) {
+                    response.setHeader("Trailer", "Digest");
+                }
+                break;
+
+            case PUSH:
+                _wantDigest.flatMap(h -> Checksums.digestHeader(h, attributes))
+                        .ifPresent(v -> response.setHeader("Digest", v));
+                break;
+            }
         }
 
         public synchronized void success()
@@ -559,6 +652,11 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
         public synchronized void awaitCompletion() throws InterruptedException
         {
+            if (_direction == Direction.PULL && _wantDigest.isPresent()) {
+                // Ensure this is called before any perf-marker data is sent.
+                addTrailerCallback();
+            }
+
             do {
                 generateMarker();
 
@@ -567,6 +665,11 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
             if (_problem == null) {
                 _out.println("success: Created");
+
+                if (_direction == Direction.PULL && _wantDigest.isPresent()) {
+                    fetchChecksums();
+                }
+
             } else {
                 _out.println("failure: " + _problem);
             }

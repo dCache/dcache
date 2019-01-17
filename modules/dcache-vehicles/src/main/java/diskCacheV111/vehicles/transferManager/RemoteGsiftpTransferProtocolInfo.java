@@ -7,8 +7,11 @@ import java.net.InetSocketAddress;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
+
+import org.dcache.util.ChecksumType;
 
 public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
 {
@@ -28,6 +31,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     private final int bufferSize;
     private int tcpBufferSize;
     private final String user;
+    private final ChecksumType desiredChecksum;
 
     private final PrivateKey key;
     private final X509Certificate[] certChain;
@@ -41,7 +45,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             String gsiftpTranferManagerDomain,
                                             int bufferSize,
                                             int tcpBufferSize,
-                                            X509Credential credential)
+                                            X509Credential credential,
+                                            Optional<ChecksumType> desiredChecksum)
     {
         this(protocol,
              major,
@@ -53,7 +58,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
              bufferSize,
              tcpBufferSize,
              credential,
-             null);
+             null,
+             desiredChecksum);
     }
 
     public RemoteGsiftpTransferProtocolInfo(String protocol,
@@ -66,7 +72,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             int bufferSize,
                                             int tcpBufferSize,
                                             X509Credential credential,
-                                            String user)
+                                            String user,
+                                            Optional<ChecksumType> desiredChecksum)
     {
         this(protocol,
              major,
@@ -79,7 +86,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
              tcpBufferSize,
              credential.getKey(),
              credential.getCertificateChain(),
-             user);
+             user,
+             desiredChecksum);
     }
 
     public RemoteGsiftpTransferProtocolInfo(String protocol,
@@ -93,7 +101,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             int tcpBufferSize,
                                             PrivateKey key,
                                             X509Certificate[] certChain,
-                                            String user)
+                                            String user,
+                                            Optional<ChecksumType> desiredChecksum)
     {
         this.name = protocol;
         this.minor = minor;
@@ -107,6 +116,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         this.user = user;
         this.key = key;
         this.certChain = certChain;
+        this.desiredChecksum = desiredChecksum.orElse(null);
     }
 
   public String getGsiftpUrl()
@@ -224,5 +234,10 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     public X509Credential getCredential() throws KeyStoreException
     {
         return new KeyAndCertCredential(key, certChain);
+    }
+
+    public Optional<ChecksumType> getDesiredChecksum()
+    {
+        return Optional.ofNullable(desiredChecksum);
     }
 }

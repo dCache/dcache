@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableMap;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.Optional;
 
 import org.dcache.auth.OpenIdCredential;
+import org.dcache.util.ChecksumType;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -24,19 +26,22 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
     private final boolean isVerificationRequired;
     private final ImmutableMap<String,String> headers;
     private final OpenIdCredential openIdCredential;
+    private final ChecksumType desiredChecksum;
 
     private static final long serialVersionUID = 4482469147378465931L;
 
     public RemoteHttpDataTransferProtocolInfo(String protocol, int major,
                                               int minor, InetSocketAddress addr, String url,
-                                              boolean isVerificationRequired, ImmutableMap<String,String> headers)
+                                              boolean isVerificationRequired, ImmutableMap<String,String> headers,
+                                              Optional<ChecksumType> desiredChecksum)
     {
-        this(protocol, minor, major, addr, url, isVerificationRequired, headers, null);
+        this(protocol, minor, major, addr, url, isVerificationRequired, headers, desiredChecksum, null);
     }
 
     public RemoteHttpDataTransferProtocolInfo(String protocol, int major,
                                               int minor, InetSocketAddress addr, String url,
                                               boolean isVerificationRequired, ImmutableMap<String,String> headers,
+                                              Optional<ChecksumType> desiredChecksum,
                                               OpenIdCredential openIdCredential)
     {
         this.name  = protocol ;
@@ -47,6 +52,7 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
         this.isVerificationRequired = isVerificationRequired;
         this.headers = checkNotNull(headers);
         this.openIdCredential = openIdCredential;
+        this.desiredChecksum = desiredChecksum.orElse(null);
     }
 
     public URI getUri()
@@ -108,5 +114,10 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
     public boolean hasTokenCredential()
     {
         return openIdCredential != null;
+    }
+
+    public Optional<ChecksumType> getDesiredChecksum()
+    {
+        return Optional.ofNullable(desiredChecksum);
     }
 }

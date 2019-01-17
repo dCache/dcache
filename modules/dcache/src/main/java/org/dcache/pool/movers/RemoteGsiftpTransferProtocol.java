@@ -195,6 +195,17 @@ public class RemoteGsiftpTransferProtocol
         RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo
             = (RemoteGsiftpTransferProtocolInfo) protocol;
 
+        fileChannel.optionallyAs(ChecksumChannel.class).ifPresent(c -> {
+                    remoteGsiftpProtocolInfo.getDesiredChecksum().ifPresent(t -> {
+                                try {
+                                    c.addType(t);
+                                } catch (IOException e) {
+                                    _log.warn("Unable to calculate checksum {}: {}",
+                                            t, messageOrClassName(e));
+                                }
+                            });
+                });
+
         createFtpClient(remoteGsiftpProtocolInfo);
 
         if (access.contains(StandardOpenOption.WRITE)) {

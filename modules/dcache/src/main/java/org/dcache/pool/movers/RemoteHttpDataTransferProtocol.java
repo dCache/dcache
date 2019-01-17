@@ -30,6 +30,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -222,6 +223,17 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         RemoteHttpDataTransferProtocolInfo info =
                 (RemoteHttpDataTransferProtocolInfo) genericInfo;
         _channel = new MoverChannel<>(access, attributes, info, channel);
+
+        channel.optionallyAs(ChecksumChannel.class).ifPresent(c -> {
+                    info.getDesiredChecksum().ifPresent(t -> {
+                                try {
+                                    c.addType(t);
+                                } catch (IOException e) {
+                                    _log.warn("Unable to calculate checksum {}: {}",
+                                            t, messageOrClassName(e));
+                                }
+                            });
+                });
 
         _client = createHttpClient();
         try {
