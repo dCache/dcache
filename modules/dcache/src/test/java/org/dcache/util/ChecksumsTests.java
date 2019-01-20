@@ -8,19 +8,22 @@ import org.hamcrest.TypeSafeMatcher;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Arrays.asList;
 import static org.dcache.util.ChecksumType.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 public class ChecksumsTests
 {
@@ -335,6 +338,98 @@ public class ChecksumsTests
         assertThat(value.isPresent(), is(equalTo(false)));
     }
 
+    @Test
+    public void shouldReturnEmptyWantDigestForEmptyChecksums()
+    {
+        Set<Checksum> checksums = Collections.emptySet();
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertFalse(wantDigest.isPresent());
+    }
+
+    @Test
+    public void shouldReturnEmptyWantDigestForNonMappedChecksum()
+    {
+        Checksum checksum = newMd4Checksum("12345678901234567890123456789012");
+        Set<Checksum> checksums = Collections.singleton(checksum);
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertFalse(wantDigest.isPresent());
+    }
+
+    @Test
+    public void shouldReturnMd5WantDigestForSingleMd5Checksum()
+    {
+        Checksum checksum = newMd5Checksum("12345678901234567890123456789012");
+        Set<Checksum> checksums = Collections.singleton(checksum);
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("md5")));
+    }
+
+    @Test
+    public void shouldReturnAdler32WantDigestForSingleAdler32Checksum()
+    {
+        Checksum checksum = newAdler32Checksum("03da0195");
+        Set<Checksum> checksums = Collections.singleton(checksum);
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("adler32")));
+    }
+
+    @Test
+    public void shouldReturnMd5Adler32WantDigestForAdler32Md5Checksum()
+    {
+        List<Checksum> checksums = asList(
+                    newAdler32Checksum("03da0195"),
+                    newMd5Checksum("12345678901234567890123456789012")
+                );
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("md5,adler32;q=0.5")));
+    }
+
+    @Test
+    public void shouldReturnMd5Adler32WantDigestForMd5Adler32Checksum()
+    {
+        List<Checksum> checksums = asList(
+                    newMd5Checksum("12345678901234567890123456789012"),
+                    newAdler32Checksum("03da0195")
+                );
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("md5,adler32;q=0.5")));
+    }
+
+    @Test
+    public void shouldReturnMd5Adler32WantDigestForMd5Md4Adler32Checksum()
+    {
+        List<Checksum> checksums = asList(
+                    newMd5Checksum("12345678901234567890123456789012"),
+                    newMd4Checksum("12345678901234567890123456789012"),
+                    newAdler32Checksum("03da0195")
+                );
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("md5,adler32;q=0.5")));
+    }
+
+    private Checksum newMd4Checksum(String value)
+    {
+        return new Checksum(ChecksumType.MD4_TYPE, value);
+    }
 
     private Checksum newMd5Checksum(String value)
     {

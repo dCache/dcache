@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -557,7 +558,13 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private HttpHead buildHeadRequest(RemoteHttpDataTransferProtocolInfo info)
     {
         HttpHead head = new HttpHead(info.getUri());
-        head.addHeader("Want-Digest", WANT_DIGEST_VALUE);
+
+        _channel.getFileAttributes().getChecksumsIfPresent()
+                .map(v -> Checksums.asWantDigest(v))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .ifPresent(v -> head.addHeader("Want-Digest", v));
+
         head.setConfig(RequestConfig.custom()
                                   .setConnectTimeout(CONNECTION_TIMEOUT)
                                   .setSocketTimeout(SOCKET_TIMEOUT)

@@ -3,6 +3,7 @@ package org.dcache.util;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps.EntryTransformer;
 import com.google.common.collect.Ordering;
 import com.google.common.io.BaseEncoding;
@@ -15,6 +16,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,6 +40,11 @@ public class Checksums
     private static final Splitter.MapSplitter RFC3230_SPLITTER =
             Splitter.on(',').omitEmptyStrings().trimResults().
             withKeyValueSeparator(Splitter.on('=').limit(2));
+
+    private static final Map<ChecksumType,String> CHECKSUMTYPE_TO_RFC3230_NAME = ImmutableMap.<ChecksumType,String>builder()
+            .put(ADLER32, "adler32")
+            .put(MD5_TYPE, "md5")
+            .build();
 
     private static final EntryTransformer<String,String,Checksum>
             RFC3230_TO_CHECKSUM = (type, value) -> {
@@ -202,5 +209,58 @@ public class Checksums
     public static Ordering<Checksum> preferrredOrder()
     {
         return PREFERRED_CHECKSUM_ORDERING;
+    }
+
+    /**
+     * Build a Want-Digest header value that requests the supplied checksum
+     * algorithms.  If more than one checksum then the preference order is
+     * used.
+     * @param checksums The known checksums
+     * @return the Want-Digest string, or null if checksums is empty or
+     * there is no matching RFC 3230 algorithm.
+     */
+    public static Optional<String> asWantDigest(Collection<Checksum> checksums)
+    {
+        switch (checksums.size()) {
+        case 0:
+            return Optional.empty();
+
+        case 1:
+            Checksum checksum = checksums.iterator().next();
+            String wantDigestName = CHECKSUMTYPE_TO_RFC3230_NAME.get(checksum.getType());
+            return Optional.ofNullable(wantDigestName);
+        }
+
+        List<String> names = checksums.stream()
+                .sorted(PREFERRED_CHECKSUM_ORDERING)
+                .map(Checksum::getType)
+                .map(CHECKSUMTYPE_TO_RFC3230_NAME::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (names.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String value;
+
+        if (names.size() == 1) {
+            value = names.get(0);
+        } else {
+            double q = 1.0d;
+            double step = 1.0d / names.size();
+            StringBuilder sb = new StringBuilder();
+            for (String name : names) {
+                if (sb.length() == 0) {
+                    sb.append(name);
+                } else {
+                    sb.append(',').append(name).append(String.format(";q=%.1f", q));
+                }
+                q -= step;
+            }
+            value = sb.toString();
+        }
+
+        return Optional.of(value);
     }
 }
