@@ -8,7 +8,9 @@ To make sure data is safely encrypted during transfer, one should:
 1. Use the WebDAV protocol
 2. Configure dCache WebDAV doors not to redirect transfers (because currently it redirects to HTTP and not HTTPS)
 3. Have a well configured certificate or chain in each WebDAV door
-4. Have a well configured Java 8 or better
+4. Use Java 8 or better, with a well configured java.security
+
+Since 4.2, there is a new option `webdav.redirect.allow-https` which is `false` by default. If set to true, WebDAV doors should redirect clients to HTTPS movers on the pools. Your pools must have host certificates and have `pool.enable.encrypted-transfers = true` for this to work. This new feature should be considered experimental; test it before using it.
 
 Please note, that IT security is an ever changing field. Make sure you follow the latest developments. If security in dCache is a priority for you, be sure to follow the dCache user mailinglist.
 
@@ -45,7 +47,7 @@ Configuring Java
 
 dCache relies on Java for its transport security. Hardening Java is necessary to get the maximum security. If not configured properly, Java may support ciphers and protocols that are considered weak.
 
-To begin with, make sure you run Java 8 or newer. It's impossible to get an A rating in the Qualys SSL test without Java 8 or newer. Java 11 would be best because it adds support for TLSv1.3, but dCache has not been tested with Java 11 (as of October 2018).
+To begin with, make sure you run Java 8 or newer. It's impossible to get an A rating in the Qualys SSL test without Java 8 or newer. If you run dCache 5, you can use Java 11 which adds support for TLSv1.3.
 
 Java security setting can be configured in a file called java.security. On a Centos 7 system, this can be found with `find / -name java.security`. The most important setting in this file is:
 
@@ -96,7 +98,7 @@ Then, in the file `/etc/dcache/maximum.java.security`, you can put a specific `j
 Testing protocols and cipher suites
 ===================================
 
-To test whether the WebDAV door is safe, there are some tests you can perform.
+To test whether the WebDAV door is secure, there are some tests you can perform.
 
 
 
