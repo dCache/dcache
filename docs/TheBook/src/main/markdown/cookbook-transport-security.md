@@ -10,7 +10,7 @@ To make sure data is safely encrypted during transfer, one should:
 3. Have a well configured certificate or chain in each WebDAV door
 4. Use Java 8 or better, with a well configured java.security
 
-Since 4.2, there is a new option `webdav.redirect.allow-https` which is `false` by default. If set to true, WebDAV doors should redirect clients to HTTPS movers on the pools. Your pools must have host certificates and have `pool.enable.encrypted-transfers = true` for this to work. This new feature should be considered experimental; test it before using it.
+There is the option `webdav.redirect.allow-https` which is `false` by default. If set to true, WebDAV doors should redirect clients to HTTPS movers on the pools. Your pools must have host certificates and have `pool.enable.encrypted-transfers = true` for this to work. This new feature should be considered experimental; test it before using it.
 
 Please note, that IT security is an ever changing field. Make sure you follow the latest developments. If security in dCache is a priority for you, be sure to follow the dCache user mailinglist.
 
