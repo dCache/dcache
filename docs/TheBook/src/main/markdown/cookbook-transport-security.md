@@ -47,7 +47,7 @@ Configuring Java
 
 dCache relies on Java for its transport security. Hardening Java is necessary to get the maximum security. If not configured properly, Java may support ciphers and protocols that are considered weak.
 
-To begin with, make sure you run Java 8 or newer. It's impossible to get an A rating in the Qualys SSL test without Java 8 or newer. If you run dCache 5, you can use Java 11 which adds support for TLSv1.3.
+To begin with, make sure you run Java 8 or newer. It's impossible to get an A rating in the Qualys SSL test without Java 8 or newer. Using Java 11 will add support for TLSv1.3
 
 Java security setting can be configured in a file called java.security. On a Centos 7 system, this can be found with `find / -name java.security`. The most important setting in this file is:
 
