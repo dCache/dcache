@@ -174,12 +174,6 @@ public class RemoteGsiftpTransferProtocol
     }
 
     @Override
-    public Set<ChecksumType> desiredChecksums(ProtocolInfo info)
-    {
-        return EnumSet.noneOf(ChecksumType.class);
-    }
-
-    @Override
     public void runIO(FileAttributes fileAttributes,
                       RepositoryChannel fileChannel,
                       ProtocolInfo protocol,

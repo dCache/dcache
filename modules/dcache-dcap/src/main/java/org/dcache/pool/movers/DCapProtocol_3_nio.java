@@ -262,8 +262,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         return _status;
     }
 
-    @Override
-    public Set<ChecksumType> desiredChecksums(ProtocolInfo info)
+    private void addDesiredChecksums(RepositoryChannel fileChannel, DCapProtocolInfo info)
     {
         // The dcap protocol allows the client to supply a checksum value as
         // part of the IOCMD_CLOSE block.  However, by then we have already
@@ -276,7 +275,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         // Therefore, this mover requests an ADLER32 checksum is always
         // generated, so avoiding re-reading the file's content should the
         // client supply an ADLER32 checksum as part of the IOCMD_CLOSE block.
-        return EnumSet.of(ChecksumType.ADLER32);
+        fileChannel.optionallyAs(ChecksumChannel.class).ifPresent(c -> {
+                    try {
+                        c.addType(ChecksumType.ADLER32);
+                    } catch (IOException e) {
+                        _log.warn("Unable to add ADLER32 checksum: {}",
+                                Exceptions.messageOrClassName(e));
+                    }
+                });
     }
 
     @Override
@@ -298,6 +304,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     CacheException(44, "protocol info not DCapProtocolInfo");
         }
         DCapProtocolInfo dcapProtocolInfo = (DCapProtocolInfo)protocol;
+
+        addDesiredChecksums(fileChannel, dcapProtocolInfo);
 
         StorageInfo storage = fileAttributes.getStorageInfo();
         _pnfsId              = fileAttributes.getPnfsId();

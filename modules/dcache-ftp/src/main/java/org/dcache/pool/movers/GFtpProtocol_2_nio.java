@@ -298,22 +298,33 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
     }
 
-    @Override
-    public Set<ChecksumType> desiredChecksums(ProtocolInfo info)
+    private void addDesiredChecksums(GFtpProtocolInfo info)
     {
-        if (info instanceof GFtpProtocolInfo) {
-            String type = ((GFtpProtocolInfo) info).getChecksumType();
+        String type = info.getChecksumType();
 
-            if (type != null && !type.equals("Unknown")) {
-                if (ChecksumType.isValid(type)) {
-                    return EnumSet.of(ChecksumType.getChecksumType(type));
-                } else {
-                    _log.error("CRC Algorithm is not supported: {}", type);
-                }
-            }
+        if (type == null || type.equals("Unknown")) {
+            return;
         }
 
-        return EnumSet.noneOf(ChecksumType.class);
+        if (!ChecksumType.isValid(type)) {
+            _log.error("CRC Algorithm is not supported: {}", type);
+            return;
+        }
+
+        Optional<ChecksumChannel> checksumChannel = _fileChannel.optionallyAs(ChecksumChannel.class);
+
+        if (!checksumChannel.isPresent()) {
+            _log.warn("Unable to calculate {} checksum as checksum"
+                    + " calculation is disabled for this transfer.", type);
+            return;
+        }
+
+        try {
+            checksumChannel.get().addType(ChecksumType.getChecksumType(type));
+        } catch (IOException e) {
+            _log.error("Unable to add {} checksum calculation: {}",
+                    type, org.dcache.util.Exceptions.messageOrClassName(e));
+        }
     }
 
     @Override
@@ -348,6 +359,8 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _log.debug("version={}, role={}, mode={}, host={} buffer={}, passive={}, parallelism={}",
                   version, role, gftpProtocolInfo.getMode(),
                   address, bufferSize, passive, parallelism);
+
+        addDesiredChecksums(gftpProtocolInfo);
 
         /* Sanity check the parameters.
          */

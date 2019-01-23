@@ -2,14 +2,9 @@ package org.dcache.pool.movers;
 
 import javax.annotation.Nonnull;
 
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.function.Consumer;
 
-import diskCacheV111.vehicles.ProtocolInfo;
-
 import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
 
 /**
  * A ChecksumMover is a mover that provides checksum information.  This
@@ -18,18 +13,6 @@ import org.dcache.util.ChecksumType;
  */
 public interface ChecksumMover
 {
-    /**
-     * Supply a list of desired checksum types to be calculated while receiving
-     * data.  This method is called once before runIO if the pool is accepting
-     * data from an external source.  The method is not called when the pool
-     * is delivering data.
-     *
-     * @param info The protocol info for this mover.
-     * @return checksum types that are desired but currently unknown.
-     */
-    @Nonnull
-    Set<ChecksumType> desiredChecksums(@Nonnull ProtocolInfo info);
-
     /**
      * Register a checksum consumer that will accept client-supplied checksum
      * values with which the pool will test data data integrity.  Typically,

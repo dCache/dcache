@@ -164,7 +164,6 @@ public abstract class AbstractMoverProtocolTransferService
 
             if (mover instanceof ChecksumMover) {
                 ChecksumMover cm = (ChecksumMover) mover;
-                cm.desiredChecksums(_mover.getProtocolInfo()).forEach(_mover::addChecksumType);
                 cm.acceptIntegrityChecker(_mover::addExpectedChecksum);
             }
         }

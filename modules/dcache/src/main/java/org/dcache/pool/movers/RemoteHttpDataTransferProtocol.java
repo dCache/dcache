@@ -213,12 +213,6 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     }
 
     @Override
-    public Set<ChecksumType> desiredChecksums(ProtocolInfo info)
-    {
-        return EnumSet.noneOf(ChecksumType.class);
-    }
-
-    @Override
     public void runIO(FileAttributes attributes, RepositoryChannel channel,
             ProtocolInfo genericInfo, Set<? extends OpenOption> access)
             throws CacheException, IOException, InterruptedException
