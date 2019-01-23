@@ -61,6 +61,7 @@ import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -298,8 +299,7 @@ class Companion
         Throwable error = null;
         try {
             try {
-                Set<ChecksumType> checksums = _checksumModule.checksumsWhenWriting(handle);
-                Set<Checksum> actualChecksums = copy(uri, handle, checksums);
+                Set<Checksum> actualChecksums = copy(uri, handle);
                 _checksumModule.enforcePostTransferPolicy(handle, actualChecksums);
             } finally {
                 setThread(null);
@@ -319,11 +319,16 @@ class Companion
         }
     }
 
-    private Set<Checksum> copy(String uri, ReplicaDescriptor handle, Set<ChecksumType> checksums)
-            throws IOException
+    private Set<Checksum> copy(String uri, ReplicaDescriptor handle) throws IOException
     {
-        try (ChecksumChannel checksumChannel = new ChecksumChannel(handle.createChannel(), checksums)) {
+        EnumSet<ChecksumType> knownChecksumTypes = EnumSet.noneOf(ChecksumType.class);
+        try {
+            handle.getChecksums().forEach(c -> knownChecksumTypes.add(c.getType()));
+        } catch (CacheException e) {
+            _log.warn("Failed to fetch checksum information: {}", e.getMessage());
+        }
 
+        try (RepositoryChannel channel = handle.createChannel()) {
             HttpGet get = new HttpGet(uri);
             get.addHeader(HttpHeaders.CONNECTION, HTTP.CONN_CLOSE);
             get.setConfig(RequestConfig.custom()
@@ -351,10 +356,10 @@ class Companion
                     throw new EOFException("Received file does not match expected file size.");
                 }
 
-                ByteStreams.copy(entity.getContent(), Channels.newOutputStream(checksumChannel));
+                ByteStreams.copy(entity.getContent(), Channels.newOutputStream(channel));
 
                 try {
-                    checksumChannel.sync();
+                    channel.sync();
                 } catch (SyncFailedException e) {
                     /* Data is not guaranteed to be on disk. Not a fatal
                      * problem, but better generate a warning.
@@ -365,7 +370,9 @@ class Companion
             } finally {
                 setRequest(null);
             }
-            return checksumChannel.getChecksums();
+            return channel.optionallyAs(ChecksumChannel.class)
+                    .map(ChecksumChannel::getChecksums)
+                    .orElseThrow(() -> new IllegalStateException("Missing ChecksumChannel"));
         }
     }
 

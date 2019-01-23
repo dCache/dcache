@@ -168,6 +168,11 @@ public class ChecksumModuleV1
          return _defaultChecksumType.stream().map(CHECKSUM_NAMES::get).collect(Collectors.joining(" "));
     }
 
+    public synchronized EnumSet<ChecksumType> getDefaultChecksumTypes()
+    {
+        return EnumSet.copyOf(_defaultChecksumType);
+    }
+
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
@@ -417,20 +422,6 @@ public class ChecksumModuleV1
     {
         return _policy.contains(flag);
     }
-
-    @Nonnull
-    @Override
-    public Set<ChecksumType> checksumsWhenWriting(ReplicaDescriptor handle)
-    {
-        EnumSet<ChecksumType> types = EnumSet.copyOf(_defaultChecksumType);
-        try {
-            handle.getChecksums().forEach(c -> types.add(c.getType()));
-        } catch (CacheException e) {
-            LOGGER.warn("Failed to fetch checksum information: {}", e.getMessage());
-        }
-        return types;
-    }
-
 
     @Override
     public Set<Checksum> verifyBrokenFile(ReplicaRecord entry, Set<Checksum> expectedChecksums) throws IOException, FileCorruptedCacheException, InterruptedException

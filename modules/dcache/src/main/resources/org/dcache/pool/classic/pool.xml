@@ -111,23 +111,28 @@
   </bean>
 
   <bean id="replica-store"
-          class="org.dcache.pool.statistics.IoStatisticsReplicaStore">
+	class="org.dcache.pool.repository.checksums.ChecksumReplicaStore">
       <constructor-arg>
-          <bean class="org.dcache.pool.repository.ConsistentReplicaStore" init-method="init">
-              <constructor-arg ref="csm"/>
-              <constructor-arg ref="pnfs"/>
+          <bean class="org.dcache.pool.statistics.IoStatisticsReplicaStore">
               <constructor-arg>
-                  <bean class="${pool.plugins.meta}" init-method="init">
-                      <description>Store for pool meta data</description>
-                      <constructor-arg ref="file-store"/>
-                      <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
-                      <constructor-arg value="${pool.name}"/>
+                  <bean class="org.dcache.pool.repository.ConsistentReplicaStore" init-method="init">
+                      <constructor-arg ref="csm"/>
+                      <constructor-arg ref="pnfs"/>
+                      <constructor-arg>
+                          <bean class="${pool.plugins.meta}" init-method="init">
+                              <description>Store for pool meta data</description>
+                              <constructor-arg ref="file-store"/>
+                              <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
+                              <constructor-arg value="${pool.name}"/>
+                          </bean>
+                      </constructor-arg>
+                      <constructor-arg ref="replica-state-policy"/>
+                      <property name="poolName" value="${pool.name}"/>
                   </bean>
               </constructor-arg>
-              <constructor-arg ref="replica-state-policy"/>
-              <property name="poolName" value="${pool.name}"/>
           </bean>
       </constructor-arg>
+      <constructor-arg ref="csm"/>
   </bean>
 
   <bean id="sweeper" class="${pool.plugins.sweeper}"

@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.CompletionHandler;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.OpenOption;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -82,7 +81,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     protected final String _transferPath;
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
-    private final Set<ChecksumType> _checksumTypes;
+    private final Set<ChecksumType> _checksumTypes = EnumSet.noneOf(ChecksumType.class);
     private final Set<Checksum> _checksums = new HashSet<>();
     private volatile ChecksumChannel _checksumChannel;
     private volatile Optional<RepositoryChannel> _channel = Optional.empty();
@@ -106,7 +105,6 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         _pathToDoor = pathToDoor;
         _handle = handle;
         _transferService = transferService;
-        _checksumTypes = EnumSet.copyOf(checksumModule.checksumsWhenWriting(handle));
     }
 
     @Override
@@ -299,30 +297,39 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         RepositoryChannel channel;
         try {
             channel = _handle.createChannel();
-            if (getIoMode().contains(StandardOpenOption.WRITE)) {
-                try {
-                    synchronized (_checksumTypes) {
-                        channel = _checksumChannel = new ChecksumChannel(channel, _checksumTypes);
-                    }
-                } catch (Throwable t) {
-                    /* This should only happen in case of JVM Errors or if the checksum digest cannot be
-                     * instantiated (which, barring bugs, should never happen).
-                     */
-                    try {
-                        channel.close();
-                    } catch (IOException e) {
-                        t.addSuppressed(e);
-                    }
-                    throw t;
-                }
-            }
         } catch (AsynchronousCloseException e) {
-            throw new InterruptedIOException("mover interrupted while opening file: " + Exceptions.messageOrClassName(e));
+            throw new InterruptedIOException("mover interrupted while opening file: " + messageOrClassName(e));
         } catch (IOException e) {
             throw new DiskErrorCacheException(
                     "File could not be opened; please check the file system: "
                     + messageOrClassName(e), e);
         }
+
+        synchronized (_checksumTypes) {
+            _checksumChannel = channel.optionallyAs(ChecksumChannel.class).orElse(null);
+            if (_checksumChannel != null) {
+                try {
+                    for (Checksum c : _handle.getChecksums()) {
+                        try {
+                            _checksumChannel.addType(c.getType());
+                        } catch (IOException e) {
+                            LOGGER.error("On-the-fly {} calculation (for known checksum) not possible: {}", c.getType(), messageOrClassName(e));
+                        }
+                    }
+                } catch (CacheException e) {
+                    LOGGER.warn("Failed to fetch checksum information: {}", e.getMessage());
+                }
+
+                for (ChecksumType type : _checksumTypes) {
+                    try {
+                        _checksumChannel.addType(type);
+                    } catch (IOException e) {
+                        LOGGER.error("On-the-fly {} calculation (for protocol-delivered checksum) not possible: {}", type, messageOrClassName(e));
+                    }
+                }
+            }
+        }
+
         if (!_channel.isPresent()) {
             _channel = Optional.of(channel);
         }

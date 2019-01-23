@@ -39,16 +39,6 @@ import org.dcache.util.ChecksumType;
 public interface ChecksumModule
 {
     /**
-     * A set of checksum types that should be calculated when the pool is
-     * accepting data for a new file.
-     *
-     * @param handle A write descriptor
-     * @return set of ChecksumType that should be calculated
-     */
-    @Nonnull
-    Set<ChecksumType> checksumsWhenWriting(ReplicaDescriptor handle);
-
-    /**
      * Verify the integrity of a file identified as broken.  If knownChecksums
      * is empty then the replica's data is assumed to be correct.
      * <p>

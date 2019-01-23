@@ -29,6 +29,7 @@ import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.checksums.ChecksumReplicaRecord;
 import org.dcache.pool.statistics.IoStatisticsReplicaRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
@@ -51,6 +52,7 @@ class WriteHandleImpl implements ReplicaDescriptor
     private static final Set<OpenOption> OPEN_OPTIONS = ImmutableSet.<OpenOption>builder()
             .addAll(FileStore.O_RW)
             .add(IoStatisticsReplicaRecord.OpenFlags.ENABLE_IO_STATISTICS)
+            .add(ChecksumReplicaRecord.OpenFlags.ENABLE_CHECKSUM_CALCULATION)
             .build();
 
     /**
