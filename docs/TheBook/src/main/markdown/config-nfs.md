@@ -189,4 +189,4 @@ nfs.idmap.manage-gids = true
 As enabling it might have negative effects on the performance, the default value
 it false.
 
-> NOTICE: currently only [ldap](config-gplazma.md#ldap) plugin supports group mapping by uid.
+> NOTICE: currently only the [ldap](config-gplazma.md#ldap) plugin supports group mapping by uid when `gplazma.ldap.try-uid-mapping` option is enabled.
