@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.util.histograms;
 
 import com.google.gson.GsonBuilder;
-import org.apache.commons.math3.util.FastMath;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -73,7 +72,6 @@ import org.dcache.util.histograms.TimeFrame.Type;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.dcache.util.ByteUnit.GiB;
-import static org.dcache.util.ByteUnit.KiB;
 import static org.junit.Assert.assertTrue;
 
 public final class TimeseriesHistogramTest extends HistogramModelTest {
@@ -247,7 +245,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
     private void assertThatUpdateAveragesLastValue() {
         Double[][] values = values();
         double lastValue = values[values.length - 1][1];
-        double newValue = lastValue * 3;
+        double newValue = lastValue + 1.0;
         double average = (lastValue + newValue) / 2;
         timeseriesHistogram.average(newValue, now);
         values = values();
@@ -260,7 +258,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
     private void assertThatUpdateReplacesLastValue() {
         Double[][] values = values();
         double lastValue = values[values.length - 1][1];
-        double newValue = lastValue * 3;
+        double newValue = lastValue + 1.0;
         timeseriesHistogram.replace(newValue, now);
         values = values();
         assertTrue("value was not replaced",
@@ -303,7 +301,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
     private void assertThatUpdateSumsLastValue() {
         Double[][] values = values();
         double lastValue = values[values.length - 1][1];
-        double newValue = lastValue * 3;
+        double newValue = lastValue + 1.0;
         timeseriesHistogram.add(newValue, now);
         values = values();
         assertTrue("value was not replaced",
@@ -324,25 +322,18 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     private List<Double> getQueueCountsFor(int units) {
         List<Double> queue = new ArrayList<>();
-        int radix = 1000;
-
         for (int i = 0; i < units; ++i) {
-            long count = FastMath.abs(RANDOM.nextLong()) % radix;
-            queue.add((double) count);
+            queue.add(0.0);
         }
-
         return queue;
     }
 
     private List<Double> getRawBytesFor(int units) {
         List<Double> bytes = new ArrayList<>();
-        long radix = KiB.toBytes(1L);
-
+        double size = GiB.toBytes(1.0);
         for (int i = 0; i < units; ++i) {
-            long size = GiB.toBytes(FastMath.abs(RANDOM.nextLong()) % radix);
-            bytes.add((double) size);
+            bytes.add(size);
         }
-
         return bytes;
     }
 
