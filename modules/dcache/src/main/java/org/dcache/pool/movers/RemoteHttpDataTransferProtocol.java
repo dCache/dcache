@@ -500,8 +500,10 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                         StatusLine status = response.getStatusLine();
 
                         if (status.getStatusCode() >= 300) {
-                            throw new ThirdPartyTransferFailedCacheException("rejected HEAD: "
-                                    + status.getStatusCode() + " " + status.getReasonPhrase());
+                            checkThirdPartyTransferSuccessful(!info.isVerificationRequired(),
+                                    "rejected HEAD: %d %s", status.getStatusCode(),
+                                    status.getReasonPhrase());
+                            return;
                         }
 
                         if (shouldRetry(response)) {
