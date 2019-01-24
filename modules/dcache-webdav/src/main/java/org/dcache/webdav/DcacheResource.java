@@ -77,7 +77,7 @@ public class DcacheResource
     @Override
     public String getName()
     {
-        return _path.name();
+        return _path.isRoot() ? null : _path.name();
     }
 
     @Override
