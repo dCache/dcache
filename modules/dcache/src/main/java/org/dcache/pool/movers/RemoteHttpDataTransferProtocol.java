@@ -367,6 +367,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                     switch (status.getStatusCode()) {
                     case 200: /* OK (not actually a valid response from PUT) */
                     case 201: /* Created */
+                    case 204: /* No Content */
+                    case 205: /* Reset Content */
                         return;
 
                     case 300: /* Multiple Choice */
