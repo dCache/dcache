@@ -54,22 +54,28 @@
 
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-true">
-      <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
-            destroy-method="close">
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+      <description>Database connection pool</description>
+      <constructor-arg value="${billing.db.url}"/>
+      <constructor-arg value="BillingCell"/>
+      <constructor-arg>
+        <bean class="com.zaxxer.hikari.HikariDataSource">
           <constructor-arg>
-              <bean class="com.zaxxer.hikari.HikariConfig">
-                  <property name="jdbcUrl" value="${billing.db.url}"/>
-                  <property name="username" value="${billing.db.user}"/>
-                  <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
-                  <property name="autoCommit" value="true"/>
-                  <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
-                  <property name="minimumIdle" value="${billing.db.connections.idle}"/>
-                  <property name="maximumPoolSize" value="${billing.db.connections.max}"/>
-              </bean>
+            <bean class="com.zaxxer.hikari.HikariConfig">
+              <property name="jdbcUrl" value="${billing.db.url}"/>
+              <property name="username" value="${billing.db.user}"/>
+              <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
+              <property name="autoCommit" value="true"/>
+              <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+              <property name="minimumIdle" value="${billing.db.connections.idle}"/>
+              <property name="maximumPoolSize" value="${billing.db.connections.max}"/>
+            </bean>
           </constructor-arg>
-      </bean>
+        </bean>
+      </constructor-arg>
+    </bean>
 
-      <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
+    <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
             depends-on="liquibase" destroy-method="close">
           <description>Database persistence manager</description>
           <constructor-arg>
