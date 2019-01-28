@@ -50,6 +50,7 @@ import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.ACCESS_TIME;
 
 
 /**
@@ -63,6 +64,8 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
     private static final EnumSet<FileAttribute> PNFSID = EnumSet.of(FileAttribute.PNFSID);
     private static final EnumSet<FileAttribute> FILETYPE = EnumSet.of(FileAttribute.TYPE);
     private static final EnumSet<FileAttribute> PNFSID_FILETYPE = EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE);
+    private static final EnumSet<FileAttribute> SIGNIFICANT_UPDATES =
+            EnumSet.complementOf(EnumSet.of(FileAttribute.ACCESS_TIME));
 
     private NameSpaceProvider delegate;
     private EventReceiver eventReceiver;
@@ -151,10 +154,12 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
         FileAttributes returnAttr = super.setFileAttributes(subject, target, attr,
                 union(fetch,FILETYPE));
 
-        FileType type = returnAttr.getFileType();
+        if (!attr.isUndefined(SIGNIFICANT_UPDATES)) {
+            FileType type = returnAttr.getFileType();
 
-        eventReceiver.notifySelfEvent(EventType.IN_ATTRIB, target, type);
-        notifyParents(target, EventType.IN_ATTRIB, type);
+            eventReceiver.notifySelfEvent(EventType.IN_ATTRIB, target, type);
+            notifyParents(target, EventType.IN_ATTRIB, type);
+        }
 
         return returnAttr;
     }
