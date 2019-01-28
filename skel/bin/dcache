@@ -292,7 +292,8 @@ poolDumpYaml() # $1 = domain, $2 = cell
     classpath=$(getProperty dcache.paths.classpath "$1" "$2")
     path=$(getProperty pool.path "$1" "$2")
     type=$(getProperty pool.plugins.meta "$1" "$2")
-    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataYamlTool "$path" "$type"
+    name=$(getProperty pool.name "$1" "$2")
+    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataYamlTool "$name" "$path" "$type"
 }
 
 # Prints all domains that match a given pattern. Prints all domains if
