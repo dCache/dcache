@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import diskCacheV111.util.CacheException;
@@ -17,30 +19,31 @@ import org.dcache.vehicles.FileAttributes;
 public class MetaDataYamlTool
 {
     static ReplicaStore createStore(Class<? extends ReplicaStore> clazz,
-                                    FileStore fileStore, File poolDir)
+                                    FileStore fileStore, String poolName, Path poolDir)
         throws NoSuchMethodException, InstantiationException,
                IllegalAccessException, InvocationTargetException
     {
         Constructor<? extends ReplicaStore> constructor =
-            clazz.getConstructor(FileStore.class, File.class, Boolean.TYPE);
-        return constructor.newInstance(fileStore, poolDir, true);
+            clazz.getConstructor(FileStore.class, Path.class, String.class, Boolean.TYPE);
+        return constructor.newInstance(fileStore, poolDir, poolName, true);
     }
 
     public static void main(String[] args)
         throws Exception
     {
-        if (args.length != 2) {
-            System.err.println("Synopsis: MetaDataCopyTool DIR TYPE");
+        if (args.length != 3) {
+            System.err.println("Synopsis: MetaDataCopyTool NAME DIR TYPE");
             System.err.println();
-            System.err.println("Where DIR is the pool directory and TYPE is the meta");
+            System.err.println("Where NAME is the pool name, DIR is the pool directory and TYPE is the meta");
             System.err.println("data store class.");
             System.exit(1);
         }
 
-        File poolDir = new File(args[0]);
+        String poolName = args[0];
+        Path poolDir = Paths.get(args[1]);
         FileStore fileStore = new DummyFileStore(DummyFileStore.Mode.ALL_EXIST);
         try (ReplicaStore metaStore =
-                     createStore(Class.forName(args[1]).asSubclass(ReplicaStore.class), fileStore, poolDir)) {
+                     createStore(Class.forName(args[2]).asSubclass(ReplicaStore.class), fileStore, poolName, poolDir)) {
             metaStore.init();
 
             PrintWriter out = new PrintWriter(System.out);
