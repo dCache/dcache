@@ -563,16 +563,17 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         // limit addresses returned to client to the same 'type' as clients own address
+        // NOTICE: according to rfc1918 we allow access to private networks from public ip address
+        // Site must take care that private IP space is not visible to site external clients.
         InetAddress clientAddress = context.getRemoteSocketAddress().getAddress();
         InetSocketAddress[] usableAddresses = Stream.of(ds.getDeviceAddr())
                 .filter(a -> !a.getAddress().isLoopbackAddress() || clientAddress.isLoopbackAddress())
                 .filter(a -> !a.getAddress().isLinkLocalAddress() || clientAddress.isLinkLocalAddress())
-                .filter(a -> !a.getAddress().isSiteLocalAddress() || clientAddress.isSiteLocalAddress())
                 // due to bug in linux kernel we need to filter out IPv6 addresses if client connected
                 // with IPv4.
                 // REVISIT: remove this workaround as soon as RHEL 7.5 is released.
                 .filter(a -> clientAddress.getAddress().length >= a.getAddress().getAddress().length)
-                .toArray(size -> new InetSocketAddress[size]);
+                .toArray(InetSocketAddress[]::new);
 
         return layoutDriver.getDeviceAddress(usableAddresses);
     }
