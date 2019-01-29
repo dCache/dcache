@@ -90,6 +90,8 @@ public class DcacheStandardFilter implements Filter
              */
             response.setStatus(Response.Status.SC_TEMPORARY_REDIRECT);
             response.setLocationHeader(e.getUrl());
+        } catch (MethodNotAllowedException e) {
+            responseHandler.respondMethodNotAllowed(e.getResource(), response, request);
         } catch (WebDavException e) {
             log.warn("Internal server error: {}", e.toString());
             responseHandler.respondServerError(request, response, e.getMessage());
