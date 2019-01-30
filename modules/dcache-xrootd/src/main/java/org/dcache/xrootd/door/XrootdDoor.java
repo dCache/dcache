@@ -1132,8 +1132,7 @@ public class XrootdDoor
         }
     }
 
-    public XrootdTpcInfo updateRendezvousInfo(String key, String slfn,
-                                               Map<String, String> opaque)
+    public XrootdTpcInfo createOrGetRendezvousInfo(String key)
     {
         synchronized (_tpcFdIndex) {
             XrootdTpcInfo info = _tpcInfo.get(key);
@@ -1145,8 +1144,7 @@ public class XrootdDoor
                 info.setFd(next);
                 _log.debug("Added fhandle {} for key {}.", next, key);
             }
-            info.addInfoFromOpaque(slfn, opaque);
-            _log.debug("Updated info {} for key {}.", info, key);
+            _log.debug("info {} for key {}.", info, key);
             return info;
         }
     }

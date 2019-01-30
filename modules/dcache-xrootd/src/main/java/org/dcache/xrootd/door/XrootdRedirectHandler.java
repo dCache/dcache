@@ -22,6 +22,8 @@ import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -46,6 +48,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.LoginReply;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -80,6 +83,7 @@ import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
+import org.dcache.xrootd.tpc.XrootdTpcInfo.Status;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
@@ -268,11 +272,29 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                         localAddress, req.getSubject(), _authz, persistOnSuccessfulClose,
                         ((_isLoggedIn) ? _userRootPath : _rootPath));
             } else {
-                transfer = _door.read(remoteAddress, path, ioQueue,
-                                uuid, localAddress, req.getSubject(), _authz);
-
                 /*
                  * If this is a tpc transfer, then dCache is source here.
+                 *
+                 * Since we accept (from the destination server) any
+                 * valid form of authentication, but without requiring
+                 * the associated user to be mapped, we can override
+                 * file permission restrictions (since we possess the
+                 * 'token' rendezvous key, and the client file permissions
+                 * have been checked during its open request).
+                 */
+                Subject subject;
+
+                if (opaque.get("tpc.key") == null) {
+                    subject = req.getSubject();
+                } else {
+                    subject = Subjects.ROOT;
+                }
+
+                transfer = _door.read(remoteAddress, path, ioQueue,
+                                uuid, localAddress, subject, _authz);
+
+                /*
+                 * Again, if this is a tpc transfer, then dCache is source here.
                  * The transfer is initiated by the destination server
                  * (= current session).  However, we wish the doorinfo
                  * client in billing to reflect the original user connection,
@@ -366,7 +388,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         }
 
         String slfn = req.getPath();
-        XrootdTpcInfo info = _door.updateRendezvousInfo(tpcKey, slfn, opaque);
+
+        XrootdTpcInfo info = _door.createOrGetRendezvousInfo(tpcKey);
 
         /*
          *  The request originated from the TPC destination server.
@@ -378,20 +401,31 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
          *
          *  Note that the tpc info is created by either the client or the
          *  server, whichever gets here first.  Verification of the key
-         *  itself is not necessary because correctness is satisfied
-         *  by matching org, host and file name.
+         *  itself is implicit (it has been found in the map); correctness is
+         *  further satisfied by matching org, host and file name.
          */
         if (opaque.containsKey("tpc.org")) {
+            info.addInfoFromOpaque(slfn, opaque);
             switch (info.verify(remoteHost, slfn, opaque.get("tpc.org"))) {
                 case READY:
                     _log.debug("Open request {} from destination server, info {}: "
                                               + "OK to proceed.",
                               req, info);
-                    return null;  // proceed as usual with mover + redirect
+                    /*
+                     *  This means that the destination server open arrived
+                     *  second, the client server open succeeded with
+                     *  the correct permissions; proceed as usual
+                     *  with mover + redirect.
+                     */
+                    return null;
                 case PENDING:
                     _log.debug("Open request {} from destination server, info {}: "
                                               + "PENDING client open.",
                               req, info);
+                    /*
+                     *  This means that the destination server open arrived
+                     *  first; return a wait-retry reply.
+                     */
                     return new AwaitAsyncResponse<>(req, 3);
                 case CANCELLED:
                     String error = info.isExpired() ? "ttl expired" : "dst, path or org"
@@ -399,6 +433,21 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                     _log.warn("Open request {} from destination server, info {}: "
                                               + "CANCELLED: {}.",
                               req, info, error);
+                    _door.removeTpcPlaceholder(info.getFd());
+                    return withError(req, kXR_InvalidRequest,
+                                     "tpc rendezvous for " + tpcKey
+                                                     + ": " + error);
+                case ERROR:
+                    /*
+                     *  This means that the destination server requested open
+                     *  before the client did, and the client did not have
+                     *  read permissions on this file.
+                     */
+                    error = "invalid open request (file permissions).";
+                    _log.warn("Open request {} from destination server, info {}: "
+                                              + "ERROR: {}.",
+                              req, info, error);
+                    _door.removeTpcPlaceholder(info.getFd());
                     return withError(req, kXR_InvalidRequest,
                                      "tpc rendezvous for " + tpcKey
                                                      + ": " + error);
@@ -416,6 +465,19 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                                                     req.getSubject(),
                                                     _authz,
                                                     remoteHost);
+            int flags = status.getFlags();
+
+            if ((flags & kXR_readable) != kXR_readable) {
+                /*
+                 * Update the info with ERROR, so when the destination checks
+                 * it, an error can be returned.
+                 */
+                info.setStatus(Status.ERROR);
+                return withError(req, kXR_InvalidRequest,
+                                 "not allowed to read file.");
+            }
+
+            info.addInfoFromOpaque(slfn, opaque);
             return new OpenResponse(req, info.getFd(),
                                     null, null,
                                     status);

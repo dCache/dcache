@@ -319,6 +319,11 @@ While this solution means no cron job is necessary to keep the proxy up to date,
 it is also rather clunky in that it requires the hostcert DNs of all the pools
 to be mapped on the source server end.
 
+* Note:  For reading the file in dCache (dCache
+as TPC source), the third-party server needs only a valid certificate issued
+by a recognized CA; anonymous read access is granted to files (even privately
+owned) on the basis of the rendezvous token submitted with the request.
+
 
 Signed hash verification support
 ---------------------------------------------
