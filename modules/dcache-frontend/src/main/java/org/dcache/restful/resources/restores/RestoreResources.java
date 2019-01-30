@@ -96,8 +96,14 @@ public final class RestoreResources {
     private RestoresInfoService service;
 
     @GET
-    @ApiOperation("Obtain a (potentially partial) list of restore operations "
-            + "from some snapshot, along with a token that identifies the snapshot.")
+    @ApiOperation("Obtain a (potentially partial) list of restore operations"
+            + " from some snapshot, along with a token that identifies the snapshot.  Note:"
+                    + " the output to this request represents all the staging operations"
+                    + " triggered through the pool manager (via read requests through"
+                    + " the doors); cf the admin command '\\sp rc ls'.  Stage operations"
+                    + " initiated directly on a pool via 'rh restore <pnfsid>' do not"
+                    + " appear here.  To see a listing of all stages/restores on a given"
+                    + " pool, use the API for /pools/{pool}/nearline/queues?type=stage).")
     @ApiResponses({
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
