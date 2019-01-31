@@ -47,6 +47,7 @@ import org.dcache.ftp.data.ModeS;
 import org.dcache.ftp.data.ModeX;
 import org.dcache.ftp.data.Multiplexer;
 import org.dcache.ftp.data.Role;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.OutOfDiskException;
@@ -485,6 +486,10 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 throw new IllegalArgumentException(err);
             }
             mode.setPartialRetrieveParameters(offset, size);
+        } else {
+            if (fileAttributes.isDefined(FileAttribute.SIZE)) {
+                fileChannel.truncate(fileAttributes.getSize());
+            }
         }
 
         try {
