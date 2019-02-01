@@ -159,7 +159,7 @@ public final class TransferResources {
             return service.get(token,
                                offset,
                                limit,
-                               String.valueOf(suid),
+                               suid == null ? null : String.valueOf(suid),
                                state,
                                door,
                                domain,
