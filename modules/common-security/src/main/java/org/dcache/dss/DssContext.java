@@ -44,6 +44,14 @@ public interface DssContext
     byte[] wrap(byte[] data, int offset, int len) throws IOException;
 
     /**
+     * Maximum number of bytes (of application data) that may be send to a
+     * single invocation of {@link #wrap}.  This represents a limitation due
+     * to the encrypted token having a maximum size.  Returns Long.MAX_VALUE
+     * if no such limit.
+     */
+    long maxApplicationSize();
+
+    /**
      * Unwraps a token received from a peer.
      */
     byte[] unwrap(byte[] token) throws IOException;
