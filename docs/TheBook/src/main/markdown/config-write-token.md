@@ -81,7 +81,7 @@ A space reservation can only be made, when there is a link group in the **LinkGr
 
 Now we can make a space reservation for that link group.
 
-    (SrmSpaceManager) admin > reserve -desc=WriteToken 6000000 10000
+    (SrmSpaceManager) admin > reserve space -desc=WriteToken 6000000 10000
     10000 voGroup:null voRole:null retentionPolicy:CUSTODIAL accessLatency:ONLINE linkGroupId:0 size:6000000 created:Fri Aug 09     12:28:18 CEST 2013 lifetime:10000000ms expiration:Fri Aug 09 15:14:58 CEST 2013 description:WriteToken state:RESERVED used:0 allocated:0
 
     (SrmSpaceManager) admin > ls
