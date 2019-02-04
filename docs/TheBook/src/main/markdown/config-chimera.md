@@ -222,10 +222,10 @@ list the existing tags with
 
 and their content with
 
-   [user] $ /usr/bin/chimera readtag /data OSMTemplate
-   StoreName myStore
-   [user] $ /usr/bin/chimera readtag /data sGroup
-   myGroup
+    [user] $ /usr/bin/chimera readtag /data OSMTemplate
+    StoreName myStore
+    [user] $ /usr/bin/chimera readtag /data sGroup
+    myGroup
 
 CREATE, LIST AND READ DIRECTORY TAGS IF THE NAMESPACE IS MOUNTED
 ----------------------------------------------------------------
