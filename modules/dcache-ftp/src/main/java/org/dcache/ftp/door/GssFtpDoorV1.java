@@ -2,6 +2,8 @@ package org.dcache.ftp.door;
 
 import com.google.common.base.Strings;
 
+import com.google.common.base.Splitter;
+
 import org.dcache.dss.DssContext;
 import org.dcache.dss.DssContextFactory;
 
@@ -17,6 +19,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -82,15 +85,42 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     @Override
     protected void secure_reply(CommandRequest request, String answer, String code)
     {
-        byte[] data = (answer + "\r\n").getBytes(UTF8);
+        byte[] allData = (answer + "\r\n").getBytes(UTF8);
+
         try {
-            data = context.wrap(data, 0, data.length);
+            /*
+             * If the response exceeds 16.5 KiB then the encrypted output no
+             * longer fits in a single TLS token and must be split into multiple
+             * partial responses.  At the current time, the only place where
+             * this can happen is the MLSC command for directories with more
+             * than ~80 entries; the exact number depends on the file names.
+             *
+             * Only Globus (globus.org) uses the MLSC command and its client has
+             * the peculiarity that the TLS record must match a complete number
+             * of directory entries.  The Globus server code sends a TLS record
+             * for each directory item when generating an MLSC response.
+             */
+            if (allData.length <= context.maxApplicationSize()) {
+                wrapAndSend(code, ' ', allData);
+            } else {
+                List<String> lines = Splitter.on("\r\n").splitToList(answer);
+                for (int i = 0; i < lines.size(); i++) {
+                    boolean isLastLine = i == lines.size()-1;
+                    byte[] lineData = (lines.get(i) + "\r\n").getBytes(UTF8);
+                    wrapAndSend(code, isLastLine ? ' ' : '-', lineData);
+                }
+            }
         } catch (IOException e) {
             LOGGER.error("Failed to encrypt reply '{}': {}", answer, e.toString());
             reply(request.getOriginalRequest(), "500 Reply encryption error: " + e);
-            return;
         }
-        println(code + " " + Base64.getEncoder().encodeToString(data));
+    }
+
+    private void wrapAndSend(String code, char separator, byte[] applicationData)
+            throws IOException
+    {
+        byte[] wrapped = context.wrap(applicationData, 0, applicationData.length);
+        println(code + separator + Base64.getEncoder().encodeToString(wrapped));
     }
 
     @Help("AUTH <SP> <arg> - Initiate secure context negotiation.")
