@@ -121,6 +121,40 @@ document; see, for instance,
 The same procedure applies when enabling the admin role in dCache-View.
 At the upper right hand corner of the dCache-View landing page,
 you will see the user icon.  Click on it and select "add another credential"
-Type in the user name and password, and check the box which says "assert all roles". 
+Type in the user name and password, and check the box which says "assert all roles".
 
 See the [dCache-View] documentation for further information.
+
+##### A Note on the RESTful API for tape restores
+
+The data retrieved via the REST path
+
+```
+/api/v1/restores ...
+```
+
+corresponds to the admin command
+
+```
+\sp rc ls
+```
+
+for all available pool managers.   This means that the restores listed in the
+output are those initiated by an actual protocol through a door.  The restore
+initiated by the pool command:
+
+
+```
+\s <pool> rh restore <pnfsid>
+```
+
+does not show up in this list because the pool manager knows nothing about it.
+
+In order to get all the restores (stages) on a given pool, the REST path
+
+```
+/api/v1/pools/{pool}/nearline/queues?type=stage
+```
+
+must be used.
+
