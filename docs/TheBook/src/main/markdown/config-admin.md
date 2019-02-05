@@ -411,6 +411,16 @@ The following command makes a user as powerful as admin (dCache’s equivalent t
     (acm) admin > add access -allowed *.*.* <new-user>
 ```
 
+DIRECT COMMAND EXECUTION
+------------------------
+
+Admin ssh server allows direct command execution like so:
+```
+    ssh -p 22224 admin@adminNode  "command1; command2; command3"
+```
+That is it accepts semicolon (';') separated list of commands. Spaces between comamnds and command
+separators do not matter.
+
 
 USE OF THE SSH ADMIN INTERFACE BY SCRIPTS
 -----------------------------------------
