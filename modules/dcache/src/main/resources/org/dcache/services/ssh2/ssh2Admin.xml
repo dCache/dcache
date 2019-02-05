@@ -83,6 +83,22 @@
         </property>
     </bean>
 
+    <bean id="command-factory" class="org.dcache.services.ssh2.DirectCommandFactory">
+        <property name="pnfsManager" ref="pnfsmanager"/>
+        <property name="poolManager" ref="poolmanager"/>
+        <property name="acm" ref="acm"/>
+        <property name="prompt" value="${admin.prompt}"/>
+        <property name="listHandler">
+            <bean class="org.dcache.util.list.ListDirectoryHandler">
+                <constructor-arg>
+                    <bean class="diskCacheV111.util.PnfsHandler">
+                        <constructor-arg ref="pnfsmanager"/>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </property>
+    </bean>
+
     <bean id="legacy-factory" class="org.dcache.services.ssh2.LegacySubsystemFactory">
         <property name="historyFile" value="${admin.paths.history}"/>
         <property name="historySize" value="${admin.history.size}"/>
@@ -109,6 +125,7 @@
         <property name="loginStrategy"      ref="login-strategy"/>
         <property name="adminGroupId"       value="${admin.authz.gid}"/>
         <property name="shellFactory"       ref="shell-factory"/>
+        <property name="commandFactory"     ref="command-factory"/>
         <property name="subsystemFactories">
             <list>
                 <ref bean="pcells-factory"/>
