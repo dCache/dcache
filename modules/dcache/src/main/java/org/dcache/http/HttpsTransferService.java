@@ -17,6 +17,7 @@
  */
 package org.dcache.http;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.InetAddresses;
 
 import diskCacheV111.util.CacheException;
@@ -28,6 +29,8 @@ import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.ssl.SslHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.net.ssl.SSLContext;
@@ -43,7 +46,9 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 
-public class HttpsTransferService extends HttpTransferService {
+public class HttpsTransferService extends HttpTransferService
+{
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpsTransferService.class);
 
     private static final String PROTOCOL_HTTPS = "https";
 
@@ -82,20 +87,39 @@ public class HttpsTransferService extends HttpTransferService {
         _ocspCheckingMode = ocspCheckingMode;
     }
 
+    /**
+     * Obtain the hostname or IP address from a URL.  Unlike URI#getHost, this
+     * method returns any IPv6 address without the square brackets.
+     * @param url
+     * @return
+     */
+    @VisibleForTesting
+    static String getHost(URI url)
+    {
+        String host = url.getHost();
+        return host != null && !host.isEmpty() && host.charAt(0) == '[' && host.charAt(host.length()-1) == ']'
+                ? host.substring(1, host.length()-1)
+                : host;
+    }
+
     @Override
     protected URI getUri(HttpProtocolInfo protocolInfo, int port, UUID uuid)
             throws SocketException, CacheException, URISyntaxException {
 
         URI plainUrl = super.getUri(protocolInfo, port, uuid);
-        String host = plainUrl.getHost();
+        String host = getHost(plainUrl);
         try {
             if (InetAddresses.isInetAddress(host)) {
                 // An IP address is unlikely to be in the X.509 host credential.
                 host = InetAddress.getByName(host).getCanonicalHostName();
             }
+            if (InetAddresses.isInetAddress(host)) {
+                LOGGER.warn("Unable to resolve IP address {} to a canonical name", host);
+            }
         } catch (UnknownHostException e) {
             // This should not happen as getByName should never throw this
             // exception for a valid IP address
+            LOGGER.warn("Unable to resolve IP address {}: {}", host, e.toString());
         }
         return new URI(PROTOCOL_HTTPS,
                 plainUrl.getUserInfo(),
