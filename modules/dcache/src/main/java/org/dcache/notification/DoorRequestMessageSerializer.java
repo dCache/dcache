@@ -49,7 +49,7 @@ public class DoorRequestMessageSerializer implements Serializer<DoorRequestInfoM
         o.put("pnfsid", data.getPnfsId());
         o.put("billingPath", data.getBillingPath());
         o.put("fileSize", data.getFileSize());
-        o.put("storageInfo", data.getStorageInfo());
+        o.put("storageInfo", data.getStorageInfo().getStorageClass() + "@" + data.getStorageInfo().getHsm());
         return o.toString().getBytes(UTF_8);
 
     }
