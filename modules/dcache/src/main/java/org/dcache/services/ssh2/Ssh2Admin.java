@@ -13,6 +13,7 @@ import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.server.Command;
+import org.apache.sshd.server.CommandFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.gss.GSSAuthenticator;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
@@ -152,9 +153,13 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     @Required
-    public void setShellFactory(Factory<Command> shellCommand)
-    {
+    public void setShellFactory(Factory<Command> shellCommand) {
         _server.setShellFactory(shellCommand);
+    }
+
+    @Required
+    public void setCommandFactory(CommandFactory commandFactory) {
+        _server.setCommandFactory(commandFactory);
     }
 
     @Required
