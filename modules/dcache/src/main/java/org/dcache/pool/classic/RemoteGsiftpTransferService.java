@@ -141,7 +141,7 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
         if (info instanceof RemoteGsiftpTransferProtocolInfo) {
             moverProtocol = new RemoteGsiftpTransferProtocol(getCellEndpoint(), portRange, bannedCiphers, getContextFactory());
         } else {
-            throw new CacheException(27, "Could not create mover for " + info);
+            throw new CacheException(27, "Could not create third-party GSIFTP mover for " + info);
         }
         return moverProtocol;
     }
