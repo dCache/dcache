@@ -113,13 +113,13 @@ import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
-
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -842,7 +842,7 @@ public class NearlineStorageHandler
         public FlushRequestImpl(NearlineStorage nearlineStorage, PnfsId pnfsId) throws CacheException, InterruptedException
         {
             super(nearlineStorage);
-            descriptor = repository.openEntry(pnfsId, NO_FLAGS);
+            descriptor = repository.openEntry(pnfsId, EnumSet.of(OpenFlags.NOATIME));
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, false);
             infoMsg.setStorageInfo(descriptor.getFileAttributes().getStorageInfo());
             String path = descriptor.getFileAttributes().getStorageInfo().getKey("path");
