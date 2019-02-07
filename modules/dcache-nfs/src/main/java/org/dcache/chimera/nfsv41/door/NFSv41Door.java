@@ -131,6 +131,7 @@ import org.dcache.nfs.v4.NfsV41FileLayoutDriver;
 import org.dcache.nfs.v4.xdr.length4;
 import org.dcache.nfs.v4.ff.ff_ioerr4;
 import org.dcache.nfs.v4.ff.ff_layoutreturn4;
+import org.dcache.nfs.v4.ff.flex_files_prot;
 import org.dcache.nfs.v4.xdr.device_error4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.offset4;
@@ -427,7 +428,9 @@ public class NFSv41Door extends AbstractCellComponent implements
         // Supported layout drivers
         _supportedDrivers = new EnumMap<>(layouttype4.class);
         _supportedDrivers.put(layouttype4.LAYOUT4_FLEX_FILES,
-                new FlexFileLayoutDriver(4, 1, new utf8str_mixed("17"), new utf8str_mixed("17"), this::logLayoutErrors));
+                new FlexFileLayoutDriver(4, 1,
+                        flex_files_prot.FF_FLAGS_NO_IO_THRU_MDS,
+                        new utf8str_mixed("17"), new utf8str_mixed("17"), this::logLayoutErrors));
         _supportedDrivers.put(layouttype4.LAYOUT4_NFSV4_1_FILES, new NfsV41FileLayoutDriver());
 
         _rpcService = oncRpcSvcBuilder.build();
