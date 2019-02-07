@@ -102,6 +102,7 @@ import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
@@ -821,7 +822,7 @@ public class NearlineStorageHandler
         {
             super(nearlineStorage);
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, false);
-            descriptor = repository.openEntry(pnfsId, NO_FLAGS);
+            descriptor = repository.openEntry(pnfsId, EnumSet.of(OpenFlags.NOATIME));
             String path = descriptor.getFileAttributes().getStorageInfo().getKey("path");
             if (path != null) {
                 infoMsg.setBillingPath(path);
