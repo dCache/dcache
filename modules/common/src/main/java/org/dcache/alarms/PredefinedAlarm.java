@@ -74,6 +74,7 @@ public enum PredefinedAlarm implements Alarm {
    HSM_SCRIPT_FAILURE,
    POOL_DOWN,
    POOL_DISABLED,
+   POOL_DEAD,
    POOL_SIZE,
    POOL_FREE_SPACE,
    BROKEN_FILE,

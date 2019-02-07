@@ -544,16 +544,19 @@ public class PoolV4
     {
         Throwable cause = event.getCause();
         String poolState;
+        PredefinedAlarm alarm;
         switch (event.getAction()) {
         case READONLY:
             poolState = "Pool read-only: ";
             disablePool(PoolV2Mode.DISABLED_RDONLY,
                             99, poolState + event.getMessage());
+            alarm = null;
             break;
 
         case DISABLED:
             poolState = "Pool disabled: ";
             disablePool(PoolV2Mode.DISABLED_STRICT, 99, poolState + event.getMessage());
+            alarm = PredefinedAlarm.POOL_DISABLED;
             break;
 
         default:
@@ -561,20 +564,21 @@ public class PoolV4
             disablePool(PoolV2Mode.DISABLED_STRICT
                             | PoolV2Mode.DISABLED_DEAD,
                             666, poolState + event.getMessage());
+            alarm = PredefinedAlarm.POOL_DEAD;
             break;
         }
 
-        String message = "Fault occurred in " + event.getSource() + ": "
-                        + event.getMessage() +". " + poolState;
-
-        if (cause != null) {
-            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
-                                                      _poolName),
-                         "{}: {}", message, cause.toString());
-        } else {
-            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
-                                                      _poolName),
-                         message);
+        if (alarm != null) {
+            if (cause != null) {
+                LOGGER.error(AlarmMarkerFactory.getMarker(alarm, _poolName),
+                             "Fault occurred in {}: {}. {}, cause: {}",
+                             event.getSource(), event.getMessage(), poolState,
+                             cause.toString());
+            } else {
+                LOGGER.error(AlarmMarkerFactory.getMarker(alarm, _poolName),
+                             "Fault occurred in {}: {}. {}",
+                             event.getSource(), event.getMessage(), poolState);
+            }
         }
     }
 
