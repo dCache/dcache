@@ -59,8 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.CommandFactory;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.command.CommandFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Arrays;

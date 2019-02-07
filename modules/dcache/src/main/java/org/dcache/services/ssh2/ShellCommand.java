@@ -17,7 +17,7 @@
  */
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.Command;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 

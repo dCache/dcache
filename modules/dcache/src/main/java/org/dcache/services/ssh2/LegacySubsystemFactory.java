@@ -1,7 +1,7 @@
 package org.dcache.services.ssh2;
 
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.Command;
+import org.apache.sshd.server.command.Command;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.File;

@@ -5,7 +5,7 @@ import jline.console.ConsoleReader;
 import jline.console.history.FileHistory;
 import jline.console.history.MemoryHistory;
 import jline.console.history.PersistentHistory;
-import org.apache.sshd.server.Command;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import org.fusesource.jansi.Ansi;
