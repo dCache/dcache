@@ -75,12 +75,12 @@ public class LinkGroupInfoTest {
 
         _ci.command( new Args("psu create link link-a any-store world-net" )  );
         _ci.command( new Args("psu set link link-a -readpref=20 -writepref=20 -cachepref=20" )  );
-        _ci.command( new Args("psu add link link-a pg-a" )  );
-        _ci.command( new Args("psu add link link-a pg-a-copy" )  );
+        _ci.command( new Args("psu addto link link-a pg-a" )  );
+        _ci.command( new Args("psu addto link link-a pg-a-copy" )  );
 
         _ci.command( new Args("psu create link link-b any-store world-net" )  );
         _ci.command( new Args("psu set link link-b -readpref=20 -writepref=20 -cachepref=20" )  );
-        _ci.command( new Args("psu add link link-b pg-b" )  );
+        _ci.command( new Args("psu addto link link-b pg-b" )  );
 
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup link-ga"));

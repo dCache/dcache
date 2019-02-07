@@ -332,7 +332,7 @@ In the admin interface, `\c` to the CELL-POOLMNGR and create a pool group, a lin
     (PoolManager) admin > psu removefrom pgroup default spacemanager-pool
     (PoolManager) admin > psu create link spacemanager_WriteLink any-store world-net any-protocol
     (PoolManager) admin > psu set link spacemanager_WriteLink -readpref=10 -writepref=10 -cachepref=0 -p2ppref=-1
-    (PoolManager) admin > psu add link spacemanager_WriteLink  spacemanager_poolGroup
+    (PoolManager) admin > psu addto link spacemanager_WriteLink  spacemanager_poolGroup
     (PoolManager) admin > psu create linkGroup spacemanager_WriteLinkGroup
     (PoolManager) admin > psu set linkGroup custodialAllowed spacemanager_WriteLinkGroup true
     (PoolManager) admin > psu set linkGroup replicaAllowed spacemanager_WriteLinkGroup true

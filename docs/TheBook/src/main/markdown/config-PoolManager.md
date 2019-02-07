@@ -50,7 +50,7 @@ A link is defined in the file **/var/lib/dcache/config/poolmanager.conf** by
 
       psu create link <link> <unitgroup>
       psu set link <link> -readpref=<rpref> -writepref=<wpref> -cachepref=<cpref> -p2ppref=<ppref>
-      psu add link <link> <poolgroup>
+      psu addto link <link> <poolgroup>
 
 For the preference values see the [section called “Preference Values for Type of Transfer”](#preference-values-for-type-of-transfer).
 
@@ -228,7 +228,7 @@ Now we have everything we need to define a link.
 
     psu create link <link> <name-of-unitgroup>
     psu set link <link> -readpref=<10> -writepref=<0> -cachepref=<10>-p2ppref=<-1>
-    psu add link <link>  <poolgroup>
+    psu addto link <link>  <poolgroup>
 
 [return to top](#the-pool-selection-mechanism)
 
@@ -258,11 +258,11 @@ The simplest configuration for such a setup would consist of two links “write-
 
     psu create link read-link allnet-cond
     psu set link read-link -readpref=10 -writepref=0 -cachepref=10
-    psu add link read-link read-pools
+    psu addto link read-link read-pools
 
     psu create link write-link allnet-cond
     psu set link write-link -readpref=0 -writepref=10 -cachepref=0
-    psu add link write-link write-pools
+    psu addto link write-link write-pools
 
 Why is the unit group `allnet-cond` necessary? It is used as a condition which is always true in both links. This is needed, because each link must contain at least one unit group.
 
@@ -303,11 +303,11 @@ Assume, the experiment data is copied into the cache from the hosts with IP `111
 
     psu create link read-link read-cond
     psu set link read-link -readpref=10 -writepref=0 -cachepref=10
-    psu add link read-link read-pools
+    psu addto link read-link read-pools
 
     psu create link write-link write-cond
     psu set link write-link -readpref=0 -writepref=10 -cachepref=0
-    psu add link write-link write-pools
+    psu addto link write-link write-pools
 
 > **IMPORTANT**
 >
@@ -348,7 +348,7 @@ Assume, data of experiment A obtained in 2010 is written into subdirectories in 
 
       psu create link exp-a-link allnet-cond exp-a-cond
       psu set link exp-a-link -readpref=10 -writepref=10 -cachepref=10
-      psu add link exp-a-link exp-a-pools
+      psu addto link exp-a-link exp-a-pools
 
       psu create ugroup exp-b-cond
       psu create unit -store exp-b:alldata@osm
@@ -360,11 +360,11 @@ Assume, data of experiment A obtained in 2010 is written into subdirectories in 
 
       psu create link exp-b-link allnet-cond exp-b-cond
       psu set link exp-b-link -readpref=10 -writepref=10 -cachepref=10
-      psu add link exp-b-link exp-b-pools
+      psu addto link exp-b-link exp-b-pools
 
       psu create link exp-b-imp-link allnet-cond exp-b-cond imp-cond
       psu set link exp-b-imp-link -readpref=20 -writepref=20 -cachepref=20
-      psu add link exp-b-link exp-b-imp-pools
+      psu addto link exp-b-link exp-b-imp-pools
 
 
 
@@ -381,7 +381,7 @@ Example:
 
     psu create link fallback-link allnet-cond
     psu set link fallback-link -readpref=5 -writepref=5 -cachepref=5
-    psu add link fallback-link it-pools
+    psu addto link fallback-link it-pools
 
 Note again that these will only be used, if none of the experiments pools can be reached, or if the storage class is not of the form `exp-a:run2009@osm`, `exp-a:run2010@osm`, or `exp-b:alldata@osm`. If the administrator fails to create the unit `exp-a:run2005@osm` and add it to the unit group `exp-a-cond`, the fall-back pools will be used eventually.
 
@@ -531,11 +531,11 @@ For a special set of pools, where we only allow the xrootd protocol, we don't wa
     pm set xrootd-section -p2p=0.0
     #
     psu create link default-link any-protocol any-store world-net
-    psu add    link default-link default-pools
+    psu addto  link default-link default-pools
     psu set    link default-link -readpref=10 -cachepref=10 -writepref=0
     #
     psu create link xrootd-link xrootd any-store world-net
-    psu add    link xrootd-link special-pools
+    psu addto  link xrootd-link special-pools
     psu set    link xrootd-link -readpref=10 -cachepref=10 -writepref=0
     psu set    link xrootd-link -section=xrootd-section
     #
@@ -551,15 +551,15 @@ For a set of pools we select pools following the default setting of cpu and spac
     pm set incoming-section -cpucostfactor=0.0 -spacecostfactor=0.0
     #
     psu create link default-link any-protocol any-store desy-net
-    psu add    link default-link default-pools
+    psu addto  link default-link default-pools
     psu set    link default-link -readpref=10 -cachepref=10 -writepref=10
     #
     psu create link default-link any-protocol any-store world-net
-    psu add    link default-link default-pools
+    psu addto  link default-link default-pools
     psu set    link default-link -readpref=10 -cachepref=10 -writepref=0
     #
     psu create link incoming-link any-protocol any-store world-net
-    psu add    link incoming-link default-pools
+    psu addto  link incoming-link default-pools
     psu set    link incoming-link -readpref=10 -cachepref=10 -writepref=10
     psu set    link incoming-link -section=incoming-section
     #

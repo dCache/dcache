@@ -62,7 +62,7 @@ public class PoolMonitorHelper {
 
         ci.command( new Args("psu create link default-link any-store world-net all-protocols" )  );
         ci.command( new Args("psu set link default-link -writepref=1  -readpref=1 -cachepref=1" )  );
-        ci.command( new Args("psu add link default-link all-pools" )  );
+        ci.command( new Args("psu addto link default-link all-pools" )  );
 
     }
 

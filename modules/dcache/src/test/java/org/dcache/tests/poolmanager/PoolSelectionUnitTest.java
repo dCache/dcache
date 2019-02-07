@@ -244,26 +244,26 @@ public class PoolSelectionUnitTest {
 
 
         // assign pool groups to links
-        _ci.command( new Args("psu add link h1-read-link h1-read-pools" )  );
-        _ci.command( new Args("psu add link h1-write-link h1-write-pools" )  );
+        _ci.command( new Args("psu addto link h1-read-link h1-read-pools" )  );
+        _ci.command( new Args("psu addto link h1-write-link h1-write-pools" )  );
 
-        _ci.command( new Args("psu add link zeus-read-link zeus-read-pools" )  );
-        _ci.command( new Args("psu add link zeus-write-link zeus-write-pools" )  );
+        _ci.command( new Args("psu addto link zeus-read-link zeus-read-pools" )  );
+        _ci.command( new Args("psu addto link zeus-write-link zeus-write-pools" )  );
 
-        _ci.command( new Args("psu add link flc-read-link flc-read-pools" )  );
-        _ci.command( new Args("psu add link flc-write-link flc-write-pools" )  );
+        _ci.command( new Args("psu addto link flc-read-link flc-read-pools" )  );
+        _ci.command( new Args("psu addto link flc-write-link flc-write-pools" )  );
 
-        _ci.command( new Args("psu add link hermes-read-link hermes-read-pools" )  );
-        _ci.command( new Args("psu add link hermes-write-link hermes-write-pools" )  );
+        _ci.command( new Args("psu addto link hermes-read-link hermes-read-pools" )  );
+        _ci.command( new Args("psu addto link hermes-write-link hermes-write-pools" )  );
 
-        _ci.command( new Args("psu add link herab-read-link herab-read-pools" )  );
-        _ci.command( new Args("psu add link herab-write-link herab-write-pools" )  );
+        _ci.command( new Args("psu addto link herab-read-link herab-read-pools" )  );
+        _ci.command( new Args("psu addto link herab-write-link herab-write-pools" )  );
 
-        _ci.command( new Args("psu add link default-read-link-ex default-read-pools" )  );
-        _ci.command( new Args("psu add link default-write-link-ex default-write-pools" )  );
+        _ci.command( new Args("psu addto link default-read-link-ex default-read-pools" )  );
+        _ci.command( new Args("psu addto link default-write-link-ex default-write-pools" )  );
 
-        _ci.command( new Args("psu add link default-read-link-in default-read-pools" )  );
-        _ci.command( new Args("psu add link default-write-link-in default-write-pools" )  );
+        _ci.command( new Args("psu addto link default-read-link-in default-read-pools" )  );
+        _ci.command( new Args("psu addto link default-write-link-in default-write-pools" )  );
 
 
     }
@@ -807,11 +807,11 @@ public class PoolSelectionUnitTest {
 
         ci.command(new Args("psu create link read-link allnet-cond"));
         ci.command(new Args("psu set link read-link -read-pref=10 -writepref=0 -cachepref=10"));
-        ci.command(new Args("psu add link read-link read-pools"));
+        ci.command(new Args("psu addto link read-link read-pools"));
 
         ci.command(new Args("psu create link write-link write-cond"));
         ci.command(new Args("psu set link write-link -readpref=0 -writepref=10 -cachepref=0"));
-        ci.command(new Args("psu add link write-link write-pools"));
+        ci.command(new Args("psu addto link write-link write-pools"));
 
         /* We cannot read from a write pool.
          */

@@ -140,7 +140,7 @@ psu create pgroup resilient1-pools -resilient
 psu addto pgroup resilient1-pools resilient1-pool1
 
 psu create link resilient1-link resilient1-units ...
-psu add link resilient1-link resilient1-pools
+psu addto link resilient1-link resilient1-pools
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ##### Setting the directory tags

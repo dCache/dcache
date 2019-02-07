@@ -41,6 +41,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -51,6 +52,7 @@ import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.*;
+import static dmg.util.CommandException.checkCommand;
 import static java.util.Comparator.comparing;
 
 public class PoolSelectionUnitV2
@@ -310,7 +312,7 @@ public class PoolSelectionUnitV2
                                 .println(link.getAttraction());
                         link._poolList.values().stream().sorted(comparing(PoolCore::getName)).forEachOrdered(
                                 poolCore -> pw
-                                        .append("psu add link ")
+                                        .append("psu addto link ")
                                         .append(link.getName())
                                         .append(" ")
                                         .println(poolCore.getName()));
@@ -2455,10 +2457,19 @@ public class PoolSelectionUnitV2
         _psuReadLock.unlock();
     }
 
-    public static final String hh_psu_add_link = "<link> <pool>|<pool group>";
+    public static final String hh_psu_add_link = "<link> <pool>|<pool group> # deprecated use 'psu addto link'";
 
     @AffectsSetup
     public String ac_psu_add_link_$_2(Args args)
+    {
+        addLink(args.argv(0), args.argv(1));
+        return "Command was successful; please use 'psu addto link' next time.";
+    }
+
+    public static final String hh_psu_addto_link = "<link> <pool>|<pool group>";
+
+    @AffectsSetup
+    public String ac_psu_addto_link_$_2(Args args)
     {
         addLink(args.argv(0), args.argv(1));
         return "";
@@ -2744,7 +2755,7 @@ public class PoolSelectionUnitV2
     {
 	if(Glob.isGlob(args.argv(0)))
 	{
-		Glob glob = new Glob(args.argv(0));	
+		Glob glob = new Glob(args.argv(0));
 		List<String> names = getPools(glob.toPattern()).stream().map((Pool pool) -> pool.getName()).collect(Collectors.toList());
 		for(String name : names)
 		{
@@ -2910,8 +2921,6 @@ public class PoolSelectionUnitV2
         return setRegex(args.argv(0));
     }
 
-    public static final String hh_psu_unlink = "<link> <pool>|<pool group>";
-
     @AffectsSetup
     @Command(name = "psu set storage unit",
             hint = "define resilience requirements for a storage unit",
@@ -2951,8 +2960,17 @@ public class PoolSelectionUnitV2
         }
     }
 
+    public static final String hh_psu_unlink = "<link> <pool>|<pool group> # deprecated, use 'psu removefrom link'";
     @AffectsSetup
-    public String ac_psu_unlink_$_2(Args args)
+    public String ac_psu_unlink_$_2(Args args) throws CommandException
+    {
+        unlink(args.argv(0), args.argv(1));
+        return "Command was successful; please use 'psu removefrom link' next time.";
+    }
+
+    public static final String hh_psu_removefrom_link = "<link> <pool>|<pool group>";
+    @AffectsSetup
+    public String ac_psu_removefrom_link_$_2(Args args) throws CommandException
     {
         unlink(args.argv(0), args.argv(1));
         return "";

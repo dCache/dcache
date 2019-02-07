@@ -48,7 +48,7 @@ Currently there are no space reservations and no link groups. We create the link
     (PoolManager) admin > psu removefrom pgroup default pool1
     (PoolManager) admin > psu create link WriteToken_Link any-store world-net any-protocol
     (PoolManager) admin > psu set link WriteToken_Link -readpref=10 -writepref=10 -cachepref=0 -p2ppref=-1
-    (PoolManager) admin > psu add link WriteToken_Link WriteToken_poolGroup
+    (PoolManager) admin > psu addto link WriteToken_Link WriteToken_poolGroup
     (PoolManager) admin > psu create linkGroup WriteToken_LinkGroup
     (PoolManager) admin > psu set linkGroup custodialAllowed WriteToken_LinkGroup true
     (PoolManager) admin > psu set linkGroup replicaAllowed WriteToken_LinkGroup true
