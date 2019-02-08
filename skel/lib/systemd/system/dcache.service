@@ -9,8 +9,6 @@ Type=oneshot
 ExecStart=/bin/true
 ExecReload=/bin/true
 RemainAfterExit=on
-LimitNOFILE=65535
-LimitNPROC=infinity
 
 [Install]
 WantedBy=default.target
