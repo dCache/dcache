@@ -60,38 +60,17 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             _args.opwrite.data.rewind();
             int bytesWritten = fc.write(_args.opwrite.data, offset);
 
-            /*
-                due to bug in linux commit-through-ds code,
-                we shamelessly always return FILE_SYNC4 without
-                committing.
-
-                RedHat Bugzilla:
-                   https://bugzilla.redhat.com/show_bug.cgi?id=1184394
-            */
-            int stable = stable_how4.FILE_SYNC4;
-            /*
-            FIXME: enable this back as soon as kernel bug is fixed
-            int stable = _args.opwrite.stable;
-            switch (stable) {
-                case stable_how4.FILE_SYNC4:
-                    mover.commitFileSize(fc.size());
-                    // FILE_SYNC includes DATA_SYNC
-                case stable_how4.DATA_SYNC4:
-                    fc.sync();
-                    break;
-                case stable_how4.UNSTABLE4:
-                    // nop
-                    break;
-                default:
-                    throw new BadXdrException();
-            }
-            */
-
             res.status = nfsstat.NFS_OK;
             res.resok4 = new WRITE4resok();
             res.resok4.count = new count4(bytesWritten);
-            res.resok4.committed = stable;
             res.resok4.writeverf = context.getRebootVerifier();
+
+            /*
+             * The pool holds only the data. If client wants to sync metadata
+             * as well (FILE_SYNC-like behavior), the it must send an explicit
+             * LAYOUT_COMMIT to the door.
+             */
+            res.resok4.committed = stable_how4.DATA_SYNC4;
 
             _log.debug("MOVER: {}@{} written, {} requested.", bytesWritten, offset, bytesWritten);
 
