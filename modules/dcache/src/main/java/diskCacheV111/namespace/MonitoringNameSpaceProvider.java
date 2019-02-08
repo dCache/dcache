@@ -19,7 +19,9 @@
 package diskCacheV111.namespace;
 
 import com.google.common.collect.Range;
+import com.google.common.escape.Escaper;
 import com.google.common.io.BaseEncoding;
+import com.google.common.net.UrlEscapers;
 import org.apache.curator.shaded.com.google.common.hash.Hashing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +33,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.dcache.namespace.events.EventType;
 
@@ -164,6 +168,11 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
         return returnAttr;
     }
 
+    private String serialiseLink(PnfsId id, String name)
+    {
+        return id + " " + UrlEscapers.urlFragmentEscaper().escape(name);
+    }
+
     @Override
     public FileAttributes createFile(Subject subject, String path,
             FileAttributes assignAttributes, Set<FileAttribute> requestAttributes)
@@ -173,6 +182,35 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
                 union(requestAttributes, PNFSID));
 
         notifyParents(ret.getPnfsId(), EventType.IN_CREATE, FileType.REGULAR);
+
+        if (ret.isDefined(FileAttribute.STORAGEINFO)) {
+            FsPath target = FsPath.create(path);
+            PnfsId parent = super.pathToPnfsid(Subjects.ROOT, target.parent().toString(), true);
+
+            ret.getStorageInfo().setKey("links", serialiseLink(parent, target.name()));
+        }
+
+        return ret;
+    }
+
+    @Override
+    public FileAttributes getFileAttributes(Subject subject, PnfsId id,
+            Set<FileAttribute> requestAttributes) throws CacheException
+    {
+        FileAttributes ret = super.getFileAttributes(subject, id, requestAttributes);
+
+        // REVISIT: we only need to do this if this getFileAttributes is for
+        // a file open.  Can we somehow avoid doing this for other
+        // getFileAttribute calls?
+        if (ret.isDefined(FileAttribute.STORAGEINFO)) {
+            // If the file has hard-links then we don't know which is being
+            // accessed by the client.  Notify on all of them.  This behaviour
+            // is different from Linux.
+            String links = super.find(Subjects.ROOT, id).stream()
+                .map(l -> serialiseLink(l.getParent(), l.getName()))
+                .collect(Collectors.joining("#"));
+            ret.getStorageInfo().setKey("links", links);
+        }
 
         return ret;
     }
