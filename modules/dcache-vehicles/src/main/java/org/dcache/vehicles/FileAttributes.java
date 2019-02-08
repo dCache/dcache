@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -20,6 +21,7 @@ import java.util.Set;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.acl.ACL;
@@ -56,7 +58,7 @@ import static org.dcache.namespace.FileAttribute.*;
  *
  * @since 1.9.5
  */
-public class FileAttributes implements Serializable {
+public class FileAttributes implements Serializable, Cloneable {
 
 
     private static final long serialVersionUID = -3689129805631724432L;
@@ -171,6 +173,106 @@ public class FileAttributes implements Serializable {
      * The cache class of a file.
      */
     private String _cacheClass;
+
+    @Override
+    public FileAttributes clone()
+    {
+        try {
+            FileAttributes clone = (FileAttributes) super.clone();
+
+            if (isDefined(ACL)) {
+                clone.setAcl(getAcl());
+            }
+
+            if (isDefined(SIZE)) {
+                clone.setSize(getSize());
+            }
+
+            if (isDefined(CHANGE_TIME)) {
+                clone.setChangeTime(getChangeTime());
+            }
+
+            if (isDefined(CREATION_TIME)) {
+                clone.setCreationTime(getCreationTime());
+            }
+
+            if (isDefined(ACCESS_TIME)) {
+                clone.setAccessTime(getAccessTime());
+            }
+
+            if (isDefined(MODIFICATION_TIME)) {
+                clone.setModificationTime(getModificationTime());
+            }
+
+            if (isDefined(CHECKSUM)) {
+                Set<Checksum> checksums = new HashSet<>(getChecksums());
+                clone.setChecksums(checksums);
+            }
+
+            if (isDefined(OWNER)) {
+                clone.setOwner(getOwner());
+            }
+
+            if (isDefined(OWNER_GROUP)) {
+                clone.setGroup(getGroup());
+            }
+
+            if (isDefined(MODE)) {
+                clone.setMode(getMode());
+            }
+
+            if (isDefined(NLINK)) {
+                clone.setNlink(getNlink());
+            }
+
+            if (isDefined(ACCESS_LATENCY)) {
+                clone.setAccessLatency(getAccessLatency());
+            }
+
+            if (isDefined(RETENTION_POLICY)) {
+                clone.setRetentionPolicy(getRetentionPolicy());
+            }
+
+            if (isDefined(TYPE)) {
+                clone.setFileType(getFileType());
+            }
+
+            if (isDefined(LOCATIONS)) {
+                Collection<String> locations = new ArrayList<>(getLocations());
+                clone.setLocations(locations);
+            }
+
+            if (isDefined(FLAGS)) {
+                Map<String,String> flags = new HashMap<>(getFlags());
+                clone.setFlags(flags);
+            }
+
+            if (isDefined(PNFSID)) {
+                clone.setPnfsId(getPnfsId());
+            }
+
+            if (isDefined(STORAGEINFO)) {
+                StorageInfo oldValue = getStorageInfo();
+                clone.setStorageInfo(oldValue.clone());
+            }
+
+            if (isDefined(STORAGECLASS)) {
+                clone.setStorageClass(getStorageClass());
+            }
+
+            if (isDefined(HSM)) {
+                clone.setHsm(getHsm());
+            }
+
+            if (isDefined(CACHECLASS)) {
+                clone.setCacheClass(getCacheClass());
+            }
+
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Bad clone: " + e, e);
+        }
+    }
 
     /** Throws IllegalStateException if attribute is not defined. */
     private void guard(FileAttribute attribute)

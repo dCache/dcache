@@ -915,27 +915,9 @@ public class PoolV4
 
         private void _initiateReplication(CacheEntry entry, String source)
         {
-            PnfsId pnfsId = entry.getPnfsId();
-            FileAttributes fileAttributes = entry.getFileAttributes();
-            StorageInfo storageInfo = fileAttributes.getStorageInfo().clone();
-
-            storageInfo.setKey("replication.source", source);
-
-            FileAttributes attributes = new FileAttributes();
-            attributes.setPnfsId(pnfsId);
-            attributes.setStorageInfo(storageInfo);
-            attributes.setStorageClass(fileAttributes.getStorageClass());
-            if (fileAttributes.isDefined(CHECKSUM)) {
-                attributes.setChecksums(fileAttributes.getChecksums());
-            }
-            attributes.setSize(fileAttributes.getSize());
-            attributes.setCacheClass(fileAttributes.getCacheClass());
-            attributes.setHsm(fileAttributes.getHsm());
-            attributes.setFlags(fileAttributes.getFlags());
+            FileAttributes attributes = entry.getFileAttributes().clone();
             attributes.setLocations(Collections.singleton(_poolName));
-            attributes.setSize(fileAttributes.getSize());
-            attributes.setAccessLatency(fileAttributes.getAccessLatency());
-            attributes.setRetentionPolicy(fileAttributes.getRetentionPolicy());
+            attributes.getStorageInfo().setKey("replication.source", source);
 
             PoolMgrReplicateFileMsg req =
                 new PoolMgrReplicateFileMsg(attributes,
