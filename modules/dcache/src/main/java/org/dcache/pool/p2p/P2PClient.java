@@ -190,8 +190,7 @@ public class P2PClient
                  * around.
                  */
                 if (t == null) {
-                    cancelCompanions(pnfsId,
-                                     "Replica already exists");
+                    cancelCompanions(pnfsId, "Replicated by another transfer");
                 }
             } catch (InterruptedException e) {
                 // Ignored, typically happens at cell shutdown
@@ -226,8 +225,9 @@ public class P2PClient
         if (_pnfs == null) {
             throw new IllegalStateException("PNFS stub not initialized");
         }
-        if (_repository.getState(fileAttributes.getPnfsId()) != ReplicaState.NEW) {
-            throw new IllegalStateException("Replica already exists");
+        ReplicaState state = _repository.getState(fileAttributes.getPnfsId());
+        if (state != ReplicaState.NEW) {
+            throw new IllegalStateException("Replica exists with state: " + state);
         }
 
         Callback cb = new Callback(callback);
