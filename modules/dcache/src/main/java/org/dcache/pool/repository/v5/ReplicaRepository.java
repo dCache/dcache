@@ -661,7 +661,12 @@ public class ReplicaRepository
                 entry.incrementLinkCount();
             }
 
-            return new ReadHandleImpl(_pnfs, entry, fileAttributes);
+            // Here we assume that all client-drive activity can (potentially)
+            // update the file's atime (hence does not have NOATIME flag), while
+            // all dCache-internal activity cannot (hence has NOATIME flag).
+            boolean isInternalActivity = flags.contains(OpenFlags.NOATIME);
+
+            return new ReadHandleImpl(_pnfs, entry, fileAttributes, isInternalActivity);
         } catch (FileNotInCacheException e) {
             /* Somebody got the idea that we have the file, so we make
              * sure to remove any stray pointers.

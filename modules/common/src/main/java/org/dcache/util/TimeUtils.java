@@ -578,4 +578,34 @@ public class TimeUtils
                 Long.parseLong(properties.getProperty(key)));
     }
 
+    /**
+     * Convert a TimeUnit to the equivalent ChronoUnit.
+     * REVISIT: this functionality is available from Java 9 onwards as
+     * {@code TimeUnit.toChronoUnit()}.
+     */
+    public static ChronoUnit toChronoUnit(TimeUnit unit)
+    {
+        switch (unit) {
+        case DAYS:
+            return ChronoUnit.DAYS;
+        case HOURS:
+            return ChronoUnit.HOURS;
+        case MINUTES:
+            return ChronoUnit.MINUTES;
+        case SECONDS:
+            return ChronoUnit.SECONDS;
+        case MILLISECONDS:
+            return ChronoUnit.MILLIS;
+        case MICROSECONDS:
+            return ChronoUnit.MICROS;
+        case NANOSECONDS:
+            return ChronoUnit.NANOS;
+        }
+        throw new IllegalArgumentException("Unknown TimeUnit: " + unit);
+    }
+
+    public static Duration durationOf(long value, TimeUnit unit)
+    {
+        return Duration.of(value, toChronoUnit(unit));
+    }
 }

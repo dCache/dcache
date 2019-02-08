@@ -110,8 +110,8 @@
     <constructor-arg value="${pool.name}"/>
   </bean>
 
-  <bean id="replica-store"
-	class="org.dcache.pool.repository.checksums.ChecksumReplicaStore">
+  <bean id="checksum-replica-store"
+        class="org.dcache.pool.repository.checksums.ChecksumReplicaStore">
       <constructor-arg>
           <bean class="org.dcache.pool.statistics.IoStatisticsReplicaStore">
               <constructor-arg>
@@ -126,6 +126,7 @@
                               <constructor-arg value="${pool.name}"/>
                           </bean>
                       </constructor-arg>
+
                       <constructor-arg ref="replica-state-policy"/>
                       <property name="poolName" value="${pool.name}"/>
                   </bean>
@@ -668,10 +669,57 @@
             <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
             <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
         </bean>
-
-
     </beans>
 
+    <beans profile="inotify-true">
+        <bean id="event-notifier" class="diskCacheV111.namespace.EventNotifier">
+            <description>Service allowing other dCache components to be notified of namespace events</description>
+            <property name="cellStub">
+                <bean class="org.dcache.cells.CellStub">
+                    <property name="timeout" value="10"/>
+                    <property name="timeoutUnit" value="SECONDS"/>
+                </bean>
+            </property>
 
+            <property name="dispatchExecutor">
+                <bean class="org.dcache.util.BoundedCachedExecutor"
+                      destroy-method="shutdownNow">
+                    <constructor-arg value="1"/>  <!-- Only a single thread -->
+                    <constructor-arg value="${pool.inotify-generation.backlog.initial}"/>
+                </bean>
+            </property>
 
+            <property name="senderExecutor">
+                <bean class="java.util.concurrent.Executors"
+                      factory-method="newSingleThreadExecutor"
+                      destroy-method="shutdownNow"/>
+            </property>
+            <property name="eventBatchSize"
+                      value="${pool.inotify-generation.message-batch-size}"/>
+            <property name="maximumQueuedEvents"
+                      value="${pool.inotify-generation.backlog.per-door}"/>
+        </bean>
+
+	<bean id="notification-amplifier"
+	      class="org.dcache.pool.repository.inotify.NotificationAmplifier">
+	    <constructor-arg ref="event-notifier"/>
+	</bean>
+
+	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+	    <property name="targetObject" ref="rep"/>
+	    <property name="targetMethod" value="addListener"/>
+	    <property name="arguments" ref="notification-amplifier"/>
+	</bean>
+
+	<bean id="replica-store"
+	      class="org.dcache.pool.repository.inotify.InotifyReplicaStore">
+	    <constructor-arg ref="checksum-replica-store"/>
+	    <constructor-arg ref="notification-amplifier"/>
+	    <constructor-arg value="#{ T(org.dcache.util.TimeUtils).durationOf('${pool.inotify-generation.io-suppression}', '${pool.inotify-generation.io-suppression.unit}') }"/>
+	</bean>
+    </beans>
+
+    <beans profile="inotify-false">
+        <bean id="replica-store" parent="checksum-replica-store"/>
+    </beans>
 </beans>
