@@ -17,6 +17,7 @@
  */
 package org.dcache.services.httpd;
 
+import org.dcache.util.NetLoggerBuilder;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
@@ -24,14 +25,37 @@ import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletResponse;
+
 class HttpdRequestLog extends AbstractLifeCycle
     implements RequestLog
 {
-    private static final Logger LOGGER
-            = LoggerFactory.getLogger(HttpdRequestLog.class);
+    private final Logger ACCESS_LOGGER =
+            LoggerFactory.getLogger("org.dcache.access.httpd");
 
     public void log(Request request, Response response)
     {
-        LOGGER.trace("request: {}; response: {}", request, response);
+        NetLoggerBuilder log = new NetLoggerBuilder(logLevel(response), "org.dcache.httpd.request");
+        log.add("request.method", request.getMethod());
+        log.add("request.scheme", request.getScheme());
+        log.add("request.url", request.getRequestURL());
+        log.add("request.hostname", request.getLocalName());
+        log.add("request.remoteIP", request.getRemoteAddr());
+
+        log.add("response.code", response.getStatus());
+        log.toLogger(ACCESS_LOGGER);
     }
+
+    private static NetLoggerBuilder.Level logLevel(HttpServletResponse response)
+    {
+        int code = response.getStatus();
+        if (code >= 500) {
+            return NetLoggerBuilder.Level.ERROR;
+        } else if (code >= 400) {
+            return NetLoggerBuilder.Level.WARN;
+        } else {
+            return NetLoggerBuilder.Level.INFO;
+        }
+    }
+
 }
