@@ -1,5 +1,8 @@
 package org.dcache.gplazma.plugins;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -20,6 +23,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * A {@link GPlazmaAuthenticationPlugin} implementation which verifies
@@ -30,6 +34,7 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  */
 public class JaasPlugin implements GPlazmaAuthenticationPlugin
 {
+    private static final Logger LOG = LoggerFactory.getLogger(JaasPlugin.class);
     private static final String NAME = "gplazma.jaas.name";
 
     private final String _name;
@@ -59,6 +64,9 @@ public class JaasPlugin implements GPlazmaAuthenticationPlugin
             loginContext.login();
             identifiedPrincipals.addAll(loginContext.getSubject().getPrincipals());
             tryToLogout(loginContext);
+        } catch (SecurityException e) {
+            LOG.error("Plugin not authorised to use JAAS: {}", messageOrClassName(e));
+            throw new AuthenticationException("Not authorised to use JAAS");
         } catch (LoginException e) {
             throw new AuthenticationException(e.getMessage(), e);
         }
