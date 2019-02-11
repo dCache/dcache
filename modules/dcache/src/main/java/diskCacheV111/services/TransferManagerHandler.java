@@ -314,8 +314,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             //        pool.  For an attempted write (pool pulling the file)
             //        we must fail the transfer as we don't know if a mover
             //        was started.
-            sendErrorReply(CacheException.SELECTED_POOL_FAILED,
-                    "Failed while waiting for mover to start: " + error);
+            sendErrorReply(CacheException.SELECTED_POOL_FAILED, "Failed while"
+                    + " waiting for mover on " + pool.getAddress() + " to"
+                    + " start: "+ error);
             break;
 
         case WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE:
