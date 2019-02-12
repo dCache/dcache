@@ -19,6 +19,7 @@
 package org.dcache.xrootd.plugins;
 
 import com.google.common.net.HostAndPort;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.haproxy.HAProxyCommand;
@@ -72,7 +73,7 @@ public class ProxyAccessLogHandler extends AccessLogHandler
                     log.add("socket.remote", remoteAddress);
                     log.add("socket.local", localAddress);
                     log.toLogger(logger);
-                    ctx.channel().pipeline().replace(this, null, handler);
+                    replaceWith(ctx, handler);
                 } else if (!Objects.equals(destinationAddress, localAddress.getAddress().getHostAddress())) {
                     /* The above check is a workaround for what looks like a bug in HAProxy - health checks
                      * should generate a LOCAL command, but it appears they do actually use PROXY.
@@ -86,11 +87,16 @@ public class ProxyAccessLogHandler extends AccessLogHandler
                             HostAndPort.fromParts(destinationAddress, proxyMessage.destinationPort()));
                     log.add("socket.local", localAddress);
                     log.toLogger(logger);
-                    ctx.channel().pipeline().replace(this, null, handler);
+                    replaceWith(ctx, handler);
                 }
             }
         }
         super.channelRead(ctx, msg);
+    }
+
+    protected void replaceWith(ChannelHandlerContext ctx, ChannelHandler handler)
+    {
+        ctx.channel().pipeline().replace(this, null, handler);
     }
 
     @Override
