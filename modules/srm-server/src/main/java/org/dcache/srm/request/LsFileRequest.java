@@ -122,10 +122,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
             if (!getState().isFinal()) {
                 try {
                     LsRequest parent = getContainerRequest();
-                    long t0 = 0;
-                    if (LOGGER.isDebugEnabled()) {
-                        t0 = System.currentTimeMillis();
-                    }
+                    long t0 = System.currentTimeMillis();
 
                     String fileId = SRM.getSRM().getUploadFileId(surl);
 
@@ -160,9 +157,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                                        parent.getNumOfLevels(),
                                                        parent.getLongFormat());
                     }
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("LsFileRequest.run(), TOOK {}", (System.currentTimeMillis() - t0));
-                    }
+                    LOGGER.debug("LsFileRequest.run(), TOOK {}", (System.currentTimeMillis() - t0));
                     try {
                         getContainerRequest().resetRetryDeltaTime();
                     } catch (SRMInvalidRequestException ire) {

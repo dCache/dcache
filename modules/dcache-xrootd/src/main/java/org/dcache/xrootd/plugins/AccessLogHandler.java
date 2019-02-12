@@ -130,7 +130,7 @@ public class AccessLogHandler extends ChannelDuplexHandler
                 level = INFO;
             }
 
-            if (level == ERROR || level == INFO && logger.isInfoEnabled() || level == DEBUG && logger.isDebugEnabled()) {
+            if (level == ERROR || level == INFO && logger.isInfoEnabled() || level == DEBUG) {
                 NetLoggerBuilder log = new NetLoggerBuilder(level, "org.dcache.xrootd.request").omitNullValues();
                 log.add("session", CDC.getSession());
                 log.add("request", getRequestId(request));

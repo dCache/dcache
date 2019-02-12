@@ -222,9 +222,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                          new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
         pipeline.addLast("encoder", new XrootdEncoder());
         pipeline.addLast("decoder", new XrootdDecoder());
-        if (LOGGER.isDebugEnabled()) {
-            pipeline.addLast("logger", new LoggingHandler());
-        }
+        pipeline.addLast("logger", new LoggingHandler());
 
         /*
          *  This needs to precede the other plugins in order for

@@ -160,9 +160,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
         pipeline.addLast("decoder", new HttpRequestDecoder(4096, 8192, getChunkSize(), true));
         pipeline.addLast("encoder", new HttpResponseEncoder());
 
-        if (LOGGER.isDebugEnabled()) {
-            pipeline.addLast("logger", new LoggingHandler());
-        }
+        pipeline.addLast("logger", new LoggingHandler());
         pipeline.addLast("idle-state-handler",
                 new IdleStateHandler(0,
                         0,

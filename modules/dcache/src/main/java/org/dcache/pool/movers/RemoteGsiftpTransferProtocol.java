@@ -182,10 +182,8 @@ public class RemoteGsiftpTransferProtocol
             ServerException, ClientException, KeyStoreException, URISyntaxException
     {
         _pnfsId = fileAttributes.getPnfsId();
-        if (_log.isDebugEnabled()) {
-            _log.debug("runIO()\n\tprotocol={},\n\tStorageInfo={},\n\tPnfsId={},\n\taccess ={}",
-                    protocol, StorageInfos.extractFrom(fileAttributes), _pnfsId, access );
-        }
+        _log.debug("runIO()\n\tprotocol={},\n\tStorageInfo={},\n\tPnfsId={},\n\taccess ={}",
+                protocol, StorageInfos.extractFrom(fileAttributes), _pnfsId, access );
         if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
         }

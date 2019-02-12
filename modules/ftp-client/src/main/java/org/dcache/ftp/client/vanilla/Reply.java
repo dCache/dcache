@@ -74,9 +74,7 @@ public class Reply
     {
         logger.debug("read 1st line");
         String line = input.readLine();
-        if (logger.isDebugEnabled()) {
-            logger.debug("1st line: {}", line);
-        }
+        logger.debug("1st line: {}", line);
 
         //end of stream
         if (line == null) {
@@ -131,13 +129,11 @@ public class Reply
             String lastLineStarts = codeString + ' ';
             //platform dependent line separator
             String lineSeparator = System.getProperty("line.separator");
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        "multiline reply; last line should start with ->{}<-",
-                        lastLineStarts);
-                logger.debug("lenght of line.separator on this OS: {}",
-                             lineSeparator.length());
-            }
+            logger.debug(
+                    "multiline reply; last line should start with ->{}<-",
+                    lastLineStarts);
+            logger.debug("lenght of line.separator on this OS: {}",
+                         lineSeparator.length());
             StringBuilder buf = new StringBuilder(message);
             for (; ; ) {
                 logger.debug("read line");

@@ -322,7 +322,7 @@ class CellGlue
         int n = threadGroup.enumerate(threads);
         for (int i = 0; i < n; i++) {
             Thread thread = threads[i];
-            if (thread.isAlive() && !thread.isDaemon() || LOGGER.isDebugEnabled()) {
+            if (thread.isAlive() && !thread.isDaemon()) {
                 LOGGER.warn("Thread: {} [{}{}{}] ({}) {}",
                             thread.getName(),
                             (thread.isAlive() ? "A" : "-"),

@@ -329,14 +329,13 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         response.setReturnStatus(getTReturnStatus());
         TBringOnlineRequestFileStatus[] statusArray = getArrayOfTBringOnlineRequestFileStatus(surls);
         response.setArrayOfFileStatuses(new ArrayOfTBringOnlineRequestFileStatus(statusArray));
-        if (LOGGER.isDebugEnabled()) {
-            StringBuilder s = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
-            s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
-            for (TBringOnlineRequestFileStatus fs : statusArray) {
-                s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
-            }
-            LOGGER.debug(s.toString());
+        StringBuilder s = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
+        s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
+        for (TBringOnlineRequestFileStatus fs : statusArray) {
+            s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
         }
+        LOGGER.debug(s.toString());
+        
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }

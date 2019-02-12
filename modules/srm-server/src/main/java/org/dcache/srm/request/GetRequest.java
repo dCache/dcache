@@ -318,14 +318,12 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         TGetRequestFileStatus[] statusArray = getArrayOfTGetRequestFileStatus(surls);
         response.setArrayOfFileStatuses(new ArrayOfTGetRequestFileStatus(statusArray));
 
-        if (LOGGER.isDebugEnabled()) {
-            StringBuilder s = new StringBuilder("getSrmStatusOfGetRequestResponse:");
-            s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
-            for (TGetRequestFileStatus fs : statusArray) {
-                s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
-            }
-            LOGGER.debug(s.toString());
+        StringBuilder s = new StringBuilder("getSrmStatusOfGetRequestResponse:");
+        s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
+        for (TGetRequestFileStatus fs : statusArray) {
+            s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
         }
+        LOGGER.debug(s.toString());
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }

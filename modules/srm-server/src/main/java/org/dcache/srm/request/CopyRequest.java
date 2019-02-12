@@ -399,11 +399,9 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             }
             String[] remoteSurlsUniqueArray = remoteSurlToFileReqIds.keySet()
                             .toArray(new String[remoteSurlToFileReqIds.size()]);
-            if (LOGGER.isDebugEnabled()) {
-                for (int i = 0; i < remoteSurlsUniqueArray.length; ++i) {
-                    LOGGER.debug("remoteSurlsUniqueArray[{}]={}", i,
-                            remoteSurlsUniqueArray[i]);
-                }
+            for (int i = 0; i < remoteSurlsUniqueArray.length; ++i) {
+                LOGGER.debug("remoteSurlsUniqueArray[{}]={}", i,
+                        remoteSurlsUniqueArray[i]);
             }
             // need to fetch files from remote SRM system
             setRemoteTurlClient(new RemoteTurlGetterV2(getStorage(),

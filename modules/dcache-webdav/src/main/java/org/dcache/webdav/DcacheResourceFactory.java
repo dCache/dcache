@@ -605,9 +605,7 @@ public class DcacheResourceFactory
     @Override
     public Resource getResource(String host, String requestPath)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Resolving {}", HttpManager.request().getAbsoluteUrl());
-        }
+        _log.debug("Resolving {}", HttpManager.request().getAbsoluteUrl());
 
         FsPath dCachePath = _pathMapper.asDcachePath(ServletRequest.getRequest(),
                 requestPath, m -> new ForbiddenException(m, null));
