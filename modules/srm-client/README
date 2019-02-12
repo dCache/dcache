@@ -189,4 +189,5 @@ Example of srm copy (gsiftp to srm):
    srm:/stkendca.fnal.gov:24128/targetdir/myfile1.ext 
    file:////tmp/myfile1.ext
 
+Information..
    
