@@ -25,7 +25,7 @@ import org.dcache.acl.unix.AMUnix;
  */
 public class AclUnixMapper {
 
-    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclUnixMapper.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclUnixMapper.class.getName());
 
     private static AclUnixMapper _SINGLETON;
     static {
@@ -88,7 +88,7 @@ public class AclUnixMapper {
                 break;
 
             default:
-                logger.info("Unsupported who: {}", who);
+                LOGGER.info("Unsupported who: {}", who);
             }
         }
 

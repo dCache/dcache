@@ -25,17 +25,17 @@ import org.dcache.auth.Subjects;
  */
 public class AclMapper {
 
-    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclMapper.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclMapper.class.getName());
 
     private AclMapper() {
     }
 
     public static Permission getPermission(Subject subject, Origin origin, Owner owner, ACL acl) {
-        // if ( logger.isDebugEnabled() )
-        // logger.debug("Subject: {}", subject);
-        // logger.debug("Origin: {}", origin);
-        // logger.debug("Owner: {}", owner);
-        // logger.debug("ACL: {}", acl);
+        // if ( LOGGER.isDebugEnabled() )
+        // LOGGER.debug("Subject: {}", subject);
+        // LOGGER.debug("Origin: {}", origin);
+        // LOGGER.debug("Owner: {}", owner);
+        // LOGGER.debug("ACL: {}", acl);
         // }
 
         Permission permACL = new Permission();
@@ -43,8 +43,8 @@ public class AclMapper {
         try {
             if ( Subjects.isRoot(subject) ) {
                 permACL.setAll();
-                if ( logger.isDebugEnabled() ) {
-                    logger.debug("ROOT has an access to everything.");
+                if ( LOGGER.isDebugEnabled() ) {
+                    LOGGER.debug("ROOT has an access to everything.");
                 }
                 return permACL;
             }
@@ -67,8 +67,8 @@ public class AclMapper {
                     }
                 }
 
-                // if ( logger.isDebugEnabled() )
-                // logger.debug("Step {}) {}", ace.getOrder(), (new Permission(def_msk,
+                // if ( LOGGER.isDebugEnabled() )
+                // LOGGER.debug("Step {}) {}", ace.getOrder(), (new Permission(def_msk,
                 // allow_msk).asString(rsType)));
             }
 
@@ -76,10 +76,10 @@ public class AclMapper {
             permACL.setAllowMsk(allow_msk);
 
         } catch (ACLException e) {
-            logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
         } finally {
-            if ( logger.isDebugEnabled() ) {
-                logger.debug("Getted Permission: {}", (rsType == null ? permACL
+            if ( LOGGER.isDebugEnabled() ) {
+                LOGGER.debug("Getted Permission: {}", (rsType == null ? permACL
                         .toString() : permACL.asString(rsType)));
             }
         }
@@ -97,12 +97,12 @@ public class AclMapper {
     }
 
     private static Permission getPermission(Subject subject, Origin origin, Owner owner, ACE ace, RsType rsType) throws ACLException {
-        // if ( logger.isDebugEnabled() ) {
-        // logger.debug("Subject: {}", subject);
-        // logger.debug("Origin: {}", origin);
-        // logger.debug("Owner: {}", owner);
-        // logger.debug("ACE: {}", ace.toNFSv4String(rsType));
-        // logger.debug("rsType: {}", rsType);
+        // if ( LOGGER.isDebugEnabled() ) {
+        // LOGGER.debug("Subject: {}", subject);
+        // LOGGER.debug("Origin: {}", origin);
+        // LOGGER.debug("Owner: {}", owner);
+        // LOGGER.debug("ACE: {}", ace.toNFSv4String(rsType));
+        // LOGGER.debug("rsType: {}", rsType);
         // }
 
         Permission perm = null;
