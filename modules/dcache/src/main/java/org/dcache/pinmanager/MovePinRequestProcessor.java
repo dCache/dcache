@@ -55,7 +55,7 @@ import static org.springframework.transaction.annotation.Isolation.REPEATABLE_RE
 public class MovePinRequestProcessor
     implements CellMessageReceiver
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(MovePinRequestProcessor.class);
 
     private static final long POOL_LIFETIME_MARGIN = MINUTES.toMillis(30);
@@ -241,7 +241,7 @@ public class MovePinRequestProcessor
                 _dao.delete(tmpPin);
             }
 
-            _log.info("Moved pins for {} from {} to {}", pnfsId, source, target);
+            LOGGER.info("Moved pins for {} from {} to {}", pnfsId, source, target);
         } catch (NoRouteToCellException e) {
             throw new CacheException("Failed to move pin due to communication failure: " + e.getDestinationPath(), e);
         }
@@ -279,7 +279,7 @@ public class MovePinRequestProcessor
                 message.setExpirationTime(pin.getExpirationTime());
             }
 
-            _log.info("Extended pin for {} ({})", pin.getPnfsId(), pin.getPinId());
+            LOGGER.info("Extended pin for {} ({})", pin.getPnfsId(), pin.getPinId());
 
             return message;
         } catch (NoRouteToCellException e) {

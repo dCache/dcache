@@ -47,7 +47,7 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 public class ListDirectoryHandler
     implements CellMessageReceiver, DirectoryListSource
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(ListDirectoryHandler.class);
 
     private final PnfsHandler _pnfs;
@@ -173,7 +173,7 @@ public class ListDirectoryHandler
                 if (stream != null) {
                     stream.put(reply);
                 } else {
-                    _log.warn("Received list result for an unknown request. Directory listing was possibly incomplete.");
+                    LOGGER.warn("Received list result for an unknown request. Directory listing was possibly incomplete.");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -274,7 +274,7 @@ public class ListDirectoryHandler
                     }
                 }
             } catch (CacheException e) {
-                _log.error("Listing of {} incomplete: {}", _path, e.getMessage());
+                LOGGER.error("Listing of {} incomplete: {}", _path, e.getMessage());
                 return false;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

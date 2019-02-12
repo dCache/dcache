@@ -93,8 +93,7 @@ import static org.dcache.services.history.pools.PoolListingService.ALL;
  * with updating and aggregating histogram data.</p>
  */
 public final class PoolInfoCollectorUtils {
-    private static final Logger LOGGER
-                    = LoggerFactory.getLogger(PoolInfoCollectorUtils.class);
+
 
     /**
      * <p>Placeholder used internally for updating and aggregating

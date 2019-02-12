@@ -17,7 +17,7 @@ import org.dcache.vehicles.FileAttributes;
 
 public class PinTask
 {
-    private static final Logger _log = LoggerFactory.getLogger(PinTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PinTask.class);
 
     private final PinManagerPinMessage _request;
     private final MessageReply<PinManagerPinMessage> _reply;
@@ -123,13 +123,13 @@ public class PinTask
     public void fail(int rc, String error)
     {
         _reply.fail(_request, rc, error);
-        _log.warn("Failed to pin {}: {} [{}]", _pin.getPnfsId(), error, rc);
+        LOGGER.warn("Failed to pin {}: {} [{}]", _pin.getPnfsId(), error, rc);
     }
 
     public void success()
     {
         _request.setPin(_pin);
         _reply.reply(_request);
-        _log.info("Pinned {} on {} ({})", _pin.getPnfsId(), _pin.getPool(), _pin.getPinId());
+        LOGGER.info("Pinned {} on {} ({})", _pin.getPnfsId(), _pin.getPool(), _pin.getPinId());
     }
 }

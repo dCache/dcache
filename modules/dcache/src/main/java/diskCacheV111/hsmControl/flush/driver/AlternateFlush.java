@@ -30,7 +30,7 @@ import org.dcache.util.Args;
  */
  public class AlternateFlush implements HsmFlushSchedulable {
 
-     private static final Logger _log =
+     private static final Logger LOGGER =
          LoggerFactory.getLogger(AlternateFlush.class);
 
      private HsmFlushControlCore _core;
@@ -110,7 +110,7 @@ import org.dcache.util.Args;
      private static final int QUERY_ALL_POOLS_IO_MODE = 1 ;
 
      public AlternateFlush( CellAdapter cell , HsmFlushControlCore core ){
-         _log.info("AlternateFlush started");
+         LOGGER.info("AlternateFlush started");
          _core        = core ;
          _interpreter = new CommandInterpreter( this ) ;
      }
@@ -122,7 +122,7 @@ import org.dcache.util.Args;
      @Override
      public void init(){
          if(_evt) {
-             _log.info("EVENT : Initiating ...");
+             LOGGER.info("EVENT : Initiating ...");
          }
 
          Args args = _core.getDriverArgs() ;
@@ -130,13 +130,13 @@ import org.dcache.util.Args;
          // printout what we got from our master
          //
          for( int i = 0 ; i < args.argc() ; i++ ){
-             _log.info("    args {} : {}", i, args.argv(i)) ;
+             LOGGER.info("    args {} : {}", i, args.argv(i)) ;
          }
          for( int i = 0 ; i < args.optc() ; i++ ){
-             _log.info("    opts {}={}", args.optv(i), args.getOpt(args.optv(i))) ;
+             LOGGER.info("    opts {}={}", args.optv(i), args.getOpt(args.optv(i))) ;
          }
          for (Object pool : _core.getConfiguredPools()) {
-             _log.info("    configured pool : {}", pool.toString());
+             LOGGER.info("    configured pool : {}", pool.toString());
          }
          //
          //  reset the pool modes of all pools we are responsible for.
@@ -146,7 +146,7 @@ import org.dcache.util.Args;
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
              pool.setDriverHandle(new Pool(pool.getName(), pool));
              pool.setReadOnly(false);
-             _log.info("init : setting readonly=false : {}", pool.getName());
+             LOGGER.info("init : setting readonly=false : {}", pool.getName());
          }
 
      }
@@ -154,7 +154,7 @@ import org.dcache.util.Args;
      public void propertiesUpdated( Map<String,Object> properties ){
 
         if(_evt) {
-            _log.info("EVENT : propertiesUpdated : {}", properties);
+            LOGGER.info("EVENT : propertiesUpdated : {}", properties);
         }
 
         Set<String> keys = new HashSet<>( properties.keySet() ) ;
@@ -194,7 +194,7 @@ import org.dcache.util.Args;
                          }
                          _countToFlush = count;
                      } catch (Exception ee) {
-                         _log.warn("Exception while seting {} {}", key, ee.toString());
+                         LOGGER.warn("Exception while seting {} {}", key, ee.toString());
                      }
                  }
                  break;
@@ -210,7 +210,7 @@ import org.dcache.util.Args;
                          }
                          _flushAtOnce = count;
                      } catch (Exception ee) {
-                         _log.warn("Exception while seting {} {}", key, ee.toString());
+                         LOGGER.warn("Exception while seting {} {}", key, ee.toString());
                      }
                  }
                  break;
@@ -227,7 +227,7 @@ import org.dcache.util.Args;
 
                          _percentageToFlush = percent;
                      } catch (Exception ee) {
-                         _log.warn("Exception while seting {} {}", key, ee.toString());
+                         LOGGER.warn("Exception while seting {} {}", key, ee.toString());
                      }
                  }
                  break;
@@ -254,7 +254,7 @@ import org.dcache.util.Args;
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
          if(_evt) {
-             _log.info("EVENT : poolIoModeUpdated : {}", pool);
+             LOGGER.info("EVENT : poolIoModeUpdated : {}", pool);
          }
 
          Pool ip = getInternalPool( pool ) ;
@@ -266,12 +266,12 @@ import org.dcache.util.Args;
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          if(_evt) {
-             _log.info("EVENT : flushingDone : pool ={};class={}", poolName, storageClassName /* + "flushInfo="+flushInfo */);
+             LOGGER.info("EVENT : flushingDone : pool ={};class={}", poolName, storageClassName /* + "flushInfo="+flushInfo */);
          }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
-            _log.warn("flushingDone for a non configured pool : {}", poolName);
+            LOGGER.warn("flushingDone for a non configured pool : {}", poolName);
             return ;
          }
 
@@ -282,12 +282,12 @@ import org.dcache.util.Args;
 
          if( ip.flushCounter <= 0 ){
              ip.flushCounter = 0 ;
-             _log.info("flushingDone : pool finished all flushing : {} ; setting back to readWrite mode", poolName);
+             LOGGER.info("flushingDone : pool finished all flushing : {} ; setting back to readWrite mode", poolName);
              pool.setReadOnly(false);
          }
      /*
         if( ! ip.isFlushing() ){
-             _log.info("flushingDone : pool finished all flushing : {}  ; setting back to readWrite mode", poolName);
+             LOGGER.info("flushingDone : pool finished all flushing : {}  ; setting back to readWrite mode", poolName);
              pool.setReadOnly(false);
         }
       */
@@ -296,13 +296,13 @@ import org.dcache.util.Args;
      @Override
      public void reset(){
          if(_evt) {
-             _log.info("EVENT : reset");
+             LOGGER.info("EVENT : reset");
          }
      }
      @Override
      public void timer(){
          if(_evt) {
-             _log.info("EVENT : timer");
+             LOGGER.info("EVENT : timer");
          }
          //
          //
@@ -318,7 +318,7 @@ import org.dcache.util.Args;
             }
             set.add( poolName ) ;
 
-            _log.info("timer : Good candidate to flush : {}", poolName);
+            LOGGER.info("timer : Good candidate to flush : {}", poolName);
 
             Pool ip = getInternalPool( pool ) ;
             if( ! ip.modeReady ) {
@@ -335,10 +335,10 @@ import org.dcache.util.Args;
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
          if(_evt) {
-             _log.info("EVENT : poolFlushInfoUpdated : {}", pool.getName());
+             LOGGER.info("EVENT : poolFlushInfoUpdated : {}", pool.getName());
          }
          if( ! pool.isActive() ){
-             _log.info( "poolFlushInfoUpdated : Pool : {} inactive", poolName);
+             LOGGER.info( "poolFlushInfoUpdated : Pool : {} inactive", poolName);
              return ;
          }
          //
@@ -353,7 +353,7 @@ import org.dcache.util.Args;
      @Override
      public void command( Args args  ){
          if(_evt) {
-             _log.info("EVENT : command : {}", args);
+             LOGGER.info("EVENT : command : {}", args);
          }
          if (args.argc() == 0) {
              return;
@@ -364,27 +364,27 @@ import org.dcache.util.Args;
                  throw new
                          Exception("Null pointer from command call");
              }
-             _log.info("Command returns : {}", reply.toString() );
+             LOGGER.info("Command returns : {}", reply.toString() );
          }catch(Exception ee ){
-             _log.warn("Command returns an exception ({}) : {}", ee.getClass().getName(), ee.toString());
+             LOGGER.warn("Command returns an exception ({}) : {}", ee.getClass().getName(), ee.toString());
          }
      }
      @Override
      public void prepareUnload(){
          if(_evt) {
-             _log.info("EVENT : Preparing unload (ignoring)");
+             LOGGER.info("EVENT : Preparing unload (ignoring)");
          }
      }
      @Override
      public void configuredPoolAdded( String poolName ){
 
          if(_evt) {
-             _log.info("EVENT : Configured pool added : {}", poolName);
+             LOGGER.info("EVENT : Configured pool added : {}", poolName);
          }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
-            _log.warn("Pool not found in _core database : {}", poolName);
+            LOGGER.warn("Pool not found in _core database : {}", poolName);
             return ;
          }
 
@@ -396,13 +396,13 @@ import org.dcache.util.Args;
      @Override
      public void poolSetupUpdated(){
          if(_evt) {
-             _log.info("EVENT : Pool Setup updated (ignoring)");
+             LOGGER.info("EVENT : Pool Setup updated (ignoring)");
          }
      }
      @Override
      public void configuredPoolRemoved( String poolName ){
          if(_evt) {
-             _log.info("EVENT : Configured pool removed : {}  (ignoring)", poolName);
+             LOGGER.info("EVENT : Configured pool removed : {}  (ignoring)", poolName);
          }
      }
      //-------------------------------------------------------------------------------------------
@@ -424,7 +424,7 @@ import org.dcache.util.Args;
 
             Pool ip = (Pool)pool.getDriverHandle() ;
             if( ip == null ){
-               _log.warn("getInternalPool : Unconfigured pool arrived {}; configuring", pool.getName());
+               LOGGER.warn("getInternalPool : Unconfigured pool arrived {}; configuring", pool.getName());
                pool.setDriverHandle( ip = new Pool( pool.getName() , pool ) ) ;
             }
             return ip ;
@@ -445,18 +445,18 @@ import org.dcache.util.Args;
 
              long size = flush.getTotalPendingFileSize();
 
-             _log.info("flushPool : class = {} size = {} flushing = {}", info.getName(), size, info.isFlushing());
+             LOGGER.info("flushPool : class = {} size = {} flushing = {}", info.getName(), size, info.isFlushing());
              //
              // is precious size > 0 and are we not yet flushing ?
              //
              try {
                  if ((size > 0L) && !info.isFlushing()) {
-                     _log.info("flushPool : !!! flushing {} {}", pool.getName(), info.getName());
+                     LOGGER.info("flushPool : !!! flushing {} {}", pool.getName(), info.getName());
                      info.flush(_flushAtOnce);
                      flushing++;
                  }
              } catch (Exception ee) {
-                 _log.warn("flushPool : Problem flushing {} {} {}", pool.getName(), info.getName(), ee.toString());
+                 LOGGER.warn("flushPool : Problem flushing {} {} {}", pool.getName(), info.getName(), ee.toString());
              }
 
          }
@@ -512,7 +512,7 @@ import org.dcache.util.Args;
 
          for (HsmFlushControlCore.Pool pool : pools) {
              if (_ntf) {
-                 _log.info("nextToFlush : checking pool {}", pool);
+                 LOGGER.info("nextToFlush : checking pool {}", pool);
              }
 
              if (!pool.isActive()) {
@@ -523,7 +523,7 @@ import org.dcache.util.Args;
 
              if (ip.isFlushing()) {
                  if (_ntf) {
-                     _log.info("nextToFlush : is already flushing {}", pool.getName());
+                     LOGGER.info("nextToFlush : is already flushing {}", pool.getName());
                  }
              } else {
                  list.add(ip);
@@ -534,12 +534,12 @@ import org.dcache.util.Args;
          //
          if( list.size() < 2 ){
              if(_ntf) {
-                 _log.info("nextToFlush : currently not enough pools to write on ({})", list.size());
+                 LOGGER.info("nextToFlush : currently not enough pools to write on ({})", list.size());
              }
              return null ;
          }
          if(_ntf) {
-             _log.info("nextToFlush : possible candidates : {}", list);
+             LOGGER.info("nextToFlush : possible candidates : {}", list);
          }
          /**
            *  Get pool with highest pending file count and pool with highest
@@ -561,11 +561,11 @@ import org.dcache.util.Args;
              }
          }
          if(_ntf) {
-             _log.info("nextToFlush : highest percentage found for : {} ({})", poolWithHighestPercentage
+             LOGGER.info("nextToFlush : highest percentage found for : {} ({})", poolWithHighestPercentage
                      .pool.getName(), highestPercentage );
          }
          if(_ntf) {
-             _log.info("nextToFlush : highest counter    found for : {} ({})", poolWithHighestCounter
+             LOGGER.info("nextToFlush : highest counter    found for : {} ({})", poolWithHighestCounter
                      .pool.getName(), highestCounter );
          }
          if( highestPercentage > _percentageToFlush  ) {

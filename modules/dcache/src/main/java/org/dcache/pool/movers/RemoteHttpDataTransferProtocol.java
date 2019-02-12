@@ -137,7 +137,7 @@ import static org.dcache.util.Strings.toThreeSigFig;
 public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         ChecksumMover
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(RemoteHttpDataTransferProtocol.class);
 
     /** Maximum time to wait when establishing a connection. */
@@ -218,7 +218,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             ProtocolInfo genericInfo, Set<? extends OpenOption> access)
             throws CacheException, IOException, InterruptedException
     {
-        _log.debug("info={}, attributes={},  access={}", genericInfo,
+        LOGGER.debug("info={}, attributes={},  access={}", genericInfo,
                 attributes, access);
         RemoteHttpDataTransferProtocolInfo info =
                 (RemoteHttpDataTransferProtocolInfo) genericInfo;
@@ -229,7 +229,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                                 try {
                                     c.addType(t);
                                 } catch (IOException e) {
-                                    _log.warn("Unable to calculate checksum {}: {}",
+                                    LOGGER.warn("Unable to calculate checksum {}: {}",
                                             t, messageOrClassName(e));
                                 }
                             });
@@ -429,7 +429,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                             String percent = toThreeSigFig(100 * _channel.getBytesTransferred() / (double)_channel.size(), 1000);
                             message.append(" (").append(percent).append("%)");
                         } catch (IOException io) {
-                            _log.warn("failed to discover file size: {}", messageOrClassName(io));
+                            LOGGER.warn("failed to discover file size: {}", messageOrClassName(io));
                         }
                     }
                     throw new ThirdPartyTransferFailedCacheException(message.toString(), e);

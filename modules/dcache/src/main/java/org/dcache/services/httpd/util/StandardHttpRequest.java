@@ -31,7 +31,7 @@ import java.util.Base64;
 public class StandardHttpRequest implements HttpRequest {
     private static final Splitter PATH_SPLITTER
         = Splitter.on('/').omitEmptyStrings();
-    private static final Logger logger
+    private static final Logger LOGGER
         = LoggerFactory.getLogger(StandardHttpRequest.class);
 
     private final OutputStream out;
@@ -146,7 +146,7 @@ public class StandardHttpRequest implements HttpRequest {
             return;
         }
         auth = new String(Base64.getDecoder().decode(st.nextToken()));
-        logger.info("Authentication : >{}<", auth);
+        LOGGER.info("Authentication : >{}<", auth);
         st = new StringTokenizer(auth, ":");
         if (st.countTokens() < 2) {
             return;

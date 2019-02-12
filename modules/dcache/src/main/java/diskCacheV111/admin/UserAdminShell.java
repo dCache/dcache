@@ -99,7 +99,7 @@ public class UserAdminShell
         extends CommandInterpreter
         implements Completer
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(UserAdminShell.class);
 
     /**
@@ -320,7 +320,7 @@ public class UserAdminShell
         /* Log and ignore any errors. */
         return catchingAsync(future, Throwable.class,
                              t -> {
-                                 _log.debug("Failed to query the System cell of domain {}: {}", domain, t);
+                                 LOGGER.debug("Failed to query the System cell of domain {}: {}", domain, t);
                                  return immediateFuture(emptyList());
                              });
     }
@@ -633,7 +633,7 @@ public class UserAdminShell
                     throw new CommandException(1, "Cell does not exist.");
                 }
                 // Some other failure, but apparently the cell exists
-                _log.info("Cell probe failed: {}", e.getCause().toString());
+                LOGGER.info("Cell probe failed: {}", e.getCause().toString());
                 return new Position(cell, path);
             }
         }
@@ -854,7 +854,7 @@ public class UserAdminShell
             }
             return _completer.complete(buffer, cursor, candidates);
         } catch (CommandException | NoRouteToCellException e) {
-            _log.info("Completion failed: {}", e.toString());
+            LOGGER.info("Completion failed: {}", e.toString());
             return -1;
         } catch (InterruptedException | AclException e) {
             return -1;
@@ -880,7 +880,7 @@ public class UserAdminShell
             }
             return 0;
         } catch (CacheException | NoRouteToCellException | ExecutionException e) {
-            _log.info("Completion failed: {}", e.toString());
+            LOGGER.info("Completion failed: {}", e.toString());
             return -1;
         } catch (InterruptedException e) {
             return -1;
@@ -920,7 +920,7 @@ public class UserAdminShell
             }
             return 0;
         } catch (CacheException | NoRouteToCellException | ExecutionException e) {
-            _log.info("Completion failed: {}", e.toString());
+            LOGGER.info("Completion failed: {}", e.toString());
             return -1;
         } catch (InterruptedException e) {
             return -1;
@@ -983,7 +983,7 @@ public class UserAdminShell
             } catch (InterruptedException e) {
                 return -1;
             } catch (CacheException e) {
-                _log.info("Completion failed: {}", e.toString());
+                LOGGER.info("Completion failed: {}", e.toString());
                 return -1;
             }
             return endIndex + 1;
@@ -1008,7 +1008,7 @@ public class UserAdminShell
                     return arguments.completeTail(createRemoteCompleter(new CellPath(Iterables.get(locations, 0))));
                 }
             } catch (CacheException | NoRouteToCellException e) {
-                _log.info("Completion failed: {}", e.toString());
+                LOGGER.info("Completion failed: {}", e.toString());
                 return -1;
             } catch (InterruptedException e) {
                 return -1;
@@ -1098,7 +1098,7 @@ public class UserAdminShell
             HelpCompleter completer = new HelpCompleter(String.valueOf(help));
             return completer.complete(buffer, cursor, candidates);
         } catch (NoRouteToCellException | CommandException | AclException e) {
-            _log.info("Completion failed: {}", e.toString());
+            LOGGER.info("Completion failed: {}", e.toString());
             return -1;
         } catch (InterruptedException e) {
             return -1;
@@ -1107,7 +1107,7 @@ public class UserAdminShell
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException, AclException
     {
-        _log.info("String command (super) {}", str);
+        LOGGER.info("String command (super) {}", str);
 
         if (str.trim().isEmpty()) {
             return "";
@@ -1124,7 +1124,7 @@ public class UserAdminShell
 
     private Serializable localCommand(Args args) throws CommandException
     {
-        _log.info("Local command {}", args);
+        LOGGER.info("Local command {}", args);
         Object or = command(args);
         if (or == null) {
             return "";

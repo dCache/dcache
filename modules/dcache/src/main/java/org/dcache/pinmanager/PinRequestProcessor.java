@@ -70,7 +70,7 @@ import static org.springframework.transaction.annotation.Isolation.REPEATABLE_RE
 public class PinRequestProcessor
     implements CellMessageReceiver
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(PinRequestProcessor.class);
 
     /**
@@ -219,7 +219,7 @@ public class PinRequestProcessor
                 RequestContainerV5.allStates :
                 RequestContainerV5.allStatesExceptStage;
         } catch (PatternSyntaxException | IOException ex) {
-            _log.error("Failed to check stage permission: {}", ex.toString());
+            LOGGER.error("Failed to check stage permission: {}", ex.toString());
         }
         return RequestContainerV5.allStatesExceptStage;
     }
@@ -247,7 +247,7 @@ public class PinRequestProcessor
             task.fail(rc, error);
             clearPin(task);
         } catch (RuntimeException e) {
-            _log.error(e.toString());
+            LOGGER.error(e.toString());
         }
     }
 

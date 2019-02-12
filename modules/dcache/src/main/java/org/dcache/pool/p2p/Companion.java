@@ -86,7 +86,7 @@ import static org.dcache.util.ByteUnit.KiB;
  */
 class Companion
 {
-    private static final Logger _log = LoggerFactory.getLogger(Companion.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Companion.class);
 
     private static final long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
     private static final int BUFFER_SIZE = KiB.toBytes(64);
@@ -325,7 +325,7 @@ class Companion
         try {
             handle.getChecksums().forEach(c -> knownChecksumTypes.add(c.getType()));
         } catch (CacheException e) {
-            _log.warn("Failed to fetch checksum information: {}", e.getMessage());
+            LOGGER.warn("Failed to fetch checksum information: {}", e.getMessage());
         }
 
         try (RepositoryChannel channel = handle.createChannel()) {
@@ -364,7 +364,7 @@ class Companion
                     /* Data is not guaranteed to be on disk. Not a fatal
                      * problem, but better generate a warning.
                      */
-                    _log.warn("Failed to synchronize file with storage device: {}",
+                    LOGGER.warn("Failed to synchronize file with storage device: {}",
                               e.getMessage());
                 }
             } finally {
@@ -579,17 +579,17 @@ class Companion
 
         if (_error != null) {
             if (_error instanceof Error) {
-                _log.error("P2P for {} failed due to a serious problem in the JVM.",
+                LOGGER.error("P2P for {} failed due to a serious problem in the JVM.",
                         _pnfsId, _error);
                 throw (Error)_error; // We should not attempt to recover from this!
             } else if (_error instanceof RuntimeException) {
-                _log.error("P2P for {} failed due to a bug.  Please report"
+                LOGGER.error("P2P for {} failed due to a bug.  Please report"
                         + " this to <support@dCache.org>", _pnfsId, _error);
             } else {
-                _log.error("P2P for {} failed: {}", _pnfsId, _error.toString());
+                LOGGER.error("P2P for {} failed: {}", _pnfsId, _error.toString());
             }
         } else {
-            _log.info("P2P for {} completed", _pnfsId);
+            LOGGER.info("P2P for {} completed", _pnfsId);
         }
 
         if (_callback != null) {

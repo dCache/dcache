@@ -23,7 +23,7 @@ import java.util.Properties;
  */
 public class ReplicaStoreDatabase
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private final Environment env;
@@ -53,7 +53,7 @@ public class ReplicaStoreDatabase
         envConfig.setExceptionListener(event -> {
             if (event.getException() instanceof EnvironmentFailureException && !env.isValid()) {
                 setFailed();
-                _log.error("Pool restart required due to Berkeley DB failure: {}", event.getException().getMessage());
+                LOGGER.error("Pool restart required due to Berkeley DB failure: {}", event.getException().getMessage());
             }
         });
 

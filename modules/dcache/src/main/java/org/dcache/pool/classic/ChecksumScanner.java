@@ -45,7 +45,7 @@ import static org.dcache.util.Exceptions.messageOrClassName;
 public class ChecksumScanner
     implements CellCommandListener, CellLifeCycleAware
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(ChecksumScanner.class);
 
     private final FullScan _fullScan = new FullScan();
@@ -139,11 +139,11 @@ public class ChecksumScanner
                             _bad.put(id, e.getActualChecksums().get());
                             _badCount++;
                         } else {
-                            _log.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
+                            LOGGER.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
                             _unableCount++;
                         }
                     } catch (CacheException e) {
-                        _log.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
+                        LOGGER.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
                         _unableCount++;
                     } catch (IOException e) {
                         _unableCount++;
@@ -152,7 +152,7 @@ public class ChecksumScanner
                     _totalCount++;
                 }
             } catch (IOException e) {
-                _log.error("Aborting 'cms check' full-scan: {}", messageOrClassName(e));
+                LOGGER.error("Aborting 'cms check' full-scan: {}", messageOrClassName(e));
                 setAbortMessage("failure in underlying storage: " + messageOrClassName(e));
             } finally {
                 startScrubber();
@@ -262,7 +262,7 @@ public class ChecksumScanner
             try {
                 Files.write(line, _scrubberStateFile, Charset.defaultCharset());
             } catch (IOException e) {
-                _log.error("Failed to save scrubber state ({}) to {}: {}", line, _scrubberStateFile, messageOrClassName(e));
+                LOGGER.error("Failed to save scrubber state ({}) to {}: {}", line, _scrubberStateFile, messageOrClassName(e));
             }
         }
 
@@ -287,14 +287,14 @@ public class ChecksumScanner
                 _lastStart = System.currentTimeMillis();
                 return;
             } catch (IOException e) {
-                _log.error("Failed to read scrubber saved state from {}: {}",
+                LOGGER.error("Failed to read scrubber saved state from {}: {}",
                           _scrubberStateFile, messageOrClassName(e));
                 return;
             }
 
             String[] fields = line.split(" ");
             if (fields.length != 2) {
-                _log.error("scrubber saved state in {} has an invalid format: {}",
+                LOGGER.error("scrubber saved state in {} has an invalid format: {}",
                           _scrubberStateFile, line);
                 return;
             }
@@ -302,17 +302,17 @@ public class ChecksumScanner
             try {
                 _lastStart = Long.parseLong(fields[0]);
             } catch (NumberFormatException e) {
-                _log.error("Failed to read the last scrubber start time from {}: {}",
+                LOGGER.error("Failed to read the last scrubber start time from {}: {}",
                           _scrubberStateFile, e.getMessage());
                 return;
             }
 
             if (PnfsId.isValid(fields[1])) {
-                _log.debug("Resuming scrubbing from the first file with a pnfs id greater than {}",
+                LOGGER.debug("Resuming scrubbing from the first file with a pnfs id greater than {}",
                            fields[1]);
                 _lastFileChecked = new PnfsId(fields[1]);
             } else if (!fields[1].equals("-")) {
-                _log.error("Last checked pnfs id within {} has an invalid format: {}",
+                LOGGER.error("Last checked pnfs id within {} has an invalid format: {}",
                            _scrubberStateFile, fields[1]);
             }
         }
@@ -352,12 +352,12 @@ public class ChecksumScanner
             try {
                 while (true) {
                     if (isFinished) {
-                        _log.debug("Next scrub start is {}",
+                        LOGGER.debug("Next scrub start is {}",
                              new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").
                                  format(new Date(_lastStart +
                                                  _csm.getScrubPeriod())));
                         if (System.currentTimeMillis() - _lastStart > _csm.getScrubPeriod()) {
-                            _log.warn("The last scrub took longer time to finish ({} s.) than the configured period ({} s.) - consider increasing the scrubbing period",
+                            LOGGER.warn("The last scrub took longer time to finish ({} s.) than the configured period ({} s.) - consider increasing the scrubbing period",
                                       System.currentTimeMillis() - _lastStart,
                                       _csm.getScrubPeriod());
                         }
@@ -374,26 +374,26 @@ public class ChecksumScanner
                         _unableCount = 0;
                         scanFiles(toScan);
                         if (_badCount > 0) {
-                            _log.warn("Finished scrubbing. Found {} bad files of {}",
+                            LOGGER.warn("Finished scrubbing. Found {} bad files of {}",
                                        _badCount, _numFiles);
                         }
                         isFinished = true;
                     } catch (IOException e) {
-                        _log.error("Aborting scrubber run: {}", messageOrClassName(e));
+                        LOGGER.error("Aborting scrubber run: {}", messageOrClassName(e));
                         setAbortMessage("failure in underlying storage: " + messageOrClassName(e));
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
                     } catch (IllegalStateException e) {
-                        _log.error("Aborting scrubber run: {}", e.getMessage());
+                        LOGGER.error("Aborting scrubber run: {}", e.getMessage());
                         setAbortMessage("illegal state: " + e.getMessage());
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
                     } catch (NoSuchAlgorithmException e) {
-                        _log.error("Aborting scrubber run: {}", e.getMessage());
+                        LOGGER.error("Aborting scrubber run: {}", e.getMessage());
                         setAbortMessage("checksum algorithm not supported: " + e.getMessage());
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
                     }
                 }
             } finally {
-                _log.debug("Stopping scrubber");
+                LOGGER.debug("Stopping scrubber");
                 saveState();
             }
         }
@@ -458,7 +458,7 @@ public class ChecksumScanner
                     }
                 } catch (FileCorruptedCacheException e) {
                     _badCount++;
-                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.CHECKSUM,
+                    LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.CHECKSUM,
                                                             id.toString(),
                                                             poolName),
                                     "Marking {} on {} as BROKEN: {}",
@@ -468,7 +468,7 @@ public class ChecksumScanner
                     try {
                         _repository.setState(id, ReplicaState.BROKEN);
                     } catch (CacheException f) {
-                        _log.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
+                        LOGGER.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
                     }
                 } catch (IOException e) {
                     _unableCount++;
@@ -477,7 +477,7 @@ public class ChecksumScanner
                     /* It was removed before we could get it. No problem.
                      */
                 } catch (CacheException e) {
-                    _log.warn("Scrubber unable to verify {}: {}", id, e.getMessage());
+                    LOGGER.warn("Scrubber unable to verify {}: {}", id, e.getMessage());
                     _unableCount++;
                 }
                 _lastFileChecked = id;

@@ -88,7 +88,7 @@ import org.dcache.services.billing.db.impl.HourlyAggregateDataHandler;
  */
 public class BillingInfoMessageReceiver implements CellMessageReceiver,
                 CellCommandListener {
-    private static final Logger logger =
+    private static final Logger LOGGER =
                     LoggerFactory.getLogger(BillingInfoMessageReceiver.class);
 
     /**
@@ -154,18 +154,18 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
             }
 
             /**
-             * report at error level so that no adjustment of logger is
+             * report at error level so that no adjustment of LOGGER is
              * necessary
              */
             private void log() {
-                logger.error("insert queue (last {}, current {}, change {}/minute)",
+                LOGGER.error("insert queue (last {}, current {}, change {}/minute)",
                                 insertQueueLast, insertQueueCurrent,
                                 insertQueueDelta);
-                logger.error("commits (last {}, current {}, change {}/minute)",
+                LOGGER.error("commits (last {}, current {}, change {}/minute)",
                                 commitLast, commitCurrent, commitDelta);
-                logger.error("dropped (last {}, current {}, change {}/minute)",
+                LOGGER.error("dropped (last {}, current {}, change {}/minute)",
                                 droppedLast, droppedCurrent, droppedDelta);
-                logger.error("total memory {}; free memory {}",
+                LOGGER.error("total memory {}; free memory {}",
                                 Runtime.getRuntime().totalMemory(),
                                 Runtime.getRuntime().freeMemory());
             }
@@ -180,7 +180,7 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
                     Thread.sleep(TimeUnit.MINUTES.toMillis(1));
                 }
             } catch (InterruptedException e) {
-                logger.debug("statistics thread interrupted, "
+                LOGGER.debug("statistics thread interrupted, "
                                 + "probably due to cell shutdown");
             }
         }
@@ -225,7 +225,7 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
             try {
                 commitStatistics.join();
             } catch (InterruptedException e) {
-                logger.trace("stopStatistics join interrupted");
+                LOGGER.trace("stopStatistics join interrupted");
             } finally {
                 commitStatistics = null;
             }

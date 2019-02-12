@@ -93,7 +93,7 @@ import static org.dcache.util.MathUtils.subWithInfinity;
  */
 public class Transfer implements Comparable<Transfer>
 {
-    protected static final Logger _log = LoggerFactory.getLogger(Transfer.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(Transfer.class);
 
     private static final TimebasedCounter _sessionCounter =
             new TimebasedCounter();
@@ -305,7 +305,7 @@ public class Transfer implements Comparable<Transfer>
     public synchronized void setStatus(String status)
     {
         if (status != null) {
-            _log.debug("Status: {}", status);
+            LOGGER.debug("Status: {}", status);
         }
         _status = status;
     }
@@ -1137,15 +1137,15 @@ public class Transfer implements Comparable<Transfer>
              * for the transfer confirmation.
              */
             if (millis > 0 && !waitForMover(millis)) {
-                _log.error("Failed to kill mover {}/{}: Timeout", pool, moverId);
+                LOGGER.error("Failed to kill mover {}/{}: Timeout", pool, moverId);
             }
         } catch (CacheException e) {
             // Not surprising that the pool reported a failure
             // when we killed the mover.
-            _log.debug("Killed mover and pool reported: {}",
+            LOGGER.debug("Killed mover and pool reported: {}",
                        e.getMessage());
         } catch (InterruptedException e) {
-            _log.warn("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
+            LOGGER.warn("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
             Thread.currentThread().interrupt();
         } finally {
             setStatus(null);
@@ -1190,9 +1190,9 @@ public class Transfer implements Comparable<Transfer>
                 new PnfsHandler(_pnfs, Restrictions.none())
                         .deletePnfsEntry(pnfsId, _path.toString());
             } catch (FileNotFoundCacheException e) {
-                _log.debug("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
+                LOGGER.debug("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
             } catch (CacheException e) {
-                _log.error("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
+                LOGGER.error("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
             } finally {
                 setStatus(null);
             }
@@ -1306,23 +1306,23 @@ public class Transfer implements Comparable<Transfer>
                         case CacheException.OUT_OF_DATE:
                         case CacheException.POOL_DISABLED:
                         case CacheException.FILE_NOT_IN_REPOSITORY:
-                            _log.info("Retrying pool selection: {}", t.getMessage());
+                            LOGGER.info("Retrying pool selection: {}", t.getMessage());
                             return retryWhen(immediateFuture(null));
                         case CacheException.FILE_IN_CACHE:
                         case CacheException.INVALID_ARGS:
                         case CacheException.FILE_NOT_FOUND:
                             return immediateFailedFuture(t);
                         case CacheException.NO_POOL_CONFIGURED:
-                            _log.error(t.getMessage());
+                            LOGGER.error(t.getMessage());
                             return immediateFailedFuture(t);
                         case CacheException.NO_POOL_ONLINE:
-                            _log.warn(t.getMessage());
+                            LOGGER.warn(t.getMessage());
                             break;
                         case CacheException.PERMISSION_DENIED:
-                            _log.info("request rejected due to permission settings: {}", t.getMessage());
+                            LOGGER.info("request rejected due to permission settings: {}", t.getMessage());
                             return immediateFailedFuture(t);
                         default:
-                            _log.error(t.getMessage());
+                            LOGGER.error(t.getMessage());
                             break;
                         }
 

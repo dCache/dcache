@@ -45,7 +45,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class ZooKeeperCell extends AbstractCell
 {
-    private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperCell.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZooKeeperCell.class);
 
     @Option(name = "data-log-dir", required = true)
     protected File dataLogDir;
@@ -160,7 +160,7 @@ public class ZooKeeperCell extends AbstractCell
             // This should be a no-op, as ZK should already have shutdown.
             shutdownLatch.await(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOG.error("ZooKeeper server failed to shutdown.");
+            LOGGER.error("ZooKeeper server failed to shutdown.");
         }
 
         if (cnxnFactory != null) {
@@ -170,7 +170,7 @@ public class ZooKeeperCell extends AbstractCell
             try {
                 txnLog.close();
             } catch (IOException e) {
-                LOG.error("Failed to close ZooKeeper transaction log: {}", e.toString());
+                LOGGER.error("Failed to close ZooKeeper transaction log: {}", e.toString());
             }
         }
         super.stopped();

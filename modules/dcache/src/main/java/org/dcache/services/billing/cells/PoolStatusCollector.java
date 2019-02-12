@@ -25,7 +25,7 @@ import org.dcache.cells.CellStub;
  */
 public final class PoolStatusCollector extends Thread
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(PoolStatusCollector.class);
 
     private final Path _report;
@@ -55,18 +55,18 @@ public final class PoolStatusCollector extends Thread
                         pw.println(pool.getKey() + "  " + line);
                     }
                 } catch (CacheException | InterruptedException t) {
-                    _log.warn("CollectPoolStatus : {}: {}", pool.getValue(), t.toString());
+                    LOGGER.warn("CollectPoolStatus : {}: {}", pool.getValue(), t.toString());
                 }
             }
         } catch (CacheException | NoRouteToCellException | InterruptedException t) {
-            _log.warn("Exception in CollectPools status : {}", t.toString());
+            LOGGER.warn("Exception in CollectPools status : {}", t.toString());
             try {
                 Files.delete(_report);
             } catch (IOException e) {
-                _log.warn("Could not delete report {}: {}", _report, e.toString());
+                LOGGER.warn("Could not delete report {}: {}", _report, e.toString());
             }
         } catch (IOException ioe) {
-            _log.warn("Problem opening {} : {}", _report, ioe.getMessage());
+            LOGGER.warn("Problem opening {} : {}", _report, ioe.getMessage());
         }
     }
 }

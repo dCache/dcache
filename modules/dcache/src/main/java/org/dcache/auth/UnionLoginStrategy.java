@@ -37,7 +37,7 @@ import org.dcache.auth.attributes.Restrictions;
  */
 public class UnionLoginStrategy implements LoginStrategy
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(UnionLoginStrategy.class);
 
     /**
@@ -48,23 +48,23 @@ public class UnionLoginStrategy implements LoginStrategy
         NONE, READONLY, FULL
     }
 
-    private List<LoginStrategy> _loginStrategies = Collections.emptyList();
+    private List<LoginStrategy> LOGGERinStrategies = Collections.emptyList();
     private AccessLevel _anonymousAccess = AccessLevel.NONE;
     private boolean _shouldFallback = true;
 
     public void setLoginStrategies(List<LoginStrategy> list)
     {
-        _loginStrategies = new ArrayList<>(list);
+        LOGGERinStrategies = new ArrayList<>(list);
     }
 
     public List<LoginStrategy> getLoginStrategies()
     {
-        return Collections.unmodifiableList(_loginStrategies);
+        return Collections.unmodifiableList(LOGGERinStrategies);
     }
 
     public void setAnonymousAccess(AccessLevel level)
     {
-        _log.debug( "Setting anonymous access to {}", level);
+        LOGGER.debug( "Setting anonymous access to {}", level);
         _anonymousAccess = level;
     }
 
@@ -96,12 +96,12 @@ public class UnionLoginStrategy implements LoginStrategy
 
         PermissionDeniedCacheException loginFailure = null;
         try {
-            for (LoginStrategy strategy: _loginStrategies) {
-                _log.debug( "Attempting login strategy: {}", strategy.getClass().getName());
+            for (LoginStrategy strategy: LOGGERinStrategies) {
+                LOGGER.debug( "Attempting login strategy: {}", strategy.getClass().getName());
 
                 try {
                     LoginReply login = strategy.login(subject);
-                    _log.debug( "Login strategy returned {}", login.getSubject());
+                    LOGGER.debug( "Login strategy returned {}", login.getSubject());
                     if (!Subjects.isNobody(login.getSubject())) {
                         return login;
                     }
@@ -109,7 +109,7 @@ public class UnionLoginStrategy implements LoginStrategy
                     /* LoginStrategies throw IllegalArgumentException when
                      * provided with a Subject they cannot handle.
                      */
-                    _log.debug("Login failed with IllegalArgumentException for {}: {}", subject,
+                    LOGGER.debug("Login failed with IllegalArgumentException for {}: {}", subject,
                             e.getMessage());
                 }
             }
@@ -121,12 +121,12 @@ public class UnionLoginStrategy implements LoginStrategy
             throw loginFailure != null ? loginFailure : new PermissionDeniedCacheException("Access denied");
         }
 
-        _log.debug( "Strategies failed, trying for anonymous access");
+        LOGGER.debug( "Strategies failed, trying for anonymous access");
 
         LoginReply reply = new LoginReply();
         switch (_anonymousAccess) {
         case READONLY:
-            _log.debug( "Allowing read-only access as an anonymous user");
+            LOGGER.debug( "Allowing read-only access as an anonymous user");
             reply.getLoginAttributes().add(Restrictions.readOnly());
             if (origin.isPresent()) {
                 reply.getSubject().getPrincipals().add(origin.get());
@@ -134,14 +134,14 @@ public class UnionLoginStrategy implements LoginStrategy
             break;
 
         case FULL:
-            _log.debug( "Allowing full access as an anonymous user");
+            LOGGER.debug( "Allowing full access as an anonymous user");
             if (origin.isPresent()) {
                 reply.getSubject().getPrincipals().add(origin.get());
             }
             break;
 
         default:
-            _log.debug( "Login failed");
+            LOGGER.debug( "Login failed");
             throw loginFailure != null ? loginFailure : new PermissionDeniedCacheException("Access denied");
         }
         return reply;
@@ -150,7 +150,7 @@ public class UnionLoginStrategy implements LoginStrategy
     @Override
     public Principal map(Principal principal) throws CacheException
     {
-        for (LoginStrategy strategy: _loginStrategies) {
+        for (LoginStrategy strategy: LOGGERinStrategies) {
             Principal result = strategy.map(principal);
             if (result != null) {
                 return result;
@@ -163,7 +163,7 @@ public class UnionLoginStrategy implements LoginStrategy
     public Set<Principal> reverseMap(Principal principal) throws CacheException
     {
         Set<Principal> result = new HashSet<>();
-        for (LoginStrategy strategy: _loginStrategies) {
+        for (LoginStrategy strategy: LOGGERinStrategies) {
             result.addAll(strategy.reverseMap(principal));
         }
         return result;

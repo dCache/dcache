@@ -48,7 +48,7 @@ import static org.dcache.util.ByteUnit.KiB;
 public class CopyManager extends AbstractCellComponent
     implements CellMessageReceiver, CellCommandListener, CellInfoProvider
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(CopyManager.class);
 
     private final Map<Long,CopyHandler> _activeTransfers =
@@ -285,7 +285,7 @@ public class CopyManager extends AbstractCellComponent
                 CopyManagerMessage message =
                     (CopyManagerMessage) _envelope.getMessageObject();
                 try {
-                    _log.info("starting processing transfer message with id {}",
+                    LOGGER.info("starting processing transfer message with id {}",
                               message.getId());
 
                     copy(message.getSubject(),
@@ -315,14 +315,14 @@ public class CopyManager extends AbstractCellComponent
                     finishTransfer();
                     message.increaseNumberOfPerformedRetries();
                     if (requeue) {
-                        _log.info("putting on queue for retry: {}", _envelope);
+                        LOGGER.info("putting on queue for retry: {}", _envelope);
                         putOnQueue(_envelope);
                     } else {
                         try {
                             _envelope.revertDirection();
                             sendMessage(_envelope);
                         } catch (RuntimeException e) {
-                            _log.warn(e.toString(), e);
+                            LOGGER.warn(e.toString(), e);
                         }
                     }
                 }
@@ -388,11 +388,11 @@ public class CopyManager extends AbstractCellComponent
                 if (!_target.waitForMover(timeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
                 }
-                _log.info("transfer finished successfully");
+                LOGGER.info("transfer finished successfully");
                 success = true;
             } catch (CacheException e) {
                 _source.setStatus("Failed: " + e.toString());
-                _log.warn(e.toString());
+                LOGGER.warn(e.toString());
                 explanation = "copy failed: " + e.getMessage();
                 throw e;
             } catch (InterruptedException e) {
@@ -465,20 +465,20 @@ public class CopyManager extends AbstractCellComponent
 
     private synchronized boolean newTransfer()
     {
-        _log.debug("newTransfer() numTransfers = {} maxTransfers = {}",
+        LOGGER.debug("newTransfer() numTransfers = {} maxTransfers = {}",
                    _numTransfers, _maxTransfers);
         if (_numTransfers == _maxTransfers) {
-            _log.debug("newTransfer() returns false");
+            LOGGER.debug("newTransfer() returns false");
             return false;
         }
-        _log.debug("newTransfer() INCREMENT and return true");
+        LOGGER.debug("newTransfer() INCREMENT and return true");
         _numTransfers++;
         return true;
     }
 
     private synchronized void finishTransfer()
     {
-        _log.debug("finishTransfer() numTransfers = {} DECREMENT",
+        LOGGER.debug("finishTransfer() numTransfers = {} DECREMENT",
                    _numTransfers);
         _numTransfers--;
     }

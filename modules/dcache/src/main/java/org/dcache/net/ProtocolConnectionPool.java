@@ -23,7 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class ProtocolConnectionPool implements Runnable {
 
-    private static final Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
+    private static final Logger LOGGER = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
     private final Map<Object, SocketChannel> _acceptedSockets = new HashMap<>();
     private final ChallengeReader _challengeReader;
     private final int _receiveBufferSize;
@@ -129,7 +129,7 @@ public class ProtocolConnectionPool implements Runnable {
             try {
                 socket.bind(new InetSocketAddress((InetAddress)null, _port));
             } catch (IOException e) {
-                _logSocketIO.debug("Failed to bind to existing port: {}", e.toString());
+                LOGGER.debug("Failed to bind to existing port: {}", e.toString());
             }
         }
 
@@ -137,7 +137,7 @@ public class ProtocolConnectionPool implements Runnable {
             _port = _portRange.bind(socket);
         }
 
-        _logSocketIO.debug("Socket BIND local = {}:{}", socket.getInetAddress(),
+        LOGGER.debug("Socket BIND local = {}:{}", socket.getInetAddress(),
                 _port);
 
         return channel;
@@ -145,13 +145,13 @@ public class ProtocolConnectionPool implements Runnable {
 
     private void close(ServerSocketChannel channel)
     {
-        _logSocketIO.debug("Socket SHUTDOWN local = {}:{}",
+        LOGGER.debug("Socket SHUTDOWN local = {}:{}",
                 channel.socket().getInetAddress(),
                 channel.socket().getLocalPort());
         try {
             channel.close();
         } catch (IOException e) {
-            _logSocketIO.warn("Failed to close socket: {}", e.toString());
+            LOGGER.warn("Failed to close socket: {}", e.toString());
         }
     }
 
@@ -208,20 +208,20 @@ public class ProtocolConnectionPool implements Runnable {
         try {
             while (true) {
                 SocketChannel channel = serverChannel.accept();
-                _logSocketIO.debug("Socket OPEN (ACCEPT) remote = {}:{} local = {}:{}",
+                LOGGER.debug("Socket OPEN (ACCEPT) remote = {}:{} local = {}:{}",
                         channel.socket().getInetAddress(), channel.socket().getPort(),
                         channel.socket().getLocalAddress(), channel.socket().getLocalPort());
 
                 Object challenge = _challengeReader.getChallenge(channel);
                 if (challenge == null) {
                     // Unable to read challenge....skip connection
-                    _logSocketIO.debug("Socket CLOSE (no challenge) remote = {}:{} local = {}:{}",
+                    LOGGER.debug("Socket CLOSE (no challenge) remote = {}:{} local = {}:{}",
                             channel.socket().getInetAddress(), channel.socket().getPort(),
                             channel.socket().getLocalAddress(), channel.socket().getLocalPort());
                     try {
                         channel.close();
                     } catch (IOException e) {
-                        _logSocketIO.info("Failed to close client socket: {}",
+                        LOGGER.info("Failed to close client socket: {}",
                                 channel.socket());
                     }
                 } else {
@@ -234,7 +234,7 @@ public class ProtocolConnectionPool implements Runnable {
         } catch (ClosedChannelException e) {
             // Ignore thread stopped by interrupting or by closing the channel
         } catch (IOException e) {
-            _logSocketIO.error("Accept loop", e);
+            LOGGER.error("Accept loop", e);
         }
     }
 }

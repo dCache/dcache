@@ -37,7 +37,7 @@ import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
 public class PinManager
     implements CellMessageReceiver, CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(PinManager.class);
     private static final long INITIAL_EXPIRATION_DELAY = SECONDS.toMillis(15);
     private static final long INITIAL_UNPIN_DELAY = SECONDS.toMillis(30);
@@ -161,10 +161,10 @@ public class PinManager
                            dao.set().
                                     state(UNPINNING));
             } catch (JDOException | DataAccessException e) {
-                _log.error("Database failure while expiring pins: {}",
+                LOGGER.error("Database failure while expiring pins: {}",
                            e.getMessage());
             } catch (RuntimeException e) {
-                _log.error("Unexpected failure while expiring pins", e);
+                LOGGER.error("Unexpected failure while expiring pins", e);
             }
         }
     }

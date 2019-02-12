@@ -32,7 +32,7 @@ import org.dcache.services.httpd.util.AliasEntry;
  * @author arossi
  */
 public class HandlerDelegator extends AbstractHandler {
-    private static final Logger logger
+    private static final Logger LOGGER
         = LoggerFactory.getLogger(HandlerDelegator.class);
     private static final Splitter PATH_SPLITTER
         = Splitter.on('/').omitEmptyStrings();
@@ -49,18 +49,18 @@ public class HandlerDelegator extends AbstractHandler {
             if (cause instanceof HttpException) {
                 printHttpException((HttpException) cause, response);
             }
-            logger.warn("Problem with {}: {}", uri, e.getMessage());
+            LOGGER.warn("Problem with {}: {}", uri, e.getMessage());
         } else if (e instanceof HttpException) {
             printHttpException((HttpException) e, response);
-            logger.warn("Problem with {}: {}", uri, e.getMessage());
+            LOGGER.warn("Problem with {}: {}", uri, e.getMessage());
         } else if (e instanceof RuntimeException) {
             printHttpException(new HttpException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                                                 "Internal problem processing request"), response);
-            logger.warn("Bug found, please report it", e);
+            LOGGER.warn("Bug found, please report it", e);
         } else {
             printHttpException(new HttpException(HttpServletResponse.SC_BAD_REQUEST,
                                                 "Bad Request : " + e), response);
-            logger.warn("Problem in HttpServiceCellHandler: {}", e.getMessage());
+            LOGGER.warn("Problem in HttpServiceCellHandler: {}", e.getMessage());
         }
     }
 
@@ -75,7 +75,7 @@ public class HandlerDelegator extends AbstractHandler {
             }
             response.sendError(exception.getErrorCode(), exception.getMessage());
         } catch (final IOException e) {
-            logger.warn("Failed to send reply: {}", e.getMessage());
+            LOGGER.warn("Failed to send reply: {}", e.getMessage());
         }
     }
 
@@ -94,7 +94,7 @@ public class HandlerDelegator extends AbstractHandler {
             uri = request.getRequestURI();
             alias = extractAlias(uri);
 
-            logger.debug("handle {}, {}", uri, alias);
+            LOGGER.debug("handle {}, {}", uri, alias);
 
             entry = aliases.get(alias);
 
@@ -107,7 +107,7 @@ public class HandlerDelegator extends AbstractHandler {
                                 "Alias not found : " + alias);
             }
 
-            logger.debug("alias: {}, entry {}", alias, entry);
+            LOGGER.debug("alias: {}, entry {}", alias, entry);
 
             /*
              * Exclusion of POST is absolute.
@@ -122,16 +122,16 @@ public class HandlerDelegator extends AbstractHandler {
              */
             final String alternate = entry.getOverwrite();
             if (alternate != null) {
-                logger.debug("handle, overwritten alias: {}", alternate);
+                LOGGER.debug("handle, overwritten alias: {}", alternate);
                 final AliasEntry overwrittenEntry = aliases.get(alternate);
                 if (overwrittenEntry != null) {
                     entry = overwrittenEntry;
                 }
-                logger.debug("handle, alias {}, entry {}", alternate, entry);
+                LOGGER.debug("handle, alias {}, entry {}", alternate, entry);
             }
 
             final Handler handler = entry.getHandler();
-            logger.debug("got handler: {}", handler);
+            LOGGER.debug("got handler: {}", handler);
             if (handler != null) {
                 handler.handle(target, baseRequest, request, response);
             }
@@ -140,11 +140,11 @@ public class HandlerDelegator extends AbstractHandler {
             if (entry != null && e.getCause() instanceof OnErrorException) {
                 final String alternate = entry.getOnError();
                 if (alternate != null) {
-                    logger.debug("handle, onError alias: {}", alternate);
+                    LOGGER.debug("handle, onError alias: {}", alternate);
                     final AliasEntry overwrittenEntry = aliases.get(alternate);
                     if (overwrittenEntry != null) {
                         entry = overwrittenEntry;
-                        logger.debug("handle, alias {}, entry {}", alternate,
+                        LOGGER.debug("handle, alias {}, entry {}", alternate,
                                         entry);
                         final Handler handler = entry.getHandler();
                         if (handler != null) {
@@ -165,7 +165,7 @@ public class HandlerDelegator extends AbstractHandler {
             }
         }
 
-        logger.info("Finished");
+        LOGGER.info("Finished");
     }
 
     public AliasEntry removeAlias(String name) throws InvocationTargetException

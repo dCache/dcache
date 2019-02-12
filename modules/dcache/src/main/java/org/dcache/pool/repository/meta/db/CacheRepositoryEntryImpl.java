@@ -43,7 +43,7 @@ import static org.dcache.pool.repository.ReplicaState.*;
  */
 public class CacheRepositoryEntryImpl implements ReplicaRecord
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
 
     // Reusable list for the common case
@@ -154,7 +154,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         try {
             return _state.isMutable() ? _repository.getFileSize(_pnfsId) : _size;
         } catch (IOException e) {
-            _log.error("Failed to read file size: {}", e.toString());
+            LOGGER.error("Failed to read file size: {}", e.toString());
             return 0;
         }
     }
@@ -301,7 +301,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                 return new CacheRepositoryEntryImpl(repository, pnfsId, state.getState(), state.stickyRecords(), attributes);
             }
         } catch (ClassCastException e) {
-            _log.warn(e.toString());
+            LOGGER.warn(e.toString());
         } catch (RuntimeExceptionWrapper e) {
             /* BerkeleyDB wraps internal exceptions. We ignore class
              * cast and class not found exceptions, since they are a
@@ -311,7 +311,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                 !(e.getCause() instanceof ClassCastException)) {
                 throw e;
             }
-            _log.warn(e.toString());
+            LOGGER.warn(e.toString());
         }
         return new CacheRepositoryEntryImpl(repository, pnfsId, BROKEN, ImmutableList.of(), attributes);
     }

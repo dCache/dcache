@@ -47,14 +47,14 @@ import static org.dcache.util.ByteUnit.BYTES;
 public class TransferObserverV1
     extends CellAdapter
     implements Runnable {
-    private static final Logger _log = LoggerFactory.getLogger(TransferObserverV1.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransferObserverV1.class);
 
     private final CellNucleus _nucleus;
     private final CellStub _cellStub;
     private final Args _args;
     private TransferCollector _collector;
     private Thread _workerThread;
-    private LoginBrokerSubscriber _loginBrokerSource;
+    private LoginBrokerSubscriber LOGGERinBrokerSource;
     private long _update = 120000L;
     private long _timeUsed;
     private long _processCounter;
@@ -286,13 +286,13 @@ public class TransferObserverV1
             throw new IllegalArgumentException("Usage : ... ");
         }
 
-        _loginBrokerSource = new LoginBrokerSubscriber();
-        addCellEventListener(_loginBrokerSource);
-        addCommandListener(_loginBrokerSource);
-        _loginBrokerSource.setCellEndpoint(this);
-        _loginBrokerSource.setTopic(_args.getOpt("loginBroker"));
+        LOGGERinBrokerSource = new LoginBrokerSubscriber();
+        addCellEventListener(LOGGERinBrokerSource);
+        addCommandListener(LOGGERinBrokerSource);
+        LOGGERinBrokerSource.setCellEndpoint(this);
+        LOGGERinBrokerSource.setTopic(_args.getOpt("loginBroker"));
 
-        _collector = new TransferCollector(_cellStub, _loginBrokerSource.doors());
+        _collector = new TransferCollector(_cellStub, LOGGERinBrokerSource.doors());
 
         String updateString = _args.getOpt("update");
         try {
@@ -300,7 +300,7 @@ public class TransferObserverV1
                 _update = Long.parseLong(updateString) * 1000L;
             }
         } catch (NumberFormatException e) {
-            _log.warn("Illegal value for -update: {}", updateString);
+            LOGGER.warn("Illegal value for -update: {}", updateString);
         }
 
         useInterpreter(true);
@@ -310,7 +310,7 @@ public class TransferObserverV1
     protected void started() {
         _workerThread = _nucleus.newThread(this, "worker");
         _workerThread.start();
-        _loginBrokerSource.afterStart();
+        LOGGERinBrokerSource.afterStart();
     }
 
     @Override
@@ -318,7 +318,7 @@ public class TransferObserverV1
         if (_workerThread != null) {
             _workerThread.interrupt();
         }
-        _loginBrokerSource.beforeStop();
+        LOGGERinBrokerSource.beforeStop();
     }
 
     public static final String hh_table_help = "";
@@ -405,9 +405,9 @@ public class TransferObserverV1
     public void messageArrived(CellMessage envelope) {
         Serializable message = envelope.getMessageObject();
         if (message instanceof LoginBrokerInfo) {
-            _loginBrokerSource.messageArrived((LoginBrokerInfo) message);
+            LOGGERinBrokerSource.messageArrived((LoginBrokerInfo) message);
         } else if (message instanceof NoRouteToCellException) {
-            _loginBrokerSource.messageArrived((NoRouteToCellException) message);
+            LOGGERinBrokerSource.messageArrived((NoRouteToCellException) message);
         }
     }
 
@@ -421,7 +421,7 @@ public class TransferObserverV1
                     collectDataSequentially();
                     _timeUsed = System.currentTimeMillis() - start;
                 } catch (RuntimeException ee) {
-                    _log.error(ee.toString(), ee);
+                    LOGGER.error(ee.toString(), ee);
                 }
 
                 synchronized (this) {
@@ -429,7 +429,7 @@ public class TransferObserverV1
                 }
             }
         } catch (InterruptedException e) {
-            _log.info("Data collector interrupted");
+            LOGGER.info("Data collector interrupted");
         }
     }
 

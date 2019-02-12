@@ -38,7 +38,7 @@ import static org.dcache.util.ByteUnit.BYTES;
 
 public class WebCollectorV3 extends CellAdapter implements Runnable
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(WebCollectorV3.class);
 
     protected static final String OPTION_REPEATHEADER = "repeatHeader";
@@ -75,7 +75,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         {
             long start = System.currentTimeMillis();
             wait(_mode ? _shortPeriod / 2 : _regularPeriod / 2);
-            _log.debug("Woke up after {} millis", (System.currentTimeMillis() - start));
+            LOGGER.debug("Woke up after {} millis", (System.currentTimeMillis() - start));
         }
 
         private synchronized void setShortPeriod(long shortPeriod)
@@ -92,7 +92,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         private synchronized void topologyChanged(boolean modified)
         {
-            // _log.info("Topology changed : {}", modified);
+            // LOGGER.info("Topology changed : {}", modified);
             if (!_enabled) {
                 return;
             }
@@ -101,7 +101,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 if (!_mode) {
                     _mode = true;
                     notifyAll();
-                    _log.info("Aggressive changed to ON");
+                    LOGGER.info("Aggressive changed to ON");
                 }
 
             } else if (_mode &&
@@ -109,7 +109,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                        (_shortPeriod * _retentionFactor)) {
                 _mode = false;
                 notifyAll();
-                _log.info("Aggressive changed to OFF");
+                LOGGER.info("Aggressive changed to OFF");
             }
 
         }
@@ -203,9 +203,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 optionString = _args.getOpt(OPTION_REPEATHEADER);
                 _repeatHeader = Math.max(0, Integer.parseInt(optionString));
             } catch (NumberFormatException e) {
-                _log.warn("Parsing error in in {} command : {}", OPTION_REPEATHEADER, optionString);
+                LOGGER.warn("Parsing error in in {} command : {}", OPTION_REPEATHEADER, optionString);
             }
-            _log.info("Repeat header set to {}", _repeatHeader);
+            LOGGER.info("Repeat header set to {}", _repeatHeader);
         }
 
         String optionString = _args.getOpt("aggressive");
@@ -215,7 +215,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         aggressive = !aggressive;
 
-        _log.info("Aggressive mode : {}", aggressive);
+        LOGGER.info("Aggressive mode : {}", aggressive);
 
         _sleepHandler = new SleepHandler(aggressive);
     }
@@ -230,8 +230,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
         _senderThread = _nucleus.newThread(this, "sender");
         _senderThread.start();
-        _log.info("Sender started");
-        _log.info("Collector will be started a bit delayed");
+        LOGGER.info("Sender started");
+        LOGGER.info("Collector will be started a bit delayed");
         _collectThread = _nucleus.newThread(WebCollectorV3.this, "collector");
         _collectThread.start();
     }
@@ -242,7 +242,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         if (_infoMap.containsKey(address) || _queues.contains(address)) {
             return false;
         }
-        _log.debug("Adding {)", address);
+        LOGGER.debug("Adding {)", address);
         if (address.isLocalAddress()) {
             _queues.add(address);
             sendPing(address);
@@ -256,7 +256,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private void removeQuery(String destination)
     {
-        _log.debug("Removing {}", destination);
+        LOGGER.debug("Removing {}", destination);
         synchronized (_infoLock) {
             _infoMap.remove(new CellAddressCore(destination));
         }
@@ -280,7 +280,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         } catch (InterruptedException e1) {
             return;
         }
-        _log.info("Collector now started as well");
+        LOGGER.info("Collector now started as well");
 
         try {
             while (!Thread.interrupted()) {
@@ -290,7 +290,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 _sleepHandler.sleep();
             }
         } catch (InterruptedException e) {
-            _log.info("Collector Thread interrupted");
+            LOGGER.info("Collector Thread interrupted");
         }
     }
 
@@ -312,19 +312,19 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 }
             }
         } catch (InterruptedException iie) {
-            _log.info("Sender Thread interrupted");
+            LOGGER.info("Sender Thread interrupted");
         }
     }
 
     private void sendPing(CellAddressCore address)
     {
-        _log.debug("Sending ping to : {}", address);
+        LOGGER.debug("Sending ping to : {}", address);
         sendMessage(new CellMessage(address, new PingMessage()));
     }
 
     private void sendQuery(CellQueryInfo info)
     {
-        _log.debug("Sending query to : {}", info.getDestination());
+        LOGGER.debug("Sending query to : {}", info.getDestination());
         sendMessage(info.getCellMessage());
     }
 
@@ -338,7 +338,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         if (reply instanceof LoginBrokerInfo) {
             LoginBrokerInfo brokerInfo = (LoginBrokerInfo) reply;
             synchronized (_infoLock) {
-                _log.debug("Login broker reports: {}@{}", brokerInfo.getCellName(), brokerInfo.getDomainName());
+                LOGGER.debug("Login broker reports: {}@{}", brokerInfo.getCellName(), brokerInfo.getDomainName());
                 if (addQuery(new CellAddressCore(brokerInfo.getCellName(), brokerInfo.getDomainName()))) {
                     modified++;
                 }
@@ -357,14 +357,14 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                     // We may have registered the cell as a well known cell
                     info = _infoMap.get(new CellAddressCore(address.getCellName()));
                     if (info == null) {
-                        _log.info("Unexpected reply arrived from: {}", path);
+                        LOGGER.info("Unexpected reply arrived from: {}", path);
                         return;
                     }
                 }
             }
 
             if (reply instanceof CellInfo) {
-                _log.debug("CellInfo: {}", ((CellInfo) reply).getCellName());
+                LOGGER.debug("CellInfo: {}", ((CellInfo) reply).getCellName());
                 info.infoArrived((CellInfo) reply);
             }
             if (reply instanceof PoolManagerCellInfo) {
@@ -673,7 +673,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             double yellow  = round(100 * freespace / (float)total);
             double blue    = Math.max(0, 100 - red - green - yellow);
 
-            _log.info(cellInfo.getCellName() + " : " +
+            LOGGER.info(cellInfo.getCellName() + " : " +
                 ";total=" + total + ";free=" + freespace +
                 ";precious=" + precious + ";removable=" + removable);
 
@@ -847,9 +847,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private synchronized void printPoolActionTable2(HTMLBuilder page)
     {
         // get the translated list
-        _log.debug("Preparing pool cost table");
+        LOGGER.debug("Preparing pool cost table");
         List<PoolCostEntry> list = preparePoolCostTable();
-        _log.debug("Preparing pool cost table done {}", list.size());
+        LOGGER.debug("Preparing pool cost table done {}", list.size());
         // calculate the totals ...
         TreeMap<String, int[]> moverMap = new TreeMap<>();
         int[][] total = new int[5][3];
@@ -961,11 +961,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     @Override
     protected void stopping()
     {
-        _log.info("Clean Up sequence started");
+        LOGGER.info("Clean Up sequence started");
         //
         // wait for the worker to be done
         //
-        _log.info("Waiting for collector thread to be finished");
+        LOGGER.info("Waiting for collector thread to be finished");
         _collectThread.interrupt();
         _senderThread.interrupt();
         try {
@@ -980,9 +980,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     public void stopped()
     {
         _nucleus.getDomainContext().remove("cellInfoTable.html");
-        _log.info("cellInfoTable.html removed from domain context");
+        LOGGER.info("cellInfoTable.html removed from domain context");
 
-        _log.info("Clean Up sequence done");
+        LOGGER.info("Clean Up sequence done");
     }
 
     @Override

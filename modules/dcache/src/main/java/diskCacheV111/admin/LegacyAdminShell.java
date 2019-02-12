@@ -70,7 +70,7 @@ public class LegacyAdminShell
         extends CommandInterpreter
         implements Completer
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(LegacyAdminShell.class);
 
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
@@ -345,7 +345,7 @@ public class LegacyAdminShell
                     getUser()+" > " ;
         }
     }
-    public Object ac_logoff(Args args) throws CommandException
+    public Object acLOGGERoff(Args args) throws CommandException
     {
         throw new CommandExitException("Done", 0);
     }
@@ -509,7 +509,7 @@ public class LegacyAdminShell
         try {
             spreader.waitForReplies();
         } catch (InterruptedException ex) {
-            _log.info("InterruptedException while waiting for a reply from pools {}", ex.toString());
+            LOGGER.info("InterruptedException while waiting for a reply from pools {}", ex.toString());
         }
 
         return spreader.getReplies();
@@ -1245,7 +1245,7 @@ public class LegacyAdminShell
             throw new IllegalArgumentException("Cannot cd to this cell as it doesn't exist.");
         } catch (CacheException e) {
             // Some other failure, but apparently the cell exists
-            _log.info("Cell probe failed: {}", e.getMessage());
+            LOGGER.info("Cell probe failed: {}", e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -1264,14 +1264,14 @@ public class LegacyAdminShell
             }
             return _completer.complete(buffer, cursor, candidates);
         } catch (Exception e) {
-            _log.info("Completion failed: {}", e.toString());
+            LOGGER.info("Completion failed: {}", e.toString());
             return -1;
         }
     }
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
     {
-        _log.info("String command (super) {}", str);
+        LOGGER.info("String command (super) {}", str);
 
         if (str.trim().isEmpty()) {
             return "";
@@ -1312,7 +1312,7 @@ public class LegacyAdminShell
 
     private Object localCommand(Args args) throws CommandException
     {
-        _log.info("Local command {}", args);
+        LOGGER.info("Local command {}", args);
         Object or = command(args);
         if (or == null) {
             return "";
@@ -1386,7 +1386,7 @@ public class LegacyAdminShell
     public Object executeCommand(CellPath destination, Object str)
             throws InterruptedException, TimeoutCacheException, NoRouteToCellException
     {
-        _log.info("Object command ({}) {}",destination, str);
+        LOGGER.info("Object command ({}) {}",destination, str);
 
         return sendCommand(destination, str.toString());
     }

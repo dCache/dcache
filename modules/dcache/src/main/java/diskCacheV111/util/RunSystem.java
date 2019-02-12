@@ -13,7 +13,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class RunSystem implements Runnable {
-    private static final Logger _log = LoggerFactory.getLogger(RunSystem.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunSystem.class);
     private static final Runtime __runtime = Runtime.getRuntime() ;
     private final String[] _exec ;
     private final int    _maxLines ;
@@ -54,7 +54,7 @@ public class RunSystem implements Runnable {
     }
 
     private void say(String str) {
-        _log.debug("[{}] {}", _id, str);
+        LOGGER.debug("[{}] {}", _id, str);
     }
 
     private void interruptReaders(){

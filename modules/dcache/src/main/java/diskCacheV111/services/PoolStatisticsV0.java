@@ -124,7 +124,7 @@ import static org.dcache.util.ByteUnit.BYTES;
   */
 public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnable {
 
-    private static final Logger _log = LoggerFactory.getLogger(PoolStatisticsV0.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolStatisticsV0.class);
 
     /*
      *   Magic spells to get the infos out of the different cells.
@@ -449,35 +449,35 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             }
 
             try {
-                _log.info("Starting hourly run for : {}", path);
+                LOGGER.info("Starting hourly run for : {}", path);
 
                 createHourlyRawFile(path, _calendar);
 
-                _log.info("Hourly run finished for : {}", path);
+                LOGGER.info("Hourly run finished for : {}", path);
 
                 File today = getTodayPath(_calendar);
-                _log.info("Creating daily file : {}", today);
+                LOGGER.info("Creating daily file : {}", today);
 
                 //noinspection ResultOfMethodCallIgnored
                 today.delete();
                 copyFile(path, today);
 
-                _log.info("Daily file done : {}", today);
+                LOGGER.info("Daily file done : {}", today);
 
                 File yesterday = getYesterdayPath(_calendar);
                 if (yesterday.exists()) {
                     File diffFile  = getTodayDiffPath(_calendar);
-                    _log.info("Starting diff run for : {}", yesterday);
+                    LOGGER.info("Starting diff run for : {}", yesterday);
 
                     createDiffFile(today, yesterday, diffFile);
 
-                    _log.info("Finishing diff run for : {}", diffFile);
+                    LOGGER.info("Finishing diff run for : {}", diffFile);
                 }
                 if (_calendar.get(Calendar.HOUR_OF_DAY) == 23) {
                     resetBillingStatistics();
                 }
             } catch(Exception ee) {
-                _log.warn("Failed to create file {}: {}", path,
+                LOGGER.warn("Failed to create file {}: {}", path,
                         Exceptions.messageOrClassName(ee));
                 path.delete();
             }
@@ -486,7 +486,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 return;
             }
             try {
-                _log.info("Creating html tree");
+                LOGGER.info("Creating html tree");
                 prepareDailyHtmlFiles(_calendar);
                 if (_calendar.get(Calendar.HOUR_OF_DAY) == 23) {
                     updateHtmlMonth(_calendar);
@@ -494,7 +494,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                     updateHtmlTop();
                 }
             } catch(Exception eee) {
-                _log.warn("Exception in creating html tree for : "+path, eee);
+                LOGGER.warn("Exception in creating html tree for : "+path, eee);
             }
         }
     }
@@ -502,7 +502,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     @Override
     public void run(CellCron.TimerTask task) {
         if (task == _hourly) {
-            _log.info("Hourly ticker : {}", new Date());
+            LOGGER.info("Hourly ticker : {}", new Date());
             Calendar calendar = (Calendar)task.getCalendar().clone();
             new HourlyRunner(calendar);
             task.repeatNextHour();
@@ -769,13 +769,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                         @Override
                         public void run() {
                             try {
-                                _log.info("Starting internal Manual run");
+                                LOGGER.info("Starting internal Manual run");
                                 synchronized(PoolStatisticsV0.this) { _recentPoolStatistics = null; }
                                 Map<String,Map<String,long[]>> map = createStatisticsMap();
                                 synchronized(PoolStatisticsV0.this) { _recentPoolStatistics = map; }
-                                _log.info("Finishing internal Manual run");
+                                LOGGER.info("Finishing internal Manual run");
                             } catch(Exception e) {
-                                _log.info("Aborting internal Manual run {}", e.toString());
+                                LOGGER.info("Aborting internal Manual run {}", e.toString());
                             }
                         }
                     },
@@ -786,11 +786,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             final File file = new File(args.argv(0));
             _nucleus.newThread(() -> {
                 try {
-                    _log.info("Starting Manual run for file : {}", file);
+                    LOGGER.info("Starting Manual run for file : {}", file);
                     createHourlyRawFile(file, new GregorianCalendar());
-                    _log.info("Finishing Manual run for file : {}", file);
+                    LOGGER.info("Finishing Manual run for file : {}", file);
                 } catch(Exception e) {
-                    _log.info("Aborting Manual run for file : {} {}", file, e.toString());
+                    LOGGER.info("Aborting Manual run for file : {} {}", file, e.toString());
                 }
             }, file.toString()).start();
 
@@ -1035,7 +1035,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
         File diffFile  = getTodayDiffPath(calendar);
         if (! diffFile.exists()) {
-            _log.warn("prepareDailyHtmlFiles : File not found : {}", diffFile);
+            LOGGER.warn("prepareDailyHtmlFiles : File not found : {}", diffFile);
             return;
         }
         File dir = getHtmlPath(calendar);
@@ -1055,7 +1055,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             printIndex(new File(dir, "index.html"), getNiceDayOfCalendar(calendar));
 
         } catch(IOException ee) {
-            _log.warn("Can't prepare Html directory : "+dir, ee);
+            LOGGER.warn("Can't prepare Html directory : "+dir, ee);
         }
     }
 
@@ -1324,7 +1324,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             NoRouteToCellException,
             IOException
     {
-        _log.info("getPoolRepositoryStatistics : asking PoolManager for cell info");
+        LOGGER.info("getPoolRepositoryStatistics : asking PoolManager for cell info");
 
         PoolManagerCellInfo info;
         try {
@@ -1333,13 +1333,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             throw new IOException(e.getMessage(), e);
         }
 
-        _log.info("getPoolRepositoryStatistics :  PoolManager replied : {}", info);
+        LOGGER.info("getPoolRepositoryStatistics :  PoolManager replied : {}", info);
 
         Map<String, Map<String, long[]>> map = new HashMap<>();
         for (Map.Entry<String,CellAddressCore> pool : info.getPoolMap().entrySet()) {
             CellAddressCore address = pool.getValue();
             try {
-                _log.info("getPoolRepositoryStatistics : asking {} for statistics", address);
+                LOGGER.info("getPoolRepositoryStatistics : asking {} for statistics", address);
                 Object[] result =
                         _poolStub.sendAndWait(new CellPath(address), GET_REP_STATISTICS, Object[].class);
                 Map<String, long[]> classMap = new HashMap<>();
@@ -1347,21 +1347,21 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                     Object[] e = (Object[]) entry;
                     classMap.put((String) e[0], (long[]) e[1]);
                 }
-                _log.info("getPoolRepositoryStatistics : {} replied with {}", address, classMap);
+                LOGGER.info("getPoolRepositoryStatistics : {} replied with {}", address, classMap);
                 map.put(pool.getKey(), classMap);
 
             } catch (InterruptedException ie) {
-                _log.warn("getPoolRepositoryStatistics : sendAndWait interrupted");
+                LOGGER.warn("getPoolRepositoryStatistics : sendAndWait interrupted");
                 throw ie;
             } catch (CacheException e) {
-                _log.warn("getPoolRepositoryStatistics : {} : {}", address, e.getMessage());
+                LOGGER.warn("getPoolRepositoryStatistics : {} : {}", address, e.getMessage());
             }
         }
         return map;
     }
 
     private void resetBillingStatistics() {
-        _log.info("Resetting Billing statistics");
+        LOGGER.info("Resetting Billing statistics");
         _billing.notify(RESET_POOL_STATISTICS);
     }
     //
@@ -1389,7 +1389,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             throws InterruptedException,
             IOException, NoRouteToCellException
     {
-        _log.info("getBillingStatistics : asking billing for generic pool statistics");
+        LOGGER.info("getBillingStatistics : asking billing for generic pool statistics");
         Map<String,Map<String,long[]>> generic;
         try {
             //noinspection unchecked
@@ -1397,22 +1397,22 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         } catch (CacheException e) {
             throw new IOException(e.getMessage(), e);
         }
-        _log.info("getBillingStatistics :  billing replied with {}", generic);
+        LOGGER.info("getBillingStatistics :  billing replied with {}", generic);
 
         Map<String, Map<String, long[]>> map = new HashMap<>();
         for (String poolName: generic.keySet()) {
             try {
-                _log.info("getBillingStatistics : asking billing for [{}] statistics", poolName);
+                LOGGER.info("getBillingStatistics : asking billing for [{}] statistics", poolName);
                 //noinspection unchecked
                 Map<String,long[]> result = _billing.sendAndWait(GET_POOL_STATISTICS + " " + poolName, Map.class);
-                _log.info("getBillingStatistics : billing replied with {}", result);
+                LOGGER.info("getBillingStatistics : billing replied with {}", result);
 
                 map.put(poolName, result);
             } catch(InterruptedException ie) {
-                _log.warn("'get pool statistics' : sendAndWait interrupted");
+                LOGGER.warn("'get pool statistics' : sendAndWait interrupted");
                 throw ie;
             } catch (CacheException e) {
-                _log.warn("'get pool statistics' : {} : {}", poolName, e.getMessage());
+                LOGGER.warn("'get pool statistics' : {} : {}", poolName, e.getMessage());
             }
         }
         return map;

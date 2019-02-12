@@ -40,7 +40,7 @@ import static org.fusesource.jansi.Ansi.Color.RED;
  */
 public class LegacyAdminShellCommand implements Command, Runnable
 {
-    private static final Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(LegacyAdminShellCommand.class);
     private LegacyAdminShell _shell;
     private InputStream _in;
@@ -63,7 +63,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
                 _history  = new FileHistory(historyFile);
                 _history.setMaxSize(historySize);
             } catch (IOException e) {
-                _logger.warn("History creation failed: {}", e.getMessage());
+                LOGGER.warn("History creation failed: {}", e.getMessage());
             }
         }
     }
@@ -117,12 +117,12 @@ public class LegacyAdminShellCommand implements Command, Runnable
             initAdminShell();
             runAsciiMode();
         } catch (IOException e) {
-            _logger.warn(e.getMessage());
+            LOGGER.warn(e.getMessage());
         } finally {
             try {
                 cleanUp();
             } catch (IOException e) {
-                _logger.warn("Failed to shutdown console cleanly: {}"
+                LOGGER.warn("Failed to shutdown console cleanly: {}"
                         , e.getMessage());
             }
             _exitCallback.onExit(0);
@@ -169,7 +169,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
             } catch (SerializationException e) {
                 result =
                     "There is a bug here, please report to support@dcache.org";
-                _logger.error("This must be a bug, please report to support@dcache.org.", e);
+                LOGGER.error("This must be a bug, please report to support@dcache.org.", e);
             } catch (CommandSyntaxException e) {
                 result = e;
             } catch (CommandEvaluationException e) {
@@ -186,7 +186,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
                 result =
                     "Cell name does not exist or cell is not started: "
                     + e.getMessage();
-                _logger.warn("The cell the command was sent to is no "
+                LOGGER.warn("The cell the command was sent to is no "
                         + "longer there: {}", e.getMessage());
             } catch (InterruptedException e) {
                 result = e.getMessage();
@@ -195,7 +195,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
                                        " locate this message in the log file of the admin service and" +
                                        " send an email to support@dcache.org with this line and the" +
                                        " following stack-trace", str, e);
-                _logger.error((String) result, e);
+                LOGGER.error((String) result, e);
             } catch (Exception e) {
                 result = e.getMessage();
                 if(result == null) {

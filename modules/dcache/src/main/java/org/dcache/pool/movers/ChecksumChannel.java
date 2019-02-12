@@ -41,7 +41,7 @@ import static org.dcache.util.Exceptions.messageOrClassName;
  */
 public class ChecksumChannel extends ForwardingRepositoryChannel
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(ChecksumChannel.class);
 
     /**
@@ -275,7 +275,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
                             .map(Checksum::new)
                             .collect(Collectors.toSet());
                 } catch (IOException e) {
-                    _log.info("Unable to generate checksum of sparse file: {}", e.toString());
+                    LOGGER.info("Unable to generate checksum of sparse file: {}", e.toString());
                     return Collections.emptySet();
                 }
             }
@@ -340,7 +340,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
             RangeSet<Long> overlappingRanges = _dataRangeSet.subRangeSet(writeRange);
             if (!overlappingRanges.isEmpty()) {
                 _isChecksumViable = false;
-                _log.info("On-transfer checksum aborted due to overlapping writes from client.");
+                LOGGER.info("On-transfer checksum aborted due to overlapping writes from client.");
                 return;
             }
 

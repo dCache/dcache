@@ -26,7 +26,7 @@ import static com.google.common.collect.Iterables.find;
  */
 public class PluginChain implements EnvironmentAware
 {
-    private static final Logger _log = LoggerFactory.getLogger(PluginChain.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginChain.class);
 
     private static final ServiceLoader<PluginFactory> _factories =
             ServiceLoader.load(PluginFactory.class);
@@ -76,9 +76,9 @@ public class PluginChain implements EnvironmentAware
             PluginInstance pi = new PluginInstance(name, plugin);
             _plugins.add(pi);
         } catch(NoSuchElementException e) {
-            _log.error("Unknown plugin");
+            LOGGER.error("Unknown plugin");
         } catch(RuntimeException e) {
-            _log.error("Failed to instantiate plugin: {}", e.getMessage());
+            LOGGER.error("Failed to instantiate plugin: {}", e.getMessage());
         }
     }
 

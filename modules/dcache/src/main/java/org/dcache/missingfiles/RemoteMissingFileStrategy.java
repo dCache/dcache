@@ -19,7 +19,7 @@ import org.dcache.cells.CellStub;
  */
 public class RemoteMissingFileStrategy implements MissingFileStrategy
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(RemoteMissingFileStrategy.class);
 
     private CellStub _stub;
@@ -43,9 +43,9 @@ public class RemoteMissingFileStrategy implements MissingFileStrategy
             reply = _stub.sendAndWait(msg);
             return reply.getAction();
         } catch (NoRouteToCellException | CacheException e) {
-            _log.error(e.getMessage());
+            LOGGER.error(e.getMessage());
         } catch (InterruptedException e) {
-            _log.info("interrupted while waiting for advise from missing-files service");
+            LOGGER.info("interrupted while waiting for advise from missing-files service");
         }
 
         return Action.FAIL;

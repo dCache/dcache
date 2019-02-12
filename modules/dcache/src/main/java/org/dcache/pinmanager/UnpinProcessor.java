@@ -33,7 +33,7 @@ import org.dcache.poolmanager.PoolMonitor;
  */
 public class UnpinProcessor implements Runnable
 {
-    private static final Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(UnpinProcessor.class);
 
     private static final int MAX_RUNNING = 1000;
@@ -59,14 +59,14 @@ public class UnpinProcessor implements Runnable
             unpin(idle, executor);
             idle.acquire(MAX_RUNNING);
         } catch (InterruptedException e) {
-            _logger.debug(e.toString());
+            LOGGER.debug(e.toString());
         } catch (JDOException | DataAccessException e) {
-            _logger.error("Database failure while unpinning: {}",
+            LOGGER.error("Database failure while unpinning: {}",
                           e.getMessage());
         } catch (RemoteConnectFailureException e) {
-            _logger.error("Remote connection failure while unpinning: {)", e.getMessage());
+            LOGGER.error("Remote connection failure while unpinning: {)", e.getMessage());
         } catch (RuntimeException e) {
-            _logger.error("Unexpected failure while unpinning", e);
+            LOGGER.error("Unexpected failure while unpinning", e);
         } finally {
             executor.shutdown();
         }
@@ -92,7 +92,7 @@ public class UnpinProcessor implements Runnable
     {
         PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(pin.getPool());
         if (pool == null || !pool.isActive()) {
-            _logger.warn("Unable to clear sticky flag because pool {} is unavailable", pin.getPool());
+            LOGGER.warn("Unable to clear sticky flag because pool {} is unavailable", pin.getPool());
             return;
         }
 
@@ -122,7 +122,7 @@ public class UnpinProcessor implements Runnable
                                          _dao.delete(pin);
                                          break;
                                      default:
-                                         _logger.warn("Failed to clear sticky flag: {} [{}]", error, rc);
+                                         LOGGER.warn("Failed to clear sticky flag: {} [{}]", error, rc);
                                          break;
                                      }
                                  }

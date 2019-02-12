@@ -33,7 +33,7 @@ import static org.dcache.services.httpd.util.AliasEntry.AliasType;
 public class HttpdCommandLineInterface
         implements CellCommandListener
 {
-    private static final Logger logger = LoggerFactory.getLogger(HttpdCommandLineInterface.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpdCommandLineInterface.class);
 
     @Autowired
     private AutowireCapableBeanFactory beanFactory;
@@ -85,7 +85,7 @@ public class HttpdCommandLineInterface
         String type = args.argv(1);
         args.shift(2);
         AliasEntry entry = createEntry(alias, type, args);
-        logger.debug("Creating alias {}: {}", entry.getName(), entry);
+        LOGGER.debug("Creating alias {}: {}", entry.getName(), entry);
         delegator.addAlias(entry.getName(), entry);
         return entry.getStatusMessage();
     }

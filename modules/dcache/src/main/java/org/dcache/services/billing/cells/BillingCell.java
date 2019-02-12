@@ -63,7 +63,7 @@ public final class BillingCell
                CellInfoProvider,
                EnvironmentAware
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(BillingCell.class);
     public static final String FORMAT_PREFIX = "billing.text.format.";
 
@@ -96,7 +96,7 @@ public final class BillingCell
     public BillingCell()
     {
         _templateGroup.registerRenderer(Date.class, new DateRenderer());
-        _templateGroup.setListener(new Slf4jSTErrorListener(_log));
+        _templateGroup.setListener(new Slf4jSTErrorListener(LOGGER));
     }
 
     @Override
@@ -192,7 +192,7 @@ public final class BillingCell
         Date now = new Date();
         String output = _formatter.format(now) + " " + msg.toString();
 
-        _log.info(output);
+        LOGGER.info(output);
 
         /*
          * Removed writing these to the billing log.  We only
@@ -208,7 +208,7 @@ public final class BillingCell
                 msg.accept(new StringTemplateInfoMessageVisitor(template));
                 return template.render();
             } catch (STException e) {
-                _log.error("Unable to render format '{}'.", format);
+                LOGGER.error("Unable to render format '{}'.", format);
             }
         }
         return "";
@@ -289,7 +289,7 @@ public final class BillingCell
                 }
             }
         } catch (RuntimeException e) {
-            _log.warn("Exception in dumpPoolStatistics : {}", e);
+            LOGGER.warn("Exception in dumpPoolStatistics : {}", e);
             try {
                 Files.delete(report);
             } catch (IOException f) {
@@ -329,7 +329,7 @@ public final class BillingCell
             try {
                 Files.createDirectories(_currentDbFile);
             } catch (IOException e) {
-                _log.error("Failed to create directory {}: {}", _currentDbFile, e.toString());
+                LOGGER.error("Failed to create directory {}: {}", _currentDbFile, e.toString());
             }
             return _fileNameFormat.format(now);
         }
@@ -352,7 +352,7 @@ public final class BillingCell
                 }
             }
         } catch (IOException e) {
-            _log.warn("Can't write billing [{}] : {}", path, e.toString());
+            LOGGER.warn("Can't write billing [{}] : {}", path, e.toString());
         }
     }
 

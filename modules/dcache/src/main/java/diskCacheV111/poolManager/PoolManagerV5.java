@@ -98,7 +98,7 @@ public class PoolManagerV5
     private WatchdogThread     _watchdog;
     private PoolMonitorThread _poolMonitorThread;
 
-    private static final Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolManagerV5.class);
 
     private final ExecutorService _executor = new CDCExecutorServiceDecorator<>(
             Executors.newCachedThreadPool(
@@ -186,7 +186,7 @@ public class PoolManagerV5
             _watchdog = new WatchdogThread();
         }
         _poolMonitorThread = new PoolMonitorThread();
-        _log.info("Watchdog : {}", _watchdog);
+        LOGGER.info("Watchdog : {}", _watchdog);
     }
 
     @Override
@@ -273,13 +273,13 @@ public class PoolManagerV5
                 }
 
             } catch (Exception ee) {
-                _log.warn("WatchdogThread : illegal arguments [{}] (using defaults) {}", parameter, ee.getMessage());
+                LOGGER.warn("WatchdogThread : illegal arguments [{}] (using defaults) {}", parameter, ee.getMessage());
             }
         }
 
         @Override
         public void run() {
-            _log.debug("watchdog thread activated");
+            LOGGER.debug("watchdog thread activated");
             try {
                 while (true) {
                     Thread.sleep(_sleepTimer);
@@ -288,7 +288,7 @@ public class PoolManagerV5
                 }
             } catch (InterruptedException ignored) {
             }
-            _log.debug("watchdog finished");
+            LOGGER.debug("watchdog finished");
         }
 
         @Override
@@ -311,9 +311,9 @@ public class PoolManagerV5
             try {
                 limiter.acquire();
                 while (!Thread.interrupted()) {
-                    if (_log.isDebugEnabled()) { // For RT 9250.
+                    if (LOGGER.isDebugEnabled()) { // For RT 9250.
                         if (_poolMonitor.getPoolSelectionUnit().getLinkGroups().isEmpty()) {
-                            _log.debug("notifying with PoolMonitor that has empty linkgroups");
+                            LOGGER.debug("notifying with PoolMonitor that has empty linkgroups");
                         }
                     }
                     _poolMonitorTopic.notify(_poolMonitor);
@@ -372,7 +372,7 @@ public class PoolManagerV5
                     _requestContainer.poolStatusChanged(name, PoolStatusChangedMessage.DOWN);
                     sendPoolStatusRelay(name, PoolStatusChangedMessage.DOWN,
                                         null, 666, "DEAD");
-                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DOWN, name),
+                    LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DOWN, name),
                                "Pool {} declared as DOWN: no ping in "
                                + deathDetectedTimer/1000 +" seconds.", name);
                 }
@@ -417,7 +417,7 @@ public class PoolManagerV5
 
     public void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage poolMessage)
     {
-        _log.debug("PoolUp message from {} with mode {} and serialId {}",
+        LOGGER.debug("PoolUp message from {} with mode {} and serialId {}",
                    poolMessage.getPoolName(), poolMessage.getPoolMode(), poolMessage.getSerialId());
 
         String poolName = poolMessage.getPoolName();
@@ -741,7 +741,7 @@ public class PoolManagerV5
            FileAttributes fileAttributes = _request.getFileAttributes();
            ProtocolInfo protocolInfo = _request.getProtocolInfo();
 
-           _log.info("{} write handler started", _pnfsId);
+           LOGGER.info("{} write handler started", _pnfsId);
            long started = System.currentTimeMillis();
 
            SelectedPool pool;
@@ -749,7 +749,7 @@ public class PoolManagerV5
                pool = _poolMonitor
                        .getPoolSelector(fileAttributes, protocolInfo, _request.getLinkGroup())
                        .selectWritePool(_request.getPreallocated());
-               _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.name(),
+               LOGGER.info("{} write handler selected {} after {} ms", _pnfsId, pool.name(),
                          System.currentTimeMillis() - started);
            } catch (CacheException ce) {
                requestFailed(ce.getRc(), ce.getMessage());

@@ -52,7 +52,7 @@ import org.dcache.util.FireAndForgetTask;
 public class ZookeeperSecretHandler implements SecretHandler,
         CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware
 {
-    private static final Logger LOG = LoggerFactory.getLogger(ZookeeperSecretHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperSecretHandler.class);
     private static final long INITIAL_EXPIRATION_DELAY = TimeUnit.MINUTES.toMillis(5);
     private static final Duration MINIMUM_SECRET_VALIDITY = Duration.ofMinutes(5);
 
@@ -80,7 +80,7 @@ public class ZookeeperSecretHandler implements SecretHandler,
         @Override
         public void isLeader()
         {
-            LOG.debug("Have become leader");
+            LOGGER.debug("Have become leader");
             expirationFuture = executor.scheduleWithFixedDelay(expirationTask,
                     INITIAL_EXPIRATION_DELAY, expirationPeriodUnit.toMillis(expirationPeriod),
                     TimeUnit.MILLISECONDS);
@@ -89,7 +89,7 @@ public class ZookeeperSecretHandler implements SecretHandler,
         @Override
         public void notLeader()
         {
-            LOG.debug("Have yielded leadership");
+            LOGGER.debug("Have yielded leadership");
             expirationFuture.cancel(false);
         }
     }

@@ -35,7 +35,7 @@ import static org.dcache.util.ChecksumType.*;
  */
 public class Checksums
 {
-    private static final Logger _log = LoggerFactory.getLogger(Checksums.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Checksums.class);
 
     private static final Splitter.MapSplitter RFC3230_SPLITTER =
             Splitter.on(',').omitEmptyStrings().trimResults().
@@ -62,11 +62,11 @@ public class Checksums
                         return new Checksum(ChecksumType.MD5_TYPE, bytes);
 
                     default:
-                        _log.debug("Unsupported checksum type {}", type);
+                        LOGGER.debug("Unsupported checksum type {}", type);
                         return null;
                     }
                 } catch(IllegalArgumentException e) {
-                    _log.debug("Value \"{}\" is invalid for type {}", value,
+                    LOGGER.debug("Value \"{}\" is invalid for type {}", value,
                             type);
                     return null;
                 }

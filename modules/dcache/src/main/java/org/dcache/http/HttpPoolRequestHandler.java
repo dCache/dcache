@@ -73,7 +73,7 @@ import static org.dcache.util.StringMarkup.quotedString;
  */
 public class HttpPoolRequestHandler extends HttpRequestHandler
 {
-    private static final Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(HttpPoolRequestHandler.class);
 
     private static final String DIGEST = "Digest";
@@ -235,13 +235,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception
     {
-        _logger.debug("HTTP connection from {} established", ctx.channel().remoteAddress());
+        LOGGER.debug("HTTP connection from {} established", ctx.channel().remoteAddress());
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception
     {
-        _logger.debug("HTTP connection from {} closed", ctx.channel().remoteAddress());
+        LOGGER.debug("HTTP connection from {} closed", ctx.channel().remoteAddress());
         for (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file: _files) {
             if (file == _writeChannel) {
                 file.release(new FileCorruptedCacheException("Connection lost before end of file."));
@@ -255,7 +255,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t)
     {
         if (t instanceof ClosedChannelException) {
-            _logger.info("Connection {} unexpectedly closed.", ctx.channel());
+            LOGGER.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
             for (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file : _files) {
                 CacheException cause;
@@ -281,8 +281,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         if (event instanceof IdleStateEvent) {
             IdleStateEvent idleStateEvent = (IdleStateEvent) event;
             if (idleStateEvent.state() == IdleState.ALL_IDLE) {
-                if (_logger.isInfoEnabled()) {
-                    _logger.info("Connection from {} id idle; disconnecting.",
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("Connection from {} id idle; disconnecting.",
                                  ctx.channel().remoteAddress());
                 }
                 ctx.close();
@@ -556,7 +556,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         Map<String, List<String>> params = queryStringDecoder.parameters();
         if (!params.containsKey(HttpTransferService.UUID_QUERY_PARAM)) {
             if(!request.getUri().equals("/favicon.ico")) {
-                _logger.error("Received request without UUID in the query " +
+                LOGGER.error("Received request without UUID in the query " +
                         "string. Request-URI was {}", request.getUri());
             }
 
@@ -580,7 +580,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         FsPath transferFile = FsPath.create(file.getProtocolInfo().getPath());
 
         if (!requestedFile.equals(transferFile)) {
-            _logger.warn("Received an illegal request for file {}, while serving {}",
+            LOGGER.warn("Received an illegal request for file {}, while serving {}",
                     requestedFile,
                     transferFile);
             throw new IllegalArgumentException("The file you specified does " +

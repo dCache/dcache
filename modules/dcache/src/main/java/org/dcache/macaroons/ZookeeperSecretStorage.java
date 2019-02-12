@@ -50,7 +50,7 @@ import static org.dcache.macaroons.ZookeeperSecretHandler.ZK_MACAROONS;
  */
 public class ZookeeperSecretStorage implements PathChildrenCacheListener, CuratorFrameworkAware, CellLifeCycleAware
 {
-    private static final Logger LOG = LoggerFactory.getLogger(ZookeeperSecretStorage.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperSecretStorage.class);
     private static final String ZK_MACAROONS_SECRETS = ZKPaths.makePath(ZK_MACAROONS, "secrets");
     private static final String IDENTITY_KEY = "id:";
     private static final String SECRET_KEY = "secret:";
@@ -88,7 +88,7 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
     @Override
     public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws IOException
     {
-        LOG.debug("Recieved event {}", event);
+        LOGGER.debug("Recieved event {}", event);
 
         ChildData child = event.getData();
 
@@ -98,7 +98,7 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
             break;
 
         case CHILD_UPDATED:
-            LOG.error("Secret unexpectedly updated: {}", event);
+            LOGGER.error("Secret unexpectedly updated: {}", event);
             break;
 
         case CHILD_ADDED:
@@ -169,14 +169,14 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
 
     public IdentifiedSecret put(Instant expiry, IdentifiedSecret secret) throws Exception
     {
-        LOG.debug("Adding secret {} into ZK with expire after {}", secret.getIdentifier(), expiry);
+        LOGGER.debug("Adding secret {} into ZK with expire after {}", secret.getIdentifier(), expiry);
 
         try {
             client.create().creatingParentsIfNeeded().forPath(pathFromExpiry(expiry), encodeSecret(secret));
             storage.put(expiry, secret);
             return secret;
         } catch (KeeperException.NodeExistsException e) {
-            LOG.debug("Lost put race, returning winner");
+            LOGGER.debug("Lost put race, returning winner");
             Optional<IdentifiedSecret> winner = storage.get(expiry);
             return winner.orElseThrow(() -> e);
         }
@@ -184,14 +184,14 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
 
     private void remove(Instant expiry)
     {
-        LOG.debug("Removing secret expiring at {} from ZK", expiry);
+        LOGGER.debug("Removing secret expiring at {} from ZK", expiry);
 
         String path = pathFromExpiry(expiry);
         try {
             client.delete().forPath(path);
         } catch (Exception e) {
             Throwables.throwIfUnchecked(e);
-            LOG.error("Failed to delete path {} from ZK: {}", path, e.getMessage());
+            LOGGER.error("Failed to delete path {} from ZK: {}", path, e.getMessage());
         }
     }
 }

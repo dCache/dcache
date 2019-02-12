@@ -49,7 +49,7 @@ public class Domain
 {
     private static final String SYSTEM_CELL_NAME = "System";
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(SystemCell.class);
 
     private final ConfigurationProperties _properties;
@@ -130,7 +130,7 @@ public class Domain
         CDC.reset(SYSTEM_CELL_NAME, domainName);
         SystemCell systemCell = SystemCell.create(domainName, createCuratorFramework());
         systemCell.start().get();
-        _log.info("Starting {}", domainName);
+        LOGGER.info("Starting {}", domainName);
 
         executePreload(systemCell);
         for (ConfigurationProperties serviceConfig: _services) {
@@ -138,7 +138,7 @@ public class Domain
         }
 
         if (_services.isEmpty()) {
-            _log.warn("No services found. Domain appears to be empty.");
+            LOGGER.warn("No services found. Domain appears to be empty.");
         }
     }
 

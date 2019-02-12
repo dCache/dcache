@@ -13,9 +13,6 @@ import diskCacheV111.util.FsPath;
  */
 public class AlwaysFailMissingFileStrategy implements MissingFileStrategy
 {
-    private static final Logger _log =
-            LoggerFactory.getLogger(AlwaysFailMissingFileStrategy.class);
-
     @Override
     public Action recommendedAction(Subject subject, FsPath dCachePath,
             String requestPath)

@@ -47,7 +47,7 @@ public class SpaceSweeper2
     implements Runnable, CellCommandListener, StateChangeListener,
                SpaceSweeperPolicy, PoolDataBeanProvider<SweeperData>
 {
-    private static final Logger _log = LoggerFactory.getLogger(SpaceSweeper2.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpaceSweeper2.class);
 
     private static final DateTimeFormatter ISO8601_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(ZoneId.systemDefault());
@@ -127,7 +127,7 @@ public class SpaceSweeper2
 
         PnfsId id = entry.getPnfsId();
         if (_queue.add(id, entry.getLastAccessTime())) {
-            _log.debug("Added {} to sweeper", id);
+            LOGGER.debug("Added {} to sweeper", id);
             /* The sweeper thread may be waiting for more files to
              * delete.
              */
@@ -141,7 +141,7 @@ public class SpaceSweeper2
     {
         PnfsId id = entry.getPnfsId();
         if (_queue.remove(id)) {
-            _log.debug("Removed {} from sweeper", id);
+            LOGGER.debug("Removed {} from sweeper", id);
             return true;
         }
         return false;
@@ -203,7 +203,7 @@ public class SpaceSweeper2
                 {
                     try {
                         long bytes = reclaim(Long.MAX_VALUE);
-                        _log.info("'sweeper purge' reclaimed {} bytes.", bytes);
+                        LOGGER.info("'sweeper purge' reclaimed {} bytes.", bytes);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -229,7 +229,7 @@ public class SpaceSweeper2
                 {
                     try {
                         long bytes = reclaim(bytesToFree);
-                        _log.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
+                        LOGGER.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -365,7 +365,7 @@ public class SpaceSweeper2
     private long reclaim(long amount)
         throws InterruptedException
     {
-        _log.debug("Sweeper tries to reclaim {} bytes.", amount);
+        LOGGER.debug("Sweeper tries to reclaim {} bytes.", amount);
 
         /* We copy the entries into a tmp list to avoid
          * ConcurrentModificationException.
@@ -382,16 +382,16 @@ public class SpaceSweeper2
                 // Removing an open file will not free space until
                 // the file is closed, so we skip it this time around.
                 if (entry.getLinkCount() > 0) {
-                    _log.debug("File skipped by sweeper (in use): {}", entry);
+                    LOGGER.debug("File skipped by sweeper (in use): {}", entry);
                     continue;
                 }
                 if (!isRemovable(entry)) {
-                    _log.debug("File skipped by sweeper (not removable): {}", entry);
+                    LOGGER.debug("File skipped by sweeper (not removable): {}", entry);
                     continue;
                 }
 
                 long size = entry.getReplicaSize();
-                _log.debug("Sweeper removes {}.", id);
+                LOGGER.debug("Sweeper removes {}.", id);
                 _repository.setState(id, ReplicaState.REMOVED);
                 deleted += size;
             } catch (IllegalTransitionException | FileNotInCacheException e) {
@@ -399,7 +399,7 @@ public class SpaceSweeper2
                  * remove it ourselves.
                  */
             } catch (CacheException e) {
-                _log.error(e.getMessage());
+                LOGGER.error(e.getMessage());
             }
             if (deleted >= amount) {
                 break;

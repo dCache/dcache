@@ -123,7 +123,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class ReservationCaches
 {
-    private static final Logger _log = LoggerFactory.getLogger(ReservationCaches.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationCaches.class);
 
     public static class GetSpaceTokensKey
     {
@@ -189,7 +189,7 @@ public class ReservationCaches
                         } catch (InterruptedException e) {
                             throw new SRMInternalErrorException("Operation interrupted", e);
                         } catch (CacheException e) {
-                            _log.warn("GetSpaceTokens failed with rc={} error={}", e.getRc(), e.getMessage());
+                            LOGGER.warn("GetSpaceTokens failed with rc={} error={}", e.getRc(), e.getMessage());
                             throw new SRMException("GetSpaceTokens failed with rc=" + e.getRc() +
                                                    " error=" + e.getMessage(), e);
                         }

@@ -117,7 +117,7 @@ public class PnfsManagerV3
     extends AbstractCellComponent
     implements CellCommandListener, CellMessageReceiver, CellInfoProvider
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(PnfsManagerV3.class);
 
     private static final int THRESHOLD_DISABLED = 0;
@@ -149,7 +149,7 @@ public class PnfsManagerV3
     private int _directoryListLimit;
     private int _queueMaxSize;
     private int _listThreads;
-    private long _logSlowThreshold;
+    private long LOGGERSlowThreshold;
 
     /**
      * Whether to use folding.
@@ -234,16 +234,16 @@ public class PnfsManagerV3
     {
         _cacheModificationRelay =
             Strings.isNullOrEmpty(path) ? null : new CellPath(path);
-        _log.info("CacheModificationRelay = {}",
+        LOGGER.info("CacheModificationRelay = {}",
                   (_cacheModificationRelay == null) ? "NONE" : _cacheModificationRelay.toString());
     }
 
     @Required
     public void setLogSlowThreshold(long threshold)
     {
-        _logSlowThreshold = threshold;
-        _log.info("logSlowThreshold {}",
-                  (_logSlowThreshold == THRESHOLD_DISABLED) ? "NONE" : String.valueOf(_logSlowThreshold));
+        LOGGERSlowThreshold = threshold;
+        LOGGER.info("logSlowThreshold {}",
+                  (LOGGERSlowThreshold == THRESHOLD_DISABLED) ? "NONE" : String.valueOf(LOGGERSlowThreshold));
     }
 
     @Required
@@ -306,7 +306,7 @@ public class PnfsManagerV3
         _stub = new CellStub(getCellEndpoint());
 
         _fifos = new BlockingQueue[_threads];
-        _log.info("Starting {} threads", _fifos.length);
+        LOGGER.info("Starting {} threads", _fifos.length);
         for (int i = 0; i < _fifos.length; i++) {
             if (_queueMaxSize > 0) {
                 _fifos[i] = new LinkedBlockingQueue<>(_queueMaxSize);
@@ -932,7 +932,7 @@ public class PnfsManagerV3
                 throw new CommandException("Timeout must be greater than zero.");
             }
 
-            _logSlowThreshold = timeout;
+            LOGGERSlowThreshold = timeout;
 
             return "";
         }
@@ -948,9 +948,9 @@ public class PnfsManagerV3
         @Override
         public String call()
         {
-            return _logSlowThreshold == THRESHOLD_DISABLED
+            return LOGGERSlowThreshold == THRESHOLD_DISABLED
                     ? "disabled"
-                    : (_logSlowThreshold + " ms");
+                    : (LOGGERSlowThreshold + " ms");
         }
     }
 
@@ -963,7 +963,7 @@ public class PnfsManagerV3
         @Override
         public String call()
         {
-            _logSlowThreshold = THRESHOLD_DISABLED;
+            LOGGERSlowThreshold = THRESHOLD_DISABLED;
             return "";
         }
 
@@ -976,7 +976,7 @@ public class PnfsManagerV3
         BlockingQueue<CellMessage> fifo = _fifos[queueId];
         Object[] fifoContent = fifo.toArray();
 
-        _log.warn("PnfsManager thread #{} queue dump ({}):", queueId, fifoContent.length);
+        LOGGER.warn("PnfsManager thread #{} queue dump ({}):", queueId, fifoContent.length);
 
         StringBuilder sb = new StringBuilder();
 
@@ -985,7 +985,7 @@ public class PnfsManagerV3
             sb.append(fifoContent[i]).append('\n');
         }
 
-        _log.warn( sb.toString() );
+        LOGGER.warn( sb.toString() );
     }
 
     private Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
@@ -1004,7 +1004,7 @@ public class PnfsManagerV3
         String flagName  = pnfsMessage.getFlagName() ;
         String value     = pnfsMessage.getValue() ;
         Subject subject = pnfsMessage.getSubject();
-        _log.info("update flag "+operation+" flag="+flagName+" value="+
+        LOGGER.info("update flag "+operation+" flag="+flagName+" value="+
                   value+" for "+pnfsId);
 
         try{
@@ -1020,10 +1020,10 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {
-            _log.warn("Exception in updateFlag: " + e);
+            LOGGER.warn("Exception in updateFlag: " + e);
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Exception in updateFlag", e);
+            LOGGER.error("Exception in updateFlag", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1036,12 +1036,12 @@ public class PnfsManagerV3
         FileAttributes attributes;
         switch (operation) {
         case SET:
-            _log.info("flags set " + pnfsId + " " + flagName + "=" + value);
+            LOGGER.info("flags set " + pnfsId + " " + flagName + "=" + value);
             _nameSpaceProvider.setFileAttributes(subject, pnfsId,
                     FileAttributes.ofFlag(flagName, value), EnumSet.noneOf(FileAttribute.class));
             break;
         case SETNOOVERWRITE:
-            _log.info("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
+            LOGGER.info("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
             attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId, EnumSet.of(FileAttribute.FLAGS));
             String current = attributes.getFlags().get(flagName);
             if ((current == null) || (!current.equals(value))) {
@@ -1052,10 +1052,10 @@ public class PnfsManagerV3
         case GET:
             attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId, EnumSet.of(FileAttribute.FLAGS));
             String v = attributes.getFlags().get(flagName);
-            _log.info("flags ls " + pnfsId + " " + flagName + " -> " + v);
+            LOGGER.info("flags ls " + pnfsId + " " + flagName + " -> " + v);
             return v;
         case REMOVE:
-            _log.info("flags remove " + pnfsId + " " + flagName);
+            LOGGER.info("flags remove " + pnfsId + " " + flagName);
             _nameSpaceProvider.removeFileAttribute(subject, pnfsId, flagName);
             break;
         }
@@ -1063,7 +1063,7 @@ public class PnfsManagerV3
     }
 
     public void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage){
-        _log.info("addCacheLocation : {} for {}", pnfsMessage.getPoolName(), pnfsMessage.getPnfsId());
+        LOGGER.info("addCacheLocation : {} for {}", pnfsMessage.getPoolName(), pnfsMessage.getPnfsId());
         try {
             /* At this point, the file is no longer new and should
              * really have level 2 set. Otherwise we would not be able
@@ -1093,10 +1093,10 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException fnf ) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
         } catch (CacheException e){
-            _log.warn("Exception in addCacheLocation: {}", e.toString());
+            LOGGER.warn("Exception in addCacheLocation: {}", e.toString());
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e){
-            _log.error("Exception in addCacheLocation", e);
+            LOGGER.error("Exception in addCacheLocation", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,"Exception in addCacheLocation");
         }
 
@@ -1105,7 +1105,7 @@ public class PnfsManagerV3
 
     public void clearCacheLocation(PnfsClearCacheLocationMessage pnfsMessage){
         PnfsId pnfsId = pnfsMessage.getPnfsId();
-        _log.info("clearCacheLocation : {} for {}", pnfsMessage.getPoolName(), pnfsId);
+        LOGGER.info("clearCacheLocation : {} for {}", pnfsMessage.getPoolName(), pnfsId);
         try {
             checkMask(pnfsMessage);
             checkRestriction(pnfsMessage, UPDATE_METADATA);
@@ -1116,10 +1116,10 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException fnf ) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
         } catch (CacheException e){
-            _log.warn("Exception in clearCacheLocation for {}: {}", pnfsId, e.toString());
+            LOGGER.warn("Exception in clearCacheLocation for {}: {}", pnfsId, e.toString());
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e){
-            _log.error("Exception in clearCacheLocation for "+pnfsId, e);
+            LOGGER.error("Exception in clearCacheLocation for "+pnfsId, e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage() );
         }
 
@@ -1130,7 +1130,7 @@ public class PnfsManagerV3
         Subject subject = pnfsMessage.getSubject();
         try {
             PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            _log.info("get cache locations for {}", pnfsId);
+            LOGGER.info("get cache locations for {}", pnfsId);
 
             checkMask(pnfsMessage);
             checkRestriction(pnfsMessage, READ_METADATA);
@@ -1139,10 +1139,10 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException fnf ) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
         } catch (CacheException e){
-            _log.warn("Exception in getCacheLocations: {}", e.toString());
+            LOGGER.warn("Exception in getCacheLocations: {}", e.toString());
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e){
-            _log.error("Exception in getCacheLocations", e);
+            LOGGER.error("Exception in getCacheLocations", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                   "Pnfs lookup failed");
         }
@@ -1167,7 +1167,7 @@ public class PnfsManagerV3
 
             switch (type) {
             case DIR:
-                _log.info("create directory {}", path);
+                LOGGER.info("create directory {}", path);
                 // as a special case, if the user is allowed to upload into
                 // a child directory then they are also allowed to create this
                 // directory
@@ -1188,7 +1188,7 @@ public class PnfsManagerV3
                 // We declare the request to be successful because
                 // the createEntry seem to be ok.
                 try{
-                    _log.info( "Trying to get storageInfo for {}", pnfsId);
+                    LOGGER.info( "Trying to get storageInfo for {}", pnfsId);
 
                     /* If we were allowed to create the entry above, then
                      * we also ought to be allowed to read it here. Hence
@@ -1196,12 +1196,12 @@ public class PnfsManagerV3
                      */
                     attrs = _nameSpaceProvider.getFileAttributes(ROOT, pnfsId, requested);
                 } catch (CacheException e) {
-                    _log.warn("Can't determine storageInfo: {}", e.toString());
+                    LOGGER.warn("Can't determine storageInfo: {}", e.toString());
                 }
                 break;
 
             case REGULAR:
-                _log.info("create file {}", path);
+                LOGGER.info("create file {}", path);
                 checkRestriction(pnfsMessage, UPLOAD);
 
                 requested.add(FileAttribute.STORAGEINFO);
@@ -1222,7 +1222,7 @@ public class PnfsManagerV3
             case LINK:
                 checkArgument(pnfsMessage instanceof PnfsCreateSymLinkMessage);
                 String destination = ((PnfsCreateSymLinkMessage)pnfsMessage).getDestination();
-                _log.info("create symlink {} to {}", path, destination);
+                LOGGER.info("create symlink {} to {}", path, destination);
 
                 checkRestrictionOnParent(pnfsMessage, MANAGE);
 
@@ -1241,7 +1241,7 @@ public class PnfsManagerV3
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Bug found when creating entry:", e);
+            LOGGER.error("Bug found when creating entry:", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1263,7 +1263,7 @@ public class PnfsManagerV3
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Create upload path failed", e);
+            LOGGER.error("Create upload path failed", e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1282,7 +1282,7 @@ public class PnfsManagerV3
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Commit upload path failed", e);
+            LOGGER.error("Commit upload path failed", e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1318,7 +1318,7 @@ public class PnfsManagerV3
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Cancel upload path failed", e);
+            LOGGER.error("Cancel upload path failed", e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1343,7 +1343,7 @@ public class PnfsManagerV3
             FileAttributes attributes;
 
             if (path != null) {
-                _log.info("delete PNFS entry for {}", path);
+                LOGGER.info("delete PNFS entry for {}", path);
                 if (pnfsId != null) {
                     attributes = _nameSpaceProvider.deleteEntry(subject, allowed,
                             pnfsId, path, requested);
@@ -1354,7 +1354,7 @@ public class PnfsManagerV3
                     pnfsMessage.setPnfsId(attributes.getPnfsId());
                 }
             } else {
-                _log.info("delete PNFS entry for {}", pnfsId);
+                LOGGER.info("delete PNFS entry for {}", pnfsId);
                 attributes = _nameSpaceProvider.deleteEntry(subject, allowed,
                         pnfsId, requested);
             }
@@ -1364,10 +1364,10 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException e) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage());
         } catch (CacheException e) {
-            _log.warn("Failed to delete entry: {}", e.getMessage());
+            LOGGER.warn("Failed to delete entry: {}", e.getMessage());
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Failed to delete entry", e);
+            LOGGER.error("Failed to delete entry", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1386,7 +1386,7 @@ public class PnfsManagerV3
                 }
                 sourcePath = _nameSpaceProvider.pnfsidToPath(msg.getSubject(), pnfsId);
             }
-            _log.info("Rename {} to new name: {}", sourcePath, destinationPath);
+            LOGGER.info("Rename {} to new name: {}", sourcePath, destinationPath);
             checkRestriction(msg, MANAGE, FsPath.create(sourcePath).parent());
             checkRestriction(msg, MANAGE, FsPath.create(destinationPath).parent());
             boolean overwrite = msg.getOverwrite()
@@ -1395,7 +1395,7 @@ public class PnfsManagerV3
         } catch (CacheException e){
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error(e.toString(), e);
+            LOGGER.error(e.toString(), e);
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           "Pnfs rename failed");
         }
@@ -1417,7 +1417,7 @@ public class PnfsManagerV3
         }
 
         try {
-            _log.info("map:  id2path for {}", pnfsId);
+            LOGGER.info("map:  id2path for {}", pnfsId);
             String path = pathfinder(subject, pnfsId);
             checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(path));
             pnfsMessage.setGlobalPath(path);
@@ -1426,9 +1426,9 @@ public class PnfsManagerV3
             pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
         }catch (CacheException ce) {
             pnfsMessage.setFailed(ce.getRc(), ce.getMessage());
-            _log.warn("mapPath: {}", ce.getMessage());
+            LOGGER.warn("mapPath: {}", ce.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Exception in mapPath (pathfinder) " + e, e);
+            LOGGER.error("Exception in mapPath (pathfinder) " + e, e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1441,10 +1441,10 @@ public class PnfsManagerV3
             _nameSpaceProvider.find(msg.getSubject(), pnfsId)
                     .forEach(l -> msg.addLocation(l.getParent(), l.getName()));
         } catch (CacheException e) {
-            _log.warn(e.toString());
+            LOGGER.warn(e.toString());
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error(e.toString(), e);
+            LOGGER.error(e.toString(), e);
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           e.getMessage());
         }
@@ -1556,10 +1556,10 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException | NotDirCacheException e) {
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {
-            _log.warn(e.toString());
+            LOGGER.warn(e.toString());
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error(e.toString(), e);
+            LOGGER.error(e.toString(), e);
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           e.getMessage());
         }
@@ -1587,7 +1587,7 @@ public class PnfsManagerV3
                          */
                         PnfsMessage pnfs = (PnfsMessage) message.getMessageObject();
                         if (message.getLocalAge() > message.getAdjustedTtl() && useEarlyDiscard(pnfs)) {
-                            _log.warn("Discarding {} because its time to live has been exceeded.",
+                            LOGGER.warn("Discarding {} because its time to live has been exceeded.",
                                       pnfs.getClass().getSimpleName());
                             sendTimeout(message, "TTL exceeded");
                             continue;
@@ -1596,7 +1596,7 @@ public class PnfsManagerV3
                         processPnfsMessage(message, pnfs);
                         fold(pnfs);
                     } catch (Throwable e) {
-                        _log.warn("processPnfsMessage: {} : {}", Thread.currentThread().getName(), e);
+                        LOGGER.warn("processPnfsMessage: {} : {}", Thread.currentThread().getName(), e);
                     } finally {
                         CDC.clearMessageContext();
                     }
@@ -1620,7 +1620,7 @@ public class PnfsManagerV3
                     }
 
                     if (other.fold(message)) {
-                        _log.info("Folded {}", other.getClass().getSimpleName());
+                        LOGGER.info("Folded {}", other.getClass().getSimpleName());
                         _foldedCounters.incrementRequests(message.getClass());
 
                         i.remove();
@@ -1654,13 +1654,13 @@ public class PnfsManagerV3
         int index;
         if (pnfsId != null) {
             index = (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
-            _log.info("Using thread [{}] {}", pnfsId, index);
+            LOGGER.info("Using thread [{}] {}", pnfsId, index);
         } else if (path != null) {
             index = (int) (Math.abs((long) path.hashCode()) % _threads);
-            _log.info("Using thread [{}] {}", path, index);
+            LOGGER.info("Using thread [{}] {}", path, index);
         } else {
             index = _random.nextInt(_fifos.length);
-            _log.info("Using random thread {}", index);
+            LOGGER.info("Using random thread {}", index);
         }
 
         /*
@@ -1682,22 +1682,22 @@ public class PnfsManagerV3
             }
         } catch (TransactionException e) {
             if (pnfsMessage.getReturnCode() == 0) {
-                _log.error("Name space transaction failed: {}", e.getMessage());
+                LOGGER.error("Name space transaction failed: {}", e.getMessage());
                 pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, "Name space transaction failed.");
             }
         }
 
         if (pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS) {
-            _log.error("Inconsistent message {} received form {}",
+            LOGGER.error("Inconsistent message {} received form {}",
                        pnfsMessage.getClass(), message.getSourcePath());
         }
 
         long duration = System.currentTimeMillis() - ctime;
         _gauges.update(pnfsMessage.getClass(), duration);
-        if (_logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold) {
-            _log.warn("{} processed in {} ms", pnfsMessage.getClass(), duration);
+        if (LOGGERSlowThreshold != THRESHOLD_DISABLED && duration > LOGGERSlowThreshold) {
+            LOGGER.warn("{} processed in {} ms", pnfsMessage.getClass(), duration);
         } else {
-            _log.info("{} processed in {} ms", pnfsMessage.getClass(), duration);
+            LOGGER.info("{} processed in {} ms", pnfsMessage.getClass(), duration);
         }
 
         postProcessMessage(message, pnfsMessage);
@@ -1741,7 +1741,7 @@ public class PnfsManagerV3
         } else if (pnfsMessage instanceof PnfsRemoveChecksumMessage) {
             removeChecksum((PnfsRemoveChecksumMessage) pnfsMessage);
         } else {
-            _log.warn("Unexpected message class [{}] from source [{}]",
+            LOGGER.warn("Unexpected message class [{}] from source [{}]",
                       pnfsMessage.getClass(), message.getSourcePath());
             return false;
         }
@@ -1813,7 +1813,7 @@ public class PnfsManagerV3
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.warn("Failed to process flush notification", e);
+            LOGGER.warn("Failed to process flush notification", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1941,10 +1941,10 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException e){
             message.setFailed(e.getRc(), e);
         } catch (CacheException e) {
-            _log.warn("Error while retrieving file attributes: {}", e.getMessage());
+            LOGGER.warn("Error while retrieving file attributes: {}", e.getMessage());
             message.setFailed(e.getRc(), e);
         } catch (RuntimeException e) {
-            _log.error("Error while retrieving file attributes: " + e.getMessage(), e);
+            LOGGER.error("Error while retrieving file attributes: " + e.getMessage(), e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1981,10 +1981,10 @@ public class PnfsManagerV3
         }catch(FileNotFoundCacheException e){
             message.setFailed(e.getRc(), e);
         }catch(CacheException e) {
-            _log.warn("Error while updating file attributes: " + e.getMessage());
+            LOGGER.warn("Error while updating file attributes: " + e.getMessage());
             message.setFailed(e.getRc(), e);
         }catch(RuntimeException e) {
-            _log.error("Error while updating file attributes: " + e.getMessage(), e);
+            LOGGER.error("Error while updating file attributes: " + e.getMessage(), e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -2180,7 +2180,7 @@ public class PnfsManagerV3
                 checkRestriction(message.getRestriction(), message.getAccessMask(),
                         activity, path);
             } else {
-                _log.warn("Restriction check by-passed due to missing path; please report this to <support@dCache.org>");
+                LOGGER.warn("Restriction check by-passed due to missing path; please report this to <support@dCache.org>");
             }
         }
     }

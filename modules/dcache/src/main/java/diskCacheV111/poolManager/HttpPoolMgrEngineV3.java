@@ -66,7 +66,7 @@ public class HttpPoolMgrEngineV3 implements
     private static final String PARAMETER_SORT = "sort";
     private static final String PARAMETER_STORE = "store";
     private static final String PARAMETER_TYPE = "type";
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(HttpPoolMgrEngineV3.class);
 
     private static final long TIMEOUT = 20000;
@@ -118,15 +118,15 @@ public class HttpPoolMgrEngineV3 implements
         _pnfsManagerAddress = arguments.getOption("pnfsmanager");
 
         for (int i = 0; i < argsString.length; i++) {
-            _log.info("HttpPoolMgrEngineV3 : argument : {} : {}", i, argsString[i]);
+            LOGGER.info("HttpPoolMgrEngineV3 : argument : {} : {}", i, argsString[i]);
             if (argsString[i].equals("addStorageInfo")) {
                 _addStorageInfo = true;
-                _log.info("Option accepted : addStorageInfo");
+                LOGGER.info("Option accepted : addStorageInfo");
             } else if (argsString[i].equals("addHsmInfo")) {
                 _addHsmInfo = true;
-                _log.info("Option accepted : addHsmInfo");
+                LOGGER.info("Option accepted : addHsmInfo");
             } else if (argsString[i].startsWith("details=")) {
-                _log.info("Details for lazy restore : {}", argsString[i]);
+                LOGGER.info("Details for lazy restore : {}", argsString[i]);
                 decodeDetails(argsString[i]);
             } else if (argsString[i].equals("cacheLifetime")) {
                 _receiver.setLifetime(Integer.parseInt(argsString[i]));
@@ -138,7 +138,7 @@ public class HttpPoolMgrEngineV3 implements
         }
         _receiver.initialize();
         _restoreCollector = new Thread(this, "restore-collector");
-        _log.info("Using CSS file : {}", _cssFile);
+        LOGGER.info("Using CSS file : {}", _cssFile);
     }
 
     @Override
@@ -173,7 +173,7 @@ public class HttpPoolMgrEngineV3 implements
         try {
             _restoreCollector.join();
         } catch (InterruptedException e) {
-            _log.warn("Interrupted while waiting for restore-collector to terminate");
+            LOGGER.warn("Interrupted while waiting for restore-collector to terminate");
         }
         _pm.beforeStop();
     }
@@ -202,7 +202,7 @@ public class HttpPoolMgrEngineV3 implements
     @Override
     public void run()
     {
-        _log.info("Restore Collector Thread started");
+        LOGGER.info("Restore Collector Thread started");
         try {
             while (!Thread.interrupted()) {
                 try {
@@ -211,11 +211,11 @@ public class HttpPoolMgrEngineV3 implements
                     }
                     runRestoreCollector();
                 } catch(NoRouteToCellException e) {
-                    _log.warn("Restore Collector got : " + e, e);
+                    LOGGER.warn("Restore Collector got : " + e, e);
                 }
             }
         } catch (InterruptedException e) {
-            _log.debug("Restore Collector interrupted");
+            LOGGER.debug("Restore Collector interrupted");
         }
     }
 
@@ -316,7 +316,7 @@ public class HttpPoolMgrEngineV3 implements
 
                 agedList.add(a);
             } catch (Exception e) {
-                _log.warn(e.toString(), e);
+                LOGGER.warn(e.toString(), e);
             }
         }
         _lazyRestoreList = agedList;
@@ -329,7 +329,7 @@ public class HttpPoolMgrEngineV3 implements
                 new HsmControlGetBfDetailsMsg(new PnfsId(pnfsId),storageInfo,"default");
             return _hsmController.sendAndWait(msg).getStorageInfo();
         } catch (InterruptedException | CacheException | NoRouteToCellException e) {
-            _log.warn(e.toString(), e);
+            LOGGER.warn(e.toString(), e);
             return null;
         }
     }
@@ -340,7 +340,7 @@ public class HttpPoolMgrEngineV3 implements
             PnfsMapPathMessage msg = new PnfsMapPathMessage(new PnfsId(pnfsId));
             return _pnfsManager.sendAndWait(msg).getGlobalPath();
         } catch (InterruptedException | CacheException | NoRouteToCellException e) {
-            _log.warn(e.toString());
+            LOGGER.warn(e.toString());
             return null;
         }
     }
@@ -352,7 +352,7 @@ public class HttpPoolMgrEngineV3 implements
                     new PnfsGetFileAttributes(new PnfsId(pnfsId), EnumSet.of(FileAttribute.SIZE, FileAttribute.STORAGEINFO));
             return _pnfsManager.sendAndWait(msg).getFileAttributes();
         } catch (InterruptedException | CacheException | NoRouteToCellException e) {
-            _log.warn(e.toString());
+            LOGGER.warn(e.toString());
             return null;
         }
     }

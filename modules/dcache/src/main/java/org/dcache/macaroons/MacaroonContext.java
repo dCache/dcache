@@ -45,7 +45,7 @@ import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
  */
 public class MacaroonContext
 {
-    private static final Logger LOG = LoggerFactory.getLogger(MacaroonContext.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MacaroonContext.class);
 
     private FsPath root = FsPath.ROOT;
     private FsPath home = FsPath.ROOT;
@@ -61,13 +61,13 @@ public class MacaroonContext
 
     public void updateHome(String directory) throws InvalidCaveatException
     {
-        LOG.debug("Updating home: {}", directory);
+        LOGGER.debug("Updating home: {}", directory);
         home = root.resolve(directory);
     }
 
     public void setHome(FsPath path)
     {
-        LOG.debug("Setting home to {}", path);
+        LOGGER.debug("Setting home to {}", path);
         home = path;
     }
 
@@ -78,7 +78,7 @@ public class MacaroonContext
 
     public void setRoot(FsPath newRoot)
     {
-        LOG.debug("Setting root to {}", root);
+        LOGGER.debug("Setting root to {}", root);
         checkArgument(newRoot.hasPrefix(root), "Attempt to weaken root path");
         root = newRoot;
     }
@@ -114,7 +114,7 @@ public class MacaroonContext
     public void setPath(FsPath desiredPath)
     {
         path = desiredPath;
-        LOG.debug("Setting path to {}", path);
+        LOGGER.debug("Setting path to {}", path);
     }
 
     public void updatePath(String directory)
@@ -184,7 +184,7 @@ public class MacaroonContext
 
     public void removeActivities(EnumSet<Activity> deniedActivities)
     {
-        LOG.debug("Denying activities: {}", deniedActivities);
+        LOGGER.debug("Denying activities: {}", deniedActivities);
         activities.removeAll(deniedActivities);
     }
 
@@ -223,7 +223,7 @@ public class MacaroonContext
 
         if (!expiry.isPresent() || newExpiry.isBefore(expiry.get())) {
             expiry = Optional.of(newExpiry);
-            LOG.debug("Updating expiry to {}", newExpiry);
+            LOGGER.debug("Updating expiry to {}", newExpiry);
         }
     }
 

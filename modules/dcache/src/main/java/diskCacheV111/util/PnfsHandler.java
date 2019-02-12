@@ -60,7 +60,7 @@ public class PnfsHandler implements CellMessageSender
     private Subject _subject;
     private Restriction _restriction;
 
-    private static final Logger _logNameSpace =
+    private static final Logger LOGGER =
                     LoggerFactory.getLogger("logger.org.dcache.namespace."
                                                             + PnfsHandler.class.getName());
 
@@ -331,7 +331,7 @@ public class PnfsHandler implements CellMessageSender
             } catch (FileNotFoundCacheException e) {
                 // Already gone, so never mind
             } catch (CacheException e) {
-                _logNameSpace.error(e.toString());
+                LOGGER.error(e.toString());
             }
 
             throw new CacheException("Failed to create directory: " + path);

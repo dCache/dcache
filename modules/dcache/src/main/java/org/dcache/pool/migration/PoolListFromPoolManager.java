@@ -13,7 +13,7 @@ public abstract class PoolListFromPoolManager
     extends AbstractMessageCallback<PoolManagerGetPoolsMessage>
     implements RefreshablePoolList
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(PoolListFromPoolManager.class);
 
     protected ImmutableList<PoolManagerPoolInformation> _pools =
@@ -53,6 +53,6 @@ public abstract class PoolListFromPoolManager
     @Override
     public void failure(int rc, Object error)
     {
-        _log.error("Failed to query pool manager ({})", error );
+        LOGGER.error("Failed to query pool manager ({})", error );
     }
 }

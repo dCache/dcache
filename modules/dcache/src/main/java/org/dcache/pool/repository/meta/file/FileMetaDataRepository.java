@@ -36,7 +36,7 @@ import static org.dcache.util.Exceptions.messageOrClassName;
 public class FileMetaDataRepository
     implements ReplicaStore
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private static final String DIRECTORY_NAME = "control";
@@ -91,7 +91,7 @@ public class FileMetaDataRepository
 
             Stopwatch watch = Stopwatch.createStarted();
             Set<PnfsId> files = _fileStore.index();
-            _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+            LOGGER.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
 
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
                 watch.reset().start();
@@ -105,7 +105,7 @@ public class FileMetaDataRepository
                             })
                             .collect(toList());
                 }
-                _log.info("Found {} orphaned meta data entries in {} in {}.", metaFilesToBeDeleted.size(), _metadir, watch);
+                LOGGER.info("Found {} orphaned meta data entries in {} in {}.", metaFilesToBeDeleted.size(), _metadir, watch);
 
                 for (Path name : metaFilesToBeDeleted) {
                     deleteIfExists(name);
@@ -197,7 +197,7 @@ public class FileMetaDataRepository
             Files.createFile(tmp);
             return true;
         } catch (IOException e) {
-            _log.error("Failed to touch " + tmp + ": " + messageOrClassName(e), e);
+            LOGGER.error("Failed to touch " + tmp + ": " + messageOrClassName(e), e);
             return false;
         }
     }
@@ -227,7 +227,7 @@ public class FileMetaDataRepository
         try {
             return _fileStore.getFreeSpace();
         } catch (IOException e) {
-            _log.warn("Failed to query free space: {}", e.toString());
+            LOGGER.warn("Failed to query free space: {}", e.toString());
             return 0;
         }
     }
@@ -242,7 +242,7 @@ public class FileMetaDataRepository
         try {
             return _fileStore.getTotalSpace();
         } catch (IOException e) {
-            _log.warn("Failed to query total space: {}", e.toString());
+            LOGGER.warn("Failed to query total space: {}", e.toString());
             return 0;
         }
     }

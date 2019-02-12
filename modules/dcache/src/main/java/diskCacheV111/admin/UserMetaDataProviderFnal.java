@@ -21,7 +21,7 @@ import org.dcache.util.Args;
  */
 public class UserMetaDataProviderFnal implements UserMetaDataProvider {
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(UserMetaDataProviderFnal.class);
 
     private final CellAdapter _cell    ;
@@ -131,27 +131,27 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
             authf = new KAuthFile(_kpwdFilePath);
         }
         catch ( Exception e ) {
-            _log.warn("User authentication file not found: {}", e.toString());
+            LOGGER.warn("User authentication file not found: {}", e.toString());
             return answer;
         }
         if (userRole.startsWith("UNSPECIFIED")) {
 
             userRole = authf.getIdMapping(userPrincipal);
-            _log.warn("userRole={}", userRole);
+            LOGGER.warn("userRole={}", userRole);
 
             if(userRole == null) {
-                _log.warn("User {} not found.", userPrincipal);
+                LOGGER.warn("User {} not found.", userPrincipal);
                 return answer;
             }
         }
         pwdRecord = authf.getUserRecord(userRole);
         if( pwdRecord == null ) {
-            _log.warn("User {} not found.", userRole);
+            LOGGER.warn("User {} not found.", userRole);
             return answer;
         }
 
         if( !((UserAuthRecord)pwdRecord).hasSecureIdentity(userPrincipal) ) {
-            _log.warn(userPrincipal+": Permission denied");
+            LOGGER.warn(userPrincipal+": Permission denied");
             return answer;
         }
         uid  = pwdRecord.UID;
@@ -162,7 +162,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         answer.put("gid", String.valueOf(gid));
         answer.put("home", home);
 
-        _log.info("User {} logged in", userRole);
+        LOGGER.info("User {} logged in", userRole);
         return answer;
     }
 

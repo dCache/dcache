@@ -77,8 +77,8 @@ import org.dcache.util.NetLoggerBuilder;
  */
 public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 {
-    private static final Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
-    private static final Logger _accessLog =
+    private static final Logger LOGGER = LoggerFactory.getLogger(Ssh2Admin.class);
+    private static final Logger ACCESSLOGGER =
             LoggerFactory.getLogger("org.dcache.access.ssh2");
 
     // get the user part from a public key line like
@@ -115,7 +115,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     public void setPort(int port) {
-        _log.debug("Ssh2 port set to: {}", String.valueOf(port));
+        LOGGER.debug("Ssh2 port set to: {}", String.valueOf(port));
         _port = port;
     }
 
@@ -212,7 +212,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         configureKeyFiles();
         startServer();
 
-        _log.debug("Ssh2 Admin Interface started!");
+        LOGGER.debug("Ssh2 Admin Interface started!");
     }
 
     @Override
@@ -220,7 +220,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         try {
             _server.stop();
         } catch (IOException e) {
-            _log.warn("SSH failure during shutdown: {}", e.getMessage());
+            LOGGER.warn("SSH failure during shutdown: {}", e.getMessage());
         }
     }
 
@@ -270,7 +270,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 .add("method", method)
                 .add("successful", successful)
                 .add("reason", reason)
-                .toLogger(_accessLog);
+                .toLogger(ACCESSLOGGER);
 
         // set session parameter
         if (successful) {
@@ -278,7 +278,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 session.setAuthenticated();
                 session.setUsername(username);
             } catch (IOException e) {
-                _log.error("Failed to set Authenticated: {}",
+                LOGGER.error("Failed to set Authenticated: {}",
                         e.getMessage());
             }
         }
@@ -307,10 +307,10 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
                 successful = true;
             } catch (PermissionDeniedCacheException e) {
-                _log.warn("Login for {} denied: {}", userName, e.getMessage());
+                LOGGER.warn("Login for {} denied: {}", userName, e.getMessage());
             } catch (CacheException e) {
                 reason = e.toString();
-                _log.warn("Login for {} failed: {}", userName, e.toString());
+                LOGGER.warn("Login for {} failed: {}", userName, e.toString());
             }
 
             logLoginTry(userName, session, "Password", successful, reason);
@@ -325,7 +325,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 AuthorizedKeyParser decoder = new AuthorizedKeyParser();
                 return decoder.decodePublicKey(s);
             } catch (InvalidKeySpecException | NoSuchAlgorithmException | IllegalArgumentException e) {
-                _log.warn("can't decode public key from file: {} ", e.getMessage());
+                LOGGER.warn("can't decode public key from file: {} ", e.getMessage());
             }
             return null;
         }
@@ -343,7 +343,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 ServerSession session) {
             boolean successful = false;
             String reason = null;
-            _log.debug("Authentication username set to: {} publicKey: {}",
+            LOGGER.debug("Authentication username set to: {} publicKey: {}",
                     userName, key);
             try {
                 try(Stream<String> fileStream = java.nio.file.Files.lines(_authorizedKeyList.toPath())) {
@@ -371,9 +371,9 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     }
                 }
             } catch (FileNotFoundException e) {
-                _log.debug("File not found: {}", _authorizedKeyList);
+                LOGGER.debug("File not found: {}", _authorizedKeyList);
             } catch (IOException e) {
-                _log.error("Failed to read {}: {}", _authorizedKeyList,
+                LOGGER.error("Failed to read {}: {}", _authorizedKeyList,
                         e.getMessage());
             }
 
@@ -446,7 +446,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     .add("username", session.getUsername())
                     .add("remote.socket", session.getIoSession()
                             .getRemoteAddress())
-                    .toLogger(_accessLog);
+                    .toLogger(ACCESSLOGGER);
         }
     }
 
@@ -481,13 +481,13 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 }
                 successful = true;
             } catch (PermissionDeniedCacheException e) {
-                _log.error("Login for {} denied: {}",
+                LOGGER.error("Login for {} denied: {}",
                            Strings.nullToEmpty(userName),
                            e.getMessage());
                 reason = e.getMessage();
             } catch (CacheException e) {
                 reason = e.toString();
-                _log.error("Login for {} failed: {}",
+                LOGGER.error("Login for {} failed: {}",
                            Strings.nullToEmpty(userName),
                            e.toString());
             }

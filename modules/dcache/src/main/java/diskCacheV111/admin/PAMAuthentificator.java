@@ -41,7 +41,7 @@ import org.dcache.util.Args;
 
 public class PAMAuthentificator  extends CellAdapter {
 
-   private static final Logger _log =
+   private static final Logger LOGGER =
        LoggerFactory.getLogger(PAMAuthentificator.class);
 
    private final int request_len  = 5;
@@ -99,7 +99,7 @@ public class PAMAuthentificator  extends CellAdapter {
         _service = _args.getOpt("service");
         if (_service == null) {
             _service = "dcache";
-            _log.info("'service' not defined. Using '{}' as default service", _service);
+            LOGGER.info("'service' not defined. Using '{}' as default service", _service);
         }
 
 
@@ -107,16 +107,16 @@ public class PAMAuthentificator  extends CellAdapter {
         if (tmp == null) {
             if ((tmp = _args.getOpt("syspassword")) != null) {
                 _sysPassword = new UserPasswords(new File(tmp));
-                _log.info("using as SystemPasswordfile : {}", tmp);
+                LOGGER.info("using as SystemPasswordfile : {}", tmp);
             }
             if ((tmp = _args.getOpt("dcachepassword")) != null) {
                 _egPassword = new UserPasswords(new File(tmp));
-                _log.info("using as dCachePassword : {}", tmp);
+                LOGGER.info("using as dCachePassword : {}", tmp);
             }
 
             if ((tmp = _args.getOpt("usepam")) != null) {
                 _pam = new PAM_Auth(_service);
-                _log.info("using PAM mudule");
+                LOGGER.info("using PAM mudule");
             }
         } else {
             _execAuth = new ExecAuth(tmp);
@@ -124,7 +124,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
 
         if ((tmp = _args.getOpt("users")) != null) {
-            _log.info("using as userService : {}", tmp);
+            LOGGER.info("using as userService : {}", tmp);
 
             if (tmp.startsWith("nis:")) {
                 String provider = _args.getOpt("provider");
@@ -137,7 +137,7 @@ public class PAMAuthentificator  extends CellAdapter {
                 try {
                     _userServiceNIS = new InitialDirContext(env);
                 } catch (NamingException ne) {
-                    _log.warn("Can't InitialDirContext(env) {}", ne.toString());
+                    LOGGER.warn("Can't InitialDirContext(env) {}", ne.toString());
                     throw ne;
                 }
                 _userServiceType = USER_SERVICE_NIS;
@@ -217,14 +217,14 @@ public class PAMAuthentificator  extends CellAdapter {
             _sysPassword.update();
         }
      }catch(Exception ee ){
-        _log.warn( "Updating failed : {}", _sysPassword ) ;
+        LOGGER.warn( "Updating failed : {}", _sysPassword ) ;
      }
      try{
         if( _egPassword != null ) {
             _egPassword.update();
         }
      }catch(Exception ee ){
-        _log.warn( "Updating failed : {}", _egPassword ) ;
+        LOGGER.warn( "Updating failed : {}", _egPassword ) ;
      }
    }
    private boolean matchPassword( String userName , String password ){
@@ -261,7 +261,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
          }
       }catch( Throwable t ){
-         _log.warn( "Found : {}", t.toString()) ;
+         LOGGER.warn( "Found : {}", t.toString()) ;
       }
       return false ;
    }
@@ -277,7 +277,7 @@ public class PAMAuthentificator  extends CellAdapter {
                                   " "+password       ) ;
             return result.equals("true") ;
          }catch(Exception ee ){
-            _log.warn(ee.toString(), ee) ;
+            LOGGER.warn(ee.toString(), ee) ;
             return false ;
          }
       }else{
@@ -289,14 +289,14 @@ public class PAMAuthentificator  extends CellAdapter {
       try{
          pamOk = authenticate( principal , password )  ;
       }catch(Exception ee ){
-         _log.warn( "_pam.authorize : {}", ee.toString() ) ;
+         LOGGER.warn( "_pam.authorize : {}", ee.toString() ) ;
       }
       if( ! pamOk ){
-         _log.info("pam _log.infos no to <{}> (switching to local)", principal);
+         LOGGER.info("pam LOGGER.infos no to <{}> (switching to local)", principal);
          try{
             return matchPassword( principal , password ) ;
          }catch(Exception ee ){
-            _log.warn( "matchPassword : {}", ee.toString() ) ;
+            LOGGER.warn( "matchPassword : {}", ee.toString() ) ;
          }
       }
       return pamOk ;
@@ -307,7 +307,7 @@ public class PAMAuthentificator  extends CellAdapter {
       Serializable answer;
 
       try{
-         _log.info( "Message type : {}", obj.getClass() ) ;
+         LOGGER.info( "Message type : {}", obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -317,7 +317,7 @@ public class PAMAuthentificator  extends CellAdapter {
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.info( ">{}< request from {}", command, user ) ;
+            LOGGER.info( ">{}< request from {}", command, user ) ;
             try{
                 switch (command) {
                 case "check-password":
@@ -335,7 +335,7 @@ public class PAMAuthentificator  extends CellAdapter {
          }else{
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             _log.warn( r ) ;
+             LOGGER.warn( r ) ;
              throw new Exception( r ) ;
          }
       }catch(Exception iex ){
@@ -351,7 +351,7 @@ public class PAMAuthentificator  extends CellAdapter {
       try{
          sendMessage( msg ) ;
       }catch( RuntimeException ioe ){
-          _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
+          LOGGER.warn( "Can't send acl_response : "+ioe, ioe ) ;
       }
   }
   private Serializable getMetaInfo( Object [] request )throws Exception {

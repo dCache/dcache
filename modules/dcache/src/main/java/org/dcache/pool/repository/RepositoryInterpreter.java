@@ -36,7 +36,7 @@ import static org.dcache.util.ByteUnits.jedecPrefix;
 public class RepositoryInterpreter
     implements CellCommandListener
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(RepositoryInterpreter.class);
 
     private Repository _repository;
@@ -358,13 +358,13 @@ public class RepositoryInterpreter
                 } catch (IllegalTransitionException ignored) {
                     // File is transient - no problem
                 } catch (CacheException e) {
-                    _log.error("Failed to delete {}: {}", id, e.getMessage());
+                    LOGGER.error("Failed to delete {}: {}", id, e.getMessage());
                 } catch (InterruptedException e) {
-                    _log.warn("File removal was interrupted.");
+                    LOGGER.warn("File removal was interrupted.");
                     break;
                 }
             }
-            _log.info("'rep rmclass {}' removed {} files.", storageClassName, cnt);
+            LOGGER.info("'rep rmclass {}' removed {} files.", storageClassName, cnt);
             return cnt + " files removed.";
         }
     }
@@ -387,7 +387,7 @@ public class RepositoryInterpreter
         {
             CacheEntry entry = _repository.getEntry(pnfsId);
             if (isForced || entry.getState() == ReplicaState.CACHED && !entry.isSticky()) {
-                _log.warn("rep rm: removing {}", pnfsId);
+                LOGGER.warn("rep rm: removing {}", pnfsId);
                 _repository.setState(pnfsId, ReplicaState.REMOVED);
                 return "Removed " + pnfsId;
             } else {

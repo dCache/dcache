@@ -95,13 +95,13 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
                      * take() blocks until non-empty
                      * and throws an InterruptedException
                      */
-                    logger.trace("calling queue.take()");
+                    LOGGER.trace("calling queue.take()");
                     data.add(queue.take());
 
                     /*
                      * add to data and remove from queue any accumulated entries
                      */
-                    logger.trace("calling queue.drainTo(), queue size {}",
+                    LOGGER.trace("calling queue.drainTo(), queue size {}",
                                  queue.size());
                     queue.drainTo(data, maxBatchSize);
 
@@ -110,29 +110,29 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
                     }
 
                     try {
-                        logger.trace("calling commit");
+                        LOGGER.trace("calling commit");
                         commit(data);
                         committed.addAndGet(data.size());
                     } catch (RetryException t) {
-                        logger.warn("commit failed; retrying once ...");
+                        LOGGER.warn("commit failed; retrying once ...");
                         try {
                             commit(data);
                             committed.addAndGet(data.size());
                         } catch (RetryException t1) {
-                            logger.error("commit retry failed, {} inserts have "
+                            LOGGER.error("commit retry failed, {} inserts have "
                                                          + "been lost",
                                          data.size());
-                            logger.debug("exception in run(), commit", t1);
+                            LOGGER.debug("exception in run(), commit", t1);
                         }
                     }
                 }
             } catch (InterruptedException ignored) {
-                logger.trace("Consumer interrupted.");
+                LOGGER.trace("Consumer interrupted.");
             }
         }
     }
 
-    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
     private final AtomicLong dropped   = new AtomicLong(0);
     private final AtomicLong committed = new AtomicLong(0);
@@ -151,11 +151,11 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
                 try {
                     consumer.join();
                 } catch (InterruptedException e) {
-                    logger.trace("join on consumers interrupted");
+                    LOGGER.trace("join on consumers interrupted");
                 }
             });
         }
-        logger.trace("{} close exiting", this);
+        LOGGER.trace("{} close exiting", this);
     }
 
     public long getCommittedMessages() {
@@ -171,7 +171,7 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
     }
 
     public void initialize() {
-        logger.debug("access type: {}", this.getClass().getName());
+        LOGGER.debug("access type: {}", this.getClass().getName());
         queue = new LinkedBlockingQueue<>(maxQueueSize);
         consumers = new ArrayList<>();
         for (int i = 0; i < numberOfConsumers; i++) {
@@ -216,17 +216,17 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
 
     private void processDroppedData(IHistogramData data) {
         dropped.incrementAndGet();
-        logger.info("encountered max queue limit; "
+        LOGGER.info("encountered max queue limit; "
                                     + "{} entries have been dropped",
                     dropped.get());
-        logger.debug("queue limit prevented storage of {}", data);
+        LOGGER.debug("queue limit prevented storage of {}", data);
     }
 
     private void processInterrupted(IHistogramData data) {
         dropped.incrementAndGet();
-        logger.warn("queueing of data was interrupted; "
+        LOGGER.warn("queueing of data was interrupted; "
                                     + "{} entries have been dropped",
                     dropped.get());
-        logger.debug("failed to store {}", data);
+        LOGGER.debug("failed to store {}", data);
     }
 }

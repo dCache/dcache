@@ -29,7 +29,7 @@ import org.dcache.util.Strings;
 
 public class NoTerminalCommand implements Command, Runnable
 {
-    private static final Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(NoTerminalCommand.class);
     private final UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;
@@ -79,7 +79,7 @@ public class NoTerminalCommand implements Command, Runnable
         try {
             repl();
         } catch (IOException e) {
-            _logger.warn(e.getMessage());
+            LOGGER.warn(e.getMessage());
         } finally {
             _exitCallback.onExit(0);
         }
@@ -107,7 +107,7 @@ public class NoTerminalCommand implements Command, Runnable
                 } catch (SerializationException e) {
                     error =
                             "There is a bug here, please report to support@dcache.org";
-                    _logger.error("This must be a bug, please report to support@dcache.org.", e);
+                    LOGGER.error("This must be a bug, please report to support@dcache.org.", e);
                 } catch (CommandSyntaxException e) {
                     error = e;
                 } catch (CommandEvaluationException | CommandAclException e) {
@@ -124,14 +124,14 @@ public class NoTerminalCommand implements Command, Runnable
                     error =
                             "Cell name does not exist or cell is not started: "
                             + e.getMessage();
-                    _logger.warn("The cell the command was sent to is no "
+                    LOGGER.warn("The cell the command was sent to is no "
                                  + "longer there: {}", e.getMessage());
                 } catch (RuntimeException e) {
                     error = String.format("Command '%s' triggered a bug (%s); please" +
                                            " locate this message in the log file of the admin service and" +
                                            " send an email to support@dcache.org with this line and the" +
                                            " following stack-trace", str, e);
-                    _logger.error((String) error, e);
+                    LOGGER.error((String) error, e);
                 }
             } catch (InterruptedException e) {
                 error = null;

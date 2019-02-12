@@ -25,7 +25,7 @@ import org.dcache.util.Args;
 
 public class PoolInfoObserverV3 extends AbstractCell
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(PoolInfoObserverV3.class);
 
     private static final String THREAD_NAME = "pool-info-observer";
@@ -65,9 +65,9 @@ public class PoolInfoObserverV3 extends AbstractCell
                             try {
                                 refresh();
                             } catch (CacheException | NoRouteToCellException e) {
-                                _log.error("Failed to update topology map: {}", e.getMessage());
+                                LOGGER.error("Failed to update topology map: {}", e.getMessage());
                             } catch (RuntimeException e) {
-                                _log.error("Failed to update topology map: {}", e.toString());
+                                LOGGER.error("Failed to update topology map: {}", e.toString());
                             }
 
                             Thread.sleep(_interval * 1000);
@@ -87,7 +87,7 @@ public class PoolInfoObserverV3 extends AbstractCell
 
     public void messageArrived(NoRouteToCellException e)
     {
-        _log.warn(e.getMessage());
+        LOGGER.warn(e.getMessage());
     }
 
     private void refresh()
@@ -114,7 +114,7 @@ public class PoolInfoObserverV3 extends AbstractCell
             if ((props.length < 3) ||
                 (! (props[0] instanceof String)) ||
                 (! (props[1] instanceof Object []))) {
-                _log.error("Unexpected reply from PoolManager: {}", props);
+                LOGGER.error("Unexpected reply from PoolManager: {}", props);
                 continue;
             }
             for (Object p: (Object[]) props[1]) {
@@ -152,7 +152,7 @@ public class PoolInfoObserverV3 extends AbstractCell
                                     @Override
                                     public void onFailure(Throwable t)
                                     {
-                                        _log.warn("Failed to query {}: {}", pool, t.getMessage());
+                                        LOGGER.warn("Failed to query {}: {}", pool, t.getMessage());
                                         latch.countDown();
                                     }
                                 });

@@ -26,7 +26,7 @@ import javax.annotation.PreDestroy;
 
 public class Server extends org.eclipse.jetty.server.Server
 {
-    private static final Logger LOG = LoggerFactory.getLogger(Server.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
     public Server(ThreadPool pool)
     {
@@ -49,7 +49,7 @@ public class Server extends org.eclipse.jetty.server.Server
         try {
             stop();
         } catch (Exception e) {
-            LOG.error("Web server shutdown failed: {}", e.toString());
+            LOGGER.error("Web server shutdown failed: {}", e.toString());
         }
     }
 }

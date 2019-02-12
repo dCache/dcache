@@ -291,7 +291,7 @@ public final class AlarmCommandHandler implements CellCommandListener {
         }
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AlarmCommandHandler.class);
+
 
     private AlarmPriorityMap alarmPriorityMap;
     private String serverHost;

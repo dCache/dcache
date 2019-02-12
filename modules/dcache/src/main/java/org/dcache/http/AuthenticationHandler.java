@@ -62,7 +62,7 @@ import static java.util.Arrays.asList;
 
 public class AuthenticationHandler extends HandlerWrapper {
 
-    private final static Logger LOG = LoggerFactory.getLogger(AuthenticationHandler.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(AuthenticationHandler.class);
     public static final String X509_CERTIFICATE_ATTRIBUTE =
             "javax.servlet.request.X509Certificate";
     public static final String DCACHE_SUBJECT_ATTRIBUTE =
@@ -171,12 +171,12 @@ public class AuthenticationHandler extends HandlerWrapper {
                     throw new RuntimeException(problem);
                 }
             } catch (PermissionDeniedCacheException e) {
-                LOG.info("Login failed for {} on {}: {}", request.getMethod(),
+                LOGGER.info("Login failed for {} on {}: {}", request.getMethod(),
                         request.getPathInfo(), e.getMessage());
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
                 baseRequest.setHandled(true);
             } catch (CacheException e) {
-                LOG.error("Internal server error: {}", e.getMessage());
+                LOGGER.error("Internal server error: {}", e.getMessage());
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 baseRequest.setHandled(true);
             }
@@ -235,7 +235,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                         try {
                             return InetAddresses.forString(id);
                         } catch (IllegalArgumentException e) {
-                            LOG.warn("Fail to parse \"{}\" in X-Forwarded-For " +
+                            LOGGER.warn("Fail to parse \"{}\" in X-Forwarded-For " +
                                     "header \"{}\": {}", id, xff, e.getMessage());
                             return UNKNOWN_ADDRESS;
                         }
@@ -251,7 +251,7 @@ public class AuthenticationHandler extends HandlerWrapper {
         try {
             addresses.add(InetAddress.getByName(address));
         } catch (UnknownHostException e) {
-            LOG.warn("Failed to resolve {}: {}", address, e.getMessage());
+            LOGGER.warn("Failed to resolve {}: {}", address, e.getMessage());
             return;
         }
 
@@ -296,7 +296,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                             subject.getPrincipals().add(new LoginNamePrincipal(credential));
                         }
                     } catch (IllegalArgumentException e) {
-                        LOG.warn("Authentication Data in the header received is not Base64 encoded {}",
+                        LOGGER.warn("Authentication Data in the header received is not Base64 encoded {}",
                                 request.getHeader("Authorization"));
                     }
                     break;
@@ -308,12 +308,12 @@ public class AuthenticationHandler extends HandlerWrapper {
                     try {
                         subject.getPrivateCredentials().add(new BearerTokenCredential(info.getData()));
                     } catch (IllegalArgumentException e) {
-                        LOG.info("Bearer Token in invalid {}",
+                        LOGGER.info("Bearer Token in invalid {}",
                                 request.getHeader("Authorization"));
                     }
                     break;
                 default:
-                    LOG.debug("Unknown authentication scheme {}", info.getScheme());
+                    LOGGER.debug("Unknown authentication scheme {}", info.getScheme());
             }
         }
     }
@@ -428,12 +428,12 @@ public class AuthenticationHandler extends HandlerWrapper {
     private Optional<AuthInfo> parseAuthenticationHeader(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
         if (header == null) {
-            LOG.debug("No credentials found in Authorization header");
+            LOGGER.debug("No credentials found in Authorization header");
             return Optional.empty();
         }
 
         if (header.length() == 0) {
-            LOG.debug("Credentials in Authorization header are not-null, but are empty");
+            LOGGER.debug("Credentials in Authorization header are not-null, but are empty");
             return Optional.empty();
         }
 

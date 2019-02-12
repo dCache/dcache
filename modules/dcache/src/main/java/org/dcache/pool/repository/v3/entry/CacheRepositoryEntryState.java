@@ -21,7 +21,7 @@ import org.dcache.pool.repository.v3.entry.state.Sticky;
 
 public class CacheRepositoryEntryState
 {
-    private static final Logger _log = LoggerFactory.getLogger(CacheRepositoryEntryState.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CacheRepositoryEntryState.class);
 
     private static final Pattern VERSION_PATTERN =
         Pattern.compile("#\\s+version\\s+[0-9]\\.[0-9]");
@@ -303,7 +303,7 @@ public class CacheRepositoryEntryState
 
                         break;
                     default:
-                        _log.info("Unknow number of arguments in {} [{}]", _controlFile, line);
+                        LOGGER.info("Unknow number of arguments in {} [{}]", _controlFile, line);
                         _state = ReplicaState.BROKEN;
                         return;
                     }
@@ -313,7 +313,7 @@ public class CacheRepositoryEntryState
                 }
 
                 // if none of knows states, then it's BAD state
-                _log.error("Invalid state [{}] for entry {}", line, _controlFile);
+                LOGGER.error("Invalid state [{}] for entry {}", line, _controlFile);
                 break;
             }
         }

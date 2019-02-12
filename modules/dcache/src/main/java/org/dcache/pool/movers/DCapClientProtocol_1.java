@@ -41,7 +41,7 @@ import static org.dcache.util.ByteUnit.KiB;
 
 public class DCapClientProtocol_1 implements MoverProtocol
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(DCapClientProtocol_1.class);
     public static final int READ   =  1;
     public static final int WRITE  =  2;
@@ -59,16 +59,16 @@ public class DCapClientProtocol_1 implements MoverProtocol
     }
 
     private void say(String str){
-        _log.info(str);
+        LOGGER.info(str);
     }
 
     private void esay(String str){
-        _log.error(str);
+        LOGGER.error(str);
     }
 
     private void esay(Throwable t)
     {
-        _log.error(t.toString());
+        LOGGER.error(t.toString());
     }
 
     @Override

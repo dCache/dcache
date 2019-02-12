@@ -17,8 +17,6 @@ import org.dcache.util.expression.Expression;
  */
 public class PoolListFilter implements RefreshablePoolList
 {
-    private static final Logger _log =
-        LoggerFactory.getLogger(PoolListFilter.class);
 
     private final Collection<Pattern> _exclude;
     private final Expression _excludeWhen;

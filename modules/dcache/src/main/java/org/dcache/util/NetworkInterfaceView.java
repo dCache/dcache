@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class NetworkInterfaceView implements Serializable {
     private static final long serialVersionUID = 5589652882519395824L;
-    private static final Logger _log = LoggerFactory.getLogger(NetworkInterfaceView.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NetworkInterfaceView.class);
 
     private final String _displayName;
     private final byte[] _hardwareAddress;
@@ -124,7 +124,7 @@ public class NetworkInterfaceView implements Serializable {
                 NetworkInterfaceView childView = new NetworkInterfaceView(child, this);
                 builder.add(childView);
             } catch (SocketException e) {
-                _log.debug("Unable to add child {} of interface {}: {}", child.getName(), ni.getName(), e.getMessage());
+                LOGGER.debug("Unable to add child {} of interface {}: {}", child.getName(), ni.getName(), e.getMessage());
             }
         }
 

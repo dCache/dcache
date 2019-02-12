@@ -30,7 +30,7 @@ import static org.dcache.macaroons.CaveatValues.*;
  */
 public class MacaroonProcessor
 {
-    private static final Logger LOG  = LoggerFactory.getLogger(MacaroonProcessor.class);
+    private static final Logger LOGGER  = LoggerFactory.getLogger(MacaroonProcessor.class);
     private static final int SECRET_ID_LENGTH = 8;
     // In Base64, every 3 bytes is represented as 4 characters.
     private static final int SECRET_ID_LENGTH_BYTES = SECRET_ID_LENGTH * 3 / 4;
@@ -145,7 +145,7 @@ public class MacaroonProcessor
     public MacaroonContext expandMacaroon(String serialisedMacaroon, InetAddress clientAddress)
             throws InvalidMacaroonException
     {
-        LOG.trace("Received macaroon validate message");
+        LOGGER.trace("Received macaroon validate message");
 
         Macaroon macaroon = MacaroonsBuilder.deserialize(serialisedMacaroon);
 

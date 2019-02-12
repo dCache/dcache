@@ -39,7 +39,7 @@ import java.util.TreeMap;
  */
 public class InMemorySecretStorage
 {
-    private static final Logger LOG = LoggerFactory.getLogger(InMemorySecretStorage.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InMemorySecretStorage.class);
 
     private final SortedMap<Instant,IdentifiedSecret> _secrets = new TreeMap<>();
     private final Map<String,IdentifiedSecret> _secretsByIdentifier = new HashMap<>();
@@ -58,7 +58,7 @@ public class InMemorySecretStorage
      */
     public synchronized IdentifiedSecret put(Instant expiry, IdentifiedSecret secret)
     {
-        LOG.debug("Adding secret {} expiring at {}", secret.getIdentifier(), expiry);
+        LOGGER.debug("Adding secret {} expiring at {}", secret.getIdentifier(), expiry);
         _secrets.put(expiry, secret);
         _secretsByIdentifier.put(secret.getIdentifier(), secret);
         return secret;
@@ -74,12 +74,12 @@ public class InMemorySecretStorage
             String id = secret.getIdentifier();
             secret = _secretsByIdentifier.remove(id);
             if (secret == null) {
-                LOG.warn("Removed secret {} expiring at {}, but failed to remove from identifier map", id, expiry);
+                LOGGER.warn("Removed secret {} expiring at {}, but failed to remove from identifier map", id, expiry);
             } else {
-                LOG.debug("Removed secret {} expiring at {}", id, expiry);
+                LOGGER.debug("Removed secret {} expiring at {}", id, expiry);
             }
         } else {
-            LOG.debug("Requested removal of secret expiring at {}, but none found", expiry);
+            LOGGER.debug("Requested removal of secret expiring at {}, but none found", expiry);
         }
     }
 
@@ -107,7 +107,7 @@ public class InMemorySecretStorage
      */
     public synchronized Set<Instant> expiringBefore(Instant cutoff)
     {
-        LOG.debug("Checking for expired secrets");
+        LOGGER.debug("Checking for expired secrets");
 
         Set<Instant> expired = _secrets.headMap(cutoff).keySet();
 

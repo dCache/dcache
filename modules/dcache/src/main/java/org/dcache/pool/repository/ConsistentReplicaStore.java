@@ -45,7 +45,7 @@ import static org.dcache.util.Exceptions.messageOrClassName;
 public class ConsistentReplicaStore
     implements ReplicaStore
 {
-    private static final Logger _log = LoggerFactory.getLogger(ConsistentReplicaStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsistentReplicaStore.class);
 
     private final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =
             EnumSet.of(STORAGEINFO, LOCATIONS, ACCESS_LATENCY, RETENTION_POLICY, SIZE, CHECKSUM);
@@ -106,7 +106,7 @@ public class ConsistentReplicaStore
     {
         ReplicaRecord entry = _replicaStore.get(id);
         if (entry != null && isBroken(entry)) {
-            _log.warn("Recovering {}...", id);
+            LOGGER.warn("Recovering {}...", id);
 
             try {
                 /* It is safe to remove FROM_STORE/FROM_POOL replicas: We have
@@ -120,7 +120,7 @@ public class ConsistentReplicaStore
                 case DESTROYED:
                     _replicaStore.remove(id);
                     _pnfsHandler.clearCacheLocation(id);
-                    _log.info("Recovering: Removed {} because it was not fully staged.", id);
+                    LOGGER.info("Recovering: Removed {} because it was not fully staged.", id);
                     return null;
                 }
 
@@ -129,11 +129,11 @@ public class ConsistentReplicaStore
                 throw new DiskErrorCacheException("I/O error in healer: " + messageOrClassName(e), e);
             } catch (FileNotFoundCacheException e) {
                 _replicaStore.remove(id);
-                _log.warn("Recovering: Removed {} because name space entry was deleted.", id);
+                LOGGER.warn("Recovering: Removed {} because name space entry was deleted.", id);
                 return null;
             } catch (FileIsNewCacheException e) {
                 _replicaStore.remove(id);
-                _log.warn("Recovering: Removed {}: {}", id, e.getMessage());
+                LOGGER.warn("Recovering: Removed {}: {}", id, e.getMessage());
                 return null;
             } catch (TimeoutCacheException e) {
                 throw e;
@@ -142,7 +142,7 @@ public class ConsistentReplicaStore
                 throw new CacheException("Pool is shutting down", e);
             } catch (CacheException | NoSuchAlgorithmException e) {
                 entry.update(r -> r.setState(ReplicaState.BROKEN));
-                _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
+                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                 id.toString(), _poolName),
                         "Marked {} bad: {}.", id, e.getMessage());
             }
@@ -168,7 +168,7 @@ public class ConsistentReplicaStore
 
            ReplicaState state = entry.getState();
 
-           _log.warn("Recovering: Fetched storage info for {} from name space.", id);
+           LOGGER.warn("Recovering: Fetched storage info for {} from name space.", id);
            FileAttributes attributesInNameSpace = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
 
            /* As a special case, empty files upon client upload are deleted, except if we already managed to
@@ -218,7 +218,7 @@ public class ConsistentReplicaStore
                     AccessLatency accessLatency = attributesOnPool.getAccessLatency();
                     attributesToUpdate.setAccessLatency(accessLatency);
                     attributesInNameSpace.setAccessLatency(accessLatency);
-                    _log.warn("Recovering: Setting access latency of {} in name space to {}.",
+                    LOGGER.warn("Recovering: Setting access latency of {} in name space to {}.",
                             id, accessLatency);
                 }
 
@@ -235,20 +235,20 @@ public class ConsistentReplicaStore
                     attributesToUpdate.setRetentionPolicy(retentionPolicy);
                     attributesInNameSpace.setRetentionPolicy(retentionPolicy);
 
-                    _log.warn("Recovering: Setting retention policy of {} in name space to {}.",
+                    LOGGER.warn("Recovering: Setting retention policy of {} in name space to {}.",
                             id, retentionPolicy);
                 }
                 if (attributesInNameSpace.isUndefined(SIZE)) {
                     attributesToUpdate.setSize(length);
                     attributesInNameSpace.setSize(length);
 
-                    _log.warn("Recovering: Setting size of {} in name space to {}.", id, length);
+                    LOGGER.warn("Recovering: Setting size of {} in name space to {}.", id, length);
                 }
                 if (!additionalChecksums.isEmpty()) {
                     attributesToUpdate.setChecksums(additionalChecksums);
                     attributesInNameSpace.setChecksums(
                             Sets.newHashSet(concat(namespaceChecksums, additionalChecksums)));
-                    _log.warn("Recovering: Setting checksum of {} in name space to {}.",
+                    LOGGER.warn("Recovering: Setting checksum of {} in name space to {}.",
                             id, additionalChecksums);
                 }
             }
@@ -276,7 +276,7 @@ public class ConsistentReplicaStore
                     r.setState(targetState);
                     return null;
                 });
-                _log.warn("Recovering: Marked {} as {}.", id, targetState);
+                LOGGER.warn("Recovering: Marked {} as {}.", id, targetState);
             } else {
                 entry.update(r -> r.setFileAttributes(attributesInNameSpace));
             }
