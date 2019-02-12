@@ -85,7 +85,7 @@ public final class UnitGroup extends SelectionTypeWithLinks {
 
     public UnitGroup(SelectionUnitGroup group, PoolSelectionUnit psu) {
         super(group.getName(), psu);
-        units = group.getMemeberUnits()
+        units = group.getMemberUnits()
                      .stream()
                      .sorted(Comparator.comparing(SelectionUnit::getName))
                      .map(SelectionUnit::getName)

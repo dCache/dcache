@@ -105,7 +105,7 @@ public final class StorageUnitInfoExtractor {
         psu.getLinksPointingToPoolGroup(name).stream()
                         .map(SelectionLink::getUnitGroupsTargetedBy)
                         .flatMap(Collection::stream)
-                        .map(SelectionUnitGroup::getMemeberUnits)
+                        .map(SelectionUnitGroup::getMemberUnits)
                         .flatMap(Collection::stream)
                         .filter(StorageUnit.class::isInstance)
                         .map(StorageUnit.class::cast)
