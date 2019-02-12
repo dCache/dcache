@@ -232,6 +232,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     @Override
     public void success(Message message)
     {
+        try {
             if (message instanceof PnfsCreateEntryMessage) {
                 PnfsCreateEntryMessage create_msg =
                         (PnfsCreateEntryMessage) message;
@@ -290,7 +291,11 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     sendErrorReply();
                 }
             }
-        manager.persist(this);
+            manager.persist(this);
+        } catch (RuntimeException e) {
+            log.error("Bug detected in transfermanager, please report this to <support@dCache.org>", e);
+            failure(1, "Bug detected: " + e);
+        }
     }
 
     @Override
