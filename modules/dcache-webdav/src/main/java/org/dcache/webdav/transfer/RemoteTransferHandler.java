@@ -390,14 +390,18 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 switch (_direction) {
                 case PUSH:
                     EnumSet<FileAttribute> desired = _wantDigest.isPresent()
-                            ? EnumSet.of(PNFSID, TYPE, CHECKSUM)
-                            : EnumSet.of(PNFSID, TYPE);
+                            ? EnumSet.of(PNFSID, SIZE, TYPE, CHECKSUM)
+                            : EnumSet.of(PNFSID, SIZE, TYPE);
                     try {
                         FileAttributes attributes = _pnfs.getFileAttributes(_path.toString(),
                                 desired, READ_ACCESS_MASK, false);
 
                         if (attributes.getFileType() != FileType.REGULAR) {
                             throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST, "Not a file");
+                        }
+
+                        if (!attributes.isDefined(SIZE)) {
+                            throw new ErrorResponseException(Response.Status.SC_CONFLICT, "File upload in progress");
                         }
 
                         return attributes;
