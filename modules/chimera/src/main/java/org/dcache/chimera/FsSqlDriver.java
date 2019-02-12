@@ -110,7 +110,7 @@ public class FsSqlDriver {
     /**
      * logger
      */
-    private static final Logger _log = LoggerFactory.getLogger(FsSqlDriver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FsSqlDriver.class);
 
     private static final ServiceLoader<DBDriverProvider> ALL_PROVIDERS
             = ServiceLoader.load(DBDriverProvider.class);
@@ -274,7 +274,7 @@ public class FsSqlDriver {
                             inode.setParent(dir);
                             return new HimeraDirectoryEntry(rs.getString("iname"), inode, stat);
                         } catch (SQLException e) {
-                            _log.error("failed to fetch next entry: {}", e.getMessage());
+                            LOGGER.error("failed to fetch next entry: {}", e.getMessage());
                             return null;
                         }
                     }
@@ -1723,12 +1723,12 @@ public class FsSqlDriver {
         for (DBDriverProvider driverProvider: ALL_PROVIDERS) {
             if (driverProvider.isSupportDB(dataSource)) {
                 FsSqlDriver driver = driverProvider.getDriver(dataSource);
-                _log.info("Using DBDriverProvider: {}", driver.getClass().getName());
+                LOGGER.info("Using DBDriverProvider: {}", driver.getClass().getName());
                 return driver;
             }
         }
         // fall back to generic implementation
-        _log.warn("No sutable DBDriverProvider found. Falling back to generic.");
+        LOGGER.warn("No sutable DBDriverProvider found. Falling back to generic.");
         return new FsSqlDriver(dataSource);
     }
 

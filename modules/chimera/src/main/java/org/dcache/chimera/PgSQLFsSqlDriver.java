@@ -45,7 +45,7 @@ public class PgSQLFsSqlDriver extends FsSqlDriver {
     /**
      * logger
      */
-    private static final Logger _log = LoggerFactory.getLogger(PgSQLFsSqlDriver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PgSQLFsSqlDriver.class);
 
     /**
      *  this is a utility class which is issues SQL queries on database
@@ -54,7 +54,7 @@ public class PgSQLFsSqlDriver extends FsSqlDriver {
     public PgSQLFsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
-        _log.info("Running PostgreSQL specific Driver");
+        LOGGER.info("Running PostgreSQL specific Driver");
     }
 
     @Override
