@@ -128,7 +128,7 @@ public class ChimeraNameSpaceProvider
     private FileSystemProvider       _fs;
     private ChimeraStorageInfoExtractable _extractor;
 
-    private static final Logger _log =  LoggerFactory.getLogger(ChimeraNameSpaceProvider.class);
+    private static final Logger LOGGER=  LoggerFactory.getLogger(ChimeraNameSpaceProvider.class);
 
     private boolean _inheritFileOwnership;
     private boolean _verifyAllLookups;
@@ -699,7 +699,7 @@ public class ChimeraNameSpaceProvider
     @Override
     public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation) throws CacheException {
 
-        _log.debug ("add cache location {} for {}", cacheLocation, pnfsId);
+        LOGGER.debug ("add cache location {} for {}", cacheLocation, pnfsId);
 
         try {
             ExtendedInode inode = new ExtendedInode(_fs, pnfsId, NO_STAT);
@@ -707,7 +707,7 @@ public class ChimeraNameSpaceProvider
         }catch(FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file: " + pnfsId);
         } catch (ChimeraFsException e){
-            _log.error("Exception in addCacheLocation {}", e);
+            LOGGER.error("Exception in addCacheLocation {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
@@ -734,7 +734,7 @@ public class ChimeraNameSpaceProvider
     @Override
     public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException {
 
-        _log.debug("clearCacheLocation : {} for {}", cacheLocation, pnfsId) ;
+        LOGGER.debug("clearCacheLocation : {} for {}", cacheLocation, pnfsId) ;
 
         try {
             ExtendedInode inode = new ExtendedInode(_fs, pnfsId, NO_STAT);
@@ -744,14 +744,14 @@ public class ChimeraNameSpaceProvider
             if (removeIfLast) {
                 List<StorageLocatable> locations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
                 if (locations.isEmpty()) {
-                    _log.debug("last location cleaned. removing file {}", inode);
+                    LOGGER.debug("last location cleaned. removing file {}", inode);
                     _fs.remove(inode);
                 }
             }
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId, e);
         } catch (ChimeraFsException e){
-            _log.error("Exception in clearCacheLocation for {} : {}", pnfsId, e);
+            LOGGER.error("Exception in clearCacheLocation for {} : {}", pnfsId, e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
@@ -842,7 +842,7 @@ public class ChimeraNameSpaceProvider
                                     PnfsId parentId = parent.getPnfsId();
                                     return Stream.of(new Link(parentId, l.getName()));
                                 } catch (ChimeraFsException e) {
-                                    _log.error("Failed to find PnfsId of parent {}: {}",
+                                    LOGGER.error("Failed to find PnfsId of parent {}: {}",
                                             l.getParent(), e.toString());
                                     return Stream.of();
                                 }
@@ -1022,7 +1022,7 @@ public class ChimeraNameSpaceProvider
                                   FileAttributes attr, Set<FileAttribute> acquire)
         throws CacheException
     {
-        _log.debug("File attributes update: {}", attr.getDefinedAttributes());
+        LOGGER.debug("File attributes update: {}", attr.getDefinedAttributes());
 
         try {
             ExtendedInode inode = new ExtendedInode(_fs, pnfsId, Subjects.isRoot(subject) ? NO_STAT : STAT);
@@ -1142,7 +1142,7 @@ public class ChimeraNameSpaceProvider
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         } catch (IOException e) {
-            _log.error("Exception in setFileAttributes: {}", e);
+            LOGGER.error("Exception in setFileAttributes: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
 
@@ -1200,7 +1200,7 @@ public class ChimeraNameSpaceProvider
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (IOException e) {
-            _log.error("Exception in list: {}", e);
+            LOGGER.error("Exception in list: {}", e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
@@ -1384,11 +1384,11 @@ public class ChimeraNameSpaceProvider
              */
             ExtendedInode inodeOfUploadDir = installSystemDirectory(uploadDirectory, 0711, Collections.emptyList(), Collections.emptyMap());
             if (inodeOfUploadDir.statCache().getUid() != 0) {
-                _log.error("Owner must be root: {}", uploadDirectory);
+                LOGGER.error("Owner must be root: {}", uploadDirectory);
                 throw new CacheException("Owner must be root: " + uploadDirectory);
             }
             if ((inodeOfUploadDir.statCache().getMode() & UnixPermission.S_PERMS) != 0711) {
-                _log.error("File mode must be 0711: {}", uploadDirectory);
+                LOGGER.error("File mode must be 0711: {}", uploadDirectory);
                 throw new CacheException("File mode must be 0711: " + uploadDirectory);
             }
 
@@ -1399,7 +1399,7 @@ public class ChimeraNameSpaceProvider
 
             return uploadDirectory.child(uuid.toString()).child(path.name());
         } catch (ChimeraFsException e) {
-            _log.error("Problem with database: {}", e.getMessage());
+            LOGGER.error("Problem with database: {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         }
@@ -1553,7 +1553,7 @@ public class ChimeraNameSpaceProvider
                                 deleted.add(getFileAttributes(i, requested));
                             }
                         } catch (CacheException|ChimeraFsException e) {
-                            _log.info("Unable to identify deleted file for upload cancellation: {}", e.toString());
+                            LOGGER.info("Unable to identify deleted file for upload cancellation: {}", e.toString());
                         }});
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());

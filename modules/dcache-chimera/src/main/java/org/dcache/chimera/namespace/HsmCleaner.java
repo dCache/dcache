@@ -51,7 +51,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, CellCommandListener, CellInfoProvider
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(HsmCleaner.class);
 
 
@@ -196,10 +196,10 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     protected void onSuccess(URI uri)
     {
         try {
-            _log.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}", uri);
+            LOGGER.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}", uri);
             _db.update("DELETE FROM t_locationinfo_trash WHERE ilocation=? AND itype=0", uri.toString());
         } catch (DataAccessException e) {
-            _log.error("Error when deleting from the trash-table: {}", e.getMessage());
+            LOGGER.error("Error when deleting from the trash-table: {}", e.getMessage());
         }
     }
 
@@ -208,7 +208,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     protected void onFailure(URI uri)
     {
-        _log.info("Failed to delete a file {} from HSM. Will try again later.", uri);
+        LOGGER.info("Failed to delete a file {} from HSM. Will try again later.", uri);
     }
 
     /**
@@ -276,7 +276,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             /* If there is no available pool, then we report failure on
              * all files.
              */
-            _log.warn("No pools attached to {} are available", hsm );
+            LOGGER.warn("No pools attached to {} are available", hsm );
 
             Iterator<URI> i = _locationsToDelete.get(hsm).iterator();
             while (i.hasNext()) {
@@ -300,7 +300,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     private synchronized void timeout(String hsm, String pool)
     {
-        _log.error("Timeout deleting files on HSM {} attached to {}", hsm, pool);
+        LOGGER.error("Timeout deleting files on HSM {} attached to {}", hsm, pool);
         _poolRequests.remove(hsm);
         _pools.remove(pool);
         flush(hsm);
@@ -315,7 +315,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
          * entries.
          */
         if (msg.getReturnCode() != 0) {
-            _log.error("Received failure from pool: {}", msg.getErrorObject());
+            LOGGER.error("Received failure from pool: {}", msg.getErrorObject());
             return;
         }
 
@@ -329,12 +329,12 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
              * not request. We log this as a warning, but otherwise
              * ignore it.
              */
-            _log.warn("Received confirmation from a pool, for an action this cleaner did not request.");
+            LOGGER.warn("Received confirmation from a pool, for an action this cleaner did not request.");
             return;
         }
 
         if (!failures.isEmpty()) {
-            _log.warn("Failed to delete {} files from HSM {}. Will try again later.", failures.size(), hsm );
+            LOGGER.warn("Failed to delete {} files from HSM {}. Will try again later.", failures.size(), hsm );
         }
 
         for (URI location : success) {
@@ -377,7 +377,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
                 rs -> {
                     try {
                         URI uri = new URI(rs.getString("ilocation"));
-                        _log.debug("Submitting a request to delete a file: {}", uri);
+                        LOGGER.debug("Submitting a request to delete a file: {}", uri);
                         submit(uri);
                     } catch (URISyntaxException e) {
                         throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);

@@ -62,7 +62,7 @@ import static java.util.stream.Collectors.toList;
  */
 
 public class DiskCleaner extends AbstractCleaner implements  CellCommandListener, CellLifeCycleAware, CellInfoProvider {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(DiskCleaner.class);
 
     private final ConcurrentHashMap<String, Long> _poolsBlackList =
@@ -111,21 +111,21 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
     protected void runDelete() throws InterruptedException
     {
         try {
-            _log.info("*********NEW_RUN*************");
+            LOGGER.info("*********NEW_RUN*************");
 
-            _log.debug("INFO: Refresh Interval : {} {}", _refreshInterval, _refreshIntervalUnit);
-            _log.debug("INFO: Number of files processed at once: {}", _processAtOnce);
+            LOGGER.debug("INFO: Refresh Interval : {} {}", _refreshInterval, _refreshIntervalUnit);
+            LOGGER.debug("INFO: Number of files processed at once: {}", _processAtOnce);
 
             // get list of pool names from the trash_table
             List<String> poolList = getPoolList();
 
-            _log.debug("List of Pools from the trash-table : {}", poolList);
+            LOGGER.debug("List of Pools from the trash-table : {}", poolList);
 
             // if there are some pools in the blackPoolList (i.e.,
             //pools that are down/do not exist), extract them from the
             //poolList
             if (!_poolsBlackList.isEmpty()) {
-                _log.debug("{} pools are currently blacklisted.", _poolsBlackList.size());
+                LOGGER.debug("{} pools are currently blacklisted.", _poolsBlackList.size());
 
                 for (Map.Entry<String, Long> blackListEntry : _poolsBlackList.entrySet()) {
                     String poolName = blackListEntry.getKey();
@@ -136,7 +136,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                             && (_recoverTimer > 0)
                             && ((System.currentTimeMillis() - valueTime) > _recoverTimerUnit.toMillis(_recoverTimer))) {
                         _poolsBlackList.remove(poolName);
-                        _log.debug("Removed the following pool from the black list: {}", poolName);
+                        LOGGER.debug("Removed the following pool from the black list: {}", poolName);
                     }
                 }
 
@@ -144,15 +144,15 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
             }
 
             if (!poolList.isEmpty()) {
-                _log.debug("The following pools are cleaned: {}", poolList);
+                LOGGER.debug("The following pools are cleaned: {}", poolList);
                 runDelete(poolList);
             }
         } catch (DataAccessException e) {
-            _log.error("Database failure: {}", e.getMessage());
+            LOGGER.error("Database failure: {}", e.getMessage());
         } catch (InterruptedException e) {
-            _log.info("Cleaner was interrupted");
+            LOGGER.info("Cleaner was interrupted");
         } catch (RuntimeException e) {
-            _log.error("Bug detected", e);
+            LOGGER.error("Bug detected", e);
         }
 
     }
@@ -181,12 +181,12 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
     private void runDelete(String pool) throws InterruptedException
     {
-        _log.info("runDelete(): Now processing pool {}", pool);
+        LOGGER.info("runDelete(): Now processing pool {}", pool);
         if (!_poolsBlackList.containsKey(pool)) {
             try {
                 cleanPoolComplete(pool);
             } catch (NoRouteToCellException | CacheException e) {
-                _log.warn("Failed to remove files from {}: {}", pool, e.getMessage());
+                LOGGER.warn("Failed to remove files from {}: {}", pool, e.getMessage());
             }
         }
     }
@@ -243,7 +243,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
     private void sendRemoveToPoolCleaner(String poolName, List<String> removeList)
             throws InterruptedException, CacheException, NoRouteToCellException
     {
-        _log.trace("sendRemoveToPoolCleaner: poolName={} removeList={}", poolName, removeList);
+        LOGGER.trace("sendRemoveToPoolCleaner: poolName={} removeList={}", poolName, removeList);
 
         try {
             PoolRemoveFilesMessage msg =
@@ -268,7 +268,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
     public void messageArrived(NoRouteToCellException e)
     {
-        _log.warn(e.getMessage());
+        LOGGER.warn(e.getMessage());
     }
 
     public void messageArrived(PoolManagerPoolUpMessage poolUpMessage)
@@ -291,7 +291,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                 sendDeleteNotifications(new PnfsId(id)).get();
                 _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
             } catch (ExecutionException e) {
-                _log.warn(e.getCause().getMessage());
+                LOGGER.warn(e.getCause().getMessage());
             }
         }
     }
@@ -316,7 +316,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
      */
     void cleanPoolComplete(final String poolName) throws InterruptedException, CacheException, NoRouteToCellException
     {
-        _log.trace("CleanPoolComplete(): poolname={}", poolName);
+        LOGGER.trace("CleanPoolComplete(): poolname={}", poolName);
 
         try {
             List<String> files = new ArrayList<>(_processAtOnce);
@@ -463,7 +463,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                                 try {
                                     this.runDelete();
                                 } catch (InterruptedException e) {
-                                    _log.info("Cleaner was interrupted");
+                                    LOGGER.info("Cleaner was interrupted");
                                 }
 
                             }, _refreshInterval, _refreshInterval,
