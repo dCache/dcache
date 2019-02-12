@@ -75,7 +75,7 @@ import static org.dcache.util.backoff.IBackoffAlgorithm.Status.SUCCESS;
  */
 public class BackoffController
 {
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(BackoffController.class);
 
     private final IBackoffAlgorithmFactory factory;
@@ -99,7 +99,7 @@ public class BackoffController
                 long wait = algorithm.getWaitDuration();
 
                 if (wait == IBackoffAlgorithm.NO_WAIT) {
-                    logger.trace("algorithm returned NO_WAIT");
+                    LOGGER.trace("algorithm returned NO_WAIT");
                     return FAILURE;
                 }
 

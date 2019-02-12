@@ -26,7 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OpenIdCredentialRefreshable extends WrappingOpenIdCredential
 {
-    private static final Logger LOG =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(OpenIdCredentialRefreshable.class);
     private final HttpClient client;
 
@@ -42,7 +42,7 @@ public class OpenIdCredentialRefreshable extends WrappingOpenIdCredential
             try {
                 refreshOpenIdCredentials();
             } catch (IOException | AuthenticationException e) {
-                LOG.warn("Error Refreshing OpenId Bearer Token with {}: {}",
+                LOGGER.warn("Error Refreshing OpenId Bearer Token with {}: {}",
                         credential.getOpenidProvider(), e.getMessage());
             }
         }

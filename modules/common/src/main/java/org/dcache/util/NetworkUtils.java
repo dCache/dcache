@@ -186,7 +186,7 @@ public abstract class NetworkUtils {
         }
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(NetworkUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NetworkUtils.class);
 
     public static final String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
 
@@ -554,7 +554,7 @@ public abstract class NetworkUtils {
                                     }
                                 }));
             } catch (SocketException e) {
-                logger.error("Failed to resolve local network addresses: {}", e.toString());
+                LOGGER.error("Failed to resolve local network addresses: {}", e.toString());
                 return Collections.emptyList();
             }
         }
