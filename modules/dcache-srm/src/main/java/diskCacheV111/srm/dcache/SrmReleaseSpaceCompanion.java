@@ -83,6 +83,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.SrmReleaseSpaceCallback;
+import org.dcache.util.Exceptions;
 
 public final class SrmReleaseSpaceCompanion
         extends AbstractMessageCallback<Release>
@@ -105,8 +106,11 @@ public final class SrmReleaseSpaceCompanion
             SpaceException se = (SpaceException) error;
             callback.failed(se.getMessage());
         } else {
-            LOGGER.error("Space Release Failed rc: {} error: {}", rc, error);
-            callback.failed("Failed to release space: " + error);
+            String message = error instanceof Exception
+                    ? Exceptions.messageOrClassName((Exception)error)
+                    : String.valueOf(error);
+            LOGGER.error("Space Release Failed rc: {} error: {}", rc, message);
+            callback.failed("Failed to release space: " + message);
         }
     }
 

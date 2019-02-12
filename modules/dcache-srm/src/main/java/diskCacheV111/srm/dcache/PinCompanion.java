@@ -100,6 +100,7 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileUnvailableException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
+import org.dcache.util.Exceptions;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
@@ -141,7 +142,10 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
         @Override
         public void failure(int rc, Object error)
         {
-            fail(rc, error);
+            String message = error instanceof Exception
+                    ? Exceptions.messageOrClassName((Exception)error)
+                    : String.valueOf(error);
+            fail(rc, message);
         }
     }
 
@@ -302,7 +306,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
         _state = new PinnedState();
     }
 
-    private void fail(int rc, Object error)
+    private void fail(int rc, String error)
     {
         switch (rc) {
         case FILE_NOT_FOUND:
@@ -311,12 +315,12 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
 
         case FILE_NOT_IN_REPOSITORY:
             _log.warn("Pinning failed for {} ({})", _path, error);
-            setException(new SRMFileUnvailableException(error.toString()));
+            setException(new SRMFileUnvailableException(error));
             break;
 
         case PERMISSION_DENIED:
             _log.warn("Pinning failed for {} ({})", _path, error);
-            setException(new SRMAuthorizationException(error.toString()));
+            setException(new SRMAuthorizationException(error));
             break;
 
         case TIMEOUT:
