@@ -82,6 +82,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.util.Exceptions;
 
 import static diskCacheV111.util.CacheException.TIMEOUT;
 
@@ -116,9 +117,12 @@ public class UnpinCompanion
             break;
 
         default:
-            _log.error("Unpinning failed for {} [rc={},msg={}]", pnfsId, rc, error);
+            String message = error instanceof Exception
+                    ? Exceptions.messageOrClassName((Exception)error)
+                    : String.valueOf(error);
+            _log.error("Unpinning failed for {} [rc={},msg={}]", pnfsId, rc, message);
             String reason =
-                String.format("Failed to unpin file [rc=%d,msg=%s]", rc, error);
+                String.format("Failed to unpin file [rc=%d,msg=%s]", rc, message);
             future.setException(new SRMException(reason));
             break;
         }
