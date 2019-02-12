@@ -78,8 +78,7 @@ import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.TYPE;
+import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
 
@@ -376,10 +375,14 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 case PUSH:
                     try {
                         FileAttributes attributes = _pnfs.getFileAttributes(_path.toString(),
-                                EnumSet.of(PNFSID, TYPE), READ_ACCESS_MASK, false);
+                                EnumSet.of(PNFSID, SIZE, TYPE), READ_ACCESS_MASK, false);
 
                         if (attributes.getFileType() != FileType.REGULAR) {
                             throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST, "Not a file");
+                        }
+
+                        if (!attributes.isDefined(SIZE)) {
+                            throw new ErrorResponseException(Response.Status.SC_CONFLICT, "File upload in progress");
                         }
 
                         return attributes.getPnfsId();
