@@ -28,7 +28,7 @@ class UGroup implements Serializable, SelectionUnitGroup {
     }
 
     @Override
-    public Collection<SelectionUnit> getMemeberUnits() {
+    public Collection<SelectionUnit> getMemberUnits() {
         return new ArrayList<>(_unitList.values());
     }
 

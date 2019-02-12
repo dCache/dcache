@@ -195,7 +195,7 @@ public interface PoolSelectionUnit  {
     }
 
     interface SelectionUnitGroup extends SelectionEntity {
-        Collection<SelectionUnit> getMemeberUnits();
+        Collection<SelectionUnit> getMemberUnits();
         Collection<SelectionLink> getLinksPointingTo();
     }
    SelectionPool getPool(String poolName) ;
