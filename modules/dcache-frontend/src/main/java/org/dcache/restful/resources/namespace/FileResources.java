@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
+import org.dcache.util.list.DirectoryEntry;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ import javax.ws.rs.core.Response;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.file.DirectoryStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -69,8 +71,6 @@ import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.namespace.NamespaceUtils;
-import org.dcache.util.list.DirectoryEntry;
-import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
@@ -118,16 +118,16 @@ public class FileResources {
     private CellStub pnfsmanager;
 
     @GET
-    @ApiOperation(value="Find metadata and optionally directory contents.",
-            notes="The method offers the possibility to list the content of a "
+    @ApiOperation(value = "Find metadata and optionally directory contents.",
+            notes = "The method offers the possibility to list the content of a "
                     + "directory in addition to providing metadata of a "
                     + "specified file or directory.")
     @ApiResponses({
-                @ApiResponse(code = 401, message = "Unauthorized"),
-                @ApiResponse(code = 403, message = "Forbidden"),
-                @ApiResponse(code = 404, message = "Not Found"),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+            @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("{path : .*}")
     @Produces(MediaType.APPLICATION_JSON)
     public JsonFileAttributes getFileAttributes(@ApiParam("Path of file or directory.")
@@ -138,16 +138,15 @@ public class FileResources {
                                                 @ApiParam("Whether to include file locality information.")
                                                 @DefaultValue("false")
                                                 @QueryParam("locality") boolean isLocality,
-                                                @ApiParam(value="Whether to include replica locations.")
+                                                @ApiParam(value = "Whether to include replica locations.")
                                                 @QueryParam("locations") boolean isLocations,
-                                                @ApiParam(value="Whether to include quality of service.")
+                                                @ApiParam(value = "Whether to include quality of service.")
                                                 @DefaultValue("false")
                                                 @QueryParam("qos") boolean isQos,
                                                 @ApiParam("Limit number of replies in directory listing.")
                                                 @QueryParam("limit") String limit,
                                                 @ApiParam("Number of entries to skip in directory listing.")
-                                                @QueryParam("offset") String offset) throws CacheException
-    {
+                                                @QueryParam("offset") String offset) throws CacheException {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
@@ -156,14 +155,14 @@ public class FileResources {
 
             FileAttributes namespaceAttributes = handler.getFileAttributes(path, attributes);
             NamespaceUtils.chimeraToJsonAttributes(path.name(), fileAttributes,
-                                                   namespaceAttributes,
-                                                   isLocality, isLocations,
-                                                   false,
-                                                   request, poolMonitor);
+                    namespaceAttributes,
+                    isLocality, isLocations,
+                    false,
+                    request, poolMonitor);
             if (isQos) {
                 NamespaceUtils.addQoSAttributes(fileAttributes,
-                                                namespaceAttributes,
-                                                request, poolMonitor, pinmanager);
+                        namespaceAttributes,
+                        request, poolMonitor, pinmanager);
             }
 
             // fill children list id it's a directory and listing is requested
@@ -176,14 +175,14 @@ public class FileResources {
                         throw new BadRequestException("limit and offset can not be less than zero.");
                     }
                     range = (Integer.MAX_VALUE - lower < ceiling) ? Range.atLeast(lower)
-                            : Range.closedOpen(lower, lower+ceiling);
+                            : Range.closedOpen(lower, lower + ceiling);
                 } catch (NumberFormatException e) {
                     throw new BadRequestException("limit and offset must be an integer value.");
                 }
 
                 List<JsonFileAttributes> children = new ArrayList<>();
 
-                DirectoryStream stream = listDirectoryHandler.list(
+                DirectoryStream<DirectoryEntry> stream = listDirectoryHandler.list(
                         HttpServletRequests.roleAwareSubject(request),
                         HttpServletRequests.roleAwareRestriction(request),
                         path,
@@ -197,16 +196,16 @@ public class FileResources {
                     JsonFileAttributes childrenAttributes = new JsonFileAttributes();
 
                     NamespaceUtils.chimeraToJsonAttributes(fName,
-                                                           childrenAttributes,
-                                                           entry.getFileAttributes(),
-                                                           isLocality, isLocations,
-                                                           false,
-                                                           request, poolMonitor);
+                            childrenAttributes,
+                            entry.getFileAttributes(),
+                            isLocality, isLocations,
+                            false,
+                            request, poolMonitor);
                     childrenAttributes.setFileName(fName);
                     if (isQos) {
                         NamespaceUtils.addQoSAttributes(childrenAttributes,
-                                                        entry.getFileAttributes(),
-                                                        request, poolMonitor, pinmanager);
+                                entry.getFileAttributes(),
+                                request, poolMonitor, pinmanager);
                     }
                     children.add(childrenAttributes);
                 }
@@ -229,51 +228,50 @@ public class FileResources {
     }
 
     @POST
-    @ApiOperation(value="Modify a file or directory.")
+    @ApiOperation(value = "Modify a file or directory.")
     @Path("{path : .*}")
     @ApiResponses({
-                @ApiResponse(code = 400, message = "Transition for directories not supported"),
-                @ApiResponse(code = 400, message = "Unsupported QoS transition"),
-                @ApiResponse(code = 400, message = "Unknown target QoS"),
-                @ApiResponse(code = 400, message = "Unknown action"),
-                @ApiResponse(code = 401, message = "Unauthorized"),
-                @ApiResponse(code = 403, message = "Forbidden"),
-                @ApiResponse(code = 404, message = "Not Found"),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+            @ApiResponse(code = 400, message = "Transition for directories not supported"),
+            @ApiResponse(code = 400, message = "Unsupported QoS transition"),
+            @ApiResponse(code = 400, message = "Unknown target QoS"),
+            @ApiResponse(code = 400, message = "Unknown action"),
+            @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response cmrResources(@ApiParam(value="Path of file or directory to be modified.", required=true)
+    public Response cmrResources(@ApiParam(value = "Path of file or directory to be modified.", required = true)
                                  @PathParam("path") String requestPath,
                                  @ApiParam(value = "A JSON object that has an 'action' "
-                                             + "item with a String value.\n"
-                                             + "If the 'action' value is 'mkdir' "
-                                             + "then a new directory is created "
-                                             + "with the name taken from the "
-                                             + "value of the JSON object 'name' "
-                                             + "item.  This directory is created "
-                                             + "within the supplied path parameter, "
-                                             + "which must be an existing directory.\n"
-                                             + "If action is 'mv' then the file "
-                                             + "or directory specified by the path "
-                                             + "parameter is moved and/or "
-                                             + "renamed with the value of the JSON "
-                                             + "object 'destination' item describing "
-                                             + "the final location.  If the "
-                                             + "'destination' value is a relative "
-                                             + "path then it is resolved against "
-                                             + "the path parameter value.\n"
-                                             + "If action is 'qos' then the value "
-                                             + "of the JSON object 'target' item "
-                                             + "describes the desired QoS.",
+                                         + "item with a String value.\n"
+                                         + "If the 'action' value is 'mkdir' "
+                                         + "then a new directory is created "
+                                         + "with the name taken from the "
+                                         + "value of the JSON object 'name' "
+                                         + "item.  This directory is created "
+                                         + "within the supplied path parameter, "
+                                         + "which must be an existing directory.\n"
+                                         + "If action is 'mv' then the file "
+                                         + "or directory specified by the path "
+                                         + "parameter is moved and/or "
+                                         + "renamed with the value of the JSON "
+                                         + "object 'destination' item describing "
+                                         + "the final location.  If the "
+                                         + "'destination' value is a relative "
+                                         + "path then it is resolved against "
+                                         + "the path parameter value.\n"
+                                         + "If action is 'qos' then the value "
+                                         + "of the JSON object 'target' item "
+                                         + "describes the desired QoS.",
                                          required = true,
                                          examples = @Example({
-                                             @ExampleProperty("{\n"
+                                                 @ExampleProperty("{\n"
                                                          + "    \"action\" : \"mv\""
                                                          + "    \"destination\" : \"../foo\""
                                                          + "}")}))
-                                 String requestPayload)
-    {
+                                         String requestPayload) {
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
@@ -311,42 +309,42 @@ public class FileResources {
                     ProtocolInfo info = new HttpProtocolInfo("Http", 1, 1,
                             new InetSocketAddress(request.getRemoteHost(), 0),
                             null, null, null,
-                            URI.create("http://"+request.getRemoteHost()+"/"));
+                            URI.create("http://" + request.getRemoteHost() + "/"));
 
                     MigrationPolicyEngine migrationPolicyEngine =
                             new MigrationPolicyEngine(attributes, poolmanager, poolMonitor);
 
                     switch (targetQos) {
-                    case QosManagement.DISK_TAPE:
-                        if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
-                            migrationPolicyEngine.adjust();
-                        }
-                        boolean isPinned = pinmanager.sendAndWait(new PinManagerCountPinsMessage(attributes.getPnfsId())).getCount() != 0;
-                        if (!isPinned) {
-                            pinmanager.notify(new PinManagerPinMessage(attributes, info, QOS_PIN_REQUEST_ID, -1));
-                        }
-                        break;
-                    case QosManagement.DISK:
-                        switch (locality) {
-                        case ONLINE:
-                            // do nothing
+                        case QosManagement.DISK_TAPE:
+                            if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
+                                migrationPolicyEngine.adjust();
+                            }
+                            boolean isPinned = pinmanager.sendAndWait(new PinManagerCountPinsMessage(attributes.getPnfsId())).getCount() != 0;
+                            if (!isPinned) {
+                                pinmanager.notify(new PinManagerPinMessage(attributes, info, QOS_PIN_REQUEST_ID, -1));
+                            }
+                            break;
+                        case QosManagement.DISK:
+                            switch (locality) {
+                                case ONLINE:
+                                    // do nothing
+                                    break;
+
+                                default:
+                                    throw new BadRequestException("Unsupported QoS transition");
+                            }
+                            break;
+                        case QosManagement.TAPE:
+                            if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
+                                migrationPolicyEngine.adjust();
+                            }
+                            PinManagerUnpinMessage messageUnpin = new PinManagerUnpinMessage(attributes.getPnfsId());
+                            messageUnpin.setRequestId(QOS_PIN_REQUEST_ID);
+                            pinmanager.notify(messageUnpin);
                             break;
 
                         default:
-                            throw new BadRequestException("Unsupported QoS transition");
-                        }
-                        break;
-                    case QosManagement.TAPE:
-                        if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
-                            migrationPolicyEngine.adjust();
-                        }
-                        PinManagerUnpinMessage messageUnpin = new PinManagerUnpinMessage(attributes.getPnfsId());
-                        messageUnpin.setRequestId(QOS_PIN_REQUEST_ID);
-                        pinmanager.notify(messageUnpin);
-                        break;
-
-                    default:
-                        throw new BadRequestException("Unknown target QoS: " + targetQos);
+                            throw new BadRequestException("Unknown target QoS: " + targetQos);
                     }
                     break;
 
@@ -369,18 +367,17 @@ public class FileResources {
 
     @DELETE
     @Path("{path : .*}")
-    @ApiOperation(value="delete a file or directory",
-            notes="If a directory is targeted then the directory must already be empty.")
+    @ApiOperation(value = "delete a file or directory",
+            notes = "If a directory is targeted then the directory must already be empty.")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponses({
-                @ApiResponse(code = 401, message = "Unauthorized"),
-                @ApiResponse(code = 403, message = "Forbidden"),
-                @ApiResponse(code = 404, message = "Not Found"),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
-    public Response deleteFileEntry(@ApiParam(value="Path of file or directory.", required=true)
-                                    @PathParam("path") String requestPath) throws CacheException
-    {
+            @ApiResponse(code = 401, message = "Unauthorized"),
+            @ApiResponse(code = 403, message = "Forbidden"),
+            @ApiResponse(code = 404, message = "Not Found"),
+            @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
+    public Response deleteFileEntry(@ApiParam(value = "Path of file or directory.", required = true)
+                                    @PathParam("path") String requestPath) throws CacheException {
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 

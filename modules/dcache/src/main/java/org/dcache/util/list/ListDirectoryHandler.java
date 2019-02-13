@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -33,7 +34,7 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 /**
  * DirectoryListSource which delegates the list operation to the
  * PnfsManager.
- *
+ * <p>
  * Large directories are broken into several reply messages by the
  * PnfsManager. For that reason the regular Cells callback mechanism
  * for replies cannot be used. Instead messages of type
@@ -45,17 +46,15 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
  * ListDirectoryHandler.
  */
 public class ListDirectoryHandler
-    implements CellMessageReceiver, DirectoryListSource
-{
+        implements CellMessageReceiver, DirectoryListSource {
     private static final Logger _log =
-        LoggerFactory.getLogger(ListDirectoryHandler.class);
+            LoggerFactory.getLogger(ListDirectoryHandler.class);
 
     private final PnfsHandler _pnfs;
-    private final Map<UUID,Stream> _replies =
+    private final Map<UUID, Stream> _replies =
             new ConcurrentHashMap<>();
 
-    public ListDirectoryHandler(PnfsHandler pnfs)
-    {
+    public ListDirectoryHandler(PnfsHandler pnfs) {
         _pnfs = pnfs;
     }
 
@@ -73,12 +72,11 @@ public class ListDirectoryHandler
      * been called on the underlying PnfsHandler instance.
      */
     @Override
-    public DirectoryStream
-        list(Subject subject, Restriction restriction, FsPath path, Glob pattern, Range<Integer> range)
-        throws InterruptedException, CacheException
-    {
+    public java.nio.file.DirectoryStream
+    list(Subject subject, Restriction restriction, FsPath path, Glob pattern, Range<Integer> range)
+            throws InterruptedException, CacheException {
         return list(subject, restriction, path, pattern, range,
-                    EnumSet.noneOf(FileAttribute.class));
+                EnumSet.noneOf(FileAttribute.class));
     }
 
     /**
@@ -95,14 +93,13 @@ public class ListDirectoryHandler
      * been called on the underlying PnfsHandler instance.
      */
     @Override
-    public DirectoryStream
-        list(Subject subject, Restriction restriction, FsPath path, Glob pattern,
-                Range<Integer> range, Set<FileAttribute> attributes)
-                throws InterruptedException, CacheException
-    {
+    public java.nio.file.DirectoryStream
+    list(Subject subject, Restriction restriction, FsPath path, Glob pattern,
+         Range<Integer> range, Set<FileAttribute> attributes)
+            throws InterruptedException, CacheException {
         String dir = path.toString();
         PnfsListDirectoryMessage msg =
-            new PnfsListDirectoryMessage(dir, pattern, range, attributes);
+                new PnfsListDirectoryMessage(dir, pattern, range, attributes);
         UUID uuid = msg.getUUID();
         boolean success = false;
         Stream stream = new Stream(dir, uuid);
@@ -123,9 +120,8 @@ public class ListDirectoryHandler
 
     @Override
     public void printFile(Subject subject, Restriction restriction,
-            DirectoryListPrinter printer, FsPath path)
-            throws InterruptedException, CacheException
-    {
+                          DirectoryListPrinter printer, FsPath path)
+            throws InterruptedException, CacheException {
         PnfsHandler handler = new PnfsHandler(_pnfs, subject, restriction);
         Set<FileAttribute> required = printer.getRequiredAttributes();
         FileAttributes attributes = handler.getFileAttributes(path.toString(), required);
@@ -141,21 +137,23 @@ public class ListDirectoryHandler
 
     @Override
     public int printDirectory(Subject subject, Restriction restriction,
-            DirectoryListPrinter printer, FsPath path, Glob glob, Range<Integer> range)
-            throws InterruptedException, CacheException
-    {
+                              DirectoryListPrinter printer, FsPath path, Glob glob, Range<Integer> range)
+            throws InterruptedException, CacheException {
+
         Set<FileAttribute> required =
-            printer.getRequiredAttributes();
+                printer.getRequiredAttributes();
         FileAttributes dirAttr =
-            _pnfs.getFileAttributes(path.toString(), required);
-        try (DirectoryStream stream = list(subject, restriction, path, glob, range, required)) {
+                _pnfs.getFileAttributes(path.toString(), required);
+        try (java.nio.file.DirectoryStream<DirectoryEntry> stream = list(subject, restriction, path, glob, range, required)) {
             int total = 0;
-            for (DirectoryEntry entry: stream) {
+            for (DirectoryEntry entry : stream) {
                 printer.print(path, dirAttr, entry);
                 total++;
             }
             printer.close();
             return total;
+        } catch (IOException e) {
+            throw new CacheException("IO Exception thrown: ", e);
         }
     }
 
@@ -164,8 +162,7 @@ public class ListDirectoryHandler
      * PnfsManager. PnfsListDirectoryMessage have to be routed to this
      * message.
      */
-    public void messageArrived(PnfsListDirectoryMessage reply)
-    {
+    public void messageArrived(PnfsListDirectoryMessage reply) {
         if (reply.isReply()) {
             try {
                 UUID uuid = reply.getUUID();
@@ -185,13 +182,12 @@ public class ListDirectoryHandler
      * Implementation of DirectoryStream, translating
      * PnfsListDirectoryMessage replies to a stream of
      * DirectoryEntries.
-     *
+     * <p>
      * The stream acts as its own iterator, and multiple iterators are
      * not supported.
      */
     public class Stream
-        implements DirectoryStream, Iterator<DirectoryEntry>
-    {
+            implements java.nio.file.DirectoryStream, Iterator<DirectoryEntry> {
         private final BlockingQueue<PnfsListDirectoryMessage> _queue =
                 new LinkedBlockingQueue<>();
         private final UUID _uuid;
@@ -201,37 +197,33 @@ public class ListDirectoryHandler
         private int _count;
         private int _total;
 
-        public Stream(String path, UUID uuid)
-        {
+        public Stream(String path, UUID uuid) {
             _path = path;
             _uuid = uuid;
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             _replies.remove(_uuid);
         }
 
         private void put(PnfsListDirectoryMessage msg)
-            throws InterruptedException
-        {
+                throws InterruptedException {
             _queue.put(msg);
         }
 
         private void waitForMoreEntries()
-            throws InterruptedException, CacheException
-        {
+                throws InterruptedException, CacheException {
             if (_isFinal) {
                 _iterator = null;
                 return;
             }
 
             PnfsListDirectoryMessage msg =
-                _queue.poll(_pnfs.getPnfsTimeout(), TimeUnit.MILLISECONDS);
+                    _queue.poll(_pnfs.getPnfsTimeout(), TimeUnit.MILLISECONDS);
             if (msg == null) {
                 throw new CacheException(CacheException.TIMEOUT,
-                                         "Timeout during directory listing.");
+                        "Timeout during directory listing.");
             }
 
             if (msg.isFinal()) {
@@ -258,14 +250,12 @@ public class ListDirectoryHandler
         }
 
         @Override
-        public Iterator<DirectoryEntry> iterator()
-        {
+        public Iterator<DirectoryEntry> iterator() {
             return this;
         }
 
         @Override
-        public boolean hasNext()
-        {
+        public boolean hasNext() {
             try {
                 if (_iterator == null || !_iterator.hasNext()) {
                     waitForMoreEntries();
@@ -285,8 +275,7 @@ public class ListDirectoryHandler
         }
 
         @Override
-        public DirectoryEntry next()
-        {
+        public DirectoryEntry next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
@@ -295,8 +284,7 @@ public class ListDirectoryHandler
         }
 
         @Override
-        public void remove()
-        {
+        public void remove() {
             throw new UnsupportedOperationException();
         }
     }
