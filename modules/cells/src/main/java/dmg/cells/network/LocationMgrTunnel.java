@@ -17,7 +17,7 @@
  */
 package dmg.cells.network;
 
-import org.slf4j.Logger;
+import org.slf4j.LOGGER;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
@@ -66,7 +66,7 @@ public class LocationMgrTunnel
      */
     private static final Tunnels _tunnels = new Tunnels();
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(LocationMgrTunnel.class);
 
     private final CellNucleus  _nucleus;
@@ -122,7 +122,7 @@ public class LocationMgrTunnel
     @Override
     public void stopped()
     {
-        _log.info("Closing tunnel to {}", getRemoteDomainName());
+        LOGGER.info("Closing tunnel to {}", getRemoteDomainName());
         _tunnels.remove(this);
         try {
             try {
@@ -131,7 +131,7 @@ public class LocationMgrTunnel
                     _thread.join(2_000);
                 }
             } catch (IOException e) {
-                _log.debug("Failed to shutdown socket: {}", e.getMessage());
+                LOGGER.debug("Failed to shutdown socket: {}", e.getMessage());
             } catch (UnsupportedOperationException ignored) {
                 // SSLSocket does not support shutdown.
             }  catch (InterruptedException ignored) {
@@ -140,7 +140,7 @@ public class LocationMgrTunnel
             try {
                 _socket.close();
             } catch (IOException e) {
-                _log.warn("Failed to close socket: {}", e.getMessage());
+                LOGGER.warn("Failed to close socket: {}", e.getMessage());
             }
         }
     }
@@ -156,7 +156,7 @@ public class LocationMgrTunnel
         try {
             nucleus.routeAdd(route);
         } catch (IllegalArgumentException e) {
-            _log.warn("Failed to add route: {}", e.getMessage());
+            LOGGER.warn("Failed to add route: {}", e.getMessage());
         }
     }
 
@@ -176,7 +176,7 @@ public class LocationMgrTunnel
             if (release < Releases.RELEASE_3_0) {
                 throw new IOException("Connection from incompatible domain " + _remoteDomainInfo + " rejected.");
             } else {
-                _log.debug("Using raw serialization for message envelope.");
+                LOGGER.debug("Using raw serialization for message envelope.");
 
                 /* Since dCache 3.0 we use raw encoding of CellMessage.
                  */
@@ -186,7 +186,7 @@ public class LocationMgrTunnel
 
             _allowForwardingOfRemoteMessages = (_remoteDomainInfo.getRole() != CellDomainRole.CORE);
 
-            _log.info("Established connection with {}", _remoteDomainInfo);
+            LOGGER.info("Established connection with {}", _remoteDomainInfo);
         } catch (BadVersionException e) {
             throw new IOException("Invalid information presented during handshake: " + e.getMessage(), e);
         } catch (ClassNotFoundException e) {
@@ -206,9 +206,9 @@ public class LocationMgrTunnel
             }
         } catch (AsynchronousCloseException | EOFException ignored) {
         } catch (ClassNotFoundException e) {
-            _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
+            LOGGER.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (IOException e) {
-            _log.warn("Error while reading from tunnel: {}", e.toString());
+            LOGGER.warn("Error while reading from tunnel: {}", e.toString());
         } finally {
             kill();
             NDC.pop();
@@ -227,7 +227,7 @@ public class LocationMgrTunnel
                 NDC.push(_remoteDomainInfo.toString());
                 try {
                     kill();
-                    _log.warn("Error while sending message: {}", e.getMessage());
+                    LOGGER.warn("Error while sending message: {}", e.getMessage());
                     NoRouteToCellException noRoute =
                             new NoRouteToCellException(msg, "Communication failure. Message could not be delivered.");
                     CellMessage envelope = new CellMessage(msg.getSourcePath().revert(), noRoute);

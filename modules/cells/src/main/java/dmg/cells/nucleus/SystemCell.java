@@ -5,7 +5,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.curator.framework.CuratorFramework;
-import org.slf4j.Logger;
+import org.slf4j.LOGGER;
 import org.slf4j.LoggerFactory;
 import org.springframework.remoting.RemoteProxyFailureException;
 
@@ -44,7 +44,7 @@ public class      SystemCell
     extends    CellAdapter
     implements Thread.UncaughtExceptionHandler
 {
-    private static final Logger _log = LoggerFactory.getLogger(SystemCell.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemCell.class);
 
     /* Released on OOM to increase the chance that the shutdown succeeds.
      */
@@ -63,11 +63,11 @@ public class      SystemCell
    private class TheKiller extends Thread {
       @Override
       public void run(){
-         _log.info("Running shutdown sequence");
+         LOGGER.info("Running shutdown sequence");
          kill() ;
-         _log.info("Kill done, waiting for shutdown lock");
+         LOGGER.info("Kill done, waiting for shutdown lock");
          _shutdownLock.check() ;
-         _log.info("Killer done");
+         LOGGER.info("Killer done");
       }
    }
 
@@ -111,7 +111,7 @@ public class      SystemCell
     {
         shutdownSystem();
         CellNucleus.shutdownCellGlue();
-        _log.info("Opening shutdown lock");
+        LOGGER.info("Opening shutdown lock");
         _shutdownLock.open();
         System.exit(0);
     }
@@ -168,10 +168,10 @@ public class      SystemCell
             }
         }
 
-        _log.info("Will try to shutdown non-system cells {}", nonSystem);
+        LOGGER.info("Will try to shutdown non-system cells {}", nonSystem);
         shutdownCells(nonSystem, 5000, 10000);
 
-        _log.info("Will try to shutdown remaining cells {}", system);
+        LOGGER.info("Will try to shutdown remaining cells {}", system);
         shutdownCells(system, 5000, 10000);
     }
 
@@ -192,9 +192,9 @@ public class      SystemCell
                 name -> () -> {
                     long time = System.currentTimeMillis() - start;
                     if (time > softTimeout) {
-                        _log.warn("Killed {} in {} ms", name, time);
+                        LOGGER.warn("Killed {} in {} ms", name, time);
                     } else {
-                        _log.info("Killed {}", name);
+                        LOGGER.info("Killed {}", name);
                     }
                 };
 
@@ -214,7 +214,7 @@ public class      SystemCell
             } catch (TimeoutException e) {
                 futures.forEach((name, future) -> {
                     if (!future.isDone()) {
-                        _log.warn("Still waiting for {} to shut down.", name);
+                        LOGGER.warn("Still waiting for {} to shut down.", name);
                     }
                 });
                 Futures.successfulAsList(futures.values()).get(hardTimeout - softTimeout, TimeUnit.MILLISECONDS);
@@ -229,7 +229,7 @@ public class      SystemCell
             });
             CellNucleus.listKillerThreadGroup();
         } catch (ExecutionException e) {
-            _log.error("Unexpected exception during shutdown.", e.getCause());
+            LOGGER.error("Unexpected exception during shutdown.", e.getCause());
         }
 }
 
@@ -275,10 +275,10 @@ public class      SystemCell
 
    @Override
    public void messageArrived( CellMessage msg ){
-        _log.info( "Message arrived : {}", msg ) ;
+        LOGGER.info( "Message arrived : {}", msg ) ;
         _packetsReceived ++ ;
         if( msg.isReply() ){
-            _log.warn("Seems to a bounce : {}", msg);
+            LOGGER.warn("Seems to a bounce : {}", msg);
             return ;
         }
         Object obj  = msg.getMessageObject() ;
@@ -289,7 +289,7 @@ public class      SystemCell
            if (command.isEmpty()) {
                return;
            }
-           _log.info("Command: {}", command);
+           LOGGER.info("Command: {}", command);
            if (command.equals("xyzzy")) {
                reply = "Nothing happens.";
            } else {
@@ -301,13 +301,13 @@ public class      SystemCell
            if( command.length() < 1 ) {
                return;
            }
-           _log.info( "Command(p={}) : {}", as.getAuthorizedPrincipal(), command ) ;
+           LOGGER.info( "Command(p={}) : {}", as.getAuthorizedPrincipal(), command ) ;
            reply = _cellShell.objectCommand2( command ) ;
         } else {
             return;
         }
 
-       _log.debug("Reply : {}", reply);
+       LOGGER.debug("Reply : {}", reply);
        _packetsAnswered++;
 
         try {
@@ -317,7 +317,7 @@ public class      SystemCell
                 msg.revertDirection();
                 msg.setMessageObject(reply);
                 sendMessage(msg);
-                _log.debug("Sending : {}", msg);
+                LOGGER.debug("Sending : {}", msg);
             }
             _packetsReplied++;
         }catch( RuntimeException e ){
@@ -338,7 +338,7 @@ public class      SystemCell
         if (e instanceof VirtualMachineError) {
             _oomSafetyBuffer = null;
             kill();
-            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.FATAL_JVM_ERROR,
+            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.FATAL_JVM_ERROR,
                                                     getCellDomainName(),
                                                     getCellName()),
                        "Restarting due to fatal JVM error: {}", e.toString());
@@ -352,14 +352,14 @@ public class      SystemCell
          */
         if (e instanceof RemoteProxyFailureException &&
                         e.getCause() instanceof InterruptedException) {
-            _log.warn("{} interrupted.", t.getName());
+            LOGGER.warn("{} interrupted.", t.getName());
             return;
         }
 
         Throwable root = Throwables.getRootCause(e);
         if (root instanceof FileNotFoundException) {
             if (root.getMessage().contains("Too many open files")) {
-                _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.OUT_OF_FILE_DESCRIPTORS,
+                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.OUT_OF_FILE_DESCRIPTORS,
                                                         getCellDomainName(),
                                                         getCellName()),
                            "Uncaught exception in thread " + t.getName(),
@@ -368,6 +368,6 @@ public class      SystemCell
             }
         }
 
-        _log.error("Uncaught exception in thread " + t.getName(), e);
+        LOGGER.error("Uncaught exception in thread " + t.getName(), e);
     }
 }

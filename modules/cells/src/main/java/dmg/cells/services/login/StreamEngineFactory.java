@@ -20,7 +20,7 @@ import org.dcache.util.Args;
  */
 public abstract class StreamEngineFactory {
 
-    private static Logger _log = LoggerFactory.getLogger(StreamEngineFactory.class);
+    private static Logger LOGGER= LoggerFactory.getLogger(StreamEngineFactory.class);
 
     public static StreamEngine newStreamEngine(Socket socket, String protocol,
                                                CellEndpoint endpoint, Args argsForAuth) throws Exception {

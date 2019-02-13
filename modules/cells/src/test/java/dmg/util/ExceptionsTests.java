@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.*;
  */
 public class ExceptionsTests
 {
-    private List<ILoggingEvent> _log;
+    private List<ILoggingEvent> LOGGER;
 
     @Before
     public void setup()
@@ -34,9 +34,9 @@ public class ExceptionsTests
         appender.setContext(context);
         appender.setName("appender");
         appender.start();
-        _log = appender.list;
+        LOGGER = appender.list;
 
-        Logger logger = context.getLogger(Logger.ROOT_LOGGER_NAME);
+        Logger logger = context.getLogger(Logger.ROOTLOGGERGER_NAME);
         logger.addAppender(appender);
         logger.setLevel(Level.WARN);
     }
@@ -53,7 +53,7 @@ public class ExceptionsTests
         assertThat(wrapped.getCause(), is(cause));
         assertThat(wrapped.getClass(), is(equalTo(IOException.class)));
 
-        assertThat(_log, is(empty()));
+        assertThat(LOGGER, is(empty()));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class ExceptionsTests
         assertThat(wrapped.getCause(), is(cause));
         assertThat(wrapped.getClass(), is(equalTo(IOException.class)));
 
-        assertThat(_log, is(empty()));
+        assertThat(LOGGER, is(empty()));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class ExceptionsTests
         assertThat(wrapped.getCause(), is(nullValue()));
         assertThat(wrapped.getClass(), is(equalTo(SocketException.class)));
 
-        assertThat(_log, is(empty()));
+        assertThat(LOGGER, is(empty()));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class ExceptionsTests
         assertThat(wrapped.getCause(), is(cause));
         assertThat(wrapped.getClass(), is(equalTo(Exception.class)));
 
-        assertThat(_log, is(empty()));
+        assertThat(LOGGER, is(empty()));
     }
 
     @Test
@@ -117,6 +117,6 @@ public class ExceptionsTests
 
         assertThat(wrapped, is(cause));
 
-        assertThat(_log, is(not(empty())));
+        assertThat(LOGGER, is(not(empty())));
     }
 }

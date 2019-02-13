@@ -1,7 +1,7 @@
 // $Id: UserSecurityCell.java,v 1.4 2006-12-15 10:58:14 tigran Exp $
 package dmg.cells.services.login.user  ;
 
-import org.slf4j.Logger;
+import org.slf4j.LOGGER;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -30,7 +30,7 @@ import dmg.util.CommandThrowableException;
 public class       UserSecurityCell
        extends     CellAdapter            {
 
-  private static final Logger _log =
+  private static final Logger LOGGER =
       LoggerFactory.getLogger(UserSecurityCell.class);
 
   private final String       _cellName ;
@@ -69,7 +69,7 @@ public class       UserSecurityCell
       Serializable answer;
 
       try{
-         _log.info( "Message type : {}", obj.getClass() ) ;
+         LOGGER.info( "Message type : {}", obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -79,7 +79,7 @@ public class       UserSecurityCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.info('>' + command + "< request from " + user );
+            LOGGER.info('>' + command + "< request from " + user );
             //FIXME: refactoring required
             try{
               if( command.equals( "check-password" ) ) {
@@ -98,7 +98,7 @@ public class       UserSecurityCell
          }else{
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             _log.warn( r ) ;
+             LOGGER.warn( r ) ;
              throw new Exception( r ) ;
          }
       }catch(Exception iex ){
@@ -114,7 +114,7 @@ public class       UserSecurityCell
       try{
          sendMessage( msg ) ;
       }catch( RuntimeException ioe ){
-         _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
+         LOGGER.warn( "Can't send acl_response : "+ioe, ioe ) ;
       }
   }
   private Serializable execAuthorizedString( String user , String command )
@@ -200,7 +200,7 @@ public class       UserSecurityCell
           throw new Exception("Not authenticated");
       }
       String command = args.argv(0) ;
-      _log.info( "show all : mode={};user=user", command) ;
+      LOGGER.info( "show all : mode={};user=user", command) ;
       if( command.equals("exception") ) {
           throw new
                   Exception("hallo otto");
@@ -261,7 +261,7 @@ public class       UserSecurityCell
           _userDb.removeContainer( user ) ;
           _aclDb.removeAclItem( "group."+user+".access" ) ;
        }catch( Exception ee ){
-          _log.warn(args + " : " + ee ) ;
+          LOGGER.warn(args + " : " + ee ) ;
            //
            // not an error
            //

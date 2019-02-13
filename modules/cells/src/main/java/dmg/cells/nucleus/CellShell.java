@@ -5,7 +5,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.slf4j.Logger;
+import org.slf4j.LOGGER;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
@@ -82,9 +82,9 @@ import static dmg.util.CommandException.checkCommand;
 public class CellShell extends CommandInterpreter
        implements Replaceable
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(CellShell.class);
-    private static final Logger _logNucleus =
+    private static final Logger LOGGERNucleus =
         LoggerFactory.getLogger(CellNucleus.class);
 
     enum ErrorAction
@@ -581,9 +581,9 @@ public class CellShell extends CommandInterpreter
           noRoute = false ;
           answer = null ;
           try{
-            _log.warn( "waitForCell : Sending request" ) ;
+            LOGGER.warn( "waitForCell : Sending request" ) ;
               answer = _nucleus.sendAndWait(new CellMessage(destination , message), ((long) check) * 1000);
-            _log.warn( "waitForCell : got {}", answer ) ;
+            LOGGER.warn( "waitForCell : got {}", answer ) ;
          } catch (NoRouteToCellException e) {
             noRoute = true ;
          } catch (ExecutionException ignored) {
@@ -1363,9 +1363,9 @@ public class CellShell extends CommandInterpreter
                } else {
                    startup.whenComplete((r, t) -> {
                        if (t != null) {
-                           _log.error("failed create {}: {}", cellName, t.toString());
+                           LOGGER.error("failed create {}: {}", cellName, t.toString());
                        } else {
-                           _log.info("created: {}", cellName);
+                           LOGGER.info("created: {}", cellName);
                        }
                    });
                }
@@ -1452,31 +1452,31 @@ public class CellShell extends CommandInterpreter
       if( ( levelString != null ) && (!levelString.isEmpty()) ){
           switch (levelString) {
           case "say":
-              _log.info(msg);
+              LOGGER.info(msg);
               break;
           case "esay":
-              _log.warn(msg);
+              LOGGER.warn(msg);
               break;
           case "fsay":
-              _log.error(msg);
+              LOGGER.error(msg);
               break;
           default:
               try {
                   int level = Integer.parseInt(levelString);
                   if ((level & PRINT_CELL) != 0) {
-                      _log.info(msg);
+                      LOGGER.info(msg);
                   }
                   if ((level & PRINT_ERROR_CELL) != 0) {
-                      _log.warn(msg);
+                      LOGGER.warn(msg);
                   }
                   if ((level & PRINT_FATAL) != 0) {
-                      _log.error(msg);
+                      LOGGER.error(msg);
                   }
                   if ((level & PRINT_NUCLEUS) != 0) {
-                      _logNucleus.info(msg);
+                      LOGGERNucleus.info(msg);
                   }
                   if ((level & PRINT_ERROR_NUCLEUS) != 0) {
-                      _logNucleus.warn(msg);
+                      LOGGERNucleus.warn(msg);
                   }
               } catch (NumberFormatException e) {
                   throw new IllegalArgumentException("Illegal Level string: " + levelString);
@@ -1975,8 +1975,8 @@ public class CellShell extends CommandInterpreter
     public void execute(String source, Reader in, Args args)
         throws CommandExitException, IOException
     {
-        try (Writer out = new BufferedLineWriter(new Slf4jInfoWriter(_log));
-             Writer err = new BufferedLineWriter(new Slf4jErrorWriter(_log))) {
+        try (Writer out = new BufferedLineWriter(new Slf4jInfoWriter(LOGGER));
+             Writer err = new BufferedLineWriter(new Slf4jErrorWriter(LOGGER))) {
             execute(source, in, out, err, args);
         }
     }
@@ -2031,7 +2031,7 @@ public class CellShell extends CommandInterpreter
                     Throwable error = (Throwable) answer;
 
                     if (error instanceof CommandPanicException) {
-                        _log.error("Bug detected in dCache; please report this " +
+                        LOGGER.error("Bug detected in dCache; please report this " +
                                 "to <support@dcache.org> with the following " +
                                 "information.", error);
                     }
@@ -2062,7 +2062,7 @@ public class CellShell extends CommandInterpreter
                                           source, no, error.getMessage());
                         println(err, msg);
                     } else if (error instanceof RuntimeException) {
-                        _log.warn(error.toString(), error);
+                        LOGGER.warn(error.toString(), error);
                     } else if (!(error instanceof CommandEvaluationException)) {
                         String msg =
                             Exceptions.getMessageWithCauses(error);

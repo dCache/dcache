@@ -23,7 +23,7 @@ import java.nio.charset.Charset;
 
 public class DummyStreamEngine implements StreamEngine
 {
-    private static final Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(DummyStreamEngine.class);
 
     private final Socket _socket;
@@ -79,7 +79,7 @@ public class DummyStreamEngine implements StreamEngine
                 try {
                     _inputStream = _socket.getInputStream();
                 } catch (IOException e) {
-                    _logger.error("Could not create input stream: {}", e.getMessage());
+                    LOGGER.error("Could not create input stream: {}", e.getMessage());
                 }
             } else {
                 _inputStream = Channels.newInputStream(_channel);
@@ -96,7 +96,7 @@ public class DummyStreamEngine implements StreamEngine
                 try {
                     _outputStream = _socket.getOutputStream();
                 } catch (IOException e) {
-                    _logger.error("Could not create output stream: {}", e.getMessage());
+                    LOGGER.error("Could not create output stream: {}", e.getMessage());
                 }
             } else {
                 _outputStream = Channels.newOutputStream(_channel);

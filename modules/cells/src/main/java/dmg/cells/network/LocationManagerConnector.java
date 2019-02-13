@@ -33,7 +33,7 @@ public class LocationManagerConnector
     extends CellAdapter
     implements Runnable
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger("org.dcache.cells.network");
 
     private final String _domain;
@@ -79,7 +79,7 @@ public class LocationManagerConnector
             throw new IOException("Failed to connect to " + _address + ": " + e, e);
         }
         socket.setKeepAlive(true);
-        _log.info("Connecting using {}", socket.getClass().getSimpleName());
+        LOGGER.info("Connecting using {}", socket.getClass().getSimpleName());
         return new DummyStreamEngine(socket);
     }
 
@@ -111,7 +111,7 @@ public class LocationManagerConnector
                 } catch (InterruptedIOException | ClosedByInterruptException e) {
                     throw e;
                 } catch (ExecutionException | IOException e) {
-                    _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOCATION_MANAGER_FAILURE,
+                    LOGGER.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOCATION_MANAGER_FAILURE,
                                                            name,
                                                            _domain,
                                                            e.getMessage()),
@@ -121,7 +121,7 @@ public class LocationManagerConnector
 
                 _status = "Sleeping";
                 long sleep = random.nextInt(16000) + 4000;
-                _log.warn("Sleeping {} seconds", sleep / 1000);
+                LOGGER.warn("Sleeping {} seconds", sleep / 1000);
                 Thread.sleep(sleep);
             }
         } catch (InterruptedIOException | InterruptedException | ClosedByInterruptException ignored) {
