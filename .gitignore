@@ -37,3 +37,4 @@
 
 ## Ignore Mac generated files, wherever they are
 .DS_Store
+/.metadata/
