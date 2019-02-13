@@ -353,10 +353,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
             socketChannel.connect(dcapProtocolInfo.getSocketAddress());
 
-            if (_logSocketIO.isDebugEnabled()) {
-                _logSocketIO.debug("Socket OPEN remote = {}:{} local = {}:{}", socket.getInetAddress(), socket.getPort(),
-                                   socket.getLocalAddress(), socket.getLocalPort());
-            }
+            _logSocketIO.debug("Socket OPEN remote = {}:{} local = {}:{}", socket.getInetAddress(), socket.getPort(),
+                               socket.getLocalAddress(), socket.getLocalPort());
             _log.info("Using : Buffer Sizes (send/recv/io) : {}/{}/{}", socket.getSendBufferSize(), socket.getReceiveBufferSize(),
                       _bigBuffer.capacity());
             _log.info("Connected to {}", dcapProtocolInfo.getSocketAddress());

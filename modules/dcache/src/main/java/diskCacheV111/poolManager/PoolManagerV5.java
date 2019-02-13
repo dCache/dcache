@@ -311,10 +311,8 @@ public class PoolManagerV5
             try {
                 limiter.acquire();
                 while (!Thread.interrupted()) {
-                    if (_log.isDebugEnabled()) { // For RT 9250.
-                        if (_poolMonitor.getPoolSelectionUnit().getLinkGroups().isEmpty()) {
-                            _log.debug("notifying with PoolMonitor that has empty linkgroups");
-                        }
+                    if (_poolMonitor.getPoolSelectionUnit().getLinkGroups().isEmpty()) {
+                        _log.debug("notifying with PoolMonitor that has empty linkgroups");
                     }
                     _poolMonitorTopic.notify(_poolMonitor);
                     waitUntilNextUpdate();

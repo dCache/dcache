@@ -222,11 +222,7 @@ public class SrmService implements CellMessageReceiver, CuratorFrameworkAware, C
 
                 handleGetResponseMethod = handlerClass.getMethod("getResponse");
             } catch (ClassNotFoundException e) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.info("handler discovery and dynamic loading failed", e);
-                } else {
-                    LOGGER.info("handler discovery and dynamic loading failed");
-                }
+                LOGGER.info("handler discovery and dynamic loading failed {}", e.toString());
                 throw new SRMNotSupportedException(requestName + " is unsupported");
             }
             Object result = handleGetResponseMethod.invoke(handler);

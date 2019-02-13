@@ -434,9 +434,7 @@ public class HttpClientSender extends BasicHandler
                 Message outMsg = extractResponse(msgContext, response);
                 msgContext.setResponseMessage(outMsg);
                 outMsg.getSOAPEnvelope();
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(outMsg.getSOAPPartAsString());
-                }
+                LOGGER.debug(outMsg.getSOAPPartAsString());
             }
         } catch (AxisFault e) {
             LOGGER.debug("SOAP invocation failed: {}", e.toString());

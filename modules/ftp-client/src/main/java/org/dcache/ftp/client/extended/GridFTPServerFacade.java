@@ -141,9 +141,7 @@ public class GridFTPServerFacade extends FTPServerFacade
     public void setActive(HostPort hp)
             throws UnknownHostException, ClientException, IOException
     {
-        if (logger.isDebugEnabled()) {
-            logger.debug("hostport: {} {}", hp.getHost(), hp.getPort());
-        }
+        logger.debug("hostport: {} {}", hp.getHost(), hp.getPort());
 
         if (session.serverMode == Session.SERVER_ACTIVE) {
             closeOutgoingSockets();

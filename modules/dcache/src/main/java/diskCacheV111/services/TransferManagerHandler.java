@@ -525,10 +525,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         _errorObject = errorObject;
         _cancelTimer = cancelTimer;
 
-        if (log.isDebugEnabled()) {
-            log.debug("sending error reply {}:{} for {}", replyCode,
-                    errorObject, toString(true));
-        }
+        log.debug("sending error reply {}:{} for {}", replyCode,
+                  errorObject, toString(true));
 
         if (store && created) {// Timur: I think this check  is not needed, we might not ever get storage info and pnfs id: && pnfsId != null && aMetadata != null && aMetadata.getFileSize() == 0) {
             if (state != WAITING_FOR_PNFS_ENTRY_DELETE && state != RECEIVED_PNFS_ENTRY_DELETE) {
@@ -582,10 +580,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         Serializable errorObject = _errorObject;
         boolean cancelTimer = _cancelTimer;
 
-        if (log.isDebugEnabled()) {
-            log.debug("sending error reply {}:{} for {}", replyCode,
-                    errorObject, toString(true));
-        }
+        log.debug("sending error reply {}:{} for {}", replyCode,
+                  errorObject, toString(true));
 
         if (info.getTimeQueued() < 0) {
             info.setTimeQueued(info.getTimeQueued() + System

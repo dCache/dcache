@@ -420,11 +420,9 @@ public class FTPClient
         @Override
         public void write(Buffer buffer) throws IOException
         {
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        "received {} bytes of directory listing"
-                        , buffer.getLength());
-            }
+            logger.debug(
+                    "received {} bytes of directory listing"
+                    , buffer.getLength());
             this.received.write(buffer.getBuffer(), 0, buffer.getLength());
         }
 
@@ -533,9 +531,7 @@ public class FTPClient
 
         while ((line = reader.readLine()) != null) {
             line = line.trim();
-            if (logger.isDebugEnabled()) {
-                logger.debug("line ->{}", line);
-            }
+            logger.debug("line ->{}", line);
             if (line.equals("")) {
                 continue;
             }

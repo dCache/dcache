@@ -117,7 +117,7 @@ public class RemotePoolMonitor
     public PoolSelectionUnit getPoolSelectionUnit()
     {
         PoolSelectionUnit psu = getPoolMonitor().getPoolSelectionUnit();
-        if (LOGGER.isDebugEnabled() && psu.getLinkGroups().isEmpty()) {
+        if (psu.getLinkGroups().isEmpty()) {
             LOGGER.debug("getPoolSelectionUnit returning no linkgroups");
         }
         return psu;
@@ -170,13 +170,11 @@ public class RemotePoolMonitor
 
     public void messageArrived(CellMessage envelope, SerializablePoolMonitor monitor)
     {
-        if (LOGGER.isDebugEnabled()) {
-            if (!envelope.getSourceAddress().equals(previousMonitorSource)) {
-                LOGGER.debug("received PoolMonitor from {} with {} linkgroups",
-                        envelope.getSourceAddress(), monitor.getPoolSelectionUnit().getLinkGroups().size());
-            }
-            previousMonitorSource = envelope.getSourceAddress();
+        if (!envelope.getSourceAddress().equals(previousMonitorSource)) {
+		LOGGER.debug("received PoolMonitor from {} with {} linkgroups",
+			envelope.getSourceAddress(), monitor.getPoolSelectionUnit().getLinkGroups().size());
         }
+        previousMonitorSource = envelope.getSourceAddress();
         acceptMonitor(monitor);
     }
 

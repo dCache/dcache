@@ -31,7 +31,6 @@ public class AclMapper {
     }
 
     public static Permission getPermission(Subject subject, Origin origin, Owner owner, ACL acl) {
-        // if ( logger.isDebugEnabled() )
         // logger.debug("Subject: {}", subject);
         // logger.debug("Origin: {}", origin);
         // logger.debug("Owner: {}", owner);
@@ -43,9 +42,7 @@ public class AclMapper {
         try {
             if ( Subjects.isRoot(subject) ) {
                 permACL.setAll();
-                if ( logger.isDebugEnabled() ) {
-                    logger.debug("ROOT has an access to everything.");
-                }
+                logger.debug("ROOT has an access to everything.");
                 return permACL;
             }
 

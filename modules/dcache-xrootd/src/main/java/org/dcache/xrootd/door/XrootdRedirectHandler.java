@@ -230,9 +230,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             FilePerm neededPerm = req.getRequiredPermission();
 
             _log.info("Opening {} for {}", req.getPath(), neededPerm.xmlText());
-            if (_log.isDebugEnabled()) {
-                logDebugOnOpen(req);
-            }
+            logDebugOnOpen(req);
 
             String ioQueue = appSpecificQueue(req);
 

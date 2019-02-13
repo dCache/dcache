@@ -391,14 +391,12 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
         TPutRequestFileStatus[] statusArray = getArrayOfTPutRequestFileStatus(surls);
 
-        if (LOGGER.isDebugEnabled()) {
-            StringBuilder s = new StringBuilder("getSrmStatusOfPutRequestResponse:");
-            s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
-            for (TPutRequestFileStatus fs : statusArray) {
-                s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
-            }
-            LOGGER.debug(s.toString());
+        StringBuilder s = new StringBuilder("getSrmStatusOfPutRequestResponse:");
+        s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
+        for (TPutRequestFileStatus fs : statusArray) {
+            s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
         }
+        LOGGER.debug(s.toString());
 
         response.setArrayOfFileStatuses(new ArrayOfTPutRequestFileStatus(statusArray));
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));

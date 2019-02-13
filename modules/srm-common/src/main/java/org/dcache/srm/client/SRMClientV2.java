@@ -381,10 +381,8 @@ public class SRMClientV2 implements ISRM {
     public Object handleClientCallWithRetry(String name, Object argument, boolean retry)
             throws RemoteException, IOException
     {
-        if (logger.isDebugEnabled()) {
-            logger.debug(" {} , contacting service {}", name,
-                    axis_isrm._getProperty(ENDPOINT_ADDRESS_PROPERTY));
-        }
+        logger.debug(" {} , contacting service {}", name,
+                axis_isrm._getProperty(ENDPOINT_ADDRESS_PROPERTY));
         int i = 0;
         while(true) {
             checkValid(user_cred);

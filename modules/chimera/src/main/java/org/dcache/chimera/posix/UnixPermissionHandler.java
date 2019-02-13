@@ -68,46 +68,44 @@ public class UnixPermissionHandler implements AclHandler {
 
 
 
-        if (_log.isDebugEnabled()) {
-            StringBuilder sb = new StringBuilder("ACL request : ");
-            sb.append("user=").append(((UnixUser) user).getUID()).append(':').append(((UnixUser) user).getGID());
-            sb.append(' ');
-            sb.append("file=").append(resourceUid).append(':').append(resourceGid);
-            sb.append(' ');
-            sb.append("action=");
-            switch (requsetedAcl) {
+        StringBuilder sb = new StringBuilder("ACL request : ");
+        sb.append("user=").append(((UnixUser) user).getUID()).append(':').append(((UnixUser) user).getGID());
+        sb.append(' ');
+        sb.append("file=").append(resourceUid).append(':').append(resourceGid);
+        sb.append(' ');
+        sb.append("action=");
+        switch (requsetedAcl) {
 
-                case ACL_READ:
-                    sb.append("ACL_READ");
-                    break;
-                case ACL_WRITE:
-                    sb.append("ACL_WRITE");
-                    break;
-                case ACL_DELETE:
-                    sb.append("ACL_DELETE");
-                    break;
-                case ACL_LOOKUP:
-                    sb.append("ACL_LOOKUP");
-                    break;
-                case ACL_ADMINISTER:
-                    sb.append("ACL_ADMINISTER");
-                    break;
-                case ACL_INSERT:
-                    sb.append("ACL_INSERT");
-                    break;
-                case ACL_LOCK:
-                    sb.append("ACL_LOCK");
-                    break;
-                case ACL_EXECUTE:
-                    sb.append("ACL_EXECUTE");
-                    break;
-                default:
-                    sb.append("ACL_UNKNOWN");
+            case ACL_READ:
+                sb.append("ACL_READ");
+                break;
+            case ACL_WRITE:
+                sb.append("ACL_WRITE");
+                break;
+            case ACL_DELETE:
+                sb.append("ACL_DELETE");
+                break;
+            case ACL_LOOKUP:
+                sb.append("ACL_LOOKUP");
+                break;
+            case ACL_ADMINISTER:
+                sb.append("ACL_ADMINISTER");
+                break;
+            case ACL_INSERT:
+                sb.append("ACL_INSERT");
+                break;
+            case ACL_LOCK:
+                sb.append("ACL_LOCK");
+                break;
+            case ACL_EXECUTE:
+                sb.append("ACL_EXECUTE");
+                break;
+            default:
+                sb.append("ACL_UNKNOWN");
 
-            } // switch( requsetedAcl )
+        } // switch( requsetedAcl )
 
-            _log.debug(sb.toString());
-        }
+        _log.debug(sb.toString());
 
         switch (userUid) {
 

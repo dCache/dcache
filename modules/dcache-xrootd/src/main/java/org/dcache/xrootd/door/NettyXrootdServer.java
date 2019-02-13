@@ -215,9 +215,7 @@ public class NettyXrootdServer implements CellIdentityAware
                         pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                         pipeline.addLast("encoder", new XrootdEncoder());
                         pipeline.addLast("decoder", new XrootdDecoder());
-                        if (_log.isDebugEnabled()) {
-                            pipeline.addLast("logger", new LoggingHandler(NettyXrootdServer.class));
-                        }
+                        pipeline.addLast("logger", new LoggingHandler(NettyXrootdServer.class));
 
                         /*
                          *  This needs to precede the other plugins in order for

@@ -202,10 +202,8 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
             sslsock.setEnabledCipherSuites(supportedCipherSuites);
         }
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Enabled protocols: {}", Arrays.asList(sslsock.getEnabledProtocols()));
-            LOGGER.debug("Enabled cipher suites: {}", Arrays.asList(sslsock.getEnabledCipherSuites()));
-        }
+	LOGGER.debug("Enabled protocols: {}", Arrays.asList(sslsock.getEnabledProtocols()));
+	LOGGER.debug("Enabled cipher suites: {}", Arrays.asList(sslsock.getEnabledCipherSuites()));
 
         prepareSocket(sslsock);
         LOGGER.debug("Starting handshake");
@@ -237,43 +235,41 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
                 throw new SSLHandshakeException("SSL session not available");
             }
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Secure session established");
-                LOGGER.debug(" negotiated protocol: {}", session.getProtocol());
-                LOGGER.debug(" negotiated cipher suite: {}", session.getCipherSuite());
+            LOGGER.debug("Secure session established");
+            LOGGER.debug(" negotiated protocol: {}", session.getProtocol());
+            LOGGER.debug(" negotiated cipher suite: {}", session.getCipherSuite());
 
-                try {
+            try {
 
-                    final Certificate[] certs = session.getPeerCertificates();
-                    final X509Certificate x509 = (X509Certificate) certs[0];
-                    final X500Principal peer = x509.getSubjectX500Principal();
+                final Certificate[] certs = session.getPeerCertificates();
+                final X509Certificate x509 = (X509Certificate) certs[0];
+                final X500Principal peer = x509.getSubjectX500Principal();
 
-                    LOGGER.debug(" peer principal: {}", peer);
-                    final Collection<List<?>> altNames1 = x509.getSubjectAlternativeNames();
-                    if (altNames1 != null) {
-                        final List<String> altNames = new ArrayList<>();
-                        for (final List<?> aC : altNames1) {
-                            if (!aC.isEmpty()) {
-                                altNames.add((String) aC.get(1));
-                            }
+                LOGGER.debug(" peer principal: {}", peer);
+                final Collection<List<?>> altNames1 = x509.getSubjectAlternativeNames();
+                if (altNames1 != null) {
+                    final List<String> altNames = new ArrayList<>();
+                    for (final List<?> aC : altNames1) {
+                        if (!aC.isEmpty()) {
+                            altNames.add((String) aC.get(1));
                         }
-                        LOGGER.debug(" peer alternative names: {}", altNames);
                     }
-
-                    final X500Principal issuer = x509.getIssuerX500Principal();
-                    LOGGER.debug(" issuer principal: {}", issuer);
-                    final Collection<List<?>> altNames2 = x509.getIssuerAlternativeNames();
-                    if (altNames2 != null) {
-                        final List<String> altNames = new ArrayList<>();
-                        for (final List<?> aC : altNames2) {
-                            if (!aC.isEmpty()) {
-                                altNames.add((String) aC.get(1));
-                            }
-                        }
-                        LOGGER.debug(" issuer alternative names: {}", altNames);
-                    }
-                } catch (Exception ignore) {
+                    LOGGER.debug(" peer alternative names: {}", altNames);
                 }
+
+                final X500Principal issuer = x509.getIssuerX500Principal();
+                LOGGER.debug(" issuer principal: {}", issuer);
+                final Collection<List<?>> altNames2 = x509.getIssuerAlternativeNames();
+                if (altNames2 != null) {
+                    final List<String> altNames = new ArrayList<>();
+                    for (final List<?> aC : altNames2) {
+                        if (!aC.isEmpty()) {
+                            altNames.add((String) aC.get(1));
+                        }
+                    }
+                    LOGGER.debug(" issuer alternative names: {}", altNames);
+                }
+            } catch (Exception ignore) {
             }
 
             if (!this.hostnameVerifier.verify(hostname, session)) {
