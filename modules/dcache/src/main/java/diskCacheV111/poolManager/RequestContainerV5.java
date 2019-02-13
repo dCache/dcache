@@ -33,7 +33,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.CostException;
 import diskCacheV111.util.DestinationCostException;
-import diskCacheV111.util.ExtendedRunnable;
+
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -1129,7 +1129,7 @@ public class RequestContainerV5
         private boolean    _forceContinue;
         private boolean    _overwriteCost;
 
-        public class RunEngine implements ExtendedRunnable {
+        public class RunEngine implements Runnable {
            @Override
            public void run(){
               try (CDC ignored = _cdc.restore()) {
@@ -1141,12 +1141,8 @@ public class RequestContainerV5
               }
            }
 
-           @Override
-           public void runFailed(){
-              synchronized( _fifo ){
-                   _stateEngineActive = false ;
-              }
-           }
+           /* file: ExtendedRunnable.java is no longer required
+            * runFailed is deleted and ExtendedRunnable dos not exist anymore. */
 
            @Override
            public String toString() {
