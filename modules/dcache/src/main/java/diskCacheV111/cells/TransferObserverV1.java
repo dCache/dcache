@@ -54,7 +54,7 @@ public class TransferObserverV1
     private final Args _args;
     private TransferCollector _collector;
     private Thread _workerThread;
-    private LoginBrokerSubscriber LOGGERinBrokerSource;
+    private LoginBrokerSubscriber _loginBrokerSource;
     private long _update = 120000L;
     private long _timeUsed;
     private long _processCounter;
@@ -286,13 +286,13 @@ public class TransferObserverV1
             throw new IllegalArgumentException("Usage : ... ");
         }
 
-        LOGGERinBrokerSource = new LoginBrokerSubscriber();
-        addCellEventListener(LOGGERinBrokerSource);
-        addCommandListener(LOGGERinBrokerSource);
-        LOGGERinBrokerSource.setCellEndpoint(this);
-        LOGGERinBrokerSource.setTopic(_args.getOpt("loginBroker"));
+        _loginBrokerSource = new LoginBrokerSubscriber();
+        addCellEventListener(_loginBrokerSource);
+        addCommandListener(_loginBrokerSource);
+        _loginBrokerSource.setCellEndpoint(this);
+        _loginBrokerSource.setTopic(_args.getOpt("loginBroker"));
 
-        _collector = new TransferCollector(_cellStub, LOGGERinBrokerSource.doors());
+        _collector = new TransferCollector(_cellStub, _loginBrokerSource.doors());
 
         String updateString = _args.getOpt("update");
         try {
@@ -310,7 +310,7 @@ public class TransferObserverV1
     protected void started() {
         _workerThread = _nucleus.newThread(this, "worker");
         _workerThread.start();
-        LOGGERinBrokerSource.afterStart();
+        _loginBrokerSource.afterStart();
     }
 
     @Override
@@ -318,7 +318,7 @@ public class TransferObserverV1
         if (_workerThread != null) {
             _workerThread.interrupt();
         }
-        LOGGERinBrokerSource.beforeStop();
+        _loginBrokerSource.beforeStop();
     }
 
     public static final String hh_table_help = "";
@@ -405,9 +405,9 @@ public class TransferObserverV1
     public void messageArrived(CellMessage envelope) {
         Serializable message = envelope.getMessageObject();
         if (message instanceof LoginBrokerInfo) {
-            LOGGERinBrokerSource.messageArrived((LoginBrokerInfo) message);
+            _loginBrokerSource.messageArrived((LoginBrokerInfo) message);
         } else if (message instanceof NoRouteToCellException) {
-            LOGGERinBrokerSource.messageArrived((NoRouteToCellException) message);
+            _loginBrokerSource.messageArrived((NoRouteToCellException) message);
         }
     }
 
