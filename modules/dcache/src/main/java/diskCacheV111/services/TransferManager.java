@@ -90,7 +90,7 @@ public abstract class TransferManager extends AbstractCellComponent
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.printf("DB LOGGERging            : %b\n", doDbLogging());
+        pw.printf("DB logging            : %b\n", doDbLogging());
         pw.printf("Transfer ID generated : %s\n", idGenerator == null ? "locally" : "from DB");
         pw.printf("Next Transfer ID      : %d\n", nextMessageID);
         pw.printf("Active transfers      : %d\n", _numTransfers);
@@ -106,16 +106,16 @@ public abstract class TransferManager extends AbstractCellComponent
         return "setting maxNumberOfDeleteRetries " + _maxNumberOfDeleteRetries;
     }
 
-    public static final String hh_set_tLOGGER = "<direcory for ftp LOGGERs or \"null\" for none>";
+    public static final String hh_set_tlog = "<direcory for ftp logs or \"null\" for none>";
 
-    public String ac_set_tLOGGER_$_1(Args args)
+    public String ac_set_tlog_$_1(Args args)
     {
         _tLogRoot = args.argv(0);
         if (_tLogRoot.equals("null")) {
             _tLogRoot = null;
-            return "remote ftp transaction LOGGERging is off";
+            return "remote ftp transaction logging is off";
         }
-        return "remote ftp transactions will be LOGGERged to " + _tLogRoot;
+        return "remote ftp transactions will be logged to " + _tLogRoot;
     }
 
     public static final String hh_set_max_transfers_external = "<#max transfers>";
