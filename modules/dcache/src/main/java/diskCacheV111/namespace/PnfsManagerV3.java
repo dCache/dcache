@@ -149,7 +149,7 @@ public class PnfsManagerV3
     private int _directoryListLimit;
     private int _queueMaxSize;
     private int _listThreads;
-    private long LOGGERSlowThreshold;
+    private long _logSlowThreshold;
 
     /**
      * Whether to use folding.
@@ -241,9 +241,9 @@ public class PnfsManagerV3
     @Required
     public void setLogSlowThreshold(long threshold)
     {
-        LOGGERSlowThreshold = threshold;
+        _logSlowThreshold = threshold;
         LOGGER.info("logSlowThreshold {}",
-                  (LOGGERSlowThreshold == THRESHOLD_DISABLED) ? "NONE" : String.valueOf(LOGGERSlowThreshold));
+                  (_logSlowThreshold == THRESHOLD_DISABLED) ? "NONE" : String.valueOf(_logSlowThreshold));
     }
 
     @Required
@@ -932,7 +932,7 @@ public class PnfsManagerV3
                 throw new CommandException("Timeout must be greater than zero.");
             }
 
-            LOGGERSlowThreshold = timeout;
+            _logSlowThreshold = timeout;
 
             return "";
         }
@@ -948,9 +948,9 @@ public class PnfsManagerV3
         @Override
         public String call()
         {
-            return LOGGERSlowThreshold == THRESHOLD_DISABLED
+            return _logSlowThreshold == THRESHOLD_DISABLED
                     ? "disabled"
-                    : (LOGGERSlowThreshold + " ms");
+                    : (_logSlowThreshold + " ms");
         }
     }
 
@@ -963,7 +963,7 @@ public class PnfsManagerV3
         @Override
         public String call()
         {
-            LOGGERSlowThreshold = THRESHOLD_DISABLED;
+            _logSlowThreshold = THRESHOLD_DISABLED;
             return "";
         }
 
@@ -1694,7 +1694,7 @@ public class PnfsManagerV3
 
         long duration = System.currentTimeMillis() - ctime;
         _gauges.update(pnfsMessage.getClass(), duration);
-        if (LOGGERSlowThreshold != THRESHOLD_DISABLED && duration > LOGGERSlowThreshold) {
+        if (_logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold) {
             LOGGER.warn("{} processed in {} ms", pnfsMessage.getClass(), duration);
         } else {
             LOGGER.info("{} processed in {} ms", pnfsMessage.getClass(), duration);
