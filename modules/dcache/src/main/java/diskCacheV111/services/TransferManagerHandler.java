@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -220,6 +221,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
             attributes.addAll(permissionHandler.getRequiredAttributes());
             attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+            attributes.add(SIZE); // to determine if file is currently being uploaded
             message = pnfsId == null ? new PnfsGetFileAttributes(pnfsPath, attributes)
                     : new PnfsGetFileAttributes(pnfsId, attributes);
             message.setSubject(transferRequest.getSubject());
@@ -396,6 +398,11 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void storageInfoArrived(PnfsGetFileAttributes msg)
     {
+        if (!msg.getFileAttributes().isDefined(SIZE)) {
+            sendErrorReply(CacheException.FILE_IS_NEW, new FileIsNewCacheException());
+            return;
+        }
+
         //
         // Added by litvinse@fnal.gov
         //
