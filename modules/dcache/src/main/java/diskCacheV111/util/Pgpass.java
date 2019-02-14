@@ -5,12 +5,16 @@
 package diskCacheV111.util;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 
 /**
  *
@@ -75,51 +79,79 @@ public class Pgpass {
     }
 
     public String getPgpass(String hostname, String port, String database, String username) {
-        //
+        String result;
+
+        if (!checkIfFileExists()) {
+            System.out.println("File '" + _pwdfile + "' not exist");
+            return null;
+        }
+
         try {
-            Process p1 = Runtime.getRuntime().exec("stat -c '%a' "+_pwdfile);
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p1.getInputStream()));
-            BufferedReader stdError = new BufferedReader(new InputStreamReader(p1.getErrorStream()));
-            PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p1.getOutputStream())));
-            String reply = stdInput.readLine();
-            try {
-                p1.waitFor();
-            }
-            catch (InterruptedException x) {
-                System.out.println("stat for '"+_pwdfile+"' was interrupted");
-                stdInput.close(); stdError.close(); stdOutput.close();
-                return null;
-            }
-            stdInput.close(); stdError.close(); stdOutput.close();
+            if (checkPgFilePermissions("rw-------")) {
+                result = parsePgFile(hostname, port, database, username);
 
-            if (reply==null) {
-                System.out.println("Cannot stat '"+_pwdfile+"'");
+            } else {
+                System.out.println("Protection for '" + _pwdfile + "' must be '600'");
                 return null;
-            } else if (!reply.equals("'600'")) {
-                System.out.println("Protection for '"+_pwdfile+"' must be '600'");
-                return null;
-            }
-            /*
-             * Here we can read and parse the password file
-             */
-            try {
-                BufferedReader in = new BufferedReader(new FileReader(_pwdfile));
-                String line, r = null;
-                while ((line = in.readLine()) != null && r == null) {
-                    r = process(line, hostname, port, database, username);
-                }
-                in.close();
-                return r;
-            } catch (IOException e) {
-                System.out.println("'"+_pwdfile+"': I/O error");
-                return null;
-            }
 
+            }
+        } catch (IOException e) {
+            System.out.println("'" + _pwdfile + "': I/O error");
+            return null;
         }
-        catch (IOException ex) {
-            System.out.println("Cannot stat "+_pwdfile);
+
+        return result;
+    }
+
+    /**
+     * Check if the pwd file exists
+     *
+     * @return exist? then true
+     */
+    protected boolean checkIfFileExists() {
+        return new File(_pwdfile).isFile();
+    }
+
+    /**
+     * Check the pwd file for selectable permissions. The file must be a POSIX file.
+     *
+     * @param referencePermissionInput The permissions the file should have. It's in the unix like format.
+     *                                 e.g. "rwx------" for owner read-write-execute
+     * @return permissions right? true
+     * @throws IOException
+     */
+    protected boolean checkPgFilePermissions(String referencePermissionInput) throws IOException {
+
+        if(checkIfOsIsPosixCompliant()){
+            Path path = Paths.get(_pwdfile);
+            Set<PosixFilePermission> filePermissions = Files.getPosixFilePermissions(path);
+            Set<PosixFilePermission> referencePermissions = PosixFilePermissions.fromString(referencePermissionInput);
+
+            boolean result = filePermissions.equals(referencePermissions);
+            return result;
+        } else {
+            System.out.println("Error reading permissions for '" + _pwdfile + "'. OS is not POSIX compliant");
+            return false;
         }
-        return null;
+    }
+
+    /**
+     * Check if the OS is POSIX compliant.
+     *
+     * @return
+     */
+    private boolean checkIfOsIsPosixCompliant(){
+        return FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
+    }
+
+    private String parsePgFile(String hostname, String port, String database, String username) throws IOException {
+            BufferedReader in = new BufferedReader(new FileReader(_pwdfile));
+            String line, r = null;
+            while ((line = in.readLine()) != null && r == null) {
+                r = process(line, hostname, port, database, username);
+            }
+            in.close();
+            return r;
     }
 
     public String getPgpass(String url, String username) {
@@ -142,8 +174,7 @@ public class Pgpass {
     }
 
     public static String getPassword(String file,
-                                     String url, String user, String password)
-    {
+                                     String url, String user, String password) {
         if (file != null && !file.trim().isEmpty()) {
             Pgpass pgpass = new Pgpass(file);
             return pgpass.getPgpass(url, user);
