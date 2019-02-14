@@ -378,21 +378,6 @@ public class PoolSelectionUnitV2
         }
     }
 
-    public long getActive(String poolName) {
-
-        long active = 100000000L;
-        rlock();
-        try {
-            Pool pool = _pools.get(poolName);
-            if (pool != null) {
-                active = pool.getActive();
-            }
-        } finally {
-            runlock();
-        }
-        return active;
-    }
-
     private int setEnabled(Glob glob, boolean enabled)
     {
         wlock();
@@ -406,21 +391,6 @@ public class PoolSelectionUnitV2
         } finally {
             wunlock();
         }
-    }
-
-    public boolean isEnabled(String poolName) {
-
-        boolean isEnabled = false;
-        rlock();
-        try {
-            Pool pool = _pools.get(poolName);
-            if (pool != null) {
-                isEnabled = pool.isEnabled();
-            }
-        } finally {
-            runlock();
-        }
-        return isEnabled;
     }
 
     @Override
