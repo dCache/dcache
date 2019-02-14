@@ -52,6 +52,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
 
     private final PnfsId _pnfsId;
     private final AbstractBerkeleyDBReplicaStore _repository;
+    private final long _creationTime;
 
     /**
      * Sticky records held by the file.
@@ -59,8 +60,6 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     private ImmutableList<StickyRecord> _sticky;
 
     private ReplicaState _state;
-
-    private long _creationTime = System.currentTimeMillis();
 
     private long _lastAccess;
 
@@ -74,6 +73,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         _pnfsId = pnfsId;
         _state = NEW;
         _sticky = ImmutableList.of();
+        _creationTime =   System.currentTimeMillis();
         _lastAccess = _creationTime;
     }
 
@@ -85,6 +85,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         _state = state;
         setStickyRecords(sticky);
         _lastAccess = attributes.lastModifiedTime().toMillis();
+        _creationTime = attributes.creationTime().toMillis();
         _size = attributes.size();
     }
 
@@ -118,11 +119,6 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     public synchronized int getLinkCount()
     {
         return _linkCount;
-    }
-
-    public synchronized void setCreationTime(long time)
-    {
-        _creationTime = time;
     }
 
     @Override
