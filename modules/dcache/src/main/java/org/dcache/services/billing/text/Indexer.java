@@ -16,7 +16,6 @@ import com.google.common.hash.Funnels;
 import com.google.common.io.ByteSource;
 import com.google.common.io.CharSource;
 import com.google.common.io.CharStreams;
-import com.google.common.io.Files;
 import com.google.common.io.LineProcessor;
 import com.google.gson.stream.JsonWriter;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
@@ -25,24 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import java.io.BufferedInputStream;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PipedReader;
-import java.io.PipedWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.Reader;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -134,7 +119,7 @@ public class Indexer
         if (args.hasOption("find")) {
             Collection<String> searchTerms;
             if (args.hasOption("f")) {
-                searchTerms = Files.readLines(new File(args.getOption("f")), Charsets.UTF_8);
+                searchTerms = Files.readAllLines(new File(args.getOption("f")).toPath(), Charsets.UTF_8);
             } else if (args.argc() > 0) {
                 searchTerms = args.getArguments();
             } else {
@@ -419,10 +404,12 @@ public class Indexer
     private static void decompress(File compressedFile) throws IOException
     {
         String path = compressedFile.getPath();
-        checkArgument(Files.getFileExtension(path).equals(BZ2), "File must have " + BZ2 + " extension.");
-        File file = new File(compressedFile.getParent(), Files.getNameWithoutExtension(path));
+        checkArgument(path.endsWith("." + BZ2), "File must have " + BZ2 + " extension.");
+        String pathWithoutExtension = path.replace("." + BZ2 + "$", "");
+
+        File file = new File(compressedFile.getParent(), pathWithoutExtension);
         try (InputStream in = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(file)))) {
-            Files.asByteSink(file).writeFrom(in);
+            Files.copy(in, file.toPath());
         }
         java.nio.file.Files.delete(compressedFile.toPath());
     }
@@ -430,8 +417,10 @@ public class Indexer
     private static void compress(File file) throws IOException
     {
         File compressedFile = new File(file.getPath() + "." + BZ2);
-        try (OutputStream out = new BZip2CompressorOutputStream(Files.asByteSink(compressedFile).openBufferedStream())) {
-            Files.asByteSource(file).copyTo(out);
+
+        BufferedOutputStream bufOut = new BufferedOutputStream(Files.newOutputStream(compressedFile.toPath()));
+        try (OutputStream out = new BZip2CompressorOutputStream(bufOut)) {
+            Files.copy(file.toPath(), out);
         }
         java.nio.file.Files.delete(file.toPath());
     }
@@ -536,7 +525,7 @@ public class Indexer
     private static CharSource asCharSource(final File file, Charset charset)
     {
         ByteSource source;
-        if (Files.getFileExtension(file.getPath()).equals(BZ2)) {
+        if (file.getPath().endsWith("." + BZ2)) {
             source = new ByteSource() {
                 @Override
                 public InputStream openStream() throws IOException
@@ -545,7 +534,7 @@ public class Indexer
                 }
             };
         } else {
-            source = Files.asByteSource(file);
+            source = com.google.common.io.Files.asByteSource(file);
         }
         return source.asCharSource(charset);
     }

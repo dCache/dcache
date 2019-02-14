@@ -61,11 +61,11 @@ package org.dcache.alarms.logback;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
-import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 
 /**
  * Runs when XML database is used.  Checks that storage file exists.
@@ -89,7 +89,7 @@ public class LogEntryXMLInitializer {
                 String parent = xmlStore.getParentFile().getAbsolutePath();
                 throw new FileNotFoundException(parent + " is not a directory");
             }
-            Files.write(EMPTY_XML_STORE, xmlStore, Charsets.UTF_8);
+            Files.write(xmlStore.toPath(), EMPTY_XML_STORE.getBytes(Charsets.UTF_8));
         }
     }
 }

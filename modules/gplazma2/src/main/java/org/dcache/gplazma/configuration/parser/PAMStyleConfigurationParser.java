@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +22,6 @@ import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.io.Files.newReader;
 /**
  *
  * @author timur
@@ -70,9 +70,9 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
         checkNotNull(configurationFile, "ConfigurationFile must not be NULL.");
 
         try {
-            return parse(newReader(configurationFile, Charset.defaultCharset()));
-        } catch(FileNotFoundException e) {
-            throw new ParseException("GPlazma Configuration parsing failed",e);
+            return parse(Files.newBufferedReader(configurationFile.toPath(), Charset.defaultCharset()));
+        } catch(IOException e) {
+            throw new ParseException("GPlazma Configuration parsing failed", e);
         }
     }
 
@@ -80,11 +80,11 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      * @param bufferedReader, a reader of the configuration,
      * @return Configuration based on the configuration
      * @throws ParseException
-     * line number reported in the exception will be correct iff the bufferedReader
+     * line number reported in the exception will be correct if the bufferedReader
      *  was initially pointing to the first char in the underlying char stream
      */
     @Override
-    public Configuration parse (BufferedReader bufferedReader)
+    public Configuration parse(BufferedReader bufferedReader)
     throws ParseException {
         List<ConfigurationItem> configItemList =
                 new ArrayList<>();
@@ -117,7 +117,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      * @param line
      * @return instance of ConfigurationItem or null if line is empty or
      * contains comments
-     * @throws ParseExeption if the syntax is incorrect
+     * @throws ParseException if the syntax is incorrect
      */
     private ConfigurationItem parseLine(String line) throws ParseException {
         String trimmed = line.trim();

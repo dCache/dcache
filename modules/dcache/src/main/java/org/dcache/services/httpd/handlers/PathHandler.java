@@ -2,7 +2,7 @@ package org.dcache.services.httpd.handlers;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
-import com.google.common.io.Files;
+
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.FileNameMap;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 import dmg.util.HttpException;
@@ -71,7 +72,7 @@ public class PathHandler extends AbstractHandler {
 
         try {
             proxy.setContentType(getContentTypeFor(filename));
-            Files.copy(f, proxy.getOutputStream());
+            Files.copy(f.toPath(), proxy.getOutputStream());
         } finally {
             proxy.getOutputStream().flush();
         }
