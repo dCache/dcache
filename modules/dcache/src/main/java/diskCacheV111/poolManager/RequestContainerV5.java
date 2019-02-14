@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -64,6 +65,9 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
+import dmg.util.CommandException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
@@ -77,6 +81,7 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.stream.Collectors.toList;
+import static dmg.util.CommandException.checkCommand;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -552,23 +557,43 @@ public class RequestContainerV5
        }
        return "";
     }
-    public static final String hh_rc_failed = "<pnfsId> [<errorNumber> [<errorMessage>]]" ;
-    public String ac_rc_failed_$_1_3( Args args )
+
+    @Command(name = "rc failed", hint = "abort a file read request",
+            description = "Aborts all requests from clients to read a"
+                    + " particular file.  This is typically done when"
+                    + " the request is suspended and it is impossible for"
+                    + " dCache to provide that file (for example, the disk"
+                    + " server with that file has been decomissioned, the tape"
+                    + " containing that file's data is broken).  Although this"
+                    + " command is useful for recovering from these situations,"
+                    + " its usage often points to misconfiguration elsewhere in"
+                    + " dCache.")
+    public class FailedCommand implements Callable<String>
     {
-       int    errorNumber = args.argc() > 1 ? Integer.parseInt(args.argv(1)) : 1;
-       String errorString = args.argc() > 2 ? args.argv(2) : "Operator Intervention" ;
+        @Argument(usage="The request ID, as shown in the first column of the 'rc ls' command.")
+        String id;
 
-       PoolRequestHandler rph;
+        @Argument(index=1, required=false, usage="The error number to return to the door.")
+        Integer errorNumber = 1;
 
-       synchronized( _handlerHash ){
-          rph = _handlerHash.get(args.argv(0));
-          if( rph == null ) {
-              throw new
-                      IllegalArgumentException("Not found : " + args.argv(0));
-          }
-       }
-       rph.failed(errorNumber,errorString) ;
-       return "" ;
+        @Argument(index=2, required=false, usage="The error message explaining why the transfer failed.")
+        String errorString = "Operator Intervention";
+
+        @Override
+        public String call() throws CommandException
+        {
+            checkCommand(errorNumber >= 0, "Error number must be >= 0");
+
+            PoolRequestHandler rph;
+            synchronized (_handlerHash) {
+                rph = _handlerHash.get(id);
+            }
+
+            checkCommand(rph != null, "Not found : %s", id);
+
+            rph.failed(errorNumber, errorString);
+            return "";
+        }
     }
 
     public static final String hh_rc_ls = " [<regularExpression>] [-w] [-l] # lists pending requests" ;
