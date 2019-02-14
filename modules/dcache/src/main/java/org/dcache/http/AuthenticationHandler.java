@@ -263,15 +263,16 @@ public class AuthenticationHandler extends HandlerWrapper {
 
 
     private void addAuthCredentialsToSubject(HttpServletRequest request, Subject subject) {
-        if (!_isBasicAuthenticationEnabled) {
-            return;
-        }
 
         Optional<AuthInfo> optional = parseAuthenticationHeader(request);
         if (optional.isPresent()) {
             AuthInfo info = optional.get();
             switch (info.getScheme()) {
                 case HttpServletRequest.BASIC_AUTH:
+                    if (!_isBasicAuthenticationEnabled) {
+                        return;
+                    }
+
                     try {
                         byte[] bytes = Base64.getDecoder().decode(info.getData().getBytes(StandardCharsets.US_ASCII));
                         String credential = new String(bytes, StandardCharsets.UTF_8);
