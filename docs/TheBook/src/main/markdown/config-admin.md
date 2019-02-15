@@ -418,7 +418,7 @@ Admin ssh server allows direct command execution like so:
 ```
     ssh -p 22224 admin@adminNode  "command1; command2; command3"
 ```
-That is it accepts semicolon (';') separated list of commands. Spaces between comamnds and command
+That is it accepts semicolon (';') separated list of commands. Spaces between commands and command
 separators do not matter.
 
 
