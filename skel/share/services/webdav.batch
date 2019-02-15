@@ -76,6 +76,8 @@ check -strong webdav.limits.queue-length
 check -strong webdav.limits.graceful-shutdown
 check -strong webdav.limits.graceful-shutdown.unit
 
+check -strong webdav.macaroons.accept-over-unencrypted-channel
+
 check webdav.net.internal
 check webdav.mover.queue
 check webdav.authn.ciphers
