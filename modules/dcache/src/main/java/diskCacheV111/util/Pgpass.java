@@ -108,27 +108,23 @@ public class Pgpass {
      *
      * @return exist? then true
      */
-    protected boolean checkIfFileExists() {
+    private boolean checkIfFileExists() {
         return new File(_pwdfile).isFile();
     }
 
     /**
-     * Check the pwd file for selectable permissions. The file must be a POSIX file.
+     * Check the pwd file for selectable permissions. The file must be a POSIX file, at the moment.
      *
      * @param referencePermissionInput The permissions the file should have. It's in the unix like format.
      *                                 e.g. "rwx------" for owner read-write-execute
      * @return permissions right? true
      * @throws IOException
      */
-    protected boolean checkPgFilePermissions(String referencePermissionInput) throws IOException {
+    private boolean checkPgFilePermissions(String referencePermissionInput) throws IOException {
 
         if(checkIfOsIsPosixCompliant()){
-            Path path = Paths.get(_pwdfile);
-            Set<PosixFilePermission> filePermissions = Files.getPosixFilePermissions(path);
-            Set<PosixFilePermission> referencePermissions = PosixFilePermissions.fromString(referencePermissionInput);
+            return checkPgFilePermissionsForPosix(referencePermissionInput);
 
-            boolean result = filePermissions.equals(referencePermissions);
-            return result;
         } else {
             System.out.println("Error reading permissions for '" + _pwdfile + "'. OS is not POSIX compliant");
             return false;
@@ -152,6 +148,24 @@ public class Pgpass {
             }
             in.close();
             return r;
+    }
+
+    /**
+     * Check the pwd file for selectable permissions. Explicit for POSIX conform operating systems.
+     * The file must be a POSIX file.
+     *
+     * @param referencePermissionInput The permissions the file should have. It's in the unix like format.
+     *                                 e.g. "rwx------" for owner read-write-execute
+     * @return permissions right? true
+     * @throws IOException
+     */
+    private boolean checkPgFilePermissionsForPosix(String referencePermissionInput) throws IOException {
+        Path path = Paths.get(_pwdfile);
+        Set<PosixFilePermission> filePermissions = Files.getPosixFilePermissions(path);
+        Set<PosixFilePermission> referencePermissions = PosixFilePermissions.fromString(referencePermissionInput);
+
+        boolean result = filePermissions.equals(referencePermissions);
+        return result;
     }
 
     public String getPgpass(String url, String username) {
