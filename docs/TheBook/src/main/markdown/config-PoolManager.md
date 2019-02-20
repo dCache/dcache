@@ -28,7 +28,9 @@ The behaviour of the `poolmanager` service is highly configurable. In order to e
 
 The `poolmanager` can be configured by either directly editing the file **/var/lib/dcache/config/poolmanager.conf** or via the Admin Interface. Changes made via the [Admin Interface](intouch.md#admin-interface) will be saved in the file **/var/lib/dcache/config/poolmanager.conf** by the `save` command. This file will be parsed, whenever the dCache starts up. It is a simple text file containing the corresponding Admin Interface commands. It can therefore also be edited before the system is started. It can also be loaded into a running system with the `reload` command. In this chapter we will describe the commands allowed in this file.
 
-
+> **NOTE**
+>
+> Starting from  version 2.16 dCache stores the configuration of `poolmanager` in zookeeper and reads **poolmanager.conf** file only if configuration in zookeeper is missing, e.g. on the first start.
 
 THE POOL SELECTION MECHANISM
 ============================
