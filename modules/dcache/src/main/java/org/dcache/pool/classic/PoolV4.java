@@ -2,6 +2,7 @@
 
 package org.dcache.pool.classic;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
@@ -38,8 +39,6 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import diskCacheV111.pools.PoolCellInfo;
@@ -152,9 +151,6 @@ public class PoolV4
     private static final int HEARTBEAT = 30;
 
     private static final double DEFAULT_BREAK_EVEN = 0.7;
-
-    private static final Pattern TAG_PATTERN =
-        Pattern.compile("([^=]+)=(\\S*)\\s*");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolV4.class);
 
@@ -425,19 +421,11 @@ public class PoolV4
     @Required
     public void setTags(String tags)
     {
-        Map<String,String> newTags = new HashMap<>();
-        Matcher matcher = TAG_PATTERN.matcher(tags);
-        while (matcher.lookingAt()) {
-            String tag = matcher.group(1);
-            String value = matcher.group(2);
-            newTags.put(tag, value);
-            matcher.region(matcher.end(), matcher.regionEnd());
-        }
-
-        if (matcher.regionStart() != matcher.regionEnd()) {
-            String msg = "Cannot parse '" + tags.substring(matcher.regionStart()) + "'";
-            throw new IllegalArgumentException(msg);
-        }
+        Map<String,String> newTags = Splitter.on(',')
+                .omitEmptyStrings()
+                .trimResults()
+                .withKeyValueSeparator('=')
+                .split(tags);
 
         newTags.forEach(((key,value) -> {
             _tags.put(key, value);
