@@ -151,14 +151,14 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
         try {
             tx.begin();
             Query query = createQuery(readManager, type, filter, parameters);
-            logger.trace("created query {}", query);
+            LOGGER.trace("created query {}", query);
             Collection<T> c = (values == null ? ((Collection<T>) query.execute())
                             : ((Collection<T>) query.executeWithArray(values)));
-            logger.trace("collection size = {}", c.size());
+            LOGGER.trace("collection size = {}", c.size());
             Collection<T> detached = readManager.detachCopyAll(c);
-            logger.trace("got detatched collection {}", detached);
+            LOGGER.trace("got detatched collection {}", detached);
             tx.commit();
-            logger.trace("successfully executed {}",
+            LOGGER.trace("successfully executed {}",
                             "get: {}, {}. {}. {}",
                             type, filter, parameters,
                             values == null ? null : Arrays.asList(values) );
@@ -184,7 +184,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
     public <T> long remove(Class<T> type) {
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
-        logger.trace("remove all instances of {}", type);
+        LOGGER.trace("remove all instances of {}", type);
         long removed;
         try {
             tx.begin();
@@ -192,7 +192,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
                             + type.getName());
             removed = (Long) query.execute();
             tx.commit();
-            logger.trace("successfully removed {} entries of type {}", removed, type);
+            LOGGER.trace("successfully removed {} entries of type {}", removed, type);
             return removed;
         } finally {
             try {
@@ -235,7 +235,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
                 removed = query.deletePersistentAll(values);
             }
             tx.commit();
-            logger.trace("successfully removed {} entries of type {}", removed,
+            LOGGER.trace("successfully removed {} entries of type {}", removed,
                             type);
             return removed;
         } finally {
