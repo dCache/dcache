@@ -1,5 +1,7 @@
 package diskCacheV111.admin ;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +28,6 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.services.login.Crypt;
-import dmg.util.AgingHash;
 import dmg.util.UserPasswords;
 
 import org.dcache.util.Args;
@@ -487,7 +488,7 @@ public class PAMAuthentificator  extends CellAdapter {
       return r ;
   }
   private static final long HASH_REFRESH = 4*3600*1000 ;
-  private final AgingHash _map = new AgingHash(400) ;
+  private final Cache<String, UserRecord> _map = CacheBuilder.newBuilder().maximumSize(400).build();
   private static class UserRecord {
      private final Attributes _userRecord;
      private long       _timestamp;
@@ -516,7 +517,7 @@ public class PAMAuthentificator  extends CellAdapter {
                   IllegalArgumentException("User 'nis' service not configured");
       }
 
-      UserRecord record = (UserRecord)_map.get(userName);
+      UserRecord record = _map.get(userName, () -> null);
       Attributes answer;
       if( ( record == null ) ||
           ( ( record._timestamp != 0 ) &&
@@ -676,7 +677,7 @@ public class PAMAuthentificator  extends CellAdapter {
           throw new
                   IllegalArgumentException("User map hash not needed");
       }
-      Iterator<?>     i  = _map.keysIterator() ;
+      Iterator<?>     i  = new ArrayList<>(_map.asMap().keySet()).iterator();
       StringBuilder sb = new StringBuilder() ;
       while( i.hasNext() ){
          sb.append(i.next()).append("\n");
@@ -690,7 +691,9 @@ public class PAMAuthentificator  extends CellAdapter {
                   IllegalArgumentException("User map hash not needed");
       }
 
-      if( _map.remove(args.argv(0)) == null ) {
+      UserRecord userRecord = _map.getIfPresent(args.argv(0));
+      _map.invalidate(args.argv(0));
+      if( userRecord == null ) {
           throw new
                   IllegalArgumentException("User name not in cache : " + args
                   .argv(0));
@@ -725,7 +728,7 @@ public class PAMAuthentificator  extends CellAdapter {
           throw new
                   IllegalArgumentException("User map hash not needed");
       }
-      _map.clear() ;
+      _map.invalidateAll();
       return "" ;
    }
 

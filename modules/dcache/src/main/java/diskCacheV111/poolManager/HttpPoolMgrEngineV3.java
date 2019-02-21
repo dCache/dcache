@@ -1,5 +1,9 @@
 package diskCacheV111.poolManager;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +41,6 @@ import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.AgingHash;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
@@ -85,8 +88,8 @@ public class HttpPoolMgrEngineV3 implements
 
     private RestoreRequestsReceiver _receiver;
 
-    private final AgingHash   _pnfsPathMap     = new AgingHash(500);
-    private final AgingHash _fileAttributesMap = new AgingHash(500);
+    private final Cache<String, String> _pnfsPathMap     = CacheBuilder.newBuilder().maximumSize(500).build();
+    private final Cache<String, FileAttributes> _fileAttributesMap     = CacheBuilder.newBuilder().maximumSize(500).build();
     private static final ThreadLocal<SimpleDateFormat> _formatter =
             new ThreadLocal<SimpleDateFormat>()
             {
@@ -266,21 +269,20 @@ public class HttpPoolMgrEngineV3 implements
                 //
                 // collect the paths
                 //
-                String path = (String) _pnfsPathMap.get(pnfsId);
+                String path = _pnfsPathMap.getIfPresent(pnfsId);
                 if (path == null) {
                     path = getPathByPnfsId(pnfsId);
                 }
                 if (path == null) {
                     a[1] = pnfsId;
                 } else {
-                    _pnfsPathMap.put(pnfsId, a[1] = path);
+                    _pnfsPathMap.put(pnfsId, (String) (a[1] = path));
                 }
                 //
                 // collect the storage infos
                 //
                 if (_addStorageInfo) {
-                    FileAttributes fileAttributes = (FileAttributes) _fileAttributesMap.get(
-                                    pnfsId);
+                    FileAttributes fileAttributes = _fileAttributesMap.getIfPresent(pnfsId);
                     if (fileAttributes == null) {
                         fileAttributes = getFileAttributesByPnfsId(pnfsId);
                     }
@@ -309,7 +311,7 @@ public class HttpPoolMgrEngineV3 implements
                                                fileAttributes.getCacheClass());
                             storageInfo.setKey("hsm", fileAttributes.getHsm());
                         }
-                        _fileAttributesMap.put(pnfsId, a[2] = storageInfo);
+                        _fileAttributesMap.put(pnfsId, (FileAttributes) (a[2] = storageInfo));
                     }
 
                 }
