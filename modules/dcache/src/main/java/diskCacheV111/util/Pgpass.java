@@ -4,6 +4,9 @@
 
 package diskCacheV111.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -21,6 +24,8 @@ import java.util.Set;
  * @author  Vladimir Podstavkov
  */
 public class Pgpass {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("diskCacheV111.util.Pgpass");
 
     private final String _pwdfile;
     private String _hostname;
@@ -82,7 +87,7 @@ public class Pgpass {
         String result;
 
         if (!checkIfFileExists()) {
-            System.out.println("File '" + _pwdfile + "' not exist");
+            LOGGER.warn("File '{}' not exist", _pwdfile);
             return null;
         }
 
@@ -91,12 +96,12 @@ public class Pgpass {
                 result = parsePgFile(hostname, port, database, username);
 
             } else {
-                System.out.println("Protection for '" + _pwdfile + "' must be '600'");
+                LOGGER.warn("Protection for '{}' must be '600'", _pwdfile);
                 return null;
 
             }
         } catch (IOException e) {
-            System.out.println("'" + _pwdfile + "': I/O error");
+            LOGGER.warn("'{}': I/O error", _pwdfile);
             return null;
         }
 
@@ -126,7 +131,7 @@ public class Pgpass {
             return checkPgFilePermissionsForPosix(referencePermissionInput);
 
         } else {
-            System.out.println("Error reading permissions for '" + _pwdfile + "'. OS is not POSIX compliant");
+            LOGGER.warn("Error reading permissions for '{}'. OS is not POSIX compliant", _pwdfile);
             return false;
         }
     }
