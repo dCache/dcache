@@ -1,4 +1,2 @@
 Name : Vuong
 Modul : Chimera
-LOL
-
