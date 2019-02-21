@@ -22,7 +22,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -255,9 +255,9 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         try {
             if (checksumFile.exists()) {
                 try {
-                    String firstLine = Files.readFirstLine(checksumFile, Charsets.US_ASCII);
-                    if (firstLine != null) {
-                        Checksum checksum = new Checksum(ChecksumType.ADLER32, firstLine);
+                    List<String> lines = Files.readAllLines(checksumFile.toPath(), Charsets.US_ASCII);
+                    if (! lines.isEmpty()) {
+                        Checksum checksum = new Checksum(ChecksumType.ADLER32, lines.get(0));
                         return Collections.singleton(checksum);
                     }
                 } finally {

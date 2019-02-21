@@ -1,11 +1,11 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
 /**
@@ -40,7 +40,7 @@ class FileLineSource implements LineSource {
 
     @Override
     public List<String> getContent() throws IOException {
-        List<String> result = Files.readLines(_file, Charsets.UTF_8);
+        List<String> result = Files.readAllLines(_file.toPath(), Charsets.UTF_8);
         _lastRefresh = System.currentTimeMillis();
         return result;
     }

@@ -1,7 +1,6 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +17,11 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.Set;
 
@@ -98,15 +99,19 @@ public class NfsTransferService
         int maxTcpPort = _maxTcpPort;
 
         try {
-            String line = Files.readFirstLine(_tcpPortFile, StandardCharsets.US_ASCII);
-            int savedPort = Integer.parseInt(line);
-            if (savedPort >= _minTcpPort && savedPort <= _maxTcpPort) {
-                /*
-                 *if saved port with in the range, then restrict range to a single port
-                 * to enforce it.
-                 */
-                minTcpPort = savedPort;
-                maxTcpPort = savedPort;
+            List<String> lines = Files.readAllLines(_tcpPortFile.toPath(), StandardCharsets.US_ASCII);
+            if (!lines.isEmpty()) {
+                String line = lines.get(0);
+
+                int savedPort = Integer.parseInt(line);
+                if (savedPort >= _minTcpPort && savedPort <= _maxTcpPort) {
+                    /*
+                     *if saved port with in the range, then restrict range to a single port
+                     * to enforce it.
+                     */
+                    minTcpPort = savedPort;
+                    maxTcpPort = savedPort;
+                }
             }
         } catch (NumberFormatException e) {
             // garbage in the file.
@@ -137,8 +142,8 @@ public class NfsTransferService
 
         // if we had a port range, then store selected port for the next time.
         if (minTcpPort != maxTcpPort) {
-            _tcpPortFile.delete();
-            Files.write(Integer.toString(_nfsIO.getLocalAddress().getPort()), _tcpPortFile, StandardCharsets.US_ASCII);
+            byte[] outputBytes = Integer.toString(_nfsIO.getLocalAddress().getPort()).getBytes(StandardCharsets.US_ASCII);
+            Files.write(_tcpPortFile.toPath(), outputBytes);
         }
 
         /*

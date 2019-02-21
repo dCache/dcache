@@ -1,7 +1,6 @@
 package org.dcache.pool.classic;
 
 import com.google.common.collect.Iterables;
-import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +8,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -260,7 +260,7 @@ public class ChecksumScanner
             String line = _lastStart + " " +
                           ((_lastFileChecked == null) ? "-" : _lastFileChecked);
             try {
-                Files.write(line, _scrubberStateFile, Charset.defaultCharset());
+                Files.write(_scrubberStateFile.toPath(), line.getBytes(Charset.defaultCharset()));
             } catch (IOException e) {
                 _log.error("Failed to save scrubber state ({}) to {}: {}", line, _scrubberStateFile, messageOrClassName(e));
             }
@@ -278,8 +278,7 @@ public class ChecksumScanner
         {
             String line;
             try {
-                line = Files.readFirstLine(_scrubberStateFile,
-                                           Charset.defaultCharset());
+                line = Files.readAllLines(_scrubberStateFile.toPath(), Charset.defaultCharset()).get(0);
             } catch (FileNotFoundException e) {
                 /**
                  * ignored - start immediately and check whole pool
