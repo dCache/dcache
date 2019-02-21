@@ -1,8 +1,8 @@
 package dmg.util.logback;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.LOGGER;
+import ch.qos.logback.classic.LOGGERContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.turbo.TurboFilter;
 import ch.qos.logback.core.Appender;
@@ -74,11 +74,11 @@ public class CellThresholdFilter extends TurboFilter
     }
 
     private Set<Appender<ILoggingEvent>>
-        getAppenders(LoggerContext context)
+        getAppenders(LOGGERContext context)
     {
         Set<Appender<ILoggingEvent>> appenders = Sets.newHashSet();
-        for (Logger logger: context.getLoggerList()) {
-            Iterators.addAll(appenders, logger.iteratorForAppenders());
+        for (LOGGER LOGGER: context.getLOGGERList()) {
+            Iterators.addAll(appenders, LOGGER.iteratorForAppenders());
         }
         return appenders;
     }
@@ -86,10 +86,10 @@ public class CellThresholdFilter extends TurboFilter
     @Override
     public void start()
     {
-        LoggerContext context = (LoggerContext) getContext();
+        LOGGERContext context = (LOGGERContext) getContext();
 
-        for (Logger logger: context.getLoggerList()) {
-            RootFilterThresholds.setRoot(LoggerName.getInstance(logger.getName()), !logger.isAdditive());
+        for (LOGGER LOGGER: context.getLOGGERList()) {
+            RootFilterThresholds.setRoot(LOGGERName.getInstance(LOGGER.getName()), !LOGGER.isAdditive());
         }
 
         for (Appender<ILoggingEvent> appender: getAppenders(context)) {
@@ -99,7 +99,7 @@ public class CellThresholdFilter extends TurboFilter
             for (Threshold threshold: _thresholds) {
                 if (threshold.isApplicableToAppender(appender)) {
                     RootFilterThresholds.setThreshold(
-                            threshold.getLogger(),
+                            threshold.getLOGGER(),
                             appenderName,
                             threshold.getLevel());
                 }
@@ -115,7 +115,7 @@ public class CellThresholdFilter extends TurboFilter
     }
 
     @Override
-    public FilterReply decide(Marker marker, Logger logger, Level level,
+    public FilterReply decide(Marker marker, LOGGER LOGGER, Level level,
                               String format, Object[] params, Throwable t)
     {
         if (!isStarted()) {
@@ -134,7 +134,7 @@ public class CellThresholdFilter extends TurboFilter
         }
 
         Level threshold =
-            thresholds.getThreshold(logger);
+            thresholds.getThreshold(LOGGER);
         if (threshold == null) {
             return FilterReply.NEUTRAL;
         }

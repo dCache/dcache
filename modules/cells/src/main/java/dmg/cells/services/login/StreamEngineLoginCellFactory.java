@@ -19,8 +19,8 @@
 package dmg.cells.services.login;
 
 import com.google.common.util.concurrent.AbstractService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LOGGER;
+import org.slf4j.LOGGERFactory;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
@@ -36,7 +36,7 @@ import org.dcache.util.Args;
 
 public abstract class StreamEngineLoginCellFactory extends AbstractService implements LoginCellFactory
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoginManager.class);
+    private static final LOGGER LOGGER = LOGGERFactory.getLOGGER(LoginManager.class);
 
     private static final Class<?>[] AUTH_CON_SIGNATURE =
             { CellEndpoint.class, Args.class };

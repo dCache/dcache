@@ -2,7 +2,7 @@
 package dmg.cells.services.login.user  ;
 
 import org.slf4j.LOGGER;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LOGGERFactory;
 
 import java.io.File;
 import java.io.Serializable;
@@ -30,8 +30,8 @@ import dmg.util.CommandThrowableException;
 public class       UserSecurityCell
        extends     CellAdapter            {
 
-  private static final Logger LOGGER =
-      LoggerFactory.getLogger(UserSecurityCell.class);
+  private static final LOGGER LOGGER =
+      LOGGERFactory.getLOGGER(UserSecurityCell.class);
 
   private final String       _cellName ;
   private final CellNucleus  _nucleus ;

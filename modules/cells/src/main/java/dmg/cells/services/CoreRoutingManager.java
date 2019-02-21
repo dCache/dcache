@@ -27,8 +27,8 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LOGGER;
+import org.slf4j.LOGGERFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -80,8 +80,8 @@ public class CoreRoutingManager
     extends CellAdapter
     implements CellEventListener
 {
-    private static final Logger LOG =
-        LoggerFactory.getLogger(CoreRoutingManager.class);
+    private static final LOGGER LOG =
+        LOGGERFactory.getLOGGER(CoreRoutingManager.class);
 
     private final CellNucleus nucleus;
 

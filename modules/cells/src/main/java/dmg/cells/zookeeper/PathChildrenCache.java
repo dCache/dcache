@@ -39,8 +39,8 @@ import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LOGGER;
+import org.slf4j.LOGGERFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class PathChildrenCache implements Closeable
 {
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final LOGGER log = LOGGERFactory.getLOGGER(getClass());
 
     private final CuratorFramework client;
     private final String path;

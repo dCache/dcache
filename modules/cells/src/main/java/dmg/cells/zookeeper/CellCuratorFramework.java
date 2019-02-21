@@ -72,8 +72,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LOGGER;
+import org.slf4j.LOGGERFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -92,7 +92,7 @@ import org.dcache.util.SequentialExecutor;
  */
 public class CellCuratorFramework implements CuratorFramework
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CellCuratorFramework.class);
+    private static final LOGGER LOGGER = LOGGERFactory.getLOGGER(CellCuratorFramework.class);
 
     private final CuratorFramework inner;
     private final BoundedExecutor executor;

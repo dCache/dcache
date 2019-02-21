@@ -6,7 +6,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.LOGGER;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LOGGERFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -82,10 +82,10 @@ import static dmg.util.CommandException.checkCommand;
 public class CellShell extends CommandInterpreter
        implements Replaceable
 {
-    private static final Logger LOGGER =
-        LoggerFactory.getLogger(CellShell.class);
-    private static final Logger LOGGERNucleus =
-        LoggerFactory.getLogger(CellNucleus.class);
+    private static final LOGGER LOGGER =
+        LOGGERFactory.getLOGGER(CellShell.class);
+    private static final LOGGER LOGGERNucleus =
+        LOGGERFactory.getLOGGER(CellNucleus.class);
 
     enum ErrorAction
     {

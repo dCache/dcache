@@ -1,7 +1,7 @@
 package dmg.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LOGGER;
+import org.slf4j.LOGGERFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -13,7 +13,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class Exceptions
 {
-    private static final Logger LOG = LoggerFactory.getLogger(Exceptions.class);
+    private static final LOGGER LOG = LOGGERFactory.getLOGGER(Exceptions.class);
 
     private Exceptions()
     {

@@ -1,122 +1,122 @@
 package dmg.util.logback;
 
 import org.junit.Test;
-import org.slf4j.Logger;
+import org.slf4j.LOGGER;
 
 import static org.junit.Assert.*;
 
-public class LoggerNameTest
+public class LOGGERNameTest
 {
-    private static final String CHILD_OF_ROOT = "logger";
-    private static final String LOGGER = "logger.foo";
-    private static final String CHILD1_OF_LOGGER = "logger.foo.child1";
-    private static final String CHILD2_OF_LOGGER = "logger.foo$child2";
+    private static final String CHILD_OF_ROOT = "LOGGER";
+    private static final String LOGGER = "LOGGER.foo";
+    private static final String CHILD1_OF_LOGGER = "LOGGER.foo.child1";
+    private static final String CHILD2_OF_LOGGER = "LOGGER.foo$child2";
 
     @Test
     public void testRootHasCorrectName()
     {
-        assertEquals(Logger.ROOT_LOGGER_NAME, LoggerName.ROOT.toString());
+        assertEquals(LOGGER.ROOT_LOGGER_NAME, LOGGERName.ROOT.toString());
     }
 
     @Test
     public void testGetInstanceOfRoot()
     {
-        assertEquals(LoggerName.ROOT, LoggerName.getInstance(Logger.ROOT_LOGGER_NAME));
+        assertEquals(LOGGERName.ROOT, LOGGERName.getInstance(LOGGER.ROOT_LOGGER_NAME));
     }
 
     @Test
     public void testGetInstanceOfRootIsCaseInsensitive()
     {
-        assertEquals(LoggerName.ROOT, LoggerName.getInstance(Logger.ROOT_LOGGER_NAME.toUpperCase()));
-        assertEquals(LoggerName.ROOT, LoggerName.getInstance(Logger.ROOT_LOGGER_NAME.toLowerCase()));
+        assertEquals(LOGGERName.ROOT, LOGGERName.getInstance(LOGGER.ROOT_LOGGER_NAME.toUpperCase()));
+        assertEquals(LOGGERName.ROOT, LOGGERName.getInstance(LOGGER.ROOT_LOGGER_NAME.toLowerCase()));
     }
 
     @Test
     public void testGetInstance()
     {
-        assertEquals(LOGGER, LoggerName.getInstance(LOGGER).toString());
+        assertEquals(LOGGER, LOGGERName.getInstance(LOGGER).toString());
     }
 
     @Test
     public void testValueOfRoot()
     {
-        assertEquals(LoggerName.ROOT, LoggerName.valueOf(Logger.ROOT_LOGGER_NAME));
+        assertEquals(LOGGERName.ROOT, LOGGERName.valueOf(LOGGER.ROOT_LOGGER_NAME));
     }
 
     @Test
     public void testValueOfRootIsCaseInsensitive()
     {
-        assertEquals(LoggerName.ROOT, LoggerName.valueOf(Logger.ROOT_LOGGER_NAME.toUpperCase()));
-        assertEquals(LoggerName.ROOT, LoggerName.valueOf(Logger.ROOT_LOGGER_NAME.toLowerCase()));
+        assertEquals(LOGGERName.ROOT, LOGGERName.valueOf(LOGGER.ROOT_LOGGER_NAME.toUpperCase()));
+        assertEquals(LOGGERName.ROOT, LOGGERName.valueOf(LOGGER.ROOT_LOGGER_NAME.toLowerCase()));
     }
 
     @Test
     public void testGetValueOf()
     {
-        assertEquals(LOGGER, LoggerName.valueOf(LOGGER).toString());
+        assertEquals(LOGGER, LOGGERName.valueOf(LOGGER).toString());
     }
 
     @Test
     public void testEqualsWithNull()
     {
-        assertFalse(LoggerName.ROOT.equals(null));
+        assertFalse(LOGGERName.ROOT.equals(null));
     }
 
     @Test
     public void testEqualsWithWrongType()
     {
-        assertFalse(LoggerName.ROOT.equals(Logger.ROOT_LOGGER_NAME));
+        assertFalse(LOGGERName.ROOT.equals(LOGGER.ROOT_LOGGER_NAME));
     }
 
     @Test
     public void testEqualsWithDifferent()
     {
-        assertFalse(LoggerName.ROOT.equals(LoggerName.getInstance(LOGGER)));
+        assertFalse(LOGGERName.ROOT.equals(LOGGERName.getInstance(LOGGER)));
     }
 
     @Test
     public void testEqualsWithSame()
     {
-        assertTrue(LoggerName.ROOT.equals(LoggerName.ROOT));
+        assertTrue(LOGGERName.ROOT.equals(LOGGERName.ROOT));
     }
 
     @Test
     public void testEqualsWithEquals()
     {
-        assertTrue(LoggerName.getInstance(LOGGER).equals(LoggerName.valueOf(LOGGER)));
+        assertTrue(LOGGERName.getInstance(LOGGER).equals(LOGGERName.valueOf(LOGGER)));
     }
 
     @Test
     public void testHashCodeEquals()
     {
-        assertEquals(LoggerName.getInstance(LOGGER).hashCode(),
-                     LoggerName.getInstance(LOGGER).hashCode());
+        assertEquals(LOGGERName.getInstance(LOGGER).hashCode(),
+                     LOGGERName.getInstance(LOGGER).hashCode());
     }
 
     @Test
     public void testParentOfRootIsNull()
     {
-        assertNull(LoggerName.ROOT.getParent());
+        assertNull(LOGGERName.ROOT.getParent());
     }
 
     @Test
     public void testParentIsRoot()
     {
-        assertEquals(LoggerName.ROOT,
-                     LoggerName.getInstance(CHILD_OF_ROOT).getParent());
+        assertEquals(LOGGERName.ROOT,
+                     LOGGERName.getInstance(CHILD_OF_ROOT).getParent());
     }
 
     @Test
     public void testParentWithDot()
     {
-        assertEquals(LoggerName.getInstance(LOGGER),
-                     LoggerName.getInstance(CHILD1_OF_LOGGER).getParent());
+        assertEquals(LOGGERName.getInstance(LOGGER),
+                     LOGGERName.getInstance(CHILD1_OF_LOGGER).getParent());
     }
 
     @Test
     public void testParentWithDollar()
     {
-        assertEquals(LoggerName.getInstance(LOGGER),
-                     LoggerName.getInstance(CHILD2_OF_LOGGER).getParent());
+        assertEquals(LOGGERName.getInstance(LOGGER),
+                     LOGGERName.getInstance(CHILD2_OF_LOGGER).getParent());
     }
 }
