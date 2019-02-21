@@ -345,7 +345,7 @@ public class LegacyAdminShell
                     getUser()+" > " ;
         }
     }
-    public Object acLOGGERoff(Args args) throws CommandException
+    public Object ac_logoff(Args args) throws CommandException
     {
         throw new CommandExitException("Done", 0);
     }

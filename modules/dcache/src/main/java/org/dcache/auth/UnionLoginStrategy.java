@@ -48,18 +48,18 @@ public class UnionLoginStrategy implements LoginStrategy
         NONE, READONLY, FULL
     }
 
-    private List<LoginStrategy> LOGGERinStrategies = Collections.emptyList();
+    private List<LoginStrategy> _loginStrategies  = Collections.emptyList();
     private AccessLevel _anonymousAccess = AccessLevel.NONE;
     private boolean _shouldFallback = true;
 
     public void setLoginStrategies(List<LoginStrategy> list)
     {
-        LOGGERinStrategies = new ArrayList<>(list);
+        _loginStrategies  = new ArrayList<>(list);
     }
 
     public List<LoginStrategy> getLoginStrategies()
     {
-        return Collections.unmodifiableList(LOGGERinStrategies);
+        return Collections.unmodifiableList(_loginStrategies);
     }
 
     public void setAnonymousAccess(AccessLevel level)
@@ -96,7 +96,7 @@ public class UnionLoginStrategy implements LoginStrategy
 
         PermissionDeniedCacheException loginFailure = null;
         try {
-            for (LoginStrategy strategy: LOGGERinStrategies) {
+            for (LoginStrategy strategy: _loginStrategies) {
                 LOGGER.debug( "Attempting login strategy: {}", strategy.getClass().getName());
 
                 try {
@@ -150,7 +150,7 @@ public class UnionLoginStrategy implements LoginStrategy
     @Override
     public Principal map(Principal principal) throws CacheException
     {
-        for (LoginStrategy strategy: LOGGERinStrategies) {
+        for (LoginStrategy strategy: _loginStrategies) {
             Principal result = strategy.map(principal);
             if (result != null) {
                 return result;
@@ -163,7 +163,7 @@ public class UnionLoginStrategy implements LoginStrategy
     public Set<Principal> reverseMap(Principal principal) throws CacheException
     {
         Set<Principal> result = new HashSet<>();
-        for (LoginStrategy strategy: LOGGERinStrategies) {
+        for (LoginStrategy strategy: _loginStrategies) {
             result.addAll(strategy.reverseMap(principal));
         }
         return result;
