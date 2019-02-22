@@ -25,7 +25,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import dmg.util.AuthorizedString;
-import dmg.util.Gate;
 import dmg.util.command.Command;
 import dmg.util.logback.FilterShell;
 
