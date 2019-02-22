@@ -421,7 +421,7 @@ public class PoolV4
     @Required
     public void setTags(String tags)
     {
-        Map<String,String> newTags = Splitter.on(',')
+        Map<String,String> newTags = Splitter.on(' ')
                 .omitEmptyStrings()
                 .trimResults()
                 .withKeyValueSeparator('=')
