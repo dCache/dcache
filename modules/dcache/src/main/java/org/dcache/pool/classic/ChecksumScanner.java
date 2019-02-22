@@ -5,10 +5,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -279,7 +279,7 @@ public class ChecksumScanner
             String line;
             try {
                 line = Files.readAllLines(_scrubberStateFile.toPath(), Charset.defaultCharset()).get(0);
-            } catch (FileNotFoundException e) {
+            } catch (NoSuchFileException e) {
                 /**
                  * ignored - start immediately and check whole pool
                  */

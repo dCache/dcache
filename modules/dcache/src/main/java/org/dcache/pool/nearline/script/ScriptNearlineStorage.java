@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -50,6 +49,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HsmRunSystem;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
+import java.nio.file.NoSuchFileException;
 
 import org.dcache.pool.nearline.AbstractBlockingNearlineStorage;
 import org.dcache.pool.nearline.spi.FlushRequest;
@@ -264,7 +264,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
                     checksumFile.delete();
                 }
             }
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             /* Should not happen unless somebody else is removing
              * the file before we got a chance to read it.
              */

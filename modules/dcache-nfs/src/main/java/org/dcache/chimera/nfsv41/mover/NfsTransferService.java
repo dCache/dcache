@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.BindException;
@@ -18,6 +17,7 @@ import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
@@ -116,7 +116,7 @@ public class NfsTransferService
         } catch (NumberFormatException e) {
             // garbage in the file.
             _log.warn("Invalid content in the port file {} : {}", _tcpPortFile, e.getMessage());
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
         }
 
         boolean bound = false;
