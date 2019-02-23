@@ -4,7 +4,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.escape.CharEscaperBuilder;
 import com.google.common.escape.Escaper;
 import com.google.common.net.InetAddresses;
-import org.slf4j.LOGGER;
+import org.slf4j.Logger;
 
 import javax.security.auth.Subject;
 
@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * The NetLOGGER project can be found at http://netLOGGER.lbl.gov
  */
-public class NetLOGGERBuilder
+public class NetLoggerBuilder
 {
     private static final DateTimeFormatter TS_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
@@ -37,7 +37,7 @@ public class NetLOGGERBuilder
     private final StringBuilder s = new StringBuilder(256);
     private boolean omitNullValues;
     private Level level;
-    private LOGGER LOGGER;
+    private Logger LOGGER;
 
     private static final Escaper AS_QUOTED_VALUE = new CharEscaperBuilder().
             addEscape('\\', "\\\\").
@@ -109,13 +109,13 @@ public class NetLOGGERBuilder
         return ZonedDateTime.now().format(TS_FORMAT);
     }
 
-    public NetLOGGERBuilder(String event)
+    public NetLoggerBuilder(String event)
     {
         s.append("ts=").append(getTimestamp()).append(' ');
         s.append("event=").append(event);
     }
 
-    public NetLOGGERBuilder(Level level, String event)
+    public NetLoggerBuilder(Level level, String event)
     {
         this.level = level;
         s.append("level=").append(level).append(' ');
@@ -123,12 +123,12 @@ public class NetLOGGERBuilder
         s.append("event=").append(event);
     }
 
-    public NetLOGGERBuilder omitNullValues() {
+    public NetLoggerBuilder omitNullValues() {
         omitNullValues = true;
         return this;
     }
 
-    public NetLOGGERBuilder onLOGGER(LOGGER LOGGER) {
+    public NetLoggerBuilder onLOGGER(Logger LOGGER) {
         this.LOGGER = LOGGER;
         return this;
     }
@@ -143,7 +143,7 @@ public class NetLOGGERBuilder
      * equivalent to the empty string; however, if omitNullValues is specified
      * then this method does nothing when value is null.
      */
-    public NetLOGGERBuilder add(String name, Object value) {
+    public NetLoggerBuilder add(String name, Object value) {
         if (!omitNullValues || value != null) {
             s.append(' ').append(name).append('=');
             if (value != null) {
@@ -162,7 +162,7 @@ public class NetLOGGERBuilder
      * Add the value of an array if it contains a single item.  An empty array
      * and an array with more than one item are treated as if the array is null.
      */
-    public NetLOGGERBuilder addSingleValue(String name, Object[] array)
+    public NetLoggerBuilder addSingleValue(String name, Object[] array)
     {
         return add(name, array != null && array.length == 1 ? array [0] : null);
     }
@@ -173,7 +173,7 @@ public class NetLOGGERBuilder
      * item that maps to a null value, or an array with more than one item is
      * treated as if the array is null.
      */
-    public <A> NetLOGGERBuilder addSingleValue(String name, A[] array, Function<A,?> toDisplayedValue)
+    public <A> NetLoggerBuilder addSingleValue(String name, A[] array, Function<A,?> toDisplayedValue)
     {
         return add(name, array != null && array.length == 1 && array [0] != null ?
                 toDisplayedValue.apply(array [0]) : null);
@@ -184,7 +184,7 @@ public class NetLOGGERBuilder
      * {@literal toArray} function to {@literal source}.  If source is null then
      * the value is treated as if the array was null.
      */
-    public <U,A> NetLOGGERBuilder addSingleValue(String name, U source, Function<U,A[]> toArray, Function<A,?> toDisplayedValue)
+    public <U,A> NetLoggerBuilder addSingleValue(String name, U source, Function<U,A[]> toArray, Function<A,?> toDisplayedValue)
     {
         return addSingleValue(name, source == null ? null : toArray.apply(source), toDisplayedValue);
     }
@@ -194,7 +194,7 @@ public class NetLOGGERBuilder
      * obtained from {@literal source} by applying the {@literal toArray}
      * function.  A null source it treated as if the array is null.
      */
-    public <U,A> NetLOGGERBuilder addSingleValue(String name, U source, Function<U,A[]> toArray)
+    public <U,A> NetLoggerBuilder addSingleValue(String name, U source, Function<U,A[]> toArray)
     {
         return addSingleValue(name, source == null ? null : toArray.apply(source));
     }
@@ -205,7 +205,7 @@ public class NetLOGGERBuilder
      * or could be the uid and a list of gid(s) of this user
      * ({@literal <uid>:<gid>[,<gid>...]}).
      */
-    public NetLOGGERBuilder add(String name, Subject subject)
+    public NetLoggerBuilder add(String name, Subject subject)
     {
         if (!omitNullValues || subject != null) {
             s.append(' ').append(name).append('=');
@@ -221,7 +221,7 @@ public class NetLOGGERBuilder
      * {@link #omitNullValues} has not been called then {@literal unknown} is
      * recorded.
      */
-    public NetLOGGERBuilder add(String name, InetSocketAddress sock)
+    public NetLoggerBuilder add(String name, InetSocketAddress sock)
     {
         if (!omitNullValues || sock != null) {
             s.append(' ').append(name).append('=');
@@ -241,7 +241,7 @@ public class NetLOGGERBuilder
      * equivalent to the empty string; however, if omitNullValues is specified
      * then this method does nothing when value is null.
      */
-    public NetLOGGERBuilder addInQuotes(String name, Object value) {
+    public NetLoggerBuilder addInQuotes(String name, Object value) {
         if (!omitNullValues || value != null) {
             s.append(' ').append(name).append('=');
             if (value != null) {
@@ -251,31 +251,31 @@ public class NetLOGGERBuilder
         return this;
     }
 
-    public NetLOGGERBuilder add(String name, boolean value) {
+    public NetLoggerBuilder add(String name, boolean value) {
         return add(name, String.valueOf(value));
     }
 
-    public NetLOGGERBuilder add(String name, char value) {
+    public NetLoggerBuilder add(String name, char value) {
         return add(name, String.valueOf(value));
     }
 
-    public NetLOGGERBuilder add(String name, double value) {
+    public NetLoggerBuilder add(String name, double value) {
         return add(name, String.valueOf(value));
     }
 
-    public NetLOGGERBuilder add(String name, float value) {
+    public NetLoggerBuilder add(String name, float value) {
         return add(name, String.valueOf(value));
     }
 
-    public NetLOGGERBuilder add(String name, int value) {
+    public NetLoggerBuilder add(String name, int value) {
         return add(name, String.valueOf(value));
     }
 
-    public NetLOGGERBuilder add(String name, long value) {
+    public NetLoggerBuilder add(String name, long value) {
         return add(name, String.valueOf(value));
     }
 
-    public NetLOGGERBuilder add(String name, Exception e)
+    public NetLoggerBuilder add(String name, Exception e)
     {
         return add(name+".class", e.getClass().getSimpleName())
                 .add(name+".message", e.getMessage());
@@ -287,14 +287,14 @@ public class NetLOGGERBuilder
         return s.toString();
     }
 
-    public NetLOGGERBuilder withLevel(Level level)
+    public NetLoggerBuilder withLevel(Level level)
     {
         checkState(this.level == null, "Level is already set");
         this.level = level;
         return add("level", level);
     }
 
-    public void toLOGGER(LOGGER LOGGER)
+    public void toLOGGER(Logger LOGGER)
     {
         checkState(level != null, "Cannot log to LOGGER without a level.");
         String line = toString();

@@ -5,8 +5,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
@@ -67,8 +67,8 @@ public class LoginBrokerPublisher
     extends AbstractCellComponent
     implements CellCommandListener, CellMessageReceiver, CellEventListener, CellLifeCycleAware, CellInfoProvider
 {
-    private static final LOGGER LOGGER =
-            LOGGERFactory.getLOGGER(LoginBrokerPublisher.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(LoginBrokerPublisher.class);
 
     private enum LastEvent
     {

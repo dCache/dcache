@@ -1,8 +1,8 @@
 // $Id: UserSecurityCell.java,v 1.4 2006-12-15 10:58:14 tigran Exp $
 package dmg.cells.services.login.user  ;
 
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.Serializable;
@@ -30,8 +30,8 @@ import dmg.util.CommandThrowableException;
 public class       UserSecurityCell
        extends     CellAdapter            {
 
-  private static final LOGGER LOGGER =
-      LOGGERFactory.getLOGGER(UserSecurityCell.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(UserSecurityCell.class);
 
   private final String       _cellName ;
   private final CellNucleus  _nucleus ;

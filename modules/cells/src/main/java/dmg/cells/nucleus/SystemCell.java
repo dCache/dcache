@@ -5,8 +5,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.curator.framework.CuratorFramework;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Lgger;
+import org.slf4j.LoggerFactory;
 import org.springframework.remoting.RemoteProxyFailureException;
 
 import java.io.FileNotFoundException;
@@ -44,7 +44,7 @@ public class      SystemCell
     extends    CellAdapter
     implements Thread.UncaughtExceptionHandler
 {
-    private static final LOGGER LOGGER = LOGGERFactory.getLOGGER(SystemCell.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemCell.class);
 
     /* Released on OOM to increase the chance that the shutdown succeeds.
      */

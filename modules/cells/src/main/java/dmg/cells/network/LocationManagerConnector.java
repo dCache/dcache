@@ -2,8 +2,8 @@ package dmg.cells.network;
 
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.Uninterruptibles;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.SocketFactory;
 
@@ -33,8 +33,8 @@ public class LocationManagerConnector
     extends CellAdapter
     implements Runnable
 {
-    private static final LOGGER LOGGER =
-        LOGGERFactory.getLOGGER("org.dcache.cells.network");
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger("org.dcache.cells.network");
 
     private final String _domain;
     private final SocketFactory _ssf;

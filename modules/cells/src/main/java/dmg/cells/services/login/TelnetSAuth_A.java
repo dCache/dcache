@@ -2,8 +2,8 @@ package  dmg.cells.services.login ;
 
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -28,8 +28,8 @@ import org.dcache.util.Args;
 public class      TelnetSAuth_A
        implements TelnetServerAuthentication  {
 
-  private static final LOGGER LOGGER =
-      LOGGERFactory.getLOGGER(TelnetSAuth_A.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(TelnetSAuth_A.class);
 
   private CellEndpoint _endpoint;
   private Args         _args ;

@@ -119,7 +119,7 @@ public class LogbackShell
     {
         String name = args.argv(0);
         Level level = Level.valueOf(args.argv(1));
-        LOGGER LOGGER = getLOGGER(name);
+        Logger LOGGER = getLogger(name);
         if (LOGGER == null) {
             throw new IllegalArgumentException("LOGGER not found: " + name);
         }
@@ -138,7 +138,7 @@ public class LogbackShell
     public String ac_log_LOGGER_reset_$_1(Args args)
     {
         String name = args.argv(0);
-        LOGGER LOGGER = getLOGGER(name);
+        Logger LOGGER = getLogger(name);
         if (LOGGER == null) {
             throw new IllegalArgumentException("LOGGER not found: " + name);
         }
@@ -155,7 +155,7 @@ public class LogbackShell
     {
         String name = args.argv(0);
         String appender = args.argv(1);
-        LOGGER LOGGER = getLOGGER(name);
+        Logger LOGGER = getLogger(name);
         if (LOGGER == null) {
             throw new IllegalArgumentException("LOGGER not found: " + name);
         }
@@ -178,7 +178,7 @@ public class LogbackShell
     {
         String name = args.argv(0);
         String appender = args.argv(1);
-        LOGGER LOGGER = getLOGGER(name);
+        Logger LOGGER = getLogger(name);
         if (LOGGER == null) {
             throw new IllegalArgumentException("LOGGER not found: " + name);
         }
@@ -194,12 +194,12 @@ public class LogbackShell
             "Get encoder pattern for <LOGGER> <appender>.";
     public String ac_log_get_pattern_$_2(Args args)
     {
-        String LOGGERName = args.argv(0);
+        String LoggerName = args.argv(0);
         String appenderName = args.argv(1);
 
-        LOGGER LOGGER = getLOGGER(LOGGERName);
+        Logger LOGGER = getLogger(LoggerName);
         if (LOGGER == null) {
-            throw new IllegalArgumentException("LOGGER not found: " + LOGGERName);
+            throw new IllegalArgumentException("LOGGER not found: " + LoggerName);
         }
 
         Appender<ILoggingEvent> appender = LOGGER.getAppender(appenderName);
@@ -232,13 +232,13 @@ public class LogbackShell
         "Set encoder pattern to <pattern> for <LOGGER> <appender>.";
     public String ac_log_set_pattern_$_3(Args args)
     {
-        String LOGGERName = args.argv(0);
+        String LoggerName = args.argv(0);
         String appenderName = args.argv(1);
         String pattern = args.argv(2);
 
-        LOGGER LOGGER = getLOGGER(LOGGERName);
+        Logger LOGGER = getLogger(LoggerName);
         if (LOGGER == null) {
-            throw new IllegalArgumentException("LOGGER not found: " + LOGGERName);
+            throw new IllegalArgumentException("LOGGER not found: " + LoggerName);
         }
 
         Appender<ILoggingEvent> appender = LOGGER.getAppender(appenderName);
@@ -260,6 +260,6 @@ public class LogbackShell
             throw new IllegalArgumentException("Appender " + appenderName + " does not support encoders");
         }
 
-        return "pattern of appender " + LOGGERName + '.' + appenderName + " set to " + encoder.getPattern();
+        return "pattern of appender " + LoggerName + '.' + appenderName + " set to " + encoder.getPattern();
     }
 }

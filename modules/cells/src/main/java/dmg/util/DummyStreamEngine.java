@@ -1,8 +1,8 @@
 package dmg.util;
 
 import javatunnel.TunnelSocket;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
@@ -23,8 +23,8 @@ import java.nio.charset.Charset;
 
 public class DummyStreamEngine implements StreamEngine
 {
-    private static final LOGGER LOGGER =
-        LOGGERFactory.getLOGGER(DummyStreamEngine.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(DummyStreamEngine.class);
 
     private final Socket _socket;
     private Subject _subject = new Subject();

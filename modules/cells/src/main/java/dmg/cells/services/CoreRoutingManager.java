@@ -27,8 +27,8 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -80,8 +80,8 @@ public class CoreRoutingManager
     extends CellAdapter
     implements CellEventListener
 {
-    private static final LOGGER LOG =
-        LOGGERFactory.getLOGGER(CoreRoutingManager.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(CoreRoutingManager.class);
 
     private final CellNucleus nucleus;
 
@@ -192,7 +192,7 @@ public class CoreRoutingManager
         try {
             future.get();
         } catch (ExecutionException e) {
-            LOG.info("Failed to notify downstream of shutdown: {}", e.toString());
+            LOGGER.info("Failed to notify downstream of shutdown: {}", e.toString());
         } catch (InterruptedException ignored) {
         }
     }
@@ -340,7 +340,7 @@ public class CoreRoutingManager
                 sendMessage(msg);
             }
         } else if (obj instanceof NoRouteToCellException) {
-            LOG.info(((NoRouteToCellException) obj).getMessage());
+            LOGGER.info(((NoRouteToCellException) obj).getMessage());
         } else if (obj instanceof PeerShutdownNotification) {
             PeerShutdownNotification notification = (PeerShutdownNotification) obj;
             String remoteDomain = notification.getDomainName();
@@ -362,7 +362,7 @@ public class CoreRoutingManager
             msg.revertDirection();
             sendMessage(msg);
         } else {
-            LOG.warn("Unidentified message ignored: {}", obj);
+            LOGGER.warn("Unidentified message ignored: {}", obj);
         }
     }
 
@@ -370,14 +370,14 @@ public class CoreRoutingManager
     public void cellCreated(CellEvent ce)
     {
         String name = (String)ce.getSource();
-        LOG.info("Cell created: {}", name);
+        LOGGER.info("Cell created: {}", name);
     }
 
     @Override
     public synchronized void cellDied(CellEvent ce)
     {
         String name = (String) ce.getSource();
-        LOG.info("Cell died: {}", name);
+        LOGGER.info("Cell died: {}", name);
     }
 
     @Override
@@ -386,7 +386,7 @@ public class CoreRoutingManager
         super.routeAdded(ce);
         CellRoute cr = (CellRoute) ce.getSource();
         CellAddressCore target = cr.getTarget();
-        LOG.info("Got 'route added' event: {}", cr);
+        LOGGER.info("Got 'route added' event: {}", cr);
         switch (cr.getRouteType()) {
         case CellRoute.DOMAIN:
             Optional<CellTunnelInfo> tunnelInfo = getTunnelInfo(target);
@@ -433,7 +433,7 @@ public class CoreRoutingManager
     {
         CellRoute cr = (CellRoute) ce.getSource();
         CellAddressCore target = cr.getTarget();
-        LOG.info("Got 'route deleted' event: {}", cr);
+        LOGGER.info("Got 'route deleted' event: {}", cr);
         switch (cr.getRouteType()) {
         case CellRoute.DOMAIN:
             updateTopicRoutes(cr.getDomainName(), Collections.emptyList());
@@ -468,7 +468,7 @@ public class CoreRoutingManager
             try {
                 nucleus.routeAdd(route);
             } catch (IllegalArgumentException e) {
-                LOG.info("Failed to add route: {}", e.getMessage());
+                LOGGER.info("Failed to add route: {}", e.getMessage());
             }
         }
         delayedDefaultRoutes.clear();

@@ -10,8 +10,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.Uninterruptibles;
 import org.apache.curator.framework.CuratorFramework;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import javax.annotation.Nonnull;
@@ -67,8 +67,8 @@ import static org.dcache.util.MathUtils.subWithInfinity;
  */
 public class CellNucleus implements ThreadFactory
 {
-    private static final LOGGER LOGGER =
-            LOGGERFactory.getLOGGER(CellNucleus.class);
+    private static final LoggerFactory LOGGER =
+            LoggerFactory.getLogger(CellNucleus.class);
 
     private enum State
     {
@@ -403,11 +403,11 @@ public class CellNucleus implements ThreadFactory
             msg.addSourceAddress(getThisAddress());
         }
 
-        EventLOGGER.sendBegin(msg, "async");
+        EventEVENT_LOGGER.sendBegin(msg, "async");
         try {
             __cellGlue.sendMessage(msg, locally, remotely);
         } finally {
-            EventLOGGER.sendEnd(msg);
+            EVENT_LOGGER.sendEnd(msg);
         }
     }
 
@@ -535,7 +535,7 @@ public class CellNucleus implements ThreadFactory
         UOID uoid = msg.getUOID();
         CellLock lock = new CellLock(msg, callback, executor, timeout);
 
-        EventLOGGER.sendBegin(msg, "callback");
+        EVENT_LOGGER.sendBegin(msg, "callback");
 
         /* Ordering here is important - need to insert into waitHash before checking the state
          * to avoid a race with shutdown.
@@ -553,7 +553,7 @@ public class CellNucleus implements ThreadFactory
             __cellGlue.sendMessage(msg, local, remote);
         } catch (SerializationException e) {
             if (_waitHash.remove(uoid, lock)) {
-                EventLOGGER.sendEnd(msg);
+                EVENT_LOGGER.sendEnd(msg);
             }
             throw e;
         } catch (RuntimeException e) {
@@ -562,7 +562,7 @@ public class CellNucleus implements ThreadFactory
                     executor.execute(() -> {
                         try {
                             callback.exceptionArrived(msg, e);
-                            EventLOGGER.sendEnd(msg);
+                            EVENT_LOGGER.sendEnd(msg);
                         } catch (RejectedExecutionException e1) {
                             /* May happen when the callback itself tries to schedule the call
                              * on an executor. Put the request back and let it time out.
@@ -869,11 +869,11 @@ public class CellNucleus implements ThreadFactory
             }
 
             try {
-                EventLOGGER.queueBegin(ce);
+                EVENT_LOGGER.queueBegin(ce);
                 _eventQueueSize.incrementAndGet();
                 _messageExecutor.execute(new DeliverMessageTask(ce));
             } catch (RejectedExecutionException e) {
-                EventLOGGER.queueEnd(ce);
+                EVENT_LOGGER.queueEnd(ce);
                 _eventQueueSize.decrementAndGet();
                 LOGGER.error("Dropping message: {}", e.getMessage());
             }
@@ -919,18 +919,18 @@ public class CellNucleus implements ThreadFactory
                                                          20, 20, TimeUnit.SECONDS);
             StartEvent event = new StartEvent(new CellPath(_cellName), 0);
             try {
-                EventLOGGER.prepareSetupBegin(_cell, event);
+                EVENT_LOGGER.prepareSetupBegin(_cell, event);
                 _cell.prepareStartup(event);
             } finally {
-                EventLOGGER.prepareSetupEnd(_cell, event);
+                EVENT_LOGGER.prepareSetupEnd(_cell, event);
             }
             setState(State.POST_STARTUP);
             __cellGlue.publishCell(this);
             try {
-                EventLOGGER.postStartupBegin(_cell, event);
+                EVENT_LOGGER.postStartupBegin(_cell, event);
                 _cell.postStartup(event);
             } finally {
-                EventLOGGER.postStartupEnd(_cell, event);
+                EVENT_LOGGER.postStartupEnd(_cell, event);
             }
             setState(State.RUNNING);
         } catch (Throwable e) {
@@ -979,10 +979,10 @@ public class CellNucleus implements ThreadFactory
                 try {
                     Uninterruptibles.getUninterruptibly(_messageExecutor.submit(() -> {
                         try {
-                            EventLOGGER.prepareRemovalBegin(_cell, event);
+                            EVENT_LOGGER.prepareRemovalBegin(_cell, event);
                             _cell.prepareRemoval(event);
                         } finally {
-                            EventLOGGER.prepareRemovalEnd(_cell, event);
+                            EVENT_LOGGER.prepareRemovalEnd(_cell, event);
                         }}));
                 } catch (Throwable e) {
                     Thread t = Thread.currentThread();
@@ -1010,13 +1010,13 @@ public class CellNucleus implements ThreadFactory
             /* Shut down cell.
              */
             try {
-                EventLOGGER.postRemovalBegin(_cell, event);
+                EVENT_LOGGER.postRemovalBegin(_cell, event);
                 _cell.postRemoval(event);
             } catch (Throwable e) {
                 Thread t = Thread.currentThread();
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
             } finally {
-                EventLOGGER.postRemovalEnd(_cell, event);
+                EVENT_LOGGER.postRemovalEnd(_cell, event);
             }
 
             /* Shut down remaining threads.
@@ -1077,7 +1077,7 @@ public class CellNucleus implements ThreadFactory
                             CellMessage envelope = lock.getMessage();
                             try {
                                 lock.getCallback().answerTimedOut(envelope);
-                                EventLOGGER.sendEnd(envelope);
+                                EVENT_LOGGER.sendEnd(envelope);
                             } catch (RejectedExecutionException e) {
                                 LOGGER.warn("Failed to invoke callback: {}", e.toString());
                                 reregister.accept(uoid, lock);
@@ -1160,7 +1160,7 @@ public class CellNucleus implements ThreadFactory
                         } else {
                             callback.answerArrived(request, _message);
                         }
-                        EventLOGGER.sendEnd(request);
+                        EVENT_LOGGER.sendEnd(request);
                     } catch (RejectedExecutionException e) {
                         /* May happen when the callback itself tries to schedule the call
                          * on an executor. Put the request back and let it time out.
@@ -1197,7 +1197,7 @@ public class CellNucleus implements ThreadFactory
         {
             try (CDC ignored = CDC.reset(CellNucleus.this)) {
                 try {
-                    EventLOGGER.queueEnd(_event);
+                    EVENT_LOGGER.queueEnd(_event);
                     _lastQueueTime = _event.getMessage().getLocalAge();
                     _eventQueueSize.decrementAndGet();
 

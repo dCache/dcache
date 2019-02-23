@@ -17,8 +17,8 @@
  */
 package dmg.cells.network;
 
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -66,8 +66,8 @@ public class LocationMgrTunnel
      */
     private static final Tunnels _tunnels = new Tunnels();
 
-    private static final LOGGER LOGGER =
-        LOGGERFactory.getLOGGER(LocationMgrTunnel.class);
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(LocationMgrTunnel.class);
 
     private final CellNucleus  _nucleus;
 

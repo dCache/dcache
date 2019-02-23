@@ -4,20 +4,20 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Appender;
 
 /**
- * Simple record like class for pairing a LOGGERName and a Level.
+ * Simple record like class for pairing a LoggerName and a Level.
  */
 public class Threshold
 {
-    private LOGGERName _LOGGER;
+    private LoggerName _LOGGER;
     private Level _level;
     private String _appender;
 
-    public void setLOGGER(LOGGERName LOGGER)
+    public void setLOGGER(LoggerName LOGGER)
     {
         _LOGGER = LOGGER;
     }
 
-    public LOGGERName getLOGGER()
+    public LoggerName getLogger()
     {
         return _LOGGER;
     }

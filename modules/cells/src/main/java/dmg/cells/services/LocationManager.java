@@ -34,8 +34,8 @@ import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.SocketFactory;
 
@@ -88,8 +88,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class LocationManager extends CellAdapter
 {
-    private static final LOGGER LOGGER =
-            LOGGERFactory.getLOGGER(LocationManager.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(LocationManager.class);
 
     private static final String ZK_CORES_PLAIN = "/dcache/lm/cores";
     private static final String ZK_CORES_URI = "/dcache/lm/cores-uri";

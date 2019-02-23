@@ -1,39 +1,39 @@
 package dmg.util.logback;
 
-import org.slf4j.LOGGER;
+import org.slf4j.Logger;
 
-public class LOGGERName
+public class LoggerName
 {
-    public static final LOGGERName ROOT =
-        new LOGGERName(LOGGER.ROOT_LOGGER_NAME);
+    public static final LoggerName ROOT =
+        new LoggerName(LOGGER.ROOT_LOGGER_NAME);
 
     private String _name;
 
-    public static LOGGERName getInstance(LOGGER LOGGER)
+    public static LoggerName getInstance(Logger LOGGER)
     {
         return getInstance(LOGGER.getName());
     }
 
-    public static LOGGERName getInstance(String name)
+    public static LoggerName getInstance(String name)
     {
         if (name.equalsIgnoreCase(LOGGER.ROOT_LOGGER_NAME)) {
             return ROOT;
         } else {
-            return new LOGGERName(name);
+            return new LoggerName(name);
         }
     }
 
-    public static LOGGERName valueOf(String name)
+    public static LoggerName valueOf(String name)
     {
         return getInstance(name);
     }
 
-    private LOGGERName(String name)
+    private LoggerName(String name)
     {
         _name = name;
     }
 
-    public boolean isNameOfLOGGER(LOGGER LOGGER)
+    public boolean isNameOfLogger(Logger LOGGER)
     {
         return LOGGER.getName().equals(_name);
     }
@@ -51,11 +51,11 @@ public class LOGGERName
             return true;
         }
 
-        if (that == null || !that.getClass().equals(LOGGERName.class)) {
+        if (that == null || !that.getClass().equals(LoggerName.class)) {
             return false;
         }
 
-        LOGGERName other = (LOGGERName) that;
+        LoggerName other = (LoggerName) that;
         return _name.equals(other._name);
     }
 
@@ -65,14 +65,14 @@ public class LOGGERName
         return _name.hashCode();
     }
 
-    public LOGGERName getParent()
+    public LoggerName getParent()
     {
         if (this == ROOT) {
             return null;
         }
         int pos = Math.max(_name.lastIndexOf('.'), _name.lastIndexOf('$'));
         if (pos > -1) {
-            return new LOGGERName(_name.substring(0, pos));
+            return new LoggerName(_name.substring(0, pos));
         } else {
             return ROOT;
         }

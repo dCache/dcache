@@ -1,7 +1,7 @@
 package dmg.util.command;
 
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -24,7 +24,7 @@ public abstract class DelayedCommand<T extends Serializable>
         extends DelayedReply
         implements Callable<Reply>, Runnable
 {
-    private static final LOGGER LOGGER = LOGGERFactory.getLOGGER(DelayedCommand.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DelayedCommand.class);
 
     private final Executor executor;
 

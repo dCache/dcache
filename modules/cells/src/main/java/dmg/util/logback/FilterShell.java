@@ -1,9 +1,9 @@
 package dmg.util.logback;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LOGGER;
-import ch.qos.logback.classic.LOGGERContext;
-import org.slf4j.LOGGERFactory;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Formatter;
@@ -20,8 +20,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class FilterShell
 {
     private final FilterThresholdSet _thresholds;
-    private final LOGGERContext _context =
-        (LOGGERContext) LOGGERFactory.getILOGGERFactory();
+    private final LoggerContext _context =
+        (LoggerContext) LoggerFactory.getLoggerFactory();
 
     public FilterShell(FilterThresholdSet thresholds)
     {
@@ -29,19 +29,19 @@ public class FilterShell
         _thresholds = thresholds;
     }
 
-    private boolean isExistingLOGGER(LOGGERName name)
+    private boolean isExistingLogger(LoggerName name)
     {
-        for (LOGGER LOGGER: getLOGGERs()) {
-            if (name.isNameOfLOGGER(LOGGER)) {
+        for (Logger LOGGER: getLoggers()) {
+            if (name.isNameOfLgger(LOGGER)) {
                 return true;
             }
         }
         return false;
     }
 
-    private Collection<LOGGER> getLOGGERs()
+    private Collection<LOGGER> getLoggers()
     {
-        return _context.getLOGGERList();
+        return _context.getLoggerList();
     }
 
     public static final String hh_log_ls =
@@ -56,7 +56,7 @@ public class FilterShell
         String LOGGER = args.argv(1);
         Formatter out = new Formatter();
         if (LOGGER != null) {
-            lsLOGGER(out, all, LOGGERName.getInstance(LOGGER), appender);
+            lsLOGGER(out, all, LoggerName.getInstance(LOGGER), appender);
         } else if (appender != null) {
             lsAppender(out, all, appender);
         } else {
@@ -75,13 +75,13 @@ public class FilterShell
     private void lsAppender(Formatter out, boolean all, String appender)
     {
         out.format("%s:\n", appender);
-        for (LOGGER LOGGER: getLOGGERs()) {
-            lsLOGGER(out, all, LOGGERName.getInstance(LOGGER), appender);
+        for (Logger LOGGER: getLoggers()) {
+            lsLogger(out, all, LoggerName.getInstance(LOGGER), appender);
         }
     }
 
-    private void lsLOGGER(Formatter out, boolean all,
-                          LOGGERName LOGGER, String appender)
+    private void lsLogger(Formatter out, boolean all,
+                          LoggerName LOGGER, String appender)
     {
         Level level = _thresholds.get(LOGGER, appender);
         if (level != null) {
@@ -103,19 +103,19 @@ public class FilterShell
     public String ac_log_set_$_2_3(Args args)
     {
         String appender = args.argv(0);
-        LOGGERName LOGGER;
+        LoggerName LOGGER;
         String threshold;
 
         if (args.argc() == 3) {
-            LOGGER = LOGGERName.getInstance(args.argv(1));
+            LOGGER = LoggerName.getInstance(args.argv(1));
             threshold = args.argv(2);
         } else {
-            LOGGER = LOGGERName.ROOT;
+            LOGGER = LoggerName.ROOT;
             threshold = args.argv(1);
         }
 
         checkArgument(_thresholds.hasAppender(appender), "Appender not found");
-        checkArgument(isExistingLOGGER(LOGGER), "LOGGER not found");
+        checkArgument(isExistingLogger(LOGGER), "LOGGER not found");
         checkArgument(Level.toLevel(threshold, null) != null, "Invalid log level: " + threshold);
 
         _thresholds.setThreshold(LOGGER, appender, Level.valueOf(threshold));
@@ -131,12 +131,12 @@ public class FilterShell
     {
         String appender = args.argv(0);
         if (args.argc() == 2) {
-            _thresholds.remove(LOGGERName.getInstance(args.argv(1)), appender);
+            _thresholds.remove(LoggerName.getInstance(args.argv(1)), appender);
         } else if (!args.hasOption("a")) {
-            _thresholds.remove(LOGGERName.ROOT, appender);
+            _thresholds.remove(LoggerName.ROOT, appender);
         } else {
-            for (LOGGER LOGGER: getLOGGERs()) {
-                _thresholds.remove(LOGGERName.getInstance(LOGGER), appender);
+            for (Logger LOGGER: getLoggers()) {
+                _thresholds.remove(LoggerName.getInstance(LOGGER), appender);
             }
         }
         return "";

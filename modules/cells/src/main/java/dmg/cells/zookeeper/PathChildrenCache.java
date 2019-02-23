@@ -39,8 +39,8 @@ import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class PathChildrenCache implements Closeable
 {
-    private final LOGGER log = LOGGERFactory.getLOGGER(getClass());
+    private final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
     private final CuratorFramework client;
     private final String path;
@@ -91,7 +91,7 @@ public class PathChildrenCache implements Closeable
             } else if (event.getType() == Watcher.Event.EventType.NodeDataChanged) {
                 getDataAndStat(event.getPath());
             } else {
-                log.debug("Data watcher ignored {}", event);
+                LOGGER.debug("Data watcher ignored {}", event);
             }
         } catch (Exception e) {
             handleException(e);
@@ -212,7 +212,7 @@ public class PathChildrenCache implements Closeable
                     ensurePathAndThenRefresh(mode);
                 } else if (event.getResultCode() == KeeperException.Code.CONNECTIONLOSS.intValue() ||
                         event.getResultCode() == KeeperException.Code.SESSIONEXPIRED.intValue()) {
-                    log.debug("Refresh callback ignored {}", event);
+                    LOGGER.debug("Refresh callback ignored {}", event);
                 } else {
                     handleException(KeeperException.create(event.getResultCode()));
                 }
@@ -269,9 +269,9 @@ public class PathChildrenCache implements Closeable
     protected void handleException(Throwable e)
     {
         if (e instanceof RuntimeException) {
-            log.error("", e);
+            LOGGER.error("", e);
         } else {
-            log.error(e.getMessage());
+            LOGGER.error(e.getMessage());
         }
         ThreadUtils.checkInterrupted(e);
     }

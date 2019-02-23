@@ -1,7 +1,7 @@
 package dmg.util;
 
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -13,7 +13,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class Exceptions
 {
-    private static final LOGGER LOG = LOGGERFactory.getLOGGER(Exceptions.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Exceptions.class);
 
     private Exceptions()
     {
@@ -93,11 +93,11 @@ public class Exceptions
 
         if (lastException == null) {
             /* This should never happen */
-            LOG.error("Failed to wrap exception with message {}: " +
+            LOGGER..error("Failed to wrap exception with message {}: " +
                     "exception {} not subclass of {}", message, cause.getClass().getCanonicalName(),
                     enclosingType.getCanonicalName());
         } else {
-            LOG.error("Failed to wrap exception with message {}: {}", message, lastException.getMessage());
+            LOGGER.error("Failed to wrap exception with message {}: {}", message, lastException.getMessage());
         }
 
         return cause;

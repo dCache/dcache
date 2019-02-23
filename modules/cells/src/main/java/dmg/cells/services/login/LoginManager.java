@@ -5,8 +5,8 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import javatunnel.UserValidatable;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,7 +68,7 @@ public class LoginManager
 {
     private static final Object DEAD_CELL = new Object();
 
-    private static final LOGGER LOGGER = LOGGERFactory.getLOGGER(LoginManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoginManager.class);
 
     private final CellNucleus _nucleus;
     private final Args _args;

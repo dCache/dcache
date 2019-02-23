@@ -1,7 +1,7 @@
 package dmg.cells.services.login ;
 
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.Serializable;
@@ -26,8 +26,8 @@ import org.dcache.util.Args;
 public class       UserMgrCell
        extends     CellAdapter            {
 
-  private static final LOGGER LOGGER =
-      LOGGERFactory.getLOGGER(UserMgrCell.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(UserMgrCell.class);
 
   private String       _cellName ;
   private CellNucleus  _nucleus ;

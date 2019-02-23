@@ -1,7 +1,7 @@
 package dmg.cells.services.login ;
 
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
@@ -34,8 +34,8 @@ public class      LoginCell
        extends    CellAdapter
        implements Runnable  {
 
-  private static final LOGGER LOGGER =
-      LOGGERFactory.getLOGGER(LoginCell.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(LoginCell.class);
 
   private StreamEngine   _engine ;
   private BufferedReader _in ;

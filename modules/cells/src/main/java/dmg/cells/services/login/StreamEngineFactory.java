@@ -1,7 +1,7 @@
 package dmg.cells.services.login;
 
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.Socket;
 
@@ -20,7 +20,7 @@ import org.dcache.util.Args;
  */
 public abstract class StreamEngineFactory {
 
-    private static LOGGER LOGGER= LOGGERFactory.getLOGGER(StreamEngineFactory.class);
+    private static Logger LOGGER= LoggerFactory.getLogger(StreamEngineFactory.class);
 
     public static StreamEngine newStreamEngine(Socket socket, String protocol,
                                                CellEndpoint endpoint, Args argsForAuth) throws Exception {

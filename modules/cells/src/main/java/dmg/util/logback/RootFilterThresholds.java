@@ -21,12 +21,12 @@ public abstract class RootFilterThresholds
         _instance.addAppender(appender);
     }
 
-    public static void setThreshold(LOGGERName LOGGER, String appender, Level level)
+    public static void setThreshold(LoggerName LOGGER, String appender, Level level)
     {
         _instance.setThreshold(LOGGER, appender, level);
     }
 
-    public static void setRoot(LOGGERName LOGGER, boolean isRoot)
+    public static void setRoot(LoggerName LOGGER, boolean isRoot)
     {
         _instance.setRoot(LOGGER, isRoot);
     }

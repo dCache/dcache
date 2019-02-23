@@ -11,8 +11,8 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
@@ -36,9 +36,9 @@ import static com.google.common.base.Preconditions.checkState;
 
 class CellGlue
 {
-    private static final LOGGER LOGGER =
-            LOGGERFactory.getLOGGER(CellGlue.class);
-    private static final LOGGER EVENT_LOGGER = LOGGERFactory.getLOGGER("org.dcache.zookeeper");
+    private static final LoggerFactory LOGGER =
+            LoggerFactory.getLogger(CellGlue.class);
+    private static final Logger EVENT_LOGGER = LoggerFactory.getLogger("org.dcache.zookeeper");
 
     private final String _cellDomainName;
     private final ConcurrentMap<String, CellNucleus> _cellList = new ConcurrentHashMap<>();

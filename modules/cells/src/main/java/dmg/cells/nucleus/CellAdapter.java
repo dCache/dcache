@@ -4,8 +4,8 @@ import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import org.apache.curator.framework.CuratorFramework;
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -76,8 +76,8 @@ import static org.dcache.util.MathUtils.subWithInfinity;
 public class CellAdapter
     implements Cell, CellEventListener, CellEndpoint
 {
-    private static final LOGGER LOGGER =
-            LOGGERFactory.getLOGGER(CellAdapter.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(CellAdapter.class);
     public static final String MAX_MESSAGE_THREADS = "cell.max-message-threads";
     public static final String MAX_MESSAGES_QUEUED = "cell.max-messages-queued";
 
@@ -719,10 +719,10 @@ public class CellAdapter
     public void prepareStartup(StartEvent event) throws Exception
     {
         try {
-            EventLOGGER.startingBegin(getCellName());
+            EVENT_LOGGER.startingBegin(getCellName());
             starting();
         } finally {
-            EventLOGGER.startingEnd(getCellName());
+            EVENT_LOGGER.startingEnd(getCellName());
         }
         executeSetupContext();
     }
@@ -738,10 +738,10 @@ public class CellAdapter
         }
 
         try {
-            EventLOGGER.startedBegin(getCellName());
+            EVENT_LOGGER.startedBegin(getCellName());
             started();
         } finally {
-            EventLOGGER.startedEnd(getCellName());
+            EVENT_LOGGER.startedEnd(getCellName());
         }
     }
 
@@ -749,10 +749,10 @@ public class CellAdapter
     public void prepareRemoval(KillEvent killEvent)
     {
         try {
-            EventLOGGER.stoppingBegin(getCellName());
+            EVENT_LOGGER.stoppingBegin(getCellName());
             stopping();
         } finally {
-            EventLOGGER.stoppingEnd(getCellName());
+            EVENT_LOGGER.stoppingEnd(getCellName());
         }
     }
 
@@ -761,10 +761,10 @@ public class CellAdapter
     {
         LOGGER.info("CellAdapter : prepareRemoval : waiting for gate to open");
         try {
-            EventLOGGER.stoppedBegin(getCellName());
+            EVENT_LOGGER.stoppedBegin(getCellName());
             stopped();
         } finally {
-            EventLOGGER.stoppedEnd(getCellName());
+            EVENT_LOGGER.stoppedEnd(getCellName());
             dumpPinboard();
         }
         LOGGER.info("CellAdapter : prepareRemoval : done");
@@ -851,7 +851,7 @@ public class CellAdapter
 
                 Serializable o;
                 UOID uoid = msg.getUOID();
-                EventLOGGER.deliverBegin(msg);
+                EVENT_LOGGER.deliverBegin(msg);
                 try {
                     o =  executeLocalCommand(obj);
                     if (o == null) {
@@ -863,7 +863,7 @@ public class CellAdapter
                 } catch (CommandException ce) {
                     o = ce;
                 } finally {
-                    EventLOGGER.deliverEnd(msg.getSession(), uoid);
+                    EVENT_LOGGER.deliverEnd(msg.getSession(), uoid);
                 }
 
                 if (o instanceof Reply) {
@@ -886,22 +886,22 @@ public class CellAdapter
                 _nucleus.sendMessage(msg, true, true, true);
             } else {
                 UOID uoid = msg.getUOID();
-                EventLOGGER.deliverBegin(msg);
+                EVENT_LOGGER.deliverBegin(msg);
                 try {
                     messageArrived(msg);
                 } finally {
-                    EventLOGGER.deliverEnd(msg.getSession(), uoid);
+                    EVENT_LOGGER.deliverEnd(msg.getSession(), uoid);
                 }
             }
         } else if (obj instanceof PingMessage) {
             _nucleus.sendMessage(msg, true, true, true);
          } else {
             UOID uoid = msg.getUOID();
-            EventLOGGER.deliverBegin(msg);
+            EVENT_LOGGER.deliverBegin(msg);
             try {
                 messageToForward(msg);
             } finally {
-                EventLOGGER.deliverEnd(msg.getSession(), uoid);
+                EVENT_LOGGER.deliverEnd(msg.getSession(), uoid);
             }
         }
     }

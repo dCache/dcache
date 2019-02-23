@@ -1,7 +1,7 @@
 package dmg.cells.services.login.user  ;
 
-import org.slf4j.LOGGER;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.Serializable;
@@ -31,8 +31,8 @@ import static java.util.Arrays.asList;
 public class       AclCell
        extends     CellAdapter            {
 
-  private static final LOGGER LOGGER=
-      LOGGERFactory.getLOGGER(AclCell.class);
+  private static final Logger LOGGER=
+      LoggerFactory.getLogger(AclCell.class);
 
   private AclDb            _aclDb;
   private UserRelationable _userDb;

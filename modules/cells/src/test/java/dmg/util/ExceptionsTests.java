@@ -1,14 +1,14 @@
 package dmg.util;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LOGGER;
-import ch.qos.logback.classic.LOGGERContext;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import org.ietf.jgss.GSSException;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.LOGGERFactory;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -27,7 +27,7 @@ public class ExceptionsTests
     @Before
     public void setup()
     {
-        LOGGERContext context = (LOGGERContext) LOGGERFactory.getILOGGERFactory();
+        LoggerContext context = (LoggerContext) LoggerFactory.getLoggerFactory();
         context.reset();
 
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
@@ -36,7 +36,7 @@ public class ExceptionsTests
         appender.start();
         LOGGER = appender.list;
 
-        LOGGER LOGGER = context.getLOGGER(LOGGER.ROOTLOGGERGER_NAME);
+        LOGGER LOGGER = context.getLogger(LOGGER.ROOTLOGGERGER_NAME);
         LOGGER.addAppender(appender);
         LOGGER.setLevel(Level.WARN);
     }
