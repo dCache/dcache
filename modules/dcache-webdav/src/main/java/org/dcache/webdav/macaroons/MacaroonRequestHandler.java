@@ -297,6 +297,10 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         context.setUsername(Subjects.getUserName(subject));
         context.setRoot(_pathMapper.effectiveRoot(userRoot, m -> new ErrorResponseException(SC_BAD_REQUEST, m)));
 
+        if (!target.equals("/") && !context.getPath().isPresent()) {
+            context.setPath(_pathMapper.asDcachePath(request, target));
+        }
+
         return context;
     }
 
