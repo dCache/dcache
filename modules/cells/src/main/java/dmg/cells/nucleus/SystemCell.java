@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import dmg.util.AuthorizedString;
-import dmg.util.Gate;
 import dmg.util.command.Command;
 import dmg.util.logback.FilterShell;
 
@@ -58,7 +58,7 @@ public class      SystemCell
                 _packetsReplied,
                 _exceptionCounter;
    private final Runtime                _runtime = Runtime.getRuntime() ;
-   private final Gate                   _shutdownLock = new Gate(false);
+   private final Semaphore              _shutdownLock = new Semaphore(0);
 
    private class TheKiller extends Thread {
       @Override
@@ -66,7 +66,7 @@ public class      SystemCell
          _log.info("Running shutdown sequence");
          kill() ;
          _log.info("Kill done, waiting for shutdown lock");
-         _shutdownLock.check() ;
+         try{_shutdownLock.acquire(); } catch (Exception ee) {}
          _log.info("Killer done");
       }
    }
@@ -112,7 +112,7 @@ public class      SystemCell
         shutdownSystem();
         CellNucleus.shutdownCellGlue();
         _log.info("Opening shutdown lock");
-        _shutdownLock.open();
+        _shutdownLock.release();
         System.exit(0);
     }
 

@@ -13,13 +13,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.util.concurrent.Semaphore;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellShell;
-import dmg.util.Gate;
 import dmg.util.StreamEngine;
+
 
 import org.dcache.auth.Subjects;
 import org.dcache.util.Args;
@@ -46,7 +47,7 @@ public class      LoginCell
   private CellShell      _shell ;
   private String         _prompt;
   private boolean        _syncMode    = true ;
-  private Gate           _readyGate   = new Gate(false) ;
+  private Semaphore      _readyGate = new Semaphore(0);
   private int            _syncTimeout = 10 ;
   private int            _commandCounter;
   private String         _lastCommand    = "<init>" ;
@@ -166,7 +167,7 @@ public class      LoginCell
 
         }
         _log.info( "EOS encountered" ) ;
-        _readyGate.open() ;
+        _readyGate.release();
         kill() ;
 
     }
@@ -177,7 +178,7 @@ public class      LoginCell
      _log.info( "Clean up called" ) ;
      println("");
      _out.close();
-     _readyGate.check() ;
+     try{_readyGate.acquire(); } catch (Exception ee){}
      _log.info( "finished" ) ;
 
    }
