@@ -19,7 +19,21 @@ lib="$(getProperty dcache.paths.share.lib)"
 cd @TARGET@/dcache
 
 dn() { # $1 - path to X.509 certificate
-    openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+:/:;s:, :/:g'
+
+    # OpenSSL used to print the subject DN like
+    #
+    #     subject=/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar
+    #
+    # They changed the format to
+    #
+    #     subject=C = DE, O = GermanGrid, OU = DESY, CN = Alexander Paul Millar
+    #
+    # Initially without any backwards compatibility. The following
+    # accepts either format and produces output like:
+    #
+    #     /C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar
+    #
+    openssl x509 -in "$1" -subject -noout -nameopt compat | sed 's:subject= *\+/\?:/:;s:, :/:g'
 }
 
 if [ ! -f etc/dcache.kpwd ]; then
@@ -188,4 +202,3 @@ for path in etc/grid-security/certificates/*; do
     compare $path ~/.globus/certificates/$file
     compare $path /etc/grid-security/certificates/$file
 done
-
