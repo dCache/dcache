@@ -425,10 +425,12 @@ public class PoolManagerV5
         Set<String> poolHsmInstances = poolMessage.getHsmInstances();
         CellAddressCore poolAddress = envelope.getSourcePath().getSourceAddress();
         long poolSerialId = poolMessage.getSerialId();
+        Map<String,String> tags = poolMessage.getTagMap();
 
         _counterPoolUp.increment();
 
-        boolean changed = _selectionUnit.updatePool(poolName, poolAddress, poolSerialId, poolMode, poolHsmInstances);
+        boolean changed = _selectionUnit.updatePool(poolName, poolAddress,
+                poolSerialId, poolMode, poolHsmInstances, tags);
 
         /* Notify others in case the pool status has changed. Due to
          * limitations of the PoolStatusChangedMessage, we will often

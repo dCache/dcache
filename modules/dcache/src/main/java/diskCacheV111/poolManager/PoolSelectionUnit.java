@@ -199,7 +199,23 @@ public interface PoolSelectionUnit  {
         Collection<SelectionLink> getLinksPointingTo();
     }
    SelectionPool getPool(String poolName) ;
-   boolean updatePool(String poolName, CellAddressCore address, long serialId, PoolV2Mode mode, Set<String> hsmInstances);
+
+   /**
+    * Update pool status and information. If pool is already known to
+    * PoolSelectionUnitalready pool status is not changed, then no update will
+    * happen.
+    *
+    * @param poolName name of the pool.
+    * @param address pools cells address.
+    * @param serialId pools restart indication.
+    * @param mode of in which pool pools operate.
+    * @param hsmInstances HSM instances to which pool is connected.
+    * @param tags tags attached to pool.
+    * @return true iff pool status is changed.
+    */
+   boolean updatePool(String poolName, CellAddressCore address, long serialId,
+           PoolV2Mode mode, Set<String> hsmInstances, Map<String, String> tags);
+
    SelectionLink getLinkByName(String linkName) throws NoSuchElementException ;
    PoolPreferenceLevel []
             match(DirectionType type, String net, String protocol,

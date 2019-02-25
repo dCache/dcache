@@ -139,8 +139,8 @@ final class TestSelectionUnit implements PoolSelectionUnit {
     @Override
     public boolean updatePool(String poolName, CellAddressCore address,
                               long serialId, PoolV2Mode mode,
-                              Set<String> hsmInstances) {
-        return psu.updatePool(poolName, address, serialId, mode, hsmInstances);
+                              Set<String> hsmInstances, Map<String,String> tags) {
+        return psu.updatePool(poolName, address, serialId, mode, hsmInstances, tags);
     }
 
     @Override

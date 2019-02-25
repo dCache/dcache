@@ -162,6 +162,18 @@ In the following, we will assume that the necessary pool groups already exist. A
 
 Note that a pool-node will register itself with the `PoolManager:` The pool will be created within the PSU and added to the pool group `default`, if that exists. This is why the dCache system will automatically use any new pool-nodes in the standard configuration: All pools are in `default` and can therefore handle any request.
 
+### Dynamic Pool Groups
+
+In some situations it desired that pools dynamically added into groups based on a specific label. Such pool groups have to be created with option `-dynamic` as:
+
+    psu create pgroup -dynamic -tags=key=value
+
+The Pool Manager uses tags defined by `pool.tags` property.
+
+> **NOTE**
+>
+> Pools can't be manually added into dynamic groups with `psu addto pgroup` admin command.
+
 ### Storage Classes
 
 The storage class is a string of the form `StoreName:StorageGroup@type-of-storage-system`, where `type-of-storage-system` denotes the type of storage system in use, and `StoreName`:`StorageGroup` is a string describing the storage class in a syntax which depends on the storage system. In general use `type-of-storage-system=osm`.

@@ -3,6 +3,7 @@ package diskCacheV111.poolManager;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -292,14 +293,26 @@ public class PoolSelectionUnitV2
                         if (group.isResilient()) {
                             pw.append(" -resilient");
                         }
-                        pw.println();
-                        group._poolList.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
-                                pool -> pw
-                                        .append("psu addto pgroup ")
-                                        .append(group.getName())
-                                        .append(" ")
-                                        .println(pool.getName())
-                        );
+
+                        // don't explicitly add pools into dynamic pool groups
+                        if (group instanceof DynamicPGroup) {
+                            pw.append(" -dynamic");
+                            Map<String, String> tags = ((DynamicPGroup)group).getTags();
+                            String asOption = tags.entrySet().stream()
+                                    .map(e -> e.getKey() + "=" + e.getValue())
+                                    .collect(Collectors.joining(","));
+                            pw.append(" -tags=" + asOption);
+                            pw.println();
+                        } else {
+                            pw.println();
+                            group._poolList.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
+                                    pool -> pw
+                                            .append("psu addto pgroup ")
+                                            .append(group.getName())
+                                            .append(" ")
+                                            .println(pool.getName())
+                            );
+                        }
                         pw.println();
                     });
             _links.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
@@ -409,7 +422,9 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public boolean updatePool(String poolName, CellAddressCore address, long serialId, PoolV2Mode mode, Set<String> hsmInstances)
+    public boolean updatePool(String poolName, CellAddressCore address,
+            long serialId, PoolV2Mode mode, Set<String> hsmInstances,
+            Map<String, String> tags)
     {
         /* For compatibility with previous versions of dCache, a pool
          * marked DISABLED, but without any other DISABLED_ flags set
@@ -480,8 +495,9 @@ public class PoolSelectionUnitV2
              * Notice that calling setSerialId has a side-effect, which is
              * why we call it first.
              */
+            boolean isRestarted = pool.setSerialId(newSerialId);
             boolean changed =
-                    pool.setSerialId(newSerialId)
+                    isRestarted
                     || pool.isActive() == disabled
                     || (mode.getMode() != oldMode.getMode())
                     || !Objects.equals(pool.getHsmInstances(), hsmInstances)
@@ -495,6 +511,16 @@ public class PoolSelectionUnitV2
             pool.setPoolMode(mode);
             pool.setHsmInstances(hsmInstances);
             pool.setActive(!disabled);
+
+            // create a dynamic pool group based on pool tags.
+            if (isRestarted && !disabled) {
+                final Pool p = pool;
+                _pGroups.values().stream()
+                        .filter(DynamicPGroup.class::isInstance)
+                        .map(DynamicPGroup.class::cast)
+                        .forEach(pg -> pg.addIfMatches(p, tags));
+            }
+
             return changed;
         } finally {
             wunlock();
@@ -1074,6 +1100,19 @@ public class PoolSelectionUnitV2
     // the create's
     //
 
+    public void createDynamicPoolGroup(String name, boolean isResilient, Map<String, String> tags) {
+        wlock();
+        try {
+            PGroup group = new DynamicPGroup(name, isResilient, tags);
+
+            if (_pGroups.putIfAbsent(group.getName(), group) != null) {
+                throw new IllegalArgumentException("Duplicated entry : " + name);
+            }
+        } finally {
+            wunlock();
+        }
+    }
+
     public void createPoolGroup(String name, boolean isResilient) {
             wlock();
         try {
@@ -1609,7 +1648,8 @@ public class PoolSelectionUnitV2
                 PGroup group = i.next();
                 sb.append(group.getName()).append("\n");
                 if (detail) {
-                    sb.append(" resilient = ").append(group.isResilient())
+                    sb.append(" dynamic   = ").append(group instanceof DynamicPGroup).append("\n")
+                                    .append(" resilient = ").append(group.isResilient())
                                     .append("\n")
                                     .append(" linkList :\n");
                     group._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
@@ -2075,6 +2115,9 @@ public class PoolSelectionUnitV2
             if (group == null) {
                 throw new IllegalArgumentException("Not found : " + pGroupName);
             }
+            if (group instanceof DynamicPGroup) {
+                throw new IllegalArgumentException("Manual adding into dynamic pool is not allowed");
+            }
             Pool pool = _pools.get(poolName);
             if (pool == null) {
                 throw new IllegalArgumentException("Not found : " + poolName);
@@ -2518,7 +2561,17 @@ public class PoolSelectionUnitV2
     @AffectsSetup
     public String ac_psu_create_pgroup_$_1(Args args)
     {
-        createPoolGroup(args.argv(0), args.hasOption("resilient"));
+        if (args.hasOption("dynamic")) {
+            Map<String, String> tags = Splitter.on(',')
+                    .omitEmptyStrings()
+                    .trimResults()
+                    .withKeyValueSeparator('=')
+                    .split(args.getOption("tags", ""));
+
+            createDynamicPoolGroup(args.argv(0), args.hasOption("resilient"), tags);
+        } else {
+            createPoolGroup(args.argv(0), args.hasOption("resilient"));
+        }
         return "";
     }
 
