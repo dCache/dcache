@@ -75,8 +75,17 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
                                     EnumSet<RequestContainerV5.RequestState> allowedStates)
     {
         super(fileAttributes, protocolInfo, allowedStates);
-        checkArgument(fileAttributes.isDefined(getRequiredAttributes()), "Required attributes are missing.");
+        checkArgument(fileAttributes.isDefined(getRequiredAttributes()),
+                "Required attributes are missing: %s",
+                missingFileAttributes(fileAttributes));
         _context = (context == null) ? new Context() : context;
+    }
+
+    private static EnumSet<FileAttribute> missingFileAttributes(FileAttributes fileAttributes)
+    {
+        EnumSet<FileAttribute> attributes = getRequiredAttributes();
+        attributes.removeAll(fileAttributes.getDefinedAttributes());
+        return attributes;
     }
 
     public static EnumSet<FileAttribute> getRequiredAttributes()
