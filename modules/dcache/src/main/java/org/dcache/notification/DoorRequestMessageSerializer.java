@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.StorageInfo;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -49,7 +50,10 @@ public class DoorRequestMessageSerializer implements Serializer<DoorRequestInfoM
         o.put("pnfsid", data.getPnfsId());
         o.put("billingPath", data.getBillingPath());
         o.put("fileSize", data.getFileSize());
-        o.put("storageInfo", data.getStorageInfo().getStorageClass() + "@" + data.getStorageInfo().getHsm());
+        StorageInfo info = data.getStorageInfo();
+        if (info != null) {
+            o.put("storageInfo", info.getStorageClass() + "@" + info.getHsm());
+        }
         return o.toString().getBytes(UTF_8);
 
     }
