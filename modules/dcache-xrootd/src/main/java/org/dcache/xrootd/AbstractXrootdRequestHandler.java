@@ -31,16 +31,24 @@ import org.dcache.xrootd.protocol.messages.ProtocolResponse;
 import org.dcache.xrootd.protocol.messages.SetRequest;
 import org.dcache.xrootd.protocol.messages.SetResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
+import org.dcache.xrootd.security.SigningPolicy;
 
 public class AbstractXrootdRequestHandler extends XrootdRequestHandler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractXrootdRequestHandler.class);
 
+    protected SigningPolicy signingPolicy;
+
+    public void setSigningPolicy(SigningPolicy signingPolicy)
+    {
+        this.signingPolicy = signingPolicy;
+    }
+
     @Override
     protected XrootdResponse<ProtocolRequest> doOnProtocolRequest(ChannelHandlerContext ctx, ProtocolRequest msg)
             throws XrootdException
     {
-        return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER);
+        return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER, signingPolicy);
     }
 
     @Override

@@ -83,6 +83,10 @@
         <artifactId>xrootd4j-gsi</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>xrootd4j-unix</artifactId>
+    </dependency>
+    <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>xrootd4j-authz-plugin-alice</artifactId>
     </dependency>

@@ -328,8 +328,8 @@ owned) on the basis of the rendezvous token submitted with the request.
 Signed hash verification support
 ---------------------------------------------
 
- The embedded third-party client will honor signed hash verification if the
- source server indicates it must be observed.
+The embedded third-party client will honor signed hash verification if the
+source server indicates it must be observed.
 
 Starting with dCache 5.0, the dCache door/server will also provide the option
 to enable signed hash verification.

@@ -54,6 +54,7 @@ import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSessionIdentifier;
+import org.dcache.xrootd.core.XrootdSigverDecoder;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.AuthenticationRequest;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
@@ -228,7 +229,27 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg)
     {
         XrootdSessionIdentifier sessionId = new XrootdSessionIdentifier();
-        return new LoginResponse(msg, sessionId, "");
+        /*
+         * It is only necessary to tell the client to observe the unix protocol
+         * if security is on and signed hashes are being enforced.
+         *
+         * We also need to swap the decoder.
+         */
+        String sec;
+
+        if (signingPolicy.isSigningOn() && signingPolicy.isForceSigning()) {
+            sec = "&P=unix";
+            ctx.pipeline().addAfter("decoder",
+                                        "sigverDecoder",
+                                        new XrootdSigverDecoder(signingPolicy,
+                                                                null));
+            ctx.pipeline().remove("decoder");
+            _log.trace("swapped decoder for sigverDecoder.");
+        } else {
+            sec = "";
+        }
+
+        return new LoginResponse(msg, sessionId, sec);
     }
 
     @Override
