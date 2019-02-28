@@ -206,10 +206,19 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
             // If the file has hard-links then we don't know which is being
             // accessed by the client.  Notify on all of them.  This behaviour
             // is different from Linux.
-            String links = super.find(Subjects.ROOT, id).stream()
-                .map(l -> serialiseLink(l.getParent(), l.getName()))
-                .collect(Collectors.joining("#"));
-            ret.getStorageInfo().setKey("links", links);
+            try {
+                String links = super.find(Subjects.ROOT, id).stream()
+                        .map(l -> serialiseLink(l.getParent(), l.getName()))
+                        .collect(Collectors.joining("#"));
+                ret.getStorageInfo().setKey("links", links);
+            } catch (FileNotFoundCacheException e) {
+                // Simply indicates that the target is the root directory
+                // (which has no parent) or is no longer present in the namespace.
+                LOGGER.debug("Failed to find {}: {}", id, e.getMessage());
+            } catch (CacheException e) {
+                // Some other (unexpected) error
+                LOGGER.warn("Unable to find {}: {}", id, e.getMessage());
+            }
         }
 
         return ret;
