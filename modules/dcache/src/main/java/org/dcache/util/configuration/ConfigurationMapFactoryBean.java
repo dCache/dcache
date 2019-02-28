@@ -45,11 +45,17 @@ public class ConfigurationMapFactoryBean implements EnvironmentAware,
     private String _prefix;
     private Map<String,Object> _environment;
     private ImmutableMap<String,String> _object;
+    private Map<String,? extends Object> _staticEnvironment;
 
     @Override
     public void setEnvironment(Map<String, Object> environment)
     {
         _environment = environment;
+    }
+
+    public void setStaticEnvironment(Map<String, Object> staticEnvironment)
+    {
+        _staticEnvironment = staticEnvironment;
     }
 
     @Required
@@ -74,10 +80,14 @@ public class ConfigurationMapFactoryBean implements EnvironmentAware,
             if (item.getValue() instanceof String && name.startsWith(_prefix)) {
                 String value = (String) item.getValue();
                 String key = name.substring(prefixLength);
-                if (!key.isEmpty()) {
+                if (!key.isEmpty() && (_staticEnvironment == null || !_staticEnvironment.containsKey(key))) {
                     builder.put(key, Formats.replaceKeywords(value, replaceable));
                 }
             }
+        }
+
+        if (_staticEnvironment != null) {
+            builder.putAll((Map<? extends String, ? extends String>) _staticEnvironment);
         }
 
         _object = builder.build();

@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -140,7 +141,7 @@ public class ConfigurationMapFactoryBeanTest {
         String value = "value1";
 
 
-        String envKey2 = "blabla";
+        String envKey2 = "key2";
         Integer value2 = 2;
 
 
@@ -157,6 +158,78 @@ public class ConfigurationMapFactoryBeanTest {
 
         assertTrue(effectiveEnv.isEmpty());
 
+
+    }
+
+    @Test
+    public void testStaticEnvironment() {
+
+        String prefix = "someprefix";
+        String realKey = "key1";
+        String envKey = prefix + "!" + realKey;
+        String value = "value1";
+
+
+        String statisEnvKey = "key2";
+        String statisEnvValue = "value2";
+
+
+
+        Map<String, Object> env = ImmutableMap.of(
+                envKey, value
+        );
+
+
+        Map<String, Object> constants = ImmutableMap.of(
+                statisEnvKey, statisEnvValue
+
+        );
+
+        configuration.setPrefix(prefix);
+        configuration.setEnvironment(env);
+        configuration.setStaticEnvironment(constants);
+
+        configuration.buildMap();
+
+        ImmutableMap<String, String> effectiveEnv = configuration.getObject();
+
+        assertFalse(effectiveEnv.containsKey(envKey));
+        assertEquals(statisEnvValue, effectiveEnv.get(statisEnvKey));
+
+
+    }
+
+
+    @Test
+    public void testStaticEnvDuplicates() {
+
+        String prefix = "someprefix";
+        String realKey = "key1";
+        String envKey = prefix + "!" + realKey;
+        String value = "value1";
+
+
+        String staticEnvKey = "key1";
+        String staticEnvValue = "value2";
+
+
+        Map<String, Object> env = new HashMap<>();
+        env.put(envKey, value);
+
+        Map<String, Object> constants = new HashMap<>();
+        constants.put(staticEnvKey, staticEnvValue);
+
+        configuration.setPrefix(prefix);
+        configuration.setEnvironment(env);
+        configuration.setStaticEnvironment(constants);
+
+        configuration.buildMap();
+
+        ImmutableMap<String, String> effectiveEnv = configuration.getObject();
+
+
+        assertEquals(staticEnvValue, effectiveEnv.get(realKey));
+        assertEquals(staticEnvValue, effectiveEnv.get(staticEnvKey));
 
     }
 
