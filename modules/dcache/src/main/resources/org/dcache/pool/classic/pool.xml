@@ -350,6 +350,12 @@
 
   </bean>
 
+  <bean id="signing-policy"
+        class="org.dcache.xrootd.security.SigningPolicy">
+    <constructor-arg name="secLvl" value="${pool.mover.xrootd.security.level}"/>
+    <constructor-arg name="force" value="${pool.mover.xrootd.security.force-signing}"/>
+  </bean>
+
   <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService"
           depends-on="rep">
       <description>Xrootd transfer service</description>
@@ -389,6 +395,7 @@
           </bean>
       </property>
       <property name="thirdPartyShutdownExecutor" ref="workerThreadPool"/>
+    <property name="signingPolicy" ref="signing-policy"/>
   </bean>
 
   <bean id="http-transfer-service-parent" class="org.dcache.http.HttpTransferService"

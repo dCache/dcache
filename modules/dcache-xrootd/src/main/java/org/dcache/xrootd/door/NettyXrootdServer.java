@@ -5,6 +5,7 @@ import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
@@ -37,13 +38,15 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
 import dmg.util.TimebasedCounter;
 
-import org.dcache.util.NDC;
 import org.dcache.util.CDCThreadFactory;
+import org.dcache.util.NDC;
+import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.security.SigningPolicy;
 
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure
@@ -58,11 +61,11 @@ public class NettyXrootdServer implements CellIdentityAware
 
     private static final TimebasedCounter sessionCounter = new TimebasedCounter();
 
-    private int _port;
-    private int _backlog;
-    private ExecutorService _requestExecutor;
-    private XrootdDoor _door;
-    private ConnectionTracker _connectionTracker;
+    private int                         _port;
+    private int                         _backlog;
+    private ExecutorService             _requestExecutor;
+    private XrootdDoor                  _door;
+    private ConnectionTracker           _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
     private List<ChannelHandlerFactory> _accessLogHandlerFactories;
     private FsPath _rootPath;
@@ -73,6 +76,7 @@ public class NettyXrootdServer implements CellIdentityAware
     private Map<String, String> _queryConfig;
     private Map<String, String> _appIoQueues;
     private CellAddressCore _myAddress;
+    private SigningPolicy               _signingPolicy;
 
     private boolean _expectProxyProtocol;
 
@@ -85,6 +89,12 @@ public class NettyXrootdServer implements CellIdentityAware
     public void setPort(int port)
     {
         _port = port;
+    }
+
+    @Required
+    public void setSigningPolicy(SigningPolicy config)
+    {
+        _signingPolicy = config;
     }
 
     public String getAddress()
@@ -232,9 +242,18 @@ public class NettyXrootdServer implements CellIdentityAware
                         }
 
                         for (ChannelHandlerFactory factory: _channelHandlerFactories) {
-                            pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
+                            ChannelHandler handler = factory.createHandler();
+                            if (handler instanceof XrootdAuthenticationHandler) {
+                                /*
+                                 *  This is to support security level/signed hash verification.
+                                 */
+                                ((XrootdAuthenticationHandler)handler).setSigningPolicy(_signingPolicy);
+                            }
+                            pipeline.addLast("plugin:" + factory.getName(), handler);
                         }
-                        pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _requestExecutor, _queryConfig, _appIoQueues));
+                        XrootdRedirectHandler handler = new XrootdRedirectHandler(_door, _rootPath, _requestExecutor, _queryConfig, _appIoQueues);
+                        handler.setSigningPolicy(_signingPolicy);
+                        pipeline.addLast("redirector", handler);
                     }
                 });
 

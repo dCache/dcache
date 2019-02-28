@@ -56,6 +56,7 @@ import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.security.SigningPolicy;
 import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
 
 /**
@@ -106,6 +107,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     private Map<String, String>               queryConfig;
     private NioEventLoopGroup                 thirdPartyClientGroup;
     private ScheduledExecutorService          thirdPartyShutdownExecutor;
+    private SigningPolicy                     signingPolicy;
 
     public XrootdTransferService()
     {
@@ -147,6 +149,12 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public List<ChannelHandlerFactory> getPlugins()
     {
         return plugins;
+    }
+
+    @Required
+    public void setSigningPolicy(SigningPolicy signingPolicy)
+    {
+        this.signingPolicy = signingPolicy;
     }
 
     @Required
@@ -247,7 +255,12 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                                                          clientIdleTimeout,
                                                          clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
-        pipeline.addLast("transfer", new XrootdPoolRequestHandler(this, maxFrameSize, queryConfig));
+        XrootdPoolRequestHandler handler
+                        = new XrootdPoolRequestHandler(this,
+                                                       maxFrameSize,
+                                                       queryConfig);
+        handler.setSigningPolicy(signingPolicy);
+        pipeline.addLast("transfer", handler);
     }
 
     @PreDestroy
