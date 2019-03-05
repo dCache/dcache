@@ -12,6 +12,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import dmg.cells.nucleus.CDC;
+
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
@@ -58,20 +60,23 @@ class StateChangeListeners
 
     public void stateChanged(final StateChangeEvent event)
     {
+        CDC callingContext = new CDC();
         try {
             _executor.execute(() -> {
-                for (StateChangeListener listener: _listeners) {
-                    try {
-                        listener.stateChanged(event);
-                    } catch (RuntimeException e) {
-                        /* State change notifications are
-                         * important for proper functioning of the
-                         * pool and we cannot risk a problem in an
-                         * event handler causing other event
-                         * handlers not to be called. We therefore
-                         * catch, log and ignore these problems.
-                         */
-                        _log.error("Unexpected failure during state change notification", e);
+                try (CDC oldContext = callingContext.restore()) {
+                    for (StateChangeListener listener: _listeners) {
+                        try {
+                            listener.stateChanged(event);
+                        } catch (RuntimeException e) {
+                            /* State change notifications are
+                             * important for proper functioning of the
+                             * pool and we cannot risk a problem in an
+                             * event handler causing other event
+                             * handlers not to be called. We therefore
+                             * catch, log and ignore these problems.
+                             */
+                            _log.error("Unexpected failure during state change notification", e);
+                        }
                     }
                 }
             });
@@ -83,20 +88,23 @@ class StateChangeListeners
 
     public void accessTimeChanged(final EntryChangeEvent event)
     {
+        CDC callingContext = new CDC();
         try {
             _executor.execute(() -> {
-                for (StateChangeListener listener: _listeners) {
-                    try {
-                        listener.accessTimeChanged(event);
-                    } catch (RuntimeException e) {
-                        /* State change notifications are
-                         * important for proper functioning of the
-                         * pool and we cannot risk a problem in an
-                         * event handler causing other event
-                         * handlers not to be called. We therefore
-                         * catch, log and ignore these problems.
-                         */
-                        _log.error("Unexpected failure during state change notification", e);
+                try (CDC oldContext = callingContext.restore()) {
+                    for (StateChangeListener listener: _listeners) {
+                        try {
+                            listener.accessTimeChanged(event);
+                        } catch (RuntimeException e) {
+                            /* State change notifications are
+                             * important for proper functioning of the
+                             * pool and we cannot risk a problem in an
+                             * event handler causing other event
+                             * handlers not to be called. We therefore
+                             * catch, log and ignore these problems.
+                             */
+                            _log.error("Unexpected failure during state change notification", e);
+                        }
                     }
                 }
             });
@@ -108,20 +116,23 @@ class StateChangeListeners
 
     public void stickyChanged(final StickyChangeEvent event)
     {
+        CDC callingContext = new CDC();
         try {
             _executor.execute(() -> {
-                for (StateChangeListener listener: _listeners) {
-                    try {
-                        listener.stickyChanged(event);
-                    } catch (RuntimeException e) {
-                        /* State change notifications are
-                         * important for proper functioning of the
-                         * pool and we cannot risk a problem in an
-                         * event handler causing other event
-                         * handlers not to be called. We therefore
-                         * catch, log and ignore these problems.
-                         */
-                        _log.error("Unexpected failure during state change notification", e);
+                try (CDC oldContext = callingContext.restore()) {
+                    for (StateChangeListener listener: _listeners) {
+                        try {
+                            listener.stickyChanged(event);
+                        } catch (RuntimeException e) {
+                            /* State change notifications are
+                             * important for proper functioning of the
+                             * pool and we cannot risk a problem in an
+                             * event handler causing other event
+                             * handlers not to be called. We therefore
+                             * catch, log and ignore these problems.
+                             */
+                            _log.error("Unexpected failure during state change notification", e);
+                        }
                     }
                 }
             });
