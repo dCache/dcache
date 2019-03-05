@@ -67,7 +67,7 @@
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.4.11.v20180605</version.jetty>
-        <version.xrootd4j>3.3.4</version.xrootd4j>
+        <version.xrootd4j>3.4.0</version.xrootd4j>
         <version.jersey>2.26</version.jersey>
         <version.dcache-view>1.5.3</version.dcache-view>
         <version.netty>4.1.10.Final</version.netty>
@@ -681,6 +681,11 @@
             <dependency>
                 <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-gsi</artifactId>
+                <version>${version.xrootd4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcache</groupId>
+                <artifactId>xrootd4j-unix</artifactId>
                 <version>${version.xrootd4j}</version>
             </dependency>
             <dependency>

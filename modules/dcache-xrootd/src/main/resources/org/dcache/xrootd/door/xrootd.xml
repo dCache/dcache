@@ -86,6 +86,12 @@
     <description>Administrative interface to manage connections</description>
   </bean>
 
+  <bean id="signing-policy"
+        class="org.dcache.xrootd.security.SigningPolicy">
+      <constructor-arg name="secLvl" value="${xrootd.security.level}"/>
+      <constructor-arg name="force" value="${xrootd.security.force-signing}"/>
+  </bean>
+
   <bean id="server" class="org.dcache.xrootd.door.NettyXrootdServer"
         init-method="start" destroy-method="stop">
     <description>Netty based Xrootd service</description>
@@ -109,6 +115,7 @@
         </bean>
     </property>
     <property name="expectedProxyProtocol" value="${xrootd.enable.proxy-protocol}"/>
+    <property name="signingPolicy" ref="signing-policy"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
