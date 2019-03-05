@@ -93,6 +93,48 @@ Concurrent connections
 The FTP door will limit the number of concurrent connections.  This is
 controlled by the `ftp.limits.clients` configuration property.
 
+Anonymous access
+----------------
+
+Anonymous access (also know as anonymous FTP or anonFTP) is a long
+established practice where publicly available data is made available
+to anyone who wants it.  The client authenticates with a specific
+username (typically 'anonymous').  Although there is no specific
+password for these accounts, it is common practice that the client
+sends the user's email address as the password, as a courtesy.
+
+dCache supports anonymous FTP for the plain FTP door.  This is
+disabled by default, but may be enabled using the
+`ftp.enable.anonymous-ftp` configuration property.  When enabled,
+users may access dCache as user NOBODY; e.g., world-readable files may
+be downloaded and world-readable directories may be listed.
+
+dCache may be configured to expose only part of the namespace by
+configuring an anonymous-ftp specific root directory.  This is
+controlled by the `ftp.anonymous-ftp.root` property.  When someone
+uses the anonymous FTP service then the root directory they see is
+whichever path is configured in this property.
+
+The name of the anonymous account is configured with the
+`ftp.authn.anonymous.user` property.  If a regular dCache user has the
+same username as this property then that dCache user will no longer be
+able to log into their account via FTP username and password
+authentication.  The default value is "anonymous", which is the widely
+accepted account name for anonymous access: many FTP clients will use
+this name automatically.
+
+The `ftp.authn.anonymous.require-email-password` configuration
+property controls whether to reject anonymous login attempts where the
+password is not a valid email address.  Note that, Globus transfer
+service currently sends "dummy" as the password, which is not a valid
+email address.
+
+If the plain ftp door should be used only for anonymous access then
+regular username and password access may be disabled by configuring
+the `ftp.enable.username-password` property.  This is to prevent
+normal dCache users from typing in their password unencrypted.
+
+
 Data transfers
 ==============
 

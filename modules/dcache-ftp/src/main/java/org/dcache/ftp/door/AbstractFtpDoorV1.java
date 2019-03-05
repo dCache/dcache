@@ -1625,12 +1625,16 @@ public abstract class AbstractFtpDoorV1
     protected void login(Subject subject) throws CacheException
     {
         LoginReply login = _loginStrategy.login(subject);
+        acceptLogin(login.getSubject(), login.getLoginAttributes(), login.getRestriction(),
+                _settings.getRoot() == null ? null : FsPath.create(_settings.getRoot()));
+    }
 
-        Subject mappedSubject = login.getSubject();
-
+    protected void acceptLogin(Subject mappedSubject, Set<LoginAttribute> loginAttributes,
+            Restriction restriction, FsPath doorRootPath)
+    {
         FsPath userRootPath = FsPath.ROOT;
         String userHomePath = "/";
-        for (LoginAttribute attribute: login.getLoginAttributes()) {
+        for (LoginAttribute attribute: loginAttributes) {
             if (attribute instanceof RootDirectory) {
                 userRootPath = FsPath.create(((RootDirectory) attribute).getRoot());
             } else if (attribute instanceof HomeDirectory) {
@@ -1642,14 +1646,12 @@ public abstract class AbstractFtpDoorV1
                 }
             }
         }
-        _authz = Restrictions.concat(_doorRestriction, login.getRestriction());
-        FsPath doorRootPath;
+        _authz = Restrictions.concat(_doorRestriction, restriction);
         String cwd;
-        if (_settings.getRoot() == null) {
+        if (doorRootPath == null) {
             doorRootPath = userRootPath;
             cwd = userHomePath;
         } else {
-            doorRootPath = FsPath.create(_settings.getRoot());
             if (userRootPath.hasPrefix(doorRootPath)) {
                 cwd = userRootPath.chroot(userHomePath).stripPrefix(doorRootPath);
             } else {

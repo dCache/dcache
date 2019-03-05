@@ -7,6 +7,9 @@ onerror shutdown
 check -strong ftp.cell.name
 check ftp.cell.consume
 check ftp.cell.subscribe
+check -strong ftp.anonymous-ftp.require-email-password
+check -strong ftp.anonymous-ftp.root
+check -strong ftp.anonymous-ftp.user
 check -strong ftp.implementation
 check -strong ftp.net.port
 check -strong ftp.net.port-range
@@ -35,9 +38,11 @@ check -strong ftp.service.pool.timeout
 check -strong ftp.service.pool.timeout.unit
 check -strong ftp.service.pnfsmanager.timeout
 check -strong ftp.service.pnfsmanager.timeout.unit
+check -strong ftp.enable.anonymous-ftp
 check -strong ftp.enable.delete-on-failure
 check -strong ftp.enable.proxy-protocol
 check -strong ftp.enable.overwrite
+check -strong ftp.enable.username-password
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
 check -strong ftp.list-format
@@ -130,4 +135,9 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -list-format=\"${ftp.list-format}\" \
    -netmask=\"${ftp.net.allowed-subnets}\" \
    -log-aborted-transfers=${ftp.enable.log-aborted-transfers} \
+   -username-password-enabled=${ftp.enable.username-password} \
+   -anonymous-enabled=\"${ftp.enable.anonymous-ftp}\" \
+   -anonymous-user=\"${ftp.anonymous-ftp.user}\" \
+   -anonymous-root=\"${ftp.anonymous-ftp.root}\" \
+   -anonymous-email-required=${ftp.anonymous-ftp.require-email-password} \
    "

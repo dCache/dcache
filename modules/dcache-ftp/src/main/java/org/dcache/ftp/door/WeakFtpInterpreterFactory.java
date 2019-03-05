@@ -17,11 +17,49 @@
  */
 package org.dcache.ftp.door;
 
+
+import java.util.Optional;
+
+import diskCacheV111.util.ConfigurationException;
+import diskCacheV111.util.FsPath;
+
+import org.dcache.util.Args;
+import org.dcache.util.Option;
+
+
 public class WeakFtpInterpreterFactory extends FtpInterpreterFactory
 {
+    @Option(name="username-password-enabled", required=true)
+    private boolean allowUsernamePassword;
+
+    @Option(name="anonymous-enabled", required=true)
+    private boolean anonymousEnabled;
+
+    @Option(name="anonymous-user", required=true)
+    private String anonymousUser;
+
+    @Option(name="anonymous-email-required", required=true)
+    private boolean requireAnonEmailPassword;
+
+    @Option(name="anonymous-root", required=true)
+    private FsPath anonymousRoot;
+
+    private Optional<String> anonUser;
+
+    @Override
+    public void configure(Args args) throws ConfigurationException
+    {
+        super.configure(args);
+
+        anonUser = anonymousEnabled
+                ? Optional.of(anonymousUser)
+                : Optional.empty();
+    }
+
     @Override
     protected AbstractFtpDoorV1 createInterpreter()
     {
-        return new WeakFtpDoorV1();
+        return new WeakFtpDoorV1(allowUsernamePassword, anonUser, anonymousRoot,
+                requireAnonEmailPassword);
     }
 }
