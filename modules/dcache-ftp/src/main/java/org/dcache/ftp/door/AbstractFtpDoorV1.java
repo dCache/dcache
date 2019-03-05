@@ -2970,7 +2970,15 @@ public abstract class AbstractFtpDoorV1
                     }
                     setTransfer(null);
                 }
-                _pnfs.setFileAttributes(absPath, FileAttributes.ofChecksum(checksum));
+
+                /* The client may be downloading a file that it does not have
+                 * permission to add a new checksum value, nevertheless we want
+                 * to avoid recalculating the checksum if this file is
+                 * downloaded again.  Therefore, we add the freshly
+                 * calculated checksum value as user ROOT with no restrictions.
+                 */
+                new PnfsHandler(_pnfs, Subjects.ROOT, Restrictions.none())
+                        .setFileAttributes(absPath, FileAttributes.ofChecksum(checksum));
             }
 
             reply("213 " + checksum.getValue());
