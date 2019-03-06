@@ -590,6 +590,11 @@ public class DcacheResourceFactory
         return _internalAddress.getHostAddress();
     }
 
+    public boolean isDoorRoot(FsPath path)
+    {
+        return _pathMapper.isDoorRoot(ServletRequest.getRequest(), path);
+    }
+
     @Override
     public void getInfo(PrintWriter pw)
     {
