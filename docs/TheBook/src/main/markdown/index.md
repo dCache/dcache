@@ -30,7 +30,7 @@ Table of contents
 
         -   [frontend service](config-frontend.md)
 
-        -   ftp service
+        -   [ftp service](config-ftp.md)
 
         -   [gplazma service](config-gplazma.md)
 
