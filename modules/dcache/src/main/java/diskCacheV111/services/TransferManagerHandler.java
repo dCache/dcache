@@ -66,6 +66,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 {
     private static final Logger log =
             LoggerFactory.getLogger(TransferManagerHandler.class);
+
+    private static final int MAXIMUM_POOL_SELECTION_ATTEMPTS = 10;
+    private static final int MAXIMUM_MOVER_START_ATTEMPTS = 10;
+
     private final TransferManager manager;
     private final TransferManagerMessage transferRequest;
     private final CellPath requestor;
@@ -131,6 +135,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     private long lifeTime;
     private Long credentialId;
     private transient int numberOfRetries;
+    private transient int numberOfPoolSelectionRetries;
+    private transient int numberOfMoverStartRetries;
     private transient int _replyCode;
     private transient Serializable _errorObject;
     private transient boolean _cancelTimer;
@@ -317,14 +323,59 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             break;
 
         case WAITING_FIRST_POOL_REPLY_STATE:
-            // FIXME: in the case of an attempted read (pool pushing the file
-            //        to some remote site), we can ask PoolManager for another
-            //        pool.  For an attempted write (pool pulling the file)
-            //        we must fail the transfer as we don't know if a mover
-            //        was started.
-            sendErrorReply(CacheException.SELECTED_POOL_FAILED, "Failed while"
-                    + " waiting for mover on " + pool.getAddress() + " to"
-                    + " start: "+ error);
+            switch (rc) {
+            case CacheException.OUT_OF_DATE:
+            case CacheException.POOL_DISABLED:
+            case CacheException.FILE_NOT_IN_REPOSITORY:
+                if (numberOfPoolSelectionRetries++ < MAXIMUM_POOL_SELECTION_ATTEMPTS) {
+                    log.debug("Pool {} reported rc={}; retrying pool selection",
+                            pool.getAddress(), rc);
+                    selectPool();
+                } else {
+                    sendErrorReply(rc, "Too many attempts to select pool: " + error);
+                }
+                break;
+
+            case CacheException.TIMEOUT:
+                if (store) {
+                    /* We don't know if a mover was actually started; therefore,
+                     * we must fail the request.
+                     */
+                    sendErrorReply(CacheException.SELECTED_POOL_FAILED,
+                            "Timeout waiting for transfer to start on "
+                            + pool.getAddress());
+                    break;
+                }
+
+                // FALL THROUGH
+
+            default:
+                if (numberOfMoverStartRetries++ < MAXIMUM_MOVER_START_ATTEMPTS) {
+                    log.debug("Pool {} reported rc={}; scheduling another attempt to start mover",
+                            pool.getAddress(), rc);
+                    executor.execute(() -> {
+                                try {
+                                    Thread.sleep(1_000);
+                                    startMoverOnThePool();
+                                } catch (InterruptedException e) {
+                                    sendErrorReply(rc, "Interrupted while waiting"
+                                            + " to resend start mover on "
+                                            + pool.getAddress());
+                                }
+                            });
+                } else {
+                    if (numberOfPoolSelectionRetries++ < MAXIMUM_POOL_SELECTION_ATTEMPTS) {
+                        log.debug("Too many attempts to start mover on pool {}, retrying pool selection",
+                                pool.getAddress(), rc);
+                        numberOfMoverStartRetries = 0;
+                        selectPool();
+                    } else {
+                        sendErrorReply(rc, "Too many attempts to start mover on pool "
+                                + pool.getAddress() + ": " + error);
+                    }
+                }
+                break;
+            }
             break;
 
         case WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE:
