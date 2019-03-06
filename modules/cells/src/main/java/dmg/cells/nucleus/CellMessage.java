@@ -42,11 +42,14 @@ public final class CellMessage implements Cloneable , Serializable {
   private long        _creationTime ;
   private long        _ttl = Long.MAX_VALUE;
   private int         _mode ;
+  /** Unique Mesage ID */
   private UOID        _umid , _lastUmid ;
   private byte[]      _messageStream;
   private boolean     _isPersistent;
   private Object      _session;
+  /** Indicates deserialized message format */
   private static final int   ORIGINAL_MODE  = 0 ;
+  /** Indicates serialized message format */
   private static final int   STREAM_MODE    = 1 ;
   private transient long _receivedAt;
 

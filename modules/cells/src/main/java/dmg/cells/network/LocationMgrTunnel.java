@@ -341,11 +341,6 @@ public class LocationMgrTunnel
         }
     }
 
-    private interface ObjectSource
-    {
-        CellMessage readObject() throws IOException, ClassNotFoundException;
-    }
-
     private interface ObjectSink
     {
         void writeObject(CellMessage message) throws IOException;
@@ -366,6 +361,11 @@ public class LocationMgrTunnel
             message.writeTo(out);
             out.flush();
         }
+    }
+
+    private interface ObjectSource
+    {
+        CellMessage readObject() throws IOException, ClassNotFoundException;
     }
 
     private static class RawObjectSource implements ObjectSource
