@@ -77,7 +77,7 @@ public class DcacheResource
     @Override
     public String getName()
     {
-        return _path.isRoot() ? null : _path.name();
+        return _factory.isDoorRoot(_path) ? null : _path.name();
     }
 
     @Override
