@@ -43,6 +43,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -362,30 +363,32 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     @Override
     public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception
     {
-        ChildData child = event.getData();
-        String name = ZKPaths.getNodeFromPath(child.getPath());
-        CellAddressCore target = new CellAddressCore(name);
+        ChildData child = event.getData(); // value may be null for some events
 
         switch (event.getType()) {
         case CHILD_ADDED:
         case CHILD_UPDATED:
-            LOGGER.debug("ZK child {} added or updated", name);
-            EventReceiver priorReceiver = receivers.get(target);
-            EventReceiver receiver = new EventReceiver(child.getData());
+            String newChildName = ZKPaths.getNodeFromPath(child.getPath());
+            CellAddressCore newChildTarget = new CellAddressCore(newChildName);
+            LOGGER.debug("ZK child {} added or updated", newChildName);
+            EventReceiver priorReceiver = receivers.get(newChildTarget);
+            EventReceiver newReceiver = new EventReceiver(child.getData());
 
             synchronized (watchesByPnfsId) {
                 if (priorReceiver != null) {
                     priorReceiver.watches.forEach(w -> watchesByPnfsId.remove(w.target, w));
                 }
 
-                receivers.put(target, receiver);
-                receiver.watches.forEach(w -> watchesByPnfsId.put(w.target, w));
+                receivers.put(newChildTarget, newReceiver);
+                newReceiver.watches.forEach(w -> watchesByPnfsId.put(w.target, w));
             }
             break;
 
         case CHILD_REMOVED:
-            LOGGER.debug("ZK child {} removed", name);
-            EventReceiver oldReceiver = receivers.remove(target);
+            String removedChildName = ZKPaths.getNodeFromPath(child.getPath());
+            CellAddressCore removedChildTarget = new CellAddressCore(removedChildName);
+            LOGGER.debug("ZK child {} removed", removedChildName);
+            EventReceiver oldReceiver = receivers.remove(removedChildTarget);
             synchronized (watchesByPnfsId) {
                 if (oldReceiver != null) {
                     oldReceiver.watches.forEach(w -> watchesByPnfsId.remove(w.target, w));
