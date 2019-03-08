@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Base64;
@@ -19,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -36,6 +38,7 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.exceptions.OidcException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
+import org.dcache.gplazma.util.JsonWebToken;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toMap;
@@ -185,9 +188,36 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
     private Collection<IdentityProvider> identityProviders(String token)
     {
-        // REVISIT if the token is a JWT then it may be parsed and the issuer discovered.
-        // otherwise, return them all.
-        return providersByIssuer.values();
+        Optional<Collection<IdentityProvider>> ips = Optional.empty();
+
+        if (JsonWebToken.isCompatibleFormat(token)) {
+            try {
+                JsonWebToken jwt = new JsonWebToken(token);
+                Optional<URI> issuer = jwt.getPayloadString("iss").flatMap(s -> {
+                            try {
+                                return Optional.of(new URI(s));
+                            } catch (URISyntaxException e) {
+                                LOG.warn("JWT has bad \"iss\" claim \"{}\": {}", s, e.toString());
+                                return Optional.empty();
+                            }
+                        });
+                Optional<IdentityProvider> ip = issuer.flatMap(i -> {
+                            IdentityProvider p = providersByIssuer.get(i);
+                            if (p == null) {
+                                LOG.warn("Unknown \"iss\" claim: {}", i);
+                            } else {
+                                LOG.debug("Discovered token is JWT issued by {}",
+                                        p.getName());
+                            }
+                            return Optional.ofNullable(p);
+                        });
+                ips = ip.map(Collections::singleton);
+            } catch (IOException e) {
+                LOG.warn("Failed to parse JWT: {}", e.toString());
+            }
+        }
+
+        return ips.orElse(providersByIssuer.values());
     }
 
     private Set<Principal> validateBearerTokenWithOpenIdProvider(String token,
