@@ -37,3 +37,6 @@
 
 ## Ignore Mac generated files, wherever they are
 .DS_Store
+
+# Ignoring .reviewboardrc file
+.reviewboardrc
