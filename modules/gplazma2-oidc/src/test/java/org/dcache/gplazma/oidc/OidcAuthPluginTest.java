@@ -1,6 +1,5 @@
 package org.dcache.gplazma.oidc;
 
-import com.google.common.cache.LoadingCache;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.hamcrest.Matcher;
@@ -11,6 +10,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.net.URI;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Properties;
@@ -31,7 +31,6 @@ import static org.junit.Assert.assertThat;
 
 public class OidcAuthPluginTest {
     private static final String OIDC_PROPERTY_NAME = "gplazma.oidc.hostnames";
-    private LoadingCache cache;
     private Properties givenConfiguration;
     private JsonHttpClient httpClient;
 
@@ -43,12 +42,13 @@ public class OidcAuthPluginTest {
     @Before
     public void setUp() throws Exception
     {
-        cache = Mockito.mock(LoadingCache.class);
         httpClient = Mockito.mock(JsonHttpClient.class);
 
         givenConfiguration = new Properties();
         givenConfiguration.put("gplazma.oidc.http.slow-threshold", "2");
         givenConfiguration.put("gplazma.oidc.http.slow-threshold.unit", "SECONDS");
+        givenConfiguration.put("gplazma.oidc.discovery-cache", "1");
+        givenConfiguration.put("gplazma.oidc.discovery-cache.unit", "HOURS");
     }
 
     @After
@@ -83,7 +83,7 @@ public class OidcAuthPluginTest {
         givenConfig("accounts.google.com  idc-iam.example.org");
 
         whenOidcPluginCalledWith(
-                withExecutionException(),
+                withIOException(),
                 withUserInfo("{}"),
                 withBearerToken(null));
     }
@@ -172,9 +172,9 @@ public class OidcAuthPluginTest {
                                                     BearerTokenCredential token)
             throws ExecutionException, IOException, AuthenticationException
     {
-        OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient, cache);
+        OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient);
 
-        Mockito.doReturn(discoveryDoc).when(cache).get(Mockito.anyString());
+        Mockito.doReturn(discoveryDoc).when(httpClient).doGet(Mockito.any(URI.class));
         Mockito.doReturn(userInfo).when(httpClient).doGetWithToken(Mockito.anyString(), Mockito.anyString());
 
         Set<Object> priv = new HashSet<>();
@@ -184,12 +184,13 @@ public class OidcAuthPluginTest {
         }
 
         plugin.authenticate(new HashSet<>(), priv, principals);
+
         return principals;
     }
 
     private void whenOidcPluginCreated()
     {
-        OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient, cache);
+        OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient);
     }
 
     private void whenOidcPluginCalledWithNoCredentials() throws AuthenticationException
@@ -203,18 +204,18 @@ public class OidcAuthPluginTest {
             throws ExecutionException, IOException, AuthenticationException
     {
 
-        Mockito.doReturn(discoveryDoc).when(cache).get(Mockito.anyString());
+        Mockito.doReturn(discoveryDoc).when(httpClient).doGet(Mockito.any(URI.class));
         Mockito.doThrow(e).when(httpClient).doGetWithToken(Mockito.anyString(), Mockito.anyString());
 
         return whenPluginCreated(token);
     }
 
-    private Set<Principal> whenOidcPluginCalledWith(ExecutionException e,
+    private Set<Principal> whenOidcPluginCalledWith(IOException e,
                                                     JsonNode userInfo,
                                                     BearerTokenCredential token)
             throws ExecutionException, IOException, AuthenticationException, OidcException
     {
-        Mockito.doThrow(e).when(cache).get(Mockito.anyString());
+        Mockito.doThrow(e).when(httpClient).doGet(Mockito.any(URI.class));
         Mockito.doReturn(userInfo).when(httpClient).doGetWithToken(Mockito.anyString(), Mockito.anyString());
 
         return whenPluginCreated(token);
@@ -227,7 +228,7 @@ public class OidcAuthPluginTest {
 
     private Set<Principal> whenPluginCreated(BearerTokenCredential token) throws AuthenticationException
     {
-        OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient, cache);
+        OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient);
         Set<Object> priv = new HashSet<>();
         Set<Principal> principals = new HashSet<>();
         if (token != null) {

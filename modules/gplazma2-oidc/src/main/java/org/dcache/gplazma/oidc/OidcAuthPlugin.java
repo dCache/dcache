@@ -56,9 +56,11 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
     private final static String HTTP_SLOW_LOOKUP = "gplazma.oidc.http.slow-threshold";
     private final static String HTTP_SLOW_LOOKUP_UNIT = "gplazma.oidc.http.slow-threshold.unit";
+    private final static String DISCOVERY_CACHE_REFRESH = "gplazma.oidc.discovery-cache";
+    private final static String DISCOVERY_CACHE_REFRESH_UNIT = "gplazma.oidc.discovery-cache.unit";
 
     private final Map<URI,IdentityProvider> providersByIssuer;
-    private final LoadingCache<IdentityProvider, JsonNode> cache;
+    private final LoadingCache<IdentityProvider, JsonNode> discoveryCache;
     private final Random random = new Random();
     private JsonHttpClient jsonHttpClient;
     private final Duration slowLookupThreshold;
@@ -82,12 +84,6 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     @VisibleForTesting
     OidcAuthPlugin(Properties properties, JsonHttpClient client)
     {
-        this(properties, client, createLoadingCache(client));
-    }
-
-    @VisibleForTesting
-    OidcAuthPlugin(Properties properties, JsonHttpClient client, LoadingCache<IdentityProvider, JsonNode> cache)
-    {
         Set<IdentityProvider> providers = new HashSet<>();
         providers.addAll(buildHosts(properties));
         providers.addAll(buildProviders(properties));
@@ -95,8 +91,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
         providersByIssuer = providers.stream().collect(toMap(IdentityProvider::getIssuerEndpoint, p -> p));
         jsonHttpClient = client;
-        this.cache = cache;
-
+        discoveryCache = createDiscoveryCache(asInt(properties, DISCOVERY_CACHE_REFRESH),
+                TimeUnit.valueOf(properties.getProperty(DISCOVERY_CACHE_REFRESH_UNIT)));
         slowLookupThreshold = Duration.of(asInt(properties, HTTP_SLOW_LOOKUP),
                 ChronoUnit.valueOf(properties.getProperty(HTTP_SLOW_LOOKUP_UNIT)));
     }
@@ -139,18 +135,19 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 .collect(Collectors.toSet());
     }
 
-    private static LoadingCache<IdentityProvider, JsonNode> createLoadingCache(final JsonHttpClient client)
+    private LoadingCache<IdentityProvider, JsonNode> createDiscoveryCache(int refresh, TimeUnit refreshUnits)
     {
         return CacheBuilder.newBuilder()
                            .maximumSize(100)
-                           .expireAfterAccess(1, TimeUnit.HOURS)
+                           .refreshAfterWrite(refresh, refreshUnits)
                            .build(
                                    new CacheLoader<IdentityProvider, JsonNode>() {
                                        @Override
                                        public JsonNode load(IdentityProvider provider) throws OidcException, IOException
                                        {
+                                           LOG.debug("Fetching discoveryDoc for {}", provider.getName());
                                            URI configuration = provider.getConfigurationEndpoint();
-                                           JsonNode discoveryDoc = client.doGet(configuration);
+                                           JsonNode discoveryDoc = jsonHttpClient.doGet(configuration);
                                            if (discoveryDoc != null && discoveryDoc.has("userinfo_endpoint")) {
                                                return discoveryDoc;
                                            } else {
@@ -180,11 +177,13 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         for (Object credential : privateCredentials) {
             if (credential instanceof BearerTokenCredential) {
                 String token = ((BearerTokenCredential) credential).getToken();
+                LOG.debug("Found bearer token: {}", token);
                 foundBearerToken = true;
+
                 for (IdentityProvider ip : identityProviders(token)) {
                     Stopwatch userinfoLookupTiming = Stopwatch.createStarted();
                     try {
-                        JsonNode discoveryDoc = cache.get(ip);
+                        JsonNode discoveryDoc = discoveryCache.get(ip);
                         String userInfoEndPoint = extractUserInfoEndPoint(discoveryDoc);
                         Set<Principal> found = validateBearerTokenWithOpenIdProvider(token, userInfoEndPoint, ip.getName());
                         identifiedPrincipals.addAll(found);

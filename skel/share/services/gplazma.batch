@@ -11,6 +11,8 @@ check gplazma.cell.consume
 check gplazma.cell.subscribe
 check gplazma.x509.igtf-info.path
 
+check -strong gplazma.oidc.discovery-cache
+check -strong gplazma.oidc.discovery-cache.unit
 check -strong gplazma.oidc.http.slow-threshold
 check -strong gplazma.oidc.http.slow-threshold.unit
 
