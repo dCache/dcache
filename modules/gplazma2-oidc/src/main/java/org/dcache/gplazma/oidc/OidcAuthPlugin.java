@@ -7,6 +7,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.net.InternetDomainName;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListenableFutureTask;
 import org.codehaus.jackson.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,17 +20,20 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,9 +48,11 @@ import org.dcache.gplazma.oidc.exceptions.OidcException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.util.JsonWebToken;
+import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.TimeUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
@@ -54,20 +62,36 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     private final static String OIDC_HOSTNAMES = "gplazma.oidc.hostnames";
     private final static String OIDC_PROVIDER_PREFIX = "gplazma.oidc.provider!";
 
+    private final static String HTTP_CONCURRENT_ACCESS = "gplazma.oidc.http.total-concurrent-requests";
+    private final static String HTTP_PER_ROUTE_CONCURRENT_ACCESS = "gplazma.oidc.http.per-route-concurrent-requests";
     private final static String HTTP_SLOW_LOOKUP = "gplazma.oidc.http.slow-threshold";
     private final static String HTTP_SLOW_LOOKUP_UNIT = "gplazma.oidc.http.slow-threshold.unit";
+    private final static String HTTP_TIMEOUT = "gplazma.oidc.http.timeout";
+    private final static String HTTP_TIMEOUT_UNIT = "gplazma.oidc.http.timeout.unit";
+    private final static String CONCURRENCY = "gplazma.oidc.concurrent-requests";
     private final static String DISCOVERY_CACHE_REFRESH = "gplazma.oidc.discovery-cache";
     private final static String DISCOVERY_CACHE_REFRESH_UNIT = "gplazma.oidc.discovery-cache.unit";
+
+    private final ExecutorService executor;
 
     private final Map<URI,IdentityProvider> providersByIssuer;
     private final LoadingCache<IdentityProvider, JsonNode> discoveryCache;
     private final Random random = new Random();
-    private JsonHttpClient jsonHttpClient;
+    private final JsonHttpClient jsonHttpClient;
     private final Duration slowLookupThreshold;
 
     public OidcAuthPlugin(Properties properties)
     {
-        this(properties, new JsonHttpClient());
+        this(properties, buildClientFromProperties(properties));
+    }
+
+    private static JsonHttpClient buildClientFromProperties(Properties properties)
+    {
+        int soTimeout = (int)TimeUnit.valueOf(HTTP_TIMEOUT_UNIT).toMillis(asInt(properties, HTTP_TIMEOUT));
+
+        return new JsonHttpClient(asInt(properties, HTTP_CONCURRENT_ACCESS),
+                asInt(properties, HTTP_PER_ROUTE_CONCURRENT_ACCESS),
+                soTimeout);
     }
 
     private static int asInt(Properties properties, String key)
@@ -81,6 +105,13 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         }
     }
 
+
+    @Override
+    public void stop()
+    {
+        executor.shutdownNow();
+    }
+
     @VisibleForTesting
     OidcAuthPlugin(Properties properties, JsonHttpClient client)
     {
@@ -88,6 +119,9 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         providers.addAll(buildHosts(properties));
         providers.addAll(buildProviders(properties));
         checkArgument(!providers.isEmpty(), "No OIDC providers configured");
+
+        int concurrency = asInt(properties, CONCURRENCY);
+        executor = new BoundedCachedExecutor(concurrency);
 
         providersByIssuer = providers.stream().collect(toMap(IdentityProvider::getIssuerEndpoint, p -> p));
         jsonHttpClient = client;
@@ -156,6 +190,14 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                                                                " does not contain userinfo endpoint url");
                                            }
                                        }
+
+                                       @Override
+                                       public ListenableFuture<JsonNode> reload(final IdentityProvider provider, JsonNode value)
+                                       {
+                                           ListenableFutureTask<JsonNode> task = ListenableFutureTask.create(() -> load(provider));
+                                           executor.execute(task);
+                                           return task;
+                                       }
                                    }
                                  );
     }
@@ -171,9 +213,11 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                              Set<Principal> identifiedPrincipals)
             throws AuthenticationException
     {
-        Set<String> failures = new HashSet<>();
         boolean foundBearerToken = false;
 
+        Stopwatch userinfoLookupTiming = Stopwatch.createStarted();
+
+        List<ListenableFuture<LookupResult>> futures = new ArrayList<>();
         for (Object credential : privateCredentials) {
             if (credential instanceof BearerTokenCredential) {
                 String token = ((BearerTokenCredential) credential).getToken();
@@ -181,36 +225,92 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 foundBearerToken = true;
 
                 for (IdentityProvider ip : identityProviders(token)) {
-                    Stopwatch userinfoLookupTiming = Stopwatch.createStarted();
-                    try {
-                        JsonNode discoveryDoc = discoveryCache.get(ip);
-                        String userInfoEndPoint = extractUserInfoEndPoint(discoveryDoc);
-                        Set<Principal> found = validateBearerTokenWithOpenIdProvider(token, userInfoEndPoint, ip.getName());
-                        identifiedPrincipals.addAll(found);
-                        return;
-                    } catch (OidcException oe) {
-                        failures.add(oe.getMessage());
-                    } catch (ExecutionException e) {
-                        failures.add("(\"" + ip.getName() + "\", " + e.getMessage() + ")");
-                    } finally {
-                        if (userinfoLookupTiming.elapsed().compareTo(slowLookupThreshold) > 0) {
-                            LOG.warn("OpenID-Connect user-info endpoint {} took {} to return",
-                                    ip.getName(),
-                                    TimeUtils.describe(userinfoLookupTiming.elapsed()).orElse("no time"));
-                        }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Scheduling lookup of token {}", ip.getName(), describe(token, 10));
                     }
+
+                    ListenableFutureTask<LookupResult> lookupTask =
+                            ListenableFutureTask.create(() -> queryUserInfo(ip, token));
+                    executor.execute(lookupTask);
+                    futures.add(lookupTask);
                 }
             }
         }
 
         checkAuthentication(foundBearerToken, "No bearer token in the credentials");
 
-        if (failures.size() == 1) {
-            throw new AuthenticationException("OpenId Validation Failed: " + failures.iterator().next());
-        } else {
-            String randomId = randomId();
-            LOG.warn("OpenId Validation Failure ({}): {}", randomId, buildErrorMessage(failures));
-            throw new AuthenticationException("OpenId Validation Failed check [log entry #" + randomId + "]");
+        try {
+            List<LookupResult> allResults = Futures.allAsList(futures).get();
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Doing user-info lookup against {} OPs took {}",
+                        futures.size(),
+                        TimeUtils.describe(userinfoLookupTiming.elapsed()).orElse("no time"));
+            }
+
+            List<LookupResult> successfulResults = allResults.stream().filter(LookupResult::isSuccess).collect(Collectors.toList());
+
+            if (successfulResults.isEmpty()) {
+                if (allResults.size() == 1) {
+                    LookupResult result = allResults.get(0);
+                    throw new AuthenticationException("OpenId Validation failed for " + result.getIdentityProvider().getName() + ": " + result.getError());
+                } else {
+                    String randomId = randomId();
+                    String errors = allResults.stream()
+                            .map(r -> "[" + r.getIdentityProvider().getName() + ": " + r.getError() + "]")
+                            .collect(Collectors.joining(", "));
+                    LOG.warn("OpenId Validation Failure ({}): {}", randomId, errors);
+                    throw new AuthenticationException("OpenId Validation Failed check [log entry #" + randomId + "]");
+                }
+            }
+
+            if (successfulResults.size() > 1 && LOG.isWarnEnabled()) {
+                String names = successfulResults.stream()
+                        .map(LookupResult::getIdentityProvider)
+                        .map(IdentityProvider::getName)
+                        .collect(Collectors.joining(", "));
+                LOG.warn("Multiple OpenID-Connect endpoints accepted access token: {}", names);
+            }
+            successfulResults.stream()
+                    .map(LookupResult::getPrincipals)
+                    .forEach(identifiedPrincipals::addAll);
+        } catch (ExecutionException e) {
+            Throwable reportable = e.getCause() == null ? e : e.getCause();
+            LOG.warn("OIDC-Connect user lookup failed: ", reportable);
+            throw new AuthenticationException("Bug detected");
+        } catch (InterruptedException e) {
+            throw new AuthenticationException("interrupted while waiting for reply");
+        }
+    }
+
+    private LookupResult queryUserInfo(IdentityProvider ip, String token)
+    {
+        Stopwatch userinfoLookupTiming = null;
+
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Starting querying {} about token {}", ip.getName(), describe(token, 10));
+            }
+
+            JsonNode discoveryDoc = discoveryCache.get(ip);
+            userinfoLookupTiming = Stopwatch.createStarted();
+            String userInfoEndPoint = extractUserInfoEndPoint(discoveryDoc);
+            Set<Principal> principals = validateBearerTokenWithOpenIdProvider(token, userInfoEndPoint);
+            return LookupResult.success(ip, principals);
+        } catch (OidcException oe) {
+            return LookupResult.error(ip, oe.getMessage());
+        } catch (ExecutionException e) {
+            return LookupResult.error(ip, "(\"" + ip.getName() + "\", " + e.getMessage() + ")");
+        } finally {
+            if (userinfoLookupTiming != null) {
+                userinfoLookupTiming.stop();
+
+                if (userinfoLookupTiming.elapsed().compareTo(slowLookupThreshold) > 0) {
+                    LOG.warn("OpenID-Connect user-info endpoint {} took {} to return",
+                            ip.getName(),
+                            TimeUtils.describe(userinfoLookupTiming.elapsed()).orElse("no time"));
+                }
+            }
         }
     }
 
@@ -249,7 +349,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     }
 
     private Set<Principal> validateBearerTokenWithOpenIdProvider(String token,
-            String infoUrl, String name) throws OidcException
+            String infoUrl) throws OidcException
     {
         try {
             JsonNode userInfo = getUserInfo(infoUrl, token);
@@ -262,14 +362,14 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 addGroups(userInfo, principals);
                 return principals;
             } else {
-                throw new OidcException(name, "No OpendId \"sub\"");
+                throw new OidcException("No OpendId \"sub\"");
             }
         } catch (IllegalArgumentException iae) {
-            throw new OidcException(name, "Error parsing UserInfo: " + iae.getMessage());
+            throw new OidcException("Error parsing UserInfo: " + iae.getMessage());
         } catch (AuthenticationException e) {
-            throw new OidcException(name, e.getMessage());
+            throw new OidcException(e.getMessage());
         } catch (IOException e) {
-            throw new OidcException(name, "Failed to fetch UserInfo: " + e.getMessage());
+            throw new OidcException("Failed to fetch UserInfo: " + e.getMessage());
         }
     }
 
@@ -334,15 +434,20 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         return collection == null ? Collections.emptySet() : collection;
     }
 
-    private String buildErrorMessage(Set<String> errors)
-    {
-        return errors.isEmpty() ? "(unknown)" : errors.stream().collect(Collectors.joining(", ", "[", "]"));
-    }
-
     private String randomId()
     {
         byte[] rawId = new byte[6]; // a Base64 char represents 6 bits; 4 chars represent 3 bytes.
         random.nextBytes(rawId);
         return Base64.getEncoder().withoutPadding().encodeToString(rawId);
+    }
+
+    private static String describe(String id, int limit)
+    {
+        if (id.length() < limit) {
+            return id;
+        } else {
+            int length = (limit-3)/2;
+            return id.substring(0, length) + "..." + id.substring(id.length() - length);
+        }
     }
 }

@@ -45,8 +45,13 @@ public class OidcAuthPluginTest {
         httpClient = Mockito.mock(JsonHttpClient.class);
 
         givenConfiguration = new Properties();
+        givenConfiguration.put("gplazma.oidc.concurrent-requests", "20");
+        givenConfiguration.put("gplazma.oidc.http.total-concurrent-requests", "20");
+        givenConfiguration.put("gplazma.oidc.http.per-route-concurrent-requests", "10");
         givenConfiguration.put("gplazma.oidc.http.slow-threshold", "2");
         givenConfiguration.put("gplazma.oidc.http.slow-threshold.unit", "SECONDS");
+        givenConfiguration.put("gplazma.oidc.http.timeout", "30");
+        givenConfiguration.put("gplazma.oidc.http.timeout.unit", "SECONDS");
         givenConfiguration.put("gplazma.oidc.discovery-cache", "1");
         givenConfiguration.put("gplazma.oidc.discovery-cache.unit", "HOURS");
     }
@@ -54,6 +59,7 @@ public class OidcAuthPluginTest {
     @After
     public void tearDown() throws Exception
     {
+
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -185,12 +191,14 @@ public class OidcAuthPluginTest {
 
         plugin.authenticate(new HashSet<>(), priv, principals);
 
+        plugin.stop();
         return principals;
     }
 
     private void whenOidcPluginCreated()
     {
         OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient);
+        plugin.stop();
     }
 
     private void whenOidcPluginCalledWithNoCredentials() throws AuthenticationException
@@ -236,6 +244,8 @@ public class OidcAuthPluginTest {
         }
 
         plugin.authenticate(new HashSet<>(), priv, principals);
+
+        plugin.stop();
         return principals;
     }
 

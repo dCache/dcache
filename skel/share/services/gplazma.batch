@@ -11,10 +11,15 @@ check gplazma.cell.consume
 check gplazma.cell.subscribe
 check gplazma.x509.igtf-info.path
 
-check -strong gplazma.oidc.discovery-cache
-check -strong gplazma.oidc.discovery-cache.unit
+check -strong gplazma.oidc.concurrent-requests
+check -strong gplazma.oidc.http.total-concurrent-requests
+check -strong gplazma.oidc.http.per-route-concurrent-requests
 check -strong gplazma.oidc.http.slow-threshold
 check -strong gplazma.oidc.http.slow-threshold.unit
+check -strong gplazma.oidc.http.timeout
+check -strong gplazma.oidc.http.timeout.unit
+check -strong gplazma.oidc.discovery-cache
+check -strong gplazma.oidc.discovery-cache.unit
 
 create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
    "classpath:org/dcache/services/login/gplazma.xml \
