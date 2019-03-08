@@ -2,6 +2,7 @@ package org.dcache.gplazma.oidc;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -14,6 +15,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -39,6 +42,7 @@ import org.dcache.gplazma.oidc.exceptions.OidcException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.util.JsonWebToken;
+import org.dcache.util.TimeUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toMap;
@@ -50,14 +54,29 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     private final static String OIDC_HOSTNAMES = "gplazma.oidc.hostnames";
     private final static String OIDC_PROVIDER_PREFIX = "gplazma.oidc.provider!";
 
+    private final static String HTTP_SLOW_LOOKUP = "gplazma.oidc.http.slow-threshold";
+    private final static String HTTP_SLOW_LOOKUP_UNIT = "gplazma.oidc.http.slow-threshold.unit";
+
     private final Map<URI,IdentityProvider> providersByIssuer;
     private final LoadingCache<IdentityProvider, JsonNode> cache;
     private final Random random = new Random();
     private JsonHttpClient jsonHttpClient;
+    private final Duration slowLookupThreshold;
 
     public OidcAuthPlugin(Properties properties)
     {
         this(properties, new JsonHttpClient());
+    }
+
+    private static int asInt(Properties properties, String key)
+    {
+        try {
+            String value = properties.getProperty(key);
+            checkArgument(value != null, "Missing " + key + " property");
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Bad " + key + "value: " + e.getMessage());
+        }
     }
 
     @VisibleForTesting
@@ -77,6 +96,9 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         providersByIssuer = providers.stream().collect(toMap(IdentityProvider::getIssuerEndpoint, p -> p));
         jsonHttpClient = client;
         this.cache = cache;
+
+        slowLookupThreshold = Duration.of(asInt(properties, HTTP_SLOW_LOOKUP),
+                ChronoUnit.valueOf(properties.getProperty(HTTP_SLOW_LOOKUP_UNIT)));
     }
 
     private static Set<IdentityProvider> buildHosts(Properties properties)
@@ -160,6 +182,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 String token = ((BearerTokenCredential) credential).getToken();
                 foundBearerToken = true;
                 for (IdentityProvider ip : identityProviders(token)) {
+                    Stopwatch userinfoLookupTiming = Stopwatch.createStarted();
                     try {
                         JsonNode discoveryDoc = cache.get(ip);
                         String userInfoEndPoint = extractUserInfoEndPoint(discoveryDoc);
@@ -170,6 +193,12 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                         failures.add(oe.getMessage());
                     } catch (ExecutionException e) {
                         failures.add("(\"" + ip.getName() + "\", " + e.getMessage() + ")");
+                    } finally {
+                        if (userinfoLookupTiming.elapsed().compareTo(slowLookupThreshold) > 0) {
+                            LOG.warn("OpenID-Connect user-info endpoint {} took {} to return",
+                                    ip.getName(),
+                                    TimeUtils.describe(userinfoLookupTiming.elapsed()).orElse("no time"));
+                        }
                     }
                 }
             }

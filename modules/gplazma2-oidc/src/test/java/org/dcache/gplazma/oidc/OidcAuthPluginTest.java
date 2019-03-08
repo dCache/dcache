@@ -31,8 +31,8 @@ import static org.junit.Assert.assertThat;
 
 public class OidcAuthPluginTest {
     private static final String OIDC_PROPERTY_NAME = "gplazma.oidc.hostnames";
-    private Properties givenConfiguration = new Properties();
     private LoadingCache cache;
+    private Properties givenConfiguration;
     private JsonHttpClient httpClient;
 
     @BeforeClass
@@ -45,6 +45,10 @@ public class OidcAuthPluginTest {
     {
         cache = Mockito.mock(LoadingCache.class);
         httpClient = Mockito.mock(JsonHttpClient.class);
+
+        givenConfiguration = new Properties();
+        givenConfiguration.put("gplazma.oidc.http.slow-threshold", "2");
+        givenConfiguration.put("gplazma.oidc.http.slow-threshold.unit", "SECONDS");
     }
 
     @After

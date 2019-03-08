@@ -11,6 +11,9 @@ check gplazma.cell.consume
 check gplazma.cell.subscribe
 check gplazma.x509.igtf-info.path
 
+check -strong gplazma.oidc.http.slow-threshold
+check -strong gplazma.oidc.http.slow-threshold.unit
+
 create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
    "classpath:org/dcache/services/login/gplazma.xml \
      -consume=${gplazma.cell.consume} -subscribe=${gplazma.cell.subscribe} \
