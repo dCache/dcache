@@ -54,6 +54,11 @@ public class OidcAuthPluginTest {
         givenConfiguration.put("gplazma.oidc.http.timeout.unit", "SECONDS");
         givenConfiguration.put("gplazma.oidc.discovery-cache", "1");
         givenConfiguration.put("gplazma.oidc.discovery-cache.unit", "HOURS");
+        givenConfiguration.put("gplazma.oidc.access-token-cache.size", "1000");
+        givenConfiguration.put("gplazma.oidc.access-token-cache.refresh", "100");
+        givenConfiguration.put("gplazma.oidc.access-token-cache.refresh.unit", "SECONDS");
+        givenConfiguration.put("gplazma.oidc.access-token-cache.expire", "120");
+        givenConfiguration.put("gplazma.oidc.access-token-cache.expire.unit", "SECONDS");
     }
 
     @After

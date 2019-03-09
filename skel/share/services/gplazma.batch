@@ -20,6 +20,11 @@ check -strong gplazma.oidc.http.timeout
 check -strong gplazma.oidc.http.timeout.unit
 check -strong gplazma.oidc.discovery-cache
 check -strong gplazma.oidc.discovery-cache.unit
+check -strong gplazma.oidc.access-token-cache.size
+check -strong gplazma.oidc.access-token-cache.refresh
+check -strong gplazma.oidc.access-token-cache.refresh.unit
+check -strong gplazma.oidc.access-token-cache.expire
+check -strong gplazma.oidc.access-token-cache.expire.unit
 
 create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
    "classpath:org/dcache/services/login/gplazma.xml \
