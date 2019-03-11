@@ -948,7 +948,7 @@ public class XrootdDoor
 
     public void messageArrived(XrootdDoorAdressInfoMessage msg)
     {
-        _log.trace("Received redirect msg from mover");
+        _log.debug("Received redirect msg from mover");
         XrootdTransfer transfer = _transfers.get(msg.getXrootdFileHandle());
         if (transfer != null) {
             transfer.redirect(msg.getSocketAddress());
