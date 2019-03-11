@@ -164,7 +164,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     public synchronized void fireDelayedSync(int result, String error)
     {
         int errno = client.getErrno();
-        LOGGER.trace("fireDelayedSync (result {}), (error {}), (serverError {}); "
+        LOGGER.debug("fireDelayedSync (result {}), (error {}), (serverError {}); "
                                      + "syncRequest {}, isFirstSync {}",
                      result, error, client.getError(), syncRequest, isFirstSync);
         transferStatus = result;
@@ -290,7 +290,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                                        client.getError());
         }
 
-        LOGGER.trace("Request to sync ({}) is for third-party write.",
+        LOGGER.debug("Request to sync ({}) is for third-party write.",
                      syncRequest);
 
         if (isFirstSync) {
@@ -298,7 +298,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
              * The tpc should be started now,
              * and OK returned to the caller.
              */
-            LOGGER.trace("fireDelayedSync starting TPC client.");
+            LOGGER.debug("fireDelayedSync starting TPC client.");
 
             /*
              * Start the client connection.
