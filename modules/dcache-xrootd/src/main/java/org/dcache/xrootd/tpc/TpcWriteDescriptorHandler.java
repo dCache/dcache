@@ -105,7 +105,7 @@ public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler
             if (checksum.getType() == type) {
                 dCacheValue = checksum.getValue();
                 if (sourceValue != null && sourceValue.equals(dCacheValue)) {
-                    LOGGER.trace("Checksum query for {} on {}, "
+                    LOGGER.debug("Checksum query for {} on {}, "
                                                  + "channel {}, stream {}, succeeded.",
                                  info.getLfn(),
                                  info.getSrc(),

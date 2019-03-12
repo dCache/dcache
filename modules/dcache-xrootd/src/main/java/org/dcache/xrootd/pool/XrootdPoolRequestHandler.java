@@ -244,7 +244,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                                         new XrootdSigverDecoder(signingPolicy,
                                                                 null));
             ctx.pipeline().remove("decoder");
-            _log.trace("swapped decoder for sigverDecoder.");
+            _log.debug("swapped decoder for sigverDecoder.");
         } else {
             sec = "";
         }
@@ -309,7 +309,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                                     file.getProtocolInfo().getFlags()
                                         .contains(XrootdProtocolInfo.Flags.POSC);
                     if (opaqueMap.containsKey("tpc.src")) {
-                        _log.trace("Request to open {} is as third-party destination.", msg);
+                        _log.debug("Request to open {} is as third-party destination.", msg);
                         descriptor = new TpcWriteDescriptor(file, posc, ctx,
                                                             _server,
                                                             opaqueMap.get("org.dcache.xrootd.client"),
@@ -390,7 +390,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     {
         switch (msg.getTarget()) {
         case PATH:
-            _log.trace("Request to stat {}; redirecting to door.", msg);
+            _log.debug("Request to stat {}; redirecting to door.", msg);
             return redirectToDoor(ctx, msg);
 
         case FHANDLE:
@@ -405,11 +405,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 
             FileDescriptor descriptor = _descriptors.get(fd);
             if (descriptor instanceof TpcWriteDescriptor) {
-                _log.trace("Request to stat {} is for third-party transfer.", msg);
+                _log.debug("Request to stat {} is for third-party transfer.", msg);
                 return ((TpcWriteDescriptor)descriptor).handleStat(msg);
             } else {
                 try {
-                    _log.trace("Request to stat open file fhandle={}", fd);
+                    _log.debug("Request to stat open file fhandle={}", fd);
                     return new StatResponse(msg, stat(descriptor.getChannel()));
                 } catch (IOException e) {
                     throw new XrootdException(kXR_IOError, e.getMessage());
