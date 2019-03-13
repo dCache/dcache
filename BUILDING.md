@@ -8,8 +8,8 @@ To build dCache, you need Maven 3.1.1 or newer. Centos/Redhat 7
 comes with version 3.0.5. See https://maven.apache.org/install.html
 on how to install a newer version.
 
-It is recommended to use JDK 1.8 for building. Running the result 
-on newer JDKs should be possible.
+It is recommended to use JDK 1.8 for building. Running the resulting 
+binaries on newer JDKs should be possible.
 
 Building
 --------
@@ -57,10 +57,14 @@ or
 
     mvn clean package -am -pl packages/fhs -P deb
 
-The two profiles must not be invoked in the same run. Note that the
-platform native RPM and DEB build tools must be installed. For RPM,
-installing the rpm and rpmbuild tools suffices. For DEB, the dpkg-dev,
-debhelper, quilt, and fakeroot packages must be installed.
+The two profiles must not be invoked in the same run. 
+
+Note that the platform native RPM and DEB build tools must be installed. 
+For building RPMs on both CentOS and Debian platforms, installing 
+the rpm and rpmbuild packages suffices. 
+For building DEBs on Debian or Ubuntu platforms, the dpkg-dev, 
+debhelper, bash-completion, sh-make, quilt, and fakeroot packages
+must be installed.
 
 The package revision number can be customized by defining the
 build.number property, e.g.:
