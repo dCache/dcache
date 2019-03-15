@@ -157,8 +157,10 @@ public class CephRepositoryChannel implements RepositoryChannel {
 
     @Override
     public synchronized void close() throws IOException {
-        rbdImage.close();
-        rbdImage = null;
+        if (rbdImage != null) {
+            rbdImage.close();
+            rbdImage = null;
+        }
     }
 
     @Override
