@@ -47,6 +47,21 @@ Set the broker address, or list of broker addresses
     (one-of?true|false)dcache.enable.kafka = true
     dcache.kafka.bootstrap-servers = localhost:9092
 
+Set kafka topic name
+
+    dcache.kafka.topic = billing
+
+"billing" is default. The following serice level variables
+reference dcache.kafka.topic:
+
+   dcap.kafka.topic = ${dcache.kafka.topic}
+   ftp.kafka.topic = ${dcache.kafka.topic}
+   nfs.kafka.topic = ${dcache.kafka.topic}
+   pool.kafka.topic = ${dcache.kafka.topic}
+   webdav.kafka.topic = ${dcache.kafka.topic}
+   xrootd.kafka.topic = ${dcache.kafka.topic}
+
+
 
 
 
