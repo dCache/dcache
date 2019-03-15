@@ -66,15 +66,20 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
@@ -117,6 +122,8 @@ import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 public class FileOperationHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(
                     FileOperationHandler.class);
+    private static final Logger ACTIVITY_LOGGER =
+            LoggerFactory.getLogger("org.dcache.resilience-log");
 
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
                     = ImmutableList.of(
@@ -369,6 +376,14 @@ public class FileOperationHandler {
                              ReplicaState.CACHED, ONLINE_STICKY_RECORD,
                              Collections.EMPTY_LIST, attributes,
                              attributes.getAccessTime());
+        if (ACTIVITY_LOGGER.isInfoEnabled()) {
+            List<String> allPools = list.getPools().stream()
+                    .map(PoolManagerPoolInformation::getName)
+                    .collect(Collectors.toList());
+            ACTIVITY_LOGGER.info("Initiating replication of {} from {} to"
+                    + " pools: {}, offline: {}", pnfsId, source, allPools,
+                    list.getOfflinePools());
+        }
         LOGGER.trace("Created migration task for {}: source {}, list {}.",
                      pnfsId, source, list);
 
@@ -640,6 +655,7 @@ public class FileOperationHandler {
                                                             pnfsId);
 
         LOGGER.trace("Sending RemoveReplicasMessage {}.", msg);
+        ACTIVITY_LOGGER.info("Removing {} from {}", pnfsId, target);
         Future<RemoveReplicaMessage> future = pools.send(new CellPath(target), msg);
 
         try {
