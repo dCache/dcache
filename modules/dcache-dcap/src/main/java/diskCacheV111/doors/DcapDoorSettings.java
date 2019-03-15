@@ -88,6 +88,9 @@ public class DcapDoorSettings
     @Option(name = "bootstrap-server-kafka")
     protected String kafkaBootstrapServer;
 
+    @Option(name = "kafka-topic")
+    protected String kafkaTopic;
+
     @Option(name = "kafka-max-block", required = true)
     protected long kafkaMaxBlock;
 
@@ -243,6 +246,15 @@ public class DcapDoorSettings
      */
     public String getKafkaBootstrapServer() {
         return kafkaBootstrapServer;
+    }
+
+    /**
+     * Returns the name of kafka topic
+     *
+     * @return    kafka topic name
+     */
+    public String getKafkaTopic() {
+        return kafkaTopic;
     }
 
     /**
