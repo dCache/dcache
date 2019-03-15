@@ -297,7 +297,7 @@
     <threshold>
       <appender>resilience</appender>
       <logger>org.dcache.resilience-log</logger>
-      <level>error</level>
+      <level>${dcache.log.level.resilience}</level>
     </threshold>
 
   </turboFilter>
