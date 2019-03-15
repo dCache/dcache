@@ -5,30 +5,33 @@ Chapter 2. Installing dCache
 
 +  [Installing a dCache instance](#installing-a-dcache-instance)
 
-     [Prerequisites](#prerequisites)
-     [Installation of the dCache Software](#installation-of-the-dCache-software)
-     [Readying the PostgreSQL server for the use with dCache](#readying-the-postgresql-server-for-the-use-with-dcache)
-     [Configuring Chimera](#configuring-chimera)
-     [Configuring dCache](#configuring-dcache)
-     [Installing dCache on several nodes](#installing-dcache-on-several-nodes)
+     - [Prerequisites](#prerequisites)
+     - [Installation of the dCache Software](#installation-of-the-dCache-software)
+     - [Readying the PostgreSQL server for the use with dCache](#readying-the-postgresql-server-for-the-use-with-dcache)
+     - [Configuring Chimera](#configuring-chimera)
+     - [Configuring dCache](#configuring-dcache)
+     - [Installing dCache on several nodes](#installing-dcache-on-several-nodes)
 
 
 +  [Securing your dCache installation](#securiting-your-dcache-installation)
 +  [Upgrading a dCache Instance](#upgrading-a-dcache-instance)
 
-The first section describes the installation of a fresh dCache instance using RPM files downloaded from [the dCache home-page]. It is followed by a guide to upgrading an existing installation. In both cases we assume standard requirements of a small to medium sized dCache instance without an attached [tertiary storage system](rf-glossary.md#tertiary-storage-system). The third section contains some pointers on extended features.
+The first section describes the installation of a fresh dCache instance using RPM files downloaded from [the dCache home-page]. It is followed by a guide to upgrading an existing installation. In both cases we assume standard requirements of a small to medium sized dCache instance without an attached [tertiary storage system](rf-glossary.md#tertiary-storage-system). The third section contains some pointers to extended features.
 
-INSTALLING a dCache INSTANCE
+  [the dCache home-page]: https://www.dcache.org/
+
+
+INSTALLING A dCache INSTANCE
 ============================
 
-In the following the installation of a dCache instance will be described. The Chimera name space provider, some management components, and the **SRM** need a PSQL server installed. We recommend running this PSQL on the local node. The first section describes the configuration of a PSQL server. After that the installation of CHIMERA and of the dCache components will follow. During the whole installation process root access is required.
+In the following the installation of a dCache instance will be described. The Chimera namespace provider, some management components, and the **SRM** need a PSQL server installed. We recommend running this PSQL on the local node. The first section describes the configuration of a PSQL server. After that the installation of CHIMERA and of the dCache components will follow. During the whole installation process root access is required.
 
 PREREQUISITES
 -------------
 
 In order to install dCache the following requirements must be met:
 
--   An RPM-based Linux distribution is required for the following procedure. For Debian derived systems we provide Debian packages and for all other operating systems a tarball is available..
+-   An RPM-based Linux distribution is required for the following procedure. For Debian derived systems we provide Debian packages and for all other operating systems a tarball is available.
 
 -   dCache requires Java 8 JRE. Please use the latest patch-level and check for upgrades frequently. It is recommended to use JDK as dCache scripts can make use of some extra features that JDK provides to gather more diagnostic information (heap-dump, etc). This helps when tracking down bugs.
 
@@ -36,7 +39,7 @@ In order to install dCache the following requirements must be met:
 
     > **IMPORTANT**
     >
-    > For good performance it is necessary to maintain and tune your PostgreSQL server. There are several good books on this topic, one of which is [PostgreSQL 9.0 High Performance](https://www.2ndquadrant.com/de/buecher/).
+    > For good performance it is necessary to maintain and tune your PostgreSQL server. There are several good books on this topic, one of which is [PostgreSQL 9.0 High Performance](https://www.2ndquadrant.com/de/books/).
 
 INSTALLATION OF THE dCache SOFTWARE
 -----------------------------------
@@ -65,7 +68,7 @@ Initialize the database directory (for PSQL version 10.1 this is `/var/lib/pgsql
 
 ### Enabling local trust
 
-Perhaps the simplest configuration is to allow password-less access to the database and the following documentation assumes this is so.
+Perhaps the simplest configuration is to allow password-less access to the database. The following documentation assumes this to be the case.
 
 To allow local users to access PSQL without requiring a password, ensure the file `pg_hba.conf`, which (for PSQL version 10) is located in `/var/lib/pgsql/10/data`, contains the following lines.
 
@@ -158,7 +161,7 @@ CONFIGURING dCache
 
 dCache consists of one or more *domains*. A domain in dCache is a Java Virtual Machine hosting one or more dCache *cells*. Each domain must have a name which is unique throughout the dCache instance and a cell must have a unique name within the domain hosting the cell.
 
-A *service* is an abstraction used in the dCache configuration to describe atomic units to add to a domain. It is typically implemented through one or more cells. dCache keeps lists of the domains and the services that are to be run within these domains in the *layout files*. The layout file may contain domain- and service- specific configuration values. 
+A *service* is an abstraction used in the dCache configuration to describe atomic units to add to a domain. It is typically implemented through one or more cells. dCache keeps lists of the domains and the services that are to be run within these domains in the *layout files*. The layout file may contain domain- and service-specific configuration values. 
 
 A *pool* is a cell providing physical data storage services. A *door* provides access to the data on the pools by implementing a specific data transfer protocol like FTP or NFS.
 

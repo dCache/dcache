@@ -3,7 +3,7 @@ Message passing
 
 The dCache system is divided into cells which communicate with each other via messages. Cells run inside domains and cells communicate by passing messages to each other. Domains are connected through cell tunnels which exchange messages over TCP.
 
-Each domain runs in a separate Java virtual machine and each cell is run as a separate thread therein. Domain names have to be unique. The domains communicate with each other via `TCP` using connections that are established at start-up. The topology is controlled by the location manager service. When configured, all domains connect with a core domains, which routes all messages to the appropriate domains. This forms a star topology.
+Each domain runs in a separate Java virtual machine and each cell is run as a separate thread therein. Domain names have to be unique. The domains communicate with each other via `TCP` using connections that are established at start-up. The topology is controlled by the location manager service. When configured, all domains connect with a core domain, which routes all messages to the appropriate domains. This forms a star topology.
 
 > **ONLY FOR MESSAGE COMMUNICATION**
 >
@@ -52,7 +52,7 @@ domain route is removed.
 
 ### Core and satellite domains
 
-dCache domains are either designated as either `core` domains or `satellite` domains
+dCache domains are designated as either `core` domains or `satellite` domains
 in the configuration. Core domains act as message hubs, forwarding messages on
 behalf of satellite domains.
 
@@ -63,7 +63,7 @@ domain listens for a connection.
 
 Satellite domains connect to all core domains.
 
-Other than that, there are no difference between core and satellite domains -
+Other than that, there are no differences between core and satellite domains -
 they can both host arbitrary dCache services, including none at all.
 
 ### Location manager

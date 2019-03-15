@@ -6,26 +6,26 @@ Table of Contents
 
 * [Checking the Functionality](#checking-the-functionality)
 
-     [dCache without mounted namespace](#dcache-without-mounted-namespace)
-     [WebDAV](#webdav)
-     [dCap](#dcap)
+     - [dCache without mounted namespace](#dcache-without-mounted-namespace)
+     - [WebDAV](#webdav)
+     - [dCap](#dcap)
 
 
 * [The Web Interface for Monitoring dCache](#the-web-interface-for-monitoring-dcache)
 * [The Admin Interface](#the-admin-interface)
 
-     [First steps](#first-steps)
-     [Access with ssh](#access-with-ssh2)
-     [How to use the Admin Interface](#how-to-use-the-admin-interface)
-     [Create a new user](#create-a-new-user)
-     [Use of the ssh Admin Interface by scripts](#use-of-the-ssh-admin-interface-by-scripts)
+     - [First steps](#first-steps)
+     - [Access with ssh](#access-with-ssh2)
+     - [How to use the Admin Interface](#how-to-use-the-admin-interface)
+     - [Create a new user](#create-a-new-user)
+     - [Use of the ssh Admin Interface by scripts](#use-of-the-ssh-admin-interface-by-scripts)
 
 * [Authentication and Authorization in dCache](#authentication-and-authorization-in-dcache)
 * [How to work with secured dCache](#how-to-work-with-secured-dCache)
 
-     [GSIdCap](#gsidcap)
-     [SRM](#srm)
-     [WebDAV with certificates](#webdav-with-certificates)
+     - [GSIdCap](#gsidcap)
+     - [SRM](#srm)
+     - [WebDAV with certificates](#webdav-with-certificates)
 
  * [Files](#files)
 
@@ -533,13 +533,6 @@ For the newly created users there will be an entry in the directory **/etc/dcach
 >
 > As the initial user `admin` has not been created with the above command you will not find him in the directory **/etc/dcache/admin/users/meta.**
 
-Give the new user access to the PnfsManager.
-
-```
-      (acm) admin > create acl cell.<cellName>.execute
-      (acm) admin > add access -allowed cell.<cellName>.execute <new-user>
-```
-
 Example:
 Give the new user access to the PnfsManager.
 
@@ -592,7 +585,7 @@ In scripts, one can use a “Here Document” to list the commands, or supply th
     \q
     EOF
 ```
-or, the equivalent as stdin.
+Or, the equivalent as stdin.
 ```
     #!/bin/bash
     #
@@ -759,7 +752,7 @@ Now you can copy a file into your dCache using GSIdCap
     [user] $ dccp /bin/sh gsidcap://<dcache.example.org>:22128/data/world-writable/my-test-file3
     801512 bytes in 0 seconds
 
-and copy it back
+and copy it back.
 
     [user] $ dccp gsidcap://<dcache.example.org>:22128/data/world-writable/my-test-file3 /tmp/mytestfile3.tmp
     801512 bytes in 0 seconds
@@ -784,7 +777,7 @@ copy it back
 
     [user] $ srmcp -2 srm://dcache.example.org:8443/data/world-writable/my-test-file4 file:////tmp/mytestfile4.tmp
 
-and delete it
+and delete it.
 
     [user] $ srmcp -2 srm://dcache.example.org:8443/data/world-writable/my-test-file4
 

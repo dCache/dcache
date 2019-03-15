@@ -12,7 +12,6 @@ The **dcache.conf** file is initially empty. If one of the default configuration
 **The layout File**
 -------------------
 The layout file is located in the directory /etc/dcache/layouts. It contains lists of the [domains](#domain) and the services that are to be run within these domains.
-The properties Files
 
 The properties files are located in the directory /usr/share/dcache/defaults. They contain the default settings of the dCache.
 
@@ -20,7 +19,7 @@ Chimera
 -------
 The Chimera namespace is a core component of dCache. It maps each stored file to a unique identification number and allows storing of metadata against either files or directories.
 
-Chimera includes some features like [levels](file-level), [directory tags](#directory-tag) and many of the [dot commands](#dot-command).
+Chimera includes some features like levels, [directory tags](#directory-tag) and many of the [dot commands](#dot-command).
 
 Chimera ID
 ----------
@@ -44,7 +43,7 @@ A well-known [cell](#cell) is a cell that registers itself centrally. Within the
 
 Door
 ----
-Door is the generic name for special [cells](#cell) that provides the first point of access for end clients to communicate with a dCache instance. There are different door implementations (e.g., GSIdCap door and GridFTP door), allowing a dCache instance to support multiple communication protocols.
+Door is the generic name for special [cells](#cell) that provide the first point of access for end clients to communicate with a dCache instance. There are different door implementations (e.g., GSIdCap door and GridFTP door), allowing a dCache instance to support multiple communication protocols.
 
 A door will (typically) bind to a well-known port number depending on the protocol the door supports. This allows for only a single door instance per machine for each protocol.
 
@@ -77,7 +76,7 @@ HSM Instance
 
 Large File Store (LFS)
 ----------------------
-A Large File Store is the name for a dCache instance that is acting as a filesystem independent to, or in cooperation with, an [HSM](#HSM) system. When dCache is acting as an LFS, files may be stored and later read without involving any HSM system.
+A Large File Store is the name for a dCache instance that is acting as a filesystem independent of, or in cooperation with, an [HSM](#hierarchical-storage-manager-hsm) system. When dCache is acting as an LFS, files may be stored and later read without involving any HSM system.
 
 Whether a dCache instance provides an LFS depends on whether there are [pools](#pool) configured to do so. The LFS option, specified for each pool within the [layout file](#the-layout-file), describes how that pool should behave. This option can take three possible values:
 
@@ -85,7 +84,7 @@ Whether a dCache instance provides an LFS depends on whether there are [pools](#
 the pool does not contribute to any LFS capacity. All newly written files are regarded precious and sent to the HSM backend.
 
 - **precious** -
-Newly create files are regarded as precious but are not scheduled for the HSM store procedure. Consequently, these file will only disappear from the pool when deleted in the [Chimera](#chimera) namespace.
+Newly created files are regarded as precious but are not scheduled for the HSM store procedure. Consequently, these file will only disappear from the pool when deleted in the [Chimera](#chimera) namespace.
 
 to store
 --------
@@ -101,7 +100,7 @@ See [to restore](#to-restore).
 
 transfer
 ---------
-Any kind of transfer performed by a dCache pool. There are [store](#store), [to restore](#to-restore), pool to pool (client and server), read, and write transfers. The latter two are client transfers.
+Any kind of transfer performed by a dCache pool. There are [store](#to-store), [restore](#to-restore), pool to pool (client and server), read, and write transfers. The latter two are client transfers.
 See Also [mover](#mover).
 
 mover
@@ -113,7 +112,7 @@ See Also [transfer](rf-glossary.md#transfer).
 
 Location Manager
 -----------------
-The location manager is a [cell](#cell) that instructs a newly started [domains](#domain) to which domain they should connect. This allows domains to form arbitrary network topologies; although, by default, a dCache instance will form a star topology with the dCacheDomain domain at the centre.
+The location manager is a [cell](#cell) that instructs newly started [domains](#domain) to which domains they should connect. This allows domains to form arbitrary network topologies; although, by default, a dCache instance will form a star topology with the dCacheDomain domain at the centre.
 
 Pinboard
 ---------
@@ -121,9 +120,9 @@ The pinboard is a collection of messages describing events within dCache and is 
 
 Breakeven Parameter
 --------------------
-The breakeven parameter has to be a positive number smaller than 1.0. It specifies the impact of the age of the least recently used file on space cost. It the LRU file is one week old, the space cost will be equal to (1 + breakeven). Note that this will not be true, if the breakeven parameter has been set to a value greater or equal to 1.
+The breakeven parameter has to be a positive number smaller than 1.0. It specifies the impact of the age of the [least recently used file](#least-recently-used-lru-file) on space cost. It the LRU file is one week old, the space cost will be equal to (1 + breakeven). Note that this will not be true, if the breakeven parameter has been set to a value greater or equal to 1.
 
-least recently used (LRU) File
+least recently used (LRU) file
 -------------------------------
 The file that has not be requested for the longest.
 
@@ -133,23 +132,23 @@ In [Chimera](#chimera), each file can have up to eight independent contents; the
 
 directory tag
 --------------
-[Chimera](#chimera) includes the concept of tags. A tag is a keyword-value pair associated with a directory. Subdirectories inherit tags from their parent directory. New values may be assigned, but tags cannot be removed. The [dot command](#dot-command) .(tag)(<foo>) may be used to read or write tag <foo>’s value. The dot command .(tags)() may be read for a list of all tags in that file’s subdirectory.
+[Chimera](#chimera) includes the concept of tags. A tag is a keyword-value pair associated with a directory. Subdirectories inherit tags from their parent directory. New values may be assigned, but tags cannot be removed. The [dot command](#dot-command) .(tag)(<foo>) may be used to read or write the tag <foo>’s value. The dot command .(tags)() may be read for a list of all tags in that file’s subdirectory.
 
-    More details on directory tags are given in [the section called “Directory Tags”](config-chimera.md#directory-tags).
+More details on directory tags are given in [the section called “Directory Tags”](config-chimera.md#directory-tags-for-dcache).
 
 dot command
 ------------
-To configure and access some of the special features of the [Chimera namespace](#chimera) , special files may be read, written to or created. These files all start with a dot (or period) and have one or more parameters after. Each parameter is contained within a set of parentheses; for example, the file .(tag)(<foo>) is the Chimera dot command for reading or writing the <foo> [directory tag](#) value.
+To configure and access some of the special features of the [Chimera namespace](#chimera), special files may be read, written to or created. These files all start with a dot (or period) and have one or more parameters after. Each parameter is contained within a set of parentheses; for example, the file .(tag)(<foo>) is the Chimera dot command for reading or writing the <foo> [directory tag](#) value.
 
 Care must be taken when accessing a dot command from a shell. Shells will often expand parentheses so the filename must be protected against this; for example, by quoting the filename or by escaping the parentheses.
 
 Wormhole
 ---------
-A wormhole is a feature of the Chimera namespace. A wormhole is a file that is accessible in all directories; however, the file is not returned when scanning a directory(e.g., using the ls command).
+A wormhole is a feature of the Chimera namespace. A wormhole is a file that is accessible in all directories; however, the file is not returned when scanning a directory (e.g., using the ls command).
 
 Pool to Pool Transfer
 ----------------------
-A pool-to-pool transfer is one where a file is transferred from one dCache [pool](#pool) to another. This is typically done to satisfy a read request, either as a load-balancing technique or because the file is not available on pools that the end-user has access.
+A pool-to-pool transfer is one where a file is transferred from one dCache [pool](#pool) to another. This is typically done to satisfy a read request, either as a load-balancing technique or because the file is not available on pools that the end-user has access to.
 
 Storage Class
 --------------
@@ -157,8 +156,7 @@ The storage class is a string of the form
 
           <StoreName>:<StorageGroup>@<type-of-storage-system>
 
-
-    containing exactly one @-symbol.
+containing exactly one @-symbol.
 
         <StoreName>:<StorageGroup> is a string describing the storage class in a syntax which depends on the storage system.
 
@@ -166,11 +164,11 @@ The storage class is a string of the form
 
         In general use <type-of-storage-system>=osm.
 
-    A storage class is used by a tertiary storage system to decide where to store the file (i.e. on which set of tapes). dCache can use the storage class for a similar purpose, namely to decide on which pools the file can be stored.
+A storage class is used by a tertiary storage system to decide where to store the file (i.e. on which set of tapes). dCache can use the storage class for a similar purpose, namely to decide on which pools the file can be stored.
 
 Replica
 --------
-It is possible that dCache will choose to make a file accessible from more than one [pool](#pool) using a [pool-to-pool](#pool-to-pool) copy. If this happens, then each copy of the file is a replica.
+It is possible that dCache will choose to make a file accessible from more than one [pool](#pool) using a [pool-to-pool](#pool-to-pool-transfer) copy. If this happens, then each copy of the file is a replica.
 
 A file is independent of which pool is storing the data whereas a replica is uniquely specified by the pnfs ID and the pool name it is stored on.
 
@@ -184,7 +182,7 @@ A cached [replica](#replica) is a replica that should not be stored on tape.
 
 Resilience
 ----------------
-Resilience has to do with file preservation and availabilitykeeps.  The Resilience
+Resilience has to do with file preservation and availabilitykeeps. The Resilience
 service or manager tracks the number of [replicas](#replica)
 of files within defined subsets of pools (marked as resilient) and makes
 sure this number is always as specified by the storage class of the file.
@@ -200,11 +198,11 @@ An SRM provides a standardised webservice interface for managing a storage resou
 
 Billing/Accounting
 ------------------
-Accounting information is either stored in a text file or in a PostgreSQL database by the billing cell usually started in the httpdDomain [domain](#domain). This is described in [Chapter 15, The billing Service](config-billing.md).
+Accounting information is either stored in a text file or in a PostgreSQL database by the billing cell usually started in the [domain](#domain) httpdDomain. This is described in [Chapter 15, The billing Service](config-billing.md).
 
 Pool Manager
 ------------
-The pool manager is the [cell](#cell) running in the dCacheDomain [domain](#domain). It is a central component of a dCache instance and decides which pool is used for an incoming request.
+The pool manager is the [cell](#cell) running in the [domain](#domain) dCacheDomain. It is a central component of a dCache instance and decides which pool is used for an incoming request.
 
 Cost Module
 ------------
@@ -224,19 +222,19 @@ The (SRM) Space Manager is a [cell](#cell) by default running in the srm [domain
 
 Pool
 ----
-A pool is a [cell](#cell) responsible for storing retrieved files and for providing access to that data. Data access is supported via [movers](#MOVER). A machine may have multiple pools, perhaps due to that machine’s storage being split over multiple partitions.
+A pool is a [cell](#cell) responsible for storing retrieved files and for providings access to that data. Data access is supported via [movers](#MOVER). A machine may have multiple pools, perhaps due to that machine’s storage being split over multiple partitions.
 
 A pool must have a unique name and all pool cells on a particular machine are hosted in a domain that derives its name from the host machine’s name.
 
-The list of directories that are to store pool data are found in definition of the pools in the [layout Files](#layout-files), which are located on the pool nodes.
+The list of directories that are to store pool data are found in the definitions of the pools in the [layout files](#the-layout-file), which are located on the pool nodes.
 
 sweeper
 -------
-A sweeper is an activity located on a [pool](#pool). It is responsible for deleting files on the pool that have been marked for removal. Files can be marked for removal because their corresponding namespace entry has been deleted or because the local file is a [cache copy](#cache-copy) and more disk space is needed.
+A sweeper is an activity located on a [pool](#pool). It is responsible for deleting files on the pool that have been marked for removal. Files can be marked for removal because their corresponding namespace entry has been deleted or because the local file is a [cached replica](#cached-replica) and more disk space is needed.
 
 HSM sweeper
 ------------
-The HSM sweeper, if enabled, is a component that is responsible for removing files from the [HSM](#hsm) when the corresponding namespace entry has been removed.
+The HSM sweeper, if enabled, is a component that is responsible for removing files from the [HSM](#hierarchical-storage-manager-hsm) when the corresponding namespace entry has been removed.
 
 cost
 -----
@@ -244,7 +242,7 @@ The pool manager determines the pool used for storing a file by calculating a co
 
     	cost = ccf * performance_cost + scf * space_cost
 
-    where ccf and scf are configurable with the command [set pool decision](reference.md#set-pool-decision).
+where ccf and scf are configurable with the command [set pool decision](reference.md).
 
 performance cost
 ----------------

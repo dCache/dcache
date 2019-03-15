@@ -48,7 +48,7 @@ We recommend reading the [ZooKeeper admin guide](https://zookeeper.apache.org/do
 
 ### Configuring dCache to connect to ZooKeeper
 
-The `dcache.zookeeper.connection` property needs to be defined on every dCache server to identify the ZooKeeper server or servers. In a clustered ZooKeeper deployment this property is set to a comma separated list of ZooKeeper servers endpoints. The ZooKeeper admin guide should contain details on further configuration options that can be specified in the connection string; however, this seemed to be missing at the time of writing.  Instead, the ZooKeeper programmers guide [ZooKeeper Sessions](https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#ch_zkSessions) section contains some details (search for "connection string").
+The `dcache.zookeeper.connection` property needs to be defined on every dCache server to identify the ZooKeeper server or servers. In a clustered ZooKeeper deployment this property is set to a comma separated list of ZooKeeper servers endpoints. The ZooKeeper admin guide should contain details on further configuration options that can be specified in the connection string; however, this seemed to be missing at the time of writing.  Instead, the ZooKeeper programmers guide [ZooKeeper Sessions](https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html#ch_zkSessions) section contains some details (search for "connection string").
 
 Each domain in dCache will connect to a single ZooKeeper endpoint.  If dCache is configured with multiple ZooKeeper endpoints, one is chosen at random.  Should that fail, another endpoint is used automatically.  Note that ZooKeeper places a limit on the number of concurrent connections from the same IP address (see `maxClientCnxns` configuration parameter).  Be sure that this number is large enough for the maximum number of domains running on a single dCache node.
 
@@ -56,7 +56,7 @@ The property defaults to `localhost:2181`. Except when deploying a single server
 
 ## Inspecting ZooKeeper through dCache
 
-Every `System` cell offers two new commands, `zk ls` and `zk get` to list and read the data stored in ZooKeeper. Since all domains use the same ZooKeeper instance, the behaviors of these commands is the same in all domains. ZooKeeper data is organized hierarchically. Each element is called a _znode_ and may have children as well as a value. The name space is organized like a POSIX file system, with slash as a name separator. E.g. `zk ls /` lists the children under the root znode.
+Every `System` cell offers two new commands, `zk ls` and `zk get` to list and read the data stored in ZooKeeper. Since all domains use the same ZooKeeper instance, the behavior of these commands is the same in all domains. ZooKeeper data is organized hierarchically. An element is called a _znode_ and may have children as well as a value. The namespace is organized like a POSIX file system, with slash as a name separator. E.g. `zk ls /` lists the children under the root znode.
 
 ZooKeeper ships with its own client that allows many more operations. This can be used to connect to ZooKeeper independently of dCache. If you modify the data managed by dCache, all warranty is voided.
 
