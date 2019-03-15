@@ -1019,7 +1019,7 @@ public abstract class AbstractFtpDoorV1
 
             if (_sendToKafka) {
                 setKafkaSender(m -> {
-                    _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>("billing", m));
+                   _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>(_settings.getKafkaTopic(), m));
                 });
             }
 

@@ -593,7 +593,7 @@
                    </constructor-arg>
                </bean>
            </constructor-arg>
-           <property name="defaultTopic" value="billing"/>
+           <property name="defaultTopic" value="${pool.kafka.topic}"/>
            <property name="producerListener" ref="listener"/>
        </bean>
 
@@ -616,7 +616,7 @@
                     </constructor-arg>
                 </bean>
             </constructor-arg>
-            <property name="defaultTopic" value="billing"/>
+            <property name="defaultTopic" value="${pool.kafka.topic}"/>
             <property name="producerListener" ref="listener"/>
         </bean>
 
@@ -640,7 +640,7 @@
                 </bean>
             </constructor-arg>
             <constructor-arg name="autoFlush" value="false" />
-            <property name="defaultTopic" value="billing"/>
+            <property name="defaultTopic" value="${pool.kafka.topic}"/>
             <property name="producerListener" ref="listener"/>
         </bean>
     </beans>

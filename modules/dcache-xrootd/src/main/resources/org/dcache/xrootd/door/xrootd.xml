@@ -226,7 +226,7 @@
           </constructor-arg>
         </bean>
       </constructor-arg>
-      <property name="defaultTopic" value="billing"/>
+      <property name="defaultTopic" value="${xrootd.kafka.topic}"/>
       <property name="producerListener" ref="listener"/>
     </bean>
   </beans>
