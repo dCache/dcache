@@ -89,6 +89,8 @@ import org.dcache.vehicles.CorruptFileMessage;
 public final class ResilienceMessageHandler implements CellMessageReceiver{
     private static final Logger LOGGER = LoggerFactory.getLogger(
                     ResilienceMessageHandler.class);
+    private static final Logger ACTIVITY_LOGGER =
+                    LoggerFactory.getLogger("org.dcache.resilience-log");
 
     private MessageGuard         messageGuard;
     private FileOperationHandler fileOperationHandler;
@@ -122,6 +124,8 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
     }
 
     public void messageArrived(CorruptFileMessage message) {
+        ACTIVITY_LOGGER.info("Received notice that file {} on pool {} is corrupt.",
+                             message.getPnfsId(), message.getPool());
         if (messageGuard.getStatus("CorruptFileMessage", message)
                         == Status.DISABLED) {
             return;
@@ -130,6 +134,8 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
     }
 
     public void messageArrived(PnfsAddCacheLocationMessage message) {
+        ACTIVITY_LOGGER.info("Received notice that pool {} received file {}.",
+                             message.getPoolName(), message.getPnfsId());
         if (messageGuard.getStatus("PnfsAddCacheLocationMessage", message)
                         != Status.EXTERNAL) {
             return;
@@ -138,6 +144,8 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
     }
 
     public void messageArrived(PnfsClearCacheLocationMessage message) {
+        ACTIVITY_LOGGER.info("Received notice that pool {} cleared file {}.",
+                             message.getPoolName(), message.getPnfsId());
         if (messageGuard.getStatus("PnfsClearCacheLocationMessage", message)
                         != Status.EXTERNAL) {
             return;
@@ -146,6 +154,9 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
     }
 
     public void messageArrived(PoolMigrationCopyFinishedMessage message) {
+        ACTIVITY_LOGGER.info("Received notice that transfer {} of file "
+                                             + "{} from {} has finished.",
+                             message.getUUID(), message.getPnfsId(), message.getPool());
         fileOperationHandler.handleMigrationCopyFinished(message);
     }
 
