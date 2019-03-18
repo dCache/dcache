@@ -95,6 +95,8 @@ import org.dcache.resilience.util.MapInitializer;
 public final class PoolInfoChangeHandler implements CellMessageReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(
                     PoolInfoChangeHandler.class);
+    private static final Logger ACTIVITY_LOGGER =
+                    LoggerFactory.getLogger("org.dcache.resilience-log");
 
     private static final String SYNC_ALARM =
                     "Last pool monitor refresh was at %s, elapsed time is "
@@ -125,6 +127,10 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
     }
 
     public void messageArrived(SerializablePoolMonitor monitor) {
+        ACTIVITY_LOGGER.info("Received pool monitor update; enabled {}, "
+                                             + "initialized {}",
+                             enabled, initializer.isInitialized());
+
         if (!enabled) {
             return;
         }
