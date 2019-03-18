@@ -72,7 +72,9 @@ import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.handlers.FileOperationHandler;
@@ -137,12 +139,11 @@ public final class FileOperation {
      */
     static final int WAITING  = 0;     // NEXT TASK READY TO RUN
     static final int RUNNING  = 1;     // TASK SUBMITTED TO THE EXECUTOR
-    static final int DONE     = 2;     // CURRENT TASK SUCCESSFULLY COMPLETED
+    static final int DONE     = 2;     // CURRENT TASK COMPLETED WITHOUT ERROR
     static final int CANCELED = 3;     // CURRENT TASK WAS TERMINATED BY USER
     static final int FAILED   = 4;     // CURRENT TASK FAILED WITH EXCEPTION
-    static final int VOID     = 5;     // NO FURTHER WORK NEEDS TO BE DONE
-    static final int ABORTED  = 6;     // CANNOT DO ANYTHING FURTHER
-    static final int UNINITIALIZED = 7;
+    static final int ABORTED  = 5;     // CANNOT DO ANYTHING FURTHER
+    static final int UNINITIALIZED = 6;
 
     private static final String TO_STRING =
                     "%s (%s %s)(%s %s)(parent %s, count %s, retried %s)";
@@ -320,8 +321,6 @@ public final class FileOperation {
                 return "CANCELED";
             case FAILED:
                 return "FAILED";
-            case VOID:
-                return "VOID";
             case ABORTED:
                 return "ABORTED";
             case UNINITIALIZED:
@@ -510,7 +509,7 @@ public final class FileOperation {
     }
 
     void setLastType() {
-        if (task != null) {
+        if (task != null && getType() != Type.VOID) {
             lastType = task.getTypeValue();
         }
     }
@@ -551,7 +550,6 @@ public final class FileOperation {
             case "DONE":        updateState(DONE);      break;
             case "CANCELED":    updateState(CANCELED);  break;
             case "FAILED":      updateState(FAILED);    break;
-            case "VOID":        updateState(VOID);      break;
             case "ABORTED":     updateState(ABORTED);   break;
             case "UNINITIALIZED":
                 throw new IllegalArgumentException("Cannot set "
@@ -614,7 +612,7 @@ public final class FileOperation {
             if (isInTerminalState()) {
                 return false;
             }
-            updateState(VOID);
+            updateState(DONE);
             opCount = 0;
         }
         retried = 0;
@@ -641,7 +639,7 @@ public final class FileOperation {
     }
 
     private synchronized String lastTypeName() {
-        return lastType == NIL ? "" : Type.values()[lastType].toString();
+        return lastType == NIL ? "NOOP" : Type.values()[lastType].toString();
     }
 
     private int setNilForNull(Integer value) {
