@@ -265,6 +265,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             if (entity == null) {
                 throw new ClientProtocolException("Response contains no content");
             }
+
+            long length = entity.getContentLength();
+            if (length > 0) {
+                _channel.truncate(length);
+            }
             entity.writeTo(Channels.newOutputStream(_channel));
         } catch (SocketTimeoutException e) {
             String message = "socket timeout (received "
