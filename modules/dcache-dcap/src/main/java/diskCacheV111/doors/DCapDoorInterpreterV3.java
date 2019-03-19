@@ -2573,7 +2573,7 @@ public class DCapDoorInterpreterV3
 
     private void sendAsynctoKafka(DoorRequestInfoMessage info) {
 
-        ProducerRecord<String, DoorRequestInfoMessage> record = new ProducerRecord<String, DoorRequestInfoMessage>("billing", info);
+        ProducerRecord<String, DoorRequestInfoMessage> record = new ProducerRecord<String, DoorRequestInfoMessage>(_settings.getKafkaTopic(), info);
         _kafkaProducer.send(record, (rm, e) -> {
             if (e != null) {
                 _log.error("Unable to send message to topic {} on  partition {}: {}",
