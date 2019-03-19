@@ -87,7 +87,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
     private static JsonHttpClient buildClientFromProperties(Properties properties)
     {
-        int soTimeout = (int)TimeUnit.valueOf(HTTP_TIMEOUT_UNIT).toMillis(asInt(properties, HTTP_TIMEOUT));
+        int soTimeout = (int)TimeUnit.valueOf(properties.getProperty(HTTP_TIMEOUT_UNIT))
+                .toMillis(asInt(properties, HTTP_TIMEOUT));
 
         return new JsonHttpClient(asInt(properties, HTTP_CONCURRENT_ACCESS),
                 asInt(properties, HTTP_PER_ROUTE_CONCURRENT_ACCESS),
