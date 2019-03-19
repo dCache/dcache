@@ -114,6 +114,15 @@ public class PathMapper implements CellInfoProvider
     }
 
     /**
+     * Calculate whether the dCache path corresponds to the root path in
+     * the requested URL.
+     */
+    public boolean isDoorRoot(HttpServletRequest request, FsPath path)
+    {
+        return path.equals(effectiveRoot(request, RuntimeException::new));
+    }
+
+    /**
      * Calculate the path that a client would request that would correspond to
      * the supplied dCache path.  This method is the inverse of the
      * {@link #asDcachePath} method.  It is expected that the caller has already
