@@ -53,6 +53,9 @@ public class FtpDoorSettings
     @Option(name = "bootstrap-server-kafka")
     protected String kafkaBootstrapServer;
 
+    @Option(name = "kafka-topic")
+    protected String kafkaTopic;
+
     @Option(name = "kafka-max-block",
             defaultValue = "1")
     protected long kafkaMaxBlock;
@@ -363,6 +366,15 @@ public class FtpDoorSettings
      */
     public String getKafkaBootstrapServer() {
         return kafkaBootstrapServer;
+    }
+
+    /**
+     * Returns name of kafka topic
+     *
+     * @return    kafka topic name
+     */
+    public String getKafkaTopic() {
+        return kafkaTopic;
     }
 
     /**

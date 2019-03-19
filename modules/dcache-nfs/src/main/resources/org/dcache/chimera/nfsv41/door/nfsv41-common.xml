@@ -250,7 +250,7 @@
                 </bean>
             </constructor-arg>
             <constructor-arg name="autoFlush" value="false" />
-            <property name="defaultTopic" value="billing"/>
+            <property name="defaultTopic" value="${nfs.kafka.topic}"/>
             <property name="producerListener" ref="listener"/>
         </bean>
     </beans>
