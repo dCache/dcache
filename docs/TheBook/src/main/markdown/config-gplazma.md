@@ -378,7 +378,7 @@ Please note that the plug-in only supports principals whose assiciated name is a
 
 For the plugin to work, the configuration file has to exist even if it is empty.
 
-After modifying the banfile, you may want to update gplazma.conf to trigger a reload to active the changes. You can test the result with the `explain login` command in the gPlazma cell.
+After modifying the banfile, you may want to update gplazma.conf to trigger a reload to activate the changes. You can test the result with the `explain login` command in the gPlazma cell.
 
 
 Properties
