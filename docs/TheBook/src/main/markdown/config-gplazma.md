@@ -363,7 +363,7 @@ The `banfile` plug-in bans users by their principal class and the associated nam
 Example:
 
     # Ban users by principal
-    alias dn=org.globus.gsi.jaas.GlobusPrincipal
+    alias dn=org.globus.gsi.gssapi.jaas.GlobusPrincipal
     alias kerberos=javax.security.auth.kerberos.KerberosPrincipal
     alias fqan=org.dcache.auth.FQANPrincipal
     alias name=org.dcache.auth.LoginNamePrincipal
