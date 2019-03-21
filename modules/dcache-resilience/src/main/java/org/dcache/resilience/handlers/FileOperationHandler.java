@@ -81,12 +81,15 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
+
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
@@ -130,6 +133,8 @@ import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 public class FileOperationHandler implements CellMessageSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(
                     FileOperationHandler.class);
+    private static final Logger ACTIVITY_LOGGER =
+            LoggerFactory.getLogger("org.dcache.resilience-log");
 
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
                     = ImmutableList.of(
@@ -386,6 +391,14 @@ public class FileOperationHandler implements CellMessageSender {
                              ReplicaState.CACHED, ONLINE_STICKY_RECORD,
                              Collections.EMPTY_LIST, attributes,
                              attributes.getAccessTime());
+        if (ACTIVITY_LOGGER.isInfoEnabled()) {
+            List<String> allPools = list.getPools().stream()
+                    .map(PoolManagerPoolInformation::getName)
+                    .collect(Collectors.toList());
+            ACTIVITY_LOGGER.info("Initiating replication of {} from {} to"
+                    + " pools: {}, offline: {}", pnfsId, source, allPools,
+                    list.getOfflinePools());
+        }
         LOGGER.trace("Created migration task for {}: source {}, list {}.",
                      pnfsId, source, list);
 
@@ -463,6 +476,7 @@ public class FileOperationHandler implements CellMessageSender {
                     CellMessage cellMessage
                                     = new CellMessage(new CellPath(poolManagerAddress),
                                                       msg);
+                    ACTIVITY_LOGGER.info("Staging {}", pnfsId);
                     endpoint.sendMessage(cellMessage);
                     LOGGER.trace("handleStaging, sent select read pool message "
                                                  + "for {} to poolManager.", pnfsId);
@@ -543,6 +557,8 @@ public class FileOperationHandler implements CellMessageSender {
                         CellMessage cellMessage = new CellMessage(
                                         new CellPath(poolManagerAddress),
                                         msg);
+                        ACTIVITY_LOGGER.info("Selecting read pool for file {}"
+                                + " staged to a non-resilient pool", pnfsId);
                         endpoint.sendMessage(cellMessage);
                         LOGGER.trace("handleStagingReply, resent select read pool "
                                                      + "message for {} to poolManager.",
@@ -817,6 +833,7 @@ public class FileOperationHandler implements CellMessageSender {
                                                             pnfsId);
 
         LOGGER.trace("Sending RemoveReplicasMessage {}.", msg);
+        ACTIVITY_LOGGER.info("Removing {} from {}", pnfsId, target);
         Future<RemoveReplicaMessage> future = pools.send(new CellPath(target), msg);
 
         try {
