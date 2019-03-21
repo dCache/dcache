@@ -6,15 +6,15 @@ Table of Contents
 
 * [The Pool Selection Mechanism](#the-pool-selection-mechanism)
 
-     [Links](#links)
-     [Examples](#examples)
+  * [Links](#links)
+  * [Examples](#examples)
 
 * [The Partition Manager](#the-partition-manager)
 
-     [Overview](#overview)
-     [Managing Partitions](#managing-partitions)
-     [Using Partitions](#using-partitions)
-     [Classic Partitions](#classic-partitions)
+  * [Overview](#overview)
+  * [Managing Partitions](#managing-partitions)
+  * [Using Partitions](#using-partitions)
+  * [Classic Partitions](#classic-partitions)
 
 * [Link Groups](#link-groups)
 
