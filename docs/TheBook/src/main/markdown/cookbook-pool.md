@@ -1,21 +1,22 @@
-Chapter 23. Pool OperationsPool Operations
+Chapter 23. Pool Operations
 ==========================================
 
 Table of Contents
 
 + [Checksums](#checksums)
 
-    [How to configure checksum calculation](#how-to-configure-checksum-calculation)
+  * [How to configure checksum calculation](#how-to-configure-checksum-calculation)
 
 + [Migration Module](#migration-module)
 
-    [Overview and Terminology](#overview-and-terminology)
-    [Command Summary](#command-summary)
-    [Examples](#examples)
+  * [Overview and Terminology](#overview-and-terminology)
+  * [Command Summary](#command-summary)
+  * [Examples](#examples)
 
 + [Renaming a Pool](#renaming-a-pool)
 + [Pinning Files to a Pool](#pinning-files-to-a-pool)
 + [Running pool with CEPH backend](#running-pool-with-ceph-backend)
++ [Keeping metadata on MongoDB](#keeping-metadata-on-mongodb)
 
 Checksums
 =========
@@ -184,33 +185,20 @@ migration move
 
 The command `migration move` does the same as the command `migration copy` with the options:
 
--   -smode
-    =
-    delete
-    (default for
-    migration copy
-    is
-    same
-    ).
--   -pins
-    =
-    move
-    (default for
-    migration copy
-    is
-    keep
-    ).
+    -smode=delete
+    (default for migration copy is same).
+    
+    -pins=move
+    (default for migration copy is keep).
 
 additionally it uses the option `-verify`.
 
 migration cache
 The command `migration cache` does the same as the command `migration copy` with the option:
 
--   -tmode
-    =
-    cached
+    -tmode = cached
 
-Jobs are assinged a job ID and are executed in the background. The status of a job may be queried through the `migration info` command. A list of all jobs can be obtained through `migration ls`. Jobs stay in the list even after they have terminated. Terminated jobs can be cleared from the list through the `migration clear` command.
+Jobs are assigned a job ID and are executed in the background. The status of a job may be queried through the `migration info` command. A list of all jobs can be obtained through `migration ls`. Jobs stay in the list even after they have terminated. Terminated jobs can be cleared from the list through the `migration clear` command.
 
 Jobs can be suspended, resumed and cancelled through the `migration suspend`, `migration
         resume` and `migration cancel` commands. Existing tasks are allowed to finish before a job is suspended or cancelled.
@@ -459,6 +447,63 @@ for instance:
     rbd://dcache-pool-A/00000051ADCB3BA14799844556CD3AF0A9DF
 
 The HSM script is responsible to read, write and delete RBD image on GET, PUT and DELETE.
+
+
+Keeping metadata on MongoDB
+===========================
+
+In order to speed up database operations for metadata, dCache pools (starting from version 3.2) can store their metadata on an external MongoDB instance. For production scenarios, a dedicated, performance-optimized and well-maintained MongoDB cluster is required. 
+
+Usage of MongoDB is enabled by setting
+
+    pool.plugins.meta=org.dcache.pool.repository.meta.mongo.MongoDbMetadataRepository
+
+and the connection can be configured through the properties
+
+    pool.plugins.meta.mongo.url=mongodb://localhost:27017
+    pool.plugins.meta.mongo.db=pdm
+    pool.plugins.meta.mongo.collection=poolMetadata
+
+The database will greatly profit from an index on `pnfsid` and `pool`:
+
+    $ mongo <dbhost>:27017
+    >
+    > use pdm
+    > db.poolMetadata.createIndex({"pnfsid": 1," pool": 1})
+
+Apart from performance improvements, storing metadata on MongoDB makes it possible to easily query information about PNFSIDs right from the database. Consider the following examples:
+
+    > db.poolMetadata.findOne({"pool":"dcache-lab003-A", "pnfsid" : "0000526B3EEB9A41453CB9655531A8F4DA99"})
+    {
+    	"_id" : ObjectId("5a97c43d156fad9353c907f8"),
+    	"pnfsid" : "0000526B3EEB9A41453CB9655531A8F4DA99",
+    	"pool" : "dcache-lab003-A",
+    	"version" : 1,
+    	"created" : NumberLong("1519895538832"),
+    	"hsm" : "osm",
+    	"storageClass" : "<Unknown>:<Unknown>",
+    	"size" : NumberLong(1795),
+    	"accessLatency" : "NEARLINE",
+    	"retentionPolicy" : "CUSTODIAL",
+    	"locations" : [ ],
+    	"map" : {
+    		"path" : "/",
+    		"uid" : "0",
+    		"gid" : "0",
+    		"flag-c" : "1:c6620e81"
+    	},
+    	"replicaState" : "PRECIOUS",
+    	"stickyRecords" : {
+    		
+    	}
+    }
+    
+This example shows how to query all files with a given checksum:
+    
+    > db.poolMetadata.find({"map.flag-c" : "1:c6620e81"})
+    { "_id" : ObjectId("59104d3cb7958d3262babcaa"), "pnfsid" : "000096DC6664573C409C8D3308384CC5E25C", "pool" : "dcache-lab001-A", "version" : 1, "created" : NumberLong("1494240165952"), "hsm" : "osm", "storageClass" : "<Unknown>:<Unknown>", "size" : NumberLong(1795), "accessLatency" : "NEARLINE", "retentionPolicy" : "CUSTODIAL", "locations" : [ ], "map" : { "uid" : "3750", "gid" : "1000", "flag-c" : "1:c6620e81" }, "replicaState" : "PRECIOUS", "stickyRecords" : {  } }
+    { "_id" : ObjectId("5a97c43d156fad9353c907f8"), "pnfsid" : "0000526B3EEB9A41453CB9655531A8F4DA99", "pool" : "dcache-lab003-A", "version" : 1, "created" : NumberLong("1519895538832"), "hsm" : "osm", "storageClass" : "<Unknown>:<Unknown>", "size" : NumberLong(1795), "accessLatency" : "NEARLINE", "retentionPolicy" : "CUSTODIAL", "locations" : [ ], "map" : { "path" : "/", "uid" : "0", "gid" : "0", "flag-c" : "1:c6620e81" }, "replicaState" : "PRECIOUS", "stickyRecords" : {  } }
+
 
   [admin interface]: #intouch-admin
   [???]: #in-install-layout
