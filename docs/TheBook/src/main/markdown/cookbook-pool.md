@@ -431,24 +431,26 @@ This command does:
 
 3.  All new copies of the file will become `sticky`.
 
-Running pool with CEPH backend
+Running pools on CEPH backends
 ==============================
 
-dCache pools can be configured to store files on locally mounted file system or use CEPH as a back-end. The property `pool.backend` is used to control which back-end should be used:
+dCache pools can be configured to store files on locally mounted file systems or use CEPH as a back-end. The property `pool.backend` is used to control which back-end should be used:
 
     pool.backend = ceph
 
-dCache uses CEPH's block devices interface, know as `RBD` to store data. The dCache pools one-to-one mapped to CEPH pools. The CEPH pool must be manually created and, if required, configured before dCache can use it.
+dCache uses CEPH's block devices interface, know as `RBD`, to store data. The dCache pools map one-to-one onto CEPH pools. The CEPH pool must be manually created and, if required, configured before dCache can use it.
 
     $ rados mkpool <pool-name>
 
-By default, CEPH pool name expected to match dCache pool name. This can be change as
+By default, the CEPH pool name is expected to match the dCache pool name. This can be changed by using
 
     pool.backend.ceph.pool-name = ceph-pool-to-use
 
-dCache uses locally configured ceph client to operate. The location to client configuration files is controlled by `pool.backend.ceph.config` property and defaults to _/etc/ceph/ceph.conf_.
+dCache uses a locally configured ceph client to operate. The location to client configuration files is controlled by `pool.backend.ceph.config` property and defaults to _/etc/ceph/ceph.conf_.
 
-In order to support HSM with CEPH-backended pools, the HSM script interface provides URI-like syntax to pass file location to the HSM script:
+For authentication, the property `pool.backend.ceph.cluster` is used to set the cluser name to use, and for a cluster name of "CLNAME", the corresponding file `/etc/ceph/ceph.client.CLNAME.keyring` is used as the key ring.
+
+In order to support HSM with CEPH-backended pools, the HSM script interface provides URI-like syntax to pass file locations to the HSM script:
 
     rbd://<ceph-pool>/<pnfsid>
 
