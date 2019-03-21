@@ -5,12 +5,14 @@ Table of Contents
 
 + [Firewall Configuration](#firewall-configuration)
 
-    [Basic Installation](#basic-installations)
-    [Multi-Node with Firewalls](#multi-node-with-firewalls)
+   * [Basic Installation](#basic-installations)
+   * [Multi-Node with Firewalls](#multi-node-with-firewalls)
 
 + [GridFTP Connections via two or more Network Interfaces](#gridftp-connections-cia-two-or-more-network-interfaces)
 
 + [GridFTP with Pools in a Private Subnet](#gridftp-with-pools-in-a-private-subnet)
+
++ [Using IPv6 with dCache](#using-ipv6-with-dcache)
 
 
 This chapter contains solutions for several non-trivial network configurations. The first section discusses the interoperation of dCache with firewalls and does not require any background knowledge about dCache other than what is given in the installation guide ([Chapter 2, Installing dCache](install.md)) and the first steps tutorial ([Chapter 3, Getting to know your dCache](intouch.md). The following sections will deal with more complex network topologies, e.g. private subnets. Even though not every case is covered, these cases might help solve other problems, as well. Intermediate knowledge about dCache is required.
@@ -131,6 +133,47 @@ E.g. if the pools should connect to the secondary interface of the `GridFTP` doo
     ftp.net.internal=10.0.1.1
 
 in the **/etc/dcache/dcache.conf** file.
+
+Using IPv6 with dCache
+======================
+
+dCache does not require any special configuration to use IPv6 addressing. As long as all machines in an instance can be resolved cleanly through DNS, communication will work as expected. However, there are a few caveats that implementors should consider:
+
+#### Use dual addressed interfaces for FTP
+
+For machines reachable through both IPv4 and IPv6, FTP and GridFTP doors must be configured so that both address families use the same physical interface. 
+
+#### Adding addresses
+
+When a new IPv6 address is added for a door, a restart of its domain is *not* required. Doors discover the available IP addresses as part of it publishing its details to SRM, frontend and info-provider.  This is done periodically (every 5 seconds by default).
+
+#### Links, Units and Groups
+
+In an instance that was previously only used with IPv4 addressing, the default 'world-net' [ugroup](config-PoolManager.shtml#link-groups) is likely to only match IPv4 connections. Consider the following situation:
+
+    (local) admin > \sp psu ls -a unit
+    */*  (type=Protocol;canonical=*/*;uGroups=1)
+     uGroupList :
+       any-protocol  (links=0;units=1)
+    *@*  (type=Store;canonical=*@*;uGroups=1) (required=1; onlyOneCopyPer=[])
+     uGroupList :
+       any-store  (links=0;units=1)
+    0.0.0.0/0.0.0.0  (type=Net;canonical=0.0.0.0/0;uGroups=1)
+     uGroupList :
+       world-net  (links=14;units=1)
+
+In order to properly match IPv6 connections, a IPv6 NET unit must be added to any ugroups that need to handle IPv6 traffic, in this example, only the world-net group. This can be done with two admin commands, targeting PoolManager:
+
+    psu create unit -net ::/0
+    psu addto ugroup world-net ::/0
+
+This will update your system live, but these changes will be lost when you next restart the domain hosting poolmanager.  Therefore you must make these changes persistent.
+
+The file /var/lib/dcache/config/poolmanager.conf contains the poolmanager configuration.
+
+If you maintain the contents of this file outside of dCache then you need to add the above two commands in the file.  Take care to add them in the correct order (the `psu addto command must be after the 'world-net' ugroup and the '::/0' unit are created).
+
+If you don't maintain the contents of this file yourself, then simply run the `save` admin command in poolmanager.  This will update the file with the new content.
 
   [???]: #in
   [1]: #intouch
