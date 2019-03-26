@@ -453,6 +453,7 @@ public class Subjects
     {
         Set<Principal> principals = new HashSet<>();
         boolean isPrimaryFqan = true;
+        boolean isPrimaryGid = true;
 
         for(String arg : args) {
             int idx = arg.indexOf(':');
@@ -468,6 +469,10 @@ public class Subjects
             switch (type) {
                 case "dn":
                     principal = new GlobusPrincipal(value);
+                    break;
+                case "gid":
+                    principal = new GidPrincipal(value, isPrimaryGid);
+                    isPrimaryGid = false;
                     break;
                 case "kerberos":
                     principal = new KerberosPrincipal(value);
@@ -487,6 +492,9 @@ public class Subjects
                     break;
                 case "email":
                     principal = new EmailAddressPrincipal(value);
+                    break;
+                case "uid":
+                    principal = new UidPrincipal(value);
                     break;
                 case "user":
                     principal = new UserNamePrincipal(value);
