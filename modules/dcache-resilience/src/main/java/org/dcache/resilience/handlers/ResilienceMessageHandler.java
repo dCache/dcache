@@ -164,7 +164,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
 
     public void messageArrived(CellMessage message, PoolMgrSelectReadPoolMsg reply) {
         ACTIVITY_LOGGER.info("Received notice that file {} has been staged to pool {}",
-                             reply.getPool(),
+                             reply.getPoolName(),
                              reply.getPnfsId());
         if (messageGuard.getStatus("PoolMgrSelectReadPoolMsg", message)
                         == Status.DISABLED) {
