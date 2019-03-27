@@ -80,8 +80,10 @@ public enum PredefinedAlarm implements Alarm {
    BROKEN_FILE,
    CHECKSUM,
    INACCESSIBLE_FILE,
+   LOST_RESILIENT_FILE,
    FAILED_REPLICATION,
-   RESILIENCE_SYNC_FAILURE;
+   RESILIENCE_PM_SYNC_FAILURE,
+   RESILIENCE_LOC_SYNC_ISSUE;
 
    @Override
    public String getType() {
