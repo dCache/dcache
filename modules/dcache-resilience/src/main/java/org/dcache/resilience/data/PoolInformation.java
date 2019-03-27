@@ -160,6 +160,10 @@ final class PoolInformation {
         return canRead() || excluded;
     }
 
+    synchronized boolean isExcluded() {
+        return excluded;
+    }
+
     synchronized boolean isInitialized() {
         return mode != null && tags != null && costInfo != null;
     }
