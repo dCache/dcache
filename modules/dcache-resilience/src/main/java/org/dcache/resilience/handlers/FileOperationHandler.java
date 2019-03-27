@@ -60,12 +60,16 @@ documents or software obtained from this server.
 package org.dcache.resilience.handlers;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -80,7 +84,9 @@ import java.util.stream.Collectors;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.SpreadAndWait;
 import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -136,9 +142,31 @@ public class FileOperationHandler implements CellMessageSender {
     private static final Logger ACTIVITY_LOGGER =
             LoggerFactory.getLogger("org.dcache.resilience-log");
 
+    private static final String INCONSISTENT_LOCATIONS_ALARM
+                    = "Resilience has detected an inconsistency or lag between "
+                    + "the namespace replica locations and the actual locations on disk.";
+
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
                     = ImmutableList.of(
                     new StickyRecord("system", StickyRecord.NON_EXPIRING));
+
+    private static final RateLimiter LIMITER = RateLimiter.create(0.001);
+
+    private static void sendOutOfSyncAlarm() {
+        /*
+         *  Create a new alarm every hour by keying the alarm to
+         *  an hourly timestamp.  Otherwise, the alarm counter will
+         *  just be updated for each alarm sent.  The rate limiter
+         *  will not alarm more than once every 1000 seconds (once every
+         *  15 minutes).
+         */
+        if (LIMITER.tryAcquire()) {
+            LOGGER.warn(AlarmMarkerFactory.getMarker(
+                            PredefinedAlarm.RESILIENCE_LOC_SYNC_ISSUE,
+                            Instant.now().truncatedTo(ChronoUnit.HOURS).toString()),
+                         INCONSISTENT_LOCATIONS_ALARM);
+        }
+    }
 
     /**
      * <p>For communication with the {@link ResilientFileTask}.</p>
@@ -203,8 +231,10 @@ public class FileOperationHandler implements CellMessageSender {
                 return;
             }
 
-            int actual = attributes.getLocations().size();
-            int countable = poolInfoMap.getCountableLocations(attributes.getLocations());
+            Collection<String> locations = attributes.getLocations();
+
+            int actual = locations.size();
+            int countable = poolInfoMap.getCountableLocations(locations);
 
             if (actual <= 1) {
                 /*
@@ -643,13 +673,38 @@ public class FileOperationHandler implements CellMessageSender {
          *  available source file.  So we need the strictly readable
          *  locations, not just "countable" ones.
          */
-        Set<String> readableLocations
+        Set<String> namespaceReadable
                         = poolInfoMap.getReadableLocations(locations);
 
-        LOGGER.trace("handleVerification, {}, readable locations {}", pnfsId,
-                        readableLocations);
+        Set<String> verifiedReadable;
 
-        if (inaccessibleFileHandler.isInaccessible(readableLocations, operation)) {
+        try {
+            verifiedReadable  = verifyLocations(pnfsId,
+                                                namespaceReadable,
+                                                pools);
+        } catch (InterruptedException e) {
+            LOGGER.trace("handleVerification, {}, verify pool "
+                                         + "locations interrupted; "
+                                         + "cancelling operation", pnfsId);
+            completionHandler.taskCancelled(pnfsId);
+            return Type.VOID;
+        }
+
+        LOGGER.trace("handleVerification, {}, namespace readable locations {},"
+                                     + "verified readable locations {}", pnfsId,
+                     namespaceReadable, verifiedReadable);
+
+        if (namespaceReadable.size() != verifiedReadable.size()) {
+            ACTIVITY_LOGGER.info("The namespace is not in sync with the pool "
+                                                 + "repositories for {}: "
+                                                 + "namespace locations "
+                                                 + "that are readable: {}; "
+                                                 + "actually found: {}.",
+                                 pnfsId, namespaceReadable, verifiedReadable);
+            sendOutOfSyncAlarm();
+        }
+
+        if (inaccessibleFileHandler.isInaccessible(verifiedReadable, operation)) {
             LOGGER.trace("handleVerification {}, no readable locations found, "
                                          + "checking to see if "
                                          + "file can be staged.", pnfsId);
@@ -659,9 +714,9 @@ public class FileOperationHandler implements CellMessageSender {
             return inaccessibleFileHandler.handleInaccessibleFile(operation);
         }
 
-        if (shouldEvictALocation(operation, readableLocations)) {
+        if (shouldEvictALocation(operation, verifiedReadable)) {
             LOGGER.trace("handleVerification, location should be evicted {}",
-                         readableLocations);
+                         verifiedReadable);
             return Type.REMOVE;
         }
 
@@ -670,7 +725,7 @@ public class FileOperationHandler implements CellMessageSender {
 
         return determineTypeFromConstraints(operation,
                                             locations,
-                                            readableLocations);
+                                            verifiedReadable);
     }
 
     @Override
@@ -751,13 +806,26 @@ public class FileOperationHandler implements CellMessageSender {
 
         StorageUnitConstraints constraints
                         = poolInfoMap.getStorageUnitConstraints(sindex);
+
+        Set<String> excluded = poolInfoMap.getExcludedLocationNames(locations);
+        readableLocations = Sets.difference(readableLocations, excluded);
+
+        int required = constraints.getRequired();
+        int missing = required - readableLocations.size();
+
         /*
-         *  Countable means readable OR intentionally excluded locations.
-         *  If there are copies missing only from excluded locations,
-         *  do nothing.
+         *  First compute the missing files on the basis of just the readable
+         *  files.  If this is positive, recompute by adding in all the
+         *  excluded locations.  If these satisfy the requirement, void
+         *  the operation.  Do no allow removes in this case, since this
+         *  would imply decreasing already deficient locations.
          */
-        int missing = constraints.getRequired()
-                        - poolInfoMap.getCountableLocations(locations);
+        if (missing > 0) {
+            missing -= excluded.size();
+            if (missing < 0) {
+                missing = 0;
+            }
+        }
 
         Collection<String> tags = constraints.getOneCopyPer();
 
@@ -916,5 +984,31 @@ public class FileOperationHandler implements CellMessageSender {
         LOGGER.trace("shouldTryToStage {}, retention policy is not CUSTODIAL",
                      operation.getPnfsId());
         return false;
+    }
+
+    /*
+     *  REVISIT -- this will be expanded into a more general verification procedure
+     *
+     *  Check the readable pools for the actual existence of the replica.
+     */
+    private Set<String> verifyLocations(PnfsId pnfsId,
+                                        Collection<String> locations,
+                                        CellStub stub)
+                    throws InterruptedException {
+        SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(pools);
+
+        for(String pool: locations) {
+            LOGGER.trace("Sending query to {} to verify replica exists.", pool);
+            PoolCheckFileMessage request = new PoolCheckFileMessage(pool, pnfsId);
+            controller.send(new CellPath(pool), PoolCheckFileMessage.class, request);
+        }
+
+        controller.waitForReplies();
+
+        return controller.getReplies().values()
+                         .stream()
+                         .filter(PoolCheckFileMessage::getHave)
+                         .map(PoolCheckFileMessage::getPoolName)
+                         .collect(Collectors.toSet());
     }
 }
