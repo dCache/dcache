@@ -80,13 +80,13 @@ public final class DefaultInaccessibleFileHandler extends InaccessibleFileHandle
                     + "'inaccessible {}' to produce a list of orphaned pnfsids.";
 
     private static final String MISSING_LOCATIONS_MESSAGE
-                    = "{} has no locations in the namespace. "
+                    = "{} has no locations in the namespace (file is lost). "
                     + "Administrator intervention is required.";
 
     @Override
     protected Type handleNoLocationsForFile(FileOperation operation) {
         PnfsId pnfsId = operation.getPnfsId();
-        LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+        LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOST_RESILIENT_FILE,
                                                   pnfsId.toString()),
                      MISSING_LOCATIONS_MESSAGE, pnfsId);
         String error = String.format("%s has no locations.", pnfsId);
