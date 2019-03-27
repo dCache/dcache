@@ -145,6 +145,20 @@ final class TestStub extends CellStub {
         return future;
     }
 
+    public <T> ListenableFuture<T> send(CellPath destination,
+                                        Serializable message,
+                                        Class<T> type,
+                                        long timeout,
+                                        CellEndpoint.SendFlag... flags) {
+        ListenableFutureTask<T> future;
+        future = ListenableFutureTask.create(() -> {
+            processor.processMessage((Message)message);
+            return type.cast(message);
+        });
+        future.run();
+        return future;
+    }
+
     public void setProcessor(TestMessageProcessor processor) {
         this.processor = processor;
     }
