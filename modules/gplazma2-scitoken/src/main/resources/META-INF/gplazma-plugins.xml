@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>scitoken</name>
+        <class>org.dcache.gplazma.scitoken.SciTokenPlugin</class>
+    </plugin>
+</plugins>

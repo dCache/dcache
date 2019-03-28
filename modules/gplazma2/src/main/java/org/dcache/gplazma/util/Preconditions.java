@@ -14,12 +14,13 @@ public class Preconditions
     /**
      * A utility method that throws an exception if the first argument is false.
      * @param isAuthenticated boolean value.
-     * @param message an explanation of why the exception was thrown.
+     * @param message a message template that explanations why the exception was thrown.
+     * @param args the arguments for the message template.
      * @throws AuthenticationException if isAuthenticated is false
      */
     public static void checkAuthentication(boolean isAuthenticated,
-            String message) throws AuthenticationException
+            String message, Object... args) throws AuthenticationException
     {
-        genericCheck(isAuthenticated, AuthenticationException::new, message);
+        genericCheck(isAuthenticated, AuthenticationException::new, message, args);
     }
 }
