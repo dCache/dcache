@@ -382,6 +382,13 @@ public final class FileUpdate {
          *  Countable means readable OR intentionally excluded locations.
          *  If there are copies missing only from excluded locations,
          *  do nothing.
+         *
+         *  NOTE.  An initial check for consistency with the pools is
+         *         avoided here so as not to block this thread on a
+         *         send and wait.  The locations will be reverified as
+         *         part of the operation logic.  While this means
+         *         operations could unnecessarily be created, it
+         *         ensures more efficient use of the thread resources.
          */
         int countable = poolInfoMap.getCountableLocations(locations);
         count = required - countable;
