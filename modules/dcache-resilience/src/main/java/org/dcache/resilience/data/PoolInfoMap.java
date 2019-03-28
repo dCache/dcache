@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -349,6 +350,22 @@ public class PoolInfoMap {
         }
         return countable;
     }
+
+    public Set<String> getExcludedLocationNames(Collection<String> members) {
+        read.lock();
+        try {
+            return members.stream()
+                          .map(l -> poolInfo.get(getPoolIndex(l)))
+                          .filter(Objects::nonNull)
+                          .filter(PoolInformation::isInitialized)
+                          .filter(PoolInformation::isExcluded)
+                          .map(PoolInformation::getName)
+                          .collect(Collectors.toSet());
+        } finally {
+            read.unlock();
+        }
+    }
+
 
     public String getGroup(Integer group) {
         read.lock();

@@ -316,7 +316,7 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
             String initError = String.format(SYNC_ALARM, new Date(lastRefresh),
                             refreshTimeout, refreshTimeoutUnit);
             LOGGER.error(AlarmMarkerFactory.getMarker(
-                            PredefinedAlarm.RESILIENCE_SYNC_FAILURE,
+                            PredefinedAlarm.RESILIENCE_PM_SYNC_FAILURE,
                             "resilience", String.valueOf(lastRefresh)),
                          initError);
         }
