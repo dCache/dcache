@@ -597,7 +597,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
         NFS4Client client = null;
-        try {
+        try(CDC ignored = CDC.reset(getCellName(), getCellDomainName())) {
 
             FsInode inode = _chimeraVfs.inodeFromBytes(nfsInode.getFileId());
             PnfsId pnfsId = new PnfsId(inode.getId());
@@ -707,10 +707,6 @@ public class NFSv41Door extends AbstractCellComponent implements
             throw asNfsException(e, LayoutTryLaterException.class);
         } catch (InterruptedException e) {
             throw new LayoutTryLaterException(e.getMessage(), e);
-        } finally {
-            CDC.clearMessageContext();
-            NDC.pop();
-            NDC.pop();
         }
 
     }
