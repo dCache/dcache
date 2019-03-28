@@ -64,7 +64,6 @@ import com.google.common.util.concurrent.ListenableFutureTask;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
@@ -135,6 +134,20 @@ final class TestStub extends CellStub {
                     processor.processMessage(message);
                     return message;
                 });
+        future.run();
+        return future;
+    }
+
+    public <T> ListenableFuture<T> send(CellPath destination,
+                                        Serializable message,
+                                        Class<T> type,
+                                        long timeout,
+                                        CellEndpoint.SendFlag... flags) {
+        ListenableFutureTask<T> future;
+        future = ListenableFutureTask.create(() -> {
+            processor.processMessage((Message)message);
+            return type.cast(message);
+        });
         future.run();
         return future;
     }
