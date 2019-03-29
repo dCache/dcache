@@ -58,7 +58,6 @@ import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.OriginTag;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
 import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
 import org.dcache.chimera.namespace.ExtendedInode;
 import org.dcache.chimera.posix.Stat;
@@ -107,12 +106,11 @@ public class Shell extends ShellApplication
         pwd = fs.path2inode(path);
 
 
-        Class<? extends ChimeraOsmStorageInfoExtractor> storageInfoExtractor =
-                Class.forName(extractor).asSubclass(ChimeraOsmStorageInfoExtractor.class);
+        Class<? extends ChimeraStorageInfoExtractable> storageInfoExtractor =
+                Class.forName(extractor).asSubclass(ChimeraStorageInfoExtractable.class);
         Constructor<? extends ChimeraStorageInfoExtractable> constructor = storageInfoExtractor.getConstructor(AccessLatency.class, RetentionPolicy.class);
 
-        this.extractor = (ChimeraStorageInfoExtractable) constructor.newInstance(
-                AccessLatency.getAccessLatency(accessLatency),
+        this.extractor = constructor.newInstance(AccessLatency.getAccessLatency(accessLatency),
                 RetentionPolicy.getRetentionPolicy(retentionPolicy));
     }
 
