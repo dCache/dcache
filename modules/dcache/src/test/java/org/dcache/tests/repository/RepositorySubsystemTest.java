@@ -406,7 +406,7 @@ public class RepositorySubsystemTest
     public void testSetStateFailsBeforeLoad() throws Exception
     {
         repository.init();
-        repository.setState(id1, CACHED);
+        repository.setState(id1, CACHED, "test");
     }
 
     @Test
@@ -514,11 +514,11 @@ public class RepositorySubsystemTest
         stateChangeEvents.clear();
 
         assertCanOpen(id1, size1, PRECIOUS);
-        repository.setState(id1, CACHED);
+        repository.setState(id1, CACHED, "test");
         expectStateChangeEvent(id1, PRECIOUS, CACHED);
         assertCanOpen(id1, size1, CACHED);
 
-        repository.setState(id1, PRECIOUS);
+        repository.setState(id1, PRECIOUS, "test");
         expectStateChangeEvent(id1, CACHED, PRECIOUS);
         assertCanOpen(id1, size1, PRECIOUS);
     }
@@ -532,7 +532,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        repository.setState(id4, CACHED);
+        repository.setState(id4, CACHED, "test");
     }
 
     @Test(expected=IllegalTransitionException.class)
@@ -544,7 +544,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        repository.setState(id1, NEW);
+        repository.setState(id1, NEW, "test");
     }
 
     @Test(expected=IllegalTransitionException.class)
@@ -556,7 +556,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        repository.setState(id1, DESTROYED);
+        repository.setState(id1, DESTROYED, "test");
     }
 
     @Test(expected=IllegalStateException.class)
@@ -659,7 +659,7 @@ public class RepositorySubsystemTest
                 throws IllegalTransitionException,
                        CacheException, InterruptedException
             {
-                repository.setState(id1, REMOVED);
+                repository.setState(id1, REMOVED, "test");
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 expectStateChangeEvent(id1, REMOVED, DESTROYED);
                 assertStep("Cache location cleared", 1);
@@ -691,7 +691,7 @@ public class RepositorySubsystemTest
             {
                 ReplicaDescriptor handle1 =
                     repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
-                repository.setState(id1, REMOVED);
+                repository.setState(id1, REMOVED, "test");
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertNoStateChangeEvent();
                 assertStep("Cache location cleared", 1);
@@ -724,7 +724,7 @@ public class RepositorySubsystemTest
             {
                 ReplicaDescriptor h1 =
                     repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
-                repository.setState(id1, REMOVED);
+                repository.setState(id1, REMOVED, "test");
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertStep("Cache location should have been cleared", 1);
                 ReplicaDescriptor h2 =
@@ -921,12 +921,12 @@ public class RepositorySubsystemTest
 
         SpaceRecord r = repository.getSpaceRecord();
 
-        repository.setState(id1, CACHED);
+        repository.setState(id1, CACHED, "test");
         assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace() - size1, r.getRemovableSpace() + size1);
 
         r = repository.getSpaceRecord();
 
-        repository.setState(id1, CACHED);
+        repository.setState(id1, CACHED, "test");
         assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace(), r.getRemovableSpace());
     }
 
@@ -941,11 +941,11 @@ public class RepositorySubsystemTest
 
         SpaceRecord r = repository.getSpaceRecord();
 
-        repository.setState(id2, PRECIOUS);
+        repository.setState(id2, PRECIOUS, "test");
         assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace() + size2, r.getRemovableSpace() - size2);
 
         r = repository.getSpaceRecord();
-        repository.setState(id2, PRECIOUS);
+        repository.setState(id2, PRECIOUS, "test");
         assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace(), r.getRemovableSpace());
     }
 }

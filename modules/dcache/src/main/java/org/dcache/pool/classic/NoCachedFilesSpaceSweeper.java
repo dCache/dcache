@@ -76,7 +76,8 @@ public class NoCachedFilesSpaceSweeper
                 PnfsId id = event.getPnfsId();
                 CacheEntry entry = event.getNewEntry();
                 if (!entry.isSticky()) {
-                    _repository.setState(id, ReplicaState.REMOVED);
+                    _repository.setState(id, ReplicaState.REMOVED,
+                            "Replica is now cache-only on pool with no-cache policy");
                     _log.debug(entry.getPnfsId() + " : removed.");
                 }
             }

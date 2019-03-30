@@ -63,8 +63,11 @@ import java.util.concurrent.ExecutorService;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+
+import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
+
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
@@ -92,11 +95,12 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
     /**
      * <p>Attempts to set the cache entry to REMOVED for the pnfsid.</p>
      */
-    public Reply messageArrived(RemoveReplicaMessage message) {
+    public Reply messageArrived(CellMessage envelope, RemoveReplicaMessage message) {
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
-                repository.setState(message.getPnfsId(), ReplicaState.REMOVED);
+                repository.setState(message.getPnfsId(), ReplicaState.REMOVED,
+                        "At request of " + envelope.getSourceAddress());
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);

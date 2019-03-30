@@ -930,7 +930,8 @@ public class NearlineStorageHandler
                 notifyNamespace(pnfsId, fileAttributesForNotification);
 
                 try {
-                    repository.setState(pnfsId, ReplicaState.CACHED);
+                    repository.setState(pnfsId, ReplicaState.CACHED,
+                            "file sucessfully flushed");
                 } catch (IllegalTransitionException ignored) {
                     /* Apparently the file is no longer precious. Most
                      * likely it got deleted, which is fine, since the
@@ -1042,7 +1043,8 @@ public class NearlineStorageHandler
         private void removeFile(PnfsId pnfsId)
         {
             try {
-                repository.setState(pnfsId, ReplicaState.REMOVED);
+                repository.setState(pnfsId, ReplicaState.REMOVED,
+                        "file deleted before being flushed");
             } catch (IllegalTransitionException f) {
                 LOGGER.warn("File not found in name space, but failed to remove {}: {}",
                             pnfsId, f.getMessage());

@@ -901,7 +901,8 @@ public class Job
                 break;
             case DELETE:
                 if (!isPinned(entry)) {
-                    repository.setState(pnfsId, ReplicaState.REMOVED);
+                    repository.setState(pnfsId, ReplicaState.REMOVED,
+                            "migration job deleting source");
                     break;
                 }
                 // Fall through
@@ -914,14 +915,17 @@ public class Job
                         repository.setSticky(pnfsId, owner, 0, true);
                     }
                 }
-                repository.setState(pnfsId, ReplicaState.CACHED);
+                repository.setState(pnfsId, ReplicaState.CACHED,
+                        "migration job making source removable");
                 break;
             case CACHED:
                 applySticky(pnfsId, mode.stickyRecords);
-                repository.setState(pnfsId, ReplicaState.CACHED);
+                repository.setState(pnfsId, ReplicaState.CACHED,
+                        "migration job making source cached");
                 break;
             case PRECIOUS:
-                repository.setState(pnfsId, ReplicaState.PRECIOUS);
+                repository.setState(pnfsId, ReplicaState.PRECIOUS,
+                        "migration job making source precious");
                 applySticky(pnfsId, mode.stickyRecords);
                 break;
             }

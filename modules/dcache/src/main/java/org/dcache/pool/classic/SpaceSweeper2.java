@@ -202,7 +202,7 @@ public class SpaceSweeper2
                 public void run()
                 {
                     try {
-                        long bytes = reclaim(Long.MAX_VALUE);
+                        long bytes = reclaim(Long.MAX_VALUE, "'sweeper purge' command");
                         _log.info("'sweeper purge' reclaimed {} bytes.", bytes);
                     } catch (InterruptedException e) {
                     }
@@ -228,7 +228,7 @@ public class SpaceSweeper2
                 public void run()
                 {
                     try {
-                        long bytes = reclaim(bytesToFree);
+                        long bytes = reclaim(bytesToFree, "'sweeper free' command");
                         _log.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
                     } catch (InterruptedException e) {
                     }
@@ -362,7 +362,7 @@ public class SpaceSweeper2
         }
     }
 
-    private long reclaim(long amount)
+    private long reclaim(long amount, String why)
         throws InterruptedException
     {
         _log.debug("Sweeper tries to reclaim {} bytes.", amount);
@@ -392,7 +392,7 @@ public class SpaceSweeper2
 
                 long size = entry.getReplicaSize();
                 _log.debug("Sweeper removes {}.", id);
-                _repository.setState(id, ReplicaState.REMOVED);
+                _repository.setState(id, ReplicaState.REMOVED, why);
                 deleted += size;
             } catch (IllegalTransitionException | FileNotInCacheException e) {
                 /* Normal if file got removed just as we wanted to
@@ -432,7 +432,7 @@ public class SpaceSweeper2
     {
         try {
             while (true) {
-                if (reclaim(waitForRequests()) == 0) {
+                if (reclaim(waitForRequests(), "sweeper making space for new data") == 0) {
                     /* The list maintained by the sweeper is imperfect
                      * in the sense that it can contain locked entries
                      * or entries in use. Thus we could be caught in a

@@ -465,7 +465,8 @@ public class ChecksumScanner
                                     poolName,
                                     e.getMessage());
                     try {
-                        _repository.setState(id, ReplicaState.BROKEN);
+                        _repository.setState(id, ReplicaState.BROKEN,
+                                "scrubber found checksum inconsistency");
                     } catch (CacheException f) {
                         _log.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
                     }

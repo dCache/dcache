@@ -1208,8 +1208,8 @@ public class PoolV4
         return msg;
     }
 
-    public Reply messageArrived(PoolRemoveFilesMessage msg)
-        throws CacheException
+    public Reply messageArrived(CellMessage envelope, PoolRemoveFilesMessage msg)
+            throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
             LOGGER.warn("PoolRemoveFilesMessage request rejected due to {}", _poolMode);
@@ -1217,7 +1217,7 @@ public class PoolV4
         }
 
         List<ListenableFutureTask<String>> tasks = Stream.of(msg.getFiles())
-                .map(file -> ListenableFutureTask.create(() -> remove(file))).collect(toList());
+                .map(file -> ListenableFutureTask.create(() -> remove(file, envelope.getSourceAddress().toString()))).collect(toList());
         tasks.forEach(_executor::execute);
         MessageReply<PoolRemoveFilesMessage> reply = new MessageReply<>();
         Futures.addCallback(Futures.allAsList(tasks),
@@ -1244,7 +1244,7 @@ public class PoolV4
         return reply;
     }
 
-    private String remove(String file) throws CacheException, InterruptedException
+    private String remove(String file, String requestor) throws CacheException, InterruptedException
     {
         try {
             PnfsId pnfsId = new PnfsId(file);
@@ -1253,7 +1253,7 @@ public class PoolV4
                 LOGGER.error("Replica {} kept (precious)", file);
                 return file;
             } else {
-                _repository.setState(pnfsId, ReplicaState.REMOVED);
+                _repository.setState(pnfsId, ReplicaState.REMOVED, "At request of " + requestor);
                 return null;
             }
         } catch (IllegalTransitionException e) {
@@ -1262,22 +1262,22 @@ public class PoolV4
         }
     }
 
-    public PoolModifyPersistencyMessage
-        messageArrived(PoolModifyPersistencyMessage msg)
+    public PoolModifyPersistencyMessage messageArrived(CellMessage envelope,
+            PoolModifyPersistencyMessage msg)
     {
         try {
             PnfsId pnfsId = msg.getPnfsId();
             switch (_repository.getState(pnfsId)) {
             case PRECIOUS:
                 if (msg.isCached()) {
-                    _repository.setState(pnfsId, ReplicaState.CACHED);
+                    _repository.setState(pnfsId, ReplicaState.CACHED, "At request of " + envelope.getSourceAddress());
                 }
                 msg.setSucceeded();
                 break;
 
             case CACHED:
                 if (msg.isPrecious()) {
-                    _repository.setState(pnfsId, ReplicaState.PRECIOUS);
+                    _repository.setState(pnfsId, ReplicaState.PRECIOUS, "At request of " + envelope.getSourceAddress());
                 }
                 msg.setSucceeded();
                 break;
@@ -1638,7 +1638,7 @@ public class PoolV4
                 _pnfs.addCacheLocation(id);
             } catch (FileNotFoundCacheException e) {
                 try {
-                    _repository.setState(id, ReplicaState.REMOVED);
+                    _repository.setState(id, ReplicaState.REMOVED, "PnfsManager claimed file not found during 'pnfs register' command");
                     LOGGER.info("File not found in PNFS; removed {}", id);
                 } catch (InterruptedException | CacheException f) {
                     LOGGER.error("File not found in PNFS, but failed to remove {}: {}", id, f);

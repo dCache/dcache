@@ -781,7 +781,7 @@ public class ReplicaRepository
     }
 
     @Override
-    public void setState(PnfsId id, ReplicaState state)
+    public void setState(PnfsId id, ReplicaState state, String why)
         throws IllegalArgumentException, InterruptedException, CacheException
     {
         if (id == null) {

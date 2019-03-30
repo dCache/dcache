@@ -171,12 +171,13 @@ public interface Repository
      *
      * @param id a PNFS ID
      * @param state an entry state
+     * @param why the reason the transition is taking place
      * @throws IllegalTransitionException if the transition is illegal.
      * @throws IllegalArgumentException if <code>id</code> is null.
      * @throws InterruptedException if thread was interrupted
      * @throws CacheException in case of other errors
      */
-    void setState(PnfsId id, ReplicaState state)
+    void setState(PnfsId id, ReplicaState state, String why)
         throws IllegalArgumentException, IllegalTransitionException, InterruptedException, CacheException;
 
     /**

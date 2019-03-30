@@ -349,7 +349,8 @@ public class RepositoryInterpreter
                     if (fileAttributes.isDefined(FileAttribute.STORAGECLASS)) {
                         String sc = fileAttributes.getStorageClass();
                         if (sc.equals(storageClassName)) {
-                            _repository.setState(id, ReplicaState.REMOVED);
+                            _repository.setState(id, ReplicaState.REMOVED,
+                                    "'rep rmclass' command");
                             cnt++;
                         }
                     }
@@ -388,7 +389,8 @@ public class RepositoryInterpreter
             CacheEntry entry = _repository.getEntry(pnfsId);
             if (isForced || entry.getState() == ReplicaState.CACHED && !entry.isSticky()) {
                 _log.warn("rep rm: removing {}", pnfsId);
-                _repository.setState(pnfsId, ReplicaState.REMOVED);
+                _repository.setState(pnfsId, ReplicaState.REMOVED,
+                        "'rep rm' command");
                 return "Removed " + pnfsId;
             } else {
                 return "File is not removable; use -force to override";
@@ -407,7 +409,8 @@ public class RepositoryInterpreter
         @Override
         public String call() throws IllegalArgumentException, IllegalTransitionException, InterruptedException, CacheException
         {
-            _repository.setState(pnfsId, ReplicaState.PRECIOUS);
+            _repository.setState(pnfsId, ReplicaState.PRECIOUS,
+                    "'rep set precious' command");
             return "";
         }
     }
@@ -424,7 +427,8 @@ public class RepositoryInterpreter
         @Override
         public String call() throws IllegalArgumentException, IllegalTransitionException, InterruptedException, CacheException
         {
-            _repository.setState(pnfsId, ReplicaState.CACHED);
+            _repository.setState(pnfsId, ReplicaState.CACHED,
+                    "'rep set cached' command");
             return "";
         }
     }
@@ -440,7 +444,8 @@ public class RepositoryInterpreter
         @Override
         public String call() throws IllegalArgumentException, IllegalTransitionException, InterruptedException, CacheException
         {
-            _repository.setState(pnfsId, ReplicaState.BROKEN);
+            _repository.setState(pnfsId, ReplicaState.BROKEN,
+                    "'rep set broken' command");
             return "";
         }
     }

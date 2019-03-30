@@ -308,7 +308,8 @@ public class MigrationModuleServer
                 switch (state) {
                 case CACHED:
                     if (_targetState == PRECIOUS) {
-                        _repository.setState(_pnfsId, PRECIOUS);
+                        _repository.setState(_pnfsId, PRECIOUS,
+                                "migration request from " + _requestor.getSourceAddress());
                     }
                     // fall through
                 case PRECIOUS:
