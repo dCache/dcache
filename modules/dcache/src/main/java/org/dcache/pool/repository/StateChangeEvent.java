@@ -9,9 +9,9 @@ public class StateChangeEvent extends EntryChangeEvent
     private final ReplicaState _oldState;
     private final ReplicaState _newState;
 
-    public StateChangeEvent(CacheEntry oldEntry, CacheEntry newEntry, ReplicaState oldState, ReplicaState newState)
+    public StateChangeEvent(String why, CacheEntry oldEntry, CacheEntry newEntry, ReplicaState oldState, ReplicaState newState)
     {
-        super(oldEntry, newEntry);
+        super(why, oldEntry, newEntry);
         _oldState = oldState;
         _newState = newState;
     }

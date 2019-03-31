@@ -6,9 +6,9 @@ package org.dcache.pool.repository;
  */
 public class StickyChangeEvent extends EntryChangeEvent
 {
-    public StickyChangeEvent(CacheEntry oldEntry, CacheEntry newEntry)
+    public StickyChangeEvent(String why, CacheEntry oldEntry, CacheEntry newEntry)
     {
-        super(oldEntry, newEntry);
+        super(why, oldEntry, newEntry);
     }
 
     public String toString()

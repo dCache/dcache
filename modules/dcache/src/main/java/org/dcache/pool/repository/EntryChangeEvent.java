@@ -10,11 +10,13 @@ public class EntryChangeEvent
 {
     protected final CacheEntry oldEntry;
     protected final CacheEntry newEntry;
+    protected final String why;
 
-    public EntryChangeEvent(CacheEntry oldEntry, CacheEntry newEntry)
+    public EntryChangeEvent(String why, CacheEntry oldEntry, CacheEntry newEntry)
     {
         this.oldEntry = oldEntry;
         this.newEntry = newEntry;
+        this.why = why;
     }
 
     public PnfsId getPnfsId()
@@ -30,6 +32,11 @@ public class EntryChangeEvent
     public CacheEntry getNewEntry()
     {
         return newEntry;
+    }
+
+    public String getWhy()
+    {
+        return why;
     }
 
     public String toString()

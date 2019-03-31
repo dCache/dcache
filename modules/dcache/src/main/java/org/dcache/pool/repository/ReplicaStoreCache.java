@@ -117,7 +117,7 @@ public class ReplicaStoreCache
                 }
                 CacheEntry entry = new CacheEntryImpl(_record);
                 _stateChangeListener.stateChanged(
-                        new StateChangeEvent(entry, entry, NEW, _record.getState()));
+                        new StateChangeEvent("loading CacheEntry", entry, entry, NEW, _record.getState()));
             }
             return this;
         }
@@ -151,7 +151,7 @@ public class ReplicaStoreCache
                 _inner.remove(_id);
                 _entries.remove(_id);
                 _stateChangeListener.stateChanged(
-                        new StateChangeEvent(entry, entry, entry.getState(), DESTROYED));
+                        new StateChangeEvent(why, entry, entry, entry.getState(), DESTROYED));
             } catch (DiskErrorCacheException | RuntimeException e) {
                 _faultListener.faultOccurred(
                         new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
@@ -318,7 +318,7 @@ public class ReplicaStoreCache
                 Collection<StickyRecord> removed = _record.removeExpiredStickyFlags();
                 if (!removed.isEmpty()) {
                     CacheEntryImpl newEntry = new CacheEntryImpl(_record);
-                    _stateChangeListener.stickyChanged(new StickyChangeEvent(oldEntry, newEntry));
+                    _stateChangeListener.stickyChanged(new StickyChangeEvent("sticky has expired", oldEntry, newEntry));
                 }
                 return removed;
             } catch (RuntimeException | DiskErrorCacheException e) {
@@ -357,7 +357,7 @@ public class ReplicaStoreCache
                                         if (changed) {
                                             CacheEntryImpl newEntry = new CacheEntryImpl(_record);
                                             _stateChangeListener.stickyChanged(
-                                                    new StickyChangeEvent(oldEntry, newEntry));
+                                                    new StickyChangeEvent(why, oldEntry, newEntry));
                                         }
                                         return changed;
                                     }
@@ -370,7 +370,7 @@ public class ReplicaStoreCache
                                             r.setState(state);
                                             CacheEntry newEntry = new CacheEntryImpl(_record);
                                             _stateChangeListener.stateChanged(
-                                                    new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(),
+                                                    new StateChangeEvent(why, oldEntry, newEntry, oldEntry.getState(),
                                                                          newEntry.getState()));
                                         }
                                         return null;
