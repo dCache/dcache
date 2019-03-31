@@ -78,11 +78,12 @@ public class NoCachedFilesSpaceSweeper
                 if (!entry.isSticky()) {
                     _repository.setState(id, ReplicaState.REMOVED,
                             "Replica is now cache-only on pool with no-cache policy");
-                    _log.debug(entry.getPnfsId() + " : removed.");
+                    _log.debug(entry.getPnfsId() + " removed: {}", event.getWhy());
                 }
             }
         } catch (InterruptedException | CacheException e) {
-            _log.warn("Failed to remove entry from repository: {}", e.getMessage() );
+            _log.warn("Failed to remove entry from repository ({}): {}",
+                    event.getWhy(), e.getMessage() );
         }
     }
 }

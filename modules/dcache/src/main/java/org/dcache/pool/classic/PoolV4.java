@@ -658,6 +658,7 @@ public class PoolV4
                 msg.setFileSize(entry.getReplicaSize());
                 msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
                 msg.setSubject(Subjects.ROOT);
+                msg.setResult(0, event.getWhy());
                 _billingStub.notify(msg);
 
                 _kafkaSender.accept(msg);

@@ -381,7 +381,7 @@ public class ReplicaRepository
                     switch (event.getNewState()) {
                     case REMOVED:
                         if (event.getOldState() != NEW) {
-                            LOGGER.info("remove entry for: {}", id);
+                            LOGGER.info("remove entry {}: {}", id, event.getWhy());
                         }
 
                         _pnfs.clearCacheLocation(id, _volatile);
