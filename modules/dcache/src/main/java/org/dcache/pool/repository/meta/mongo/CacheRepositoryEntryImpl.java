@@ -324,7 +324,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public synchronized <T> T update(Update<T> update) throws CacheException {
+    public synchronized <T> T update(String why, Update<T> update) throws CacheException {
         return update.apply(this);
     }
 }

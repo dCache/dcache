@@ -84,7 +84,7 @@ public class ConsistentReplicaStoreTest
         throws DuplicateEntryException, CacheException
     {
         ReplicaRecord entry = _replicaStore.create(attributes.getPnfsId(), EnumSet.noneOf(Repository.OpenFlags.class));
-        entry.update(r -> {
+        entry.update("preparing for test", r -> {
             r.setState(state);
             r.setFileAttributes(attributes);
             return null;

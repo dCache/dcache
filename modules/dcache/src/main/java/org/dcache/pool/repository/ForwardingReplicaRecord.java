@@ -126,8 +126,8 @@ public abstract class ForwardingReplicaRecord implements ReplicaRecord
     }
 
     @Override
-    public <T> T update(Update<T> update) throws CacheException
+    public <T> T update(String why, Update<T> update) throws CacheException
     {
-        return delegate().update(update);
+        return delegate().update(why, update);
     }
 }

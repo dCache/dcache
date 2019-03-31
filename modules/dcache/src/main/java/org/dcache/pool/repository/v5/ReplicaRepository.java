@@ -600,7 +600,7 @@ public class ReplicaRepository
             LOGGER.info("Creating new entry for {}", id);
 
             ReplicaRecord entry = _store.create(id, flags);
-            return entry.update(r -> {
+            return entry.update("Creating new replica", r -> {
                 r.setFileAttributes(fileAttributes);
                 r.setState(transferState);
                 return new WriteHandleImpl(this, buildAllocator(flags, maximumSize), _pnfs,
@@ -673,7 +673,8 @@ public class ReplicaRepository
              */
             try {
                 ReplicaRecord entry = _store.create(id, EnumSet.noneOf(OpenFlags.class));
-                entry.update(r -> r.setState(REMOVED));
+                entry.update("Removing replica created to recover from unknown open request",
+                        r -> r.setState(REMOVED));
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
             } catch (CacheException | RuntimeException f) {
@@ -729,7 +730,8 @@ public class ReplicaRepository
                  */
                 try {
                     entry = _store.create(id, EnumSet.noneOf(OpenFlags.class));
-                    entry.update(r -> r.setState(REMOVED));
+                    entry.update("Removing replica created to recover from unknown setSticky request",
+                            r -> r.setState(REMOVED));
                 } catch (DuplicateEntryException concurrentCreation) {
                     setSticky(id, owner, expire, overwrite);
                     return;
@@ -739,7 +741,7 @@ public class ReplicaRepository
                 throw e;
             }
 
-            entry.update(r -> {
+            entry.update("Setting " + owner + " sticky", r -> {
                 switch (r.getState()) {
                 case NEW:
                 case FROM_CLIENT:
@@ -794,7 +796,7 @@ public class ReplicaRepository
 
             try {
                 ReplicaRecord entry = getReplicaRecord(id);
-                entry.update(r -> {
+                entry.update(why, r -> {
                     ReplicaState source = r.getState();
                     switch (source) {
                     case NEW:

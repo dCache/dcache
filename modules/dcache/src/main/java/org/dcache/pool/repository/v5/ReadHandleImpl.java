@@ -104,7 +104,8 @@ class ReadHandleImpl implements ReplicaDescriptor
                 _fileAttributes = _entry.getFileAttributes();
                 if (_fileAttributes.isUndefined(FileAttribute.CHECKSUM)) {
                     _fileAttributes.setChecksums(checksums);
-                    _entry.update(r -> r.setFileAttributes(_fileAttributes));
+                    _entry.update("Adding checksums from namespace",
+                            r -> r.setFileAttributes(_fileAttributes));
                 }
             }
         }

@@ -141,7 +141,8 @@ public class ConsistentReplicaStore
                 Thread.currentThread().interrupt();
                 throw new CacheException("Pool is shutting down", e);
             } catch (CacheException | NoSuchAlgorithmException e) {
-                entry.update(r -> r.setState(ReplicaState.BROKEN));
+                entry.update("Failed to recover replica: " + e.getMessage(),
+                        r -> r.setState(ReplicaState.BROKEN));
                 _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                 id.toString(), _poolName),
                         "Marked {} bad: {}.", id, e.getMessage());
@@ -268,7 +269,7 @@ public class ConsistentReplicaStore
                         _replicaStatePolicy.getTargetState(attributesInNameSpace);
                 List<StickyRecord> stickyRecords =
                         _replicaStatePolicy.getStickyRecords(attributesInNameSpace);
-                entry.update(r -> {
+                entry.update("Recovering newly uploaded file", r -> {
                     r.setFileAttributes(attributesInNameSpace);
                     for (StickyRecord record : stickyRecords) {
                         r.setSticky(record.owner(), record.expire(), false);
@@ -278,7 +279,8 @@ public class ConsistentReplicaStore
                 });
                 _log.warn("Recovering: Marked {} as {}.", id, targetState);
             } else {
-                entry.update(r -> r.setFileAttributes(attributesInNameSpace));
+                entry.update("Recovering " + state + " replica",
+                        r -> r.setFileAttributes(attributesInNameSpace));
             }
 
             return entry;

@@ -3,10 +3,8 @@ package org.dcache.pool.repository.meta.db;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.sleepycat.collections.TransactionWorker;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
-import com.sleepycat.je.Transaction;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,7 +231,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     @Override
     public Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
     {
-        return update(r -> {
+        return update("removing expired sticky", r -> {
             long now = System.currentTimeMillis();
             List<StickyRecord> removed = Lists.newArrayList(filter(_sticky, s -> !s.isValidAt(now)));
             if (!removed.isEmpty()) {
@@ -249,7 +247,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     }
 
     @Override
-    public synchronized <T> T update(Update<T> update) throws CacheException
+    public synchronized <T> T update(String why, Update<T> update) throws CacheException
     {
         AtomicReference<T> result = new AtomicReference<>();
         ReplicaState state = _state;

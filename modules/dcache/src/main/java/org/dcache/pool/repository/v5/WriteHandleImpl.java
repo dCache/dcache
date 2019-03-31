@@ -217,7 +217,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                 }
             } while (!namespaceUpdated);
 
-            _entry.update(r -> {
+            _entry.update("Committing new file", r -> {
                 r.setFileAttributes(_fileAttributes);
                 /* In several situations, dCache requests a CACHED file
                  * without having any sticky flags on it. Such files are
@@ -258,13 +258,14 @@ class WriteHandleImpl implements ReplicaDescriptor
      */
     private synchronized void fail()
     {
-
+        String why = null;
         /* Files from tape or from another pool are deleted in case of
          * errors.
          */
         if (_initialState == ReplicaState.FROM_POOL ||
             _initialState == ReplicaState.FROM_STORE) {
             _targetState = ReplicaState.REMOVED;
+            why = "replica is " + _initialState;
         }
 
         /* If nothing was uploaded, we delete the replica and leave the name space
@@ -273,6 +274,9 @@ class WriteHandleImpl implements ReplicaDescriptor
         long length = _entry.getReplicaSize();
         if (length == 0) {
             _targetState = ReplicaState.REMOVED;
+            if (why == null) {
+                why = "replica is empty";
+            }
         }
 
         /* Unless replica is to be removed, register cache location and
@@ -290,6 +294,7 @@ class WriteHandleImpl implements ReplicaDescriptor
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
                     _targetState = ReplicaState.REMOVED;
+                    why = "file no longer exists in namespace";
                 } else {
                     _log.warn("Failed to register {} after failed replica creation: {}",
                             _fileAttributes, e.getMessage());
@@ -299,7 +304,8 @@ class WriteHandleImpl implements ReplicaDescriptor
 
         if (_targetState == ReplicaState.REMOVED) {
             try {
-                _entry.update(r -> r.setState(ReplicaState.REMOVED));
+                String reason = why == null ? "Transfer failed" : "Transfer failed and " + why;
+                _entry.update(reason, r -> r.setState(ReplicaState.REMOVED));
             } catch (CacheException e) {
                 _log.warn("Failed to remove replica: {}", e.getMessage());
             }
@@ -312,7 +318,8 @@ class WriteHandleImpl implements ReplicaDescriptor
                       _entry.getPnfsId(),
                       _repository.getPoolName());
             try {
-                _entry.update(r -> r.setState(ReplicaState.BROKEN));
+                _entry.update("Transfer failed for " + _initialState + " replica",
+                        r -> r.setState(ReplicaState.BROKEN));
             } catch (CacheException e) {
                 _log.warn("Failed to mark replica as broken: {}", e.getMessage());
             }

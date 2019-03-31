@@ -142,12 +142,12 @@ public class ReplicaStoreCache
         }
 
         @GuardedBy("this")
-        private void destroy()
+        private void destroy(String why)
         {
             assert _entries.get(_id) == this;
             try {
                 CacheEntry entry = new CacheEntryImpl(_record);
-                _record.update(r -> r.setState(DESTROYED));
+                _record.update(why, r -> r.setState(DESTROYED));
                 _inner.remove(_id);
                 _entries.remove(_id);
                 _stateChangeListener.stateChanged(
@@ -269,7 +269,7 @@ public class ReplicaStoreCache
         {
             int cnt = _record.decrementLinkCount();
             if (cnt == 0 && _record.getState() == ReplicaState.REMOVED) {
-                destroy();
+                destroy("REMOVED replica no longer being used");
             }
             return cnt;
         }
@@ -341,10 +341,10 @@ public class ReplicaStoreCache
         }
 
         @Override
-        public synchronized <T> T update(Update<T> update) throws CacheException
+        public synchronized <T> T update(String why, Update<T> update) throws CacheException
         {
             try {
-                T result = _record.update(
+                T result = _record.update(why,
                         r -> update.apply(
                                 new UpdatableRecord()
                                 {
@@ -401,7 +401,7 @@ public class ReplicaStoreCache
                                     }
                                 }));
                 if (_record.getLinkCount() == 0 && _record.getState() == ReplicaState.REMOVED) {
-                    destroy();
+                    destroy("Idle replica marked REMOVED");
                 }
                 return result;
             } catch (IllegalArgumentException | IllegalStateException e) {

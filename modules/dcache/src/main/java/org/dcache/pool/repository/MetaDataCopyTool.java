@@ -66,18 +66,19 @@ public class MetaDataCopyTool
                     System.err.println("Failed to load " + id);
                     System.exit(1);
                 }
-                toStore.create(id, EnumSet.noneOf(Repository.OpenFlags.class)).update(r -> {
-                    /* NOTE: We do not copy the last access time, as this is currently stored
-                     * as the last modification time on the data file. If we at some point move
-                     * the last access time into the meta data, this has to be updated here.
-                     */
-                    r.setState(entry.getState());
-                    for (StickyRecord s : entry.stickyRecords()) {
-                        r.setSticky(s.owner(), s.expire(), true);
-                    }
-                    r.setFileAttributes(entry.getFileAttributes());
-                    return null;
-                });
+                toStore.create(id, EnumSet.noneOf(Repository.OpenFlags.class)).update(
+                        "copying existing entry", r -> {
+                            /* NOTE: We do not copy the last access time, as this is currently stored
+                             * as the last modification time on the data file. If we at some point move
+                             * the last access time into the meta data, this has to be updated here.
+                             */
+                            r.setState(entry.getState());
+                            for (StickyRecord s : entry.stickyRecords()) {
+                                r.setSticky(s.owner(), s.expire(), true);
+                            }
+                            r.setFileAttributes(entry.getFileAttributes());
+                            return null;
+                        });
                 count++;
             }
         }

@@ -87,10 +87,11 @@ public interface ReplicaRecord
      * callback should be fast and with minimal access to other resources to
      * avoid the risk of causing deadlocks.
      *
+     * @param why An explanation why this update was needed.
+     * @param update The changes to apply concurrently.
      * @return The return value of {@code Update#apply}
-     * @param update
      */
-    <T> T update(Update<T> update) throws CacheException;
+    <T> T update(String why, Update<T> update) throws CacheException;
 
     /**
      * Callback interface used by {@code update}.
