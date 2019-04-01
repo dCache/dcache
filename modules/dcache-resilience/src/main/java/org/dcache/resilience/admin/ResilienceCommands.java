@@ -1063,6 +1063,7 @@ public final class ResilienceCommands implements CellCommandListener {
                     new Thread(() -> {
                         poolOperationMap.loadPools();
                         poolOperationMap.initialize();
+                        poolOperationMap.updateInitialized();
                     }).start();
                     return "Consumer initialization and pool reload started.";
                 case SHUTDOWN:
