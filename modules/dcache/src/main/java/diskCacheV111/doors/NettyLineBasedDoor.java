@@ -35,6 +35,7 @@ import io.netty.handler.codec.string.LineEncoder;
 import io.netty.handler.codec.string.LineSeparator;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,6 +220,12 @@ public class NettyLineBasedDoor
         }
         if (interpreter instanceof CellMessageReceiver) {
             addMessageListener((CellMessageReceiver) interpreter);
+        }
+        if (interpreter instanceof TlsStarter) {
+            ((TlsStarter)interpreter).setTlsStarter(e -> {
+                        e.setUseClientMode(false);
+                        ctx.pipeline().addFirst("tls", new SslHandler(e, true));
+                    });
         }
         start().get(); // Blocking to prevent that we process any commands before the cell is alive
     }

@@ -465,7 +465,7 @@ public abstract class AbstractFtpDoorV1
 
     public enum ReplyType
     {
-        CLEAR, MIC, ENC, CONF
+        CLEAR, MIC, ENC, CONF, TLS
     }
 
     protected class CommandRequest
@@ -500,14 +500,14 @@ public abstract class AbstractFtpDoorV1
                 arg = commandLine.length() > l + 1 ? commandLine.substring(l + 1) : "";
                 method = _methodDict.get(name);
 
-                this.commandLine = name.equals("pass") && !arg.isEmpty()
+                this.commandLine = (name.equals("adat") || name.equals("pass")) && !arg.isEmpty()
                         ? commandLine.substring(0, 4) + " ..."
                         : commandLine;
 
                 if (replyType == ReplyType.CLEAR) {
-                    commandLineDescription = commandLine;
+                    commandLineDescription = this.commandLine;
                 } else {
-                    commandLineDescription = replyType.name() + "{" + commandLine + "}";
+                    commandLineDescription = replyType.name() + "{" + this.commandLine + "}";
                 }
             }
 
@@ -1890,6 +1890,7 @@ public abstract class AbstractFtpDoorV1
 
             switch (_isHello ? ReplyType.CLEAR : request.getReplyType()) {
             case CLEAR:
+            case TLS:
                 println(answer);
                 break;
             case MIC:
@@ -1927,18 +1928,7 @@ public abstract class AbstractFtpDoorV1
                 if (request.getReplyType() != ReplyType.CLEAR) {
                     response = request.getReplyType().name() + "{" + response + "}";
                 }
-
-                String commandLine = request.getCommandLineDescription();
-
-                if (request.getName() != null) {
-                    // For some commands we don't want to log the arguments.
-                    String name = request.getName();
-                    if (name.equals("adat") || name.equals("pass")) {
-                        commandLine = name.toUpperCase() + " ...";
-                    }
-                }
-
-                log.addInQuotes("command", commandLine);
+                log.addInQuotes("command", request.getCommandLineDescription());
             }
             if (_subject != null && !_subjectLogged) {
                 logSubject(log, _subject);
@@ -1971,6 +1961,13 @@ public abstract class AbstractFtpDoorV1
     {
         StringBuilder builder = new StringBuilder();
         builder.append("211-OK\r\n");
+        buildFeatList(builder);
+        builder.append("211 End");
+        reply(builder.toString());
+    }
+
+    protected StringBuilder buildFeatList(StringBuilder builder)
+    {
         for (String feature: FEATURES) {
             builder.append(' ').append(feature).append("\r\n");
         }
@@ -1988,9 +1985,7 @@ public abstract class AbstractFtpDoorV1
             builder.append(';');
         }
         builder.append("\r\n");
-
-        builder.append("211 End");
-        reply(builder.toString());
+        return builder;
     }
 
     public void opts_retr(String opt) throws FTPCommandException

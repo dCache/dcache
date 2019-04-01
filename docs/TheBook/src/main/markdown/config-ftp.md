@@ -33,15 +33,21 @@ The control channel is the TCP connection established by the client
 over which the client issues commands and receives replies indicating
 whether those commands were successful.
 
-In general, dCache supports three flavours of control channel:
-`plain`, `gsiftp` (also known as GridFTP), and `kerberos`.  Each FTP
-door supports exactly one of these flavours.  These flavours differ in
-how the control channel is handled.  In plain FTP, the control channel
-is unencrypted; in many cases, this is insecure and requires
-additional protection.  With gsiftp and Kerberos FTP, the control
-channel is encrypted, preventing eavesdropping or interfering with
-requests.  Authentication with gsiftp is based on X.509 credentials,
-while Kerberos FTP uses Kerberos.
+In general, dCache supports four flavours of control channel: `plain`,
+`tls` (also known as FTPS), `gsiftp` (also known as GridFTP), and
+`kerberos`.  Each FTP door supports exactly one of these flavours.
+These flavours differ in how the control channel is handled.  In plain
+FTP, the control channel is unencrypted; in many cases, this is
+insecure and requires additional protection.  With tls, gsiftp and
+Kerberos FTP, the control channel is encrypted, preventing
+eavesdropping or interfering with requests.  Authentication with tls
+is based on username and password, gsiftp is based on X.509
+credentials, while Kerberos FTP uses Kerberos.
+
+Although tls and gsi FTP doors are both X.509 based, they differ in
+how the encryption is handled.  Support for tls FTP is more common and
+is often referred to as FTPS, FTP(E)S, FTPS-explicit or FTPES. Support
+for gsi FTP is limited to grid tools.
 
 Limiting access
 ---------------
@@ -103,8 +109,8 @@ username (typically 'anonymous').  Although there is no specific
 password for these accounts, it is common practice that the client
 sends the user's email address as the password, as a courtesy.
 
-dCache supports anonymous FTP for the plain FTP door.  This is
-disabled by default, but may be enabled using the
+dCache supports anonymous FTP for the plain and tls FTP doors.  This
+is disabled by default, but may be enabled using the
 `ftp.enable.anonymous-ftp` configuration property.  When enabled,
 users may access dCache as user NOBODY; e.g., world-readable files may
 be downloaded and world-readable directories may be listed.
@@ -129,10 +135,11 @@ password is not a valid email address.  Note that, Globus transfer
 service currently sends "dummy" as the password, which is not a valid
 email address.
 
-If the plain ftp door should be used only for anonymous access then
-regular username and password access may be disabled by configuring
-the `ftp.enable.username-password` property.  This is to prevent
-normal dCache users from typing in their password unencrypted.
+If the plain or tls FTP door should be used only for anonymous access
+then regular username and password access may be disabled by
+configuring the `ftp.enable.username-password` property.  This is
+perhaps most useful with plain FTP doors to prevent normal dCache
+users from typing in their password unencrypted.
 
 
 Data transfers
@@ -260,6 +267,8 @@ without requiring any port configuration:
     ftp.authn.protocol = gsi
     [<domainName>/nfs]
     ftp.authn.protocol = kerberos
+    [<domainName>/nfs]
+    ftp.authn.protocol = tls
     ..
 
 

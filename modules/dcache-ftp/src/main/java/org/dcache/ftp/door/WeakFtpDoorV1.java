@@ -16,7 +16,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.util.NetLoggerBuilder;
 
@@ -42,7 +41,15 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
             Optional<String> anonymousUser, FsPath anonymousRoot,
             boolean requireAnonPasswordEmail)
     {
-        super("Weak FTP");
+        this("Weak FTP", allowUsernamePassword, anonymousUser, anonymousRoot,
+            requireAnonPasswordEmail);
+    }
+
+    protected WeakFtpDoorV1(String name, boolean allowUsernamePassword,
+            Optional<String> anonymousUser, FsPath anonymousRoot,
+            boolean requireAnonPasswordEmail)
+    {
+        super(name);
         _anonymousUser = requireNonNull(anonymousUser);
         _allowUsernamePassword = allowUsernamePassword;
         _anonymousRoot = anonymousRoot;
