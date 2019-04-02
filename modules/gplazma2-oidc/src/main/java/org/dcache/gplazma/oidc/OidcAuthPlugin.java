@@ -3,6 +3,7 @@ package org.dcache.gplazma.oidc;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
+import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -52,7 +53,6 @@ import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.TimeUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
@@ -224,6 +224,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 .build(new CacheLoader<String, List<LookupResult>>()
                         {
                             private ListenableFuture<List<LookupResult>> asyncFetch(String token)
+                                    throws AuthenticationException
                             {
                                 List<ListenableFuture<LookupResult>> futures =
                                         new ArrayList<>();
@@ -245,18 +246,26 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
                             @Override
                             public List<LookupResult> load(String token)
-                                    throws InterruptedException, ExecutionException
+                                    throws InterruptedException, AuthenticationException
                             {
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("User-info cache miss for token {}",
                                             describe(token, 20));
                                 }
-                                return asyncFetch(token).get();
+
+                                try {
+                                    return asyncFetch(token).get();
+                                } catch (ExecutionException e) {
+                                    Throwable cause = e.getCause();
+                                    Throwables.throwIfInstanceOf(cause, AuthenticationException.class);
+                                    Throwables.throwIfUnchecked(cause);
+                                    throw new RuntimeException("Unexpected exception", e);
+                                }
                             }
 
                             @Override
                             public ListenableFuture<List<LookupResult>> reload(String token,
-                                    List<LookupResult> results)
+                                    List<LookupResult> results) throws AuthenticationException
                             {
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("Refreshing user-info for token {}", describe(token, 20));
@@ -291,46 +300,52 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
         checkAuthentication(token != null, "No bearer token in the credentials");
 
+        List<LookupResult> allResults;
+
         try {
-            List<LookupResult> allResults = userInfoCache.get(token);
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Doing user-info lookup against {} OPs took {}",
-                        allResults.size(),
-                        TimeUtils.describe(userinfoLookupTiming.elapsed()).orElse("no time"));
-            }
-
-            List<LookupResult> successfulResults = allResults.stream().filter(LookupResult::isSuccess).collect(Collectors.toList());
-
-            if (successfulResults.isEmpty()) {
-                if (allResults.size() == 1) {
-                    LookupResult result = allResults.get(0);
-                    throw new AuthenticationException("OpenId Validation failed for " + result.getIdentityProvider().getName() + ": " + result.getError());
-                } else {
-                    String randomId = randomId();
-                    String errors = allResults.stream()
-                            .map(r -> "[" + r.getIdentityProvider().getName() + ": " + r.getError() + "]")
-                            .collect(Collectors.joining(", "));
-                    LOG.warn("OpenId Validation Failure ({}): {}", randomId, errors);
-                    throw new AuthenticationException("OpenId Validation Failed check [log entry #" + randomId + "]");
-                }
-            }
-
-            if (successfulResults.size() > 1 && LOG.isWarnEnabled()) {
-                String names = successfulResults.stream()
-                        .map(LookupResult::getIdentityProvider)
-                        .map(IdentityProvider::getName)
-                        .collect(Collectors.joining(", "));
-                LOG.warn("Multiple OpenID-Connect endpoints accepted access token: {}", names);
-            }
-            successfulResults.stream()
-                    .map(LookupResult::getPrincipals)
-                    .forEach(identifiedPrincipals::addAll);
+            allResults = userInfoCache.get(token);
         } catch (ExecutionException e) {
-            Throwable reportable = e.getCause() == null ? e : e.getCause();
-            LOG.warn("OIDC-Connect user lookup failed: ", reportable);
-            throw new AuthenticationException("Bug detected");
+            Throwable cause = e.getCause();
+            Throwables.throwIfInstanceOf(cause, AuthenticationException.class);
+            Throwables.throwIfUnchecked(cause);
+            if (cause instanceof InterruptedException) {
+                throw new AuthenticationException("Shutting down");
+            }
+            throw new RuntimeException("Unexpected exception", e);
         }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Doing user-info lookup against {} OPs took {}",
+                    allResults.size(),
+                    TimeUtils.describe(userinfoLookupTiming.elapsed()).orElse("no time"));
+        }
+
+        List<LookupResult> successfulResults = allResults.stream().filter(LookupResult::isSuccess).collect(Collectors.toList());
+
+        if (successfulResults.isEmpty()) {
+            if (allResults.size() == 1) {
+                LookupResult result = allResults.get(0);
+                throw new AuthenticationException("OpenId Validation failed for " + result.getIdentityProvider().getName() + ": " + result.getError());
+            } else {
+                String randomId = randomId();
+                String errors = allResults.stream()
+                        .map(r -> "[" + r.getIdentityProvider().getName() + ": " + r.getError() + "]")
+                        .collect(Collectors.joining(", "));
+                LOG.warn("OpenId Validation Failure ({}): {}", randomId, errors);
+                throw new AuthenticationException("OpenId Validation Failed check [log entry #" + randomId + "]");
+            }
+        }
+
+        if (successfulResults.size() > 1 && LOG.isWarnEnabled()) {
+            String names = successfulResults.stream()
+                    .map(LookupResult::getIdentityProvider)
+                    .map(IdentityProvider::getName)
+                    .collect(Collectors.joining(", "));
+            LOG.warn("Multiple OpenID-Connect endpoints accepted access token: {}", names);
+        }
+        successfulResults.stream()
+                .map(LookupResult::getPrincipals)
+                .forEach(identifiedPrincipals::addAll);
     }
 
     private LookupResult queryUserInfo(IdentityProvider ip, String token)
@@ -365,37 +380,32 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     }
 
     private Collection<IdentityProvider> identityProviders(String token)
+            throws AuthenticationException
     {
-        Optional<Collection<IdentityProvider>> ips = Optional.empty();
-
         if (JsonWebToken.isCompatibleFormat(token)) {
             try {
                 JsonWebToken jwt = new JsonWebToken(token);
-                Optional<URI> issuer = jwt.getPayloadString("iss").flatMap(s -> {
-                            try {
-                                return Optional.of(new URI(s));
-                            } catch (URISyntaxException e) {
-                                LOG.warn("JWT has bad \"iss\" claim \"{}\": {}", s, e.toString());
-                                return Optional.empty();
-                            }
-                        });
-                Optional<IdentityProvider> ip = issuer.flatMap(i -> {
-                            IdentityProvider p = providersByIssuer.get(i);
-                            if (p == null) {
-                                LOG.warn("Unknown \"iss\" claim: {}", i);
-                            } else {
-                                LOG.debug("Discovered token is JWT issued by {}",
-                                        p.getName());
-                            }
-                            return Optional.ofNullable(p);
-                        });
-                ips = ip.map(Collections::singleton);
+                Optional<String> iss = jwt.getPayloadString("iss");
+                if (iss.isPresent()) {
+                    try {
+                        URI issuer = new URI(iss.get());
+                        IdentityProvider ip = providersByIssuer.get(issuer);
+                        checkAuthentication(ip != null, "JWT with unknown \"iss\" claim");
+                        LOG.debug("Discovered token is JWT issued by {}", ip.getName());
+                        return Collections.singleton(ip);
+                    } catch (URISyntaxException e) {
+                        LOG.debug("Bad \"iss\" claim \"{}\": {}", iss.get(),
+                                e.toString());
+                        throw new AuthenticationException("Bad \"iss\" claim in JWT");
+                    }
+                }
             } catch (IOException e) {
-                LOG.warn("Failed to parse JWT: {}", e.toString());
+                LOG.debug("Failed to parse JWT: {}", e.toString());
+                throw new AuthenticationException("Bad JWT");
             }
         }
 
-        return ips.orElse(providersByIssuer.values());
+        return providersByIssuer.values();
     }
 
     private Set<Principal> validateBearerTokenWithOpenIdProvider(String token,
