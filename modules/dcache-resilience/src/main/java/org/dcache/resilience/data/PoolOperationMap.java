@@ -563,6 +563,13 @@ public class PoolOperationMap extends RunnableModule {
         watchdog.running = on;
     }
 
+    public void updateInitialized() {
+        poolInfoMap.getResilientPools().stream()
+                   .filter(poolInfoMap::isInitialized)
+                   .map(poolInfoMap::getPoolState)
+                   .forEach(this::update);
+    }
+
     /**
      * <p>Called upon receipt of a pool status update (generated via
      *      comparison of PoolMonitor data).</p>
