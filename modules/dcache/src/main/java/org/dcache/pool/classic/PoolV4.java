@@ -84,6 +84,7 @@ import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -1242,8 +1243,10 @@ public class PoolV4
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
+        String why = envelope.getSourceAddress() + " [" + msg.getDiagnosticContext() + "]";
+
         List<ListenableFutureTask<String>> tasks = Stream.of(msg.getFiles())
-                .map(file -> ListenableFutureTask.create(() -> remove(file, envelope.getSourceAddress().toString()))).collect(toList());
+                .map(file -> ListenableFutureTask.create(() -> remove(file, why))).collect(toList());
         tasks.forEach(_executor::execute);
         MessageReply<PoolRemoveFilesMessage> reply = new MessageReply<>();
         Futures.addCallback(Futures.allAsList(tasks),
@@ -1270,7 +1273,7 @@ public class PoolV4
         return reply;
     }
 
-    private String remove(String file, String requestor) throws CacheException, InterruptedException
+    private String remove(String file, String why) throws CacheException, InterruptedException
     {
         try {
             PnfsId pnfsId = new PnfsId(file);
@@ -1279,7 +1282,7 @@ public class PoolV4
                 LOGGER.error("Replica {} kept (precious)", file);
                 return file;
             } else {
-                _repository.setState(pnfsId, ReplicaState.REMOVED, "At request of " + requestor);
+                _repository.setState(pnfsId, ReplicaState.REMOVED, why);
                 return null;
             }
         } catch (IllegalTransitionException e) {
