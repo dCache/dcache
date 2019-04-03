@@ -112,10 +112,10 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
-import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.PagedList;
+import org.dcache.restful.providers.pool.MoverData;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.restful.providers.pool.PoolModeUpdate;
 import org.dcache.restful.providers.selection.Pool;
