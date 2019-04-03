@@ -59,14 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.pool;
 
-import dmg.cells.nucleus.NoRouteToCellException;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.pool.movers.json.MoverData;
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.restful.providers.PagedList;
+import org.dcache.restful.providers.pool.MoverData;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.services.history.pools.PoolListingService;
