@@ -136,7 +136,7 @@ public class OperationHistory {
                             .map((s) ->
                                  {
                                     String pnfsid = s.substring(s.indexOf("(") + 1);
-                                    return pnfsid.substring(pnfsid.indexOf(" "));
+                                    return pnfsid.substring(0, pnfsid.indexOf(" "));
                                  })
                             .collect(toList());
             errors.clear();
