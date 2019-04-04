@@ -785,8 +785,10 @@ public class PoolOperationMap extends RunnableModule {
      *
      * @param bypassStateCheck if false, will not bypass considerations
      *                              of whether the pool has been previously
-     *                              scanned because it went down, or is
-     *                              excluded from scans.
+     *                              scanned because it went down.  NOTE:
+     *                              an excluded pool will not be scanned
+     *                              under any circumstances until it is
+     *                              included.
      * @return true only if operation has been promoted from idle to waiting.
      */
     private  boolean doScan(PoolStateUpdate update, boolean bypassStateCheck) {
@@ -819,13 +821,13 @@ public class PoolOperationMap extends RunnableModule {
             return false;
         }
 
-        if (!bypassStateCheck) {
-            if (operation.state == State.EXCLUDED) {
-                LOGGER.info("Skipping scan {} –– pool is excluded", update.pool);
-                reset(update.pool, operation);
-                return false;
-            }
+        if (operation.state == State.EXCLUDED) {
+            LOGGER.info("Skipping scan {} –– pool is excluded", update.pool);
+            reset(update.pool, operation);
+            return false;
+        }
 
+        if (!bypassStateCheck) {
             if (operation.currStatus == PoolStatusForResilience.DOWN &&
                 operation.lastStatus == PoolStatusForResilience.DOWN) {
                 LOGGER.info("Skipping scan {} –– pool is down and was already "

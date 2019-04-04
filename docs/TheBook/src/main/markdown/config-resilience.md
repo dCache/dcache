@@ -921,6 +921,9 @@ migrating the files.
 `pool exclude` is useful for doing manual migrations on resilient pool groups,
 but caution should be taken when applying it.
 
+_Note that once a pool is excluded, it can no longer be scanned, even manually,
+until it is explicitly included again._
+
 #### Rebalance or migrate a resilient pool (group)
 
 Rebalancing should be required less often on resilient pools; but if you should
