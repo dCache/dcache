@@ -72,7 +72,6 @@ import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
-import diskCacheV111.vehicles.PoolQueryRepositoryMsg;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
@@ -1358,13 +1357,6 @@ public class PoolV4
                         : 0,
                 true);
         msg.setSucceeded();
-        return msg;
-    }
-
-    public PoolQueryRepositoryMsg messageArrived(PoolQueryRepositoryMsg msg)
-        throws CacheException, InterruptedException
-    {
-        msg.setReply(new RepositoryCookie(), getRepositoryListing());
         return msg;
     }
 
