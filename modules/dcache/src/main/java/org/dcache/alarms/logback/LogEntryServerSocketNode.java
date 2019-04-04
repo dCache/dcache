@@ -88,6 +88,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.HashMap;
 import java.util.Map;
 
 import dmg.cells.nucleus.CDC;
@@ -132,11 +133,12 @@ final class LogEntryServerSocketNode implements Runnable {
         try {
             while (running) {
                 ILoggingEvent event = (ILoggingEvent) ois.readObject();
+                Map<String, String> properties = new HashMap<>();
                 Map<String, String> mdc = event.getMDCPropertyMap();
-                mdc.put(Alarm.HOST_TAG, hostName);
-                mdc.put(Alarm.SERVICE_TAG, mdc.remove(CDC.MDC_CELL));
-                mdc.put(Alarm.DOMAIN_TAG, mdc.remove(CDC.MDC_DOMAIN));
-                handler.handle(event);
+                properties.put(Alarm.HOST_TAG, hostName);
+                properties.put(Alarm.SERVICE_TAG, mdc.remove(CDC.MDC_CELL));
+                properties.put(Alarm.DOMAIN_TAG, mdc.remove(CDC.MDC_DOMAIN));
+                handler.handle(LoggingEventConverter.updateMDC(event, properties));
             }
         } catch (EOFException e) {
             LOGGER.trace("Benign EOF ({}).", e.getMessage());

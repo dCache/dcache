@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggingEvent;
 import com.google.common.base.Preconditions;
 import org.slf4j.Marker;
 
@@ -68,6 +69,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import dmg.cells.nucleus.CDC;
+
 import org.dcache.alarms.Alarm;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.LogEntry;
@@ -115,6 +117,24 @@ final class LoggingEventConverter {
         Marker alarmType = typeMarker.iterator().next();
         Preconditions.checkNotNull(alarmType);
         return alarmType.getName();
+    }
+
+    static LoggingEvent updateMDC(ILoggingEvent event, Map<String, String> properties) {
+        properties.putAll(event.getMDCPropertyMap());
+        LoggingEvent newEvent = new LoggingEvent();
+        newEvent.setArgumentArray(event.getArgumentArray());
+        if (event.hasCallerData()) {
+            newEvent.setCallerData(event.getCallerData());
+        }
+        newEvent.setLevel(event.getLevel());
+        newEvent.setLoggerContextRemoteView(event.getLoggerContextVO());
+        newEvent.setLoggerName(event.getLoggerName());
+        newEvent.setThreadName(event.getThreadName());
+        newEvent.setMarker(event.getMarker());
+        newEvent.setMDCPropertyMap(properties);
+        newEvent.setMessage(event.getMessage());
+        newEvent.setTimeStamp(event.getTimeStamp());
+        return newEvent;
     }
 
     /**

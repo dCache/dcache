@@ -74,7 +74,9 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 
+import org.dcache.alarms.Alarm;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
@@ -100,9 +102,11 @@ public class LogEntryAppenderTest {
 
     static class Receiver extends AppenderBase<ILoggingEvent> {
         LogEntryHandler handler;
+        HashMap<String, String> mdc = new HashMap<>();
 
         Receiver(LogEntryHandler handler) {
             this.handler = handler;
+            mdc.put(Alarm.HOST_TAG, "localhost");
         }
 
         public void start() {
@@ -162,11 +166,12 @@ public class LogEntryAppenderTest {
         }
     };
 
-    private LogEntry lastEntry;
+    private LogEntry            lastEntry;
 
     @Before
     public void setup() throws Exception {
         clearLast();
+
         /*
          * Bypass the executor and run synchronously in this test.
          */

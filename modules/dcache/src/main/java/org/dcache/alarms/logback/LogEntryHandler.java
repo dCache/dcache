@@ -60,36 +60,38 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
   import ch.qos.logback.classic.Level;
-  import ch.qos.logback.classic.LoggerContext;
-  import ch.qos.logback.classic.PatternLayout;
-  import ch.qos.logback.classic.net.SMTPAppender;
-  import ch.qos.logback.classic.spi.ILoggingEvent;
-  import ch.qos.logback.core.spi.CyclicBufferTracker;
-  import com.google.common.base.Preconditions;
-  import com.google.common.base.Strings;
-  import org.slf4j.Logger;
-  import org.slf4j.LoggerFactory;
-  import org.springframework.beans.BeansException;
-  import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
-  import org.springframework.context.ApplicationContext;
-  import org.springframework.context.ApplicationContextAware;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.PatternLayout;
+import ch.qos.logback.classic.net.SMTPAppender;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.spi.CyclicBufferTracker;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-  import java.util.ArrayList;
-  import java.util.Collection;
-  import java.util.Collections;
-  import java.util.ServiceLoader;
-  import java.util.concurrent.AbstractExecutorService;
-  import java.util.concurrent.RejectedExecutionException;
-  import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-  import org.dcache.alarms.AlarmMarkerFactory;
-  import org.dcache.alarms.AlarmPriority;
-  import org.dcache.alarms.AlarmPriorityMap;
-  import org.dcache.alarms.LogEntry;
-  import org.dcache.alarms.dao.LogEntryDAO;
-  import org.dcache.alarms.spi.LogEntryListener;
-  import org.dcache.alarms.spi.LogEntryListenerFactory;
-  import org.dcache.util.BoundedCachedExecutor;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.AlarmPriority;
+import org.dcache.alarms.AlarmPriorityMap;
+import org.dcache.alarms.LogEntry;
+import org.dcache.alarms.dao.LogEntryDAO;
+import org.dcache.alarms.spi.LogEntryListener;
+import org.dcache.alarms.spi.LogEntryListenerFactory;
+import org.dcache.util.BoundedCachedExecutor;
 
 /**
  * <p>For server-side interception of log messages.</p>
@@ -130,10 +132,7 @@ public class LogEntryHandler implements ApplicationContextAware {
             }
 
             LogEntry entry = converter.createEntryFromEvent(event);
-
-            int priority = priorityMap.getPriority(
-                            entry.getType()).ordinal();
-            event.getMDCPropertyMap().put(MDC_TYPE, entry.getType());
+            int priority = priorityMap.getPriority(entry.getType()).ordinal();
 
            /*
             * Store the alarm.
@@ -145,9 +144,12 @@ public class LogEntryHandler implements ApplicationContextAware {
             /*
              * Post-process if this is a new alarm.
              */
-            if (entry.getReceived() == 1) {
+            Integer received = entry.getReceived();
+            if (received != null  && received == 1) {
                 if (emailEnabled && priority >= emailThreshold.ordinal()) {
-                    emailAppender.doAppend(event);
+                    Map<String, String> properties = new HashMap<>();
+                    properties.put(MDC_TYPE, entry.getType());
+                    emailAppender.doAppend(LoggingEventConverter.updateMDC(event, properties));
                 }
 
                 for (LogEntryListenerFactory factory : listenerFactories) {
