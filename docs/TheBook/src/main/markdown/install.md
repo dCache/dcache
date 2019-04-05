@@ -236,7 +236,6 @@ This is an example for the **mylayout.conf** file of a single node dCache with s
     [namespaceDomain]
     [namespaceDomain/pnfsmanager]
     [namespaceDomain/cleaner]
-    [namespaceDomain/dir]
 
     [poolmanagerDomain]
     [poolmanagerDomain/poolmanager]
