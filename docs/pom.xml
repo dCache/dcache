@@ -14,5 +14,6 @@
 
   <modules>
     <module>TheBook</module>
+    <module>UserGuide</module>
   </modules>
 </project>

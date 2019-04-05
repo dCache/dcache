@@ -1,0 +1,230 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.dcache</groupId>
+    <artifactId>documentation</artifactId>
+    <version>5.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>UserGuide</artifactId>
+  <packaging>pom</packaging>
+
+  <name>dCache User Guide</name>
+
+  <properties>
+      <html-fragments.path>${basedir}/src/main/html-fragments</html-fragments.path>
+      <html-header.path>${html-fragments.path}/header.html</html-header.path>
+      <html-footer.path>${html-fragments.path}/footer.html</html-footer.path>
+      <raw-html-target.path>${project.build.directory}/intermediate-html</raw-html-target.path>
+      <filtered-html-target.path>${project.build.directory}/html</filtered-html-target.path>
+  </properties>
+
+  <build>
+    <sourceDirectory>${project.basedir}/src/main/markdown</sourceDirectory>
+
+    <plugins>
+      <plugin>
+          <groupId>com.ruleoftech</groupId>
+          <artifactId>markdown-page-generator-plugin</artifactId>
+          <executions>
+              <execution>
+                  <phase>process-resources</phase>
+                  <goals>
+                      <goal>generate</goal>
+                  </goals>
+              </execution>
+          </executions>
+
+          <configuration>
+            <inputDirectory>${project.build.sourceDirectory}</inputDirectory>
+            <outputDirectory>${raw-html-target.path}</outputDirectory>
+            <headerHtmlFile>${html-header.path}</headerHtmlFile>
+            <footerHtmlFile>${html-footer.path}</footerHtmlFile>
+            <transformRelativeMarkdownLinks>true</transformRelativeMarkdownLinks>
+            <pegdownExtensions>SMARTYPANTS,AUTOLINKS,TABLES,FENCED_CODE_BLOCKS,STRIKETHROUGH,TASKLISTITEMS,EXTANCHORLINKS</pegdownExtensions>
+            <copyDirectories>css,images</copyDirectories>
+          </configuration>
+      </plugin>
+
+      <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <executions>
+              <execution>
+                  <!-- We need to be able to substitute information
+                       like the dCache version into the output.
+
+                       The assembly plugin however only supports ${}
+                       substitution and that conflicts with shell
+                       variables and dCache configuration properties.
+
+                       Therefore we use the resource plugin to make a
+                       filtered copy of the skel and use those files
+                       in the assembly whenever we need a filtered
+                       file. -->
+                  <id>copy-resources</id>
+                  <phase>prepare-package</phase>
+                  <goals>
+                      <goal>copy-resources</goal>
+                  </goals>
+                  <configuration>
+                      <outputDirectory>${filtered-html-target.path}</outputDirectory>
+                      <resources>
+                          <resource>
+                              <directory>${raw-html-target.path}</directory>
+                              <filtering>true</filtering>
+                          </resource>
+                      </resources>
+                      <delimiters>
+                          <delimiter>@</delimiter>
+                      </delimiters>
+                      <useDefaultDelimiters>false</useDefaultDelimiters>
+                      <nonFilteredFileExtensions>
+                          <nonFilteredFileExtension>css</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>jpg</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>png</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>pdf</nonFilteredFileExtension>
+                          <nonFilteredFileExtension>svg</nonFilteredFileExtension>
+                      </nonFilteredFileExtensions>
+                  </configuration>
+              </execution>
+          </executions>
+      </plugin>
+
+      <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <executions>
+              <execution>
+                  <id>parse-version</id>
+                  <goals>
+                      <goal>parse-version</goal>
+                  </goals>
+              </execution>
+          </executions>
+      </plugin>
+
+      <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <configuration>
+              <descriptors>
+                  <descriptor>src/main/assembly/html.xml</descriptor>
+              </descriptors>
+              <finalName>UserGuide-${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${git.commit.id.abbrev}</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+          </configuration>
+          <executions>
+              <execution>
+                  <phase>package</phase>
+                  <goals>
+                    <goal>single</goal>
+                  </goals>
+              </execution>
+          </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+      <profile>
+          <id>dcache.org</id>
+
+          <properties>
+              <html-header.path>${html-fragments.path}/dcacheorg-header.html</html-header.path>
+              <html-footer.path>${html-fragments.path}/dcacheorg-footer.html</html-footer.path>
+          </properties>
+
+          <build>
+            <plugins>
+              <plugin>
+                  <groupId>org.codehaus.gmaven</groupId>
+                  <artifactId>groovy-maven-plugin</artifactId>
+                  <executions>
+                      <execution>
+                          <phase>process-resources</phase>
+                              <goals>
+                                  <goal>execute</goal>
+                              </goals>
+                              <configuration>
+                                  <bindPropertiesToSeparateVariables>false</bindPropertiesToSeparateVariables>
+                                  <source>
+                                      ref = null
+                                      /* Detect if git checkout is on a branch or is a detached head */
+                                      p = 'git symbolic-ref -q HEAD'.execute()
+                                      p.waitFor()
+                                      if (p.exitValue() == 0) { // git checkout is on a branch
+                                          ref = 'git rev-parse --abbrev-ref --symbolic-full-name @{u}'.execute().text.trim()
+                                      } else { // git checkout is a detached HEAD or not a git repo
+                                          // Check each remote branch (if multiple, last one wins)
+                                          fer = 'git for-each-ref --format=%(refname:short) refs/remotes'.execute().text.eachLine { remoteRef -&gt;
+                                              p = "git merge-base --is-ancestor HEAD $remoteRef".execute()
+                                              p.waitFor()
+                                              if (p.exitValue() == 0) {
+                                                  ref = remoteRef
+                                              }
+                                          }
+                                      }
+
+                                      if (ref != null) {
+                                          def (remoteName, branch) = ref.tokenize('/')
+                                          def remoteUrl = "git config --get remote.${remoteName}.url".execute().text.trim()
+                                          def projectAndRepo = remoteUrl.startsWith('git@github.com:') ? remoteUrl.substring(15).minus('.git')
+                                              : remoteUrl.startsWith('https://github.com') ? remoteUrl.substring(19).minus('.git')
+                                              : null
+                                          def srcRelPath = "${project.build.sourceDirectory}" - "${maven.multiModuleProjectDirectory}/"
+                                          def prefix = "https://github.com/${projectAndRepo}/blob/${branch}/${srcRelPath}"
+                                          println "GitHub URL prefix: $prefix"
+                                          project.properties.setProperty('github.url-prefix', prefix)
+                                      }
+                                  </source>
+                              </configuration>
+                      </execution>
+                  </executions>
+              </plugin>
+
+              <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <phase>process-resources</phase>
+                    <configuration>
+                      <target>
+                        <!-- Maven does not support defining more than one target -->
+                        <ant antfile="${basedir}/src/main/antruns/substituteFilename.xml" />
+
+                        <replaceregexp byline="true">
+                          <regexp pattern="href=&quot;([^/&quot;][^&quot;]*)\.html([^&quot;]*)&quot;" />
+                          <substitution expression="href=&quot;\1.shtml\2&quot;" />
+                          <fileset dir="${raw-html-target.path}" includes="**/*.html" />
+                        </replaceregexp>
+
+                        <move todir="${raw-html-target.path}" includeemptydirs="false">
+                          <fileset dir="${raw-html-target.path}" />
+                          <mapper type="glob" from="*.html" to="*.shtml" />
+                        </move>
+                      </target>
+                    </configuration>
+                    <goals>
+                      <goal>run</goal>
+                    </goals>
+                  </execution>
+                </executions>
+                <dependencies>
+                  <dependency>
+                    <groupId>ant-contrib</groupId>
+                    <artifactId>ant-contrib</artifactId>
+                    <version>1.0b3</version>
+                    <exclusions>
+                      <exclusion>
+                        <artifactId>ant</artifactId>
+                        <groupId>ant</groupId>
+                      </exclusion>
+                    </exclusions>
+                  </dependency>
+                </dependencies>
+              </plugin>
+            </plugins>
+          </build>
+      </profile>
+  </profiles>
+</project>
