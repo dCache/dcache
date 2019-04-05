@@ -192,14 +192,11 @@ public final class MapInitializer implements Runnable {
         poolInfoChangeHandler.startWatchdog();
 
         /*
-         *  Do this after initialization.  There first PoolMonitor message
+         *  Do this after initialization.  The first PoolMonitor message
          *  may already have pools whose states are known.
          */
         LOGGER.info("Updating initialized pools.");
-        poolInfoMap.getResilientPools().stream()
-                   .filter(poolInfoMap::isInitialized)
-                   .map(poolInfoMap::getPoolState)
-                   .forEach(poolOperationMap::update);
+        poolOperationMap.updateInitialized();
 
         /*
          *  Do this after initialization.  It may take a while
