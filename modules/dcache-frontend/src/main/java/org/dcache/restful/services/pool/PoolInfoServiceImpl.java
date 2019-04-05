@@ -85,10 +85,10 @@ import org.dcache.cells.json.CellData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolInfoWrapper;
-import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.PagedList;
+import org.dcache.restful.providers.pool.MoverData;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.restful.util.admin.ReadWriteData;
@@ -133,11 +133,12 @@ public class PoolInfoServiceImpl extends
         return new PagedList<>(data, total);
     }
 
-    private static <M extends PoolMoverListingMessage> PagedList<MoverData>
+    private static <M extends PoolMoverListingMessage>
+            PagedList<MoverData>
             getMoverData(String pool, ListenableFutureWrapper<M> wrapper)
                     throws InterruptedException, NoRouteToCellException,
                     CacheException {
-        List<MoverData> data = null;
+        List<org.dcache.pool.movers.json.MoverData> data = null;
         int total = 0;
 
         try {
@@ -148,7 +149,10 @@ public class PoolInfoServiceImpl extends
             handleExecutionException(e);
         }
 
-        return new PagedList<>(data, total);
+        return new PagedList<>(data.stream()
+                                   .map(org.dcache.restful.providers.pool.MoverData::new)
+                                   .collect(Collectors.toList()),
+                               total);
     }
 
     private static RuntimeException handleExecutionException(ExecutionException e)
@@ -383,6 +387,10 @@ public class PoolInfoServiceImpl extends
                      NoRouteToCellException, CacheException {
         if (Strings.isNullOrEmpty(sort)) {
             sort = "door,startTime";
+        } else {
+            //REVISIT this is a hack to maintain backward compatibility; eliminate when pool object is modified
+            sort = sort.replace("timeInMilliseconds",
+                            "timeInSeconds");
         }
 
         PoolMoverListingMessage message
@@ -415,6 +423,10 @@ public class PoolInfoServiceImpl extends
                     NoRouteToCellException, CacheException {
         if (Strings.isNullOrEmpty(sort)) {
             sort = "door,startTime";
+        } else {
+            //REVISIT this is a hack to maintain backward compatibility; eliminate when pool object is modified
+            sort = sort.replace("timeInMilliseconds",
+                                "timeInSeconds");
         }
 
         PoolP2PListingMessage message
