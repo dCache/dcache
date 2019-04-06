@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -254,7 +255,8 @@ public class Checksums
                 if (sb.length() == 0) {
                     sb.append(name);
                 } else {
-                    sb.append(',').append(name).append(String.format(";q=%.1f", q));
+                    // setting locale explicitely to deal with locales using decimal commas
+                    sb.append(',').append(name).append(String.format(Locale.US, ";q=%.1f", q));
                 }
                 q -= step;
             }
