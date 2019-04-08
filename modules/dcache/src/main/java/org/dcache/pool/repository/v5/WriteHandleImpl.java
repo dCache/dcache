@@ -155,8 +155,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         return channel;
     }
 
-    private void registerFileAttributesInNameSpace()
-            throws CacheException
+    private void registerFileAttributesInNameSpace() throws CacheException
     {
         FileAttributes attributesToUpdate = FileAttributes.ofLocation(_repository.getPoolName());
         if (_fileAttributes.isDefined(CHECKSUM)) {
@@ -166,7 +165,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         if (_initialState == ReplicaState.FROM_CLIENT) {
             attributesToUpdate.setAccessLatency(_fileAttributes.getAccessLatency());
             attributesToUpdate.setRetentionPolicy(_fileAttributes.getRetentionPolicy());
-            if (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0) {
+            if (_fileAttributes.isDefined(SIZE)) {
                 attributesToUpdate.setSize(_fileAttributes.getSize());
             }
         }
@@ -276,6 +275,18 @@ class WriteHandleImpl implements ReplicaDescriptor
             _targetState = ReplicaState.REMOVED;
             if (why == null) {
                 why = "replica is empty";
+            }
+        } else {
+            /* ... otherwise, if the transfer was a client upload then we
+             * register the file's actual size, which will update the
+             * namespace value and trigger that the namespace marks the file
+             * as having state STORED.
+             *
+             * Note that this may override a previous value in the namespace,
+             * if the client provided an expected file size.
+             */
+            if (_initialState == ReplicaState.FROM_CLIENT) {
+                _fileAttributes.setSize(length);
             }
         }
 
