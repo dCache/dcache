@@ -897,19 +897,244 @@ describes them is available by querying the `inotify/event` resource.
 
 ### Channel lifecycle
 
-How to create a channel and how to delete it.
+All channel operations happen within the `events/channels`
+(`/api/v1/events/channels`) resource.  A GET request against this
+resource returns a list of channels.  This is initially empty:
 
-### Subscriptions: adding events
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/channels | jq .
+Enter host password for user 'paul':
+[]
+paul@sprocket:~$
+```
 
-How to create a subscription
+In order to receive any events, a client must connect to a channel.
+This requires that a client first creates a channel. This is done by
+making a POST request to the `channels` resource:
 
-How to list a channel's subscriptions
+```console
+paul@sprocket:~$ curl -D- -u paul -X POST https://dcache.example.org:3880/api/v1/events/channels
+Enter host password for user 'paul':
+HTTP/1.1 201 Created
+Date: Tue, 09 Apr 2019 20:50:07 GMT
+Server: dCache/5.1.0-SNAPSHOT
+Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+Content-Length: 0
 
-How to delete a channel's subscription
+paul@sprocket:~$
+```
+
+The `Location` response header contains the channel endpoint.  In the
+above example, the new channel is
+`https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w`.
+
+A subsequent GET request on `events/channels` will show this channel:
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/channels | jq .
+Enter host password for user 'paul':
+[
+  "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w"
+]
+paul@sprocket:~$
+```
+
+Information about a channel may be obtained by a GET request against a
+channel endpoint.  It is important to specify that the result should
+be JSON by specifying the `Accept` HTTP request header.  This is to
+avoid the request being processed as an SSE request.
+
+```console
+paul@sprocket:~$ curl -s -u paul -H 'Accept: application/json' \
+    https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w | jq .
+Enter host password for user 'paul':
+{
+  "timeout": 300
+}
+paul@sprocket:~$
+```
+
+This shows the timeout: the amount of time a client is disconnected
+from the channel after which the channel is automatically removed.
+
+This value may be modified using a PATCH request.  In the following
+example, the timeout is extended to one hour:
+
+```console
+paul@sprocket:~$ curl -s -u paul -X PATCH -H 'Content-Type: application/json' -d '{"timeout" : 3600}'
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w | jq .
+Enter host password for user 'paul':
+paul@sprocket:~$
+```
+
+After this request is successfully processed, the channel metadata
+shows the updated timeout value:
+
+```console
+paul@sprocket:~$ curl -s -u paul -H 'Accept: application/json'
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w | jq .
+Enter host password for user 'paul':
+{
+  "timeout": 3600
+}
+paul@sprocket:~$
+```
+
+Once a client is finished receiving events, it can remove a channel
+using a DELETE request:
+
+```console
+paul@sprocket:~$ curl -u paul -X DELETE https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+Enter host password for user 'paul':
+paul@sprocket:~$
+```
+
+Subsequent attempts to use this channel will return a 404 status code
+and it will not appear in the channel list.
+
+```console
+paul@sprocket:~$ curl -D- -u paul -H 'Accept: application/json'
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+Enter host password for user 'paul':
+HTTP/1.1 404 Not Found
+Date: Tue, 09 Apr 2019 21:11:57 GMT
+Server: dCache/5.1.0-SNAPSHOT
+Content-Type: application/json
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+Content-Length: 51
+
+{"errors":[{"message":"Not Found","status":"404"}]}
+paul@sprocket:~$
+```
+
+A client is not required to remove the channel it created, because
+dCache will automatically delete any left over channel once they have
+been idle for too long.  However, it is recommended clients explicitly
+delete a channel if it is no longer needed.  This is because each
+dCache user is only allowed a limit number of concurrent channels.
+
+### Subscriptions
+
+A channel subscribes to events.  A channels subscriptions are handled
+with the `events/channels/<id>/subscriptions` endpoint
+(`/api/v1/events/channels/<id>/subscriptions`).
+
+A GET request returns the current list of subscriptions.  This is
+initially empty:
+
+```console
+paul@sprocket:~$ curl -u paul -s https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
+Enter host password for user 'paul':
+[]
+paul@sprocket:~$
+```
+
+To subscribe to events, a client issues a POST request to the resource
+below subscriptions with the event type name.  The POST request entity
+is the selector for this subscription.
+
+For example, to create a subscription to the `metronome` event type,
+the client posts to `events/channels/<id>/subscriptions/metronome`
+resource with a JSON object that satisfies the metronome selector JSON
+Schema (`events/eventTypes/metronome/selector`)
+
+The following is a simple example that creates a subscription to
+`metronome` with the simple selector `{"delay": 2}`:
+
+```console
+paul@sprocket:~$ curl -D- -u paul -X POST -H 'Content-Type: application/json' -d '{"delay":2}'
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome
+Enter host password for user 'paul':
+HTTP/1.1 201 Created
+Date: Tue, 09 Apr 2019 21:29:30 GMT
+Server: dCache/5.1.0-SNAPSHOT
+Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+Content-Length: 0
+
+paul@sprocket:~$
+```
+
+The `Location` response header contains a resource that represents
+this subscription.  This new subscription is also now included in the
+channel's subscription list:
+
+```console
+paul@sprocket:~$ curl -s -u paul
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
+Enter host password for user 'paul':
+[
+  "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed"
+]
+paul@sprocket:~$
+```
+
+A GET request on the subscription returns the selector used to
+generate the subscription:
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed | jq .
+Enter host password for user 'paul':
+{
+  "delay": 2
+}
+paul@sprocket:~$
+```
+
+Once a subscription is no longer needed, it may be remove by issuing a
+DELETE request against the subscription resource.
+
+```console
+paul@sprocket:~$ curl -u paul -X DELETE https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed
+Enter host password for user 'paul':
+paul@sprocket:~$
+```
+
+The channel will stop receiving events for this subscription and the
+subscription is no longer listed:
+
+```console
+paul@sprocket:~$ curl -s -u paul
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
+Enter host password for user 'paul':
+[]
+paul@sprocket:~$
+```
 
 ### Receiving events: SSE
 
-How to obtain events from a channel
+The SSE protocol is sufficiently simple that it is possible to see
+events using curl.  In this section, we explore enough to demonstrate
+receiving events.  In real environments, you would use an SSE client
+library to receive events.
+
+First, to receive SSE events, the client makes a GET request to the
+channel, specifying it will accept the MIME type `text/event-stream`
+
+```console
+paul@sprocket:~$ curl -u paul -H 'Accept: text/event-stream' https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+Enter host password for user 'paul':
+^C
+paul@sprocket:~$
+```
+
+The server does not return straight away, but blocks.  Any event will
+be delivered as a series of lines describing the event type, the
+subscription and the event itself.
+
+You must interrupt curl (typically, by typing Control+C) in order to
+stop it from waiting for an event.
+
+Add example showing subscribing to events, and deleting an event.
+
+Add inotify examples
 
 ## Doors
 
