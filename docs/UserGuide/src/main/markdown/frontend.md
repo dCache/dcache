@@ -661,10 +661,255 @@ The output is sorted.  The priority of different fields is controlled
 by the `sort` query parameter, which takes a comma-separate list of
 field names.  The default value is `door,waiting`.
 
-## Events
+## Storage Events
 
-Support for storage events, where information is sent from dCache to
-the client using the W3C standard: Server-Sent Events (SSE).
+Storage events is a mechanism where dCache can let you know when
+something of interest has happened.  To do this, dCache uses a W3C
+standard protocol: Server-Sent Events (SSE).
+
+SSE is a protocol that allows an HTTP client to receive events with a
+minimal delay.  It is widely supported, with libraries existing in all
+major languages in addition built-in support in all major web
+browsers.
+
+All REST activity to do with storage events target `events` resources
+(`/api/v1/events`) with different resources below this having more
+specific roles.
+
+### Management overview
+
+Although the SSE protocol is a standard, there is no standard
+management interface to allow you to control which events you are
+interested in receiving.  Therefore, dCache has a proprietary
+interface that allows you to discover what possibilities exist,
+discover the current configuration and modify that configuration.
+
+The SSE protocol targets a specific endpoint.  In dCache, this
+endpoint is called the channel.  It is expected that each client has
+its own channel: channels are not shared.  A client will create its
+own channel and then configures this channel to receive all events the
+client is interested in.
+
+Although it is not forbidden, a client could create multiple channels.
+However, this is both unnecessary and discouraged as each user is
+allowed only a limited number of channels.
+
+Storage events are grouped together into broadly similar types, called
+event types; for example, all events that simulate the Linux
+filesystem notification system "inotify" have the `inotify` event
+type.  Events that are to do with SSE support itself (or other
+low-level aspects) have the `SYSTEM` event type.
+
+When a client creates a channel, it initially receives only `SYSTEM`
+events, which are generally not of interest.  To start receiving
+interesting events, the client must create subscriptions.  A
+subscription is just how a client describes which events of a specific
+event type are of interest.
+
+A subscription has two parts: the name of the event type and a
+selector.  The selector is a JSON object that describes which events
+(of all possible events) are of interest.  The exact format of a
+selector depends on the event type.
+
+A channel can have multiple subscriptions.  Each subscription is
+independent: they could come from the same event type, or from
+different event types.  A client can add and remove subscriptions as
+needed.
+
+### Top-level information
+
+A GET request on the `/api/v1/events` resource provide information
+that is independent of any channel and any event type.
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events | jq .
+Enter host password for user 'paul':
+{
+  "channels": {
+    "lifetimeWhenDisconnected": {
+      "maximum": 86400,
+      "minimum": 1,
+      "default": 300
+    },
+    "maximumPerUser": 128
+  }
+}
+paul@sprocket:~$
+```
+
+The `channels` object describes information about channels in general,
+rather than about a specific channel.  Channels are automatically
+deleted if they are not used for long enough.  The time before this
+happens may be adjusted by the client.  The `lifetimeWhenDisconnected`
+describes this policy, with the values in seconds.
+
+In the above example, new channels are garbage collected automatically
+after five minutes.  An individual channel may be configured to be
+garbage collected on a different schedule, as quickly as after one
+second, or as long as after a day.
+
+### Understanding event types
+
+The `eventTypes` resource (`/api/v1/events/eventTypes`) describes
+information about different events types, independent of any
+subscriptions.
+
+A GET request against this resource provides a list of available event
+types:
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/eventTypes | jq .
+Enter host password for user 'paul':
+[
+  "inotify",
+  "metronome"
+]
+paul@sprocket:~$
+```
+
+In the above example, two event types are shown: `inotify` and
+`metronome`.  The `SYSTEM` is not shown since a channel is always
+subscribed to this event type and cannot control the delivery of those
+events.
+
+To learn more about an event type, the event type name is appended to
+the path.  For example, the resource about the `metronome` event type
+is `events/eventTypes/metronome`
+(`/api/v1/events/eventTypes/metronome`).
+
+A GET request on this resource provides generic information about this
+event type:
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/eventTypes/metronome | jq .
+Enter host password for user 'paul':
+{
+  "description": "a configurable stream of messages"
+}
+paul@sprocket:~$
+```
+
+There are two further useful documents about an event type: one that
+describes selectors and one that describes the events of this event
+type.
+
+#### Selectors
+
+The `selector` resource (`/api/v1/events/eventTypes/<name>/selector`)
+provides a JSON Schema description of the selector.  When creating a
+subscription a selector is used to describe which events are of
+interest.
+
+A GET request on this resource returns a JSON Schema.  When
+subscribing to this event type, the selector must satisfy this JSON
+Schema.  In addition to describing the structure, it also describes
+the semantics of each of the arguments, including any default values
+that are used if not specified.
+
+Here is the selector for the metronome event type:
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/eventTypes/metronome/selector | jq .
+Enter host password for user 'paul':
+{
+  "$id": "http://dcache.org/frontend/events/metronomeSelectors#",
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "type": "object",
+  "properties": {
+    "frequency": {
+      "title": "The trigger frequency",
+      "description": "How often events are fired, in Hz.",
+      "type": "number",
+      "minimum": 0.0033333333333333335,
+      "maximum": 1000000
+    },
+    "delay": {
+      "title": "The delay between successive triggers",
+      "description": "The time between two triggers, in seconds.",
+      "type": "number",
+      "minimum": 1e-06,
+      "maximum": 300
+    },
+    "message": {
+      "title": "The event payload",
+      "description": "The data sent with each event.  A ${username} is replaced by the user's username and ${count} is replaced by the message number.",
+      "minLength": 1,
+      "type": "string",
+      "default": "tick"
+    },
+    "count": {
+      "title": "The number of events",
+      "description": "The number of events to generate before cancelling the subscription.  If not specified then the events are supplied until the subscription is explicitly cancelled by the client.",
+      "type": "number"
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "frequency"
+      ]
+    },
+    {
+      "required": [
+        "delay"
+      ]
+    }
+  ],
+  "additionalProperties": false
+}
+paul@sprocket:~$
+```
+
+When subscribing for `metronome` events, either the `frequency` or
+`delay` argument must be provided.  The `count` and `message` argument
+may be provided, but are not required.
+
+Selectors for `inotify` are more complicated, but a JSON Schema that
+describes them is available by querying the `inotify/selector`
+resource.
+
+#### Events
+
+The `event` resource (`/api/v1/events/eventTypes/<name>/event`)
+provides a JSON Schema description of events this event type will
+generate.
+
+The `metronome/event` resource
+(`/api/v1/events/eventTypes/metronome/event`) provides the schema for
+the metronome event type:
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/eventTypes/metronome/event | jq .
+Enter host password for user 'paul':
+{
+  "$id": "http://dcache.org/frontend/events/metronomeEvents#",
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "type": "string"
+}
+paul@sprocket:~$
+```
+
+This JSON Schema describes a String which (in this case) corresponds
+to the `message` field in the metronome selector.
+
+Events for `inotify` are more complicated, but a JSON Schema that
+describes them is available by querying the `inotify/event` resource.
+
+### Channel lifecycle
+
+How to create a channel and how to delete it.
+
+### Subscriptions: adding events
+
+How to create a subscription
+
+How to list a channel's subscriptions
+
+How to delete a channel's subscription
+
+### Receiving events: SSE
+
+How to obtain events from a channel
 
 ## Doors
 
