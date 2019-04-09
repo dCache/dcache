@@ -469,7 +469,197 @@ paul@sprocket:~$
 
 ## Active transfers
 
-Discovering information about on-going transfers.
+The `transfers` resource (`/api/v1/transfers`) provides information
+about ongoing transfers.  It does this by generating a snapshot of the
+active transfers every minute.  Without any additional options, a GET
+request returns information from the latest snapshot; e.g.,
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/transfers | jq .
+Enter host password for user 'paul':
+{
+  "items": [],
+  "currentOffset": 0,
+  "nextOffset": -1,
+  "currentToken": "e4c5759b-f9b3-4165-9bd5-074b8e022596",
+  "timeOfCreation": 1554815277797
+}
+paul@sprocket:~$
+```
+
+In this example, there are no active transfers (`items` is empty).
+The `currentOffset` and `nextOffset` indicate that all available data
+is shown.  The `currentToken` is a unique reference for this snapshot
+that may be used later.  Finally, the `timeOfCreation` gives the Unix
+time (in milliseconds) when this snapshot was created.
+
+If there are on-going transfers when the snapshot is created then the
+output is different.
+
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/transfers | jq .
+Enter host password for user 'paul':
+{
+  "items": [
+    {
+      "cellName": "webdav-secure-grid",
+      "domainName": "dCacheDomain",
+      "serialId": 1554815749796000,
+      "protocol": "HTTP-1.1",
+      "process": "",
+      "pnfsId": "0000AC8078894C74493B8F1BE11DC2672D9C",
+      "path": "/Users/paul/test-1",
+      "pool": "pool2",
+      "replyHost": "2001:638:700:20d6:0:0:1:3a",
+      "sessionStatus": "Mover PoolName=pool2 PoolAddress=pool2@pools/641: Waiting for completion",
+      "waitingSince": 1554815749796,
+      "moverStatus": "RUNNING",
+      "transferTime": 8021,
+      "bytesTransferred": 16384,
+      "moverId": 641,
+      "moverSubmit": 1554815749839,
+      "moverStart": 1554815749839,
+      "subject": {
+        "principals": [
+          {
+            "primaryGroup": false,
+            "gid": 0,
+            "name": "0"
+          },
+          {
+            "clientChain": [
+              "2001:638:700:20d6:0:0:1:3a"
+            ],
+            "address": "2001:638:700:20d6:0:0:1:3a",
+            "name": "2001:638:700:20d6::1:3a"
+          },
+          {
+            "name": "paul.millar@desy.de"
+          },
+          {
+            "primaryGroup": true,
+            "gid": 1001,
+            "name": "1001"
+          },
+          {
+            "name": "/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar"
+          },
+          {
+            "uid": 2002,
+            "name": "2002"
+          },
+          {
+            "primaryGroup": false,
+            "gid": 2002,
+            "name": "2002"
+          },
+          {
+            "primaryGroup": false,
+            "name": "dteam"
+          },
+          {
+            "fqan": {
+              "group": "/dteam",
+              "capability": "",
+              "role": ""
+            },
+            "primaryGroup": true,
+            "name": "/dteam"
+          },
+          {
+            "name": "paul"
+          },
+          {
+            "loA": "IGTF_AP_CLASSIC",
+            "name": "IGTF-AP:Classic"
+          }
+        ],
+        "readOnly": false,
+        "publicCredentials": [],
+        "privateCredentials": []
+      },
+      "userInfo": {
+        "username": "paul",
+        "uid": "2002",
+        "gid": "1001",
+        "primaryFqan": {
+          "group": "/dteam",
+          "capability": "",
+          "role": ""
+        },
+        "primaryVOMSGroup": "/dteam"
+      },
+      "valid": true,
+      "uid": "2002",
+      "gid": "1001",
+      "transferRate": 2,
+      "vomsGroup": "/dteam",
+      "timeWaiting": "0+00:00:09"
+    }
+  ],
+  "currentOffset": 0,
+  "nextOffset": -1,
+  "currentToken": "fbfd7d39-9959-4135-bf9a-5f65355346f5",
+  "timeOfCreation": 1554815757860
+}
+paul@sprocket:~$
+```
+
+The format describing a transfer is not yet fixed and may be subject
+to change.
+
+### Filtering
+
+The list of active transfers may be limited by specifying different
+query parameters.
+
+The following filters are supported:
+
+| Name | Select only transfers... |
+| ---- | --- |
+| state | in state |
+| door | initiated with this door |
+| domain | inititated in this specific domain |
+| prot | using the named protocol |
+| uid | initiated by this user |
+| gid | initiated by members of this group |
+| vomsgroup | initiated by a member of this voms group |
+| path | transfers involving this path |
+| pnfsid | transfers involving this PNFS-ID |
+| client | transfers involving this client |
+
+An an example, the query `/api/v1/transfers?uid=1000&prot=HTTP-1.1`
+would list all current HTTP transfers involving the user with uid
+1000.
+
+### Pagination
+
+On an active dCache, there may be many concurrent transfers: more than
+may be returned in one JSON response.  To support this, a query can
+target a specific snapshot (rather than the latest snapshot) selecting
+different subsets of all concurrent transfers.
+
+The `token` query parameter may be used to select a specific snapshot.
+The value is the `currentToken` value.  In the above example, the
+currentToken value is `fbfd7d39-9959-4135-bf9a-5f65355346f5`, so
+repeated queries that target this snapshot have
+`token=fbfd7d39-9959-4135-bf9a-5f65355346f5` as a query parameter.
+
+The `offset` and `limit` query parameters select a subset of values.
+If not specified then they default to 0 and 2147483647 respectively.
+
+Therefore, a GET request to
+`/api/v1/transfers?token=fbfd7d39-9959-4135-bf9a-5f65355346f5&offset=0&limit=10`
+returns the first ten transfers, a GET request to
+`/api/v1/transfers?token=fbfd7d39-9959-4135-bf9a-5f65355346f5&offset=10&limit=10`
+returns the next ten transfers, and so on.
+
+### Sorting
+
+The output is sorted.  The priority of different fields is controlled
+by the `sort` query parameter, which takes a comma-separate list of
+field names.  The default value is `door,waiting`.
 
 ## Events
 
