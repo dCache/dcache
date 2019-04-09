@@ -254,7 +254,6 @@ path parameter.
 The following example renames `test-1` to `test-2`.
 
 ```console
-{"status":"success"}paul@sprocket:~$ ^C
 paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
         -d '{"action":"mv", "destination":"test-2"}' \
         https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
@@ -273,7 +272,6 @@ The following modifies the file `/Users/paul/test-1` to have QoS
 `tape`.
 
 ```console
-{"status":"success"}paul@sprocket:~$ ^C
 paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
         -d '{"action":"qos", "target":"tape"}' \
         https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
