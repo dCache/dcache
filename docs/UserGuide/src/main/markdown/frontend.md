@@ -63,7 +63,7 @@ paul@sprocket:~$ curl https://dcache.example.org:3880/api/v1/user
 {
   "status" : "ANONYMOUS"
 }
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 If the user authenticates, then information is returned:
@@ -79,7 +79,7 @@ Enter host password for user 'paul':
   "homeDirectory" : "/Users/paul",
   "rootDirectory" : "/"
 }
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 ## Namespace
@@ -106,7 +106,7 @@ paul@sprocket:~$ curl https://example.org:3880/api/v1/namespace/
   "creationTime" : 1554696069369,
   "size" : 512
 }
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 Here is a query to discover information about the `/upload` directory.
@@ -122,7 +122,7 @@ paul@sprocket:~$ curl https://dcache.example.org:3880/api/v1/namespace/upload
   "creationTime" : 1554697387559,
   "size" : 512
 }
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 If the path does not exist, then dCache returns an error:
@@ -139,7 +139,7 @@ Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenti
 Content-Length: 51
 
 {"errors":[{"message":"Not Found","status":"404"}]}
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 The HTTP request returns a 404 status code, with a JSON entity
@@ -196,7 +196,7 @@ paul@sprocket:~$ curl https://dcache.example.org:3880/api/v1/namespace/?children
   "creationTime" : 1554696069369,
   "size" : 512
 }
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 The response includes metadata about each of the children.  If the
@@ -224,7 +224,7 @@ Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenti
 Content-Length: 20
 
 {"status":"success"}
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 ### Creating directories
@@ -240,7 +240,7 @@ paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
         https://dcache.example.org:3880/api/v1/namespace/Users/paul
 Enter host password for user 'paul':
 {"status":"success"}
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 ### Moving and renaming
@@ -259,7 +259,7 @@ paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
         https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
 Enter host password for user 'paul':
 {"status":"success"}
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 ### Modifying QoS
@@ -277,15 +277,111 @@ paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
         https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
 Enter host password for user 'paul':
 {"status":"success"}
-paul@sprocket:~$ 
+paul@sprocket:~$
 ```
 
 More information about discovering QoS values may be found in the QoS
 section.
 
-## QoS
+## QoS Management
 
-Discovering information about the available QoS options.
+The QoS management portion of the REST API (`/api/v1/qos-management`)
+is about working with the different QoS options.  Discovering the
+current QoS of a file or directory or modifying that value is done
+within the namespace (`/api/v1/namespace`) portion of the REST API.
+
+The `/api/v1/qos-management/qos` part of the REST API deals with the
+different QoS options.
+
+Files and directories in dCache have an associated QoS class.  The QoS
+class for a file describes how that file is handled by dCache; for
+example, what performance a user may reasonably expect when reading
+from that file.  The QoS class for a directory describes what QoS
+class a file will receive when it is written into that directory.
+Currently, all directory QoS classes have an equivalent file QoS class
+with the same name.
+
+To see the available options for files, make a GET request on
+`/api/v1/qos-management/qos/file`; e.g.,
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/qos-management/qos/file | jq .
+Enter host password for user 'paul':
+{
+  "name": [
+    "disk",
+    "tape",
+    "disk+tape",
+    "volatile"
+  ],
+  "message": "successful",
+  "status": "200"
+}
+paul@sprocket:~$
+```
+
+In a similar way, the available QoS options for directories may be
+found with a GET query to `/api/v1/qos-management/qos/directory`:
+
+```console
+paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/qos-management/qos/directory | jq .
+Enter host password for user 'paul':
+{
+  "name": [
+    "disk",
+    "tape",
+    "disk+tape",
+    "volatile"
+  ],
+  "message": "successful",
+  "status": "200"
+}
+paul@sprocket:~$
+```
+
+In both cases, the returned JSON lists the labels for the various QoS
+classes.
+
+Detailed information about a specific QoS label is available by making
+a GET request against the path appended with the QoS label.  For
+example, a GET request to `/api/v1/qos-management/qos/file/disk`
+provides information about the `disk` QoS class:
+
+```console
+paul@sprocket:~$  curl -s -u paul https://dcache.example.org:3880/api/v1/qos-management/qos/file/disk | jq .
+Enter host password for user 'paul':
+{
+  "status": "200",
+  "message": "successful",
+  "backendCapability": {
+    "name": "disk",
+    "transition": [
+      "tape",
+      "disk+tape"
+    ],
+    "metadata": {
+      "cdmi_data_redundancy_provided": "1",
+      "cdmi_geographic_placement_provided": [
+        "DE"
+      ],
+      "cdmi_latency_provided": "100"
+    }
+  }
+}
+paul@sprocket:~$
+```
+
+The returned JSON provides two groups of information.
+
+The `transition` list shows all allowed transitions if a file
+currently has the QoS class `disk`.  In this example, the transition
+from QoS class `disk` to QoS class `volatile` is not allowed.
+
+The `metadata` object contains information about the `disk` QoS class.
+The three values in this example (`cdmi_data_redundancy_provided`,
+`cdmi_geographic_placement_provided` and `cdmi_latency_provided`) come
+from the [CDMI specification](https://www.snia.org/cdmi "Cloud Data
+Management Interface (CDMI)"), see section 16.5.
 
 ## Space reservations
 
