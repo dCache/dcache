@@ -234,7 +234,6 @@ directory, with a JSON object contain the key `action` with value
 `mkdir` and the `name` key containing the new directory's name.
 
 ```console
-{"status":"success"}paul@sprocket:~$ ^C
 paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
         -d '{"action":"mkdir", "name":"new-dir"}' \
         https://dcache.example.org:3880/api/v1/namespace/Users/paul
@@ -385,7 +384,88 @@ Management Interface (CDMI)"), see section 16.5.
 
 ## Space reservations
 
-The ability to manage space reservations.
+Space reservations are a promise to store a given amount of data.
+They may be used when uploading a reasonable sized dataset, to avoid
+running out of storage space midway through the upload.
+
+The `/api/v1/space` is used when interacting with dCache's space
+reservation support.  A GET request on the `tokens` resource provides
+access to the list of available tokens.  By default, this lists all
+space reservations; e.g.,
+
+```console
+paul@sprocket:~$ curl -s https://dcache.example.org:3880/api/v1/space/tokens | jq .
+[
+  {
+    "id": 2,
+    "voGroup": "/atlas",
+    "retentionPolicy": "REPLICA",
+    "accessLatency": "ONLINE",
+    "linkGroupId": 2,
+    "sizeInBytes": 268435456000,
+    "creationTime": 1554782633504,
+    "description": "ATLASSCRATCHDISK",
+    "state": "RESERVED"
+  },
+  {
+    "id": 3,
+    "voGroup": "/atlas",
+    "retentionPolicy": "REPLICA",
+    "accessLatency": "ONLINE",
+    "linkGroupId": 2,
+    "sizeInBytes": 107374182400,
+    "creationTime": 1554782633548,
+    "description": "ATLASDATADISK",
+    "state": "RESERVED"
+  }
+]
+paul@sprocket:~$
+```
+
+Query parameters in the URL limit the reservations that are returned;
+for example, `accessLatency=ONLINE` limits the response to those
+reservations with online access-latency and `voGroup=/atlas` limits
+the response to those reservations with `/atlas` ownership.
+
+The following limits are allowed:
+
+| Name | Select only reservations... |
+| ---- | ------ |
+|  id  | with this id. |
+| voGroup | with this VO group. |
+| voRole | with this VO role. |
+| accessLatency | with this Access Latency. |
+| retentionPolicy | with this Retention Policy. |
+| groupId | created from a linkgroup with this id. |
+| state | with this current state. |
+| minSize | with a capacity (in bytes) larger than this capacity  |
+| minFreeSpace | with a free capacity (in bytes) larger than this capacuty |
+
+Multiple filters may be combined in a single query, with the effects
+being accumulative: each (potentially) reducing the number of
+reservations listed.
+
+Here is an example illustrating those space reservations that satisfy
+two filters: the VO group is `/atlas` and the reserved capacity is at
+least 200 GB.
+
+```console
+paul@sprocket:~$ curl -s 'https://dcache.example.org:3880/api/v1/space/tokens?voGroup=/atlas&minSize=200000000000' | jq .
+[
+  {
+    "id": 2,
+    "voGroup": "/atlas",
+    "retentionPolicy": "REPLICA",
+    "accessLatency": "ONLINE",
+    "linkGroupId": 2,
+    "sizeInBytes": 268435456000,
+    "creationTime": 1554782633504,
+    "description": "ATLASSCRATCHDISK",
+    "state": "RESERVED"
+  }
+]
+paul@sprocket:~$
+```
 
 ## Active transfers
 
