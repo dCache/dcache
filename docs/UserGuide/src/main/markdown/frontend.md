@@ -1,6 +1,18 @@
 Chapter 2. Frontend
 ===================
 
+**Table of Contents**
+
++ [Swagger](#swagger)
++ [REST overview](#rest-overview)
++ [Identity](#identity)
++ [Namespace](#namespace)
++ [QoS Management](#qos-management)
++ [Space reservations](#space-reservations)
++ [Active transfers](#active-transfers)
++ [Storage Events](#storage-events)
++ [Doors](#doors)
+
 The frontend is an HTTP endpoint that provides a REST API.  REST is a
 design principal, rather than a specific protocol, and the REST API
 that frontend provides is non-standard.  This allows you to take
@@ -50,7 +62,7 @@ There seven groups of API calls that a user may wish to use: identity,
 namespace, qos, space reservations, active transfers, events and
 doors.  The following sections describe each of these.
 
-## identity
+## Identity
 
 The identity API calls are about someone's identity within dCache.
 There is currently one API call: a GET request which allows you to
@@ -1342,8 +1354,8 @@ Here are some examples of self events.
 }
 ```
 
-This indicates that the subscription's path, which is a directory, has
-been moved.
+This event indicates that the subscription's path, which is a
+directory, has been moved.
 
 ```json
 {
@@ -1354,8 +1366,13 @@ been moved.
 }
 ```
 
-This indicates that the subscription's path, which is a file, has been
-deleted.
+This event indicates that the subscription's path, which is a file,
+has been deleted.
+
+Any `IN_DELETE_SELF` event will trigger the automatic removal of the
+subscription.  This, in turn, triggers the delivery of an `IN_IGNORED`
+event (see below).
+
 
 ###### Management events
 
