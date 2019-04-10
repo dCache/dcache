@@ -212,7 +212,8 @@ empty for the delete to work.
 The following example shows deleting a file:
 
 ```console
-paul@sprocket:~$ curl -u paul -D- -X DELETE https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
+paul@sprocket:~$ curl -u paul -D- -X DELETE \
+        https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
 Enter host password for user 'paul':
 HTTP/1.1 200 OK
 Date: Mon, 08 Apr 2019 21:59:47 GMT
@@ -304,7 +305,8 @@ To see the available options for files, make a GET request on
 `/api/v1/qos-management/qos/file`; e.g.,
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/qos-management/qos/file | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/qos-management/qos/file | jq .
 Enter host password for user 'paul':
 {
   "name": [
@@ -323,7 +325,8 @@ In a similar way, the available QoS options for directories may be
 found with a GET query to `/api/v1/qos-management/qos/directory`:
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/qos-management/qos/directory | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/qos-management/qos/directory | jq .
 Enter host password for user 'paul':
 {
   "name": [
@@ -347,7 +350,8 @@ example, a GET request to `/api/v1/qos-management/qos/file/disk`
 provides information about the `disk` QoS class:
 
 ```console
-paul@sprocket:~$  curl -s -u paul https://dcache.example.org:3880/api/v1/qos-management/qos/file/disk | jq .
+paul@sprocket:~$  curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/qos-management/qos/file/disk | jq .
 Enter host password for user 'paul':
 {
   "status": "200",
@@ -394,7 +398,8 @@ access to the list of available tokens.  By default, this lists all
 space reservations; e.g.,
 
 ```console
-paul@sprocket:~$ curl -s https://dcache.example.org:3880/api/v1/space/tokens | jq .
+paul@sprocket:~$ curl -s \
+        https://dcache.example.org:3880/api/v1/space/tokens | jq .
 [
   {
     "id": 2,
@@ -758,7 +763,8 @@ A GET request against this resource provides a list of available event
 types:
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/eventTypes | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/eventTypes | jq .
 Enter host password for user 'paul':
 [
   "inotify",
@@ -781,7 +787,8 @@ A GET request on this resource provides generic information about this
 event type:
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/eventTypes/metronome | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/eventTypes/metronome | jq .
 Enter host password for user 'paul':
 {
   "description": "a configurable stream of messages"
@@ -809,7 +816,8 @@ that are used if not specified.
 Here is the selector for the metronome event type:
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/eventTypes/metronome/selector | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/eventTypes/metronome/selector | jq .
 Enter host password for user 'paul':
 {
   "$id": "http://dcache.org/frontend/events/metronomeSelectors#",
@@ -879,7 +887,8 @@ The `metronome/event` resource
 the metronome event type:
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/eventTypes/metronome/event | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/eventTypes/metronome/event | jq .
 Enter host password for user 'paul':
 {
   "$id": "http://dcache.org/frontend/events/metronomeEvents#",
@@ -902,7 +911,8 @@ All channel operations happen within the `events/channels`
 resource returns a list of channels.  This is initially empty:
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/channels | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/channels | jq .
 Enter host password for user 'paul':
 []
 paul@sprocket:~$
@@ -913,7 +923,8 @@ This requires that a client first creates a channel. This is done by
 making a POST request to the `channels` resource:
 
 ```console
-paul@sprocket:~$ curl -D- -u paul -X POST https://dcache.example.org:3880/api/v1/events/channels
+paul@sprocket:~$ curl -D- -u paul -X POST \
+        https://dcache.example.org:3880/api/v1/events/channels
 Enter host password for user 'paul':
 HTTP/1.1 201 Created
 Date: Tue, 09 Apr 2019 20:50:07 GMT
@@ -934,7 +945,8 @@ above example, the new channel is
 A subsequent GET request on `events/channels` will show this channel:
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/channels | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/channels | jq .
 Enter host password for user 'paul':
 [
   "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w"
@@ -964,7 +976,8 @@ This value may be modified using a PATCH request.  In the following
 example, the timeout is extended to one hour:
 
 ```console
-paul@sprocket:~$ curl -s -u paul -X PATCH -H 'Content-Type: application/json' -d '{"timeout" : 3600}'
+paul@sprocket:~$ curl -s -u paul -X PATCH -H 'Content-Type: application/json' \
+        -d '{"timeout" : 3600}' \
         https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w | jq .
 Enter host password for user 'paul':
 paul@sprocket:~$
@@ -974,7 +987,7 @@ After this request is successfully processed, the channel metadata
 shows the updated timeout value:
 
 ```console
-paul@sprocket:~$ curl -s -u paul -H 'Accept: application/json'
+paul@sprocket:~$ curl -s -u paul -H 'Accept: application/json' \
         https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w | jq .
 Enter host password for user 'paul':
 {
@@ -987,7 +1000,8 @@ Once a client is finished receiving events, it can remove a channel
 using a DELETE request:
 
 ```console
-paul@sprocket:~$ curl -u paul -X DELETE https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+paul@sprocket:~$ curl -u paul -X DELETE \
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
 Enter host password for user 'paul':
 paul@sprocket:~$
 ```
@@ -996,7 +1010,7 @@ Subsequent attempts to use this channel will return a 404 status code
 and it will not appear in the channel list.
 
 ```console
-paul@sprocket:~$ curl -D- -u paul -H 'Accept: application/json'
+paul@sprocket:~$ curl -D- -u paul -H 'Accept: application/json' \
         https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
 Enter host password for user 'paul':
 HTTP/1.1 404 Not Found
@@ -1028,7 +1042,8 @@ A GET request returns the current list of subscriptions.  This is
 initially empty:
 
 ```console
-paul@sprocket:~$ curl -u paul -s https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
+paul@sprocket:~$ curl -u paul -s \
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
 Enter host password for user 'paul':
 []
 paul@sprocket:~$
@@ -1047,7 +1062,8 @@ The following is a simple example that creates a subscription to
 `metronome` with the simple selector `{"delay": 2}`:
 
 ```console
-paul@sprocket:~$ curl -D- -u paul -X POST -H 'Content-Type: application/json' -d '{"delay":2}'
+paul@sprocket:~$ curl -D- -u paul -X POST -H 'Content-Type: application/json' \
+        -d '{"delay":2}' \
         https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome
 Enter host password for user 'paul':
 HTTP/1.1 201 Created
@@ -1067,7 +1083,7 @@ this subscription.  This new subscription is also now included in the
 channel's subscription list:
 
 ```console
-paul@sprocket:~$ curl -s -u paul
+paul@sprocket:~$ curl -s -u paul \
         https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
 Enter host password for user 'paul':
 [
@@ -1080,7 +1096,8 @@ A GET request on the subscription returns the selector used to
 generate the subscription:
 
 ```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed | jq .
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed | jq .
 Enter host password for user 'paul':
 {
   "delay": 2
@@ -1092,7 +1109,8 @@ Once a subscription is no longer needed, it may be remove by issuing a
 DELETE request against the subscription resource.
 
 ```console
-paul@sprocket:~$ curl -u paul -X DELETE https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed
+paul@sprocket:~$ curl -u paul -X DELETE \
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed
 Enter host password for user 'paul':
 paul@sprocket:~$
 ```
@@ -1101,7 +1119,7 @@ The channel will stop receiving events for this subscription and the
 subscription is no longer listed:
 
 ```console
-paul@sprocket:~$ curl -s -u paul
+paul@sprocket:~$ curl -s -u paul \
         https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
 Enter host password for user 'paul':
 []
@@ -1119,7 +1137,8 @@ First, to receive SSE events, the client makes a GET request to the
 channel, specifying it will accept the MIME type `text/event-stream`
 
 ```console
-paul@sprocket:~$ curl -u paul -H 'Accept: text/event-stream' https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+paul@sprocket:~$ curl -u paul -H 'Accept: text/event-stream' \
+        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
 Enter host password for user 'paul':
 ^C
 paul@sprocket:~$
