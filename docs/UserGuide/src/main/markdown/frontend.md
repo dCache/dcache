@@ -1520,6 +1520,78 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
+When creating a channel, the client can give it an identifier by
+including a JSON object in the POST request with the `client-id`
+property.
+
+```console
+paul@sprocket:~$ curl -u paul -D- -H 'Content-Type: application/json' \
+        -d '{"client-id": "test-1"}' \
+	https://dcache.example.org.de:3880/api/v1/events/channels
+Enter host password for user 'paul':
+HTTP/1.1 201 Created
+Date: Wed, 10 Apr 2019 11:52:10 GMT
+Server: dCache/5.2.0-SNAPSHOT
+Location: https://dcache.example.org:3880/api/v1/events/channels/IQ7U7sA0gpnpu9QGz-Hbxg
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+Content-Length: 0
+
+paul@sprocket:~$
+```
+
+In this example, the channel is given the client identifier `test-1`.
+
+The client identifier may be used to select specific channels when
+querying which channels have already been created.
+
+As above, the query without any query parameter shows all the channels
+that are currently available to this user:
+
+```console
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/channels | jq .
+Enter host password for user 'paul':
+[
+  "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w",
+  "https://dcache.example.org:3880/api/v1/events/channels/IQ7U7sA0gpnpu9QGz-Hbxg"
+]
+paul@sprocket:~$
+```
+
+In this example, the user currently has two channels.
+
+By including the client identifier in the `client-id` query parameter,
+the output filters only those channels created with that client
+identifier.
+
+```console
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/channels?client-id=test-1 | jq .
+Enter host password for user 'paul':
+[
+  "https://dcache.example.org:3880/api/v1/events/channels/IQ7U7sA0gpnpu9QGz-Hbxg"
+]
+paul@sprocket:~$
+```
+
+In this example, only one channel was created with the `test-1` client
+identifier.
+
+If the query parameter is included but without any value then the
+query shows all channels created without any client identifier.
+
+```console
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/channels?client-id= | jq .
+Enter host password for user 'paul':
+[
+  "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w"
+]
+paul@sprocket:~$
+```
+
 Information about a channel may be obtained by a GET request against a
 channel endpoint.  It is important to specify that the result should
 be JSON by specifying the `Accept` HTTP request header.  This is to
