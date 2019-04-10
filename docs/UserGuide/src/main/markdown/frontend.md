@@ -100,7 +100,7 @@ With the namespace part of the API, you can discover information about
 a specific file or directory, list the contents of a directory, delete
 and rename files, and modify a file's QoS.
 
-### Discovering metadata and listing directory contents
+### Discovering metadata
 
 To discover information about a path in dCache, make a GET request to
 a URL formed by appending the dCache path to `/api/v1/namespace`.
@@ -137,6 +137,40 @@ paul@sprocket:~$ curl https://dcache.example.org:3880/api/v1/namespace/upload
 paul@sprocket:~$
 ```
 
+Additional information may be requested by specifying different query
+parameters in the GET request.  These additional fields are not
+included by default as fetching them slows down the query.
+
+There are three additional fields: `locality`, `locations` and `qos`.
+To enable `locality` and `qos` information, the GET request would
+include `?locality=true&qos=true`.
+
+The `locality` flag adds information about whether data is currently
+available.  With this flag, the output includes the extra field
+`fileLocality` in the output for files; no extra information is
+provided for directories.  The possible values are summarised in the
+following table:
+
+| Name | Semantics |
+| ---- | ------ |
+| ONLINE | data is available now. |
+| NEARLINE | data is not available now; an automated process can make the data available on demand. |
+| ONLINE_AND_NEARLINE | data is available now, but might require an automated activity to make it available in the future. |
+| UNAVAILABLE | data is not available now; sysadmin intervention may be needed to make it available. |
+| LOST | data is not available and there is no process to obtain it. |
+
+The `locations` flag adds information about where data is currently
+located.  With this flag, the output includes the `locations` field.
+This field's value is a JSON array of pool names.
+
+The `qos` flag adds information about the current QoS of a file or
+directory.  With this flag, the output includes the `currentQoS` field
+and optionally the `targetQoS` field.  The former describes the
+current QoS for this file or directory.  If dCache is transitioning a
+file to a different QoS then the `targetQoS` field is present,
+describing which QoS the file should have.  To understand more about
+QoS values, see [QoS Management](#qos-management).
+
 If the path does not exist, then dCache returns an error:
 
 ```console
@@ -156,6 +190,9 @@ paul@sprocket:~$
 
 The HTTP request returns a 404 status code, with a JSON entity
 containing the error.
+
+
+### Listing directories
 
 To list the contents of a directory, include the query argument
 `children=true`; for example, to list the root directory:
