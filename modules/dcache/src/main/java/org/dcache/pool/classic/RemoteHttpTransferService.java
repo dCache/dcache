@@ -28,6 +28,7 @@ import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 
@@ -39,6 +40,8 @@ import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.RemoteHttpDataTransferProtocol;
 import org.dcache.pool.movers.RemoteHttpsDataTransferProtocol;
+
+import static org.dcache.util.Files.checkDirectory;
 
 public class RemoteHttpTransferService extends AbstractMoverProtocolTransferService
 {
@@ -143,9 +146,10 @@ public class RemoteHttpTransferService extends AbstractMoverProtocolTransferServ
         }
     }
 
-    private synchronized X509CertChainValidator getValidator()
+    private synchronized X509CertChainValidator getValidator() throws IOException
     {
         if (validator == null) {
+            checkDirectory(caPath);
             OCSPParametes ocspParameters = new OCSPParametes(ocspCheckingMode);
             ValidatorParams validatorParams =
                     new ValidatorParams(new RevocationParameters(crlCheckingMode, ocspParameters), ProxySupport.ALLOW);
