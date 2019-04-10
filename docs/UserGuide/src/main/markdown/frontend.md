@@ -690,14 +690,17 @@ interface that allows you to discover what possibilities exist,
 discover the current configuration and modify that configuration.
 
 The SSE protocol targets a specific endpoint.  In dCache, this
-endpoint is called the channel.  It is expected that each client has
-its own channel: channels are not shared.  A client will create its
-own channel and then configures this channel to receive all events the
-client is interested in.
+endpoint for receiving events is called a channel.  It is expected
+that each client will have its own channel: channels are not shared
+between clients.  A client will create its own channel and then
+configures this channel to receive all events the client is interested
+in.
 
 Although it is not forbidden, a client could create multiple channels.
-However, this is both unnecessary and discouraged as each user is
-allowed only a limited number of channels.
+However, this is unnecessary, as a channel can receive any number of
+events of any type.  Clients creating multiple channels is also
+discouraged, as each user is allowed only a limited number of
+channels.
 
 Storage events are grouped together into broadly similar types, called
 event types; for example, all events that simulate the Linux
@@ -706,20 +709,20 @@ type.  Events that are to do with SSE support itself (or other
 low-level aspects) have the `SYSTEM` event type.
 
 When a client creates a channel, it initially receives only `SYSTEM`
-events, which are generally not of interest.  To start receiving
-interesting events, the client must create subscriptions.  A
-subscription is just how a client describes which events of a specific
-event type are of interest.
-
-A subscription has two parts: the name of the event type and a
-selector.  The selector is a JSON object that describes which events
-(of all possible events) are of interest.  The exact format of a
+events.  To start receiving interesting events, the client must create
+subscriptions.  A subscription is a description of which events (of a
+specific event type) are of interest.  There is a JSON object, called
+a selector, that describes which events (of all possible events
+emitted by an event type) are of interest.  The exact format of the
 selector depends on the event type.
 
 A channel can have multiple subscriptions.  Each subscription is
 independent: they could come from the same event type, or from
 different event types.  A client can add and remove subscriptions as
-needed.
+its interest in events changes.  For example, a client that is showing
+the contents of a specific directory might subscribe to learn of
+changes to that directory; when the user changes directory, so the
+subscriptions would change accordingly.
 
 ### Top-level information
 
@@ -753,10 +756,15 @@ after five minutes.  An individual channel may be configured to be
 garbage collected on a different schedule, as quickly as after one
 second, or as long as after a day.
 
+Each user is allowed to have only a limited number of channels; once
+this limit is reached, attempts to create more channels will fail.  In
+the above example, the maximum number of concurrent channels any one
+user can have is 128.
+
 ### Understanding event types
 
-The `eventTypes` resource (`/api/v1/events/eventTypes`) describes
-information about different events types, independent of any
+The `events/eventTypes` resource (`/api/v1/events/eventTypes`)
+describes information about different events types, independent of any
 subscriptions.
 
 A GET request against this resource provides a list of available event
@@ -779,12 +787,13 @@ subscribed to this event type and cannot control the delivery of those
 events.
 
 To learn more about an event type, the event type name is appended to
-the path.  For example, the resource about the `metronome` event type
-is `events/eventTypes/metronome`
-(`/api/v1/events/eventTypes/metronome`).
+the path.
 
-A GET request on this resource provides generic information about this
-event type:
+The resource about the `metronome` event type is
+`events/eventTypes/metronome` (`/api/v1/events/eventTypes/metronome`).
+
+A GET request on this resource provides information about this event
+type:
 
 ```console
 paul@sprocket:~$ curl -s -u paul \
@@ -796,11 +805,23 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-There are two further useful documents about an event type: one that
-describes selectors and one that describes the events of this event
-type.
+Similar information is available about the `inotify` event type:
 
-#### Selectors
+```console
+paul@sprocket:~$ curl -u paul \
+        https://dcache.example.org:3880/api/v1/events/eventTypes/inotify
+Enter host password for user 'paul':
+{
+  "description" : "notification of namespace activity, modelled after inotify(7)"
+}
+paul@sprocket:~$
+```
+
+There are two further useful documents about each event type: one that
+describes selectors and one that describes the data supplied with
+events of this event type.
+
+#### Event Type: Selectors
 
 The `selector` resource (`/api/v1/events/eventTypes/<name>/selector`)
 provides a JSON Schema description of the selector.  When creating a
@@ -812,6 +833,8 @@ subscribing to this event type, the selector must satisfy this JSON
 Schema.  In addition to describing the structure, it also describes
 the semantics of each of the arguments, including any default values
 that are used if not specified.
+
+##### metronome
 
 Here is the selector for the metronome event type:
 
@@ -872,15 +895,131 @@ When subscribing for `metronome` events, either the `frequency` or
 `delay` argument must be provided.  The `count` and `message` argument
 may be provided, but are not required.
 
+Here are some examples of valid selectors.
+
+```json
+{
+    "message": "Message ${count}",
+    "delay": 2
+}
+```
+
+A metronome subscription with this selector will generate an event
+every two seconds with the data `"Message 1"`, `"Message 2"`,
+`"Message 3"` and so on.
+
+```json
+{
+    "freqency": 1000,
+    "count": 2000
+}
+```
+
+A metronome subscription with this selector will generate events at 1
+kHz, for two seconds.  Each event will have the same data: `"tick"`.
+
+##### inotify
+
 Selectors for `inotify` are more complicated, but a JSON Schema that
 describes them is available by querying the `inotify/selector`
-resource.
+resource:
 
-#### Events
+```console
+paul@sprocket:~$ curl -s -u paul \
+        https://dcache.example.org:3880/api/v1/events/eventTypes/inotify/selector | jq .
+Enter host password for user 'paul':
+{
+  "$id": "http://dcache.org/frontend/events/namespaceSelectors#",
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "description": "path of a directory to watch",
+  "type": "object",
+  "required": [
+    "path"
+  ],
+  "properties": {
+    "path": {
+      "title": "The path of the file or directory to watch",
+      "description": "The target must exist when the request is made.  The watch will follow the target, if it is moved.",
+      "pattern": "^/(.*[^/])?$",
+      "type": "string"
+    },
+    "flags": {
+      "title": "Control which events are selected",
+      "description": "See inotify(7) for the meaning of these flags.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "IN_ACCESS",
+          "IN_ATTRIB",
+          "IN_CLOSE_WRITE",
+          "IN_CLOSE_NOWRITE",
+          "IN_CREATE",
+          "IN_DELETE",
+          "IN_DELETE_SELF",
+          "IN_MODIFY",
+          "IN_MOVE_SELF",
+          "IN_MOVED_FROM",
+          "IN_MOVED_TO",
+          "IN_OPEN",
+          "IN_ALL_EVENTS",
+          "IN_CLOSE",
+          "IN_MOVE",
+          "IN_DONT_FOLLOW",
+          "IN_EXCL_UNLINK",
+          "IN_MASK_ADD",
+          "IN_ONESHOT",
+          "IN_ONLYDIR"
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}
+paul@sprocket:~$
+```
+
+The `path` property is required, while the `flags` property is
+optional.
+
+Here are some examples of valid inotify selectors:
+
+```json
+{
+    "path": "/data/uploads"
+}
+```
+
+A inotify subscription with this selector will watch the
+`/data/uploads` directory for any changes.
+
+```json
+{
+    "path": "/Users/paul/docs",
+    "flags":
+        [
+            "IN_CREATE",
+	    "IN_DELETE",
+	    "IN_MOVE_FROM",
+	    "IN_MOVE_TO",
+            "IN_CLOSE_WRITE"
+        ]
+}
+```
+
+An inotify subscription with this selector will watch the
+`/Users/paul/docs` directory for any files or directories being
+created, renamed or deleted.  For files, an `IN_CREATE` event is sent
+at the start of an upload and an `IN_CLOSE_WRITE` event is sent when
+the upload is complete.
+
+#### Event Type: Events
 
 The `event` resource (`/api/v1/events/eventTypes/<name>/event`)
-provides a JSON Schema description of events this event type will
-generate.
+provides a JSON Schema description of the data included with events of
+this event.
+
+##### metronome
 
 The `metronome/event` resource
 (`/api/v1/events/eventTypes/metronome/event`) provides the schema for
@@ -899,10 +1038,358 @@ paul@sprocket:~$
 ```
 
 This JSON Schema describes a String which (in this case) corresponds
-to the `message` field in the metronome selector.
+to the `message` field in the metronome selector.  Therefore, the
+default event data is `"tick"`.
 
-Events for `inotify` are more complicated, but a JSON Schema that
-describes them is available by querying the `inotify/event` resource.
+##### inotify
+
+The events generated by the inotify event type are described in the
+`inotify/event` (`/api/v1/events/eventTypes/inotify/event`) resource:
+
+```console
+paul@sprocket:~$ curl -s -u paul \
+         https://dcache.example.org:3880/api/v1/events/eventTypes/inotify/event | jq .
+Enter host password for user 'paul':
+{
+  "$id": "http://dcache.org/frontend/events/namespaceEvents#",
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "description": "the description of a change in the namespace",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/nonMoveChildEvent"
+    },
+    {
+      "$ref": "#/definitions/moveChildEvent"
+    },
+    {
+      "$ref": "#/definitions/selfEvent"
+    },
+    {
+      "$ref": "#/definitions/managementEvent"
+    }
+  ],
+  "definitions": {
+    "childEvent": {
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "title": "The name of the target",
+          "description": "The filename of the filesystem object that triggered this event.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "nonMoveChildEvent": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/childEvent"
+        },
+        {
+          "properties": {
+            "mask": {
+              "title": "One or more flags that describe this event",
+              "description": "The semantics are based on inotify(7)",
+              "type": "array",
+              "minitems": 1,
+              "maxitems": 2,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "IN_ACCESS",
+                  "IN_ATTRIB",
+                  "IN_CLOSE_WRITE",
+                  "IN_CLOSE_NOWRITE",
+                  "IN_CREATE",
+                  "IN_DELETE",
+                  "IN_MODIFY",
+                  "IN_OPEN",
+                  "IN_ISDIR"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "moveChildEvent": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/childEvent"
+        },
+        {
+          "required": [
+            "mask",
+            "cookie"
+          ],
+          "properties": {
+            "mask": {
+              "title": "One or more flags that describe this event",
+              "description": "The semantics are based on inotify(7)",
+              "type": "array",
+              "minitems": 1,
+              "maxitems": 2,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "IN_MOVED_FROM",
+                  "IN_MOVED_TO",
+                  "IN_ISDIR"
+                ]
+              }
+            },
+            "cookie": {
+              "title": "move association",
+              "description": "An id that is the same for the MOVED_FROM and MOVED_TO events from a single namespace operation.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "selfEvent": {
+      "required": [
+        "mask"
+      ],
+      "properties": {
+        "mask": {
+          "title": "One or more flags that describe this event",
+          "description": "The semantics are based on inotify(7)",
+          "type": "array",
+          "minitems": 1,
+          "maxitems": 2,
+          "items": {
+            "type": "string",
+            "enum": [
+              "IN_DELETE_SELF",
+              "IN_MOVE_SELF",
+              "IN_ISDIR"
+            ]
+          }
+        }
+      }
+    },
+    "managementEvent": {
+      "required": [
+        "mask"
+      ],
+      "properties": {
+        "mask": {
+          "title": "One or more flags that describe this event",
+          "description": "The semantics are based on inotify(7)",
+          "type": "array",
+          "minitems": 1,
+          "maxitems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "IN_IGNORED",
+              "IN_Q_OVERFLOW",
+              "IN_UNMOUNT"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+paul@sprocket:~$
+```
+
+The events from the inotify event type are one of four types: a move
+child event, a non-move child event, a self event and a management
+event.
+
+###### Move child events
+
+A move child event is where the subscription's path is a directory and
+either a directory item (a file or directory) is moved into the
+subscription's path, or a directory item is move out of that path.
+Renaming a file within a directory is treated as a move operation.
+
+Here are some example move child event:
+
+```json
+{
+    "name": "myfile.txt"
+    "mask":
+        [
+            "IN_MOVED_FROM"
+        ],
+    "cookie": "123456789abcdef"
+}
+```
+
+This describes the file `myfile.txt` is moved out of the watched
+directory.
+
+```json
+{
+    "name": "my-directory"
+    "mask":
+        [
+            "IN_MOVED_TO",
+	    "IN_ISDIR"
+        ],
+    "cookie": "1133557799bbddf"
+}
+```
+
+This describes the directory `my-directory` is moved into the watched
+directory.
+
+The two events:
+
+```json
+{
+    "name": "old-name.txt"
+    "mask":
+        [
+            "IN_MOVED_FROM"
+        ],
+    "cookie": "1111555511115555"
+}
+```
+
+and
+
+```json
+{
+    "name": "new-name.txt"
+    "mask":
+        [
+            "IN_MOVED_TO"
+        ],
+    "cookie": "1111555511115555"
+}
+```
+
+are triggered when the file `old-name.txt` is renamed to
+`new-name.txt`.  Note that the `cookie` field is the same for these
+two events.
+
+A similar set of two events is generated if a directory item is moved
+from one watched directory to another: the `cookie` value identifies
+the two events as coming from the same operation.
+
+###### Non-move child events
+
+Non-move events are generated when a subscription's path is a
+directory and something happens with a directory item (a file or
+directory) within that watched directory.
+
+Here are some example non-move child events.
+
+```json
+{
+    "name": "my-new-file.dat",
+    "mask":
+        [
+	    "IN_CREATE"
+	]
+}
+```
+
+This event indicates that a new file within the watched directory has
+been created.  This new file has the name `my-new-file.dat`.
+
+```json
+{
+    "name": "my-new-dir",
+    "mask":
+        [
+	    "IN_CREATE",
+	    "IN_ISDIR"
+	]
+}
+```
+
+This event indicates that a new directory within the watched directory
+has been created.  This new directory has the name `my-new-dir`.
+
+```json
+{
+    "name": "important.dat",
+    "mask":
+        [
+	    "IN_ATTRIB"
+	]
+}
+```
+
+This event indicates that some metadata associated with the file
+`important.dat`.  A client would need to fetch fresh metadata to learn
+what has changed.
+
+###### Self events
+
+Self events are events that describe changes to the path in the
+subscription.
+
+Here are some examples of self events.
+
+```json
+{
+    "mask" :
+        [
+	    "IN_MOVE_SELF",
+	    "IN_ISDIR"
+	]
+}
+```
+
+This indicates that the subscription's path, which is a directory, has
+been moved.
+
+```json
+{
+    "mask" :
+        [
+	    "IN_DELETE_SELF"
+	]
+}
+```
+
+This indicates that the subscription's path, which is a file, has been
+deleted.
+
+###### Management events
+
+Management events are those that are to do with the delivery of
+inotify events, rather than the result of activity in the watched
+portion of the namespace.
+
+Here are some examples of management events.
+
+```json
+{
+    "mask":
+        [
+	    "IN_IGNORED"
+	]
+}
+```
+
+This indicates that no further events will be sent on this
+subscription.
+
+```json
+{
+    "mask":
+        [
+	    "IN_Q_OVERFLOW"
+	]
+}
+```
+
+This indicates that dCache-internal resources were exhausted when
+attempting to deliver events.  The client's state may be inconsistent
+with dCache and should check for inconsistencies and take steps to
+recover from any found.
 
 ### Channel lifecycle
 
