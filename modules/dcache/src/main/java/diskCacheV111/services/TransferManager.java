@@ -380,6 +380,9 @@ public abstract class TransferManager extends AbstractCellComponent
 
     public void removeActiveTransfer(long id) {
         TransferManagerHandler handler = _activeTransfers.remove(id);
+        if (handler == null) {
+            return;
+        }
         if (doDbLogging()) {
             PersistenceManager pm = _pmf.getPersistenceManager();
             try {
