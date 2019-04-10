@@ -182,8 +182,10 @@ directory.  With this flag, the output includes the `currentQoS` field
 and optionally the `targetQoS` field.  The former describes the
 current QoS for this file or directory.  If dCache is transitioning a
 file to a different QoS then the `targetQoS` field is present,
-describing which QoS the file should have.  To understand more about
-QoS values, see [QoS Management](#qos-management).
+describing which QoS the file should have.  See [QoS
+Management](#qos-management) to understand more about these QoS
+values.  How to trigger QoS changes is described in [Modifying
+QoS](#modifying-qos).
 
 If the path does not exist, then dCache returns an error:
 
@@ -343,8 +345,14 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-More information about discovering QoS values may be found in the QoS
-section.
+A QoS transitions may take some time to complete.  While the
+transition is taking place, dCache will continue to show the file's
+QoS as unchanged but will include an additional field `targetQoS` that
+indicates to which QoS dCache is transitioning the file.  See
+[Discovering metadata](#discovering-metadata) for more details.
+
+See [QoS Management](#qos-management) to understand more about these
+QoS values.
 
 ## QoS Management
 
@@ -352,6 +360,7 @@ The QoS management portion of the REST API (`/api/v1/qos-management`)
 is about working with the different QoS options.  Discovering the
 current QoS of a file or directory or modifying that value is done
 within the namespace (`/api/v1/namespace`) portion of the REST API.
+See [Discovering metadata](#discovering-metadata) for more details.
 
 The `/api/v1/qos-management/qos` part of the REST API deals with the
 different QoS options.
@@ -441,7 +450,9 @@ The returned JSON provides two groups of information.
 
 The `transition` list shows all allowed transitions if a file
 currently has the QoS class `disk`.  In this example, the transition
-from QoS class `disk` to QoS class `volatile` is not allowed.
+from QoS class `disk` to QoS class `volatile` is not allowed.  See
+[Modifying QoS](#modifying-qos) for more information about changing a
+file's or directory's QoS.
 
 The `metadata` object contains information about the `disk` QoS class.
 The three values in this example (`cdmi_data_redundancy_provided`,
