@@ -1520,9 +1520,14 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-When creating a channel, the client can give it an identifier by
-including a JSON object in the POST request with the `client-id`
-property.
+A channel may be give an identifier by the client.  Having a client
+identifier is optional and has no impact on how the channel operates.
+A client identifier allows a client to discover a channel it created
+previously.
+
+A channel is assigned an identifier by the client when creating a
+channel.  The client does this by including a JSON object in the POST
+request with the `client-id` property:
 
 ```console
 paul@sprocket:~$ curl -u paul -D- -H 'Content-Type: application/json' \
@@ -1544,7 +1549,7 @@ paul@sprocket:~$
 In this example, the channel is given the client identifier `test-1`.
 
 The client identifier may be used to select specific channels when
-querying which channels have already been created.
+querying which channels have already been created for this user.
 
 As above, the query without any query parameter shows all the channels
 that are currently available to this user:
@@ -1579,8 +1584,9 @@ paul@sprocket:~$
 In this example, only one channel was created with the `test-1` client
 identifier.
 
-If the query parameter is included but without any value then the
-query shows all channels created without any client identifier.
+If the query parameter is included in the GET request, but without any
+value then the query shows all channels created without any client
+identifier:
 
 ```console
 paul@sprocket:~$ curl -s -u paul \
@@ -1592,10 +1598,14 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-Information about a channel may be obtained by a GET request against a
-channel endpoint.  It is important to specify that the result should
-be JSON by specifying the `Accept` HTTP request header.  This is to
-avoid the request being processed as an SSE request.
+Information about a specific channel may be obtained by a GET request
+against a channel endpoint.
+
+*Important*: clients also receive events from a channel by making a
+GET request.  A request to receive SSE events must include the request
+header `Accept: text/event-stream`.  Therefore, to avoid ambiguity, a
+query to discover a channel's metadata should include the `Accept:
+application/json` request header.
 
 ```console
 paul@sprocket:~$ curl -s -u paul -H 'Accept: application/json' \
@@ -1607,11 +1617,14 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-This shows the timeout: the amount of time a client is disconnected
-from the channel after which the channel is automatically removed.
+This shows the timeout: the amount of time, in seconds, a client is
+disconnected from the channel after which the channel is automatically
+deleted.
 
-This value may be modified using a PATCH request.  In the following
-example, the timeout is extended to one hour:
+This value may be modified using a PATCH request, with a JSON object
+as the request entity.  A `timeout` property provides the new
+duration, in seconds, after which the channel is automatically
+removed.
 
 ```console
 paul@sprocket:~$ curl -s -u paul -X PATCH -H 'Content-Type: application/json' \
@@ -1620,6 +1633,9 @@ paul@sprocket:~$ curl -s -u paul -X PATCH -H 'Content-Type: application/json' \
 Enter host password for user 'paul':
 paul@sprocket:~$
 ```
+
+In the above example, the timeout for this channel is extended to one
+hour.
 
 After this request is successfully processed, the channel metadata
 shows the updated timeout value:
@@ -1664,11 +1680,12 @@ Content-Length: 51
 paul@sprocket:~$
 ```
 
-A client is not required to remove the channel it created, because
-dCache will automatically delete any left over channel once they have
-been idle for too long.  However, it is recommended clients explicitly
-delete a channel if it is no longer needed.  This is because each
-dCache user is only allowed a limit number of concurrent channels.
+A client is not required to remove the channel it created: dCache will
+automatically delete any left over channel once they have been idle
+for too long.  However, it is recommended clients explicitly delete a
+channel if it is no longer needed.  This is because each dCache user
+is only allowed a limit number of concurrent channels and it may take
+some time before an abandoned channel is automatically deleted.
 
 ### Subscriptions
 
@@ -2009,4 +2026,126 @@ example, by setting the file's size.
 
 ## Doors
 
-Information on alternative network protocols.
+Doors are protocol-specific network services that allow clients to
+interact with dCache.  Uploading and downloading data is not supported
+through the REST API; therefore, a client must find a door that
+supports an appropriate protocol if data transfer is needed.
+
+The `doors` resource (`/api/v1/doors`) allows a client to discover
+which protocols are supported and what are their endpoints.
+
+A GET request on this resource yields a complete set of all doors.
+
+```console
+paul@sprocket:~$ curl -s -u paul \
+        https://prometheus.desy.de:3880/api/v1/doors | jq .
+Enter host password for user 'paul':
+[
+  {
+    "protocol": "ftps",
+    "version": "1.0.0",
+    "root": "/",
+    "addresses": [
+      "dcache.example.org"
+    ],
+    "port": 21,
+    "load": 0,
+    "tags": [
+      "glue",
+      "srm",
+      "storage-descriptor"
+    ],
+    "readPaths": [
+      "/"
+    ],
+    "writePaths": [
+      "/"
+    ]
+  },
+  {
+    "protocol": "https",
+    "version": "1.1",
+    "root": "/",
+    "addresses": [
+      "dcache.example.org"
+    ],
+    "port": 2443,
+    "load": 0,
+    "tags": [
+      "glue",
+      "srm",
+      "storage-descriptor"
+    ],
+    "readPaths": [
+      "/"
+    ],
+    "writePaths": [
+      "/"
+    ]
+  },
+  {
+    "protocol": "gsiftp",
+    "version": "1.0.0",
+    "root": "/",
+    "addresses": [
+      "dcache.example.org"
+    ],
+    "port": 2811,
+    "load": 0,
+    "tags": [
+      "glue",
+      "srm",
+      "storage-descriptor"
+    ],
+    "readPaths": [
+      "/"
+    ],
+    "writePaths": [
+      "/"
+    ]
+  },
+  {
+    "protocol": "https",
+    "version": "1.1",
+    "root": "/",
+    "addresses": [
+      "dcache.example.org"
+    ],
+    "port": 443,
+    "load": 0,
+    "tags": [
+      "cdmi",
+      "dcache-view"
+    ],
+    "readPaths": [
+      "/"
+    ],
+    "writePaths": [
+      "/"
+    ]
+  }
+]
+paul@sprocket:~$
+```
+
+In this example, three doors are listed: an FTPS door listening on
+port 21, an gsiftp (GridFTP) endpoint listening on port 2811, and a
+WebDAV endpoint listening on port 443.
+
+The `root` indicates the door's root path.  If the value is not `/`
+then this property's value is the directory a client sees as the root
+directory.
+
+The `addresses` indicates on which address(es) the door is listening.
+
+The `port` indicates the port number.
+
+The `tags` are arbitrary metadata describing aspects of the door; for
+example, describing for which kind of use the door is intended.
+
+The `load` is a number between 0 and 1, indicating how busy the door
+is currently.
+
+The `readPaths` and `writePaths` describe generic limitations the door
+will impose; for example, only allowing write activity on a subset of
+the namespace.
