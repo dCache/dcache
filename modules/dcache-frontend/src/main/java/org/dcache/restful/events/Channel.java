@@ -168,15 +168,17 @@ public class Channel extends CloseableWithTasks
 
         onClose(() -> {
                     subscriptionsByIdentity.values().forEach(Subscription::close);
-                    if (sink != null && !sink.isClosed()) {
-                        sink.close();
-                        sink = null;
-                        sse = null;
-                    }
-                    ringBuffer.clear();
-                    if (closeFuture != null) {
-                        closeFuture.cancel(false); // do not interrupt ourself
-                        closeFuture = null;
+                    synchronized (Channel.this) {
+                        if (sink != null && !sink.isClosed()) {
+                            sink.close();
+                            sink = null;
+                            sse = null;
+                        }
+                        ringBuffer.clear();
+                        if (closeFuture != null) {
+                            closeFuture.cancel(false); // do not interrupt ourself
+                            closeFuture = null;
+                        }
                     }
                 });
 
