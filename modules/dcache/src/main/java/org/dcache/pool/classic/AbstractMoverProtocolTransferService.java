@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.classic;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,9 +91,9 @@ public abstract class AbstractMoverProtocolTransferService
         } catch (ClassNotFoundException e) {
             throw new CacheException(27, "Protocol " + info + " is not supported", e);
         } catch (Exception e) {
+            Throwables.throwIfUnchecked(e);
             String error = "Could not create MoverProtocol mover for " + info
                     + ": " + Exceptions.messageOrClassName(e);
-            LOGGER.error(error, e);
             throw new CacheException(27, error, e);
         }
     }
