@@ -45,6 +45,7 @@ import org.dcache.pool.movers.MoverProtocolMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.CDCExecutorServiceDecorator;
+import org.dcache.util.Exceptions;
 
 public abstract class AbstractMoverProtocolTransferService
         extends AbstractCellComponent
@@ -80,12 +81,20 @@ public abstract class AbstractMoverProtocolTransferService
             MoverProtocol moverProtocol = createMoverProtocol(info);
             return new MoverProtocolMover(handle, message, pathToDoor, this, moverProtocol, _checksumModule);
         } catch (InvocationTargetException e) {
-            throw new CacheException(27, "Could not create mover for " + info, e.getTargetException());
+            Throwable cause = e.getTargetException();
+            String causeError = cause instanceof Exception
+                    ? Exceptions.messageOrClassName((Exception)cause)
+                    : cause.toString();
+            String error = "Construction of MoverProtocol mover for " + info
+                    + " failed: " + causeError;
+            throw new CacheException(27, error, cause);
         } catch (ClassNotFoundException e) {
             throw new CacheException(27, "Protocol " + info + " is not supported", e);
         } catch (Exception e) {
-            LOGGER.error("Invalid mover for " + info + ": " + e.toString(), e);
-            throw new CacheException(27, "Could not create mover for " + info, e);
+            String error = "Could not create MoverProtocol mover for " + info
+                    + ": " + Exceptions.messageOrClassName(e);
+            LOGGER.error(error, e);
+            throw new CacheException(27, error, e);
         }
     }
 
