@@ -3,3 +3,6 @@
  * Styling that should influence both non-profiled and profiled output
  * should go in the dCacheBook-common.css file.
  */
+.github-fork-ribbon {
+    position: fixed;
+}
