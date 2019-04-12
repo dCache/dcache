@@ -290,10 +290,9 @@ public class Channel extends CloseableWithTasks
         }
 
         if (closeFuture != null) {
-            if (closeFuture.isDone()) {
+            if (!closeFuture.cancel(false)) {
                 throw new NotFoundException("Channel is closed"); // This shouldn't really happen.
             }
-            closeFuture.cancel(true);
             closeFuture = null;
         }
 
