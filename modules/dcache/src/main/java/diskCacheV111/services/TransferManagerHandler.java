@@ -327,13 +327,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             case CacheException.OUT_OF_DATE:
             case CacheException.POOL_DISABLED:
             case CacheException.FILE_NOT_IN_REPOSITORY:
-                if (numberOfPoolSelectionRetries++ < MAXIMUM_POOL_SELECTION_ATTEMPTS) {
-                    log.debug("Pool {} reported rc={}; retrying pool selection",
-                            pool.getAddress(), rc);
-                    selectPool();
-                } else {
-                    sendErrorReply(rc, "Too many attempts to select pool: " + error);
-                }
+            case CacheException.CANNOT_CREATE_MOVER:
+                log.debug("Pool {} reported rc={}; retrying pool selection",
+                        pool.getAddress(), rc);
+                retryPoolSelection(rc, error);
                 break;
 
             case CacheException.TIMEOUT:
@@ -364,15 +361,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                                 }
                             });
                 } else {
-                    if (numberOfPoolSelectionRetries++ < MAXIMUM_POOL_SELECTION_ATTEMPTS) {
-                        log.debug("Too many attempts to start mover on pool {}, retrying pool selection",
-                                pool.getAddress(), rc);
-                        numberOfMoverStartRetries = 0;
-                        selectPool();
-                    } else {
-                        sendErrorReply(rc, "Too many attempts to start mover on pool "
-                                + pool.getAddress() + ": " + error);
-                    }
+                    log.debug("Too many attempts to start mover on pool {},"
+                            + " retrying pool selection", pool.getAddress());
+                    retryPoolSelection(rc, error);
                 }
                 break;
             }
@@ -407,6 +398,17 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             sendErrorReply(rc, "Failed in state " + state + ": " + error +
                     " [" + rc + "]");
             break;
+        }
+    }
+
+    private void retryPoolSelection(int rc, Object error)
+    {
+        if (numberOfPoolSelectionRetries++ < MAXIMUM_POOL_SELECTION_ATTEMPTS) {
+            numberOfMoverStartRetries = 0;
+            selectPool();
+        } else {
+            sendErrorReply(rc, "Too many attempts to select pool; last pool "
+                    + pool.getAddress() + " failed with " + error);
         }
     }
 
