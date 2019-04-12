@@ -15,7 +15,7 @@ It is useful to run the admin service in its own separate domain.
 In the example of [the section called “Installing a dCache instance”](install.md)
 this domain is called  adminDoorDomain:
 
-```
+```ini
     [adminDoorDomain]
     [adminDoorDomain/admin]
 ```
@@ -35,16 +35,14 @@ The `admin` service embeds `ssh` server listening on port 22224 (configurable) a
 
 The mechanisms can be enabled by setting the following variable:
 
-```
+```ini
    admin.ssh.authn.enabled = password,publickey,kerberos
-
 ```
 (that is comma separated mechanism names). By default `publickey` and `password` are enabled.
 To enable `kerberos` it needs to be added to the list.
 To complete `kerberos` setup the following variable needs to be defined:
-```
+```ini
    dcache.authn.kerberos.realm=EXAMPLE.ORG
-
 ```
 and `admin.ssh.authn.kerberos.keytab-file` should point existing keytab file. Default is `/etc/krb5.keytab`.
 
@@ -72,8 +70,8 @@ such as:
 > You may omit the part behind the equal sign as it is just a comment and not used by dCache.
 
 Now you can login to the admin interface by
-```
 
+```console
       [user] $ ssh -p 22224 -l admin headnode.example.org
       dCache (<version>)
       Type "\?" for help.
@@ -88,7 +86,7 @@ Public key based authorization is default with a fallback to `gPlazma` `kpwd` pl
 
 To use `gPlazma` make sure that you added it to your layout file :
 
-```
+```ini
         [gplazmaDomain]
         [gplazmaDomain/gplazma]
 ```
@@ -114,7 +112,7 @@ Add a user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dcache` 
 
 After you ran the above command the following like appears in **/etc/dcache/dcache.kpwd** file:
 
-```
+```console
    # set pwd
    passwd admin 4091aba7 read-write 12345 1000 / /
 
@@ -124,7 +122,7 @@ For more information about `gPlazma` see [Chapter 10, Authorization in dCache](c
 
 Now the user `admin` can login to the admin interface with his password `password` by:
 
-```
+```console
     [user] $ ssh -l admin -p 22224 headnode.example.org
     admin@headnode.example.org's password:
     dCache (<version>)
@@ -146,7 +144,7 @@ To utilize kerberos authentication mechanism the following lines need to be adde
 
 Then, you can access dCache having obtained kerberos ticket:
 
-```
+```console
    [user] $ kinit johndoe@EXAMPLE.ORG
    [user] $ ssh -l admin -p 22224 headnode.example.org
    dCache (<version>)
@@ -410,7 +408,7 @@ The following command makes a user as powerful as admin (dCache’s equivalent t
 ## DIRECT COMMAND EXECUTION
 
 Admin ssh server allows direct command execution like so:
-```
+```console
     ssh -p 22224 admin@adminNode  "command1; command2; command3"
 ```
 That is it accepts semicolon (';') separated list of commands. Spaces between commands and command
@@ -421,7 +419,7 @@ separators do not matter.
 
 In scripts, one can use a “Here Document” to list the commands, or supply them to `ssh` as standard-input (stdin). The following demonstrates using a Here Document:
 
-```
+```shell
     #!/bin/sh
     #
     #  Script to automate dCache administrative activity
@@ -435,7 +433,7 @@ In scripts, one can use a “Here Document” to list the commands, or supply th
     EOF
 ```
 or, the equivalent as stdin.
-```
+```shell
     #!/bin/bash
     #
     #   Script to automate dCache administrative activity.

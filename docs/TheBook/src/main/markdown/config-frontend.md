@@ -27,7 +27,7 @@ delivery of monitoring/administrative data, but the memory requirements
 are not excessive (it is just text/JSON).  Add the service to an existing
 domain or create a separate one for it:
 
-```
+```ini
 [frontendDomain]
 [frontendDomain/frontend]
 ```
@@ -41,7 +41,7 @@ which should, however, be noted.
 The number of threads which are available to collect data from
 the pools is set to 10:
 
-```
+```ini
 # Used for processing updates on messages returned from pools
 frontend.service.pool-info.update-threads=10
 ```
@@ -72,7 +72,7 @@ the [dCache History Service](config-history.md) for configuration
 
 The following property should be noted.
 
-```
+```ini
 #  ---- Determines whether operations exposing file information
 #       can be viewed by non-admin users.
 #
@@ -101,7 +101,7 @@ this up.
 When issuing a ```curl``` command, one can indicate the role using a '#'
 after the username; e.g.,
 
-```
+```console
 curl -k -u arossi#admin https://fndcatemp1.fnal.gov:3880/api/v1/restores
 Enter host password for user 'arossi#admin':
 ```
