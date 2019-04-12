@@ -1,13 +1,12 @@
 Pool Commands
 =============
 
-rep ls
-------
+## rep ls
 
 rep ls - List the files currently in the repository of the pool.
 
-synopsis
---------
+### synopsis
+
 rep ls[pnfsId...]|[-l=s|p|l|u|nc|e...][-s=k|m|g|t]
 
 pnfsId
@@ -32,45 +31,36 @@ Unit, the filesize is shown:
     g      data amount in GBytes
     t      data amount in TBytes
 
-Description
------------
+### Description
 
-st set max active
-------------------
+## st set max active
 st set max active - Set the maximum number of active store transfers.
 
-synopsis
----------
+### synopsis
 st set max active <maxActiveStoreTransfers>
 maxActiveStoreTransfers
 The maximum number of active store transfers.
 
-Description
------------
+### Description
 
 Any further requests will be queued. This value will also be used by the cost module for calculating the performance cost.
 
-rh set max active
------------------
+## rh set max active
 rh set max active - Set the maximum number of active restore transfers.
 
-synopsis
---------
+### synopsis
 rh set max active<maxActiveRetoreTransfers>
 maxActiveRetoreTransfers
 The maximum number of active restore transfers.
 
-Description
------------
+### Description
 
 Any further requests will be queued. This value will also be used by the cost module for calculating the performance cost.
 
-mover set max active
---------------------
+## mover set max active
 mover set max active- Set the maximum number of active client transfers.
 
-synopsis
---------
+### synopsis
 mover set max active<maxActiveClientTransfers> [-queue=<moverQueueName>]
 
 maxActiveClientTransfers
@@ -79,154 +69,139 @@ The maximum number of active client transfers.
 moverQueueName
 The mover queue for which the maximum number of active transfers should be set. If this is not specified, the default queue is assumed, in order to be compatible with previous versions which did not support multiple mover queues (before version 1.6.6).
 
-Description
------------
+### Description
 
 Any further requests will be queued. This value will also be used by the cost module for calculating the performance cost.
 
-mover set max active -queue=p2p
---------------------------------
+## mover set max active -queue=p2p
+
 mover set max active -queue=p2p - Set the maximum number of active pool-to-pool server transfers.
 
-synopsis
---------
+### synopsis
+
 mover set max active -queue=p2p<maxActiveP2PTransfers>
 maxActiveP2PTransfers
 The maximum number of active pool-to-pool server transfers.
 
-Description
------------
+### Description
 
 Any further requests will be queued. This value will also be used by the cost module for calculating the performance cost.
 
-pp set max active
-------------------
+## pp set max active
+
 pp set max active - Set the value used for scaling the performance cost of pool-to-pool client transfers analogous to the other
 
-synopsis
---------
+### synopsis
+
 pp set max active<maxActivePPTransfers>
 maxActivePPTransfers
 The new scaling value for the cost calculation.
 
-Description
------------
+### Description
+
 All pool-to-pool client requests will be performed immediately in order to avoid deadlocks. This value will only used by the cost module for calculating the performance cost.
 
-set gap
---------
+## set gap
+
 set gap-Set the gap parameter - the size of free space below which it will be assumed that the pool is full within the cost calculations.
 
-synopsis
---------
+### synopsis
+
 set gap<gapPara>
 gapPara
 The size of free space below which it will be assumed that the pool is full. Default is 4GB.
 
-Description
------------
+### Description
 
 The gap parameter is used within the space cost calculation scheme described in [the section called “The Space Cost”](rf-glossary.md#space-cost). It specifies the size of free space below which it will be assumed that the pool is full and consequently the least recently used file has to be removed if a new file has to be stored on the pool. If, on the other hand, the free space is greater than gapPara, it will be expensive to store a file on the pool which exceeds the free space.
 
-set breakeven
--------------
+## set breakeven
 
 set breakeven - Set the breakeven parameter - used within the cost calculations.
 
-synopsis
----------
+### synopsis
+
 set breakeven<breakevenPara>
 
 breakevenPara
 The breakeven parameter has to be a positive number smaller than 1.0. It specifies the impact of the age of the [least recently used file](rf-glossary.md#least-recently-used-lru-file) on space cost. It the LRU file is one week old, the space cost will be equal to `(1 +breakeven)`. Note that this will not be true, if the breakeven parameter has been set to a value greater or equal to 1.
 
-Description
------------
+### Description
+
 The breakeven parameter is used within the space cost calculation scheme described in [the section called “The Space Cost”](rf-glossary.md#space-cost).
 
-mover ls
---------
+## mover ls
 
 mover ls-List the active and waiting client transfer requests.
 
-synopsis
---------
+### synopsis
+
 mover ls[-queue|-queue=<queueName>]
 
 queueName
 The name of the mover queue for which the transfers should be listed.
 
-Description
------------
+### Description
 
 Without parameter all transfers are listed. With `-queue` all requests sorted according to the mover queue are listed. If a queue is explicitly specified, only transfers in that mover queue are listed.
 
-migration cache
-----------------
+## migration cache
 
 migration cache - Caches replicas on other pools.
 
-synopsis
----------
+### synopsis
+
 migration cache [<options>] <target>...
 
-DESCRIPTION
-===========
+### Description
 
 Caches replicas on other pools. Similar to `migration copy`, but with different defaults. See `migration copy` for a description of all options. Equivalent to: `migration copy` -smode=same -tmode=cached
 
-migration cancel
-----------------
+## migration cancel
+
 migration cancel - Cancels a migration job
 
-synopsis
-----------
+### synopsis
+
 migration cancel [-force] job
 
-DESCRIPTION
-===========
+### Description
 
 Cancels the given migration job. By default ongoing transfers are allowed to finish gracefully.
 
-migration clear
-----------------
+## migration clear
 
 migration clear — Removes completed migration jobs.
 
-synopsis
----------
+### synopsis
 
 migration clear
 
-DESCRIPTION
-===========
+### Description
 
 Removes completed migration jobs. For reference, information about migration jobs are kept until explicitly cleared.
 
-migration concurrency
------------------------
+## migration concurrency
 
 migration concurrency - Adjusts the concurrency of a job.
 
+### synopsis
+
 migration concurrency <job> <n>
 
-DESCRIPTION
-===========
+### Description
 
 Sets the concurrency of <job> to <n>.
 
-migration copy
---------------
+## migration copy
 
 migration copy-Copies files to other pools.
 
-synopsis
---------
+### synopsis
+
 migration copy [<options>] <target>...
 
-
-DESCRIPTION
-===========
+### Description
 
 Copies files to other pools. Unless filter options are specified, all files on the source pool are copied.
 
@@ -423,17 +398,14 @@ Mark job as permanent.
 -stop-when=expression
 Terminates the job when the expression becomes true. This option cannot be used for permanent jobs. See the description of -pause-when for the list of constants allowed in the expression.
 
-migration info
---------------
+## migration info
 
 migration info - Shows detailed information about a migration job.
 
-synopsis
----------
+## synopsis
 migration info <job>
 
-DESCRIPTION
-===========
+### Description
 
 Shows detailed information about a migration job. Possible job states are:
 
@@ -511,58 +483,51 @@ The task failed
 Done
 The task completed successfully
 
-migration ls
--------------
+## migration ls
 
 migration ls - Lists all migration jobs.
 
-synopsis
------------
+### synopsis
+
 migration ls
 
-DESCRIPTION
-===========
+### Description
 
 Lists all migration jobs.
 
-migration move
----------------
+## migration move
+
 migration move - Moves replicas to other pools.
 
-synopsis
---------
+### synopsis
+
 migration move [<options>] <target>...
 
-
-DESCRIPTION
-===========
+### Description
 
 Moves replicas to other pools. The source replica is deleted. Similar to `migration copy`, but with different defaults. Accepts the same options as `migration copy`. Equivalent to: `migration copy` -smode=delete -tmode=same -pins=move
 
-migration suspend
--------------------
+## migration suspend
 
 migration suspend - Suspends a migration job.
 
-synopsis
-----------
+### synopsis
+
 migration suspend job
 
-DESCRIPTION
-===========
+### Description
+
 Suspends a migration job. A suspended job finishes ongoing transfers, but is does not start any new transfer.
 
-migration resume
------------------
+## migration resume
 
 migration resume - Resumes a suspended migration job.
 
-synopsis
----------
+### synopsis
+
 migration resume job
 
-DESCRIPTION
-===========
+### Description
 
 Resumes a suspended migration job.
 

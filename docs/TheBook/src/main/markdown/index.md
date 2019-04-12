@@ -1,8 +1,7 @@
 dCache Book
 ===========
 
-Table of contents
------------------
+## Table of contents
 
 -   [Preface](preface.md)
 

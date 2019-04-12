@@ -1,8 +1,6 @@
 CHAPTER 18. dCache History Service
 =====================================
 
-### Collection of monitoring data
-
 The purpose of this service is to provide a disk-backed cache for time-windowed
 state data extracted from backend dCache components, most importantly, pools.
 

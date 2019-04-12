@@ -16,8 +16,7 @@ Please note, that IT security is an ever changing field. Make sure you follow th
 
 
 
-Configuring a secure WebDAV door
-================================
+## Configuring a secure WebDAV door
 
 Here is an example of a secure WebDAV door definition:
 
@@ -42,8 +41,7 @@ This disables RC4, which is considered unsafe. If the value contains `DISABLE_EC
 
 
 
-Configuring Java
-================
+## Configuring Java
 
 dCache relies on Java for its transport security. Hardening Java is necessary to get the maximum security. If not configured properly, Java may support ciphers and protocols that are considered weak.
 
@@ -76,8 +74,7 @@ As of October 2018, this should be sufficient to get an A rating in the Qualys S
 
 
 
-Configuring java.security settings per dCache domain
-----------------------------------------------------
+### Configuring java.security settings per dCache domain
 
 The java.security settings control all Java processes; so the disabled algorithms apply to all incoming and outgoing connections. There may be cases where different settings are needed for different Java processes. Examples:
 
@@ -95,22 +92,19 @@ Then, in the file `/etc/dcache/maximum.java.security`, you can put a specific `j
 
 
 
-Testing protocols and cipher suites
-===================================
+## Testing protocols and cipher suites
 
 To test whether the WebDAV door is secure, there are some tests you can perform.
 
 
 
-Qualys SSL test
----------------
+### Qualys SSL test
 
 A famous test is the Qualys SSL test at https://www.ssllabs.com/ssltest/. This test is very thorough, but it may take a long time, and it can't scan internal networks.
 
 
 
-nmap
-----
+### nmap
 
 `nmap --script ssl-enum-ciphers` is a good alternative. It has the advantage that it's very fast, and it can scan internal networks. It does not test as much as the Qualys test though. You may need to download the latest version to have a reliable result. Here is an example of a test with nmap:
 
@@ -170,8 +164,7 @@ nmap
 
 
 
-Wireshark
----------
+### Wireshark
 
 Wireshark is a network protocol analyzer. It will provide many details about the traffic. It can be installed on Centos with:
 
@@ -181,29 +174,25 @@ If you test a WebDAV door on another port than 443, you may need to tell Wiresha
 
 
 
-Greenbone/OpenVAS
------------------
+### Greenbone/OpenVAS
 
 OpenVAS is a vulnerability scanner. Greenbone is a web interface to use OpenVAS. OpenVAS can scan a system for many different vulnerabilities, including depricated ciphers and protocols. It can be downloaded from http://www.openvas.org/. It may take some effort to set it up, and scanning may take a long time, but it can detect an overwhelming amount of issues.
 
 
 
-HTTP header hardening
-=====================
+## HTTP header hardening
 
 With https://securityheaders.com/, you can test how secure the HTTP headers of your WebDAV doors are. But be warned: headers that are too strict may cripple your WebDAV doors. Be sure to test it first.
 
 
 
-About Strict Transport Security
--------------------------------
+### About Strict Transport Security
 
 The Security Headers test suggests to use HTTP Strict Transport Security (HSTS). This is a header that tells clients that next time they connect they should do so over HTTPS and not HTTP. However, this may break dCache WebDAV doors that *do* redirect, as dCache redirects to HTTP and not HTTPS. Also, it is not certain how redirection works with non-default TCP ports. A better and safer solution to avoid people from using unencrypted WebDAV doors, is to simply not have them at all: don't configure WebDAV doors on port 80, and don't have WebDAV doors that redirect (unless you have a good reason).
 
 
 
-Examples
---------
+### Examples
 
 Here is an example of safe headers that could be a good starting point:
 
@@ -256,15 +245,13 @@ Also here, settings that are too strict may cripple the web interface. And dCach
 
 
 
-Troubleshooting security headers
---------------------------------
+### Troubleshooting security headers
 
 A good way to test whether your security headers are blocking operation of a WebDAV door or a dCache View portal, is to use the Web Console in Firefox or the DevTools in Chrome. These will show all items that are blocked because of policy headers.
 
 
 
-DNS CAA records
-===============
+## DNS CAA records
 
 CAA records indicate which CA (certificate authority) is allowed to sign certificates for a specific host name or domain. Here is an example:
 

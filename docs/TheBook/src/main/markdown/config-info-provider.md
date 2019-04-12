@@ -1,8 +1,7 @@
 CHAPTER 19. GLUE INFO PROVIDER
 ==============================
 
-Table of Contents
----------------------
+## Table of Contents
 + [Internal collection of information](#internal-collection-of-information)
 + [Configuring the info service](#configuring-the-info-service)
 + [Testing the info provider](#testing-the-info-provider)
@@ -25,8 +24,7 @@ This chapter describes how to enable and test the dCache-internal collection of 
 >
 > Please be aware that changing information provider may result in a brief interruption to published information. This may have an adverse affect on client software that make use of this information.
 
-INTERNAL COLLECTION OF INFORMATION
-==================================
+## INTERNAL COLLECTION OF INFORMATION
 
 The info-provider takes as much information as possible from dCache. To achieve this, it needs the internal information-collecting service, `info`, to be running and a means to collect that information: `httpd`. Make sure that both the `httpd` and `info` services are running within your dCache instance. By default, the `info` service is started on the admin-node; but it is possible to configure dCache so it runs on a different node. You should run only one `info` service per dCache instance.
 
@@ -124,8 +122,7 @@ If running the `wget` command gives an error message with `Unable to contact the
 
 This means that the `info` service is not running. Follow the instructions for starting the `info` service given above.
 
-CONFIGURING THE INFO PROVIDER
-=============================
+## CONFIGURING THE INFO PROVIDER
 
 In the directory **/etc/dcache** you will find the file **info-provider.xml**. This file is where you configure the info-provider. It provides information that is difficult or impossible to obtain from the running dCache directly.
 
@@ -167,8 +164,7 @@ To edit the constant's value, you must change the text between the start- and en
 
 The **info-provider.xml** contains detailed descriptions of all the properties that are editable. You should refer to this documentation when editing the **info-provider.xml**.
 
-TESTING THE INFO PROVIDER
-=========================
+## TESTING THE INFO PROVIDER
 
 Once you have configured **info-provider.xml** to reflect your site's configuration, you may test that the info provider produces meaningful results.
 
@@ -209,8 +205,7 @@ If you see error messages (which may be repeated several times) of the form:
 
 then it is likely that either the `httpd` or `info` service has not been started. Use the above `wget` test to check that both services are running. You can also see which services are available by running the `dcache services` and `dcache status` commands.
 
-PUBLISHING dCache INFORMATION
-=============================
+## PUBLISHING dCache INFORMATION
 
 BDII obtains information by querying different sources. One such source of information is by running an info-provider command and taking the resulting LDIF output. To allow BDII to obtain dCache information, you must allow BDII to run the dCache info-provider. This is achieved by symbolically linking the **dcache-info-provider ** script into the BDII plugins directory:
 
@@ -280,8 +275,7 @@ Now calculate the number of GLUE v2.0 objects in BDII describing your dCache ins
 
 If there is a discrepancy in the pair of numbers obtains in the above commands then BDII has rejecting some of the objects. This is likely due to malformed LDAP objects from the info-provider.
 
-Troubleshooting BDII problems
-=============================
+## Troubleshooting BDII problems
 
 The BDII log file should explain why objects are not accepted; for example, due to a badly formatted attribute. The default location of the log file is **/var/log/bdii/bdii-update.log**, but the location is configured by the `BDII_LOG_FILE` option in the **/opt/bdii/etc/bdii.conf** file.
 
@@ -299,8 +293,7 @@ There are several temporary files located in the **/var/run/bdii** directory. Wh
 
 Once information in BDII has stablised, the only new, incoming objects for BDII come from those objects that it was unable to add previously. This means that **add.ldif** will contain these badly formatted objects and **add.err** will contain the corresponding errors.
 
-UPDATING INFORMATION
-====================
+## UPDATING INFORMATION
 
 The information contained within the `info` service may take a short time to achieve a complete overview of dCache's state. For certain gathered information it may take a few minutes before the information stabilises. This delay is intentional and prevents the gathering of information from adversely affecting dCache's performance.
 

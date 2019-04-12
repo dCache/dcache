@@ -1,8 +1,7 @@
 Protocols
 =========
 
-DCAP options mover and client options
-=====================================
+## DCAP options mover and client options
 
 DCAP is the native random access I/O protocol for files within dCache. In additition to the usual data transfer mechanisms, it supports all necessary file metadata and name space manipulation operations.
 
@@ -12,8 +11,7 @@ In order to optimize I/O transferrates and memory consumption DCAP allows to con
 
 -   I/O buffers sizes.
 
-TCP send/recv buffer sizes from the servers point of view
----------------------------------------------------------
+### TCP send/recv buffer sizes from the servers point of view
 
 There are two parameters per I/O direction, determining the actual TCP send/recv buffer size used for each transfer. Those values can be set within the `config/pool.batch` file on the pool nodes.
 
@@ -46,13 +44,11 @@ The most appropriate way to specify those values on the server side is certainly
 
 Please note the different ways of using the '=' and the '-' sign in the different alternatives.
 
-TCP send/recv buffer sizes from the dCap clients point of view
---------------------------------------------------------------
+### TCP send/recv buffer sizes from the dCap clients point of view
 
 For a full list of dCap library API calls and dccp options, please refer to to `http://www.dcache.org/manuals/libdcap.shtml` and `http://www.dcache.org/manuals/dccp.shtml` respectively. To set the local and remote TCP buffer send and receive buffers either use the API call `dc_setTCPSend/ReceiveBuffer(int size)` or the `-r SIZE -s SIZE` dccp options. In both cases the value is transferred to the remote mover which tries to set the corresponding values. Please not the the server protects itself by having a maximum size for those values which it doesn't exceed. Please check the section 'TCP send/recv buffer sizes from the servers point of view' to learn how to change those values.
 
-Specifying dCap open timeouts
-=============================
+## Specifying dCap open timeouts
 
 In cases where dccp/dcap requests a file which is still on tertiary storage, the user resp. the administrator might what to limit the time, dccp/dCap waits in the open call until the file has been fetched from backend storage. This, so called `openTimeout`, can be specified on the server or on the client. In all cases the `-keepAlive` must be specified with an appropriate number of seconds on the cell create command in the door batch files. The following mechanisms are available to specify open timeouts :
 
@@ -94,8 +90,7 @@ In cases where dccp/dcap requests a file which is still on tertiary storage, the
 
 If the openTimeout expires while a read transfer is already active, this transfer will be interrupted, but it will automatically resume because the client can't destinguish between a network failure and a timeout. So the timeout disturbes the read but it will finally succeed. This is different for write. If a write is interrupted by a timeout in the middle of a transfer, dccp will stuck. (This is not a feature and needs further investigation).
 
-Using the dCap protocol for strict file checking
-================================================
+## Using the dCap protocol for strict file checking
 
 The DCAP protocol allows to check whether a dataset is on tape only or has a copy on a dCache disk. The DCAP library API call is ` int dc_check(const char *path, const char
        *location)` and the dccp options are `-t -1
@@ -122,20 +117,17 @@ This door will do a precise checking (-check=strict). To get the dCap lib and dc
 
 If PROG-DCCP returns `File is not cached` and this dCache instance is connected to an HSM, the file is no longer on one of the dCache pools but is assumed to have a copy within the HSM. If the PROG-DCCP returns this message and no HSM is attached, the file is either on a pool which is currently down or the file is lost.
 
-Passive DCAP
-============
+## Passive DCAP
 
 The DCAP protocol, similiar to FTP, uses a control channel to request a transfer which is subsequently done through data channels. Per default, the data channel is initiated by the server, connecting to an open port in the client library. This is commonly known as active transfer. Starting with dCache 1.7.0 the DCAP protocol supports passive transfer mode as well, which consequently means that the client connects to the server pool to initiate the data channel. This is essential to support DCAP clients running behind firewalls and within private networks.
 
-Preparing the server for dCap passive transfer
-----------------------------------------------
+### Preparing the server for dCap passive transfer
 
 The port(s), the server pools should listens on, can be specified by the `org.dcache.net.tcp.portrange` variable, as part of the 'java\_options' directive in the `config/dCacheSetup` configuration file. A range has to be given if pools are split amoung multiple JVMs. E.g:
 
     java_options="-server ... -Dorg.dcache.dcap.port=0 -Dorg.dcache.net.tcp.portrange=33115:33145"
 
-Switching the DCAP library resp. PROG-DCCP to PASSIVE
------------------------------------------------------
+### Switching the DCAP library resp. PROG-DCCP to PASSIVE
 
 > **Note**
 >
@@ -149,15 +141,13 @@ The environment variable dCache\_CLIENT\_ACTIVE switches the DCAP library to ser
 
 PROG-DCCP switches to server-passive when issuing the `-A` command line option.
 
-Access to SRM and GRIDFTP server from behind a firewall
-=======================================================
+## Access to SRM and GRIDFTP server from behind a firewall
 
 This describes firewall issues from the clients perspective. [???] discusses the server side.
 
 When files are transferred in GRIDFTP active mode from GRIDFTP server to the GRIDFTP client, server establishes data channel(s) by connecting to the client. In this case client creates a TCP socket, bound to some particular address on the client host, and sends the client host IP and port to the server. If the client host is running a firewall, firewall might refuse server's connection to the client's listening socket. Common solution to this problem is establishing a range of ports on the client's host that are allowed to be connected from Internet by changing firewall rules.Once the port range is defined the client can be directed to use one of the ports from the port ranges when creating listening tcp sockets.
 
-Access with PROG-SRMCP
-----------------------
+### Access with PROG-SRMCP
 
 If you are using PROG-SRMCP as a client you need to do the following:
 
@@ -175,8 +165,7 @@ With the latest PROG-SRMCP release you can use the `globus_tcp_port_range` optio
 
 A range of ports open for TCP connections is specified as a pair of positive integers separated by ":". This is not set by default.
 
-Access with PROG-GLOBUS-URL-COPY
---------------------------------
+### Access with PROG-GLOBUS-URL-COPY
 
 If you are transferring files from gridftp server using PROG-GLOBUS-URL-COPY, you need to define an environment variable GLOBUS\_TCP\_PORT\_RANGE, in the same shell in which PROG-GLOBUS-URL-COPY will be executed.
 
@@ -190,8 +179,7 @@ in csh/tcsh you invoke:
 
 here min and max are again the lower and upper bounds of the port range
 
-Disableing unauthenticated DCAP via SRM
-=======================================
+## Disableing unauthenticated DCAP via SRM
 
 In some cases SRM transfers fail because they are tried via the plain DCAP protocol (URL starts with `dcap://`). Since plain DCAP is unauthenticated, the dCache server will have no information about the user trying to access the system. While the transfer will succeed if the UNIX file permissions allow access to anybody (e.g. mode 777), it will fail otherwise.
 

@@ -15,8 +15,7 @@ This chapter explains how to configure dCache in order to access it via the `NFS
 >
 > The `pNFS` mentioned in this chapter is the protocol `NFSv4.1/pNFS` and not the namespace pnfs.
 
-Setting up
-==========
+## Setting up
 
 To allow file transfers in and out of dCache using NFSv4.1/pNFS, a new NFSv4.1 door must be started. This door acts then as the mount point for NFS clients.
 
@@ -36,8 +35,7 @@ You can just add the following lines to the layout file:
     nfs.version = 4.1
     ..
 
-Exporting file system
----------------------
+### Exporting file system
 
 In addition to run an NFSv4.1 door you need to add exports to the **exports** file. The location of exports file is controlled by **nfs.export.file** property and defaults to **/etc/exports**.
 
@@ -117,8 +115,7 @@ In this example, hosts in the dcache.org may read and write, while host external
 
 If there are multiple path specifications, the shortest matching path wins. If there are multiple host/subnet specifications, the most precise specification wins.
 
-Configuring NFSv4.1 door with GSS-API support
-=============================================
+## Configuring NFSv4.1 door with GSS-API support
 
 Adding `sec=krb5` into **/etc/exports** is not sufficient to get kerberos authentication to work.
 
@@ -147,8 +144,7 @@ The **/etc/dcache/gss.conf** on pool nodes and node running `NFSv4.1` door must 
 
 Now your `NFS` client can securely access dCache.
 
-Configuring principal-id mapping for NFS access
-===============================================
+## Configuring principal-id mapping for NFS access
 
 The `NFSv4.1` uses utf8 based strings to represent user and group names:
 
@@ -172,8 +168,7 @@ To avoid big latencies and avoiding multiple queries for the same information, l
     nfs.idmap.cache.timeout.unit = SECONDS
     ..
 
-Managing group ids
-==================
+## Managing group ids
 
 The remote procedure call v2 (RPC) that used by nfs protocol defines different
 mechanisms for user authentication. One of them is AUTH_SYS, which majority of

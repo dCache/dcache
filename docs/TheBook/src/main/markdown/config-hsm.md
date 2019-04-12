@@ -34,13 +34,11 @@ Table of Contents
 * [Example of an executable to simulate a tape backend](#example-of-an-executable-to-simulate-a-tape-backend)
 
 
-INTRODUCTION
-============
+## INTRODUCTION
 
 One of the features dCache provides is the ability to migrate files from its disk repository to one or more connected Tertiary Storage Systems (TSS) and to move them back to disk when necessary. Although the interface between dCache and the TSS is kept simple, dCache assumes to interact with an intelligent TSS. dCache does not drive tape robots or tape drives by itself. More detailed requirements to the storage system are described in one of the subsequent paragraphs.
 
-SCOPE OF THIS CHAPTER
-=====================
+## SCOPE OF THIS CHAPTER
 
 This document describes how to enable a standard dCache installation to interact with a Tertiary Storage System. In this description we assume that
 
@@ -50,13 +48,11 @@ This document describes how to enable a standard dCache installation to interact
 
 In general, not all pools need to be configured to interact with the same Tertiary Storage System or with a storage system at all. Furthermore pools can be configured to have more than one Tertiary Storage System attached, but all those cases are not in the scope of the document.
 
-REQUIREMENTS FOR A TERTIARY STORAGE SYSTEM
-==========================================
+## REQUIREMENTS FOR A TERTIARY STORAGE SYSTEM
 
 dCache can only drive intelligent Tertiary Storage Systems. This essentially means that tape robot and tape drive operations must be done by the TSS itself and that there is some simple way to abstract the file `PUT, GET and REMOVE` operation.
 
-Migrating Tertiary Storage Systems with a file system interface.
-----------------------------------------------------------------
+### Migrating Tertiary Storage Systems with a file system interface.
 
 Most migrating storage systems provide a regular POSIX file system interface. Based on rules, data is migrated from primary to tertiary storage (mostly tape systems). Examples for migrating storage systems are:
 
@@ -65,8 +61,7 @@ Most migrating storage systems provide a regular POSIX file system interface. Ba
 -   [DMF](http://www.sgi.com/products/storage/tiered/dmf.html?)
     (Data Migration Facility)
 
-Tertiary Storage Systems with a minimalistic PUT, GET and REMOVE interface
---------------------------------------------------------------------------
+### Tertiary Storage Systems with a minimalistic PUT, GET and REMOVE interface
 
 Some tape systems provide a simple PUT, GET, REMOVE interface. Typically, a copy-like application writes a disk file into the TSS and returns an identifier which uniquely identifies the written file within the Tertiary Storage System. The identifier is sufficient to get the file back to disk or to remove the file from the TSS. Examples are:
 
@@ -75,8 +70,7 @@ Some tape systems provide a simple PUT, GET, REMOVE interface. Typically, a copy
 -   [Enstore](http://www-ccf.fnal.gov/enstore/)
     (FERMIlab)
 
-How dCache interacts with a Tertiary Storage System
-===================================================
+## How dCache interacts with a Tertiary Storage System
 
 Whenever dCache decides to copy a file from disk to tertiary storage a user-provided [executable](#example-of-an-executable-to-simulate-a-tape-backend) which can be either a script or a binary is automatically started on the pool where the file is located. That `executable` is expected to write the file into the Backend Storage System and to return a URI, uniquely identifying the file within that storage system. The format of the URI as well as the arguments to the `executable`, are described later in this document. The unique part of the URI can either be provided by the storage element, in return of the `STORE FILE` operation, or can be taken from dCache. A non-error return code from the `executable` lets dCache assume that the file has been successfully stored and, depending on the properties of the file, dCache can decide to remove the disk copy if space is running short on that pool. On a non-zero return from the `executable`, the file doesn't change its state and the operation is retried or an error flag is set on the file, depending on the error [return code](#summary-of-return-codes) from the `executable`.
 
@@ -84,11 +78,9 @@ If dCache needs to restore a file to disk the same `executable` is launched with
 
 Details about [writing an HSM plugin](../cookbook-writing-hsm-plugins/) can be found in the cookbook section of this book.
 
-Details on the TSS-support EXECUTABLE
-=====================================
+## Details on the TSS-support EXECUTABLE
 
-Summary of command line options
--------------------------------
+### Summary of command line options
 
 	This part explains the syntax of calling the EXECUTABLE that supports STOREFILE, `FETCH
 	FILE` and REMOVEFILE operations.
@@ -111,7 +103,7 @@ Summary of command line options
 
 
 
-### Storage Information
+#### Storage Information
 
 	The <storage-information> is a string in the format
    	 -si=size=bytes;new=true/false;stored=true/false;sClass=StorageClass;\
@@ -146,7 +138,7 @@ Enstore specific storage information’s keys
 
 There might be more key values pairs which are used by the dCache internally and which should not affect the behaviour of the   executable.
 
-### Storage URI
+#### Storage URI
 
 The storage-uri is formatted as follows:
 
@@ -163,8 +155,7 @@ A storage-uri:
 
     osm://osm/?store=sql&group=chimera&bfid=3434.0.994.1188400818542
 
-Summary of return codes
------------------------
+### Summary of return codes
 
 | Return Code         | Meaning                 | Behaviour for PUT FILE | Behaviour for GET FILE                             |
 |---------------------|-------------------------|------------------------|----------------------------------------------------|
@@ -174,8 +165,7 @@ Summary of return codes
 | 43                  | Disk write I/O error    | Pool retries           | Disables pool and reports problem to POOLMNGR |
 | other               | -                       | Pool retries           | Reports problem to POOLMNGR                   |
 
-The EXECUTABLE and the STORE FILE operation
-------------------------------------------
+### The EXECUTABLE and the STORE FILE operation
 
 Whenever a disk file needs to be copied to a Tertiary Storage System dCache automatically launches an `executable` on the pool containing the file to be copied. Exactly one instance of the `executable` is started for each file. Multiple instances of the `executable` may run concurrently for different files. The maximum number of concurrent instances of the `executable` per pool as well as the full path of the `executable` can be configured in the 'setup' file of the pool as described in [the section called “The pool ’setup’ file”.](#the-pool-setup-file)
 
@@ -201,8 +191,7 @@ The `bfid` can either be provided by the TSS as result of the STORE FILE operati
 >
 > Only the URI must be printed to stdout by the `executable`. Additional information printed either before or after the URI will result in an error. stderr can be used for additional debug information or error messages.
 
-The EXECUTABLE and the FETCH FILE operation
--------------------------------------------
+### The EXECUTABLE and the FETCH FILE operation
 
 Whenever a disk file needs to be restored from a Tertiary Storage System dCache automatically launches an `executable` on the pool containing the file to be copied. Exactly one instance of the `executable` is started for each file. Multiple instances of the `executable` may run concurrently for different files. The maximum number of concurrent instances of the `executable` per pool as well as the full path of the `executable` can be configured in the 'setup' file of the pool as described in [the section called “The pool ’setup’ file”](#the-pool-setup-file).
 
@@ -212,9 +201,7 @@ The following arguments are given to the executable of a FETCH FILE operation on
 
 Details on the meaning of certain arguments are described in [the section called “Summary of command line options”](#summary-of-command-line-options). For return codes see [the section called “Summary of return codes”](#summary-of-return-codes).
 
-The EXECUTABLE and the REMOVE FILE operation
--------------------------------------------
-
+### The EXECUTABLE and the REMOVE FILE operation
 Whenever a file is removed from the dCache namespace (file system) a process inside dCache makes sure that all copies of the file are removed from all internal and external media. The pool which is connected to the TSS which stores the file is activating the executable with the following command line options:
 
 remove -uri= storage-uri more options
@@ -223,8 +210,7 @@ Details on the meaning of certain arguments are described in [the section called
 
 The `executable` is supposed to remove the file from the TSS and report a zero return code. If a non-zero error code is returned, the dCache will call the script again at a later point in time.
 
-Configuring pools to interact with a Tertiary Storage System
-============================================================
+## Configuring pools to interact with a Tertiary Storage System
 
 The `executable` interacting with the Tertiary Storage System (TSS), as described in the chapter above, has to be provided to dCache on all pools connected to the TSS. The `executable`, either a script or a binary, has to be made `executable` for the user, dCache is running as, on that host.
 
@@ -241,10 +227,9 @@ After the layout files and the various 'setup' files have been corrected, the fo
 -   dCacheDomain
 -   namespaceDomain
 
-The dCache layout files
------------------------
+### The dCache layout files
 
-### The **/var/lib/dcache/config/poolmanager.conf** file
+#### The **/var/lib/dcache/config/poolmanager.conf** file
 
 To be able to read a file from the tape in case the cached file has been deleted from all pools, enable the restore-option. The best way to do this is to log in to the Admin Interface and run the following commands:
 
@@ -264,11 +249,11 @@ and restart the DOMAIN-dCache.
 >
 > Do not create the file **/var/lib/dcache/config/poolmanager.conf** with this single entry! This will result in an error.
 
-### The pool layout
+#### The pool layout
 
 The dCache layout file must be modified for each pool node connected to a TSS. If your pool nodes have been configured correctly to work without TSS, you will find the entry lfs=precious in the layout file (that is located in **/etc/dcache/layouts** and in the file **/etc/dcache/dcache.conf** respectively) for each pool service. This entry is a disk-only-option and has to be removed for each pool which should be connected to a TSS. This will default the lfs parameter to hsm which is exactly what we need.
 
-### The pool 'setup' file
+#### The pool 'setup' file
 
 The pool 'setup' file is the file **$poolHomeDir/$poolName/setup**. It mainly defines 3 details related to TSS connectivity.
 
@@ -319,7 +304,7 @@ Login to the Admin Interface to change the entry of the pool 'setup' file for a 
     (pool_1) admin > rh set timeout 5
     (pool_1) admin > save
 
-### The namespace layout
+#### The namespace layout
 
 In order to allow dCache to remove files from attached TSSes, the “cleaner.enable.hsm = true” must be added immediately underneath the \[namespaceDomain/cleaner\] service declaration:
 
@@ -329,13 +314,11 @@ In order to allow dCache to remove files from attached TSSes, the “cleaner.ena
     cleaner.enable.hsm = true
     .. more ...
 
-What happens next
------------------
+### What happens next
 
 After restarting the necessary dCache domains, pools, already containing files, will start transferring them into the TSS as those files only have a disk copy so far. The number of transfers is determined by the configuration in the pool 'setup' file as described above in [the section called “The pool ’setup’ file”.](#the-pool-setup-file)
 
-How to Store-/Restore files via the Admin Interface
-===================================================
+## How to Store-/Restore files via the Admin Interface
 
 In order to see the state of files within a pool, login into the pool in the admin interface and run the command `rep ls`.
 
@@ -411,25 +394,23 @@ Example:
     [example.dcache.org] (pool_1) admin > rh restore 00002A9282C2D7A147C68A327208173B81A6
     Fetch request queued
 
-How to monitor what's going on
-==============================
+## How to monitor what's going on
 
 This section briefly describes the commands and mechanisms to monitor the TSS `PUT, GET and REMOVE` operations. dCache provides a configurable logging facility and a Command Line Admin Interface to query and manipulate transfer and waiting queues.
 
-Log Files
----------
+### Log Files
 
 By default dCache is configured to only log information if something unexpected happens. However, to get familiar with Tertiary Storage System interactions you might be interested in more details. This section provides advice on how to obtain this kind of information.
 
-### The **executable** log file
+#### The **executable** log file
 
 Since you provide the `executable`, interfacing dCache and the TSS, it is in your responsibility to ensure sufficient logging information to be able to trace possible problems with either dCache or the TSS. Each request should be printed with the full set of parameters it receives, together with a timestamp. Furthermore information returned to dCache should be reported.
 
-### dCache log files in general
+#### dCache log files in general
 
 In dCache, each domain (e.g. dCacheDomain, <pool>Domain etc) prints logging information into its own log file named after the domain. The location of those log files it typically the **/var/log** or **/var/log/dCache** directory depending on the individual configuration. In the default logging setup only errors are reported. This behavior can be changed by either modifying **/etc/dcache/logback.xml** or using the dCache CLI to increase the log level of particular components as described [below](#obtain-information-via-the-dcache-command-line-admin-interface).
 
-#### Increase the dCache log level by changes in **/etc/dcache/logback.xml**
+##### Increase the dCache log level by changes in **/etc/dcache/logback.xml**
 
 If you intend to increase the log level of all components on a particular host you would need to change the **/etc/dcache/logback.xml** file as described below. dCache components need to be restarted to activate the changes.
 
@@ -451,7 +432,7 @@ needs to be changed to
 >
 > The change might result in a significant increase in log messages. So don't forget to change back before starting production operation. The next section describes how to change the log level in a running system.
 
-#### Increase the dCache log level via the Command Line Admin Interface
+##### Increase the dCache log level via the Command Line Admin Interface
 
 Example:
 
@@ -466,8 +447,7 @@ Login into the dCache Command Line Admin Interface and increase the log level of
      logger.org.dcache.cells.messages=ERROR*
      .....
 
-Obtain information via the dCache Command Line Admin Interface
---------------------------------------------------------------
+### Obtain information via the dCache Command Line Admin Interface
 
 The dCache Command Line Admin Interface gives access to information describing the process of storing and fetching files to and from the TSS, as there are:
 
@@ -543,8 +523,7 @@ Example:
 To check the repository on the pools run the command `rep ls` that is described in the beginning of [the section called “How to Store-/Restore files via the Admin Interface”.](#how-to-store-restore-files-via-the-admin-interface)
 
 
-Example of an EXECUTABLE to simulate a tape backend
-===================================================
+# Example of an EXECUTABLE to simulate a tape backend
 
     #!/bin/sh
     #
