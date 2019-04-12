@@ -1,7 +1,7 @@
 Chapter 23. Pool OperationsPool Operations
 ==========================================
 
-Table of Contents
+## Table of Contents
 
 + [Checksums](#checksums)
 
@@ -17,8 +17,7 @@ Table of Contents
 + [Pinning Files to a Pool](#pinning-files-to-a-pool)
 + [Running pool with CEPH backend](#running-pool-with-ceph-backend)
 
-Checksums
-=========
+## Checksums
 
 In dCache the storage of a checksum is part of a successful transfer.
 
@@ -48,8 +47,7 @@ After all the file data has been received by the dCache server and the file has 
 
 The default configuration is that a checksum is calculated on write, i.e. a Server File Checksum.
 
-How to configure checksum calculation
--------------------------------------
+### How to configure checksum calculation
 
 Configure the calculation of checksums in the [admin interface](https://www.dcache.org/manuals/Book-2.16/start/intouch-admin-fhs.shtml). The configuration has to be done for each pool separately.
 
@@ -112,8 +110,7 @@ If an option is enabled a checksum is calculated as described. If there is alrea
 >
 > Do not change the default configuration for the option `enforcecrc`. This option should always be enabled as this ensures that there will always be a checksum stored with a file.
 
-Migration Module
-================
+## Migration Module
 
 The purpose of the migration module is essentially to copy or move the content of a pool to one or more other pools.
 
@@ -126,8 +123,7 @@ Typical use cases for the migration module include:
 -   As an alternative to the hopping manager.
 
 
-Overview and Terminology
-------------------------
+### Overview and Terminology
 
 The migration module runs inside pools and hosts a number of migration jobs. Each job operates on a set of files on the pool on which it is executed and can copy or move those files to other pools. The migration module provides filters for defining the set of files on which a job operates.
 
@@ -151,8 +147,7 @@ Idempotence is achieved by locating existing copies of a file on any of the targ
 
 A migration task aborts whenever it runs into a problem. The file will be reinserted at the end of the transfer queue. Consequently, once a migration job terminates, all files have been successfully transferred. If for some reason tasks for particular files keep failing, then the migration job will never terminate by itself as it retries indefinitely.
 
-Command Summary
----------------
+### Command Summary
 
 Login to the [admin interface](https://www.dcache.org/manuals/Book-2.16/start/intouch-admin-fhs.shtml) and `cd` to a pool to use the `migration` commands. Use the command `help migration` to view the possiblities.
 
@@ -293,10 +288,9 @@ Except for the number of concurrent tasks, transfer parameters of existing jobs 
 
 
 
-Examples
---------
+### Examples
 
-### Vacating a pool
+#### Vacating a pool
 
 To vacate the pool <sourcePool>, we first mark the pool `read-only` to avoid that more files are added to the pool, and then move all files to the pool <targetPool>. It is not strictly necessary to mark the pool `read-only`, however if not done there is no guarantee that the pool is empty when the migration job terminates. The job can be rerun to move remaining files.
 
@@ -327,7 +321,7 @@ To vacate the pool <sourcePool>, we first mark the pool `read-only` to avoid tha
     (<sourcePool>) admin > rep ls
     (<sourcePool>) admin >
 
-### Caching recently accessed files
+#### Caching recently accessed files
 
 Say we want to cache all files belonging to the storage group `atlas:default` and accessed within the last month on a set of low-cost cache pools defined by the pool group `cache_pools`. We can achieve this through the following command.
 
@@ -347,8 +341,7 @@ Say we want to cache all files belonging to the storage group `atlas:default` an
 
 The files on the source pool will not be altered. Any file copied to one of the target pools will be marked cached.
 
-Renaming a Pool
-===============
+## Renaming a Pool
 
 A pool may be renamed with the following procedure, regardless of the type of files stored on it.
 
@@ -410,8 +403,7 @@ Register the files on the pool with
 
    (<poolname>) admin > pnfs register
 
-Pinning Files to a Pool
-=======================
+## Pinning Files to a Pool
 
 You may pin a file locally within the private pool repository:
 
@@ -431,8 +423,7 @@ This command does:
 
 3.  All new copies of the file will become `sticky`.
 
-Running pool with CEPH backend
-==============================
+## Running pools on CEPH backends
 
 dCache pools can be configured to store files on locally mounted file system or use CEPH as a back-end. The property `pool.backend` is used to control which back-end should be used:
 

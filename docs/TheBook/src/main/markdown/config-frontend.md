@@ -1,8 +1,6 @@
 CHAPTER 17. dCache Frontend Service
 =====================================
 
-### Frontend RESTful Interfaces
-
 The Frontend service is the dCache service (cell) responsible for serving
 data to clients via HTTP/REST.  The default port on which it runs is 3880.
 The default protocol is https (TLS).  As usual, these, as well as other
@@ -22,7 +20,7 @@ the methods and their data types, and can be used to test the calls to the
 service.  Each path also provides example `curl` commands, example responses
 and error code descriptions.
 
-#### Configuring the Frontend service
+## Configuring the Frontend service
 
 Some in-memory caching is done by this service in order to optimize the
 delivery of monitoring/administrative data, but the memory requirements
@@ -38,7 +36,7 @@ The service can be run out-of-the-box without changing default property
 values.  There are a few properties affecting the admin/monitoring components
 which should, however, be noted.
 
-##### Properties controlling monitoring data collection 
+## Properties controlling monitoring data collection
 
 The number of threads which are available to collect data from
 the pools is set to 10:
@@ -53,24 +51,24 @@ large numbers of pools more threads may be necessary.  One could, alternatively,
 increase the refresh interval for pool data collection.
 
 When RESTful calls are made for admin or monitoring information, some of them
-translate into a direct (blocking) call to a backend service to deliver 
-the data to the frontend, which then delivers it to the REST client.  These 
+translate into a direct (blocking) call to a backend service to deliver
+the data to the frontend, which then delivers it to the REST client.  These
 "pass through" calls usually involve queries concerning a specific file (pnfsid)
 to either the namespace or billing.   The remainder of the data, however,
 is served from cached data which the frontend has collected from backend
-services.  How often this data is collected can be controlled by adjusting timeout 
-properties (for alarms, billing, cells, pools, transfers, restores, history) 
+services.  How often this data is collected can be controlled by adjusting timeout
+properties (for alarms, billing, cells, pools, transfers, restores, history)
 in the configuration files, or directly through the admin interface.
 
 Aside from collecting data directly from the pools, the frontend also relies
 on the history service for its histogram data.  Without that service, you
 will not be able to request time-related statistics for billing, pool queues or
 file lifetime.  The plots generated from this data by dCache-View will also
-not be available.  Please refer to the section on 
-the [dCache History Service](config-history.md) for configuration 
+not be available.  Please refer to the section on
+the [dCache History Service](config-history.md) for configuration
 (which is very simple).
 
-##### Properties controlling monitoring data access   
+## Properties controlling monitoring data access
 
 The following property should be noted.
 
@@ -92,12 +90,12 @@ If you wish all authenticated (non-anonymous) users to be be able to see
 the full range of file-related information through either the RESTful api
 or in dCache-View, this property should be set to _true_.
 
-##### Configuring and using the _admin_ role
+## Configuring and using the _admin_ role
 
 The above property has to do with `HTTP GET`.  `HTTP PUT`, `POST`, `PATCH`
-or `DELETE`, however, are always limited to those who have the _admin role_.  
-Hence, this role must be defined for the dCache installation.  Please see 
-the documentation under [gPlazma](config-gplazma.md#roles) for how to set 
+or `DELETE`, however, are always limited to those who have the _admin role_.
+Hence, this role must be defined for the dCache installation.  Please see
+the documentation under [gPlazma](config-gplazma.md#roles) for how to set
 this up.
 
 When issuing a ```curl``` command, one can indicate the role using a '#'
@@ -114,8 +112,8 @@ on allowing role assertion on the basis of the credential.
 
 For the moment, however, you will need to add a .kpwd module to your
 gplazma setup and enable login and passwd entries for the user in question.
-Examples of how to do this may be found in the gPlazma section of this 
-document; see, for instance, 
+Examples of how to do this may be found in the gPlazma section of this
+document; see, for instance,
 [Enabling Username/Password Access for WebDAV](#enabling-username-password-access-for-webdav).
 
 The same procedure applies when enabling the admin role in dCache-View.
@@ -157,4 +155,3 @@ In order to get all the restores (stages) on a given pool, the REST path
 ```
 
 must be used.
-

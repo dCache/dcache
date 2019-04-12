@@ -22,8 +22,7 @@ low level communication infrastructure used by dCache is redundant. This
 involves setting up a [ZooKeeper cluster](config-zookeeper.md) of at least three
 nodes, as well as using a multipath topology for [Cell Message passing](config-message-passing.md).
 
-Pools
------
+## Pools
 
 Pools contain the data files stored in dCache. If a pool is offline, any file
 stored on this pool and not available on any other pool or on tape will be
@@ -39,8 +38,7 @@ several pool cells, e.g. when using a cluster file system or a third party
 object store as the data backend. We can, however, not provide any guarantees
 when that work will be completed.
 
-Doors
------
+## Doors
 
 Doors in dCache are the enduser endpoints. These expose the files in dCache
 through one of several supported protocols, e.g. FTP, HTTP, or NFS.
@@ -70,7 +68,7 @@ balance load over these endpoints and to allow rolling upgrades:
     endpoints. Such a proxy may be implemented in a load balancing switch or in
     software such as HA Proxy.
 
-#### `srm`
+### `srm`
 
 The SRM implementation in dCache is technically a door, even though it merely
 redirects a client to one of the other endpoints for the actual transfer. In
@@ -84,8 +82,7 @@ appear as a separate endpoint and the instances will typically talk to the same
 `srmmanager` backend. The same techniques as for other doors may be used to make
 these appear as a single endpoint to the enduser.
 
-Critical Central Services
--------------------------
+## Critical Central Services
 
 Several services are critical for file transfers, meaning if any of these
 services is unavailable, file transfers may be affected. The way to avoid those
@@ -128,21 +125,21 @@ service is idle it may be shut down.
 
 The following is a list of critical replicable services in dCache 2.16.
 
-#### `spacemanager`
+### `spacemanager`
 
 Space manager is fully replicable. Several instances must share the same
 database as requests from doors will be load balanced over all physical
 instances. The configuration should be synchronized such that all instances are
 configured the same way.
 
-#### `pinmanager`
+### `pinmanager`
 
 Pin manager is fully replicable. Several instances must share the same database
 as requests from doors will be load balanced over all physical instances. The
 configuration should be synchronized such that all instances are configured the
 same way.
 
-#### `srmmanager`
+### `srmmanager`
 
 SRM manager is fully replicable. Several instance must have separate databases.
 The configuration should be synchronized such that with the exception of the
@@ -168,20 +165,19 @@ useful to provide VO specific configuration. In such a setup one would have VO
 specific `srm` frontends, each configured to talk to a specific logical backend
 (which in turn may be implemented by several physical instances).
 
-#### `pnfsmanager`
+### `pnfsmanager`
 
 PNFS manager is fully replicable. Several instances must share the same database
 as requests from doors will be load balanced over all physical instances. The
 configuration should be synchronized such that all instances are configured the
 same way.
 
-#### `gplazma`
+### `gplazma`
 
 gPlazma is fully replicable. The configuration should be synchronized such that
 all instances are configured the same way.
 
-Non-critical Central Services
------------------------------
+## Non-critical Central Services
 
 Non-critical services will not directly affect transfers in case of
 unavailabilty. As such, it may be unnecessary to replicate these services if the
@@ -189,30 +185,30 @@ primary interest is rolling upgrades.
 
 The following is a list of non-critical replicable services in dCache 2.16.
 
-#### `admin`
+### `admin`
 
 This is a door and one can have multiple instances of `admin` like any other
 door.
 
-#### `httpd`
+### `httpd`
 
 This is a door and one can have multiple instances of `httpd` like any other
 door.
 
-#### `info`
+### `info`
 
 This service is replicable and one can have multiple instances of `info` all
 sharing the same logical service name. Each instance will collect the same
 information. Requests from `httpd` will be load balanced over available
 instances of `info`.
 
-#### `topo`
+### `topo`
 
 This service is replicable and one can have multiple instances of `topo` all
 sharing the same logical service name. Each instance will collect the same
 information. Requests will be load balanced over available instances of `topo`.
 
-#### `statistics`
+### `statistics`
 
 This service collects nightly statistics about available pools. One can have
 multiple instances of `statistics` and each instance will collect the same

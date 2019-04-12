@@ -1,12 +1,12 @@
 Preface
 =======
 
-#### Table of Contents
+## Table of Contents
 
 [Minimum System Requirements](#minimum-system-requirements)
 [Structure of this book](#structure-of-this-book)
 
-Welcome to dCache.
+## Welcome to dCache.
 
 dCache is a distributed storage system proven to scale to hundreds of Petabytes.
 Originally conceived as a disk cache (hence the name) in front of a tertiary storage to

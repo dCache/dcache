@@ -1,8 +1,7 @@
 Chapter 11. dCache as xRootd-Server
 ===================================
 
-Table of Contents
------------------
+## Table of Contents
 
 * [Setting up](#setting-up)
 
@@ -30,8 +29,7 @@ Table of Contents
 
 This chapter explains how to configure dCache in order to access it via the `xrootd` protocol, allowing `xrootd`-Clients like ROOT’s TXNetfile and xrdcp to do file operations against a dCache instance in a transparent manner. dCache implements version 2.1.6 of `xrootd` protocol.
 
-Setting up
-==========
+## Setting up
 
 To allow file transfers in and out of dCache using xrootd, a new `xrootd door` must be started. This door acts then as the entry point to all xrootd requests. Compared to the native xrootd server-implementation (produced by SLAC), the `xrootd door` corresponds to the `redirector node`.
 
@@ -58,8 +56,7 @@ After a restart of the domain running the DOOR-XROOTD, done e.g. by executing
 
 the xrootd door should be running. A few minutes later it should appear at the web monitoring interface under "Cell Services" (see [the section called “The Web Interface for Monitoring dCache”).](intouch.md#the-web-interface-for-monitoring-dcache)
 
-Parameters
-----------
+### Parameters
 
 The default port the `xrootd door` is listening on is 1094. This can be changed two ways:
 
@@ -83,13 +80,11 @@ The default port the `xrootd door` is listening on is 1094. This can be changed 
     dcache.net.lan.port.max=30200
     ..
 
-QUICK TESTS
-===========
+## QUICK TESTS
 
 The subsequent paragraphs describe a quick guide on how to test `xrootd` using the **xrdcp** and **ROOT** clients.
 
-Copying files with xrdcp
-------------------------
+### Copying files with xrdcp
 
 A simple way to get files in and out of dCache via `xrootd` is the command xrdcp. It is included in every xrootd and ROOT distribution.
 
@@ -98,8 +93,7 @@ To transfer a single file in and out of dCache, just issue
     [user] $ xrdcp /bin/sh root://<xrootd-door.example.org>/pnfs/<example.org>/data/xrd_test
     [user] $ xrdcp root://<xrootd-door.example.org>/pnfs/<example.org>/data/xrd_test /dev/null
 
-Accessing files from within ROOT
---------------------------------
+### Accessing files from within ROOT
 
 This simple ROOT example shows how to write a randomly filled histogram to a file in dCache:
 
@@ -123,11 +117,9 @@ To read it back into ROOT from dCache:
    	TXNetFile*             //pnfs/<example.org>/data/test.root
   	 KEY: TH1F     testhisto;1     test
 
-XROOTD security
-===============
+## XROOTD security
 
-Read-Write access
------------------
+### Read-Write access
 
  Per default dCache xrootd is restricted to read-only, because plain xrootd is completely unauthenticated. A typical error message on the clientside if the server is read-only looks like:
 
@@ -155,8 +147,7 @@ and restart any domain(s) running a `xrootd door`.
 
 Please note that due to the unauthenticated nature of this access mode, files can be written and read to/from any subdirectory in the pnfs namespace (including the automatic creation of parent directories). If there is no user information at the time of request, new files/subdirectories generated through `xrootd` will inherit UID/GID from its parent directory. The user used for this can be configured via the `xrootd.authz.user` property.
 
-Permitting read/write access on selected directories
-----------------------------------------------------
+### Permitting read/write access on selected directories
 
  To overcome the security issue of uncontrolled `xrootd` read and write access mentioned in the previous section, it is possible to restrict read and write access on a per-directory basis (including subdirectories).
 
@@ -169,8 +160,7 @@ To activate this feature, a colon-seperated list containing the full paths of au
 
 A restart of the `xrootd` door is required to make the changes take effect. As soon as any of the above properties are set, all read or write requests to directories not matching the allowed path lists will be refused. Symlinks are however not restricted to these prefixes.
 
-Token-based authorization
--------------------------
+### Token-based authorization
 
 The `xrootd` dCache implementation includes a generic mechanism to plug in different authorization handlers. The only plugin available so far implements token-based authorization as suggested in [http://people.web.psi.ch/feichtinger/doc/authz.pdf](https://www.psi.ch/search/phonebook-and-e-mail-directory?q=feichtinger).
 
@@ -207,8 +197,7 @@ After doing a restart of dCache, any requests without an appropriate token shoul
 
 If both tokenbased authorization and read-only access are activated, the read-only restriction will dominate (local settings have precedence over remote file catalogue permissions).
 
-Strong authentication
----------------------
+### Strong authentication
 
 The `xrootd`-implementation in dCache includes a pluggable authentication framework. To control which authentication mechanism is used by `xrootd`, add the `xrootdAuthNPlugin` option to your dCache configuration and set it to the desired value.
 
@@ -232,8 +221,7 @@ When using `GSI` authentication, depending on your setup, you may or may not wan
 >
 > In general `GSI` on `xrootd` is not secure. It does not provide confidentiality and integrity guarantees and hence does not protect against man-in-the-middle attacks.
 
-Precedence of security mechanisms
----------------------------------
+### Precedence of security mechanisms
 
 The previously explained methods to restrict access via `xrootd` can also be used together. The precedence applied in that case is as following:
 
@@ -247,14 +235,12 @@ The same argument holds for many strong authentication mechanisms - for example,
 
 To allow local site’s administrators to override remote security settings, write access can be further restricted to few directories (based on the local namespace, the `pnfs`). Setting `xrootd access to read-only has the highest priority, overriding all other settings.
 
-Other configuration options
----------------------------
+### Other configuration options
 
 The `xrootd-door` has several other configuration properties. You can configure various timeout parameters, the thread pool sizes on pools, queue buffer sizes on pools, the `xrootd` root path, the xrootd user and the `xrootd` IO queue. Full descriptions on the effect of those can be found in **/usr/share/dcache/defaults/xrootd.properties.**
 
 
-XROOTD Third-party Transfer
-===========================
+## XROOTD Third-party Transfer
 
 Starting with dCache 4.2, native third-party transfers between dCache and another
 xrootd server (including another dCache door) are possible.  These can be done
@@ -269,13 +255,13 @@ One can also try third party and fail over to one-hop two-party (through the cli
 
                 xrdcp --tpc first <source> <destination>
 
-### TPC from dCache to another xrootd server
+#### TPC from dCache to another xrootd server
 
 Very few changes in the dCache door were needed to accomplish this.
 If dCache is merely to serve as file source, then all that is needed
 is to update to version 4.2+ on the nodes running the xrootd doors.
 
-### TPC from another xrootd server to dCache, or between dCache instances
+#### TPC from another xrootd server to dCache, or between dCache instances
 
 As per the protocol, the destination pulls/reads the file from the source and
 writes it locally to a selected pool. This is achieved by an embedded third-party
@@ -287,8 +273,7 @@ to act as destination in a third-party transfer and a "tpc not supported" error
 will be reported if `--tpc only` is specified.
 
 
-Changes to dCache configuration for authenticated (GSI) transfers
------------------------------------------------------------------
+### Changes to dCache configuration for authenticated (GSI) transfers
 
  For dCache as source, gPlazma configuration is identical to that needed for
  normal two-party reads and writes, with the caveat that the necessary destination
@@ -320,8 +305,7 @@ it is also rather clunky in that it requires the hostcert DNs of all the pools
 to be mapped on the source server end.
 
 
-Signed hash verification support
----------------------------------------------
+### Signed hash verification support
 
 The embedded third-party client will honor signed hash verification if the
 source server indicates it must be observed.

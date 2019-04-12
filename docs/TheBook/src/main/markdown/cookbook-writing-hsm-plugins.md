@@ -16,8 +16,7 @@ recalled at a time.
 dCache has a third party accessible plugin system. One of the pluggable
 components is the nearline storage interface.
 
-Nearline Requests
------------------
+## Nearline Requests
 
 A nearline storage drive must support three types of requests: flush to the
 nearline storage, stage from the nearline storage, and removal of a file from a
@@ -34,8 +33,7 @@ failure of the request.
 Each request object has a unique ID and dCache may cancel a nearline request at
 any time using this ID.
 
-Identifying Replicas
---------------------
+## Identifying Replicas
 
 In dCache, a physical copy of a logical file is called a *replica*. Thus pools
 contain replicas. It is the responsibility of the nearline storage driver to
@@ -60,8 +58,7 @@ the driver to identify the file. dCache stores the generated URI in its name
 space. Upon recalling a replica from nearline storage or removing it from
 nearline storage, the URI is used to identify it.
 
-Request Lifecycle
------------------
+## Request Lifecycle
 
 From the point of view of dCache, the request goes through three steps: QUEUED,
 ACTIVE and then either COMPLETED or FAILED. It is the responsibility of the
@@ -87,8 +84,7 @@ For this reason the activation callback is asynchronous, providing a
 `ListenableFuture` as a result. The driver can obtain the result of the
 activation from this future once it is available.
 
-The Nearline Storage SPI
-------------------------
+## The Nearline Storage SPI
 
 A third party plugin must implement two interfaces: An implementation of
 [org.dcache.pool.nearline.spi.NearlineStorageProvider](https://github.com/dCache/dcache/blob/master/modules/dcache-nearline-spi/src/main/java/org/dcache/pool/nearline/spi/NearlineStorageProvider.java)
@@ -109,8 +105,7 @@ shell.
 To simplify setting up the basic structure of a nearline storage plugin, we
 provide a Maven archetype. See below for further details.
 
-AbstractBlockingNearlineStorage
--------------------------------
+## AbstractBlockingNearlineStorage
 
 Although it appears simple, the `NearlineStorageProvider` interface can be
 difficult to implement as it is an asynchronous interface. Only an asynchronous
@@ -128,8 +123,7 @@ use, allowing full control over concurrency and request queueing.
 In fact, the `script` driver shipped with dCache is a subclass of
 `AbstractBlockingNearlineStorage`.
 
-Maven Archetype
----------------
+## Maven Archetype
 
 A Maven Archetype is a template for new Maven projects. We provide an archetype
 as a starting point for writing nearline storage plugins for dCache. To
@@ -293,8 +287,7 @@ The resulting tar file can be shipped to customers and unpackaged in
 `/usr/local/share/dcache/plugins`. Obviously you need to modify the generated
 files to do something useful first.
 
-Examples
---------
+## Examples
 
 The simplest functional nearline storage driver is probably the `copy` driver
 that ships with dCache. It sequentially copies the replicas to and from another

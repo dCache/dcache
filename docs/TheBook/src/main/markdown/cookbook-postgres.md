@@ -1,7 +1,7 @@
 Chapter 24. PostgreSQL and dCache
 =================================
 
-Table of Contents
+## Table of Contents
 
 + [Installing a PostgreSQL Server](#installing-a-postgresql-Server)
 + [Configuring Access to PostgreSQL](#configuring-access-tp-postgresql)
@@ -13,8 +13,7 @@ PostgreSQL is used for various things in a dCache system: The [SRM](rf-glossary.
 
 The `SRM`, the pin manager, the space manager and the replica manager will use the PostgreSQL database as configured at cell start-up in the corresponding batch files. The `billing` will only write the accounting information into a database if it is configured with the option `-useSQL`. The `pnfs` server will use a PostgreSQL server if the `pnfs-posgresql` version is used. It will use several databases in the PostgreSQL server.
 
-Installing a PSQL Server
-========================
+## Installing a PSQL Server
 
 The preferred way to set up a PSQL server should be the installation of the version provided by your OS distribution; however, version 8.3 or later is required. Version 9.5 is recommended, as it has a more efficient locking mechanism that improves performance.
 
@@ -28,8 +27,7 @@ Initialize the database directory (for PSQL version 9.2 this is **/var/lib/pgsql
     Starting postgresql-9.2 service:                           [  OK  ]
     [root] # chkconfig postgresql-9.2 on
 
-Configuring Access to PSQL
-==========================
+## Configuring Access to PSQL
 
 In the installation guide instructions are given for configuring one PSQL server on the admin node for all the above described purposes with generous access rights. This is done to make the installation as easy as possible. The access rights are configured in the file  **<database_directory_name>/data/pg_hba.conf**. According to the installation guide the end of the file should look like
 
@@ -71,8 +69,7 @@ User access should be prohibited to this file with
 
     [root] # chmod go-rwx /usr/etc/pnfsSetup
 
-Performance of the PostgreSQL Server
-====================================
+## Performance of the PostgreSQL Server
 
 On small systems it should never be a problem to use one single PSQL server for all the functions listed above. In the standard installation, the `ReplicaManager` is not activated by default. The `billing` will only write to a file by default.
 

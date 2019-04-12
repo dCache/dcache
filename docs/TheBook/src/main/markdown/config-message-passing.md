@@ -13,8 +13,7 @@ Within this framework, cells send messages to other cells addressing them in the
 
 A domain is started with a shell script **bin/dcache start** domainName. The routing manager and location manager cells are started in each domain and are part of the underlying cell package structure. Each domain will contain at least one cell in addition to them.
 
-Naming and addressing
----------------------
+## Naming and addressing
 
 Domains must have a name unique through the dCache installation. Each cell has a
 unique name within the domain in which it is running. A fully qualified cell
@@ -23,8 +22,7 @@ at-sign, e.g. `PoolManager@dCacheDomain`. Unqualified addresses either do not
 have a domain suffix or have a `local` suffix, e.g. `PoolManager@local`. It
 follows that `local` is an illegal domain name.
 
-Routing
--------
+## Routing
 
 Each domain has a message routing table. This routing table may be inspected and
 manipulated through the `System` cell inside that domain. Routing tables are
@@ -157,8 +155,7 @@ fact that a message to a topic is delivered along all topic routes - as well as
 one of the default routes. Messages to named queues on the other hand are only
 routed along one of the queue routes chosen at random.
 
-Configuration
--------------
+## Configuration
 
 All domains default to being satellite domains. Unless some domain is explicitly
 marked as a core domain, domains will be disconnected from each other.

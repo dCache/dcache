@@ -13,8 +13,7 @@ dCache includes support for Access Control Lists (ACLs). This support is conform
 
 This chapter provides some background information and details on configuring dCache to use ACLs and how to administer the resulting system.
 
-Introduction
-============
+## Introduction
 
 dCache allows control over namespace operations (e.g., creating new files and directories, deleting items, renaming items) and data operations (reading data, writing data) using the standard Unix permission model. In this model, files and directories have both owner and group-owner attributes and a set of permissions that apply to the owner, permissions for users that are members of the group-owner group and permissions for other users.
 
@@ -38,8 +37,7 @@ Inheritance only happens when a new file or directory is created. After creation
 
 Inheritance is optional. Within a directory's ACL some ACEs may be inherited whilst others are not. New files or directories will receive only those ACEs that are configured; the remaining ACEs will not be copied.
 
-Configuring ACL support
-=======================
+## Configuring ACL support
 
 The **dcache.conf** and layout files contain a number of settings that may be adjusted to configure dCache's permission settings. These settings are are described in this section.
 
@@ -52,8 +50,7 @@ To enable ACL support set `pnfsmanager.enable.acl`=`true` in the layout file.
 
 As NFSv4.0 protocol specification has a native ACL support, dCache's NFS door doesn't use this option and relays on `acl` option in export configurations. See [Exporting filesystem](config-nfs.md#exporting-filesystem) for details.
 
-Setting and getting ACLs
-----------------------------
+### Setting and getting ACLs
 
 Altering dCache ACL behaviour is achieved by connecting to the `PnfsManager` [well-known cell](rf-glossary.md#well-known-cell) using the administrator interface. For further details about how to use the administrator interface, see [the section called “The Admin Interface”](intouch.md#the-admin-interface).
 
@@ -69,7 +66,7 @@ The `getfacl` is used to obtain the current ACL for objects in dCache namespace.
 
 The `getfacl` command fetches the ACL information of a namespace item (a file or directory). The item may be specified by its PNFS-ID or its absolute path.
 
-### Description of the ACE structure
+#### Description of the ACE structure
 
 The *ACE* arguments to the `setfacl` command have a specific format. This format is described below in Extended Backus-Naur Form (EBNF).
 
@@ -92,7 +89,7 @@ The *ACE* arguments to the `setfacl` command have a specific format. This format
     [9]	GroupID	::=	INTEGER
 The various options are described below.
 
-#### The Subject
+##### The Subject
 
 The [Subject](#the-subject) defines to which user or group of users the ACE will apply. It acts as a filter so that only those users that match the Subject will have their access rights affected.
 
@@ -125,7 +122,7 @@ The `AUTHENTICATED@` Subject indicates that an ACE applies to all authenticated 
 >
 > An end user of dCache is either authenticated or is unauthenticated, but never both. Because of this, an end user operation will either match ACEs with `ANONYMOUS@` Subjects or `AUTHENTICATED@` Subjects but the request will never match both at the same time.
 
-#### Access mask
+##### Access mask
 
 [Access](#description-of-the-ace-structure) (defined in the [ACE EBNF](#description-of-the-ace-structure) above) describes what kind of operations are being described by the ACE and whether the ACE is granting permission or denying it.
 
@@ -199,7 +196,7 @@ writing ACL information. Specifying `C` in an ACE's access mask controls whether
 **o**
 altering owner and owner-group information. Specifying `o` controls whether end users are allowed to change ownership information of the item to which the ACE's ACL is attached.
 
-#### ACL inheritance
+##### ACL inheritance
 
 To enable ACL inheritance, the optional [inheritance flags](#description-of-the-ace-structure) must be defined. The flag is a list of letters. There are three possible letters that may be included and the order doesn't matter.
 
@@ -226,8 +223,7 @@ When a file or directory inherits from an ACE with `o` in the inheritance flags 
 
 An `o` in the inheritance flag allows child files or directories to inherit authorisation behaviour that is different from the parent directory.
 
-Accessing ACL over NFS mount
------------------------------
+### Accessing ACL over NFS mount
 
 As mentioned earlier, NFSv4.0 natively supports ACL. On linux system there are two commands to get and set ACLs - `nfs4_getfacl` and `nfs4_setfacl`. The both commands are are a part of `nfs4-acl-tools` package and available on most of the modern linux distributions.
 

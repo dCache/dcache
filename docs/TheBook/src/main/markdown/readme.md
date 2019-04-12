@@ -2,8 +2,7 @@
 
 This [book](index.md) is about **dCache**, a distributed storage solution for storing huge amounts of data without a hard limit, on the order of hundreds of Petabytes, which introduces you to dCache and provide you with the details of the installation. It describes configuration, customization of dCache as well as the usage of several protocols that dCache supports. Additionally, it provides cookbooks for standard tasks.
 
-Looking for help?
------------------
+## Looking for help?
 
 This part gets you all the help that you might need:
 

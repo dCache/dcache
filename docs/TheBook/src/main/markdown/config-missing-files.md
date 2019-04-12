@@ -1,8 +1,7 @@
 THE MISSING FILES SERVICE
 =========================
 
-Introduction
-============
+## Introduction
 
 When a user requests to read a file that doesn't exist, 
 the door will respond to the user with the appropriate error message.
@@ -35,8 +34,7 @@ the next plugin in the chain.  If the last plugin defers the request
 then then the MissingFiles service will instruct the door to fail the
 request.
 
-Setting up
-==========
+## Setting up
 
 To instantiate `MissignFiles` service the following line needs to be added to your 
 layout file.  

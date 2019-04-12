@@ -1,8 +1,7 @@
 Chapter 3. Getting to know dCache
 =================================
 
-Table of Contents
-------------------
+## Table of Contents
 
 * [Checking the Functionality](#checking-the-functionality)
 
@@ -35,13 +34,11 @@ This section is a guide for exploring a newly installed dCache system. The confi
 
 
 
-CHECKING THE FUNCTIONALITY
-==========================
+## CHECKING THE FUNCTIONALITY
 
 Reading and writing data to and from a dCache instance can be done with a number of protocols. After a standard installation, these protocols are **WebDav**, **xrootd**, **GSIdCap**, and **GridFTP**. In addition dCache comes with an implementation of the **SRM** protocol which negotiates the actual data transfer protocol.
 
-dCache WITHOUT MOUNTED NAMESPACE
---------------------------------
+### dCache WITHOUT MOUNTED NAMESPACE
 
 Create the root of the Chimera namespace and a world-writable directory by
 
@@ -49,8 +46,7 @@ Create the root of the Chimera namespace and a world-writable directory by
     [root] # /usr/bin/chimera mkdir /data/world-writable
     [root] # /usr/bin/chimera chmod 777 /data/world-writable
 
-WEBDAV
-------
+### WEBDAV
 
 To use **WebDAV** you need to define a **WebDAV** service in your layout file. You can define this service in an extra domain, e.g. [webdavDomain] or add it to another domain to the file /etc/dcache
 /layouts/mylayout.conf.
@@ -108,8 +104,7 @@ and read it
 
     [root] # curl http://webdav-door.example.org:2880/data/world-writable/testfile.txt
 
-DCAP
-----
+### DCAP
 
 To be able to use dCap you need to have the dCap door running in a domain.
 
@@ -147,8 +142,7 @@ and copy the file back.
 To remove the file you will need to mount the namespace.
 
 
-THE WEB INTERFACE FOR MONITORING dCache
-=======================================
+## THE WEB INTERFACE FOR MONITORING dCache
 
 In the standard configuration the dCache web interface is started on the head node (meaning that the domain hosting the httpd service is running on the head node) and can be reached via port 2288. Point a web browser to http://<head-node.example.org>:2288/ to get to the main menu of the dCache web interface. The contents of the web interface are self-explanatory and are the primary source for most monitoring and trouble-shooting tasks.
 
@@ -160,15 +154,13 @@ The page “Pool Request Queues” (or “Pool Transfer Queues”) gives informa
 
 The remaining pages are only relevant with more advanced configurations: The page “Pools” (or “Pool Attraction Configuration”) can be used to analyze the current configuration of the [pool selection unit](rf-glossary.md#pool-selection-unit) in the pool manager. The remaining pages are relevant only if a [tertiary storage system (HSM)](rf-glossary.md#hsm-type) is connected to the dCache instance.
 
-THE ADMIN INTERFACE
-===================
+## THE ADMIN INTERFACE
 
 > **JUST USE COMMANDS THAT ARE DOCUMENTED HERE**
 >
 > Only commands described in this documentation should be used for the administration of a dCache system.
 
-FIRST STEPS
------------
+### FIRST STEPS
 
 dCache has a powerful administration interface.  Administration protocol is implemented as `admin` cell that
 embeds `ssh` server. Once logged to admin interface an administrator can connect or send commands to other cells
@@ -188,8 +180,7 @@ this domain is called  adminDoorDomain:
 > All configurable values of the ssh admin interface can be found in the **/usr/share/dcache/defaults/admin.properties** file. Please do NOT change any value in this file. Instead enter the key value combination in the **/etc/dcache/dcache.conf**.
 
 
-ACCESS WITH SSH
----------------
+### ACCESS WITH SSH
 
 The `admin` service embeds `ssh` server listening on port 22224 (configurable) and supports the following authentication mechanisms :
 
@@ -217,7 +208,7 @@ authorization and `gPlazma` based authorization.  The configuration of both auth
 described below.
 
 
-### Public Key Authorization
+#### Public Key Authorization
 
 To authorize administrators by their public key insert the key into the file **authorized_keys2** which should
 be placed in the directory **/etc/dcache/admin** as specified in the file **/usr/share/dcache/defaults/admin.properties**
@@ -248,7 +239,7 @@ Now you can login to the admin interface by
 Public key based authorization is default with a fallback to `gPlazma` `kpwd` plugin.
 
 
-### Access via **gPlazma** and the **dcache.kpwd** File
+#### Access via **gPlazma** and the **dcache.kpwd** File
 
 To use `gPlazma` make sure that you added it to your layout file :
 
@@ -327,8 +318,7 @@ Just adding a user in the **dcache.kpwd** file is not sufficient. The generated 
 See [the section called “Create a new user”](#create-a-new-user) to learn how to create the user in the admin interface and set the rights.
 
 
-HOW TO USE THE ADMIN INTERFACE
-------------------------------
+### HOW TO USE THE ADMIN INTERFACE
 
 Admin interface allows you to execute shell commands, connect to other cells and execute their supported commands or
 send supported cell commands to other cells. Once logged in you are prompted to use help `Type "\?" for help`.
@@ -516,8 +506,7 @@ Finally, [cm ls](reference.md#cm-ls) with the option `-r` gives the information 
 
 While the first line for each pool gives the information stored in the cache of the cost module, the second line gives the    costs (SC: [space cost](rf-glossary.md#space-cost), CC: [performance cost](rf-glossary.md#performance-cost)) calculated for a (hypothetical) file of zero size. For details on how these are calculated and their meaning, see [the section called “Classic Partitions”](#config-poolmanager.md#classic-partitions).
 
-CREATE A NEW USER
------------------
+### CREATE A NEW USER
 
 To create a new user, <new-user> and set a new password for the user `\c` from the local prompt `((local) admin >)` to the acm, the access control manager, and run following command sequence:
 
@@ -574,8 +563,7 @@ The following command makes a user as powerful as admin (dCache’s equivalent t
 ```
 
 
-USE OF THE SSH ADMIN INTERFACE BY SCRIPTS
------------------------------------------
+### USE OF THE SSH ADMIN INTERFACE BY SCRIPTS
 
 In scripts, one can use a “Here Document” to list the commands, or supply them to `ssh` as standard-input (stdin). The following demonstrates using a Here Document:
 
@@ -604,8 +592,7 @@ or, the equivalent as stdin.
 ```
 
 
-AUTHENTICATION AND AUTHORIZATION IN dCache
-------------------------------------------
+### AUTHENTICATION AND AUTHORIZATION IN dCache
 
 In dCache digital certificates are used for authentication and authorisation. To be able to verify the chain of trust when using the non-commercial grid-certificates you should install the list of certificates of grid Certification Authorities (CAs). In case you are using commercial certificates you will find the list of CAs in your browser.
 
@@ -722,15 +709,13 @@ The **/etc/dcache/dcachesrm-gplazma.policy:**
 
 
 
-HOW TO WORK WITH SECURED dCache
--------------------------------
+### HOW TO WORK WITH SECURED dCache
 
 If you want to copy files into dCache with GSIdCap, SRM or WebDAV with certificates you need to follow the instructions in the section [above](#authentication-and-authorization-in-dcache).
 
 
 
-GSIDCAP
--------
+### GSIDCAP
 
 To use `GSIdCap` you must run a `GSIdCap` door. This is achieved by including the `gsidcap` service in your layout file on the machine you wish to host the door.
 
@@ -764,8 +749,7 @@ and copy it back
     [user] $ dccp gsidcap://<dcache.example.org>:22128/data/world-writable/my-test-file3 /tmp/mytestfile3.tmp
     801512 bytes in 0 seconds
 
-SRM
----
+### SRM
 
 To use the `SRM` you need to define the `srm` service in your layout file.
 
@@ -792,8 +776,7 @@ If the grid functionality is not required the file can be deleted with the `NFS`
 
     [user] $ rm /data/world-writable/my-test-file4
 
-WEBDAV WITH CERTIFICATES
-------------------------
+### WEBDAV WITH CERTIFICATES
 
 To use `WebDAV` with certificates you change the entry in **/etc/dcache/layouts/mylayout.conf** from
 
@@ -830,7 +813,7 @@ and access your files via https://<dcache.example.org>:2880 with your browser.
 >
 > If the host certificate contains an extended key usage extension, it must include the extended usage for server authentication. Therefore you have to make sure that your host certificate is either unrestricted or it is explicitly allowed as a certificate for `TLS Web Server Authentication`.
 
-### Allowing authenticated and non-authenticated access with WebDAV
+#### Allowing authenticated and non-authenticated access with WebDAV
 
 You can also choose to have secure and insecure access to your files at the same time. You might for example allow access without authentication for reading and access with authentication for reading and writing.
 
@@ -843,8 +826,7 @@ You can also choose to have secure and insecure access to your files at the same
 
 You can access your files via https://<dcache.example.org>:2880 with your browser.
 
-Files
-=====
+## Files
 
 In this section we will have a look at the configuration and log files of dCache.
 

@@ -1,8 +1,7 @@
 Part IV. Reference
 ==================
 
-Table of Contents
-------------------
+## Table of Contents
 
 + [27. dCache Clients](rf-clients-srm.md)
 [The SRM Client Suite](rf-clients-srm.md#the-srm-client-suite)

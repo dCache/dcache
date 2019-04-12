@@ -1,8 +1,7 @@
 CHAPTER 22. dCache CLIENTS.
 ==========================
 
-Table of Contents
------------------
+## Table of Contents
 
 + [GSI-FTP](#gsi-ftp)
 
@@ -36,13 +35,11 @@ There are many client tools for dCache. These can most easily be classified by c
 As can be seen from above even a single node standard install of dCache returns a considerable number of lines and for this reason we have not included the output, in this case 205 lines where written.
 
 
-GSI-FTP
-=======
+## GSI-FTP
 
 dCache provides a GSI-FTP door, which is in effect a GSI authenticated FTP access point to dCache
 
-Listing a directory
--------------------
+### Listing a directory
 
 To list the content of a dCache directory, the GSI-FTP protocol can be used;
 
@@ -50,8 +47,7 @@ To list the content of a dCache directory, the GSI-FTP protocol can be used;
 
 
 
-Checking a file exists
-----------------------
+### Checking a file exists
 
 To check the existence of a file with GSI-FTP.
 
@@ -67,8 +63,7 @@ To check the existence of a file with GSI-FTP.
 >
 > Please note the `echo $?` show the return code of the last run application. The error message returned from the client this should not be scripted against as it is one of many possible errors.
 
-Deleting files
---------------
+### Deleting files
 
 To delete files with GSI-FTP use the `edg-gridftp-rm` command.
 
@@ -76,8 +71,7 @@ To delete files with GSI-FTP use the `edg-gridftp-rm` command.
 
 This deletes the file **filler_test20050811160948926780000** from the **/pnfs/example.org/data/dteam** using the door running on the host gridftp-door.example.org within the dCache cluster example.org
 
-Copying files
--------------
+### Copying files
 
 globus-url-copy
 \[command line options\]
@@ -95,13 +89,11 @@ The following example copies the file **/etc/group** into dCache as the file **/
 
 Please note that the five slashes are really needed.
 
-DCAP
-====
+## DCAP
 
 When using `dccp` client or using the interposition library the errors `Command failed!` can be safely ignored.
 
-DCCP
-----
+### DCCP
 
 The following example shows `dccp` being used to copy the file **/etc/group** into dCache as the the file **/pnfs/example.org/data/dteam/test6**. The `dccp` program will connect to dCache without authenticating.
 
@@ -188,8 +180,7 @@ The following example shows `dccp` with the debugging enabled. The value `63` co
     597 bytes in 0 seconds
     Debugging
 
-Using the dCache client interposition library.
-----------------------------------------------
+### Using the dCache client interposition library.
 
 > **Finding the GSI tunnel.**
 >
@@ -222,15 +213,13 @@ The following session demonstrates copying a file into dCache, checking the file
     bin:x:2:
     [user] $ rm gsidcap://gsidcap-door.example.org:22128/pnfs/example.org/data/dteam/MyFile
 
-SRM
-===
+## SRM
 
 dCache provides a series of clients one of which is the `SRM?  client which supports a large number operations, but is just one Java application, the script name is sent to the Java applications command line to invoke each operation.
 
 This page just shows the scripts command line and not the invocation of the Java application directly.
 
-Creating a new directory.
--------------------------
+### Creating a new directory.
 
 Usage:
 
@@ -245,8 +234,7 @@ The following example creates the directory **/pnfs/example.org/data/dteam/myDir
     [user] $ srmmkdir srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/myDir
 
 
-Removing files from dCache
---------------------------
+### Removing files from dCache
 
 Usage:
 
@@ -258,8 +246,7 @@ Usage:
 Example:
     [user] $ srmrm srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/myDir/myFile
 
-Removing empty directories from dCache
---------------------------------------
+### Removing empty directories from dCache
 
 It is allowed to remove only empty directories as well as trees of empty directories.
 
@@ -275,8 +262,7 @@ Examples:
 
     [user] $ srmrmdir -recursive=true srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/myDir
 
-srmcp for SRM v1
-----------------
+### srmcp for SRM v1
 
 Usage:
 
@@ -287,23 +273,22 @@ or
     srmcp [command line options] [-copyjobfile] file
 
 
-### Copying files to dCache
+#### Copying files to dCache
 
 Example:
    [user] $ srmcp -webservice_protocol=http \
    file://///etc/group \
    srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/test_Srm.clinton.501.32050.20070907153055.0
 
-### Copying files from dCache
+#### Copying files from dCache
 
     [user] $ srmcp -webservice_protocol=http \
    srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/test_Srm.clinton.501.32050.20070907153055.0 \
    file://///tmp/testfile1 -streams_num=1
 
-srmcp for SRM v2.2
-------------------
+### srmcp for SRM v2.2
 
-### Getting the dCache Version
+#### Getting the dCache Version
 
 The `srmping` command will tell you the version of dCache. This only works for authorized users and not just authenticated users.
 
@@ -314,11 +299,11 @@ The `srmping` command will tell you the version of dCache. This only works for a
    backend_type:dCache
    backend_version:production-1-9-1-11
 
-### Space Tokens
+#### Space Tokens
 
 Space token support must be set up and reserving space with the admin interface this is also documented [in the SRM section](config-SRM.md#introduction) and in [the dCache wiki](http://trac.dcache.org/wiki/manuals/SRM_2.2_Setup).
 
-#### Space Token Listing
+##### Space Token Listing
 
 Usage:
 
@@ -358,7 +343,7 @@ Example 22.2. Listing the space tokens for a SRM:
     28839
     145589
 
-#### Space Reservation
+##### Space Reservation
 
 Usage:
 
@@ -405,7 +390,7 @@ Possible result:
                accessLatency:ONLINE
              retentionPolicy:REPLICA
 
-#### Writing to a Space Token
+##### Writing to a Space Token
 
 Usage:
 
@@ -422,7 +407,7 @@ Examples:
     file://///home/user/path/to/myFile2 \
     srm://srm-door.example.org:8443/pnfs/example.org/data/dteam
 
-#### Space Metadata
+##### Space Metadata
 
 Users can get the metadata available for the space, but the ability to query the metadata of a space reservation may be restricted so that only certain users can obtain this information.
 
@@ -439,13 +424,13 @@ Users can get the metadata available for the space, but the ability to query the
                accessLatency:ONLINE
              retentionPolicy:REPLICA
 
-#### Space Token Release
+##### Space Token Release
 
 Removes a space token from the SRM.
 
     [user] $ srm-release-space srm://srm-door.example.org:8443 -space_token=15
 
-### Listing a file in SRM
+#### Listing a file in SRM
 
 SRM version 2.2 has a much richer set of file listing commands.
 
@@ -540,8 +525,7 @@ In the next command, the `-offset` option is used to view a different set of ent
           31 /pnfs/example.org/data/dteam/testdir/testFile3
           31 /pnfs/example.org/data/dteam/testdir/testFile4
 
-ldap
-====
+## ldap
 
 dCache is commonly deployed with the BDII. The information provider within dCache publishes information to BDII. To querying the dCache BDII is a matter of using the standard command ldapsearch. For grid the standard ldap port is set to 2170 from the previous value of 2135.
 
@@ -552,8 +536,7 @@ dCache is commonly deployed with the BDII. The information provider within dCach
 
 As can be seen from above even a single node standard install of dCache returns a considerable number of lines and for this reason we have not included the output, in this case 205 lines where written.
 
-Using the LCG commands with dCache
-==================================
+## Using the LCG commands with dCache
 
 The `lcg_util` RPM contains many small command line applications which interact with SRM implementations, these where developed independently from dCache and provided by the LCG grid computing effort.
 
@@ -564,8 +547,7 @@ Each command line application operates on a different method of the SRM interfac
     [user] $ lcg-infosites --vo dteam se
 
 
-The `lcg-gt` Application
-------------------------
+### The `lcg-gt` Application
 
 `SRM` provides a protocol negotiating interface, and returns a TURL (transfer URL). The protocol specified by the client will be returned by the server if the server supports the requested protocol.
 
@@ -592,8 +574,7 @@ Each of the above three lines contains different information. These are explaine
 
 If you use `lcg-gt` to request a file with a protocol that is not supported by dCache the command will block for some time as dCache's SRM interface times out after approximately 10 minutes.
 
-The `lcg-sd` Application
-------------------------
+### The `lcg-sd` Application
 
 This command should be used to return any TURLs given by dCache's SRM interface. This is because dCache provides a limited number of TURLs available concurrently.
 

@@ -1,8 +1,7 @@
 CHAPTER 20.  STAGE PROTECTION
 =============================
 
-Table of Contents
------------------
+## Table of Contents
 
 + [Configuration of Stage Protection](#configuration-of-stage-protection)
 + [Definition of the White List](#definition-of-the-white-list)
@@ -13,8 +12,7 @@ on user identity (DN), VO group membership and VO role (defined in FQAN),
 storage group and protocol. Attempts to stage data that does not satisfy criteria of
 stage permission configuration will result in permission denied errors
 
-CONFIGURATION OF STAGE PROTECTION
-=================================
+## CONFIGURATION OF STAGE PROTECTION
 
 The stage protection rules are captured in stage configuration file which
 is pointed to by  the variable :
@@ -43,8 +41,7 @@ then the stage protection applies only to transfers performed by doors on hosts 
 The default settings are `dcache.authz.staging = ` (not set) and
 `dcache.authz.staging.pep = doors`.
 
-DEFINING STAGE PROTECTION
-=========================
+## DEFINING STAGE PROTECTION
 
 Stage protection can be setup as a white or a black list.  Blacklisting is achieved by
 using `!` in front of an expression.

@@ -8,8 +8,8 @@ PROG-DCCP
 option
 sourceUrl
 destUrl
-Arguments
-=========
+
+## Arguments
 
 The following arguments are required:
 
@@ -19,13 +19,11 @@ The URL of the source file.
 `destUrl`
 The URL of the destination file.
 
-Description
-===========
+## Description
 
 The PROG-DCCP utility provides a `cp`(1) like functionality on the dCache file system. The source must be a single file while the destination could be a directory name or a file name. If the directory is a destination, a new file with the same name as the source name will be created there and the contents of the source will be copied. If the final destination file exists in dCache, it won't be overwritten and an error code will be returned. Files in regular file systems will always be overwritten if the `-i` option is not specified. If the source and the final destination file are located on a regular file system, the PROG-DCCP utility can be used similar to the `cp`(1) program.
 
-Options
-=======
+## Options
 
 The following arguments are optional:
 
@@ -81,8 +79,7 @@ TCP send buffer size. The default is `256K`. Setting to `0` uses the system defa
 `-t` time
 Stage timeout in seconds. This option must be used with the `-P` option.
 
-Examples:
-=========
+## Examples:
 
 To copy a file to dCache:
 
@@ -104,7 +101,6 @@ stdout:
 
     PROMPT-USER dccp /acs/user_space/data_arch.tar - | tar xf -
 
-See also
-========
+## See also
 
 cp 1

@@ -1,8 +1,7 @@
 Chapter 21.  Using Space Reservations without SRM
 =================================================
 
-Table of Contents
------------------
+## Table of Contents
 
 * [The Space Reservation](#the-space-reservation)
 * [The WriteToken tag](#the-writetoken-tag)
@@ -14,8 +13,7 @@ If you are using space reservations, i.e. you set
 
 in your configuration file and all of your pools are in [link groups](config-PoolManager.md#link-groups), then you can only write into dCache if a link group is available for your transfer. Using the `SRM` you can specify the link group to write into. If you want to use another protocol like `curl` or `xrootd` you cannot specify a link group. In this case you need to use the `WriteToken` directory tag.
 
-The Space Reservation
-=====================
+## The Space Reservation
 
 Before you can create a `WriteToken` tag you need to have a space reservation.
 
@@ -97,8 +95,7 @@ Now we can make a space reservation for that link group.
     total number of bytes reserved  : 6000000
     (SrmSpaceManager) admin >
 
-The `WriteToken` Tag
-====================
+## The `WriteToken` Tag
 
 The `WriteToken` tag is a [directory tag](config-chimera.md#directory-tag). Create the `WriteToken` tag with
 
@@ -130,8 +127,7 @@ and echo the space reservation into the WriteToken tag.
     [root] # /usr/bin/chimera writetag /data/write-token WriteToken [10000]
 
 
-Copy a File into the `WriteToken`
-=================================
+## Copy a File into the `WriteToken`
 
 Given that you have a `WriteToken` tag which contains the id of a valid space reseravtion, you can copy a file into a space reservation even if you are using a protocol that does not support space reservation.
 

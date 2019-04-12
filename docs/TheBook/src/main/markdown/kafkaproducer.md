@@ -9,19 +9,16 @@ Starting from version 4.1 we introduced a new approach to external messaging. Wi
 
 
 
-What do you need to download to enable Kafka in dCache?
-=======================
+## What do you need to download to enable Kafka in dCache?
 
 
 * ZooKeeper Framework
 
 * Apache Kafka
 
-Apache Kafka Installation.
-=======================
+## Apache Kafka Installation.
 
-1. Download
-------------
+### 1. Download
 
 
 To install Kafka on your machine, click on the below link −
@@ -35,8 +32,7 @@ Extract the tar file
     cd kafka_2.11.0.9.0.0
 
 
-2. Enable kafka in dCache.
-------------
+### 2. Enable kafka in dCache.
 
 
     (one-of?true|false)dcache.enable.kafka = true
@@ -52,8 +48,7 @@ Set the broker address, or list of broker addresses
 
 
 
-3. Start Server
-------------
+### 3. Start Server
 
 
 
@@ -62,7 +57,7 @@ Set the broker address, or list of broker addresses
 
 
 
-4. Start consumer
+### 4. Start consumer
 
 
 

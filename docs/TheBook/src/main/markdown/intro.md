@@ -1,8 +1,7 @@
 Chapter 1. Introduction
 =======================
 
-Table of Contents
-------------------
+## Table of Contents
 
 * [dCache Architecture](#architecture)
 * [Cells and Domains](#cells-and-domains)
@@ -41,8 +40,7 @@ dCache provides a comprehensive administrative interface for configuring the dCa
 
 The layer model shown in [The dCache Layer Model] gives an overview of the architecture of the dCache system.
 
-Architecture
-============
+## Architecture
 
 As it is shown in the Figure # dCache has many important components. A minimal dCache instance must have:
 - **door**
@@ -67,8 +65,7 @@ The **PoolManager** is the heart of dCache system it manages all the pools in th
 task is data dispatch based on data selection rules, relative pool cost and availability of tertiary system
 support.
 
-Components of dCache System
-=============================
+## Components of dCache System
 
 |      Services                        |Responsible for    |
 |:------------------------------------------:|:----|
@@ -116,8 +113,7 @@ Components of dCache System
   [figure\_title]: #fig-intro-layer-model
 
 
-Cells and Domains
-=================
+## Cells and Domains
 
 dCache, as distributed storage software, can provide a coherent service using multiple computers or nodes (the two terms are used interchangeable). Although dCache can provide a complete storage solution on a single computer, one of its strengths is the ability to scale by spreading the work over multiple nodes.
 
@@ -135,8 +131,7 @@ dCache is scalable storage software. This means that (in most cases) the perform
 
 Most cells communicate in such a way that they don't rely on in which domain they are running. This allows a site to move cells from one domain to another or to create new domain definitions with some subset of available cells. Although this is possible, it is rare that redefining domains or defining new domains is necessary. Starting or stopping domains is usually sufficient for managing load.
 
-Protocols Supported by dCache
-=============================
+## Protocols Supported by dCache
 
 |                              |dCap  |FTP   |xrootd|NFSv4.1| WebDAV | SRM |
 |:----------------------------:|:----:|:----:|:----:|:-----:|:------:|:---:|

@@ -3,8 +3,7 @@ Part II. Configuration of dCache
 
 This part contains descriptions of the components of dCache, their role, functionality within the framework. In short, all information necessary for configuring them.
 
-Table of Contents
------------------
+## Table of Contents
 
 1. [ZooKeeper](config-zookeeper.md)
     - [Deployment scenarios](config-zookeeper.md#deployment-scenarios)
