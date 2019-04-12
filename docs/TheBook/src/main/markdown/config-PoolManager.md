@@ -165,7 +165,14 @@ In some situations it desired that pools dynamically added into groups based on 
 
     psu create pgroup -dynamic -tags=key=value
 
-The Pool Manager uses tags defined by `pool.tags` property.
+Currently, Pool Manager only supports pool tag, defined by `pool.tags`, to create such dynamic groups.
+
+    Example:
+
+    psu create pgroup -dynamic -tags=zone=A zone-A-pools
+
+Will create pool group `zone-A-pools` and any existing pool as well as any new pool that configured with tag
+`zone=A` will be automatically included into that pool group.
 
 > **NOTE**
 >
