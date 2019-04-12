@@ -1,9 +1,9 @@
 The Resilience Service
---------------------------
+======================
 
-### Configuring the resilience service
+## Configuring the resilience service
 
-#### Activating resilience
+### Activating resilience
 
 The service can be run out of the box. All that is required is to include it in
 some domain.
@@ -16,7 +16,7 @@ set explicitly if Resilience is not running on the same host as the database.
 chimera.db.host=<host-where-chimera-runs>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#### Memory requirements
+### Memory requirements
 
 While it is possible to run Resilience in the same domain as other services,
 memory requirements for resilience handling are fairly substantial, particularly
@@ -29,7 +29,7 @@ for large installations.
 
 Whenever feasible, it is recommended to give Resilience its own domain.
 
-#### Some definitions
+### Some definitions
 
 A **resilient file** is one whose `AccessLatency` is `ONLINE` and which belongs
 to a **resilient storage unit**.
@@ -53,7 +53,7 @@ permanent on-disk copies (the 'Own Cloud' dCache instance running at DESY uses
 this configuration to maintain both hard replicas and a tape copy for each
 file).
 
-#### Setting up resilience
+### Setting up resilience
 
 To have a fully functioning resilient installation, you must take the following
 steps:
@@ -66,7 +66,7 @@ steps:
 3.  Create the namespace directories where these files will reside, with the
     necessary tags.
 
-##### Defining a resilient pool group
+#### Defining a resilient pool group
 
 To make a pool group resilient, simply add the '`-resilient`' flag; e.g., in
 `poolmanager.conf`:
@@ -98,7 +98,7 @@ BEST PRACTICE:  Drain pools in a resilient pool group before removing the
                 group's resilience flag.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-##### Defining a resilient storage unit
+#### Defining a resilient storage unit
 
 There are two attributes which pertain to resilience.
 
@@ -121,7 +121,7 @@ psu set storage unit test:resilient1@osm -required=2 -onlyOneCopyPer=hostname
 This example assumes that the pool layout has also configured the pools with the
 appropriate `hostname` tag and value.
 
-##### Configuration Example
+#### Configuration Example
 
 The following demonstrates the setup for a single resilient pool, pool group and
 storage unit. The usual procedure for linking pools, pool groups and units
@@ -143,7 +143,7 @@ psu create link resilient1-link resilient1-units ...
 psu addto link resilient1-link resilient1-pools
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-##### Setting the directory tags
+#### Setting the directory tags
 
 To continue with the above example, the tags which would be minimally required
 in the directories pointing to this storage unit are:
@@ -153,7 +153,7 @@ in the directories pointing to this storage unit are:
 .(tag)(sGroup): resilient1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#### Pool Sharing
+### Pool Sharing
 
 It is possible to share pools between a resilient group and a group backed by an
 HSM. The files can be mixed, and the HSM files will not be replicated. This
@@ -165,7 +165,7 @@ Because Resilience checks whether the `AccessLatency` attribute is `ONLINE`, the
 `NEARLINE` files belonging to `hsmunit` are ignored. This pertains to pool scans
 as well. Thus 1A, 2A and 3A can contain both replicas and cached copies.
 
-#### Cached files on resilient pools
+### Cached files on resilient pools
 
 On pools belonging to a resilient group, any copies which are simply `cached`
 (without a permanent sticky bit set by the system) are assumed to be from files
@@ -197,7 +197,7 @@ BEST PRACTICE:  Hot replication should be turned off on resilient pools.
                 as well as the available space.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-### Resilience home
+## Resilience home
 
 On the host where the resilience service is running, you will see several files
 in the `resilience.home` directory (`/var/lib/dcache/resilience` by default):
@@ -214,7 +214,7 @@ in the `resilience.home` directory (`/var/lib/dcache/resilience` by default):
 
 Explanations of these files follow.
 
-#### pnfs-operation-map
+### pnfs-operation-map
 
 This is the snapshot of the main operation table. By default, this checkpoint is
 written out (in simple text format) every minute. As mentioned above, this
@@ -229,7 +229,7 @@ When a new snapshot is taken, the old is first renamed to
 is renamed to `pnfs-operation-map-reload` to distinguish it from the current
 snapshot whose processing may overlap with the reloading.
 
-#### pnfs-backlogged-messages
+### pnfs-backlogged-messages
 
 It is possible to enable and disable message handling inside Resilience. There
 is also a short delay at startup which may also accumulate a backlog. Any
@@ -238,7 +238,7 @@ which is then read back in and deleted during initialization. The lifetime of
 the file, in the latter case, is therefore rather brief, so you will usually not
 see one in the directory unless you purposely disable message handling.
 
-#### pnfs-operation-statistics and pnfs-operation-statistics-task-{datetime}
+### pnfs-operation-statistics and pnfs-operation-statistics-task-{datetime}
 
 Through an admin command, one can enable and disable the recording of
 statistical data. When activated, two kinds of files are produced. The first is
@@ -272,7 +272,7 @@ each entry, two timings are reported: *verify* refers to the part of the
 operation which determines whether the file needs handling; then either a copy
 or remove timing is given.
 
-#### excluded-pools
+### excluded-pools
 
 When the command `pool exclude <pools>` is used, the pool operation record is
 marked as `EXCLUDED`. This can be observed when the `pool ls` command is issued.
@@ -284,7 +284,7 @@ For pool exclusion, see the [section
 below](https://github.com/dCache/dcache/wiki/Resilience#exclude-a-pool-from-resilience-handling)
 under typical scenarios.
 
-### Admin Commands
+## Admin Commands
 
 There are a number of ways to interact with the resilience service through the
 admin door. As usual, the best guide for each command is to consult its help
@@ -293,7 +293,7 @@ documentation (`\h <command>`).
 These commands will not be discussed in detail here. We instead present a brief
 overview and a few examples of output.
 
-#### Available actions
+### Available actions
 
 1.  `enable`, `disable [strict]`: Enable and disable Resilience message
     handling; enable and disable all of Resilience without having to stop the
@@ -341,7 +341,7 @@ overview and a few examples of output.
     completed and are now no longer active; do the same for the most recent
     terminally failed operations.
 
-#### Example output
+### Example output
 
 One of the most useful commands is `diag`, or diagnostics. This can be called
 with or without a regular expression (indicating pool names):
@@ -467,7 +467,7 @@ scan window set to 24 HOURS
 period set to 3 MINUTE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-### Tuning
+## Tuning
 
 Only a few properties can be reset using the `ctrl` commands shown above. Please
 consult the documentation in the `resilience.properties` defaults for a fuller
@@ -478,7 +478,7 @@ and that these be properly matched to the number of threads responsible for the
 various operations, in order to avoid contention (see again, the explanation in
 the default properties file).
 
-### Resilience's View of Pool Status
+## Resilience's View of Pool Status
 
 In order to allow for flexibility in configuring door access to pools, the
 `disabled` state on a pool is interpreted this way:
@@ -498,7 +498,7 @@ by doors or Resilience.
 for write, but also for read; is the pool is resilient, Resilience will schedule
 it for a scan so that the resilient files it contains can be replicated elsewhere.
 
-### Automatic Staging of Missing CUSTODIAL Replicas
+## Automatic Staging of Missing CUSTODIAL Replicas
 
 Files whose `retention policy` is `CUSTODIAL` and whose `access latency` is `ONLINE`
 will be handled by Resilience when their replicas are found in a resilient
@@ -518,9 +518,9 @@ staging pools from which the staged-in replica is then to be p2p'd to a resilien
 pool group, and works normally in this case (i.e., provided the proper link
 selection preferences are set).
 
-### Some typical scenarios part 1: what happens when ...?
+## Some typical scenarios part 1: what happens when ...?
 
-#### Resilience is initialized (service start)
+### Resilience is initialized (service start)
 
 Should the resilience service go offline, nothing special occurs when it is
 restarted. That is, it will simply go through the full re-initialization
@@ -553,7 +553,7 @@ is parsed and loaded into a local data structure (accessed via the `pool info`
 command). The pool operations table is then built (accessed via the `pool ls`
 command). The `excluded-pools` file is also reloaded at this point.
 
-##### What exactly does `UNINITIALIZED` mean for a pool?
+#### What exactly does `UNINITIALIZED` mean for a pool?
 
 In addition to the usual pool status types (`ENABLED`, `READ_ONLY`, `DOWN`),
 `UNINITIALIZED` serves to indicate incomplete information on that pool from the
@@ -594,7 +594,7 @@ file.
 >   particular issues, since the system treats the reloaded operations as just
 >   another set of cache location updates and handles them accordingly.**
 
-#### A pool goes down or is reported as dead
+### A pool goes down or is reported as dead
 
 Resilience considers pools viable until they become unreadable. If a pool is
 read-only, its files will still be counted as accessible replicas, and will be
@@ -616,7 +616,7 @@ its state changes.
 Under most circumstances, no intervention should be required. This is part of
 the normal functioning of the service.
 
-#### A pool is re-enabled or brought back on line
+### A pool is re-enabled or brought back on line
 
 This is just the counterpart to the previous scenario. When a pool is brought
 back on line, Resilience queues it for eventual scanning, once again activated
@@ -631,7 +631,7 @@ a change from `UP` to `DOWN` or vice versa: it checks the countable replicas of
 a file, compares them to the required number, and takes the appropriate action
 (either copy or remove).
 
-#### Several pools go off line simultaneously
+### Several pools go off line simultaneously
 
 Each will be treated as above. By default, five scans are allowed to run
 simultaneously. If there are more scans than five, they will continue in the
@@ -641,7 +641,7 @@ Scans can take some time to complete, depending on how big the pool is. If there
 is a `WAITING` scan which has not run yet when the periodic window for the scan
 expires, it will simply remain queued until it finally runs.
 
-##### Why don't I see a value for the 'total' on the admin `pool ls` output for a `RUNNING` pool operation?
+#### Why don't I see a value for the 'total' on the admin `pool ls` output for a `RUNNING` pool operation?
 
 When a pool is scanned, a query is run against Chimera to collect all the
 `pnfsids` associated with `ONLINE` files on the given pool. The scanning
@@ -653,14 +653,14 @@ only known at the end of this loop. So it is possible to see a value for the
 number of files processed so far before seeing the total. Obviously, only when
 the total exists can the % value be computed.
 
-### Some typical scenarios part 2: how do I ...?
+## Some typical scenarios part 2: how do I ...?
 
 During the normal operation of a resilient installation of dCache, changes to
 the number of pools, along with the creation and removal of storage classes or
 pool groups, will undoubtedly be necessary. The following describes the steps to
 take and what response to expect from the resilience service in each case.
 
-#### Add a pool to a resilient group
+### Add a pool to a resilient group
 
 Let us assume that we have some new disk space available on node `dmsdca24`, and
 that we want to use it to host some pools. Of course, the first steps are to
@@ -731,7 +731,7 @@ When the pool is added, a scan is scheduled for it, provided it is in an
 initialized state. In this case, since the pool is empty, the scan completes
 quickly.
 
-#### Remove a pool from a resilient group
+### Remove a pool from a resilient group
 
 When a pool is removed from a resilient group, the pool needs to be scanned,
 because the `ONLINE` files it contains constitute replicas, and as such, the
@@ -851,7 +851,7 @@ already been processed. Thus this sequence would also work:
 >   pool group, however, Resilience becomes agnostic concerning the number of
 >   copies of that file (the file becomes "invisible" to Resilience).**
 
-#### Add or remove a resilient group
+### Add or remove a resilient group
 
 There is nothing special about adding or removing a resilient group. Doing so
 will register the group inside Resilience as well:
@@ -874,7 +874,7 @@ to run.)
 >   it is not possible to use the admin shell to demote a resilient pool group
 >   to non-resilient status.**
 
-#### Exclude a pool from resilience handling
+### Exclude a pool from resilience handling
 
 During normal operation, the resilience service should be expected to handle
 gracefully situations where a pool with many files, for one reason or another,
@@ -899,7 +899,7 @@ This feature has been held over in the new resilience service.
 \s Resilience pool include <regular expression>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-##### When **NOT** to use `pool exclude`
+#### When **NOT** to use `pool exclude`
 
 The `pool exclude` command interferes with the normal operation of Resilience;
 use in the wrong circumstances may easily lead to inconsistent state.
@@ -924,7 +924,7 @@ but caution should be taken when applying it.
 _Note that once a pool is excluded, it can no longer be scanned, even manually,
 until it is explicitly included again._
 
-#### Rebalance or migrate a resilient pool (group)
+### Rebalance or migrate a resilient pool (group)
 
 Rebalancing should be required less often on resilient pools; but if you should
 decide to rebalance a resilient pool group, or need to migrate files from one
@@ -971,7 +971,7 @@ BEST PRACTICE:  Disable resilience on the potential source and target pools
                 afterwards.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#### Manually schedule or cancel a pool scan
+### Manually schedule or cancel a pool scan
 
 A scan can be manually scheduled for any resilient pool, including those in the
 `DOWN` or `EXCLUDED` states.
@@ -1027,7 +1027,7 @@ operations scheduled thus far will also be immediately cancelled and removed
 from the file operation table. File operations can also be cancelled
 individually (see below).
 
-#### Add or remove a resilient storage unit
+### Add or remove a resilient storage unit
 
 Adding a resilient storage unit from scratch would involve creating the unit and
 adding it to a unit group.
@@ -1069,7 +1069,7 @@ directories for the files that belong to it.
 Removing a unit also will not trigger an immediate response from Resilience,
 though once again the unit will be unregistered internally.
 
-#### Modify a resilient storage unit
+### Modify a resilient storage unit
 
 There are two possible modifications to a resilient storage unit. One would be
 to change the required number of replicas, and the other, the tag constraints.
@@ -1079,7 +1079,7 @@ removes and copies may occur in order to redistribute the existing files to
 satisfy the new partitioning by pool tag. In both cases, all the pools in all
 the pool groups to which the storage unit is linked will be scheduled for scans.
 
-\#\#\#Troubleshooting file operations
+### Troubleshooting file operations
 
 Intervention to rectify resilience handling should hopefully be needed
 infrequently; yet it is not impossible for copy or remove jobs not to run to

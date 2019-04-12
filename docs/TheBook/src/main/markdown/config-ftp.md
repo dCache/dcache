@@ -11,8 +11,7 @@ Table of Contents
 This chapter explains how to configure dCache to allow FTP, a common
 network protocol that many clients support.
 
-Introduction
-============
+## Introduction
 
 FTP is a long established protocol that allows clients to transfer
 files, and manage files and directories within dCache.  FTP was
@@ -26,8 +25,7 @@ These are typically backwards compatible, allowing the ftp door to
 work with clients that support the extension in addition to those that
 don't.
 
-The Control channel
-===================
+## The Control channel
 
 The control channel is the TCP connection established by the client
 over which the client issues commands and receives replies indicating
@@ -49,8 +47,7 @@ how the encryption is handled.  Support for tls FTP is more common and
 is often referred to as FTPS, FTP(E)S, FTPS-explicit or FTPES. Support
 for gsi FTP is limited to grid tools.
 
-Limiting access
----------------
+### Limiting access
 
 The door may be configured to accept network connections only from
 specific clients.  This is perhaps most useful with plain
@@ -58,8 +55,7 @@ specific clients.  This is perhaps most useful with plain
 configuration property `ftp.net.allowed-subnets` is a space-separated
 list of either IP addresses of subnets (written in CIDR notation).
 
-Directory listing
------------------
+### Directory listing
 
 A client may request a directory listing.  In the original FTP
 specification, the format of a directory listing was unspecified.
@@ -79,8 +75,7 @@ prescribed format.  This extension removes any ambiguity and allows
 clients to work with different servers.  dCache supports this
 extension.
 
-High-availability
------------------
+### High-availability
 
 It is possible for dCache to run several ftp doors of the same type.
 These doors could be accessed through a DNS alias or through an
@@ -93,14 +88,12 @@ to process such message via the `ftp.enable.proxy-protocol`
 configuration property.  The door accepts both version 1 and version 2
 of the ha-proxy protocol.
 
-Concurrent connections
-----------------------
+### Concurrent connections
 
 The FTP door will limit the number of concurrent connections.  This is
 controlled by the `ftp.limits.clients` configuration property.
 
-Anonymous access
-----------------
+### Anonymous access
 
 Anonymous access (also know as anonymous FTP or anonFTP) is a long
 established practice where publicly available data is made available
@@ -142,8 +135,7 @@ perhaps most useful with plain FTP doors to prevent normal dCache
 users from typing in their password unencrypted.
 
 
-Data transfers
-==============
+## Data transfers
 
 Transferring a file with FTP involves establishing one (or more) TCP
 connect over which the data will travel.  These are independent of the
@@ -155,8 +147,7 @@ Transfers where the data channel is establish by dCache are called
 active transfers; those where the client establishes the data channel
 are called passive transfers.
 
-Overwriting existing files
---------------------------
+### Overwriting existing files
 
 The FTP specification is clear that an upload that targets an existing
 file should overwrite that file (provided the user is authorisation to
@@ -167,8 +158,7 @@ Currently, the `ftp.enable.overwrite` configuration property controls
 whether or not dCache allows clients to overwrite existing files when
 uploading data.  By default, this is allowed.
 
-Proxies
--------
+### Proxies
 
 There are extensions to basic the FTP protocol (called GridFTP) that
 allow the ftp door to redirect the client to the pool.  Clients that
@@ -197,8 +187,7 @@ is desirable not to proxy transfers, if possible.  If proxying is
 necessary then this increased requirements may be managed by spread
 the load over multiple ftp doors.
 
-Transfer Modes
---------------
+### Transfer Modes
 
 Data transfers may use one of two modes: MODE S and MODE E.
 
@@ -223,8 +212,7 @@ for smaller files, where the time needed to establish a data channel
 is a significant compared to the time needed to transfer the file's
 data.
 
-Logging aborted transfers
--------------------------
+### Logging aborted transfers
 
 An aborted transfer is one where the client requested a new file be
 uploaded or all data from an existing file be downloaded, but only
@@ -239,8 +227,7 @@ This is currently disabled by default, but may be controlled with the
 `ftp.enable.log-aborted-transfers` configuration property.
 
 
-Configuration examples
-======================
+## Configuration examples
 
 Hosting an FTP server in a domain is as simple as:
 
@@ -270,5 +257,3 @@ without requiring any port configuration:
     [<domainName>/nfs]
     ftp.authn.protocol = tls
     ..
-
-

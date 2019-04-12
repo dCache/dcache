@@ -2,7 +2,7 @@ CHAPTER 9. FILE HOPPING
 =======================
 
 
-Table of Contents
+## Table of Contents
 
 * [File Hopping on arrival from outside dCache](#file-hopping-on-arrival-from-outside-dcache)
 
@@ -21,8 +21,7 @@ File hopping is a collective term in dCache, summarizing the possibility of havi
 
 -   If a dataset has been written into dCache it might become necessary to have this file replicated instantly. The reasons can be, to either have a second, safe copy, or to make sure that clients don't access the file for reading on the write pools.
 
-FILE HOPPING ON ARRIVAL FROM OUTSIDE dCache
-===========================================
+## FILE HOPPING ON ARRIVAL FROM OUTSIDE dCache
 
 *File Hopping on arrival* is a term, denoting the possibility of initiating a pool to pool transfer as the result of a file successfully arriving on a pool from some external client. Files restored from HSM or arriving on a pool as the result of a pool to pool transfer will not yet be forwarded.
 
@@ -38,8 +37,7 @@ The pool is requested to send a `replicateFile` message to either the `PoolManag
 
 -   The `replicateFile` message is sent to the `HoppingManager`. The `HoppingManager` can be configured to replicate certain storage classes only and to set the mode of the replicated file according to rules. The file mode of the source file cannot be modified.
 
-FILE MODE OF REPLICATED FILES
------------------------------
+### FILE MODE OF REPLICATED FILES
 
 The mode of a replicated file can either be determined by settings in the destination pool or by the `HoppingManager`. It can be `cached` or `precious`.
 
@@ -47,8 +45,7 @@ The mode of a replicated file can either be determined by settings in the destin
 
 -   If a `HoppingManager` is used for file replication, the mode of the replicated file is determined by the `HoppingManager` rule responsible for this particular replication. If the destination mode is set to `keep` in the rule, the mode of the destination pool determines the final mode of the replicated file.
 
-FILE HOPPING MANAGED BY THE POOLMANAGER
----------------------------------------
+### FILE HOPPING MANAGED BY THE POOLMANAGER
 
 To enable replication on arrival by the `PoolManager` set the property `pool.destination.replicate` to `PoolManager` for the particular pool
 
@@ -176,8 +173,7 @@ In the layout file it is defined that all files arriving on the pools `ocean` or
 
 While `131.169.10.1` is a legal IP address e.g. of one of your farm nodes, the `192.1.1.1` IP address must not exist anywhere at your site.
 
-FILE HOPPING MANAGED BY THE HOPPINGMANAGER
-------------------------------------------
+### FILE HOPPING MANAGED BY THE HOPPINGMANAGER
 
 With the `HoppingManager` you have several configuration options for file `hopping on arrival`, e.g.:
 
@@ -185,7 +181,7 @@ With the `HoppingManager` you have several configuration options for file `hoppi
 -   You can specify the protocol the replicated files can be accessed with.
 -   You can specify from which ip-adresses it should be possible to access the files.
 
-### Starting the FileHopping Manager service
+#### Starting the FileHopping Manager service
 
 Add the `hoppingManager` service to a domain in your layout file and restart the domain.
 
@@ -196,7 +192,7 @@ Initially no rules are configured for the HoppingManager. You may add rules by e
 
 
 
-### Configuring pools to use the HoppingManager
+#### Configuring pools to use the HoppingManager
 
 To enable replication on arrival by the CELL-HOPMNGR set the property `pool.destination.replicate` to `HoppingManager` for the particular pool
 
@@ -210,7 +206,7 @@ or for several pools in the **/etc/dcache/dcache.conf** file.
     ...
     pool.destination.replicate=HoppingManager
 
-### HoppingManager Configuration Introduction
+#### HoppingManager Configuration Introduction
 
 -   The `HoppingManager` essentially receives `replicateFile` messages from pools, configured to support file hopping, and either discards or modifies and forwards them to the `PoolManager`, depending on rules described below.
 
@@ -232,7 +228,7 @@ or for several pools in the **/etc/dcache/dcache.conf** file.
 
         The requested protocol can be specified.
 
-### HoppingManager Configuration Reference
+#### HoppingManager Configuration Reference
 
              define hop OPTIONS <name> <pattern> precious|cached|keep
                 OPTIONS
@@ -272,7 +268,7 @@ Choose the id of a node of the farm of worker-nodes that should be allowed to ac
 **-protType, -protMajor, -protMinor**
 Specify the protocol which should be used to access the replicated files.
 
-### HoppingManager configuration examples
+#### HoppingManager configuration examples
 
 In order to instruct a particular pool to send a `replicateFile` message to the HOPPINGMANAGER service, you need to add the line `pool.destination.replicate=HoppingManager` to the layout file.
 

@@ -5,7 +5,7 @@ Part I. Getting started
 
 This part is intended for people who are new to dCache. It gives an introduction to dCache, including how to configure a simple setup, and details some simple and routine administrative operations.
 
-**Table of Contents**
+## Table of Contents
 
 1. [Introduction](intro.md)
 

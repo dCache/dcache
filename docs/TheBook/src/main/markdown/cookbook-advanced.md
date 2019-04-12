@@ -1,8 +1,7 @@
 CHAPTER 26. ADVANCED TUNING
 ===========================
 
-Table of Contents
------------------
+## Table of Contents
 
 + [Multiple Queues for Movers in each Pool](#multiple-queues-for-movers-in-each-pool)
 
@@ -20,11 +19,9 @@ Table of Contents
 
 The use cases described in this chapter are only relevant for large-scale dCache instances which require special tuning according to a longer experience with client behaviour.
 
-MULTIPLE QUEUES FOR MOVERS IN EACH POOL
-=======================================
+## MULTIPLE QUEUES FOR MOVERS IN EACH POOL
 
-Description
------------
+### Description
 
 Client requests to a dCache system may have rather diverse behaviour. Sometimes it is possible to classify them into several typical usage patterns. An example are the following two concurrent usage patterns:
 
@@ -36,8 +33,7 @@ However, if requests are queued, the slow processing jobs might clog up the queu
 
 The above example is pretty realistic: As a rule of thumb, `GridFTP` requests are fastest, `dCap` requests with the dccp program are a little slower and dCap requests with the `dCap` library are very slow. However, the usage patterns might be different at other sites and also might change over time.
 
-Solution
---------
+### Solution
 
  Use separate queues for the movers, depending on the door initiating them. This easily allows for a separation of requests of separate protocols. (Transfers from and to a [tape backend](rf-glossary.md#tape-backend) and [pool-to-pool](rf-glossary.md#pool-to-pool-transfer) are handled by separate queues, one for each of these transfers.)
 
@@ -45,8 +41,7 @@ A finer grained queue selection mechanism based on, e.g. the `IP` address of the
 
 In the above example, two separate queues for fast `GridFTP`  transfers and slow `dCap` library access would solve the problem. The maximum number of active movers for the `GridFTP`  queue should be set to a lower value compared to the `dCap` queue since the fast `GridFTP` transfers will put a high load on the system while the `dCap` requests will be mostly idle.
 
-Configuration
--------------
+### Configuration
 
 For a multi mover queue setup, the pools have to be told to start several queues and the doors have to be configured to use one of these. It makes sense to create the same queues on all pools. This is done by the following change to the file **/etc/dcache/dcache.conf: **
 
@@ -109,8 +104,7 @@ With the `dccp` command the queue can now be specified as follows:
 
 Since `dccp` requests may be quite different from other requests with the `dCap` protocol, this feature may be used to use separate queues for `dccp`  requests and other dCap library requests. Therefore, the `dccp`  command may be changed in future releases to request a special `dccp` -queue by default.
 
-Tunable Properties for Multiple Queues
---------------------------------------
+### Tunable Properties for Multiple Queues
 
 | Property                         | Default Value | Description                                                          |
 |:---------------------------------|---------------|:---------------------------------------------------------------------|
@@ -126,11 +120,9 @@ Tunable Properties for Multiple Queues
 | webdav.mover.queue               | NO-DEFAULT    | WEBDAV and HTTP I/O queue name                                       |
 | xrootd.mover.queue               | NO-DEFAULT    | XROOTD I/O queue name                                                |
 
-Tunable Properties
-==================
+## Tunable Properties
 
-DCAP
-----
+### DCAP
 
 | Property                         | Default Value | Description                                     |
 |:---------------------------------|---------------|:------------------------------------------------|
@@ -139,8 +131,7 @@ DCAP
 | dcap.authz.mover-queue-overwrite | denied        | Is application allowed to overwrite queue name? |
 | dcap.authz.mover-queue-overwrite | denied        | Is application allowed to overwrite queue name? |
 
-GRIDFTP
--------
+### GRIDFTP
 
 | Property                        | Default Value                              | Description                                    |
 |:--------------------------------|--------------------------------------------|:-----------------------------------------------|
@@ -160,8 +151,7 @@ GRIDFTP
 | ftp.net.port-range              | 20000:25000                                | The client data port range                     |
 | gplazma.kpwd.file               | `${ourHomeDir}/etc/dcache.kpwd`            | Legacy authorization                           |
 
-SRM
----
+### SRM
 
 <table>
 <caption>Property Overview</caption>

@@ -1,8 +1,7 @@
 THE POOLMANAGER SERVICE
 ==================================
 
-Table of Contents
-------------------
+## Table of Contents
 
 * [The Pool Selection Mechanism](#the-pool-selection-mechanism)
 
@@ -32,8 +31,7 @@ The `poolmanager` can be configured by either directly editing the file **/var/l
 >
 > Starting from  version 2.16 dCache stores the configuration of `poolmanager` in zookeeper and reads **poolmanager.conf** file only if configuration in zookeeper is missing, e.g. on the first start.
 
-THE POOL SELECTION MECHANISM
-============================
+## THE POOL SELECTION MECHANISM
 
 The PSU is responsible for finding the set of pools which can be used for a specific transfer-request. By telling the PSU which pools are permitted for which type of transfer-request, the administrator of the dCache system can adjust the system to any kind of scenario: Separate organizations served by separate pools, special pools for writing the data to a tertiary storage system, pools in a DMZ which serves only a certain kind of data (e.g., for the grid). This section explains the mechanism employed by the PSU and shows how to configure it with several examples.
 
@@ -43,8 +41,7 @@ Instead of “yes” and “no” the table really contains a *preference* - a n
 
 Actually maintaining such a table in memory (and as user in a configuration file) would be quite inefficient, because there are many possibilities for the transfer-requests. Instead, the PSU consults a set of rules in order to generate the list of allowed pools. Each such rule is called a link because it links a set of transfer-requests to a group of pools.
 
-LINKS
------
+### LINKS
 
 A link consists of a set of unit groups and a list of pools. If all the unit groups are matched, the pools belonging to the link are added to the list of allowable pools.
 
@@ -84,7 +81,7 @@ A request for reading a file which is not stored on disk, but has to be staged f
 
 Each link contains one or more `unit groups`, all of which have to be matched by the transfer request. Each unit group in turn contains several `units`. The unit group is matched if at least one of the units is matched.
 
-### Types of Units
+#### Types of Units
 
 There are four types of units: network (`-net`), protocol (`-protocol`), storage class (`-store`) and cache class (`-dcache`) units. Each type imposes a condition on the IP address, the protocol, the storage class and the cache class respectively.
 
@@ -120,11 +117,11 @@ A *cache class unit* is given by a cache class. It is satisfied, if the cache cl
     psu create unit -dcache <name-of-cache-class>
     psu addto ugroup <name-of-unitgroup> <name-of-cache-class>
 
-### Preference Values for Type of Transfer
+#### Preference Values for Type of Transfer
 
 The conditions for the *type of transfer* are not specified with units. Instead, each link contains four attributes `-readpref`, `-writepref`, `-p2ppref` and `-cachepref`, which specify a preference value for the respective types of transfer. If all the unit groups in the link are matched, the corresponding preference is assigned to each pool the link points to. Since we are ignoring different preference values at the moment, a preference of `0` stands for `no` and a non-zero preference stands for `yes`. A negative value for `-p2ppref` means, that the value for `-p2ppref` should equal the one for the `-readpref`.
 
-#### Multiple non-zero Preference Values
+##### Multiple non-zero Preference Values
 
 > **NOTE**
 >
@@ -132,7 +129,7 @@ The conditions for the *type of transfer* are not specified with units. Instead,
 
 If several different non-zero preference values are used, the PSU will not generate a single list but a set of lists, each containing pools with the same preference. The Pool Manager will use the list of pools with highest preference and select a pool according to the load balancing policy for the transfer. Only if all pools with the highest preference are offline, the next list will be considered by the Pool Manager. This can be used to configure a set of fall-back pools which are used if none of the other pools are available.
 
-### Pool Groups
+#### Pool Groups
 
 Pools can be grouped together to pool groups.
 
@@ -162,7 +159,7 @@ In the following, we will assume that the necessary pool groups already exist. A
 
 Note that a pool-node will register itself with the `PoolManager:` The pool will be created within the PSU and added to the pool group `default`, if that exists. This is why the dCache system will automatically use any new pool-nodes in the standard configuration: All pools are in `default` and can therefore handle any request.
 
-### Dynamic Pool Groups
+#### Dynamic Pool Groups
 
 In some situations it desired that pools dynamically added into groups based on a specific label. Such pool groups have to be created with option `-dynamic` as:
 
@@ -174,7 +171,7 @@ The Pool Manager uses tags defined by `pool.tags` property.
 >
 > Pools can't be manually added into dynamic groups with `psu addto pgroup` admin command.
 
-### Storage Classes
+#### Storage Classes
 
 The storage class is a string of the form `StoreName:StorageGroup@type-of-storage-system`, where `type-of-storage-system` denotes the type of storage system in use, and `StoreName`:`StorageGroup` is a string describing the storage class in a syntax which depends on the storage system. In general use `type-of-storage-system=osm`.
 
@@ -200,7 +197,7 @@ and will result in the storage class `exp-a:run2010@osm` for any data stored in 
 
 To summarize: The storage class depends on the directory the data is stored in and is configurable.
 
-### Cache Class
+#### Cache Class
 
 Storage classes might already be in use for the configuration of a tertiary storage system. In most cases they should be flexible enough to configure the PSU. However, in rare cases the existing configuration and convention for storage classes might not be flexible enough.
 
@@ -228,7 +225,7 @@ Check the existing tags of a directory and their content by:
 >
 > A new directory will inherit the tags from the parent directory. But updating a tag will *not* update the tags of any child directories.
 
-### Define a link
+#### Define a link
 
 Now we have everything we need to define a link.
 
@@ -246,12 +243,11 @@ Now we have everything we need to define a link.
 
 [return to top](#the-pool-selection-mechanism)
 
-EXAMPLES
---------
+### EXAMPLES
 
 Find some examples for the configuration of the PSU below.
 
-### Separate Write and Read Pools
+#### Separate Write and Read Pools
 
 The dCache we are going to configure receives data from a running experiment, stores the data onto a tertiary storage system, and serves as a read cache for users who want to analyze the data. While the new data from the experiment should be stored on highly reliable and therefore expensive systems, the cache functionality may be provided by inexpensive hardware. It is therefore desirable to have a set of pools dedicated for writing the new data and a separate set for reading.
 
@@ -282,7 +278,7 @@ Why is the unit group `allnet-cond` necessary? It is used as a condition which i
 
 [return to top](#the-pool-selection-mechanism)
 
-### Restricted Access by IP Address
+#### Restricted Access by IP Address
 
 You might not want to give access to the pools for the whole network, as in the previous example ([the section called “Separate Write and Read Pools”](#separate-write-and-read-pools)), though.
 
@@ -328,7 +324,7 @@ Assume, the experiment data is copied into the cache from the hosts with IP `111
 > For a given transfer exactly zero or one storage class unit, cache class unit, net unit and protocol unit will match. As always the most restrictive one will match, the IP `111.111.111.201` will match the `111.111.111.201/255.255.255.255` unit and not the `111.111.111.0/255.255.255.0` unit. Therefore if you only add `111.111.111.0/255.255.255.0` to the unit group “read-cond”, the transfer request coming from the IP `111.111.111.201` will only be allowed to write and not to read. The same is true for transfer requests from `111.111.111.202` and `111.111.111.203`.
 
 
-### Reserving Pools for Storage and Cache Classes
+#### Reserving Pools for Storage and Cache Classes
 
 If pools are financed by one experimental group, they probably do not like it if they are also used by another group. The best way to restrict data belonging to one experiment to a set of pools is with the help of storage class conditions. If more flexibility is needed, cache class conditions can be used for the same purpose.
 
@@ -399,8 +395,7 @@ Example:
 
 Note again that these will only be used, if none of the experiments pools can be reached, or if the storage class is not of the form `exp-a:run2009@osm`, `exp-a:run2010@osm`, or `exp-b:alldata@osm`. If the administrator fails to create the unit `exp-a:run2005@osm` and add it to the unit group `exp-a-cond`, the fall-back pools will be used eventually.
 
-THE PARTITION MANAGER
-=====================
+## THE PARTITION MANAGER
 
 The partition manager defines one or more load balancing policies. Whereas the PSU produces a prioritized set of candidate pools using a collection of rules defined by the administrator, the load balancing policy determines the specific pool to use. It is also the load balancing policy that determines when to fall back to lesser prirority links, or when to trigger creation of additional copies of a file.
 
@@ -408,8 +403,7 @@ Since the load balancing policy and parameters are defined per partition, unders
 
 This section documents the use of the partition manager, how to create partitions, set parameters and how to associate links with partitions. In the following sections the available partition types and their configuration parameters are described.
 
-OVERVIEW
---------
+### OVERVIEW
 
 There are various parameters that affect the load balancing policy. Some of them are generic and apply to any load balancing policy, but many are specific to a particular policy. To avoid limiting the complete dCache instance to a single configuration, the choice of load balancing policy and the various parameters apply to partitions of the instance. The load balancing algorithm and the available parameters is determined by the partition type.
 
@@ -419,8 +413,7 @@ The `default` partition has a hard-coded partition type called `classic`. This t
 
 To ease the management of partition parameters, a common set of shared parameters can be defined outside all partitions. Any parameter not explicitly set on a partition inherits the value from the common set. If not defined in the common set, a default value determined by the partition type is used. Currently, the common set of parameters happens to be the same as the parameters of the `default` partition, however this is only due to compatibility constraints and may change in future versions.
 
-MANAGING PARTITIONS
--------------------
+### MANAGING PARTITIONS
 
 For each partition you can choose the load balancing policy. You do this by chosing the type of the partition.
 
@@ -467,8 +460,7 @@ Lists a single or all partitions, including the type of each partition. If a par
 Removes a partition from dCache. Any links configured to use this partition will fall back to the `default` partition.
 
 
-USING PARTITIONS
-----------------
+### USING PARTITIONS
 
 A partition, so far, is just a set of parameters which may or may not differ from the default set. To let a partition relate to a part of the dCache, links are used. Each link may be assigned to exactly one partition. If not set, or the assigned partition doesn't exist, the link defaults to the `default` partition.
 
@@ -488,7 +480,7 @@ For your dCache on dcache.example.org the address is
 http://dcache.example.org:2288/poolInfo/parameterHandler/set/matrix/*
 
 
-### Examples
+#### Examples
 
 For the subsequent examples we assume a basic poolmanager setup :
 
@@ -534,7 +526,7 @@ For the subsequent examples we assume a basic poolmanager setup :
     psu addto pgroup special-pools pool4
     #
 
-#### Disallowing pool to pool transfers for special pool groups based on the access protocol
+##### Disallowing pool to pool transfers for special pool groups based on the access protocol
 
 For a special set of pools, where we only allow the xrootd protocol, we don't want the datasets to be replicated on high load while for the rest of the pools we allow replication on hot spot detection.
 
@@ -554,7 +546,7 @@ For a special set of pools, where we only allow the xrootd protocol, we don't wa
     psu set    link xrootd-link -section=xrootd-section
     #
 
-#### Choosing pools randomly for incoming traffic only
+##### Choosing pools randomly for incoming traffic only
 
 For a set of pools we select pools following the default setting of cpu and space related cost factors. For incoming traffic from outside, though, we select the same pools, but in a randomly distributed fashion. Please note that this is not really a physical partitioning of the dCache system, but rather a virtual one, applied to the same set of pools.
 
@@ -578,8 +570,7 @@ For a set of pools we select pools following the default setting of cpu and spac
     psu set    link incoming-link -section=incoming-section
     #
 
-CLASSIC PARTITIONS
-------------------
+### CLASSIC PARTITIONS
 
 The `classic` partition type implements the load balancing policy known from dCache releases before version 2.0. This partition type is still the default. This section describes this load balancing policy and the available configuration parameters.
 
@@ -587,7 +578,7 @@ Example:
 
 To create a classic partition use the command: `pm create` -type=classic  <partitionName>
 
-### Load Balancing Policy
+#### Load Balancing Policy
 
 From the allowable pools as determined by the [pool selection unit](rf-glossary.md#pool-selection-unit), the pool manager determines the pool used for storing or reading a file by calculating a [cost](rf-glossary.md#cost) value for each pool. The pool with the lowest cost is used.
 
@@ -599,7 +590,7 @@ The [cost module](rf-glossary.md#cost-module) is responsible for calculating the
 
 Calculating the cost for a data transfer is done in two steps. First, the cost module merges all information about space and transfer queues of the pools to calculate the performance and space costs separately. Second, in the case of a write or stage request, these two numbers are merged to build the total cost for each pool. The first step is isolated within a separate loadable class. The second step is done by the partition.
 
-### The Performance Cost
+#### The Performance Cost
 
 The load of a pool is determined by comparing the current number of active and waiting transfers to the maximum number of concurrent transfers allowed. This is done separately for each of the transfer types (store, restore, pool-to-pool client, pool-to-pool server, and client request) with the following equation:
 
@@ -621,7 +612,7 @@ perfCost(total) = ( perfCost(restore) + perfCost(client) ) / 2 .
 
 For a well balanced system, the performance cost should not exceed 1.0.
 
-### The Space Cost
+#### The Space Cost
 
 In this section only the new scheme for calculating the space cost will be described. Be aware, that the old scheme will be used if the [breakeven parameter](rf-glossary.md#breakeven-parameter) of a pool is larger or equal 1.0.
 
@@ -698,7 +689,7 @@ The prescription above can be stated a little differently as follows:
 
 where `newFileSize` is at least 50MB and `lruAge` at least one minute.
 
-#### Rationale
+##### Rationale
 
 As the last version of the formula suggests, a pool can be in two states: Either freeSpace &gt; gapPara or freeSpace &lt;= gapPara - either there is free space left to store files without deleting cached files or there isn't.
 
@@ -706,7 +697,7 @@ Therefore, `gapPara` should be around the size of the smallest files which frequ
 
 If the LRU file is smaller than the new file, other files might have to be deleted. If these are much younger than the LRU file, this space cost calculation scheme might not lead to a selection of the optimal pool. However, in pratice this happens very seldomly and this scheme turns out to be very efficient.
 
-### The Total Cost
+#### The Total Cost
 
 The total cost is a linear combination of the [performance](rf-glossary.md#performance-cost) and [space cost](rf-glossary.md#space-cost). I.e. totalCost = ccf \* perfCost + scf \* spaceCost , where `ccf` and `scf` are configurable with the command [set pool decision](reference.md#set-pool-decision). E.g.,
 
@@ -714,7 +705,7 @@ The total cost is a linear combination of the [performance](rf-glossary.md#perfo
 
 will give the [space cost](rf-glossary.md#space-cost) three times the weight of the [performance cost](rf-glossary.md#performance-cost).
 
-### Parameters of Classic Partitions
+#### Parameters of Classic Partitions
 
 Classic partitions have a large number of tunable parameters. These parameters are set using the `pm set` command.
 
@@ -796,8 +787,7 @@ To set the space cost factor on the `default` partition to `0.3`, use the follow
 
                                                  The default value is `500`.                                                                                                                                                                                                                                                                                              | integer |
 
-Link Groups
-===========
+## Link Groups
 
 The PoolManager supports a type of objects called link groups. These link groups are used by the [SRM SpaceManager](config-SRM.md#srm-spacemanager) to make reservations against space. Each link group corresponds to a number of dCache pools in the following way: A link group is a collection of [links](#links) and each link points to a set of pools. Each link group knows about the size of its available space, which is the sum of all sizes of available space in all the pools included in this link group.
 

@@ -1,27 +1,24 @@
 PoolManager Commands
 ======================
 
-rc ls
-------
+## rc ls
 
 rc ls - List the requests currently handled by the CELL-POOLMNGR
 
-synopsis
----------
+### synopsis
+
 rc ls [<regularExpression>] [-w]
 
-Description
------------
+### Description
 
 Lists all requests currently handled by the pool manager. With the option `-w` only the requests currently waiting for a response are listed. Only requests satisfying the regular expression are shown.
 
-cm ls
-------
+## cm ls
 
 cm ls - List information about the pools in the cost module cache.
 
-synopsis
----------
+### synopsis
+
 cm ls [-r] [-d] [-s] [<fileSize>]
 
 **-r **
@@ -33,8 +30,7 @@ Also list the space cost and performance cost as calculated by the cost module f
 **-t **
 Also list the time since the last update of the cached information in milliseconds.
 
-Description
------------
+### Description
 
 A typical output reads
 
@@ -48,13 +44,11 @@ A typical output reads
 <poolName2>={Tag={{hostname=<hostname>}};size=543543543;SC=0.0030372862312942743;CC=0.0;}
 <poolName2>=3157
 
-set pool decision
-------------------
+## set pool decision
 
 set pool decision -Set the factors for the calculation of the total costs of the pools.
 
-synopsis
-----------
+### synopsis
 set pool decision [-spacecostfactor=<scf>] [-cpucostfactor=<ccf>] [-costcut=<cc>]
 
 scf
@@ -66,5 +60,4 @@ The factor (strength) with which the performance cost will be included in the to
 cc
 Deprecated since version 5 of the pool manager.
 
-Description
------------
+### Description

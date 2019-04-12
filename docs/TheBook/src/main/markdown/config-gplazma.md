@@ -1,7 +1,7 @@
 Chapter 10. Authorization in dCache
 ===================================
 
-Table of Contents
+## Table of Contents
 
 + [Basics](#basics)
 + [Configuration](#configuration)
@@ -32,15 +32,13 @@ Table of Contents
 
 To limit access to data, dCache comes with an authentication and authorization interface called `gPlazma2`. gPlazma is an acronym for Grid-aware PLuggable AuthorZation Management. Earlier versions of dCache worked with `gPlazma1` which has now been completely removed from dCache. So if you are upgrading, you have to reconfigure `gPlazma` if you used `gPlazma1` until now.
 
-Basics
-======
+## Basics
 
 Though it is possible to allow anonymous access to dCache it is usually desirable to authenticate users. The user then has to connect to one of the different doors (e.g., `GridFTP door, dCap door`) and login with credentials that prove his identity. In Grid-World these credentials are very often `X.509` certificates, but dCache also supports other methods like username/password and kerberos authentication.
 
 The door collects the credential information from the user and sends a login request to the configured authorization service (i.e., `gPlazma`) Within `gPlazma` the configured plug-ins try to verify the users identity and determine his access rights. From this a response is created that is then sent back to the door and added to the entity representing the user in dCache. This entity is called `subject`. While for authentication usually more global services (e.g., ARGUS) may be used, the mapping to site specific UIDs has to be configured on a per site basis.
 
-Configuration
-=============
+## Configuration
 
 `gPlazma2` is configured by the PAM-style configuration file **/etc/dcache/gplazma.conf**. Each line of the file is either a comment (i.e., starts with #, is empty, or defines a plugin. Plugin defining lines start with the plugin stack type (one of `auth, map, account, session identity`), followed by a PAM-style modifier (one of `optional, sufficient, required, requisite`), the plugin name and an optional list of key-value pairs of parameters. During the login process they will be executed in the order `auth, map, account` and `session`. The `identity` plugins are not used during login, but later on to map from UID+GID back to user names (e.g., for NFS). Within these groups they are used in the order they are specified.
 
@@ -88,14 +86,13 @@ Failure of such a plug-in will ultimately lead to `gPlazma2` returning failure b
 **requisite**
 Like `required`, however, in the case that such a plug-in returns a failure, control is directly returned to the door.
 
-Plug-ins
---------
+### Plug-ins
 
 `gPlazma2` functionality is configured by combining different types of plug-ins to work together in a way that matches your requirements. For this purpose there are five different types of plug-ins. These types correspond to the keywords `auth, map, account, session` and `identity` as described in the previous section. The plug-ins can be configured via properties that may be set in **dcache.conf**, the layout-file or in **gplazma.conf**.
 
-### auth Plug-ins
+#### auth Plug-ins
 
-#### kpwd
+##### kpwd
 
 The `kpwd` plug-in authorizes users by username and password, by pairs of DN and FQAN and by `Kerberos` principals.
 
@@ -108,7 +105,7 @@ Path to   **dcache.kpwd**
 Default:  **/etc/dcache/dcache.kpwd**
 
 
-#### voms
+##### voms
 
 The `voms` plug-in is an `auth` plug-in. It can be used to verify `X.509` credentials. It takes the certificates and checks their validity by testing them against the trusted CAs. The verified certificates are then stored and passed on to the other plug-ins in the stack.
 
@@ -128,11 +125,11 @@ Properties
   Path to **vomsdir**
   Default: **/etc/grid-security/vomsdir**
 
-#### X.509 plug-in
+##### X.509 plug-in
 
 The X.509 is a auth plug-in that extracts X.509 certificate chains from the credentials of a user to be used by other plug-ins.
 
-#### jaas
+##### jaas
 
 The `jaas` uses _Java Authentication and Authorization Service_ and implements username and password based authentication against JAAS configured service. The typical usesage of `jaas` plugin is authentication with kerberos5. Though it's possible to use `jaas` plugin for ldap authentication it's recommended to use `ldap` plugin directly.
 
@@ -168,9 +165,9 @@ Example:
     identity requisite      ldap
     session optional        ldap
 
-### map Plug-ins
+#### map Plug-ins
 
-#### kpwd
+##### kpwd
 
 As a `map` plug-in it maps usernames to UID and GID. And as a `session` plug-in it adds root and home path information to the session based on the user’s username.
 
@@ -183,7 +180,7 @@ Properties
 
 
 
-#### authzdb
+##### authzdb
 
 The GP2-AUTHZDB takes a username and maps it to UID+GID using the `storage-authzdb` file.
 
@@ -196,7 +193,7 @@ The GP2-AUTHZDB takes a username and maps it to UID+GID using the `storage-authz
 
 
 
-#### GridMap
+##### GridMap
 
 The `authzdb` plug-in takes a username and maps it to UID+GID using the **storage-authzdb** file.
 
@@ -211,7 +208,7 @@ Properties
 
 
 
-#### vorolemap
+##### vorolemap
 
 The `voms` plug-in maps pairs of DN and FQAN to usernames via a [vorolemap](config-gplazma.md#preparing-grid-vorolemap) file.
 
@@ -226,7 +223,7 @@ Properties
 
 
 
-#### krb5
+##### krb5
 
  The `krb5` plug-in maps a kerberos principal to a username by removing the domain part from the principal.
 
@@ -235,7 +232,7 @@ Example:
                     user@KRB-DOMAIN.EXAMPLE.ORG to user
 
 
-#### nsswitch
+##### nsswitch
 
 The `nsswitch` plug-in uses the system’s `nsswitch` configuration to provide mapping.
 
@@ -252,7 +249,7 @@ Example:
 
 In this example following is happening: extract user's DN (1), extract and verify VOMS attributes (2), map DN+Role to a local account (3), extract uid and gids for a local account (4) and, finally, extract users home directory (5).
 
-#### nis
+##### nis
 
 The `nis` uses an existing `NIS` service to map username+password to a username.
 
@@ -283,7 +280,7 @@ Example:
 
 In this example two access methods are considered: grid based and kerberos based. If user comes with grid certificate and VOMS role: extract user’s DN (1), extract and verify VOMS attributes (2), map DN+Role to a local account (3). If user comes with `Kerberos` ticket: extract local account (4). After this point in both cases we talk to `NIS` to get uid and gids for a local account (5) and, finally, adding users home directory (6).
 
-#### mutator
+##### mutator
 
 The `mutator` plugin is used to convert principal returned by third-party plugin into a principal, which is understood by gplazma plugins. For example, when the `jaas` plugin is configured to be used with an _ActiveMQ_ server, then login module specific principal is returned.
 
@@ -313,9 +310,9 @@ Properties
   |username| UserNamePrincipal|Principal which is associated with final login step|
 
 
-### account Plug-ins
+#### account Plug-ins
 
-#### argus
+##### argus
 
  The argus plug-in bans users by their DN. It talks to your site’s ARGUS system (see [https://twiki.cern.ch/twiki/bin/view/EGEE/AuthorizationFramework](https://twiki.cern.ch/twiki/bin/view/EGEE/AuthorizationFramework)) to check for banned users.
 
@@ -356,7 +353,7 @@ Properties
 
 
 
-#### banfile
+##### banfile
 
 The `banfile` plug-in bans users by their principal class and the associated name. It is configured via a simple plain text file.
 
@@ -403,11 +400,11 @@ Example:
     session requisite nis
     account requisite banfile
 
-### session Plug-ins
+#### session Plug-ins
 
 
 
-#### kpwd
+##### kpwd
 
 The `kpwd`plug-in adds root and home path information to the session, based on the username.
 
@@ -422,7 +419,7 @@ Properties
 
 
 
-#### authzdb
+##### authzdb
 
 The `authzdb` plug-in adds root and home path information to the session, based and username using the **storage-authzdb** file.
 
@@ -437,7 +434,7 @@ Properties
 
 
 
-#### nsswitch
+##### nsswitch
 
 The `nsswitch` plug-in adds root and home path information to the session, based on the username using your system’s `nsswitch` service.
 
@@ -458,7 +455,7 @@ In this example following is happening: extract user's DN (1), extract and verif
 
 
 
-#### nis
+##### nis
 
 The `nis` plug-in adds root and home path information to the session, based on the username using your site’s `NIS` service.
 
@@ -494,7 +491,7 @@ In this example two access methods are considered: grid based and kerberos based
 
 
 
-#### ldap
+##### ldap
 
 The `ldap` is a map, session and identity plugin. As a map plugin it maps user names to UID and GID. As a session plugin it adds root and home path information to the session. As an identity plugin it supports reverse mapping of UID and GID to user and group names repectively.
 
@@ -563,13 +560,13 @@ Default: `false`
 
 Allow the ldap plugin to use the user's (numerical) uid to identify the user if no username is known. If enabled, the plugin uses the `uidNumber` attribute in LDAP to establish the username for such login attempts.
 
-### identity Plug-ins
+#### identity Plug-ins
 
-#### nsswitch
+##### nsswitch
 
 The `nsswitsch` provides forward and reverse mapping for `NFSv4.1` using your system's `nsswitch` service.
 
-#### nis
+##### nis
 
 The `nis` plug-in forward and reverse mapping for `NFSv4.1` using your site's NIS service.
 
@@ -585,14 +582,12 @@ Properties
    `NIS` domain
     Default: domain.com
 
-Using X509 Certificates
-=======================
+## Using X509 Certificates
 
 Most plug-ins of `gPlazma` support `X.509` certificates for authentication and authorisation. `X.509` certificates are used to identify entities (e.g., persons, hosts) in the Internet. The certificates contain a DN (Distinguished Name) that uniquely describes the entity. To give the certificate credibility it is issued by a CA (Certificate Authority) which checks the identity upon request of the certificate (e.g., by checking the persons id). For the use of X.509 certificates with dCache your users will have to request a certificate from a CA you trust and you need host certificates for every host of your dCache instance.
 
 
-CA Certificates
----------------
+### CA Certificates
 
 To be able to locally verify the validity of the certificates, you need to store the CA certificates on your system. Most operating systems come with a number of commercial CA certificates, but for the *Grid* you will need the certificates of the Grid CAs. For this, CERN packages a number of CA certificates. These are deployed by most grid sites. By deploying these certificates, you state that you trust the CA's procedure for the identification of individuals and you agree to act promptly if there are any security issues.
 
@@ -611,8 +606,7 @@ Certificates which have been revoked are collected in certificate revocation lis
 
 **fetch-crl** adds `X.509` CRLs  to **/etc/grid-security/certificates**. It is recommended to set up a cron job to periodically update the CRLs.
 
-User Certificate
-----------------
+### User Certificate
 
 If you do not have a valid grid user certificate yet, you have to request one from your CA. Follow the instructions from your CA on how to get a certificate. After your request was accepted you will get a URL pointing to your new certificate. Install it into your browser to be able to access grid resources with it. Once you have the certificate in your browser, make a backup and name it **userCertificate.p12**. Copy the user certificate to the directory **~/.globus/** on your worker node and convert it to **usercert.pem** and **userkey.pem** as described below.
 
@@ -638,15 +632,13 @@ Now change the file permissions to make the key only readable by you and the cer
     [root] # chmod 400 userkey.pem
     [root] # chmod 644 usercert.pem
 
-Host Certificate
-----------------
+### Host Certificate
 
 To request a host certificate for your server host, follow again the instructions of your CA.
 
 The conversion to **hostcert.pem** and **hostkey.pem** works analogous to the user certificate. For the hostkey you have to remove the pass phrase. How to do this is also explained in the previous section. Finally copy the **host*.pem** files to **/etc/grid-security/** as `root` and change the file permissions in favour of the user running the grid application.
 
-VOMS Proxy Certificate
-----------------------
+### VOMS Proxy Certificate
 
 For very large groups of people, it is often more convenient to authorise people based on their membership of some group. To identify that they are a member of some group, the certificate owner can create a new short-lived `X.509` certificate that includes their membership of various groups. This short-lived certificate is called a proxy-certificate and, if the membership information comes from a VOMS server, it is often referred to as a VOMS-proxy.
 
@@ -654,7 +646,7 @@ For very large groups of people, it is often more convenient to authorise people
    [root] # wget http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/glite-UI.repo
    [root] # yum install glite-security-voms-clients
 
-### `Creating a VOMS proxy`
+#### `Creating a VOMS proxy`
 
 To create a VOMS proxy for your user certificate you need to execute the **voms-proxy-init** as a user.
 
@@ -669,7 +661,7 @@ Example:
     Your proxy is valid until Mon Mar  7 22:06:15 2011
 
 
-#### Certifying your membership of a VO
+##### Certifying your membership of a VO
 
  You can certify your membership of a VO by using the command **voms-proxy-init -voms <yourVO>**. This is useful as in dCache authorization can be done by VO (see [the section called “Authorizing a VO”](#authorizing-a-vo)). To be able to use the extension **-voms <yourVO>** you need to be able to access VOMS servers. To this end you need the the VOMS server’s and the CA’s DN. Create a file **/etc/grid-security/vomsdir/<VO>/<hostname>.lsc** per VOMS server containing on the 1st line the VOMS server’s DN and on the 2nd line, the corresponding CA’s DN. The name of this file should be the fully qualified hostname followed by an **.lsc** extension and the file must appear in a subdirectory **/etc/grid-security/vomsdir/<VO>** for each VO that is supported by that VOMS server and by the site.
 
@@ -759,8 +751,7 @@ Use the command **voms-proxy-destroy** to destroy your VOMS proxy.
     Couldn't find a valid proxy.
 
 
-Using OpenID Connect
-====================
+## Using OpenID Connect
 
 dCache also supports the use of OpenID Connect bearer tokens as a means of authentication. 
 
@@ -777,18 +768,18 @@ As of version 2.16, dCache is able to perform authentication based on [OpendID C
 OpenID Connect credentials are sent to dCache with Authorisation HTTP Header as follows 
 `Authorization: Bearer  <yaMMeexxx........>`. This bearer token is extracted, validated and verified against a **Trusted Authorisation Server** (Issue of the bearer token) and is used later to fetch additional user identity information from the corresponding Authorisation Server.
 
-## Steps for configuration 
+### Steps for configuration 
 
 In order to configure the OpenID Connect support, we need to 
 
 1. configure the gplazma plugins providing the support for authentication using OpenID credentials and mapping a verified OpenID credential to dCache specific `username`, `uid` and `gid`.
 2. enabling the plugins in gplazma 
 
-## Gplazma Plugins for OpenId Connect
+### Gplazma Plugins for OpenId Connect
 
 The support for OpenID Connect in Cache is achieved with the help of two gplazma plugins.
 
-### OpenID Authenticate Plugin (oidc)
+#### OpenID Authenticate Plugin (oidc)
 It takes the extracted OpenID connect credentials (Bearer Token) from the HTTP requests and validates it against a OpenID Provider end-point. The admins need to obtain this information from their trusted OpenID Provider such as Google.
 
 In case of Google, the provider end-point can be obtained from the url of its [Discovery Document](http://openid.net/specs/openid-connect-core-1_0.html#OpenID.Discovery), e.g. https://accounts.google.com/.well-known/openid-configuration. Hence, the provider end-point in this case would be **accounts.google.com**. 
@@ -797,7 +788,7 @@ This end-point has to be appended to the gplazma property **gplazma.oidc.hostnam
 
 `gplazma.oidc.hostnames = accounts.google.com iam-test.indigo-datacloud.eu`
 
-### MultiMap plugin (multimap)
+#### MultiMap plugin (multimap)
 
 dCache requires that authenticated credentials be mapped to posix style `username`, `uid` and `gid`. In case of OpenID credentials, it can be achieved through the new gplazma multimap plugin. This plugin is able to take a verified OpenID credentials in the form of OpenID Subject or the corresponding Email address, and map it to a username, uid, gid etc.
 
@@ -811,7 +802,7 @@ In this example, it is assumed there is an additional mapping from username to u
 
 This mapping as shown above can be stored in a gplazma multi-map configuration file. The location of the multimap configuration file can be specified with another gplazma property **gplazma.multimap.file**. By default it is configured to be located in /etc/dcache/multi-mapfile.
 
-### Enable the gplazma plugins
+#### Enable the gplazma plugins
 
 The two plugins above must be enabled in the gplazma.conf.
 
@@ -821,7 +812,7 @@ The two plugins above must be enabled in the gplazma.conf.
 
 Restart dCache and check that there are no errors in loading these gplazma plugins.
 
-### Third-Party Transfer with OpenID Connect Credentials
+#### Third-Party Transfer with OpenID Connect Credentials
 
 Third-party transfer with OpenID Connect Credentials are also possible. dCache performs a token-exchange with the OpenID provider in order and obtain a new delegated bearer token for itself, which it can use (and refresh) to perform Third-party transfer.
 
@@ -835,17 +826,15 @@ The client-id and client-secret of such a client can be set in the webdav proper
 
 Here, **provider.hostname** must be replaced with a supported OpenID provider like accounts.google.com.
 
-Configuration files
-===================
+## Configuration files
 
 In this section we explain the format of the the **storage-authzdb, kpwd** and **vorolemap** files. They are used by the `authzdb` plug-in, `vorolemap` plug-in,and `kpwd` plug-in.
 
-`storage-authzdb`
------------------
+### `storage-authzdb`
 
 In `gPlazma`, except for the `kpwd` plug-in, authorization is a two-step process. First, a username is obtained from a mapping of the user’s DN or his DN and role, then a mapping of username to UID and GID with optional additional session parameters like the root path is performed. For the second mapping usually the file called **storage-authzdb** is used.
 
-### Preparing **storage-authzdb**
+#### Preparing **storage-authzdb**
 
 The default location of the **storage-authzdb** is **/etc/grid-security**. Before the mapping entries there has to be a line specifying the version of the used file format.
 
@@ -889,12 +878,11 @@ and replace the word `login` with `authorize`. The following line does this for 
 
     [root] #  sed "s/^ *login/authorize/" dcache.kpwd|grep "^authorize" > storage-authzdb
 
-The gplazmalite-vorole-mapping plug-in
---------------------------------------
+### The gplazmalite-vorole-mapping plug-in
 
 The second is the **storage-authzdb** used in other plug-ins. See the above documentation on [`storage-authdb`](config-gplazma.md#storage-authzdb) for how to create the file.
 
-### Preparing `grid-vorolemap`
+#### Preparing `grid-vorolemap`
 
 The file is similar in format to the `grid-mapfile`, however there is an additional field following the DN (Certificate Subject), containing the FQAN (Fully Qualified Attribute Name).
 
@@ -923,8 +911,7 @@ In a `GRIDFTP` URL, the user may also explicitly request a username.
 
 in which case other roles will be disregarded.
 
-Authorizing a VO
-----------------
+### Authorizing a VO
 
 Instead of individual DNs, it is allowed to use `*` or `"*"` as the first field, such as
 
@@ -940,7 +927,7 @@ Thus a user with subject `/C=DE/O=GermanGrid/OU=DESY/CN=John Doe` and role `/des
 
 in which case the username will be `desyprod2`.
 
-### Revocation Entries
+#### Revocation Entries
 
 To create a revocation entry, add a line with a dash (`-`) as the username, such as
 
@@ -950,7 +937,7 @@ or modify the username of the entry if it already exists. The behaviour is undef
 
 Since DN is matched first, if a user would be authorized by his VO membership through a `"*"` entry, but is matched according to his DN to a revocation entry, authorization would be denied. Likewise if a whole VO were denied in a revocation entry, but some user in that VO could be mapped to a username through his DN, then authorization would be granted.
 
-### More Examples
+#### More Examples
 
 Suppose that there are users in production roles that are expected to write into the storage system data which will be read by other users. In that case, to protect the data the non-production users would be given read-only access. Here in **/etc/grid-security/grid-vorolemap** the production role maps to username `cmsprod`, and the role which reads the data maps to `cmsuser`.
 
@@ -975,8 +962,7 @@ and the corresponding lines from **/etc/grid-security/storage-authzdb** would be
     authorize cms822 read-write 10822 7000 / /data/cms822 /
     authorize cms823 read-write 10823 7000 / /data/cms823 /
 
-The kpwd plug-in
-----------------
+### The kpwd plug-in
 
 The section in the `gPlazma` policy file for the kpwd plug-in specifies the location of the **dcache.kpwd** file, for example
 
@@ -999,8 +985,7 @@ adds this to the kpwd file:
 
 There are many more commands for altering the kpwd-file, see the dcache-script help for further commands available.
 
-The gridmap plug-in
--------------------
+### The gridmap plug-in
 
 Two file locations are defined in the policy file for this plug-in:
 
@@ -1008,7 +993,7 @@ Two file locations are defined in the policy file for this plug-in:
     gridMapFilePath="/etc/grid-security/grid-mapfile"
     storageAuthzPath="/etc/grid-security/storage-authzdb"
 
-### Preparing the `grid-mapfile`
+#### Preparing the `grid-mapfile`
 
 The `grid-mapfile` is the same as that used in other applications. It can be created in various ways, either by connecting directly to VOMS or GUMS servers, or by hand.
 
@@ -1020,8 +1005,7 @@ Example:
 
 When using the `gridmap`, the **storage-authzdb** file must also be configured. See [the section called “storage-authzdb”](config-gplazma.md#storage-authzdb) for details.
 
-gPlazma specific dCache configuration
-=====================================
+## gPlazma specific dCache configuration
 
 dCache has many parameters that can be used to configure the systems behaviour. You can find all these parameters well documented and together with their default values in the properties files in **/usr/share/dcache/defaults/**. To use non-default values, you have to set the new values in **/etc/dcache/dcache.conf** or in the layout file. Do not change the defaults in the properties files! After changing a parameter you have to restart the concerned cells.
 
@@ -1029,8 +1013,7 @@ Refer to the file **gplazma.properties** for a full list of properties for `gPla
 
 Setting the value for `gplazma.cell.limits.threads` too high may result in large spikes of CPU activity and the potential to run out of memory. Setting the number too low results in potentially slow login activity.
 
-Enabling Username/Password Access for WEBDAV
---------------------------------------------
+### Enabling Username/Password Access for WEBDAV
 
 This section describes how to activate the Username/Password access for `WebDAV`. It uses **dcache.kwpd** file as an example format for storing Username/Password information. First make sure `gPlazma2` is enabled in the **/etc/dcache/dcache.conf ** or in the layout file.
 
@@ -1067,8 +1050,7 @@ Some file access examples:
 
     wget --user=tanja --password=dickerelch http://webdav-door.example.org:2880/pnfs/
 
-Roles
---------------------------------------------
+### Roles
 
 Roles are a way of describing what capabilities a given user has.  They constitute
 a set of operations defined either explicitly or implicitly which the user who

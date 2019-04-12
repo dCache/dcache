@@ -1,29 +1,30 @@
 Specialized NFS Dot Commands
 ============================
 
-### The following commands provide information concerning a file's locality, checksums and storage location.
+The following commands provide information concerning a file's
+locality, checksums and storage location.
 
-#### GET LOCALITY
+## GET LOCALITY
 
 Returns the media types on which the file is currently stored.
 
-##### USAGE:
+### USAGE:
 
     cat ".(get)(<filename>)(locality)"
 
-##### RETURNS:
+### RETURNS:
 
 * ``ONLINE``:                  stored on disk
 * ``NEARLINE``:                requires staging or data replication before open succeeds
 * ``ONLINE_AND_NEARLINE``:     stored both on disk and tape
 * ``UNAVAILABLE``:             not stored on any media (i.e., lost)
 
-##### EXAMPLE:
+### EXAMPLE:
 
     $ cat ".(get)(test_file-Thu_Oct_23_10:39:37_CDT_2014-109)(locality)"
     $ ONLINE_AND_NEARLINE
 
-##### NOTES:
+### NOTES:
 
 Currently, the NFS client sends 'localhost' to the poolmanager as its hostname (the protocol match defaults to '*/*').  SRM does something similar. In the future this may be modified to send the actual IP address of the client.
 
@@ -31,11 +32,11 @@ There are no guarantees concerning future availability of the file; in particula
 
 ***
 
-#### GET CHECKSUM(S)
+## GET CHECKSUM(S)
 
 Get checksum types and checksums for a given file.
 
-##### USAGE:
+### USAGE:
 
     cat ".(get)(<filename>)(checksum[s])"
 

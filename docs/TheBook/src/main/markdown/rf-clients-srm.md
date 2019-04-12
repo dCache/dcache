@@ -1,8 +1,7 @@
 Chapter 27. dCache Clients
 ===========================
 
-Table of Contents
------------------
+## Table of Contents
 
 + [The SRM Client Suite](#the-srm-client-suite)
 
@@ -13,17 +12,14 @@ Table of Contents
   [dccp](#dccp) — Copy a file from or to a dCache server.
 
 
-The SRM Client Suite
-====================
+## The SRM Client Suite
 
 An SRM URL has the form <srm://dmx.lbl.gov:6253//srm/DRM/srmv1?SFN=/tmp/try1> and the file URL looks like <file:////tmp/aaa>.
 
-srmcp
------
+### srmcp
 srmcp - Copy a file from or to an SRM or between two SRMs.
 
-synopsis
---------
+### synopsis
 
 srmcp|option...|sourceUrl destUrl
 
@@ -72,37 +68,30 @@ This option will have effect only if transfer is performed in a stream mode (see
 Example:
     [user] $  srmcp --streams_num=1 --server_mode=active sourceUrl destinationUrl
 
-Description
------------
+### Description
 
-srmstage
---------
+### srmstage
 srmstage - Request staging of a file.
 
-synopsis
---------
+### synopsis
 srmstage[srmUrl]
 
 Arguments
 srmUrl
 The URL of the file which should be staged.
 
-Description
------------
+### Description
 
 Provides an option to the user to stage files from HSM to dCache and not transfer them to the user right away. This case will be useful if files are not needed right away at user end, but its good to stage them to dcache for faster access later.
 
-dccp
-----
+### dccp
 
 dccp — Copy a file from or to a dCache server.
 
-Synopsis
----------
+### Synopsis
 dccp [option...] <sourceUrl> <destUrl>
 
-Arguments
----------
+### Arguments
 
 The following arguments are required:
 
@@ -114,12 +103,10 @@ The following arguments are required:
 
     The URL of the destination file.
 
-Description
-------------
+### Description
 The dccp utility provides a cp(1) like functionality on the dCache file system. The source must be a single file while the destination could be a directory name or a file name. If the directory is a destination, a new file with the same name as the source name will be created there and the contents of the source will be copied. If the final destination file exists in dCache, it won’t be overwritten and an error code will be returned. Files in regular file systems will always be overwritten if the -i option is not specified. If the source and the final destination file are located on a regular file system, the dccp utility can be used similar to the cp(1) program.
 
-Options
---------
+### Options
 The following arguments are optional:
 
 **-a**
@@ -179,8 +166,7 @@ The following arguments are optional:
 
     Stage timeout in seconds. This option must be used with the -P option.
 
-Examples:
----------
+### Examples:
 
 To copy a file to dCache:
 
@@ -202,8 +188,7 @@ stdout:
 
 [user] $ dccp /acs/user_space/data_arch.tar - | tar xf -
 
-See also
---------
+### See also
 
 cp
 

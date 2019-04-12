@@ -3,8 +3,7 @@ Part III. Cookbook
 
 This part contains guides for specific tasks a system administrator might want to perform.
 
-Table of Contents
------------------
+## Table of Contents
 
 1. [dCache Clients.](cookbook-clients.md)
     - [GSI-FTP](cookbook-clients.md#gsi-ftp)

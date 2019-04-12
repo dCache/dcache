@@ -1,7 +1,7 @@
 CHIMERA
 ==================
 
-Table of Contents
+## Table of Contents
 
 - [Mounting Chimera through NFS](#mounting-chimera-through-nfs)
 - [Using dCap with a mounted file system](#using-dcap-with-a-mounted-file-system)
@@ -41,8 +41,7 @@ If you wish dCache to access your Chimera with a PostgreSQL user other than chim
     chimera.db.user=myuser
     chimera.db.password=secret
 
-MOUNTING CHIMERA THROUGH NFS
-============================
+## MOUNTING CHIMERA THROUGH NFS
 
 dCache does not need the Chimera filesystem to be mounted, but a mounted file system is convenient for administrative access. This offers the opportunity to use OS-level tools like `ls` and `mkdir` for Chimera. However, direct I/O-operations like `cp` are not possible, since the `NFSv3` interface provides the namespace part only. This section describes how to start the Chimera `NFSv3` server and mount the name space.
 
@@ -94,8 +93,7 @@ You can now add directory tags. For more information on tags see [the section ca
     [root] # /usr/bin/chimera writetag /data OSMTemplate "StoreName sql"
 
 
-USING DCAP WITH A MOUNTED FILE SYSTEM
--------------------------------------
+### USING DCAP WITH A MOUNTED FILE SYSTEM
 
 If you plan to use `dCap` with a mounted file system instead of the URL-syntax (e.g. `dccp` **/data/file1 /tmp/file1**), you need to mount the root of Chimera locally (remote mounts are not allowed yet). This will allow us to establish wormhole files so `dCap` clients can discover the `dCap` doors.
 
@@ -137,8 +135,7 @@ When the configuration is complete you can unmount Chimera:
 >
 > Please note that whenever you need to change the configuration, you have to remount the root `localhost:/` to a temporary location like **/mnt**.
 
-COMMUNICATING WITH CHIMERA
-==========================
+## COMMUNICATING WITH CHIMERA
 
 Many configuration parameters of Chimera and the application specific meta data is accessed by reading, writing, or creating files of the form .(command)(para). For example, the following prints the ChimeraID of the file **/data/some/dir/file.dat**:
 
@@ -154,8 +151,7 @@ Some of these command files have a second parameter in a third pair of parenthes
 
 Only a subset of file operations are allowed on these special command files. Any other operation will result in an appropriate error. Beware, that files with names of this form might accidentally be created by typos. They will then be shown when listing the directory.
 
-IDs
-===
+## IDs
 
 Each file in Chimera has a unique 18 byte long ID. It is referred to as ChimeraID or as pnfsID. This is comparable to the inode number in other filesystems. The ID used for a file will never be reused, even if the file is deleted. dCache uses the ID for all internal references to a file.
 
@@ -183,8 +179,7 @@ And the ID of the directory it resides in is obtained by:
 
 This way, the complete path of a file may be obtained starting from the ID.
 
-DIRECTORY TAGS
-==============
+## DIRECTORY TAGS
 
 In the Chimera namespace, each directory can have a number of tags. These directory tags may be used within dCache to control the file placement policy in the pools (see [the section called “The Pool Selection Mechanism”](config-PoolManager.md#the-pool-selection-mechanism)). They might also be used by a [tertiary storage system](config-hsm.md) for similar purposes (e.g. controlling the set of tapes used for the files in the directory).
 
@@ -192,8 +187,7 @@ In the Chimera namespace, each directory can have a number of tags. These direct
 >
 > Directory tags are not needed to control the behaviour of dCache. dCache works well without directory tags.
 
-CREATE, LIST AND READ DIRECTORY TAGS IF THE NAMESPACE IS NOT MOUNTED
---------------------------------------------------------------------
+### CREATE, LIST AND READ DIRECTORY TAGS IF THE NAMESPACE IS NOT MOUNTED
 
 You can create tags with
 
@@ -227,8 +221,7 @@ and their content with
     [user] $ /usr/bin/chimera readtag /data sGroup
     myGroup
 
-CREATE, LIST AND READ DIRECTORY TAGS IF THE NAMESPACE IS MOUNTED
-----------------------------------------------------------------
+### CREATE, LIST AND READ DIRECTORY TAGS IF THE NAMESPACE IS MOUNTED
 
 If the namespace is mounted, change to the directory for which the tag should be set and create a tag with
 
@@ -279,8 +272,7 @@ A nice trick to list all tags with their contents is
     .(tag)(OSMTemplate):StoreName myStore
     .(tag)(sGroup):myGroup
 
-DIRECTORY TAGS AND COMMAND FILES
---------------------------------
+### DIRECTORY TAGS AND COMMAND FILES
 
 When creating or changing directory tags by writing to the command file as in
 
@@ -298,8 +290,7 @@ one has to take care not to treat the command files in the same way as regular f
 
 4. Empty tags are ignored.
 
-DIRECTORY TAGS FOR dCache
--------------------------
+### DIRECTORY TAGS FOR dCache
 
 The following directory tags appear in the dCache context:
 
@@ -327,8 +318,7 @@ If not set, the `hsmInstance` tag will be the same as the `HSMType` tag. Setting
 
 Assign a `WriteToken` tag to a directory in order to be able to write to a space token without using the `SRM`.
 
-STORAGE CLASS AND DIRECTORY TAGS
---------------------------------
+### STORAGE CLASS AND DIRECTORY TAGS
 
 The [storage class](config-PoolManager.md#storage-classes) is a string of the form `StoreName`:`StorageGroup`@`hsm-type`, where `StoreName`is given by the OSMTemplate tag, `StorageGroup` by the sGroup tag and `hsm-type` by the HSMType tag. As mentioned above the HSMType tag is assumed to be osm if the tag OSMTemplate exists.
 

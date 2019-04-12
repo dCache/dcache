@@ -1,8 +1,7 @@
 CHAPTER 14. THE STATISTICS SERVICE
 ==================================
 
-Table of Contents
-------------------
+## Table of Contents
 
 [The Basic Setup](#the-basic-setup)
 [The Statistics Web Page](#the-statistics-web-page)
@@ -16,8 +15,7 @@ Once per hour an ASCII file is produced, containing a table with information on 
 In addition to the hourly statistics, files are produced reporting on the daily, monthly and yearly dCache activities. An HTML tree is produced and updated once per hour allowing to navigate through the collected statistics information.
 
 
-THE BASIC SETUP
-===============
+## THE BASIC SETUP
 
 Define the statistics service in the domain, where the httpd is running.
 
@@ -44,8 +42,7 @@ In the same directory tree the HTML files are created for each day, month and ye
 
 By default the path for the statistics data is **/var/lib/dcache/statistics**. You can modify this path by setting the property **dcache.paths.statistics** to a different value.
 
-THE STATISTICS WEB PAGE
-=======================
+## THE STATISTICS WEB PAGE
 
 Point a web browser to your dCache webpage at http://<head-node.example.org>:2288/. On the bottom you find the link to Statistics.
 
@@ -82,8 +79,7 @@ You will see an empty statistics page athttp://<head-node.example.org>:2288/stat
 
 On the `Statistics Help Page`  http://<head-node.example.org>:2288/docs/statisticsHelp.html you find an explanation for the colors.
 
-EXPLANATION OF THE FILE FORMAT OF THE XXX.RAW FILES
-=====================================================
+## EXPLANATION OF THE FILE FORMAT OF THE XXX.RAW FILES
 
 The file formats of the **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw** and the **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-day.raw** files are similar. The file **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw** does not contain columns 2 and 3 as these are related to the day and not to the hour.
 

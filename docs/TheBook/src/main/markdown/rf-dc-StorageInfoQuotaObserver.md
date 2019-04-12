@@ -3,8 +3,7 @@ The StorageInfoQuotaObserver cell
 
 The StorageInfoQuotaObserver keeps track on spaces for all attached pools. The space granularity is based on the StorageInfo. It records precious, total, pinned, free and removable spaces of currently available pools. Pools, not active are not counted. Spaces may be queried by pool, storageinfo or link. For link queries, additional, link specific information is provided for convenience.
 
-Calling Sequence
-----------------
+## Calling Sequence
 
     #
     define context QuotaManagerSetup  endDefine
@@ -19,8 +18,7 @@ Calling Sequence
                   "default -export"
     #
 
-Parameter setter commands
--------------------------
+## Parameter setter commands
 
 These commands allow to customize the behaviour of the StorageInfoQuotaObserver. They many determine how often information is updated and how aggressive the cells queries other services for updates. The meaning of the `set
       pool/poolmanager query interval` is obvious. Because of the fact, that the number of pools to query can be rather large, the cell allows to send the space update queries in junks with some time inbetween. The junk size is set by `set pool
@@ -34,8 +32,7 @@ These commands allow to customize the behaviour of the StorageInfoQuotaObserver.
 | set pool query steps           | Counter       | None          | Number of space queries between 'break'                                |
 | set pool validity timeout      | Time          | Seconds       | If if pool info arrived within this time, the pool is declared OFFLINE |
 
-Information query commands
---------------------------
+## Information query commands
 
 -   `show pool [poolName]`
 
@@ -44,8 +41,7 @@ Information query commands
 
 -   `show sci` Lists spaces per storage element.
 
-Messages
---------
+## Messages
 
 This cells currently replies on the following cell messages. The different sections are all relative to `diskCacheV111.vehicles.`
 
