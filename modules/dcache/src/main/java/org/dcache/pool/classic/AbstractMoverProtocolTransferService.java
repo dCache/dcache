@@ -88,14 +88,17 @@ public abstract class AbstractMoverProtocolTransferService
                     : cause.toString();
             String error = "Construction of MoverProtocol mover for " + info
                     + " failed: " + causeError;
-            throw new CacheException(27, error, cause);
+            throw new CacheException(CacheException.CANNOT_CREATE_MOVER, error,
+                    cause);
         } catch (ClassNotFoundException e) {
-            throw new CacheException(27, "Protocol " + info + " is not supported", e);
+            throw new CacheException(CacheException.CANNOT_CREATE_MOVER,
+                    "Protocol " + info + " is not supported", e);
         } catch (Exception e) {
             Throwables.throwIfUnchecked(e);
             String error = "Could not create MoverProtocol mover for " + info
                     + ": " + Exceptions.messageOrClassName(e);
-            throw new CacheException(27, error, e);
+            throw new CacheException(CacheException.CANNOT_CREATE_MOVER, error,
+                    e);
         }
     }
 
