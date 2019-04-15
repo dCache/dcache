@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -93,6 +95,9 @@ import static diskCacheV111.util.AccessLatency.ONLINE;
  *      file operation handler results in a fire-and-forget request to
  *      PoolManager, at which point the task (and operation) is considered
  *      complete.</p>
+ *
+ * <p>If instead of a copy, a non-sticky replica is promoted to sticky,
+ *    the same procedure as a remove is followed.</p>
  */
 public final class ResilientFileTask extends ErrorAwareTask implements Cancellable {
     private static final String STAT_FORMAT
@@ -160,6 +165,15 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
             case VOID:
                 endTime = System.currentTimeMillis();
                 break;
+            case SET_STICKY:
+                /*
+                 * create a new copy by promoting a non-sticky copy to sticky
+                 */
+                startSubTask = System.currentTimeMillis();
+                handler.getRemoveService()
+                       .schedule(new FireAndForgetTask(() -> runPromote(attributes)),
+                                 0, TimeUnit.MILLISECONDS);
+                break;
             case WAIT_FOR_STAGE:
                 if (cancelled) {
                     break;
@@ -226,6 +240,7 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
         endTime = System.currentTimeMillis();
 
         switch(type) {
+            case SET_STICKY:
             case COPY:
                 inCopy = endTime - startSubTask;
                 break;
@@ -292,6 +307,11 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
         inCopy = endTime - startSubTask;
     }
 
+    @VisibleForTesting
+    public void setType(Type type) {
+        this.type = type;
+    }
+
     public void submit() {
         long delay = handler.getLaunchDelay();
         TimeUnit unit = handler.getLaunchDelayUnit();
@@ -303,6 +323,13 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
 
         future = handler.getTaskService()
                         .schedule(createFireAndForgetTask(), delay, unit);
+    }
+
+    void runPromote(FileAttributes attributes) {
+        MessageGuard.setResilienceSession();
+        handler.handlePromoteToSticky(attributes);
+        endTime = System.currentTimeMillis();
+        inCopy = endTime - startSubTask;
     }
 
     void runRemove(FileAttributes attributes) {

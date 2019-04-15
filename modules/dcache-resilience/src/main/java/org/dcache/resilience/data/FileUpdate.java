@@ -67,19 +67,23 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.cells.CellStub;
 import org.dcache.resilience.db.LocalNamespaceAccess;
 import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.resilience.util.ExceptionMessage;
+import org.dcache.resilience.util.ReplicaVerifier;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.resilience.ReplicaStatusMessage;
 
 import static org.dcache.resilience.data.MessageType.*;
 
@@ -294,7 +298,9 @@ public final class FileUpdate {
     }
 
     public boolean validateForAction(Integer storageUnit,
-                                     PoolInfoMap poolInfoMap) {
+                                     PoolInfoMap poolInfoMap,
+                                     ReplicaVerifier verifier,
+                                     CellStub pools) {
         /*
          * Storage unit is not recorded in checkpoint, so it should
          * be set here.
@@ -367,7 +373,8 @@ public final class FileUpdate {
          * storage unit matches the modified one, or if this is a periodic
          * or admin initiated scan.
          */
-        if (storageUnit == ScanSummary.ALL_UNITS || unitIndex.equals(storageUnit)) {
+        if (storageUnit == ScanSummary.ALL_UNITS
+                        || unitIndex.equals(storageUnit)) {
             /*
              * The maximum number of steps required to redistribute all files
              * would be (N - 1) removes + (required - 1) copies, where N
@@ -377,25 +384,50 @@ public final class FileUpdate {
             return true;
         }
 
+        Collection<ReplicaStatusMessage> verified;
+
         /*
-         *  Check the constraints.
-         *  Countable means readable OR intentionally excluded locations.
-         *  If there are copies missing only from excluded locations,
-         *  do nothing.
-         *
-         *  NOTE.  An initial check for consistency with the pools is
-         *         avoided here so as not to block this thread on a
-         *         send and wait.  The locations will be reverified as
-         *         part of the operation logic.  While this means
-         *         operations could unnecessarily be created, it
-         *         ensures more efficient use of the thread resources.
+         * Verify the locations. The pools are sent a message which returns
+         * whether the copy exists, is readable, is removable, and has
+         * the necessary sticky flag owned by system.
          */
-        int countable = poolInfoMap.getCountableLocations(locations);
-        count = required - countable;
+        try {
+            verified = verifier.verifyLocations(pnfsId, locations, pools);
+        } catch (InterruptedException e) {
+            LOGGER.warn("validateForAction: replica verification for "
+                                        + "{} was interrupted; "
+                                        + "cancelling operation.", pnfsId);
+            return false;
+        }
+
+        if (!verifier.isSticky(pool, verified)) {
+            LOGGER.debug("validateForAction: replica of {} on source pool {} "
+                                         + "is not sticky; skipping.",
+                         pnfsId, pool);
+            return false;
+        }
+
+        /*
+         *  Preliminary determination of viable replicas:
+         *  eliminate non-readable, non-sticky.
+         *
+         *  We do not skip broken files here to give resilience
+         *  a chance to catch them during the operation.
+         *
+         *  We also do not check for consistency of namespace here,
+         *  since that potential issue only presents itself when there
+         *  is a prior action by resilience taken on the file (pnfsid)
+         *  in question.
+         */
+        Set<String> valid = poolInfoMap.getReadableLocations(locations);
+        valid = verifier.areSticky(valid, verified);
+
+        count = required - valid.size();
+
         LOGGER.debug("validateForAction ({} needs {} replicas, locations {}, "
-                                     + "{} countable; difference = {}.",
+                                     + "{} valid; difference = {}.",
                      pnfsId, required,
-                     locations, countable, count);
+                     locations, valid, count);
 
         if (count == 0) {
             LOGGER.debug("{}, requirements are already met.", pnfsId);

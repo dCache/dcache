@@ -333,7 +333,7 @@ public class FileOperationMap extends RunnableModule {
             if (operation.getState() == FileOperation.FAILED) {
                 FailureType type =
                     CacheExceptionUtils.getFailureType(operation.getException(),
-                                                       source != null);
+                                                       operation.getType());
                 switch (type) {
                     case BROKEN:
                         if (source != null) {
@@ -798,7 +798,6 @@ public class FileOperationMap extends RunnableModule {
                                                     data.getCount(),
                                                     data.getSize());
         operation.setParentOrSource(data.getSourceIndex(), data.isParent());
-        operation.setVerifySticky(data.shouldVerifySticky());
         FileAttributes attributes = data.getAttributes();
         operation.setRetentionPolicy(attributes.getRetentionPolicy().toString());
         operation.resetOperation();

@@ -167,34 +167,49 @@ as well. Thus 1A, 2A and 3A can contain both replicas and cached copies.
 
 ### Cached files on resilient pools
 
-On pools belonging to a resilient group, any copies which are simply `cached`
-(without a permanent sticky bit set by the system) are assumed to be from files
-whose `AccessLatency` is `NEARLINE` (residing on the pool as a consequence of
-pool sharing). On the other hand, the resilience service checks that every
-`ONLINE` file written to a resilient pool has a sticky bit owned by the system,
-adding one if it doesn't already exist.
+As of Golden Release 5.2, the semantics of resilience have changed in the
+following ways:
 
-When a file is originally written to a pool, `ONLINE` actually translates into
-"`--------X--`" in the pool repository, i.e., ... + (system-owned) `sticky`.
-How, then, could a cached copy of an `ONLINE` file appear on a pool without this
-sticky bit set in the first place?
+-    the namespace information is not acted upon until a verification
+     is run against the pool repositories supposedly containing the replicas
+     the database has recorded.
 
--   by a manual p2p copy via an admin command (**why would you want to do
-    that?**)
+-    full information about whether the replica has the system-owned
+     "sticky" flag or is just cached is now gathered by resilience.
 
--   by replication across links
+-    removal of a given replica is done not by setting the repository state
+     to REMOVED, but by removing the "sticky" flag bit.
 
-Pool-to-pool copying, especially of temporary replicas (such as during hot
-replication), does not *necessarily* reproduce the source's sticky flags.
-Resilience guards against leaving such files without a sticky bit, because
-otherwise the counting procedure it utilizes to maintain the correct number of
-replicas for a file would be rendered less efficient.
+Several important advantages result from these changes.
+
+-    Pool sharing no longer carries any restrictions in the sense that
+     if the pool is resilient, one should not manually p2p a replica of
+     a file to it, or that hot replication should be turned off.  Resilience
+     will now handle such situations seamlessly.
+
+-    Allowing the sweeper to remove unnecessary or excess copies by changing
+     permanent replicas into cached ones is inherently safer.  It also means
+     that resilient pools can also be periodically swept for efficiency.
+
+-    A resilient replica which is marked PRECIOUS (the first/new location of a
+     CUSTODIAL ONLINE file which is resilient) will not be selected for
+     removal in the case of excess copies (this was not guaranteed previously).
+
+There is still one caveat about resilient pools:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-BEST PRACTICE:  Hot replication should be turned off on resilient pools.
-                The required number of replicas for files of a resilient
-                storage unit should reflect the estimated average usage
-                as well as the available space.
+WARNING:        If a pool is part of a resilient pool group, it should NOT
+                carry the large file store configuration
+
+                pool.lfs=volatile
+
+                This is because as a resilient pool group member, this pool
+                could be chosen by the Pool Manager as the location of the
+                original (new) copy, in which case the system "sticky" flag
+                required for ONLINE files will actually be suppressed.  This
+                will cause resilience to treat this file as "missing" (since
+                it ignores cached replicas in its file count), and to send
+                an alarm before any further replicas can be made.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## Resilience home

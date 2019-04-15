@@ -94,7 +94,7 @@ public final class DefaultInaccessibleFileHandler extends InaccessibleFileHandle
                         = CacheExceptionUtils.getCacheException(
                         CacheException.PANIC,
                         FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                        pnfsId, error, null);
+                        pnfsId, Type.VOID, error, null);
         completionHandler.taskFailed(pnfsId, exception);
         return Type.VOID;
     }
@@ -119,7 +119,7 @@ public final class DefaultInaccessibleFileHandler extends InaccessibleFileHandle
                         = CacheExceptionUtils.getCacheException(
                         CacheException.PANIC,
                         FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                        pnfsId, error, null);
+                        pnfsId, Type.VOID, error, null);
         completionHandler.taskFailed(pnfsId, exception);
         return Type.VOID;
     }

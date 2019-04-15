@@ -64,6 +64,8 @@ import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+
+import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.util.CacheExceptionFactory;
 
 /**
@@ -100,6 +102,7 @@ public final class CacheExceptionUtils {
      * @param rc error code for CacheException
      * @param template string formatting, must have three '%' markers.
      * @param pnfsid of the file operation
+     * @param type of operation
      * @param info
      * @param e
      * @return appropriate CacheException to be propagated.
@@ -107,6 +110,7 @@ public final class CacheExceptionUtils {
     public static CacheException getCacheException(int rc,
                                                    String template,
                                                    PnfsId pnfsid,
+                                                   Type type,
                                                    String info,
                                                    Throwable e) {
         Object[] args = new Object[3];
@@ -116,7 +120,7 @@ public final class CacheExceptionUtils {
 
         String message = String.format(template, args);
 
-        FailureType failureType = getFailureType(rc, true);
+        FailureType failureType = getFailureType(rc, type);
 
         if (failureType != FailureType.FATAL
                         && failureType != FailureType.BROKEN) {
@@ -131,34 +135,40 @@ public final class CacheExceptionUtils {
     }
 
     public static FailureType getFailureType(CacheException exception,
-                                             boolean isCopyOperation) {
+                                             Type type) {
         if (exception == null) {
             return FailureType.RETRIABLE;
         }
 
-        return getFailureType(exception.getRc(), isCopyOperation);
+        return getFailureType(exception.getRc(), type);
     }
 
-    private static FailureType getFailureType(int rc, boolean isCopyOperation) {
+    private static FailureType getFailureType(int rc, Type type) {
         switch (rc) {
             case CacheException.FILE_CORRUPTED:
             case CacheException.BROKEN_ON_TAPE:
                 return FailureType.BROKEN;
             case CacheException.FILE_NOT_IN_REPOSITORY:
-                if (isCopyOperation) {
-                    /*
-                     * The source for a copy is missing.
-                     */
-                    return FailureType.NEWSOURCE;
-                }
-
                 /*
-                 *  This is a remove operation.  Trying to remove
-                 *  a file which doesn't exist suggests the remove
-                 *  information is faulty or subject to a race.
-                 *  Consider this fatal.
+                 *  Given that replicas can be made from cached copies by
+                 *  promoting the file, we need to distinguish clearly
+                 *  between this error on an actual copy, indicating
+                 *  faulty source, or on set sticky, indicating faulty
+                 *  target.
+                 *
+                 *  For removal, instead of failing, we allow the
+                 *  operation to reverify.
                  */
-                return FailureType.FATAL;
+                switch (type) {
+                    case COPY:
+                        return FailureType.NEWSOURCE;
+                    case SET_STICKY:
+                        return FailureType.NEWTARGET;
+                    case REMOVE:
+                        return FailureType.RETRIABLE;
+                    default:
+                        return FailureType.FATAL;
+                }
 
             /*
              *

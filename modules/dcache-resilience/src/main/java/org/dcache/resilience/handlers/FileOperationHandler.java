@@ -84,9 +84,7 @@ import java.util.stream.Collectors;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.SpreadAndWait;
 import diskCacheV111.vehicles.HttpProtocolInfo;
-import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -119,10 +117,12 @@ import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.LocationSelectionException;
 import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.RemoveLocationExtractor;
+import org.dcache.resilience.util.ReplicaVerifier;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.StaticSinglePoolList;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 
 /**
@@ -147,8 +147,8 @@ public class FileOperationHandler implements CellMessageSender {
                     + "the namespace replica locations and the actual locations on disk.";
 
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-                    = ImmutableList.of(
-                    new StickyRecord("system", StickyRecord.NON_EXPIRING));
+                    = ImmutableList.of(new StickyRecord("system",
+                                                        StickyRecord.NON_EXPIRING));
 
     private static final RateLimiter LIMITER = RateLimiter.create(0.001);
 
@@ -175,11 +175,13 @@ public class FileOperationHandler implements CellMessageSender {
         COPY,
         REMOVE,
         VOID,
-        WAIT_FOR_STAGE
+        WAIT_FOR_STAGE,
+        SET_STICKY
     }
 
     private final PoolSelectionStrategy taskSelectionStrategy
                     = new DegenerateSelectionStrategy();
+    private final ReplicaVerifier verifier = new ReplicaVerifier();
 
     private FileOperationMap fileOpMap;
     private PoolInfoMap      poolInfoMap;
@@ -232,14 +234,22 @@ public class FileOperationHandler implements CellMessageSender {
             }
 
             Collection<String> locations = attributes.getLocations();
+            Collection verified = verifier.verifyLocations(pnfsId, locations, pools);
 
-            int actual = locations.size();
-            int countable = poolInfoMap.getCountableLocations(locations);
+            if (!verifier.exists(pool, verified)) {
+                LOGGER.trace("Broken replica of {} on {} has already been removed.",
+                             pnfsId, pool);
+                return;
+            }
 
-            if (actual <= 1) {
+            /*
+             *  Get the sticky locations that have been verified.
+             */
+            Collection<String> sticky = verifier.getSticky(verified);
+
+            if (sticky.contains(pool) && sticky.size() == 1) {
                 /*
-                 * This is the only copy, or it is not/no longer in the
-                 * namespace. In either case, do nothing.
+                 * This is the only copy; do nothing.
                  */
                 LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
                                                           pnfsId.toString()),
@@ -250,7 +260,9 @@ public class FileOperationHandler implements CellMessageSender {
 
             removeTarget(pnfsId, pool);
 
-            if (countable > 1) {
+            locations.remove(pool);
+
+            if (poolInfoMap.getCountableLocations(locations) > 1) {
                 FileUpdate update = new FileUpdate(pnfsId, pool,
                                                    MessageType.CLEAR_CACHE_LOCATION,
                                                    false);
@@ -271,6 +283,9 @@ public class FileOperationHandler implements CellMessageSender {
         } catch (CacheException e) {
             LOGGER.error("Error during handling of broken file removal ({}, {}): {}",
                          pnfsId, pool, new ExceptionMessage(e));
+        } catch (InterruptedException e) {
+            LOGGER.warn("Handling of broken file removal interrupted ({}, {})",
+                        pnfsId, pool);
         }
     }
 
@@ -323,7 +338,10 @@ public class FileOperationHandler implements CellMessageSender {
         /*
          *  Determine if action needs to be taken (counts).
          */
-        if (!data.validateForAction(null, poolInfoMap)) {
+        if (!data.validateForAction(null,
+                                    poolInfoMap,
+                                    verifier,
+                                    pools)) {
             return false;
         }
 
@@ -364,7 +382,10 @@ public class FileOperationHandler implements CellMessageSender {
         /*
          *  Determine if action needs to be taken.
          */
-        if (!data.validateForAction(storageUnit, poolInfoMap)) {
+        if (!data.validateForAction(storageUnit,
+                                    poolInfoMap,
+                                    verifier,
+                                    pools)) {
             return false;
         }
 
@@ -381,11 +402,6 @@ public class FileOperationHandler implements CellMessageSender {
         PnfsId pnfsId = attributes.getPnfsId();
         FileOperation operation = fileOpMap.getOperation(pnfsId);
 
-        /*
-         * Fire-and-forget best effort.
-         */
-        operation.ensureSticky(poolInfoMap, pools);
-
         LOGGER.trace("Configuring migration task for {}.", pnfsId);
         StaticSinglePoolList list;
 
@@ -395,7 +411,7 @@ public class FileOperationHandler implements CellMessageSender {
             CacheException exception = CacheExceptionUtils.getCacheException(
                             CacheException.NO_POOL_CONFIGURED,
                             "Copy %s, could not get PoolManager info for %s: %s.",
-                            pnfsId, poolInfoMap.getPool(operation.getTarget()),
+                            pnfsId, Type.COPY, poolInfoMap.getPool(operation.getTarget()),
                             e);
             completionHandler.taskFailed(pnfsId, exception);
             return null;
@@ -451,6 +467,19 @@ public class FileOperationHandler implements CellMessageSender {
              *  and the arrival of the message from the pool.
              */
             LOGGER.trace("{}", new ExceptionMessage(e));
+        }
+    }
+
+    public void handlePromoteToSticky(FileAttributes attributes) {
+        PnfsId pnfsId = attributes.getPnfsId();
+        FileOperation operation = fileOpMap.getOperation(pnfsId);
+        String target = poolInfoMap.getPool(operation.getTarget());
+
+        try {
+            promoteToSticky(pnfsId, target);
+            completionHandler.taskCompleted(pnfsId);
+        } catch (CacheException e) {
+            completionHandler.taskFailed(pnfsId, e);
         }
     }
 
@@ -516,7 +545,8 @@ public class FileOperationHandler implements CellMessageSender {
                                        CacheExceptionUtils.getCacheException(
                                        CacheException.INVALID_ARGS,
                                        "could not construct HTTP protocol: %s.",
-                                       pnfsId, e.getMessage(), null));
+                                       pnfsId, Type.WAIT_FOR_STAGE,
+                                       e.getMessage(), null));
                 }
             }, 0, TimeUnit.MILLISECONDS);
         } catch (CacheException ce) {
@@ -606,11 +636,182 @@ public class FileOperationHandler implements CellMessageSender {
 
     /**
      * <p>Called when a pnfsid has been selected from the operation map for
-     *      possible processing. Refreshes locations from namespace, and checks
-     *      which of those are currently readable.  Sends an alarm if
-     *      no operation can occur but should.</p>
+     *    possible processing. Refreshes locations from namespace, and checks
+     *    which of those are currently readable.  Sends an alarm if
+     *    no operation can occur but should.</p>
      *
-     * @return COPY, REMOVE, or VOID if no operation is necessary.
+     * <p>Note:  because of the possibility of data loss due to a lag between
+     *    the pools and namespace, the namespace locations are now verified
+     *    by sending a message to the pool.</p>
+     *
+     * <p>The following table illustrates the progress of this routine
+     *    by positing a file with one type of replica location each
+     *    reported initially by the namespace:</p>
+     *
+     * <table>
+     *   <thead>
+     *     <th>
+     *         <td style="text-align: center;">Cached+Sticky</td>
+     *         <td style="text-align: center;">Precious+Sticky</td>
+     *         <td style="text-align: center;">Precious</td>
+     *         <td style="text-align: center;">Cached</td>
+     *         <td style="text-align: center;">Broken</td>
+     *         <td style="text-align: center;">Removed</td>
+     *         <td style="text-align: center;">OFFLINE</td>
+     *         <td style="text-align: center;">EXCLUDED</td>
+     *     </th>
+     *   </thead>
+     *   <tbody>
+     *     <tr>
+     *             <td style="text-align: left;">LOCATIONS</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;">B2</td>
+     *             <td style="text-align: center;">C</td>
+     *             <td style="text-align: center;">D</td>
+     *             <td style="text-align: center;">[E]</td>
+     *             <td style="text-align: center;">F</td>
+     *             <td style="text-align: center;">G</td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;">VERIFIED</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;">B2</td>
+     *             <td style="text-align: center;">C</td>
+     *             <td style="text-align: center;">D</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">G</td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;">BROKEN</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">D</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;"><i>(remove broken, return)</i></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *     </tr>
+     *     <tr/>
+     *     <tr>
+     *             <td style="text-align: left;">LOCATIONS</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;">B2</td>
+     *             <td style="text-align: center;">C</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">[E]</td>
+     *             <td style="text-align: center;">F</td>
+     *             <td style="text-align: center;">G</td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;">VERIFIED</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;">B2</td>
+     *             <td style="text-align: center;">C</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">G</td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;">READABLE</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;">B2</td>
+     *             <td style="text-align: center;">C</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">[E]</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">G</td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;">VERIFIED READABLE</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;">B2</td>
+     *             <td style="text-align: center;">C</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">G</td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;"><i>(alarm, continue)</i></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *     </tr>
+     *     <tr/>
+     *     <tr>
+     *             <td style="text-align: left;">OCCUPIED</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;">B2</td>
+     *             <td style="text-align: center;">C</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">F</td>
+     *             <td style="text-align: center;">G</td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;">STICKY READABLE</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;">G</td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;">W/O EXCLUDED</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;">B1</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *     </tr>
+     *     <tr>
+     *             <td style="text-align: left;">REMOVABLE</td>
+     *             <td style="text-align: center;">A</td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *             <td style="text-align: center;"></td>
+     *     </tr>
+     *   </tbody>
+     * </table>
+     *
+     * @return COPY, REMOVE, SET_STICKY, WAIT_FOR_STAGE,
+     *         or VOID if no operation is necessary.
      */
     public Type handleVerification(FileAttributes attributes) {
         PnfsId pnfsId = attributes.getPnfsId();
@@ -628,23 +829,22 @@ public class FileOperationHandler implements CellMessageSender {
         } catch (CacheException e) {
             CacheException exception = CacheExceptionUtils.getCacheException(e.getRc(),
                             FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                            pnfsId, null, e.getCause());
+                            pnfsId, Type.VOID, null, e.getCause());
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
         }
 
         Collection<String> locations = attributes.getLocations();
-
         LOGGER.trace("handleVerification {}, locations from namespace: {}",
                      pnfsId, locations);
 
         /*
-         * Somehow, all the cache locations for this file have been removed.
+         * Somehow, all the cache locations for this file have been removed
+         * from the namespace.
          */
         if (locations.isEmpty()) {
-            LOGGER.trace("handleVerification {}, no locations found, "
-                                         + "checking to see if "
-                                         + "file can be staged.",
+            LOGGER.trace("handleVerification {}, no namespace locations found, "
+                          + "checking to see if file can be staged.",
                          pnfsId);
             if (shouldTryToStage(attributes, operation)) {
                 return Type.WAIT_FOR_STAGE;
@@ -652,46 +852,74 @@ public class FileOperationHandler implements CellMessageSender {
             return inaccessibleFileHandler.handleNoLocationsForFile(operation);
         }
 
-        locations = poolInfoMap.getMemberLocations(gindex, locations);
-
+        Set<String> members = poolInfoMap.getMemberLocations(gindex, locations);
         LOGGER.trace("handleVerification {}, valid group member locations {}",
-                     pnfsId, locations);
+                     pnfsId, members);
 
         /*
          * If all the locations are pools no longer belonging to the group,
          * the operation should be voided.
          */
-        if (locations.isEmpty()) {
+        if (members.isEmpty()) {
             fileOpMap.voidOperation(pnfsId);
             return Type.VOID;
         }
 
+        Collection verified;
+
         /*
-         *  If we have arrived here, we are expecting there to be an
-         *  available source file.  So we need the strictly readable
-         *  locations, not just "countable" ones.
+         * Verify the locations. The pools are sent a message which returns
+         * whether the copy exists, is readable, is removable, and has
+         * the necessary sticky flag owned by system.
          */
-        Set<String> namespaceReadable
-                        = poolInfoMap.getReadableLocations(locations);
-
-        Set<String> verifiedReadable;
-
         try {
-            verifiedReadable  = verifyLocations(pnfsId,
-                                                namespaceReadable,
-                                                pools);
+            verified = verifier.verifyLocations(pnfsId, members, pools);
         } catch (InterruptedException e) {
-            LOGGER.trace("handleVerification, {}, verify pool "
-                                         + "locations interrupted; "
-                                         + "cancelling operation", pnfsId);
+            LOGGER.warn("handleVerification, replica verification "
+                                        + "for {} was interrupted; "
+                                        + "cancelling operation.", pnfsId);
             completionHandler.taskCancelled(pnfsId);
             return Type.VOID;
         }
+
+        LOGGER.trace("handleVerification {}, verified replicas: {}",
+                     pnfsId, verified);
+
+        /*
+         *  First, if there are broken replicas, remove the first one
+         *  and iterate.  As with the broken file handler routine, do
+         *  not remove the last sticky replica, whatever it is.
+         */
+        Set<String> broken = verifier.getBroken(verified);
+        if (!broken.isEmpty()) {
+            String target = broken.iterator().next();
+            if (!verifier.isSticky(target, verified)
+                            || verifier.getSticky(verified).size() > 1) {
+                fileOpMap.updateOperation(pnfsId, null, target);
+                operation.incrementCount();
+                return Type.REMOVE;
+            }
+        }
+
+        /*
+         *  Ensure that the readable locations from the namespace actually exist.
+         *  This is crucial for the counts.
+         */
+        Set<String> namespaceReadable
+                        = poolInfoMap.getReadableLocations(members);
+
+        Set<String> verifiedReadable
+                        = verifier.exist(namespaceReadable, verified);
 
         LOGGER.trace("handleVerification, {}, namespace readable locations {},"
                                      + "verified readable locations {}", pnfsId,
                      namespaceReadable, verifiedReadable);
 
+        /*
+         * This should now happen very rarely, since resilience itself
+         * no longer sets the files to removed, but rather removes
+         * the system sticky flag.
+         */
         if (namespaceReadable.size() != verifiedReadable.size()) {
             ACTIVITY_LOGGER.info("The namespace is not in sync with the pool "
                                                  + "repositories for {}: "
@@ -702,8 +930,39 @@ public class FileOperationHandler implements CellMessageSender {
             sendOutOfSyncAlarm();
         }
 
-        if (inaccessibleFileHandler.isInaccessible(verifiedReadable, operation)) {
-            LOGGER.trace("handleVerification {}, no readable locations found, "
+        /*
+         *  Find the locations in the namespace that are actually occupied.
+         *  This is an optimization so that we can choose a new pool from the
+         *  group without failing and retrying the migration with a new target.
+         *
+         *  In effect, this means eliminating the phantom locations from
+         *  the namespace.  We do this be adding back into the verified
+         *  locations the offline replica locations.
+         */
+        Set<String> occupied = Sets.union(verifiedReadable,
+                                          Sets.difference(members,
+                                                          namespaceReadable));
+
+        /*
+         *  Now, exclude locations that are not on readable pools that
+         *  actually aren't readable (i.e., incomplete).
+         */
+        verifiedReadable = verifier.areReadable(verifiedReadable, verified);
+
+        /*
+         *  Find just the sticky locations.
+         */
+        Set<String> stickyReadable = verifier.areSticky(verifiedReadable,
+                                                        verified);
+
+        /*
+         *  Since cached copies are volatile and could disappear, resilience
+         *  ignores them both in terms of its counting and in terms of
+         *  available locations from which to copy.
+         */
+        if (inaccessibleFileHandler.isInaccessible(stickyReadable, operation)) {
+            LOGGER.trace("handleVerification {}, "
+                                         + "no valid readable locations found, "
                                          + "checking to see if "
                                          + "file can be staged.", pnfsId);
             if (shouldTryToStage(attributes, operation)) {
@@ -712,18 +971,45 @@ public class FileOperationHandler implements CellMessageSender {
             return inaccessibleFileHandler.handleInaccessibleFile(operation);
         }
 
-        if (shouldEvictALocation(operation, verifiedReadable)) {
-            LOGGER.trace("handleVerification, location should be evicted {}",
-                         verifiedReadable);
+        /*
+         *  Tagging of the pools may have changed and/or the requirements on
+         *  the storage class may have changed.  If this is the case,
+         *  the files may need to be redistributed.  This begins by choosing
+         *  a location to evict.  When all evictions are done, the new copies
+         *  are made from the remaining replica.  Again, this operation is
+         *  only done on sticky replicas.
+         */
+        if (shouldEvictALocation(operation, stickyReadable, verified)) {
+            LOGGER.trace("handleVerification, a replica should be evicted from {}",
+                         stickyReadable);
             return Type.REMOVE;
         }
 
-        LOGGER.trace("handleVerification after eviction check, {}, locations {}",
-                        pnfsId, locations);
+        LOGGER.trace("handleVerification after eviction check, {}, "
+                                     + "valid replicas {}",
+                        pnfsId, stickyReadable);
+
+        /*
+         *  Find the non-sticky locations which are readable.
+         *  Partition the sticky readable locations between usable and excluded.
+         */
+        Set<String> nonStickyReadable = Sets.difference(verifiedReadable,
+                                                        stickyReadable);
+        Set<String> excluded
+                        = verifier.areSticky(poolInfoMap.getExcludedLocationNames(members),
+                                             verified);
+        stickyReadable = Sets.difference(stickyReadable, excluded);
+
+        LOGGER.trace("handleVerification {}: member pools with a sticky replica  "
+                                     + " but which have been manually excluded: {}.",
+                     pnfsId, excluded);
 
         return determineTypeFromConstraints(operation,
-                                            locations,
-                                            verifiedReadable);
+                                            excluded.size(),
+                                            occupied,
+                                            stickyReadable,
+                                            nonStickyReadable,
+                                            verified);
     }
 
     @Override
@@ -787,14 +1073,23 @@ public class FileOperationHandler implements CellMessageSender {
 
     /**
      * <p>Checks the readable locations against the requirements.
-     *      If previous operations on this pnfsId have already satisfied them,
-     *      the operation should be voided.</p>
+     *    If previous operations on this pnfsId have already satisfied them,
+     *    the operation should be voided.</p>
      *
+     * @param operation -- on the given pnfsid
+     * @param excluded -- number of member pools manually excluded by admins
+     * @param occupied -- group member pools with a replica in any state
+     * @param stickyReadable -- readable group member replicas that are sticky
+     * @param nonStickyReadable -- readable group member replicas that are not sticky
+     * @param verified -- the messages returned by the pools
      * @return the type of operation which should take place, if any.
      */
     private Type determineTypeFromConstraints(FileOperation operation,
-                                              Collection<String> locations,
-                                              Set<String> readableLocations) {
+                                              int excluded,
+                                              Set<String> occupied,
+                                              Set<String> stickyReadable,
+                                              Set<String> nonStickyReadable,
+                                              Collection verified) {
         PnfsId pnfsId = operation.getPnfsId();
         Integer gindex = operation.getPoolGroup();
         Integer sindex = operation.getStorageUnit();
@@ -805,11 +1100,8 @@ public class FileOperationHandler implements CellMessageSender {
         StorageUnitConstraints constraints
                         = poolInfoMap.getStorageUnitConstraints(sindex);
 
-        Set<String> excluded = poolInfoMap.getExcludedLocationNames(locations);
-        readableLocations = Sets.difference(readableLocations, excluded);
-
         int required = constraints.getRequired();
-        int missing = required - readableLocations.size();
+        int missing = required - stickyReadable.size();
 
         /*
          *  First compute the missing files on the basis of just the readable
@@ -819,7 +1111,7 @@ public class FileOperationHandler implements CellMessageSender {
          *  would imply decreasing already deficient locations.
          */
         if (missing > 0) {
-            missing -= excluded.size();
+            missing -= excluded;
             if (missing < 0) {
                 missing = 0;
             }
@@ -827,9 +1119,8 @@ public class FileOperationHandler implements CellMessageSender {
 
         Collection<String> tags = constraints.getOneCopyPer();
 
-        LOGGER.trace("{}, readable locations {}, required {}, missing {}.",
-                     pnfsId, readableLocations, constraints.getRequired(),
-                     missing);
+        LOGGER.trace("{}, required {}, excluded {}, missing {}.",
+                     pnfsId, required, excluded, missing);
 
         Type type;
         String source = null;
@@ -838,30 +1129,63 @@ public class FileOperationHandler implements CellMessageSender {
         try {
             /*
              *  Note that if the operation source or target is preset,
-             *  the selection is skipped.
+             *  and the location is valid, the selection is skipped.
              */
             if (missing < 0) {
-                type = Type.REMOVE;
                 Integer pool = operation.getTarget();
-                if (pool == null || !poolInfoMap.isPoolViable(pool, true)) {
+                if (pool == null || !poolInfoMap.isPoolViable(pool, true)
+                                || !verifier.isRemovable(poolInfoMap.getPool(pool),
+                                                         verified)) {
+                    Set<String> removable = verifier.areRemovable(stickyReadable,
+                                                                  verified);
                     target = locationSelector.selectRemoveTarget(operation,
-                                    readableLocations, tags);
+                                                                 removable,
+                                                                 tags);
                 }
+
                 LOGGER.trace("target to remove: {}", target);
+                type = Type.REMOVE;
             } else if (missing > 0) {
-                type = Type.COPY;
-                Integer pool = operation.getSource();
-                if (pool == null || !poolInfoMap.isPoolViable(pool, false)) {
-                    source = locationSelector.selectCopySource(operation,
-                                                               readableLocations);
+                Integer pool = operation.getTarget();
+                if (pool == null) {
+                    /*
+                     *  See if we can avoid a copy by promoting an existing
+                     *  non-sticky replica to sticky.
+                     */
+                    target = locationSelector.selectPromotionTarget(operation,
+                                                                    stickyReadable,
+                                                                    nonStickyReadable,
+                                                                    tags);
+                    if (target != null) {
+                        fileOpMap.updateOperation(pnfsId, null, target);
+
+                        LOGGER.trace("target to promote to sticky: {}", target);
+
+                        return Type.SET_STICKY;
+                    }
+
+                    target = locationSelector.selectCopyTarget(operation,
+                                                               gindex,
+                                                               occupied,
+                                                               tags);
+                } else if (!poolInfoMap.isPoolViable(pool, true)) {
+                    target = locationSelector.selectCopyTarget(operation,
+                                                               gindex,
+                                                               occupied,
+                                                               tags);
                 }
-                LOGGER.trace("source: {}", source);
-                pool = operation.getTarget();
-                if (pool == null || !poolInfoMap.isPoolViable(pool, true)) {
-                    target = locationSelector.selectCopyTarget(operation, gindex,
-                                    readableLocations, tags);
-                }
+
                 LOGGER.trace("target to copy: {}", target);
+
+                pool = operation.getSource();
+                if (pool == null || !poolInfoMap.isPoolViable(pool,
+                                                              false)) {
+                    source = locationSelector.selectCopySource(operation,
+                                                               stickyReadable);
+                }
+
+                LOGGER.trace("source: {}", source);
+                type = Type.COPY;
             } else {
                 LOGGER.trace("Nothing to do, VOID operation for {}", pnfsId);
                 fileOpMap.voidOperation(pnfsId);
@@ -871,7 +1195,7 @@ public class FileOperationHandler implements CellMessageSender {
             CacheException exception = CacheExceptionUtils.getCacheException(
                             CacheException.DEFAULT_ERROR_CODE,
                             FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                            pnfsId, null, e);
+                            pnfsId, Type.VOID, null, e);
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
         }
@@ -888,6 +1212,40 @@ public class FileOperationHandler implements CellMessageSender {
                                     null, null,
                                     new URI("http", "localhost",
                                             null, null));
+    }
+
+    /**
+     * <p>Synchronously sends message to turn a non-sticky replica into
+     *    a sticky replica.</p>
+     */
+    private void promoteToSticky(PnfsId pnfsId, String target)
+                    throws CacheException {
+        ForceSystemStickyBitMessage msg
+                        = new ForceSystemStickyBitMessage(target, pnfsId);
+
+        LOGGER.trace("Sending message to promote to sticky {}.", msg);
+        Future<ForceSystemStickyBitMessage> future
+                        = pools.send(new CellPath(target), msg);
+
+        try {
+            msg = future.get();
+            LOGGER.trace("Returned ForceSystemStickyBitMessage {}.", msg);
+        } catch (InterruptedException | ExecutionException e) {
+            throw CacheExceptionUtils.getCacheException(
+                            CacheException.SELECTED_POOL_FAILED,
+                            FileTaskCompletionHandler.FAILED_COPY_MESSAGE,
+                            pnfsId, Type.SET_STICKY, target, e);
+        }
+
+        CacheException exception = msg.getErrorObject() == null ? null :
+                        CacheExceptionFactory.exceptionOf(msg);
+
+        if (exception != null && !CacheExceptionUtils.replicaNotFound(exception)) {
+            throw CacheExceptionUtils.getCacheException(
+                            CacheException.SELECTED_POOL_FAILED,
+                            FileTaskCompletionHandler.FAILED_COPY_MESSAGE,
+                            pnfsId, Type.SET_STICKY, target, exception);
+        }
     }
 
     /**
@@ -911,7 +1269,7 @@ public class FileOperationHandler implements CellMessageSender {
             throw CacheExceptionUtils.getCacheException(
                             CacheException.SELECTED_POOL_FAILED,
                             FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
-                            pnfsId, target, e);
+                            pnfsId, Type.REMOVE, target, e);
         }
 
         CacheException exception = msg.getErrorObject() == null ? null :
@@ -921,20 +1279,25 @@ public class FileOperationHandler implements CellMessageSender {
             throw CacheExceptionUtils.getCacheException(
                             CacheException.SELECTED_POOL_FAILED,
                             FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
-                            pnfsId, target, exception);
+                            pnfsId, Type.REMOVE, target, exception);
         }
     }
 
     /**
      * <p>Checks for necessary eviction due to pool tag changes or
-     *      constraint change.  This call will automatically set
-     *      the offending location as the target for a remove operation,
-     *      and will increment the operation count so that there will
-     *      be a chance to repeat the operation in order to make a new copy.</p>
+     *    constraint change.  This call will automatically set
+     *    the offending location as the target for a remove operation,
+     *    and will increment the operation count so that there will
+     *    be a chance to repeat the operation in order to make a new copy.</p>
+     *
+     * <p> Note that the extractor algorithm will never remove the last replica,
+     *     because a singleton will always satisfy any equivalence relation.
+     *     But we short-circuit this check anyway (for location size < 2).</p>
      */
     private boolean shouldEvictALocation(FileOperation operation,
-                                         Collection<String> readableLocations) {
-        if (readableLocations.isEmpty()) {
+                                         Collection<String> readableLocations,
+                                         Collection verified) {
+        if (readableLocations.size() < 2) {
             return false;
         }
 
@@ -946,10 +1309,11 @@ public class FileOperationHandler implements CellMessageSender {
         StorageUnitConstraints constraints
                         = poolInfoMap.getStorageUnitConstraints(sunit);
         RemoveLocationExtractor extractor
-                        = new RemoveLocationExtractor(
-                        constraints.getOneCopyPer(),
-                        poolInfoMap);
-        String toEvict = extractor.findALocationToEvict(readableLocations);
+                        = new RemoveLocationExtractor(constraints.getOneCopyPer(),
+                                                      poolInfoMap);
+        String toEvict = extractor.findALocationToEvict(readableLocations,
+                                                        verified,
+                                                        verifier);
 
         if (toEvict != null) {
             operation.setTarget(poolInfoMap.getPoolIndex(toEvict));
@@ -982,31 +1346,5 @@ public class FileOperationHandler implements CellMessageSender {
         LOGGER.trace("shouldTryToStage {}, retention policy is not CUSTODIAL",
                      operation.getPnfsId());
         return false;
-    }
-
-    /*
-     *  REVISIT -- this will be expanded into a more general verification procedure
-     *
-     *  Check the readable pools for the actual existence of the replica.
-     */
-    private Set<String> verifyLocations(PnfsId pnfsId,
-                                        Collection<String> locations,
-                                        CellStub stub)
-                    throws InterruptedException {
-        SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(pools);
-
-        for(String pool: locations) {
-            LOGGER.trace("Sending query to {} to verify replica exists.", pool);
-            PoolCheckFileMessage request = new PoolCheckFileMessage(pool, pnfsId);
-            controller.send(new CellPath(pool), PoolCheckFileMessage.class, request);
-        }
-
-        controller.waitForReplies();
-
-        return controller.getReplies().values()
-                         .stream()
-                         .filter(PoolCheckFileMessage::getHave)
-                         .map(PoolCheckFileMessage::getPoolName)
-                         .collect(Collectors.toSet());
     }
 }

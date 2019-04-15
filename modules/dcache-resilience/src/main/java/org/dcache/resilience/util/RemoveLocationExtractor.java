@@ -89,7 +89,8 @@ import org.dcache.resilience.data.PoolInfoMap;
  *      The set of weights is recomputed at each iteration based on the
  *      remaining locations.</p>
  */
-public final class RemoveLocationExtractor extends PoolTagConstraintDiscriminator {
+public final class RemoveLocationExtractor
+                extends PoolTagConstraintDiscriminator {
     class WeightedLocation {
         final String location;
         Integer weight;
@@ -111,7 +112,8 @@ public final class RemoveLocationExtractor extends PoolTagConstraintDiscriminato
 
     private int maximal = 0;
 
-    public RemoveLocationExtractor(Collection<String> onlyOneCopyPer, PoolInfoMap info) {
+    public RemoveLocationExtractor(Collection<String> onlyOneCopyPer,
+                                   PoolInfoMap info) {
         super(onlyOneCopyPer);
         this.info = info;
     }
@@ -130,8 +132,11 @@ public final class RemoveLocationExtractor extends PoolTagConstraintDiscriminato
         return info.getTags(info.getPoolIndex(location));
     }
 
-    private Map<String, WeightedLocation> calculateWeights(Collection<String> locations) {
-        locations.stream().forEach((l) -> weights.put(l, new WeightedLocation(l, 0)));
+    private Map<String, WeightedLocation>
+                calculateWeights(Collection<String> locations) {
+        locations.stream()
+                 .forEach((l) -> weights.put(l,
+                                             new WeightedLocation(l, 0)));
 
         for (String tag: partitionKeys) {
             for (String location: locations) {
@@ -161,14 +166,18 @@ public final class RemoveLocationExtractor extends PoolTagConstraintDiscriminato
         return weights;
     }
 
-    public String findALocationToEvict(Collection<String> locations) {
+    public String findALocationToEvict(Collection<String> locations,
+                                       Collection verified,
+                                       ReplicaVerifier verifier) {
         Set<String> seen = new HashSet <>();
         for (String location: locations) {
             Map<String, String> tags = getPoolTagsFor(location);
             for (String tag: partitionKeys) {
                 if (tags.containsKey(tag)) {
                     String nameValue = tag + tags.get(tag);
-                    if (seen.contains(nameValue)) {
+                    if (seen.contains(nameValue)
+                                    && verifier.isRemovable(location,
+                                                            verified)) {
                         return location;
                     }
                     seen.add(nameValue);

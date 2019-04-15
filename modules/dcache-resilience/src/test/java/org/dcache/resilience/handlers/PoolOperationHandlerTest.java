@@ -65,21 +65,39 @@ import org.junit.Test;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.Message;
+
 import org.dcache.resilience.TestBase;
+import org.dcache.resilience.TestMessageProcessor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.PoolStatusForResilience;
+import org.dcache.vehicles.resilience.ReplicaStatusMessage;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class PoolOperationHandlerTest extends TestBase {
+public class PoolOperationHandlerTest extends TestBase
+                implements TestMessageProcessor {
     String pool;
+
+    @Override
+    public void processMessage(Message message) throws Exception {
+        if (message instanceof ReplicaStatusMessage) {
+            ReplicaStatusMessage reply = (ReplicaStatusMessage) message;
+            reply.setExists(true);
+            reply.setBroken(false);
+            reply.setReadable(true);
+            reply.setRemovable(true);
+            reply.setSystemSticky(true);
+        }
+    }
 
     @Before
     public void setUp() throws CacheException, InterruptedException {
         setUpBase();
+        setPoolMessageProcessor(this);
         setShortExecutionMode(Mode.NOP);
         setLongExecutionMode(Mode.RUN);
         createCounters();

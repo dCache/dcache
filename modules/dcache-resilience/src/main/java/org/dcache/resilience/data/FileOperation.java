@@ -75,15 +75,11 @@ import java.util.Set;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
-import dmg.cells.nucleus.CellPath;
-
-import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.ResilientFileTask;
-import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 
 /**
  * <p>Object stored in the {@link FileOperationMap}.</p>
@@ -184,7 +180,6 @@ public final class FileOperation {
     private int               state;
     private int               opCount;
     private int               retried;
-    private boolean           checkSticky;
 
     private Collection<Integer> tried;
     private ResilientFileTask task;
@@ -228,37 +223,6 @@ public final class FileOperation {
         if (operation.tried != null) {
             tried.addAll(operation.tried);
         }
-    }
-
-    /**
-     * <p>This method fires and forgets a message to the source pool
-     *    to set the system-owned sticky bit.</p>
-     *
-     * <p>While this may most of the time be a redundant operation, the
-     *    rationale behind it is to prevent having to check the sticky
-     *    bit during a pool scan to see whether the copy is a replica or
-     *    merely a temporarily cached one (via an ad hoc p2p transfer).
-     *    By forcing the system sticky bit, we ensure that resilient
-     *    pools will never have simply cached copies.</p>
-     *
-     * <p>Checking/verifying requires a response, which means either a
-     *    blocking call or yet another queue of messages to handle.
-     *    Since this operation most of the time will not be crucial,
-     *    an asynchronous best effort is the most efficient solution.</p>
-     *
-     * <p>Should the message/command fail for some reason, it will be
-     *    recorded on the pool side.</p>
-     */
-    public void ensureSticky(PoolInfoMap poolInfoMap, CellStub pools) {
-        if (!checkSticky) {
-            return;
-        }
-
-        String pool = poolInfoMap.getPool(getNullForNil(source));
-
-        ACTIVITY_LOGGER.info("Setting system sticky for {} on {}", pnfsId, pool);
-        pools.send(new CellPath(pool),
-                   new ForceSystemStickyBitMessage(pool, pnfsId));
     }
 
     public CacheException getException() {
@@ -408,6 +372,11 @@ public final class FileOperation {
                         retried, exception == null ? "" : new ExceptionMessage(exception));
     }
 
+    @VisibleForTesting
+    public void setTask(ResilientFileTask task) {
+        this.task = task;
+    }
+
     synchronized void abortOperation() {
         updateState(ABORTED);
         opCount = 0;
@@ -424,15 +393,8 @@ public final class FileOperation {
         if (tried == null) {
             tried = new HashSet<>();
         }
-        tried.add(source);
 
-        /*
-         *  Sticky-bit verification only needs to be done
-         *  on a new source location.  If a different source
-         *  is to be attempted, the verification can be
-         *  bypassed.
-         */
-        checkSticky = false;
+        tried.add(source);
     }
 
     void addTargetToTriedLocations() {
@@ -503,10 +465,6 @@ public final class FileOperation {
         target = NIL;
     }
 
-    void setVerifySticky(boolean checkSticky) {
-        this.checkSticky = checkSticky;
-    }
-
     void setLastType() {
         if (task != null && getType() != Type.VOID) {
             lastType = task.getTypeValue();
@@ -558,10 +516,6 @@ public final class FileOperation {
         }
     }
 
-    void setTask(ResilientFileTask task) {
-        this.task = task;
-    }
-
     /**
      * <p>When another operation for this file/pnfsid is to be
      *    queued, we simply overwrite the appropriate fields on
@@ -570,10 +524,6 @@ public final class FileOperation {
     synchronized void updateOperation(FileOperation operation) {
         if (operation.storageUnit != NIL) {
             storageUnit = operation.storageUnit;
-        }
-
-        if (operation.checkSticky) {
-            checkSticky = true;
         }
 
         /*

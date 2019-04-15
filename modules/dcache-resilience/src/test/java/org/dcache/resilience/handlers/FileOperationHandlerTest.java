@@ -70,7 +70,6 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PoolCheckFileMessage;
 
 import org.dcache.pool.migration.Task;
 import org.dcache.resilience.TestBase;
@@ -82,9 +81,11 @@ import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.StorageUnitConstraints;
+import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
+import org.dcache.vehicles.resilience.ReplicaStatusMessage;
 
 import static org.junit.Assert.*;
 
@@ -98,7 +99,15 @@ public final class FileOperationHandlerTest extends TestBase
     String               storageUnit;
     Integer              originalTarget;
     Integer              originalSource;
+
+    String  failurePool;
+
     boolean rmMessageFailure = false;
+    boolean exists           = true;
+    boolean readable         = true;
+    boolean broken           = false;
+    boolean precious         = false;
+    boolean sticky           = true;
 
     @Override
     public void processMessage(Message message) throws Exception {
@@ -108,9 +117,21 @@ public final class FileOperationHandlerTest extends TestBase
             }
 
             repRmMessage = (RemoveReplicaMessage) message;
-        } else if (message instanceof PoolCheckFileMessage) {
-            PoolCheckFileMessage reply = (PoolCheckFileMessage) message;
-            reply.setHave(true);
+        } else if (message instanceof ReplicaStatusMessage) {
+            ReplicaStatusMessage reply = (ReplicaStatusMessage)message;
+            if (reply.getPool().equals(failurePool)) {
+                reply.setExists(exists);
+                reply.setBroken(broken);
+                reply.setReadable(readable);
+                reply.setRemovable(!precious);
+                reply.setSystemSticky(sticky);
+            } else {
+                reply.setExists(true);
+                reply.setBroken(false);
+                reply.setReadable(true);
+                reply.setRemovable(true);
+                reply.setSystemSticky(true);
+            }
         }
     }
 
@@ -670,7 +691,7 @@ public final class FileOperationHandlerTest extends TestBase
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
                                          new CacheException(
-                                                         CacheException.FILE_NOT_IN_REPOSITORY,
+                                                         CacheException.SELECTED_POOL_FAILED,
                                                          FORCED_FAILURE.toString()));
         fileOperationMap.scan();
     }
@@ -681,6 +702,10 @@ public final class FileOperationHandlerTest extends TestBase
                                          new CacheException(
                                                          CacheException.FILE_NOT_IN_REPOSITORY,
                                                          "Source pool failed"));
+        ResilientFileTask task = new ResilientFileTask(update.pnfsId, 0,
+                                                       fileOperationHandler);
+        task.setType(Type.COPY);
+        fileOperationMap.getOperation(update.pnfsId).setTask(task);
         fileOperationMap.scan();
     }
 

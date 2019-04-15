@@ -88,8 +88,11 @@ public final class LocationSelector {
     private PoolSelectionStrategy poolSelectionStrategy;
 
     public String selectCopySource(FileOperation operation,
-                    Set<String> locations) throws LocationSelectionException {
-        LOGGER.trace("selecting source for {}", operation);
+                                   Set<String> locations)
+                    throws LocationSelectionException {
+        LOGGER.trace("selecting copy source for {} from {}.",
+                     operation.getPnfsId(),
+                     locations);
         if (locations.size() == 1) {
             if (!operation.getTried().isEmpty()) {
                 throw new LocationSelectionException(String.format("Cannot find "
@@ -101,17 +104,38 @@ public final class LocationSelector {
         return selectSource(locations, operation.getTried());
     }
 
-    public String selectCopyTarget(FileOperation operation, Integer gindex,
-                                   Collection<String> locations, Collection<String> tags)
+    public String selectCopyTarget(FileOperation operation,
+                                   Integer gindex,
+                                   Collection<String> locations,
+                                   Collection<String> tags)
                     throws LocationSelectionException {
-        LOGGER.trace("selecting target for {}", operation);
+        LOGGER.trace("selecting copy target for {} from {}.",
+                     operation.getPnfsId(),
+                     locations);
         return selectCopyTarget(gindex, locations, operation.getTried(), tags);
     }
 
+    public String selectPromotionTarget(FileOperation operation,
+                                        Collection<String> sticky,
+                                        Collection<String> notSticky,
+                                        Collection<String> tags) {
+        if (notSticky.isEmpty()) {
+            return null;
+        }
+
+        LOGGER.trace("selecting target for {} from possible non-sticky locations",
+                     operation);
+        return selectPromotionTarget(sticky, notSticky, tags);
+    }
+
     public String selectRemoveTarget(FileOperation operation,
-                    Collection<String> locations, Collection<String> tags)
+                                     Collection<String> locations,
+                                     Collection<String> tags)
                     throws LocationSelectionException {
-        LOGGER.trace("selecting target for {}", operation);
+        LOGGER.trace("selecting remove target for {} from {}; tags {}.",
+                     operation.getPnfsId(),
+                     locations,
+                     tags);
         if (locations.size() == 1) {
             String message = String.format("Remove replica was selected, but "
                                             + "the principal pool %s is the "
@@ -133,18 +157,42 @@ public final class LocationSelector {
     private Set<String> getEligibleCopyTargets(Integer gindex,
                     Collection<String> locations, Set<Integer> tried) {
         Collection<Integer> pools = poolInfoMap.getPoolsOfGroup(gindex);
-        Set<Integer> writableMembers = poolInfoMap.getValidLocations(pools,
-                        true);
+        Set<Integer> writableMembers
+                        = poolInfoMap.getValidLocations(pools,true);
         Set<Integer> lindices = poolInfoMap.getPoolIndices(locations);
         Set<Integer> valid = Sets.difference(writableMembers, lindices);
         valid = Sets.difference(valid, tried);
         return poolInfoMap.getPools(valid);
     }
 
+    private Set<String> getEligibleCopyTargets(Collection<String> notSticky) {
+        Set<Integer> pools = poolInfoMap.getPoolIndices(notSticky);
+        Set<Integer> writable
+                        = poolInfoMap.getValidLocations(pools,true);
+        return poolInfoMap.getPools(writable);
+    }
+
     private Set<String> getEligibleRemoveTargets(Collection<String> locations) {
         Collection<Integer> indices = poolInfoMap.getPoolIndices(locations);
         indices = poolInfoMap.getValidLocations(indices, true);
         return poolInfoMap.getPools(indices);
+    }
+
+    @VisibleForTesting
+    String selectPromotionTarget(Collection<String> sticky,
+                                 Collection<String> notSticky,
+                                 Collection<String> oneCopyPer) {
+        Set<String> possible = getEligibleCopyTargets(notSticky);
+
+        /*
+         * Filter by tag constraints.
+         */
+        CopyLocationExtractor extractor = new CopyLocationExtractor(oneCopyPer,
+                                                                    poolInfoMap);
+        sticky.stream().forEach(extractor::addSeenTagsFor);
+        return extractor.getCandidateLocations(possible).stream()
+                                                        .findFirst()
+                                                        .orElse(null);
     }
 
     /**
@@ -156,10 +204,13 @@ public final class LocationSelector {
      */
      @VisibleForTesting
      String selectCopyTarget(Integer gindex,
-                    Collection<String> locations, Set<Integer> tried,
-                    Collection<String> oneCopyPer) throws LocationSelectionException {
+                             Collection<String> locations,
+                             Set<Integer> tried,
+                             Collection<String> oneCopyPer)
+                     throws LocationSelectionException {
         /*
-         *  Writable locations in the pool group without a copy of this file.
+         *  Writable locations in the pool group without a copy of this file,
+         *  or locations which exist which are not sticky.
          */
         Set<String> possible = getEligibleCopyTargets(gindex, locations, tried);
 
@@ -167,10 +218,9 @@ public final class LocationSelector {
          * Filter by tag constraints.
          */
         CopyLocationExtractor extractor = new CopyLocationExtractor(oneCopyPer,
-                        poolInfoMap);
+                                                                    poolInfoMap);
         locations.stream().forEach(extractor::addSeenTagsFor);
-        Collection<String> candidates = extractor.getCandidateLocations(
-                        possible);
+        Collection<String> candidates = extractor.getCandidateLocations(possible);
 
         if (candidates.isEmpty()) {
             throw new LocationSelectionException(String.format("Cannot satisfy "
@@ -214,12 +264,14 @@ public final class LocationSelector {
      */
     @VisibleForTesting
     String selectRemoveTarget(Collection<String> locations,
-                    Collection<String> oneCopyPer) throws LocationSelectionException {
+                              Collection<String> oneCopyPer)
+                    throws LocationSelectionException {
         Set<String> possible = getEligibleRemoveTargets(locations);
-        RemoveLocationExtractor extractor = new RemoveLocationExtractor(
-                        oneCopyPer, poolInfoMap);
-        List<String> maximallyConstrained = extractor.getCandidateLocations(
-                        possible);
+        RemoveLocationExtractor extractor
+                        = new RemoveLocationExtractor(oneCopyPer,
+                                                      poolInfoMap);
+        List<String> maximallyConstrained
+                        = extractor.getCandidateLocations(possible);
         String target = RandomSelectionStrategy.SELECTOR.apply(maximallyConstrained);
 
         if (target == null) {

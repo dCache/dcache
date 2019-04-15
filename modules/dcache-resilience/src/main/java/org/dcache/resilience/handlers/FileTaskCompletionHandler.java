@@ -73,6 +73,7 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.migration.Task;
 import org.dcache.pool.migration.TaskCompletionHandler;
 import org.dcache.resilience.data.FileOperationMap;
+import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.ExceptionMessage;
 
@@ -213,7 +214,7 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
         PnfsId pnfsId = task.getPnfsId();
         CacheException exception
                         = CacheExceptionUtils.getCacheException(rc,
-                        FAILED_COPY_MESSAGE, pnfsId, msg, null);
+                          FAILED_COPY_MESSAGE, pnfsId, Type.COPY, msg, null);
         taskFailed(pnfsId, exception);
     }
 
