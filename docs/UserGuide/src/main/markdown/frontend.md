@@ -3,8 +3,15 @@ Chapter 2. Frontend
 
 **Table of Contents**
 
-+ [Swagger](#swagger)
 + [REST overview](#rest-overview)
++ [Swagger](#swagger)
++ [Authentication](#authentication)
++ [REST with curl](#rest-with-curl)
++ [Active transfers](#active-transfers)
+    * [Filtering](#filtering)
+    * [Pagination](#pagination)
+    * [Sorting](#sorting)
++ [Doors](#doors)
 + [Identity](#identity)
 + [Namespace](#namespace)
     * [Discovering metadata](#discovering-metadata)
@@ -15,28 +22,52 @@ Chapter 2. Frontend
     * [Modifying QoS](#modifying-qos)
 + [QoS Management](#qos-management)
 + [Space reservations](#space-reservations)
-+ [Active transfers](#active-transfers)
-    * [Filtering](#filtering)
-    * [Pagination](#pagination)
-    * [Sorting](#sorting)
 + [Storage Events](#storage-events)
     * [Top-level information](#top-level-information)
     * [Understanding event types](#understanding-event-types)
     * [Channel lifecycle](#channel-lifecycle)
     * [Subscriptions](#subscriptions)
     * [Receiving events: SSE](#receiving-events-sse)
-+ [Doors](#doors)
 
-The frontend is an HTTP endpoint that provides a REST API.  REST is a
-design principal, rather than a specific protocol, and the REST API
-that frontend provides is non-standard.  This allows you to take
-advantage of some dCache advance features that are not available
-through other protocols.
+The frontend is an HTTP endpoint that provides a REST API.  In this
+chapter, we discuss how you can interact with dCache using this
+interface.
 
 In this chapter, we will assume that dCache is running a frontend
 service on `dcache.example.org` on port `3880` with TLS encryption
 enabled.  Therefore, all the example URLs will start
 `https://dcache.example.org:3880/`
+
+## REST overview
+
+REST is a design principal, rather than a specific protocol.  One of
+the key ideas of REST is that clients use only a very few operations
+when interacting with dCache.  In fact, only four standard HTTP
+operations are needed: GET, POST, DELETE and PATCH.
+
+Despite the small number of operations, clients can still discover and
+control a wide range of aspects of dCache by targeting different URLs.
+These URLs are referred to as resources, with the different requests
+having similar semantics: a GET request discovers the current status
+of a resource, a POST request creates a new resource, a DELETE request
+removes or destroys a resource and a PATCH request modifies an
+existing resource.
+
+The REST API that frontend provides is non-standard.  This allows us
+to expose some of dCache's advance features that are not available
+through other protocols.
+
+All REST API resources start `/api/v1/`.  The next path element in the
+resource groups together related concepts; for example resources that
+start `namespace` (`/api/v1/namespace`) represent dCache's namespace:
+files and directories.  Resources that start `events`
+(`/api/v1/events`) represent the Server-Sent Events (SSE) support and
+its management interface.  Resources that start `/user`
+(`/api/v1/user`) describe the identity of dCache users.
+
+A number of resources are intended for administrative operations and
+require special privileges.  These resources are not documented here,
+but in a separate admin-focused book.
 
 ## Swagger
 
@@ -59,245 +90,87 @@ try the Swagger UI by pointing your browser at `/api/v1/`
 You can find out more about Swagger UI at [Swagger UI home
 page](https://swagger.io/tools/swagger-ui/).
 
-## REST overview
+*Note* the Swagger JSON description of dCache REST API and
+corresponding Swagger UI include all resources, whether they are
+user-focused or admin-focused.  You will see a number of resources
+that are not described here and that regular dCache users are not
+authorised to use.
 
-All REST API calls start `/api/v1/`.  The next path element groups
-together related API calls; for example `namespace`
-(`/api/v1/namespace`) contains all API calls that operate on dCache's
-namespace, `events` (`/api/v1/events`) contains the Server-Sent Events
-support with its management interface, and `/user` (`/api/v1/user`)
-contains information about user identities.
+## Authentication
 
-A number of API calls are intended for administrative operations and
-require special privileges.  These API calls are not documented here,
-but in a separate admin-focused book.
+The frontend service supports several different forms of
+authentication.  Each REST request may be authenticated using username
+and password (HTTP BASIC), Kerberos, OpenID-Connect, Macaroons,
+SciToken.  In addition, the TLS connection supports authentication
+with X.509 client certificates.  However, it is possible that your
+dCache instance is configured to support only a subset of these
+options.
 
-There seven groups of API calls that a user may wish to use: identity,
-namespace, qos, space reservations, active transfers, events and
-doors.  The following sections describe each of these.
+Bearer tokens (such as macaroons, SciToken and OpenID-Connect) may be
+specified by including them in the `Authorization` HTTP request
+header; e.g., `Authorization: Bearer <token>`.  They may also be
+specified in the URL, with the `authz` query parameters;
+e.g. `https://dcache.example.org:3880/api/v1/user?authz=M[...]z`
 
-## Identity
+If the client supplies an X.509 client certificate when establishing
+the secure TLS connection then that identity is used only if no other
+authentication information is available.  If the HTTP request contain
+the `Authorization` request header or the `authz` query parameter then
+that information is used to authenticate and authorise the request.
 
-The identity API calls are about someone's identity within dCache.
-There is currently one API call: a GET request which allows you to
-discover information about the user making the request.
+## REST with curl
 
-If no credentials are presented then the user is the ANONYMOUS user:
+In most of this document, we will give the resource path (from which
+the request URL is derived), indicate a request type (e.g., GET or
+POST), necessary input (if any) and output (if any).
+
+Whether it is to gain experience or to build a simple script, the
+`curl` command is a simple way to interact with dCache REST API.  In
+the following section, we describe how to use curl with frontend.
+
+Although a simple `curl` invocation will make a GET request and show
+the response, the format may not be layed out for easy reading:
 
 ```console
 paul@sprocket:~$ curl https://dcache.example.org:3880/api/v1/user
+{
+  "status" : "ANONYMOUS"
+}paul@sprocket:~$
+```
+
+Therefore, it is often useful to reformat the JSON output.  The
+following example shows the JSON response reformatted using the `jq`
+command:
+
+```console
+paul@sprocket:~$ curl -s https://dcache.example.org:3880/api/v1/user | jq .
 {
   "status" : "ANONYMOUS"
 }
 paul@sprocket:~$
 ```
 
-If the user authenticates, then information is returned:
+The `| jq .` uses the `jq` command to format the JSON response.  Since
+curl is no longer providing data on standard output (stdout), it
+provides progress information instead.  This would upset the output,
+so the `-s` option is used to tell curl not to emit such progress
+information.
 
-```console
-paul@sprocket:~$ curl -u paul https://dcache.example.org:3880/api/v1/user
-Enter host password for user 'paul':
+When making a POST request with curl that sends JSON as input, it is
+important to specify the `Content-Type` request header.  This is
+because curl will, by default, use the wrong type, which will prevent
+dCache from accepting the request.
+
+For example, to send a POST request with the following JSON input:
+
+```json
 {
-  "status" : "AUTHENTICATED",
-  "uid" : 2002,
-  "gids" : [ 2002, 0 ],
-  "username" : "paul",
-  "homeDirectory" : "/Users/paul",
-  "rootDirectory" : "/"
+    "action": "mkdir",
+    "name": "new-dir"
 }
-paul@sprocket:~$
 ```
 
-## Namespace
-
-With the namespace part of the API, you can discover information about
-a specific file or directory, list the contents of a directory, delete
-and rename files, and modify a file's QoS.
-
-### Discovering metadata
-
-To discover information about a path in dCache, make a GET request to
-a URL formed by appending the dCache path to `/api/v1/namespace`.
-
-The following example shows information about the root directory:
-
-```console
-paul@sprocket:~$ curl https://example.org:3880/api/v1/namespace/
-{
-  "fileMimeType" : "application/vnd.dcache.folder",
-  "fileType" : "DIR",
-  "pnfsId" : "000000000000000000000000000000000000",
-  "nlink" : 11,
-  "mtime" : 1554697387559,
-  "creationTime" : 1554696069369,
-  "size" : 512
-}
-paul@sprocket:~$
-```
-
-Here is a query to discover information about the `/upload` directory.
-
-```console
-paul@sprocket:~$ curl https://dcache.example.org:3880/api/v1/namespace/upload
-{
-  "fileMimeType" : "application/vnd.dcache.folder",
-  "fileType" : "DIR",
-  "pnfsId" : "00003405A2416C8D4317AA3833352F967A9A",
-  "nlink" : 14,
-  "mtime" : 1554726185595,
-  "creationTime" : 1554697387559,
-  "size" : 512
-}
-paul@sprocket:~$
-```
-
-Additional information may be requested by specifying different query
-parameters in the GET request.  These additional fields are not
-included by default as fetching them slows down the query.
-
-There are three additional fields: `locality`, `locations` and `qos`.
-To enable `locality` and `qos` information, the GET request would
-include `?locality=true&qos=true`.
-
-The `locality` flag adds information about whether data is currently
-available.  With this flag, the output includes the extra field
-`fileLocality` in the output for files; no extra information is
-provided for directories.  The possible values are summarised in the
-following table:
-
-| Name | Semantics |
-| ---- | ------ |
-| ONLINE | data is available now. |
-| NEARLINE | data is not available now; an automated process can make the data available on demand. |
-| ONLINE_AND_NEARLINE | data is available now, but might require an automated activity to make it available in the future. |
-| UNAVAILABLE | data is not available now; sysadmin intervention may be needed to make it available. |
-| LOST | data is not available and there is no process to obtain it. |
-
-The `locations` flag adds information about where data is currently
-located.  With this flag, the output includes the `locations` field.
-This field's value is a JSON array of pool names.
-
-The `qos` flag adds information about the current QoS of a file or
-directory.  With this flag, the output includes the `currentQoS` field
-and optionally the `targetQoS` field.  The former describes the
-current QoS for this file or directory.  If dCache is transitioning a
-file to a different QoS then the `targetQoS` field is present,
-describing which QoS the file should have.  See [QoS
-Management](#qos-management) to understand more about these QoS
-values.  How to trigger QoS changes is described in [Modifying
-QoS](#modifying-qos).
-
-If the path does not exist, then dCache returns an error:
-
-```console
-paul@sprocket:~$ curl -D- https://dcache.example.org:3880/api/v1/namespace/no-such-item
-HTTP/1.1 404 Not Found
-Date: Mon, 08 Apr 2019 21:55:48 GMT
-Server: dCache/5.0.5
-Content-Type: application/json
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, DELETE, PUT
-Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
-Content-Length: 51
-
-{"errors":[{"message":"Not Found","status":"404"}]}
-paul@sprocket:~$
-```
-
-The HTTP request returns a 404 status code, with a JSON entity
-containing the error.
-
-
-### Listing directories
-
-To list the contents of a directory, include the query argument
-`children=true`; for example, to list the root directory:
-
-```console
-paul@sprocket:~$ curl https://dcache.example.org:3880/api/v1/namespace/?children=true
-{
-  "fileMimeType" : "application/vnd.dcache.folder",
-  "children" : [ {
-    "fileName" : "lost+found",
-    "fileMimeType" : "application/vnd.dcache.folder",
-    "fileType" : "DIR",
-    "pnfsId" : "000000000000000000000000000000000001",
-    "nlink" : 2,
-    "mtime" : 1554696070327,
-    "creationTime" : 1554696070327,
-    "size" : 512
-  }, {
-    "fileName" : "Users",
-    "fileMimeType" : "application/vnd.dcache.folder",
-    "fileType" : "DIR",
-    "pnfsId" : "00007EF0F064738E420099E7BDA672500DC2",
-    "nlink" : 30,
-    "mtime" : 1554696093632,
-    "creationTime" : 1554696089487,
-    "size" : 512
-  }, {
-    "fileName" : "VOs",
-    "fileMimeType" : "application/vnd.dcache.folder",
-    "fileType" : "DIR",
-    "pnfsId" : "0000F0C3D9A2EA9F4681970BF3D414A311ED",
-    "nlink" : 15,
-    "mtime" : 1554696092837,
-    "creationTime" : 1554696089424,
-    "size" : 512
-  }, {
-    "fileName" : "upload",
-    "fileMimeType" : "application/vnd.dcache.folder",
-    "fileType" : "DIR",
-    "pnfsId" : "00003405A2416C8D4317AA3833352F967A9A",
-    "nlink" : 14,
-    "mtime" : 1554726185595,
-    "creationTime" : 1554697387559,
-    "size" : 512
-  } ],
-  "fileType" : "DIR",
-  "pnfsId" : "000000000000000000000000000000000000",
-  "nlink" : 11,
-  "mtime" : 1554697387559,
-  "creationTime" : 1554696069369,
-  "size" : 512
-}
-paul@sprocket:~$
-```
-
-The response includes metadata about each of the children.  If the
-target is not a directory then adding `children=true` has no effect on
-the output.
-
-### Deleting files and directories
-
-A file or directory may be deleted by using the DELETE HTTP verb on
-the corresponding path.  If the target is a directory then it must be
-empty for the delete to work.
-
-The following example shows deleting a file:
-
-```console
-paul@sprocket:~$ curl -u paul -D- -X DELETE \
-        https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
-Enter host password for user 'paul':
-HTTP/1.1 200 OK
-Date: Mon, 08 Apr 2019 21:59:47 GMT
-Server: dCache/5.0.5
-Content-Type: application/json
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, DELETE, PUT
-Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
-Content-Length: 20
-
-{"status":"success"}
-paul@sprocket:~$
-```
-
-### Creating directories
-
-A new directory may be created using a POST request to the containing
-directory, with a JSON object contain the key `action` with value
-`mkdir` and the `name` key containing the new directory's name.
+The curl command might look like:
 
 ```console
 paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
@@ -308,254 +181,45 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-### Moving and renaming
+In several cases, a POST request will create a new resource with a
+name chosen by dCache.  A common pattern is for dCache to return the
+URL of this new resource in the `Location` HTTP response header.
 
-To rename a file or directory, make a POST request to the source file
-or directory containing a JSON object with the `action` key with `mv`,
-and the `destination` key with the path to the destination.  If the
-destination path is relative then it is resolved agianst the request's
-path parameter.
-
-The following example renames `test-1` to `test-2`.
+The `-D-` curl option returns all response headers, allowing you to
+see the `Location` response header:
 
 ```console
-paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
-        -d '{"action":"mv", "destination":"test-2"}' \
-        https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
+paul@sprocket:~$ curl -D- -u paul -X POST \
+        https://dcache.example.org:3880/api/v1/events/channels
 Enter host password for user 'paul':
-{"status":"success"}
+HTTP/1.1 201 Created
+Date: Tue, 09 Apr 2019 20:50:07 GMT
+Server: dCache/5.1.0-SNAPSHOT
+Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+Content-Length: 0
+
 paul@sprocket:~$
 ```
 
-### Modifying QoS
+In this example, the new resource has the URL
+`https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w`.
 
-A file or directory has a corresponding QoS.  To modify this assigned
-QoS, make a POST request with `action` of `qos` and `target` with the
-target QoS.
-
-The following modifies the file `/Users/paul/test-1` to have QoS
-`tape`.
-
-```console
-paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
-        -d '{"action":"qos", "target":"tape"}' \
-        https://dcache.example.org:3880/api/v1/namespace/Users/paul/test-1
-Enter host password for user 'paul':
-{"status":"success"}
-paul@sprocket:~$
-```
-
-A QoS transitions may take some time to complete.  While the
-transition is taking place, dCache will continue to show the file's
-QoS as unchanged but will include an additional field `targetQoS` that
-indicates to which QoS dCache is transitioning the file.  See
-[Discovering metadata](#discovering-metadata) for more details.
-
-See [QoS Management](#qos-management) to understand more about these
-QoS values.
-
-## QoS Management
-
-The QoS management portion of the REST API (`/api/v1/qos-management`)
-is about working with the different QoS options.  Discovering the
-current QoS of a file or directory or modifying that value is done
-within the namespace (`/api/v1/namespace`) portion of the REST API.
-See [Discovering metadata](#discovering-metadata) for more details.
-
-The `/api/v1/qos-management/qos` part of the REST API deals with the
-different QoS options.
-
-Files and directories in dCache have an associated QoS class.  The QoS
-class for a file describes how that file is handled by dCache; for
-example, what performance a user may reasonably expect when reading
-from that file.  The QoS class for a directory describes what QoS
-class a file will receive when it is written into that directory.
-Currently, all directory QoS classes have an equivalent file QoS class
-with the same name.
-
-To see the available options for files, make a GET request on
-`/api/v1/qos-management/qos/file`; e.g.,
-
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/qos-management/qos/file | jq .
-Enter host password for user 'paul':
-{
-  "name": [
-    "disk",
-    "tape",
-    "disk+tape",
-    "volatile"
-  ],
-  "message": "successful",
-  "status": "200"
-}
-paul@sprocket:~$
-```
-
-In a similar way, the available QoS options for directories may be
-found with a GET query to `/api/v1/qos-management/qos/directory`:
-
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/qos-management/qos/directory | jq .
-Enter host password for user 'paul':
-{
-  "name": [
-    "disk",
-    "tape",
-    "disk+tape",
-    "volatile"
-  ],
-  "message": "successful",
-  "status": "200"
-}
-paul@sprocket:~$
-```
-
-In both cases, the returned JSON lists the labels for the various QoS
-classes.
-
-Detailed information about a specific QoS label is available by making
-a GET request against the path appended with the QoS label.  For
-example, a GET request to `/api/v1/qos-management/qos/file/disk`
-provides information about the `disk` QoS class:
-
-```console
-paul@sprocket:~$  curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/qos-management/qos/file/disk | jq .
-Enter host password for user 'paul':
-{
-  "status": "200",
-  "message": "successful",
-  "backendCapability": {
-    "name": "disk",
-    "transition": [
-      "tape",
-      "disk+tape"
-    ],
-    "metadata": {
-      "cdmi_data_redundancy_provided": "1",
-      "cdmi_geographic_placement_provided": [
-        "DE"
-      ],
-      "cdmi_latency_provided": "100"
-    }
-  }
-}
-paul@sprocket:~$
-```
-
-The returned JSON provides two groups of information.
-
-The `transition` list shows all allowed transitions if a file
-currently has the QoS class `disk`.  In this example, the transition
-from QoS class `disk` to QoS class `volatile` is not allowed.  See
-[Modifying QoS](#modifying-qos) for more information about changing a
-file's or directory's QoS.
-
-The `metadata` object contains information about the `disk` QoS class.
-The three values in this example (`cdmi_data_redundancy_provided`,
-`cdmi_geographic_placement_provided` and `cdmi_latency_provided`) come
-from the [CDMI specification](https://www.snia.org/cdmi "Cloud Data
-Management Interface (CDMI)"), see section 16.5.
-
-## Space reservations
-
-Space reservations are a promise to store a given amount of data.
-They may be used when uploading a reasonable sized dataset, to avoid
-running out of storage space midway through the upload.
-
-The `/api/v1/space` is used when interacting with dCache's space
-reservation support.  A GET request on the `tokens` resource provides
-access to the list of available tokens.  By default, this lists all
-space reservations; e.g.,
-
-```console
-paul@sprocket:~$ curl -s \
-        https://dcache.example.org:3880/api/v1/space/tokens | jq .
-[
-  {
-    "id": 2,
-    "voGroup": "/atlas",
-    "retentionPolicy": "REPLICA",
-    "accessLatency": "ONLINE",
-    "linkGroupId": 2,
-    "sizeInBytes": 268435456000,
-    "creationTime": 1554782633504,
-    "description": "ATLASSCRATCHDISK",
-    "state": "RESERVED"
-  },
-  {
-    "id": 3,
-    "voGroup": "/atlas",
-    "retentionPolicy": "REPLICA",
-    "accessLatency": "ONLINE",
-    "linkGroupId": 2,
-    "sizeInBytes": 107374182400,
-    "creationTime": 1554782633548,
-    "description": "ATLASDATADISK",
-    "state": "RESERVED"
-  }
-]
-paul@sprocket:~$
-```
-
-Query parameters in the URL limit the reservations that are returned;
-for example, `accessLatency=ONLINE` limits the response to those
-reservations with online access-latency and `voGroup=/atlas` limits
-the response to those reservations with `/atlas` ownership.
-
-The following limits are allowed:
-
-| Name | Select only reservations... |
-| ---- | ------ |
-|  id  | with this id. |
-| voGroup | with this VO group. |
-| voRole | with this VO role. |
-| accessLatency | with this Access Latency. |
-| retentionPolicy | with this Retention Policy. |
-| groupId | created from a linkgroup with this id. |
-| state | with this current state. |
-| minSize | with a capacity (in bytes) larger than this capacity  |
-| minFreeSpace | with a free capacity (in bytes) larger than this capacuty |
-
-Multiple filters may be combined in a single query, with the effects
-being accumulative: each (potentially) reducing the number of
-reservations listed.
-
-Here is an example illustrating those space reservations that satisfy
-two filters: the VO group is `/atlas` and the reserved capacity is at
-least 200 GB.
-
-```console
-paul@sprocket:~$ curl -s 'https://dcache.example.org:3880/api/v1/space/tokens?voGroup=/atlas&minSize=200000000000' | jq .
-[
-  {
-    "id": 2,
-    "voGroup": "/atlas",
-    "retentionPolicy": "REPLICA",
-    "accessLatency": "ONLINE",
-    "linkGroupId": 2,
-    "sizeInBytes": 268435456000,
-    "creationTime": 1554782633504,
-    "description": "ATLASSCRATCHDISK",
-    "state": "RESERVED"
-  }
-]
-paul@sprocket:~$
-```
 
 ## Active transfers
 
-The `transfers` resource (`/api/v1/transfers`) provides information
-about ongoing transfers.  It does this by generating a snapshot of the
-active transfers every minute.  Without any additional options, a GET
-request returns information from the latest snapshot; e.g.,
+The `transfers` resource (`/api/v1/transfers`) represents snapshots of
+ongoing transfers.
 
-```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/transfers | jq .
-Enter host password for user 'paul':
+By default, a GET request returns information about transfers from the
+most recent snapshot.
+
+The following example shows a typical response when there are no
+active transfers:
+
+```json
 {
   "items": [],
   "currentOffset": 0,
@@ -563,22 +227,24 @@ Enter host password for user 'paul':
   "currentToken": "e4c5759b-f9b3-4165-9bd5-074b8e022596",
   "timeOfCreation": 1554815277797
 }
-paul@sprocket:~$
 ```
 
-In this example, there are no active transfers (`items` is empty).
-The `currentOffset` and `nextOffset` indicate that all available data
-is shown.  The `currentToken` is a unique reference for this snapshot
-that may be used later.  Finally, the `timeOfCreation` gives the Unix
-time (in milliseconds) when this snapshot was created.
+In this example, there are no active transfers so the `items` property
+is empty.  The `currentOffset` and `nextOffset` properties indicate that all
+available data is shown.
 
-If there are on-going transfers when the snapshot is created then the
-output is different.
+The `currentToken` is a unique reference for this snapshot.  It may be
+supplied as a query parameter when making subsequent GET requests to
+refer to this snapshot (and not any other snapshot).
+
+Finally, the `timeOfCreation` gives the Unix time (in milliseconds)
+when this snapshot was created.
+
+The following example shows the response to a GET request when there
+are on-going transfers:
 
 
-```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/transfers | jq .
-Enter host password for user 'paul':
+```json
 {
   "items": [
     {
@@ -682,7 +348,6 @@ Enter host password for user 'paul':
   "currentToken": "fbfd7d39-9959-4135-bf9a-5f65355346f5",
   "timeOfCreation": 1554815757860
 }
-paul@sprocket:~$
 ```
 
 The format describing a transfer is not yet fixed and may be subject
@@ -714,10 +379,10 @@ would list all current HTTP transfers involving the user with uid
 
 ### Pagination
 
-On an active dCache, there may be many concurrent transfers: more than
-may be returned in one JSON response.  To support this, a query can
-target a specific snapshot (rather than the latest snapshot) selecting
-different subsets of all concurrent transfers.
+On an active dCache, there may be many too many concurrent transfers
+to return them all in a single JSON response.  To support this, a
+query can target a specific snapshot (rather than the latest snapshot)
+and limiting the number of responses.
 
 The `token` query parameter may be used to select a specific snapshot.
 The value is the `currentToken` value.  In the above example, the
@@ -728,9 +393,11 @@ repeated queries that target this snapshot have
 The `offset` and `limit` query parameters select a subset of values.
 If not specified then they default to 0 and 2147483647 respectively.
 
-Therefore, a GET request to
+Therefore, a GET request targeting the path
 `/api/v1/transfers?token=fbfd7d39-9959-4135-bf9a-5f65355346f5&offset=0&limit=10`
-returns the first ten transfers, a GET request to
+returns the first ten transfer from a specific snapshot.
+
+A subsequent GET request targeting the path
 `/api/v1/transfers?token=fbfd7d39-9959-4135-bf9a-5f65355346f5&offset=10&limit=10`
 returns the next ten transfers, and so on.
 
@@ -739,6 +406,592 @@ returns the next ten transfers, and so on.
 The output is sorted.  The priority of different fields is controlled
 by the `sort` query parameter, which takes a comma-separate list of
 field names.  The default value is `door,waiting`.
+
+
+## Doors
+
+Doors are protocol-specific network services that allow clients to
+interact with files stored in dCache; for example, a WebDAV door
+allows clients to read and write files using the WebDAV protocol, in
+addition to creating directories and renaming files.
+
+Uploading and downloading files is not supported in the REST API;
+therefore, a client must find a door that supports an appropriate
+protocol if the client needs to transfer files.
+
+The `doors` resource (`/api/v1/doors`) represents all doors within
+dCache.  This allows a client to discover which protocols are
+supported and what are their endpoints.
+
+A GET request on this resource yields a complete set of all doors.
+The response is a JSON array of JSON objects, with each JSON object
+describing a door.
+
+Here is an example response:
+
+```json
+[
+  {
+    "protocol": "ftps",
+    "version": "1.0.0",
+    "root": "/",
+    "addresses": [
+      "dcache.example.org"
+    ],
+    "port": 21,
+    "load": 0,
+    "tags": [
+      "glue",
+      "srm",
+      "storage-descriptor"
+    ],
+    "readPaths": [
+      "/"
+    ],
+    "writePaths": [
+      "/"
+    ]
+  },
+  {
+    "protocol": "https",
+    "version": "1.1",
+    "root": "/",
+    "addresses": [
+      "dcache.example.org"
+    ],
+    "port": 2443,
+    "load": 0,
+    "tags": [
+      "glue",
+      "srm",
+      "storage-descriptor"
+    ],
+    "readPaths": [
+      "/"
+    ],
+    "writePaths": [
+      "/"
+    ]
+  },
+  {
+    "protocol": "gsiftp",
+    "version": "1.0.0",
+    "root": "/",
+    "addresses": [
+      "dcache.example.org"
+    ],
+    "port": 2811,
+    "load": 0,
+    "tags": [
+      "glue",
+      "srm",
+      "storage-descriptor"
+    ],
+    "readPaths": [
+      "/"
+    ],
+    "writePaths": [
+      "/"
+    ]
+  },
+  {
+    "protocol": "https",
+    "version": "1.1",
+    "root": "/",
+    "addresses": [
+      "dcache.example.org"
+    ],
+    "port": 443,
+    "load": 0,
+    "tags": [
+      "cdmi",
+      "dcache-view"
+    ],
+    "readPaths": [
+      "/"
+    ],
+    "writePaths": [
+      "/"
+    ]
+  }
+]
+```
+
+In this example, three doors are listed: an FTPS door listening on
+port 21, an gsiftp (GridFTP) door listening on port 2811, and a WebDAV
+door listening on port 443.
+
+The `root` property the door's root path.  The value is the absolute
+path in dCache equivalent to the door's root path.  For example, if
+the `root` property value is `/data/atlas` and a client downloads the
+file `/2019/data-1.root` through this door then the client will
+receive the file `/data/atlas/2019/data-1.root`.
+
+The `addresses` indicates on which address(es) the door is listening.
+
+The `port` indicates the TCP port number on which the door is
+listening.
+
+The `tags` are arbitrary metadata describing aspects of the door; for
+example, describing for which kind of use the door is intended.  This
+information is advisory, but allows dCache to advertise doors that are
+for specialist users.
+
+The `load` is a number between 0 and 1, indicating how busy the door
+is currently.
+
+The `readPaths` and `writePaths` describe generic limitations the door
+will impose; for example, only allowing write activity on a subset of
+the namespace.
+
+
+## Identity
+
+The identity resources are about someone's identity within dCache.
+There is currently one resource that represents the user making the
+request: `/user` (`/api/v1/user`).  A GET request to this resource
+returns information about the user making the request.
+
+If no credentials are presented then the user is the ANONYMOUS user:
+
+```json
+{
+  "status" : "ANONYMOUS"
+}
+```
+
+If the user authenticates, then information about that user is
+returned:
+
+```json
+{
+  "status" : "AUTHENTICATED",
+  "uid" : 2002,
+  "gids" : [ 2002, 0 ],
+  "username" : "paul",
+  "homeDirectory" : "/Users/paul",
+  "rootDirectory" : "/"
+}
+```
+
+## Namespace
+
+With the namespace part of the API, you can discover information about
+a specific file or directory, list the contents of a directory, delete
+and rename files, and modify a file's or directory's QoS.
+
+### Discovering metadata
+
+Resources that describe files and directories in dCache are beneath
+the `namespace` resource (`/api/v1/namespace`) by simply appending the
+dCache path this path.  For example, the resource `namespace`
+(`/api/v1/namespace`) represents the root directory and
+`namespace/upload` (`/api/v1/namespace/upload`) represents the
+`upload` directory.
+
+To discover information about a path in dCache, make a GET request to
+the file's or directory's resource.
+
+The following example shows the root directory's resource:
+
+```json
+{
+  "fileMimeType" : "application/vnd.dcache.folder",
+  "fileType" : "DIR",
+  "pnfsId" : "000000000000000000000000000000000000",
+  "nlink" : 11,
+  "mtime" : 1554697387559,
+  "creationTime" : 1554696069369,
+  "size" : 512
+}
+```
+
+Additional information may be requested by specifying different query
+parameters in the GET request.  These additional fields are not
+included by default as fetching them would slow down the query.
+
+There are three additional fields: `locality`, `locations` and `qos`;
+for example, to enable fetching `locality` and `qos` information, the
+GET request would include `?locality=true&qos=true` in the URL.
+
+The `locality` flag adds information about whether data is currently
+available.  With this flag, the output includes the extra field
+`fileLocality` in the output for files.  This flag does not provide
+any extra information for directories.  The possible values for
+`fileLocality` are summarised in the following table:
+
+| Name | Semantics |
+| ---- | ------ |
+| ONLINE | data is available now. |
+| NEARLINE | data is not available now; an automated process can make the data available on demand. |
+| ONLINE_AND_NEARLINE | data is available now, but might require an automated activity to make it available in the future. |
+| UNAVAILABLE | data is not available now; sysadmin intervention may be needed to make it available. |
+| LOST | data is not available and there is no process to obtain it. |
+
+The `locations` flag adds information about where data is currently
+located.  With this flag, the output includes the `locations` field.
+This field's value is a JSON array of pool names.
+
+The `qos` flag adds information about the current QoS of a file or
+directory.  With this flag, the output includes the `currentQoS` field
+and optionally the `targetQoS` field.  The former describes the
+current QoS for this file or directory.  If dCache is currently
+transitioning a file to a different QoS then the `targetQoS` field is
+present, describing which QoS the file should have.  See [QoS
+Management](#qos-management) to understand more about these QoS
+values.  How to trigger QoS changes is described in [Modifying
+QoS](#modifying-qos).
+
+If the path does not exist, then the HTTP response has a status code
+404, with the following JSON response:
+
+```json
+{
+    "errors": [
+        {
+	    "message": "Not Found",
+	    "status": "404"
+	}
+    ]
+}
+```
+
+### Listing directories
+
+A GET request that target's a directory resource URL that includes the
+query argument `children=true`.  For example, a request to list the
+root directory would target the resource `/namespace`
+(`/api/v1/namespace`) and the complete path would be
+`/api/v1/namespace/?children=true`.
+
+The response is as before, but now also includes the `children`
+property.  The value is a JSON array of JSON objects, where each JSON
+object describes a child of this directory.  The same information is
+provided for each child as is provided for the parent directory.
+
+
+The following example shows a typical root directory listing.
+
+```json
+{
+  "fileMimeType" : "application/vnd.dcache.folder",
+  "children" : [ {
+    "fileName" : "lost+found",
+    "fileMimeType" : "application/vnd.dcache.folder",
+    "fileType" : "DIR",
+    "pnfsId" : "000000000000000000000000000000000001",
+    "nlink" : 2,
+    "mtime" : 1554696070327,
+    "creationTime" : 1554696070327,
+    "size" : 512
+  }, {
+    "fileName" : "Users",
+    "fileMimeType" : "application/vnd.dcache.folder",
+    "fileType" : "DIR",
+    "pnfsId" : "00007EF0F064738E420099E7BDA672500DC2",
+    "nlink" : 30,
+    "mtime" : 1554696093632,
+    "creationTime" : 1554696089487,
+    "size" : 512
+  }, {
+    "fileName" : "VOs",
+    "fileMimeType" : "application/vnd.dcache.folder",
+    "fileType" : "DIR",
+    "pnfsId" : "0000F0C3D9A2EA9F4681970BF3D414A311ED",
+    "nlink" : 15,
+    "mtime" : 1554696092837,
+    "creationTime" : 1554696089424,
+    "size" : 512
+  }, {
+    "fileName" : "upload",
+    "fileMimeType" : "application/vnd.dcache.folder",
+    "fileType" : "DIR",
+    "pnfsId" : "00003405A2416C8D4317AA3833352F967A9A",
+    "nlink" : 14,
+    "mtime" : 1554726185595,
+    "creationTime" : 1554697387559,
+    "size" : 512
+  } ],
+  "fileType" : "DIR",
+  "pnfsId" : "000000000000000000000000000000000000",
+  "nlink" : 11,
+  "mtime" : 1554697387559,
+  "creationTime" : 1554696069369,
+  "size" : 512
+}
+```
+
+If the target is not a directory then adding `children=true` has no
+effect on the output.
+
+### Deleting files and directories
+
+A file or directory may be deleted by making a DELETE request on the
+target's corresponding resource.  For example, a DELETE request
+targeting `/api/v1/namespace/Users/paul/old-data` would attempt to
+delete the file `/Users/paul/old-data`.
+
+If the target is a directory then it must be empty before the
+operation will be successful.
+
+The following example shows the response when successfully deleting a
+file:
+
+```json
+{
+    "status": "success"
+}
+```
+
+### Creating directories
+
+A new directory may be created using a POST request targeting the
+resource corresponding to the parent directory.  This request must
+supply a JSON object as the HTTP entity, with the `action` property of
+`mkdir` and the `name property containing the new directory's name.
+
+The following example creates a new directory called `my new dir`.
+
+```json
+{
+    "action": "mkdir",
+    "name": "my new dir"
+}
+```
+
+The response, if successful shows the status `success`:
+
+```json
+{
+    "status": "success"
+}
+```
+
+### Moving and renaming
+
+To rename or move a file or directory, make a POST request to the
+resource representing the source file or directory; for example, to
+rename the file `/Users/paul/my-data`, the POST request would target a
+URL with the path `/api/v1/namespace/Users/paul/my-data`.
+
+The POST request must contain a JSON object with the `action` property
+value `mv`, and the `destination` property set to the new name or
+path.  If the destination path is relative (i.e., does not start with
+`/`) then it is resolved against the request's path parameter.
+
+The following example renames the source to `new-name`.
+
+```json
+{
+    "action": "mv",
+    "destination": "new-name"
+}
+```
+
+If the operation is successful then HTTP response has a 200 status
+code, and the response entity is the JSON object:
+
+```json
+{
+    "status": "success"
+}
+```
+
+### Modifying QoS
+
+Each file or directory has a corresponding QoS value.  To modify this
+assigned QoS, make a POST request to the resource representing the
+file or directory; for example, to modify the QoS of the file
+`/Users/paul/my-data`, the POST request would target
+`/api/v1/namespace/Users/paul/my-data`.
+
+The POST request must contain a JSON object with the `action` property
+set to `qos`, and the `target` property set to the desired QoS.  The
+following example requests the target have QoS `tape`:
+
+```json
+{
+    "action": "qos",
+    "target": "tape"
+}
+```
+
+A QoS transitions that target a file may take some time to complete.
+While the transition is taking place, a GET request on the resource
+representing this file will continue to show the file's QoS unchanged
+but will include an additional field `targetQoS` that indicates to
+which QoS dCache is transitioning this file.  See [Discovering
+metadata](#discovering-metadata) for more details.
+
+See [QoS Management](#qos-management) to understand more about the
+different QoS target values, including performance characteristics.
+
+## QoS Management
+
+The `qos-management` resources are a set of resources for working with
+different QoS classes.  These resources all start
+(`/api/v1/qos-management`).
+
+The current QoS class of a file or directory is represented by that
+file or directory's resource.  See [Discovering
+metadata](#discovering-metadata) for more details on how to query the
+current QoS and modify QoS values.
+
+The resources that start `qos-management/qos`
+(`/api/v1/qos-management/qos`) represent the different QoS classes.
+
+Files and directories in dCache have an associated QoS class.  The QoS
+class for a file describes how that file is handled by dCache; for
+example, what performance a user may reasonably expect when reading
+from that file.  The QoS class for a directory describes what QoS
+class a file will receive when it is written into that directory.
+Currently, all directory QoS classes have an equivalent file QoS class
+with the same name.
+
+A GET request on `qos-management/qos/file`
+(`/api/v1/qos-management/qos/file`) provides a list of file QoS class
+names.  Similarly, a GET request on `qos-management/qos/directory`
+(`/api/v1/qos-management/qos/directory`) provides a list of directory
+QoS class names.
+
+The following example shows the response to a GET request targeting
+`/api/v1/qos-management/qos/file`:
+
+```json
+{
+  "name": [
+    "disk",
+    "tape",
+    "disk+tape",
+    "volatile"
+  ],
+  "message": "successful",
+  "status": "200"
+}
+```
+
+The same response is returned when querying the
+`qos-management/qos/directory` resource.
+
+In both cases, the `name` property is a JSON array of QoS class names.
+
+Each individual QoS class is represented by the resource
+`qos-management/qos/<type>/<name>`
+(`/api/v1/qos-management/qos/<type>/<name>`).  For example, the
+resource `qos-management/qos/file/tape` represents the QoS `tape` for
+files.
+
+A GET request on a QoS class resource returns information about that
+resource.  The following example shows the response to a GET request
+targeting the resource `qos-management/qos/file/disk`
+(`/api/v1/qos-management/qos/file/disk`):
+
+```json
+{
+  "status": "200",
+  "message": "successful",
+  "backendCapability": {
+    "name": "disk",
+    "transition": [
+      "tape",
+      "disk+tape"
+    ],
+    "metadata": {
+      "cdmi_data_redundancy_provided": "1",
+      "cdmi_geographic_placement_provided": [
+        "DE"
+      ],
+      "cdmi_latency_provided": "100"
+    }
+  }
+}
+```
+
+The returned JSON provides two groups of information.
+
+The `transition` list shows all allowed transitions if a file
+currently has the QoS class `disk`.  In this example, the transition
+from QoS class `disk` to QoS class `volatile` is not allowed.  See
+[Modifying QoS](#modifying-qos) for more information about changing a
+file's or directory's QoS.
+
+The `metadata` object contains information about the `disk` QoS class.
+The three values in this example (`cdmi_data_redundancy_provided`,
+`cdmi_geographic_placement_provided` and `cdmi_latency_provided`) come
+from the [CDMI specification](https://www.snia.org/cdmi "Cloud Data
+Management Interface (CDMI)"), see section 16.5.
+
+## Space reservations
+
+Space reservations are a promise to store a given amount of data.
+They may be used when uploading a reasonable sized dataset, to avoid
+running out of storage space midway through the upload.
+
+Resources beneath `space` (`/api/v1/space`) represent space
+reservations.
+
+A GET request on the `space/tokens` (`/api/v1/space/tokens`) resource
+provides information about space reservations.  The response is a JSON
+array containing a JSON object.  Each of these JSON objects provides
+information about a space reservation.
+
+The following example shows the returned JSON for two space
+reservations:
+
+```json
+[
+  {
+    "id": 2,
+    "voGroup": "/atlas",
+    "retentionPolicy": "REPLICA",
+    "accessLatency": "ONLINE",
+    "linkGroupId": 2,
+    "sizeInBytes": 268435456000,
+    "creationTime": 1554782633504,
+    "description": "ATLASSCRATCHDISK",
+    "state": "RESERVED"
+  },
+  {
+    "id": 3,
+    "voGroup": "/atlas",
+    "retentionPolicy": "REPLICA",
+    "accessLatency": "ONLINE",
+    "linkGroupId": 2,
+    "sizeInBytes": 107374182400,
+    "creationTime": 1554782633548,
+    "description": "ATLASDATADISK",
+    "state": "RESERVED"
+  }
+]
+```
+
+Query parameters in the URL may be used to limit the reservations
+listed; for example, `accessLatency=ONLINE` limits the response to
+those reservations with online access-latency and `voGroup=/atlas`
+limits the response to those reservations with `/atlas` ownership.
+
+The following filters are supported:
+
+| Name | Select only reservations... |
+| ---- | ------ |
+|  id  | with this id. |
+| voGroup | with this VO group. |
+| voRole | with this VO role. |
+| accessLatency | with this Access Latency. |
+| retentionPolicy | with this Retention Policy. |
+| groupId | created from a linkgroup with this id. |
+| state | with this current state. |
+| minSize | with a capacity (in bytes) larger than this capacity  |
+| minFreeSpace | with a free capacity (in bytes) larger than this capacuty |
+
+Multiple filters may be combined in a single query, with the effects
+being accumulative: each filter (potentially) reducing the number of
+reservations listed.
+
+For example, the query parameter `voGroup=/atlas&minSize=200000000000`
+(`/api/v1/space/tokens?voGroup=/atlas&minSize=200000000000`) restricts
+the returned list of space reservations to those that are both owned
+by VO group `/atlas` and have a reserved capacity is at least 200 GB.
 
 ## Storage Events
 
@@ -800,12 +1053,26 @@ subscriptions would change accordingly.
 
 ### Top-level information
 
-A GET request on the `/api/v1/events` resource provide information
-that is independent of any channel and any event type.
+A GET request on the `events` (`/api/v1/events`) resource returns a
+JSON object providing information that is independent of any channel
+and any event type.
 
-```console
-paul@sprocket:~$ curl -s -u paul https://dcache.example.org:3880/api/v1/events | jq .
-Enter host password for user 'paul':
+The `channels` property value describes information about channels in
+general, rather than about a specific channel.  Channels are
+automatically deleted if they are not used for long enough.  The time
+before this happens may be adjusted by the client.  The
+`lifetimeWhenDisconnected` property describes this policy, with the
+values in seconds.
+
+Additionally, each user is allowed to have only a limited number of
+channels.  Once this limit is reached, attempts to create more
+channels will fail.  This limit is recorded in the `maximumPerUser`
+property.
+
+The following shows a typical response to a GET request on the
+`events` resource:
+
+```json
 {
   "channels": {
     "lifetimeWhenDisconnected": {
@@ -816,24 +1083,13 @@ Enter host password for user 'paul':
     "maximumPerUser": 128
   }
 }
-paul@sprocket:~$
 ```
-
-The `channels` object describes information about channels in general,
-rather than about a specific channel.  Channels are automatically
-deleted if they are not used for long enough.  The time before this
-happens may be adjusted by the client.  The `lifetimeWhenDisconnected`
-describes this policy, with the values in seconds.
 
 In the above example, new channels are garbage collected automatically
 after five minutes.  An individual channel may be configured to be
-garbage collected on a different schedule, as quickly as after one
-second, or as long as after a day.
-
-Each user is allowed to have only a limited number of channels; once
-this limit is reached, attempts to create more channels will fail.  In
-the above example, the maximum number of concurrent channels any one
-user can have is 128.
+garbage collected on a different schedule: as quickly as after one
+second, or as long as after a day.  Users are limited to having at
+most 128 channels concurrently.
 
 ### Understanding event types
 
@@ -844,78 +1100,68 @@ subscriptions.
 A GET request against this resource provides a list of available event
 types:
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/eventTypes | jq .
-Enter host password for user 'paul':
+```json
 [
   "inotify",
   "metronome"
 ]
-paul@sprocket:~$
 ```
 
 In the above example, two event types are shown: `inotify` and
-`metronome`.  The `SYSTEM` is not shown since a channel is always
-subscribed to this event type and cannot control the delivery of those
-events.
+`metronome`.  The `SYSTEM` event type is not shown since a channel is
+always subscribed to this event type and cannot control the delivery
+of those events.
 
-To learn more about an event type, the event type name is appended to
-the path.
+Individual event types are represented by the resource
+`events/eventTypes/<name>`.  For example, the `inotify` event type is
+represented by the resource `events/eventTypes/inotify`
+(`/api/v1/events/eventTypes/inotify`).
 
-The resource about the `metronome` event type is
-`events/eventTypes/metronome` (`/api/v1/events/eventTypes/metronome`).
+A GET request targeting the event type resource returns a JSON object
+providing basic information about this event type.
 
-A GET request on this resource provides information about this event
-type:
+For example, the following JSON is the response to a GET request
+targeting the `events/eventTypes/metronome`
+(`/api/v1/events/eventTypes/metronome`) resource
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/eventTypes/metronome | jq .
-Enter host password for user 'paul':
+```json
 {
   "description": "a configurable stream of messages"
 }
-paul@sprocket:~$
 ```
 
-Similar information is available about the `inotify` event type:
+Similar information is available from the
+`events/eventTypes/metronome` resource:
 
-```console
-paul@sprocket:~$ curl -u paul \
-        https://dcache.example.org:3880/api/v1/events/eventTypes/inotify
-Enter host password for user 'paul':
+```json
 {
   "description" : "notification of namespace activity, modelled after inotify(7)"
 }
-paul@sprocket:~$
 ```
 
-There are two further useful documents about each event type: one that
-describes selectors and one that describes the data supplied with
-events of this event type.
+There are two further resources per resource type: one that represents
+the selector and one that represents the data supplied with events of
+this type.
 
 #### Event Type: Selectors
 
-The `selector` resource (`/api/v1/events/eventTypes/<name>/selector`)
-provides a JSON Schema description of the selector.  When creating a
-subscription a selector is used to describe which events are of
-interest.
+The `events/eventTypes/<name>/selector` resource
+(`/api/v1/events/eventTypes/<name>/selector`) represents the selector
+for this event type.  A selector is supplied when subscribing to
+events of a specific type, to describe which events are of interest.
 
-A GET request on this resource returns a JSON Schema.  When
-subscribing to this event type, the selector must satisfy this JSON
-Schema.  In addition to describing the structure, it also describes
-the semantics of each of the arguments, including any default values
-that are used if not specified.
+A GET request on this resource returns the JSON Schema of the
+selector.  When subscribing to this event type, the selector must
+satisfy this JSON Schema.  In addition to describing the structure,
+the schema also describes the semantics of each of the arguments,
+including any default values that are used if not specified.
 
 ##### metronome
 
-Here is the selector for the metronome event type:
+The following is the response to a GET request targeting the
+`events/eventTypes/<name>/selector` resource:
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/eventTypes/metronome/selector | jq .
-Enter host password for user 'paul':
+```json
 {
   "$id": "http://dcache.org/frontend/events/metronomeSelectors#",
   "$schema": "http://json-schema.org/draft-06/schema#",
@@ -962,14 +1208,15 @@ Enter host password for user 'paul':
   ],
   "additionalProperties": false
 }
-paul@sprocket:~$
 ```
 
-When subscribing for `metronome` events, either the `frequency` or
-`delay` argument must be provided.  The `count` and `message` argument
-may be provided, but are not required.
+This describes how, when subscribing for `metronome` events, either
+the `frequency` or `delay` argument must be provided.  The `count` and
+`message` argument may be provided, but are not required.
 
-Here are some examples of valid selectors.
+The following is a valid selector that requests events be sent every
+two seconds with the data `"Message 1"`, `"Message 2"`, `"Message 3"`
+and so on.
 
 ```json
 {
@@ -978,9 +1225,8 @@ Here are some examples of valid selectors.
 }
 ```
 
-A metronome subscription with this selector will generate an event
-every two seconds with the data `"Message 1"`, `"Message 2"`,
-`"Message 3"` and so on.
+The following JSON object is a valid selector that requests events at
+1 kHZ for two seconds.  Each event will have the same data `"tick"`.
 
 ```json
 {
@@ -989,19 +1235,16 @@ every two seconds with the data `"Message 1"`, `"Message 2"`,
 }
 ```
 
-A metronome subscription with this selector will generate events at 1
-kHz, for two seconds.  Each event will have the same data: `"tick"`.
-
 ##### inotify
 
 Selectors for `inotify` are more complicated, but a JSON Schema that
-describes them is available by querying the `inotify/selector`
-resource:
+describes them is represented by the
+`events/eventTypes/inotify/selector` resource.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/eventTypes/inotify/selector | jq .
-Enter host password for user 'paul':
+The following JSON Schema is returned by a GET request targeting this
+resource.
+
+```json
 {
   "$id": "http://dcache.org/frontend/events/namespaceSelectors#",
   "$schema": "http://json-schema.org/draft-06/schema#",
@@ -1050,13 +1293,13 @@ Enter host password for user 'paul':
   },
   "additionalProperties": false
 }
-paul@sprocket:~$
 ```
 
 The `path` property is required, while the `flags` property is
 optional.
 
-Here are some examples of valid inotify selectors:
+The following selector selects all inotify events for the directory
+`/data/uploads`.
 
 ```json
 {
@@ -1064,8 +1307,10 @@ Here are some examples of valid inotify selectors:
 }
 ```
 
-A inotify subscription with this selector will watch the
-`/data/uploads` directory for any changes.
+The following selector watches the `/Users/paul/docs` directory for
+any files or directories being created, renamed or deleted.  For
+files, an `IN_CREATE` event is sent at the start of an upload and an
+`IN_CLOSE_WRITE` event is sent when the upload is complete.
 
 ```json
 {
@@ -1081,49 +1326,45 @@ A inotify subscription with this selector will watch the
 }
 ```
 
-An inotify subscription with this selector will watch the
-`/Users/paul/docs` directory for any files or directories being
-created, renamed or deleted.  For files, an `IN_CREATE` event is sent
-at the start of an upload and an `IN_CLOSE_WRITE` event is sent when
-the upload is complete.
 
 #### Event Type: Events
 
-The `event` resource (`/api/v1/events/eventTypes/<name>/event`)
-provides a JSON Schema description of the data included with events of
-this event.
+The `events/eventTypes/<eventType>/event` resource
+(`/api/v1/events/eventTypes/<eventType>/event`) represents the events
+generated by this event type.
+
+A GET request returns a JSON Schema that describes the information
+included with events of this type.
 
 ##### metronome
 
-The `metronome/event` resource
-(`/api/v1/events/eventTypes/metronome/event`) provides the schema for
-the metronome event type:
+The `events/eventTypes/metronome/event` resource
+(`/api/v1/events/eventTypes/metronome/event`) represents the events from the metronome event type.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/eventTypes/metronome/event | jq .
-Enter host password for user 'paul':
+A GET request will provide JSON object like:
+
+```json
 {
   "$id": "http://dcache.org/frontend/events/metronomeEvents#",
   "$schema": "http://json-schema.org/draft-06/schema#",
   "type": "string"
 }
-paul@sprocket:~$
 ```
 
-This JSON Schema describes a String which (in this case) corresponds
-to the `message` field in the metronome selector.  Therefore, the
-default event data is `"tick"`.
+This JSON Schema describes a simple JSON String which (for metronome)
+corresponds to the `message` field in the metronome selector.
+Therefore, the default event data is simply `"tick"`.
 
 ##### inotify
 
 The events generated by the inotify event type are described in the
-`inotify/event` (`/api/v1/events/eventTypes/inotify/event`) resource:
+`events/eventTypes/inotify/event
+(`/api/v1/events/eventTypes/inotify/event`) resource.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-         https://dcache.example.org:3880/api/v1/events/eventTypes/inotify/event | jq .
-Enter host password for user 'paul':
+A GET request targeting this resource returns the following JSON
+Schema:
+
+```json
 {
   "$id": "http://dcache.org/frontend/events/namespaceEvents#",
   "$schema": "http://json-schema.org/draft-06/schema#",
@@ -1271,39 +1512,46 @@ Enter host password for user 'paul':
     }
   }
 }
-paul@sprocket:~$
 ```
 
-The events from the inotify event type are one of four types: a move
-child event, a non-move child event, a self event and a management
-event.
+This JSON Schema describes how inotify events are one of four types: a
+move-child event, a non-move-child event, a self event and a
+management event.
 
-###### Move child events
+###### Move-child events
 
 A move child event is where the subscription's path is a directory and
 either a directory item (a file or directory) is moved into the
 subscription's path, or a directory item is move out of that path.
-Renaming a file within a directory is treated as a move operation.
+Renaming a file within a directory is treated as a move operation and
+generates two move-child events.
 
-Here are some example move child event:
+Here are some examples to clarify this.
+
+A move-child event is generated if the watched directory is
+`/Users/paul/data` and a file is moved from
+`/Users/paul/old-data/example.dat` to `/Users/paul/data/example.dat`.
+The event might look like:
 
 ```json
 {
-    "name": "myfile.txt"
+    "name": "example.dat"
     "mask":
         [
-            "IN_MOVED_FROM"
+            "IN_MOVED_TO"
         ],
     "cookie": "123456789abcdef"
 }
 ```
 
-This describes the file `myfile.txt` is moved out of the watched
-directory.
+Similarly, a move-child event is generated if the watched directory is
+`/Users/paul/data` and a directory is moved from
+`/Users/paul/data/2018` to `/Users/paul/old-data/2018`.  Here's how
+that event would look:
 
 ```json
 {
-    "name": "my-directory"
+    "name": "2018"
     "mask":
         [
             "IN_MOVED_TO",
@@ -1313,10 +1561,11 @@ directory.
 }
 ```
 
-This describes the directory `my-directory` is moved into the watched
-directory.
+Finally, two move-child events are generated if the file
+`old-name.txt` in `/Users/paul/data` is renamed to `new-name.txt` and
+kept in the same directory.
 
-The two events:
+Here are those two events:
 
 ```json
 {
@@ -1342,13 +1591,17 @@ and
 }
 ```
 
-are triggered when the file `old-name.txt` is renamed to
-`new-name.txt`.  Note that the `cookie` field is the same for these
-two events.
+The order of these two events is not guaranteed; however the two
+events will have the same `cookie` property value.
 
-A similar set of two events is generated if a directory item is moved
-from one watched directory to another: the `cookie` value identifies
-the two events as coming from the same operation.
+If a client is watching multiple directories then the event's
+subscription property describes which event corresponds to which
+watched directory (or file).  The subscription property is part of
+every event's envelope, so isn't shown here.
+
+If a file is moved from one watch directory to another then the client
+will receive two move-child events with the same cookie property
+value, much like a rename within the same directory.
 
 ###### Non-move child events
 
@@ -1356,7 +1609,9 @@ Non-move events are generated when a subscription's path is a
 directory and something happens with a directory item (a file or
 directory) within that watched directory.
 
-Here are some example non-move child events.
+The following event indicates that a new file within the watched
+directory has been created.  This new file has the name
+`my-new-file.dat`.
 
 ```json
 {
@@ -1368,8 +1623,9 @@ Here are some example non-move child events.
 }
 ```
 
-This event indicates that a new file within the watched directory has
-been created.  This new file has the name `my-new-file.dat`.
+The following event indicates that a new directory within the watched
+directory has been created.  This new directory has the name
+`my-new-dir`.
 
 ```json
 {
@@ -1382,8 +1638,9 @@ been created.  This new file has the name `my-new-file.dat`.
 }
 ```
 
-This event indicates that a new directory within the watched directory
-has been created.  This new directory has the name `my-new-dir`.
+This event indicates that some metadata associated with the file or
+directory called `important.dat` has changed.  A client must fetch
+fresh metadata to learn what has changed.
 
 ```json
 {
@@ -1395,16 +1652,15 @@ has been created.  This new directory has the name `my-new-dir`.
 }
 ```
 
-This event indicates that some metadata associated with the file
-`important.dat`.  A client would need to fetch fresh metadata to learn
-what has changed.
-
 ###### Self events
 
-Self events are events that describe changes to the path in the
-subscription.
+Self events are events that describe changes to the watched path
+itself, rather than the watched directory's child.  If the
+subscription is targeting a file (rather than a directory) then the
+client will receive only self events and management events.
 
-Here are some examples of self events.
+The following event indicates that the subscription's path, which is a
+directory, has moved.
 
 ```json
 {
@@ -1416,8 +1672,8 @@ Here are some examples of self events.
 }
 ```
 
-This event indicates that the subscription's path, which is a
-directory, has been moved.
+The following event indicates that the subscription's path, which is a
+file, has been deleted.
 
 ```json
 {
@@ -1428,21 +1684,17 @@ directory, has been moved.
 }
 ```
 
-This event indicates that the subscription's path, which is a file,
-has been deleted.
-
 Any `IN_DELETE_SELF` event will trigger the automatic removal of the
-subscription.  This, in turn, triggers the delivery of an `IN_IGNORED`
-event (see below).
-
+subscription.
 
 ###### Management events
 
 Management events are those that are to do with the delivery of
-inotify events, rather than the result of activity in the watched
-portion of the namespace.
+inotify events, rather than the direct result of activity in the
+watched portion of the namespace.
 
-Here are some examples of management events.
+The `IN_IGNORED` event indicates that no further events will be sent
+on this subscription.  Here is an example:
 
 ```json
 {
@@ -1453,8 +1705,12 @@ Here are some examples of management events.
 }
 ```
 
-This indicates that no further events will be sent on this
-subscription.
+The `IN_Q_OVERFLOW` event indicates that dCache-internal resources
+were exhausted when attempting to deliver events.  It is possible that
+events were lost as a result of this.  Therefore, the client should
+take steps to resynchronise its state with dCache's namespace.
+
+Here is an example of such an event.
 
 ```json
 {
@@ -1465,28 +1721,33 @@ subscription.
 }
 ```
 
-This indicates that dCache-internal resources were exhausted when
-attempting to deliver events.  The client's state may be inconsistent
-with dCache and should check for inconsistencies and take steps to
-recover from any found.
-
 ### Channel lifecycle
 
-All channel operations happen within the `events/channels`
-(`/api/v1/events/channels`) resource.  A GET request against this
-resource returns a list of channels.  This is initially empty:
+A channel provides the endpoint that an SSE client will use to receive
+events.  A channel is also the entity that receives subscription
+requests.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/channels | jq .
-Enter host password for user 'paul':
+The `events/channels` (`/api/v1/events/channels`) resource represents
+all channels for the current user.
+
+A GET request against this resource returns a JSON List of JSON
+Strings, one for each of the currently available channels.  This list
+is initially empty:
+
+```json
 []
-paul@sprocket:~$
 ```
 
-In order to receive any events, a client must connect to a channel.
-This requires that a client first creates a channel. This is done by
-making a POST request to the `channels` resource:
+In order to receive any events, a client must connect to the channel's
+SSE endpoint.  This requires that a client first creates a
+channel.
+
+A POST request to the `events/channels` (`/api/v1/events/channels`)
+resource creates a new channel.  The new channel is represented by the
+`events/channels/<id>` (`/api/v1/events/channels/<id>`) resource.
+
+The complete URL of this resource is provided in the `Location` HTTP
+response header:
 
 ```console
 paul@sprocket:~$ curl -D- -u paul -X POST \
@@ -1504,154 +1765,142 @@ Content-Length: 0
 paul@sprocket:~$
 ```
 
-The `Location` response header contains the channel endpoint.  In the
-above example, the new channel is
-`https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w`.
+In the above example, the new channel is represented by the resource
+`events/channels/pf_B1dEed98IVKqc9BNa-w`.
 
-A subsequent GET request on `events/channels` will show this channel:
+A subsequent GET request targeting the `events/channels` resource will
+show this channel:
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/channels | jq .
-Enter host password for user 'paul':
+```json
 [
   "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w"
 ]
-paul@sprocket:~$
 ```
 
 A channel may be give an identifier by the client.  Having a client
-identifier is optional and has no impact on how the channel operates.
-A client identifier allows a client to discover a channel it created
+identifier is optional and has no impact on how the channel operates;
+instead, it allows a client to discover a channel it created
 previously.
 
 A channel is assigned an identifier by the client when creating a
-channel.  The client does this by including a JSON object in the POST
-request with the `client-id` property:
+channel by including a JSON object in the POST request with the
+`client-id` property:
 
-```console
-paul@sprocket:~$ curl -u paul -D- -H 'Content-Type: application/json' \
-        -d '{"client-id": "test-1"}' \
-	https://dcache.example.org.de:3880/api/v1/events/channels
-Enter host password for user 'paul':
-HTTP/1.1 201 Created
-Date: Wed, 10 Apr 2019 11:52:10 GMT
-Server: dCache/5.2.0-SNAPSHOT
-Location: https://dcache.example.org:3880/api/v1/events/channels/IQ7U7sA0gpnpu9QGz-Hbxg
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, DELETE, PUT
-Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
-Content-Length: 0
-
-paul@sprocket:~$
+```json
+{
+    "client-id": "test-1"
+}
 ```
 
-In this example, the channel is given the client identifier `test-1`.
+In this example, the newly created channel will be given the client
+identifier `test-1`.
 
-The client identifier may be used to select specific channels when
-querying which channels have already been created for this user.
+The client identifier may then be used to select specific channels
+when querying the existing channels.  This is done by specifying the
+identifier as a query parameter in a GET request targeting the
+`events/channels` resource.
 
-As above, the query without any query parameter shows all the channels
-that are currently available to this user:
+As above, a GET request without any query parameter will show all the
+channels that are currently available to this user:
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/channels | jq .
-Enter host password for user 'paul':
+```json
 [
   "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w",
   "https://dcache.example.org:3880/api/v1/events/channels/IQ7U7sA0gpnpu9QGz-Hbxg"
 ]
-paul@sprocket:~$
 ```
 
-In this example, the user currently has two channels.
+In this example, the user currently has two channels: the channel
+created earlier without a Client ID and the channel created with
+Client ID `test-1`.
 
 By including the client identifier in the `client-id` query parameter,
-the output filters only those channels created with that client
-identifier.
+the response from the GET request selects only those channels created
+with that client identifier.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/channels?client-id=test-1 | jq .
-Enter host password for user 'paul':
+The following is the response to a GET request targeting the
+`events/channels` resource while selecting `test-1` client ID
+(`/api/v1/events/channels?client-id=test-1`)
+
+```json
 [
   "https://dcache.example.org:3880/api/v1/events/channels/IQ7U7sA0gpnpu9QGz-Hbxg"
 ]
-paul@sprocket:~$
 ```
 
-In this example, only one channel was created with the `test-1` client
-identifier.
+In this example, only the channel created with the `test-1` client
+identifier is returned.
 
-If the query parameter is included in the GET request, but without any
-value then the query shows all channels created without any client
-identifier:
+If the query parameter is included in the GET request without any
+value (`/api/v1/events/channels?client-id=`) then the response
+includes only channels created without a client identifier:
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/channels?client-id= | jq .
-Enter host password for user 'paul':
+```json
 [
   "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w"
 ]
-paul@sprocket:~$
 ```
 
 Information about a specific channel may be obtained by a GET request
-against a channel endpoint.
+against that channel's resource: `events/channels/<id>`
+(`/api/v1/events/channels/<id>`).
 
-*Important*: clients also receive events from a channel by making a
-GET request.  A request to receive SSE events must include the request
-header `Accept: text/event-stream`.  Therefore, to avoid ambiguity, a
-query to discover a channel's metadata should include the `Accept:
-application/json` request header.
+*Note*: clients also receive events from a channel by making a GET
+request to a channel's resource.  A request to receive SSE events must
+include the HTTP request header `Accept: text/event-stream`.
+Therefore, to avoid ambiguity, a query to discover a channel's
+metadata should include the `Accept: application/json` HTTP request
+header.
 
-```console
-paul@sprocket:~$ curl -s -u paul -H 'Accept: application/json' \
-    https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w | jq .
-Enter host password for user 'paul':
+The response to a GET request targeting a channel endpoint is a JSON
+object that describes this channel.  The `timeout` property describes
+the amount of time, in seconds, a client may be disconnected from the
+channel before the channel is automatically deleted.
+
+
+The following shows the response to a GET request targeting a specific
+channel:
+
+```json
 {
   "timeout": 300
 }
-paul@sprocket:~$
 ```
 
-This shows the timeout: the amount of time, in seconds, a client is
-disconnected from the channel after which the channel is automatically
-deleted.
+In this example, the channel will be automatically deleted if the
+client remains disconnected for more than five minutes.
 
-This value may be modified using a PATCH request, with a JSON object
-as the request entity.  A `timeout` property provides the new
-duration, in seconds, after which the channel is automatically
-removed.
+The timeout value may be modified by making a PATCH request that
+targets the channel's resource.  This PATCH request must contain a
+JSON object with the `timeout` property provides the updated duration,
+in seconds, after which the channel is automatically removed.
 
-```console
-paul@sprocket:~$ curl -s -u paul -X PATCH -H 'Content-Type: application/json' \
-        -d '{"timeout" : 3600}' \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w | jq .
-Enter host password for user 'paul':
-paul@sprocket:~$
+The following JSON Object is an example of the HTTP entity sent with a
+PATCH request.
+
+```json
+{
+    "timeout": 3600
+}
 ```
 
-In the above example, the timeout for this channel is extended to one
-hour.
+In the above example, the PATCH request attempts to modify this
+channel's timeout to one hour.
 
-After this request is successfully processed, the channel metadata
-shows the updated timeout value:
+After this request is successfully processed, a GET request that
+targets this channel's resource will shows the updated timeout value:
 
-```console
-paul@sprocket:~$ curl -s -u paul -H 'Accept: application/json' \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w | jq .
-Enter host password for user 'paul':
+```json
 {
   "timeout": 3600
 }
-paul@sprocket:~$
 ```
 
+Further down, there are several complete examples showing how to
+receive events.
+
 Once a client is finished receiving events, it can remove a channel
-using a DELETE request:
+by issuing a DELETE request that targets the channel's resource.
 
 ```console
 paul@sprocket:~$ curl -u paul -X DELETE \
@@ -1660,8 +1909,8 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-Subsequent attempts to use this channel will return a 404 status code
-and it will not appear in the channel list.
+Subsequent attempts to use this channel will return a 404 status code,
+as will attempts to query the channel's status or modify the channel.
 
 ```console
 paul@sprocket:~$ curl -D- -u paul -H 'Accept: application/json' \
@@ -1680,41 +1929,67 @@ Content-Length: 51
 paul@sprocket:~$
 ```
 
+The channel will also no longer appear in the response to GET requests
+targeting the `events/channels` resource.
+
 A client is not required to remove the channel it created: dCache will
-automatically delete any left over channel once they have been idle
-for too long.  However, it is recommended clients explicitly delete a
-channel if it is no longer needed.  This is because each dCache user
-is only allowed a limit number of concurrent channels and it may take
-some time before an abandoned channel is automatically deleted.
+automatically delete any left over channel once the client remains
+disconnected for long enough.  However, it is recommended clients
+explicitly delete a channel if the channel is no longer needed.  This
+is because each dCache user is only allowed a limit number of
+concurrent channels and it may take some time before an abandoned
+channel is automatically deleted.
 
 ### Subscriptions
 
-A channel subscribes to events.  A channels subscriptions are handled
-with the `events/channels/<id>/subscriptions` endpoint
-(`/api/v1/events/channels/<id>/subscriptions`).
+A channel must subscribe to receive events.  A channel's subscriptions
+are represented by the `events/channels/<id>/subscriptions`
+(`/api/v1/events/channels/<id>/subscriptions`) resource.
 
-A GET request returns the current list of subscriptions.  This is
-initially empty:
+A GET request targeting the `events/channels/<id>/subscriptions`
+resource will return the current list of subscriptions.
 
-```console
-paul@sprocket:~$ curl -u paul -s \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
-Enter host password for user 'paul':
+As a channel initially has no subscriptions, this list is initially
+empty:
+
+```json
 []
-paul@sprocket:~$
 ```
 
-To subscribe to events, a client issues a POST request to the resource
-below subscriptions with the event type name.  The POST request entity
-is the selector for this subscription.
+The resource `events/channels/<id>/subscriptions/<eventType>`
+(`/api/v1/events/channels/<id>/subscriptions/<eventType>`) represents
+the subscriptions of this channel of event type `<eventType>`.
 
-For example, to create a subscription to the `metronome` event type,
-the client posts to `events/channels/<id>/subscriptions/metronome`
-resource with a JSON object that satisfies the metronome selector JSON
-Schema (`events/eventTypes/metronome/selector`)
+For example, the
+`events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/inotify`
+resource represents the `inotify` subscriptions of the channel
+`events/channels/pf_B1dEed98IVKqc9BNa-w`.
 
-The following is a simple example that creates a subscription to
-`metronome` with the simple selector `{"delay": 2}`:
+To subscribe to events from `<eventType>`, a client issues a POST
+request targeting this resource.  The POST request entity is the
+selector for this subscription, and must be valid according to this
+eventType selector JSON Schema.
+
+For example, to subscribe `metronome` events with the default message
+every two seconds to the `events/channels/pf_B1dEed98IVKqc9BNa-w`
+channel, the client issues a POST request to
+`events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome` with
+the HTTP entity:
+
+```json
+{
+    "delay": 2
+}
+```
+
+This selector is valid for the `metronome` selector schema (see the
+`events/eventTypes/metronome/selector` resource).
+
+If the subscription is accepted then the HTTP response contains the
+subscription resource as the `Location` response header.
+
+The following example shows a subscription to the `metronome` event
+source.
 
 ```console
 paul@sprocket:~$ curl -D- -u paul -X POST -H 'Content-Type: application/json' \
@@ -1734,34 +2009,36 @@ paul@sprocket:~$
 ```
 
 The `Location` response header contains a resource that represents
-this subscription.  This new subscription is also now included in the
-channel's subscription list:
+this subscription.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
-Enter host password for user 'paul':
+This new subscription is now included in the response to a GET request
+targeting this channel's subscription resource `events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions` (`/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions`):
+
+```json
 [
   "https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed"
 ]
-paul@sprocket:~$
 ```
 
-A GET request on the subscription returns the selector used to
-generate the subscription:
+A GET request on the resource representing the subscription returns
+the selector used to generate the subscription.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed | jq .
-Enter host password for user 'paul':
+For example, the resource representing the above subscription is
+`events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed`
+(`/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed`). A
+GET request on this resource returns the selector:
+
+```json
 {
   "delay": 2
 }
-paul@sprocket:~$
 ```
 
-Once a subscription is no longer needed, it may be remove by issuing a
-DELETE request against the subscription resource.
+Once events from this subscription are no longer needed, the
+subscription may be removed by issuing a DELETE request against the
+subscription resource.
+
+The following example shows the above subscription being removed.
 
 ```console
 paul@sprocket:~$ curl -u paul -X DELETE \
@@ -1770,26 +2047,31 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-The channel will stop receiving events for this subscription and the
-subscription is no longer listed:
+Once the subscription is removed, the channel will stop receiving
+events from this subscription.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions | jq .
-Enter host password for user 'paul':
+In addition, this subscription will no longer be included in the
+response from a GET request that targets the channel's subscription
+resource `events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions`
+(`/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions`):
+
+```json
 []
-paul@sprocket:~$
 ```
 
 ### Receiving events: SSE
 
 The SSE protocol is sufficiently simple that it is possible to see
 events using curl.  In this section, we explore enough to demonstrate
-receiving events.  In real environments, you would use an SSE client
-library to receive events.
+receiving events.
+
+*Note* Using curl as an SSE client is meant only to provide an easy
+way to see the effect of subscribing to events.  This is not a
+recommended procedure.
 
 First, to receive SSE events, the client makes a GET request to the
-channel, specifying it will accept the MIME type `text/event-stream`
+resource representing the channel, specifying it will accept the MIME
+type `text/event-stream`
 
 ```console
 paul@sprocket:~$ curl -u paul -H 'Accept: text/event-stream' \
@@ -1810,7 +2092,9 @@ with their delivery.
 
 Let's show a complete example, where a channel is created and curl is
 set to receive any events. While that is happening, a metronome
-subscription is used to deliver a single event:
+subscription is used to deliver a single event.
+
+First, we create a channel.
 
 ```console
 paul@sprocket:~$ curl -u paul -X POST -D- \
@@ -1825,14 +2109,27 @@ Access-Control-Allow-Methods: GET, POST, DELETE, PUT
 Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
 Content-Length: 0
 
+paul@sprocket:~$
+```
+
+The channel resource is `events/channels/MwcXzif2nF3NkHWcjk8sGw`
+(`/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw`).
+
+We now start receiving events by making a GET request to this channel
+resource, accepting a `text/event-stream` response:
+
+```
 paul@sprocket:~$ curl -u paul -H 'Accept: text/event-stream' \
         https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw
 Enter host password for user 'paul':
 ```
 
-Here, the curl command is waiting for any events.  While this is
-happening, in a separate terminal, we create a new metronome
-subscription that should deliver a single event.
+This event-watching curl command will wait indefinitely to receive
+events.
+
+While this is happening, we create a new metronome subscription in a
+separate terminal.  The metronome selector indicates that metronome
+should deliver a single event and then unsubscribe itself.
 
 ```console
 paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
@@ -1860,30 +2157,35 @@ event: SYSTEM
 data: {"type":"SUBSCRIPTION_CLOSED","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822"}
 ```
 
-This output shows three events.  The SSE specification describes the
-exact format, but in summary an empty line separates events.  An Event
-has key-value fields, with certain key words (`event`, `data`, `id`)
-having a specific meaning.
+This output shows three events.  The full description of this output
+is provided by the SSE specification.  In summary, an empty line
+separates events and each event has one or more `:`-separated
+key-value pairs, with certain keywords (`event`, `data`, `id`) having
+a specific meaning.
 
-The `event` field describes the event type that generated this event.
-In this example, two events are `SYSTEM` events and there is one
-`metronome` event.
-
-The `id` field indicates an optional, unique identifier for this
-event.  This is used by the client to discover if there were any event
-while the client was disconnected.
-
-The `data` field contains information about an event.  For dCache
-events, this field is always a JSON object.
+<dl>
+<dt><tt>event</tt></dt>
+<dd>The event type that generated this event.  In this example, two
+events are <tt>SYSTEM</tt> events and one <tt>metronome</tt> event.</dd>
+<dt><tt>id</tt></dt>
+<dd>An optional, unique identifier for this
+event.  This is used by the client when reconnecting to indicate the
+last event it processed.  dCache will deliver any events that occurred
+while the client was disconnected.</dd>
+<dt><tt>data</tt></dt>
+<dd>Information about an event.  For dCache events, this field is
+always a JSON object.</dd>
+</dl>
 
 The two `SYSTEM` events describe the creation of a new subscription
-and the removal of that subscription.
+and the (automatic) removal of that subscription by metronome after
+the final event was sent.
 
 The `metronome` event is the single event generated by the
-subscription before it was automatically removed.
+subscription.
 
-Here is the event's data, reformatted to make it a little easier to
-read:
+Here is the metronome event's data, reformatted to make it a little
+easier to read:
 
 ```json
 {
@@ -1892,20 +2194,25 @@ read:
 }
 ```
 
-This overall JSON format is the same for all events: there is a
-`subscription` property and an `event` properties.
+This overall JSON format is the same for all events: there is always a
+`subscription` property and an `event` property.
 
-The subscription property is the subscription that selected this
-event.  This allows a client to have multiple subscriptions and
-identify which events are from which subscriptions.
+The `subscription` property identifies the subscription that selected
+this event.  This property's value is the resource that represents
+this subscription.  This allows a client to have multiple
+subscriptions and identify which events are from which subscriptions.
 
-The `event` property is the information from the event.  The format is
-described by the JSON Schema for this event type.  For metronome
-events, the event data is a JSON String.
+The `event` property is the specific information about the specific
+event.  The general format for this information is described by the
+event JSON Schema for this event type, as represented by the
+`events/eventTypes/<eventType>/event` resource.  For example,
+`metronome` event JSON is described by the
+`events/eventTypes/metronome/event` resource.
 
 We can also add an inotify subscription and trigger some events.
 While keeping the event-watching curl process running, we add an
-inotify subscription:
+inotify subscription by issuing a POST request to
+`events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify`:
 
 ```console
 paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
@@ -1915,8 +2222,16 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-This inotify selector (`{"path": "/Users/paul"}`) subscribes to all
-inotify events for the directory `/Users/paul`.
+The inotify selector is
+
+```json
+{
+    "path": "/Users/paul"
+}
+```
+
+This selector subscribes the channel to all inotify events for the
+directory `/Users/paul`.
 
 The event-watching curl process will see this new subscription as a
 `SYSTEM` event:
@@ -1929,7 +2244,8 @@ data: {"type":"NEW_SUBSCRIPTION","subscription":"https://dcache.example.org:3880
 Now, when we create a new directory in the `/Users/paul` directory, we
 will see a corresponding event.
 
-In a separate terminal, we create this new directory:
+In a separate terminal, we create this new directory using a REST API
+call.
 
 ```console
 paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
@@ -1948,16 +2264,35 @@ id: 1
 data: {"event":{"name":"new-directory","mask":["IN_CREATE","IN_ISDIR"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
 ```
 
-Here, the event data is:
+Reformatting this event's data, the information is:
 
 ```json
 {
+  "event": {
     "name": "new-directory",
-    "mask": ["IN_CREATE", "IN_ISDIR"]
+    "mask": [
+      "IN_CREATE",
+      "IN_ISDIR"
+    ]
+  },
+  "subscription": "https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"
 }
 ```
 
-If we rename the `new-directory` directory to `my-data` directory.
+The inotify event data for this event:
+
+```json
+{
+  "name": "new-directory",
+  "mask": [
+    "IN_CREATE",
+    "IN_ISDIR"
+  ]
+}
+```
+
+We can then rename this new directory from `new-directory` to
+`my-data`.
 
 ```console
 paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
@@ -1969,7 +2304,7 @@ paul@sprocket:~$
 ```
 
 The following two events are delivered to the event-watching curl
-process.
+process:
 
 ```console
 event: inotify
@@ -1979,6 +2314,32 @@ data: {"event":{"name":"new-directory","cookie":"0r6/JbKH+oZ0D2ETnzGMQA","mask":
 event: inotify
 id: 3
 data: {"event":{"name":"my-data","cookie":"0r6/JbKH+oZ0D2ETnzGMQA","mask":["IN_MOVED_TO","IN_ISDIR"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+```
+
+The inotify event data for these two events is:
+
+```json
+{
+  "name": "new-directory",
+  "cookie": "0r6/JbKH+oZ0D2ETnzGMQA",
+  "mask": [
+    "IN_MOVED_FROM",
+    "IN_ISDIR"
+  ]
+}
+```
+
+and
+
+```json
+{
+  "name": "my-data",
+  "cookie": "0r6/JbKH+oZ0D2ETnzGMQA",
+  "mask": [
+    "IN_MOVED_TO",
+    "IN_ISDIR"
+  ]
+}
 ```
 
 Notice that the cookie value is the same for the `IN_MOVE_FROM` and
@@ -1994,7 +2355,8 @@ Enter host password for user 'paul':
 paul@sprocket:~$
 ```
 
-This generates the following events:
+This generates the following update in the event-watching curl process
+output:
 
 ```console
 event: inotify
@@ -2018,134 +2380,29 @@ id: 8
 data: {"event":{"name":"interesting-results.dat","mask":["IN_ATTRIB"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
 ```
 
+This is five events describing changes within dCache from this upload
+of data.
+
 The initial `IN_CREATE` event describes the creation of this new
-file's namespace entry.  The `IN_OPEN`, `IN_MODIFY` and
-`IN_CLOSE_WRITE` describe how the file's data is written.  The final
-`IN_ATTRIB` event describes how the namespace entry is updated; for
-example, by setting the file's size.
+file's namespace entry.  At this point, the file has no size and
+cannot be read.
 
-## Doors
+The `IN_OPEN` indicates that dCache has started the process of
+accepting data for this file.
 
-Doors are protocol-specific network services that allow clients to
-interact with dCache.  Uploading and downloading data is not supported
-through the REST API; therefore, a client must find a door that
-supports an appropriate protocol if data transfer is needed.
+The `IN_MODIFY` event indicates that the client is sending data for
+this file.  In Linux, the `IN_MODIFY` event is sent whenever data has
+been written.  In dCache, this event is rate limited, so there is a
+minimum time between successive `IN_MODIFY` events.  This is to avoid
+overloading when the system is busy.  Nevertheless there can be many
+`IN_MODIFY` events delivered if the upload takes some time.
 
-The `doors` resource (`/api/v1/doors`) allows a client to discover
-which protocols are supported and what are their endpoints.
+The `IN_CLOSE_WRITE` event indicates that the client has finished
+sending the file's data and the file is ready to be read.
 
-A GET request on this resource yields a complete set of all doors.
+The final `IN_ATTRIB` event describes how the namespace entry is
+updated with new information about the file.  For example, by setting
+the file's size.
 
-```console
-paul@sprocket:~$ curl -s -u paul \
-        https://prometheus.desy.de:3880/api/v1/doors | jq .
-Enter host password for user 'paul':
-[
-  {
-    "protocol": "ftps",
-    "version": "1.0.0",
-    "root": "/",
-    "addresses": [
-      "dcache.example.org"
-    ],
-    "port": 21,
-    "load": 0,
-    "tags": [
-      "glue",
-      "srm",
-      "storage-descriptor"
-    ],
-    "readPaths": [
-      "/"
-    ],
-    "writePaths": [
-      "/"
-    ]
-  },
-  {
-    "protocol": "https",
-    "version": "1.1",
-    "root": "/",
-    "addresses": [
-      "dcache.example.org"
-    ],
-    "port": 2443,
-    "load": 0,
-    "tags": [
-      "glue",
-      "srm",
-      "storage-descriptor"
-    ],
-    "readPaths": [
-      "/"
-    ],
-    "writePaths": [
-      "/"
-    ]
-  },
-  {
-    "protocol": "gsiftp",
-    "version": "1.0.0",
-    "root": "/",
-    "addresses": [
-      "dcache.example.org"
-    ],
-    "port": 2811,
-    "load": 0,
-    "tags": [
-      "glue",
-      "srm",
-      "storage-descriptor"
-    ],
-    "readPaths": [
-      "/"
-    ],
-    "writePaths": [
-      "/"
-    ]
-  },
-  {
-    "protocol": "https",
-    "version": "1.1",
-    "root": "/",
-    "addresses": [
-      "dcache.example.org"
-    ],
-    "port": 443,
-    "load": 0,
-    "tags": [
-      "cdmi",
-      "dcache-view"
-    ],
-    "readPaths": [
-      "/"
-    ],
-    "writePaths": [
-      "/"
-    ]
-  }
-]
-paul@sprocket:~$
-```
-
-In this example, three doors are listed: an FTPS door listening on
-port 21, an gsiftp (GridFTP) endpoint listening on port 2811, and a
-WebDAV endpoint listening on port 443.
-
-The `root` indicates the door's root path.  If the value is not `/`
-then this property's value is the directory a client sees as the root
-directory.
-
-The `addresses` indicates on which address(es) the door is listening.
-
-The `port` indicates the port number.
-
-The `tags` are arbitrary metadata describing aspects of the door; for
-example, describing for which kind of use the door is intended.
-
-The `load` is a number between 0 and 1, indicating how busy the door
-is currently.
-
-The `readPaths` and `writePaths` describe generic limitations the door
-will impose; for example, only allowing write activity on a subset of
-the namespace.
+The order of the `IN_CLOSE_WRITE` and `IN_ATTRIB` events is not
+guaranteed.
