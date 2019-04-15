@@ -287,6 +287,22 @@ final class TestData {
                                     "resilient_pool-11", "resilient_pool-12"},
     };
 
+    static final String[][] NON_TAGGED_EXCESS_RESILIENT_LOCATIONS = {
+                    {},
+                    {"resilient_pool-6", "resilient_pool-8", "resilient_pool-10"},
+                    {},
+                    {},
+                    {},
+    };
+
+    static final String[][] MISSING_RESILIENT_LOCATIONS = {
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+    };
+
     private TestData() {
     }
 }

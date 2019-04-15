@@ -74,10 +74,12 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.ProportionalPoolSelectionStrategy;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.resilience.data.FileOperationMap;
+import org.dcache.resilience.data.PoolFilter;
 import org.dcache.resilience.data.PoolInfoDiff;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperationMap;
@@ -207,6 +209,12 @@ public abstract class TestBase implements Cancellable {
                         (p) -> p.contains("resilient")).collect(
                         Collectors.toList()));
         return attributes;
+    }
+
+    protected FileAttributes aFileWithThreeReplicasInsteadOfTwo()
+                    throws CacheException {
+        return testNamespaceAccess.getRequiredAttributes(
+                        TestData.REPLICA_ONLINE[1]);
     }
 
     protected FileAttributes aNonResilientFile() throws CacheException {
@@ -403,8 +411,16 @@ public abstract class TestBase implements Cancellable {
         testSelectionUnit.load();
     }
 
+    protected void loadFilesWillAllLocationsMissing() {
+        testNamespaceAccess.loadMissingResilientLocations();
+    }
+
     protected void loadFilesWithExcessLocations() {
         testNamespaceAccess.loadExcessResilient();
+    }
+
+    protected void loadFilesWithNonTaggedExcessLocations() {
+        testNamespaceAccess.loadNonTaggedExcessResilient();
     }
 
     protected void loadFilesWithRequiredLocations() {
@@ -447,6 +463,12 @@ public abstract class TestBase implements Cancellable {
                                                          new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
             poolInfoMap.updatePoolStatus(update);
         }
+    }
+
+    protected void setExcluded(String pool) {
+        PoolFilter filter = new PoolFilter();
+        filter.setPools(pool);
+        poolOperationMap.setIncluded(filter, false);
     }
 
     protected void setLongExecutionMode(TestSynchronousExecutor.Mode mode) {

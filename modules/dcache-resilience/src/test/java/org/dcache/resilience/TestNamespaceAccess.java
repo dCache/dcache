@@ -256,6 +256,31 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
         }
     }
 
+    void loadNonTaggedExcessResilient() {
+        for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
+            loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
+                         RetentionPolicy.REPLICA, TestData.HSM,
+                         TestData.STORAGE_CLASSES[i],
+                         TestData.NON_TAGGED_EXCESS_RESILIENT_LOCATIONS[i]);
+        }
+    }
+
+    void loadMissingResilientLocations() {
+        for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
+            loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
+                         RetentionPolicy.REPLICA, TestData.HSM,
+                         TestData.STORAGE_CLASSES[i],
+                         TestData.MISSING_RESILIENT_LOCATIONS[i]);
+        }
+
+        for (int i = 0; i < TestData.CUSTODIAL_ONLINE.length; ++i) {
+            loadRequired(TestData.CUSTODIAL_ONLINE[i], AccessLatency.ONLINE,
+                         RetentionPolicy.CUSTODIAL, TestData.HSM,
+                         TestData.STORAGE_CLASSES[i],
+                         TestData.MISSING_RESILIENT_LOCATIONS[i]);
+        }
+    }
+
     void loadRequired(PnfsId pnfsId, AccessLatency accessLatency,
                       RetentionPolicy retentionPolicy, String hsm,
                       String storageClass, String... locations) {

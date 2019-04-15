@@ -99,8 +99,8 @@ public final class FileOperationHandlerTest extends TestBase
     String               storageUnit;
     Integer              originalTarget;
     Integer              originalSource;
-
-    String  failurePool;
+    String               selected;
+    String               failurePool;
 
     boolean rmMessageFailure = false;
     boolean exists           = true;
@@ -185,6 +185,174 @@ public final class FileOperationHandlerTest extends TestBase
         whenVerifyIsRun();
         whenScanIsRun();
         assertNull(fileOperationMap.getOperation(update.pnfsId));
+    }
+
+    @Test
+    public void shouldNotRemoveReplicaWhenCountIsLessThanNamespaceLocations()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(true);
+        givenAFileUpdateForAFileWithThreeReplicasInsteadOfTwo();
+        whenHandleUpdateIsCalled();
+        givenReplicaDoesNotExistOn("resilient_pool-10");
+        whenVerifyIsRun();
+        assertEquals("VOID", verifyType);
+    }
+
+    @Test
+    public void shouldNotProcessNonStickyReplicasOnFileUpdate()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(true);
+        givenAFileUpdateForANewFileOnAPoolWithNoTags();
+        givenReplicaIsNotSystemStickyOn(update.pool);
+        whenHandleUpdateIsCalled();
+        /*
+         * i.e., the operation does not get queued.
+         */
+        assertTrue(noOperationHasBeenAdded());
+    }
+
+    @Test
+    public void shouldNotCountNonStickyReplicasOnFileUpdate()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(true);
+        givenAFileUpdateForAFileWithThreeReplicasInsteadOfTwo();
+        givenReplicaIsNotSystemStickyOn("resilient_pool-10");
+        whenHandleUpdateIsCalled();
+        /*
+         * i.e., the operation does not get queued.
+         */
+        assertTrue(noOperationHasBeenAdded());
+    }
+
+    @Test
+    public void shouldNotCountNonStickyReplicasOnFileOp()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(true);
+        givenAFileUpdateForAFileWithThreeReplicasInsteadOfTwo();
+        whenHandleUpdateIsCalled();
+        givenReplicaIsNotSystemStickyOn("resilient_pool-10");
+        /*
+         * i.e., the operation runs, but NOOPs.
+         */
+        whenVerifyIsRun();
+        assertEquals("VOID", verifyType);
+    }
+
+    @Test
+    public void shouldNotRemoveReplicaWhenItIsPrecious()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(true);
+        givenAFileUpdateForAFileWithThreeReplicasInsteadOfTwo();
+        givenReplicaIsPreciousOn("resilient_pool-10");
+        whenHandleUpdateIsCalled();
+        whenVerifyIsRun();
+        whenRemoveTargetIsSelected();
+        assertNotEquals("resilient_pool-10", selected);
+    }
+
+    @Test
+    public void shouldPickBrokenReplica()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(true);
+        givenAFileUpdateForAFileWithThreeReplicasInsteadOfTwo();
+        givenReplicaIsBrokenOn("resilient_pool-10");
+        whenHandleUpdateIsCalled();
+        whenVerifyIsRun();
+        whenRemoveTargetIsSelected();
+        assertEquals("resilient_pool-10", selected);
+    }
+
+    @Test
+    public void shouldNotRunWhenARequiredReplicaIsOnAnExcludedPool()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        givenAFileUpdateForAFileWithOneLocationExcluded();
+        whenHandleUpdateIsCalled();
+        assertTrue(noOperationHasBeenAdded());
+    }
+
+    @Test
+    public void shouldReturnVoidWhenExcessCountIsFromExcludedPool()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        givenAFileUpdateForAFileWithOneExcessLocationAndOneExcluded();
+        whenHandleUpdateIsCalled();
+        whenVerifyIsRun();
+        assertEquals("VOID", verifyType);
+    }
+
+    @Test
+    public void shouldReturnVoidWhenDefectiveCountCompensatedByExcludedPools()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        givenAFileUpdateForAFileWithOneExcessLocationAndTwoExcluded();
+        whenHandleUpdateIsCalled();
+        whenVerifyIsRun();
+        assertEquals("VOID", verifyType);
+    }
+
+    @Test
+    public void shouldReturnSetStickyWhenDefectiveCountCompensatedByNonStickyReplica()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        givenAFileUpdateForPoolDownOnThreeLocations();
+        givenReplicaIsNotSystemStickyOn("resilient_pool-10");
+        givenSourcePoolIsDown();
+        whenHandleUpdateIsCalled();
+        whenVerifyIsRun();
+        assertEquals("SET_STICKY", verifyType);
+    }
+
+    @Test
+    public void shouldReturnWaitForStageWhenNoReplicasAreOnlineAndFileIsCustodial()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        givenAFileUpdateForACustodialOnlineFile();
+        givenAllPoolsAreDown();
+        whenHandleUpdateIsCalled();
+        whenVerifyIsRun();
+        assertEquals("WAIT_FOR_STAGE", verifyType);
+    }
+
+    @Test
+    public void shouldReturnWaitForStageWhenNoReplicasExistAndFileIsCustodial()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        /*
+         *  Files missing locations on update are treated differently from
+         *  those discovered during scan iteration.
+         *
+         *  For a cache location message, this would probably indicated
+         *  a deletion.
+         *
+         *  The condition would not be discoverable in the update routine
+         *  from a scan because the pool being scanned would not contain
+         *  the file (i.e., at least in the namespace's location table).
+         *
+         *  Thus we need to induce the situation artificially, by first
+         *  emulating the situation where the source pool is offline.
+         */
+        givenAFileUpdateForACustodialOnlineFile();
+        givenSourcePoolIsDown();
+        whenHandleUpdateIsCalled();
+        givenAFileUpdateForACustodialOnlineFileMissingAllLocations();
+        whenVerifyIsRun();
+        assertEquals("WAIT_FOR_STAGE", verifyType);
+    }
+
+    @Test
+    public void shouldFailForStageWhenNoReplicasExistAndFileIsReplica()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        /*
+         *  Artificially induce operation queuing (as above).
+         */
+        givenAFileUpdateForAFileWithRequiredLocations();;
+        givenSourcePoolIsDown();
+        whenHandleUpdateIsCalled();
+        givenAFileUpdateForAReplicaOnlineFileMissingAllLocations();
+        whenVerifyIsRun();
+        assertTrue(theOperationFailed());
     }
 
     @Test
@@ -402,6 +570,24 @@ public final class FileOperationHandlerTest extends TestBase
                   MessageType.CLEAR_CACHE_LOCATION);
     }
 
+    private void givenAFileUpdateForACustodialOnlineFile()
+                    throws CacheException {
+        loadFilesWithRequiredLocations();
+        setUpdate(aCustodialOnlineFile(), MessageType.POOL_STATUS_DOWN);
+    }
+
+    private void givenAFileUpdateForACustodialOnlineFileMissingAllLocations()
+                    throws CacheException {
+        loadFilesWillAllLocationsMissing();
+        setUpdate(aCustodialOnlineFile(), MessageType.POOL_STATUS_DOWN);
+    }
+
+    private void givenAFileUpdateForAReplicaOnlineFileMissingAllLocations()
+                    throws CacheException {
+        loadFilesWillAllLocationsMissing();
+        setUpdate(aReplicaOnlineFileWithNoTags(), MessageType.POOL_STATUS_DOWN);
+    }
+
     private void givenAFileUpdateForAFileDeletedFromNamespace()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
@@ -431,11 +617,47 @@ public final class FileOperationHandlerTest extends TestBase
         givenSourcePoolIsDown();
     }
 
+    private void givenAFileUpdateForAFileWithOneLocationExcluded()
+                    throws CacheException {
+        loadFilesWithRequiredLocations();
+        setUpdate(aReplicaOnlineFileWithRackTag(), MessageType.POOL_STATUS_UP);
+        setExcluded("resilient_pool-10");
+    }
+
+    private void givenAFileUpdateForAFileWithOneExcessLocationAndOneExcluded()
+                    throws CacheException {
+        loadFilesWithExcessLocations();
+        setUpdate(aReplicaOnlineFileWithRackTag(), MessageType.POOL_STATUS_UP);
+        setExcluded("resilient_pool-10");
+    }
+
+    private void givenAFileUpdateForAFileWithOneExcessLocationAndTwoExcluded()
+                    throws CacheException {
+        loadFilesWithExcessLocations();
+        setUpdate(aReplicaOnlineFileWithRackTag(), MessageType.POOL_STATUS_DOWN);
+        setExcluded("resilient_pool-10");
+        setExcluded("resilient_pool-14");
+    }
+
     private void givenAFileUpdateForAFileWithRequiredLocations()
                     throws CacheException {
         loadFilesWithRequiredLocations();
         setUpdate(aReplicaOnlineFileWithNoTags(),
                   MessageType.POOL_STATUS_UP);
+    }
+
+    private void givenAFileUpdateForAFileWithThreeReplicasInsteadOfTwo()
+                    throws CacheException {
+        loadFilesWithNonTaggedExcessLocations();
+        setUpdate(aFileWithThreeReplicasInsteadOfTwo(),
+                  MessageType.POOL_STATUS_UP);
+    }
+
+    private void givenAFileUpdateForPoolDownOnThreeLocations()
+                    throws CacheException {
+        loadFilesWithNonTaggedExcessLocations();
+        setUpdate(aFileWithThreeReplicasInsteadOfTwo(),
+                  MessageType.POOL_STATUS_DOWN);
     }
 
     private void givenAFileUpdateForANewFileOnAPoolWithHostAndRackTags()
@@ -470,14 +692,7 @@ public final class FileOperationHandlerTest extends TestBase
     private void givenAFileUpdateFromAPoolScan() throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
-                           MessageType.POOL_STATUS_DOWN, false);
-    }
-
-    private void givenAFileUpdateFromAPoolScanForPoolAddedToGroup()
-                    throws CacheException {
-        loadNewFilesOnPoolsWithHostAndRackTags();
-        setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
-                           MessageType.POOL_STATUS_UP, true);
+                           MessageType.POOL_STATUS_DOWN);
     }
 
     private void givenANewLocationForFile() throws CacheException {
@@ -522,8 +737,32 @@ public final class FileOperationHandlerTest extends TestBase
         deleteFileFromNamespace(attributes.getPnfsId());
     }
 
+    private void givenReplicaDoesNotExistOn(String pool) {
+        failurePool = pool;
+        exists = false;
+    }
+
+    private void givenReplicaIsBrokenOn(String pool) {
+        failurePool = pool;
+        broken = true;
+    }
+
+    private void givenReplicaIsPreciousOn(String pool) {
+        failurePool = pool;
+        precious = true;
+    }
+
+    private void givenReplicaIsNotSystemStickyOn(String pool) {
+        failurePool = pool;
+        sticky = false;
+    }
+
     private void givenSourcePoolIsDown() {
         shutPoolDown(update.pool);
+    }
+
+    private void givenAllPoolsAreDown() {
+        attributes.getLocations().stream().forEach(this::shutPoolDown);
     }
 
     private void givenUpdateHasBeenAddedToMapWithCountOf(int count)
@@ -586,8 +825,7 @@ public final class FileOperationHandlerTest extends TestBase
         }
     }
 
-    private void setUpdateWithGroup(FileAttributes attributes, MessageType type,
-                                    boolean newPool) {
+    private void setUpdateWithGroup(FileAttributes attributes, MessageType type) {
         this.attributes = attributes;
         PnfsId pnfsId = attributes.getPnfsId();
         Iterator<String> iterator = attributes.getLocations().iterator();
@@ -620,7 +858,8 @@ public final class FileOperationHandlerTest extends TestBase
     private boolean theOperationCountIs(int count) {
         FileOperation operation = fileOperationMap.getOperation(
                         attributes.getPnfsId());
-        return operation != null && operation.getOpCount() == count;
+        return count == 0 ? operation == null :
+                        operation != null && operation.getOpCount() == count;
     }
 
     private boolean theOperationFailed() {
@@ -682,7 +921,12 @@ public final class FileOperationHandlerTest extends TestBase
         fileOperationMap.scan();
     }
 
-    private void whenScanIsRun() throws IOException {
+    private void whenRemoveTargetIsSelected() {
+        selected = poolInfoMap.getPool(fileOperationMap.getOperation(update.pnfsId)
+                                                       .getTarget());
+    }
+
+    private void whenScanIsRun() {
         fileOperationMap.scan();
         /*
          *  Also force a save.
