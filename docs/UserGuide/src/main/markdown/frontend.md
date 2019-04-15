@@ -131,23 +131,22 @@ the following section, we describe how to use curl with frontend.
 Although a simple `curl` invocation will make a GET request and show
 the response, the format may not be layed out for easy reading:
 
-```console
-paul@sprocket:~$ curl https://dcache.example.org:3880/api/v1/user
-{
-  "status" : "ANONYMOUS"
-}paul@sprocket:~$
+```console-user
+curl https://dcache.example.org:3880/api/v1/user
+|{
+|  "status" : "ANONYMOUS"
+|}
 ```
 
 Therefore, it is often useful to reformat the JSON output.  The
 following example shows the JSON response reformatted using the `jq`
 command:
 
-```console
-paul@sprocket:~$ curl -s https://dcache.example.org:3880/api/v1/user | jq .
-{
-  "status" : "ANONYMOUS"
-}
-paul@sprocket:~$
+```console-user
+curl -s https://dcache.example.org:3880/api/v1/user | jq .
+|{
+|  "status" : "ANONYMOUS"
+|}
 ```
 
 The `| jq .` uses the `jq` command to format the JSON response.  Since
@@ -172,13 +171,12 @@ For example, to send a POST request with the following JSON input:
 
 The curl command might look like:
 
-```console
-paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
-        -d '{"action":"mkdir", "name":"new-dir"}' \
-        https://dcache.example.org:3880/api/v1/namespace/Users/paul
-Enter host password for user 'paul':
-{"status":"success"}
-paul@sprocket:~$
+```console-user
+curl -u paul -X POST -H 'Content-Type: application/json' \
+|        -d '{"action":"mkdir", "name":"new-dir"}' \
+|        https://dcache.example.org:3880/api/v1/namespace/Users/paul
+|Enter host password for user 'paul':
+|{"status":"success"}
 ```
 
 In several cases, a POST request will create a new resource with a
@@ -188,20 +186,19 @@ URL of this new resource in the `Location` HTTP response header.
 The `-D-` curl option returns all response headers, allowing you to
 see the `Location` response header:
 
-```console
-paul@sprocket:~$ curl -D- -u paul -X POST \
-        https://dcache.example.org:3880/api/v1/events/channels
-Enter host password for user 'paul':
-HTTP/1.1 201 Created
-Date: Tue, 09 Apr 2019 20:50:07 GMT
-Server: dCache/5.1.0-SNAPSHOT
-Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, DELETE, PUT
-Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
-Content-Length: 0
-
-paul@sprocket:~$
+```console-user
+curl -D- -u paul -X POST \
+|        https://dcache.example.org:3880/api/v1/events/channels
+|Enter host password for user 'paul':
+|HTTP/1.1 201 Created
+|Date: Tue, 09 Apr 2019 20:50:07 GMT
+|Server: dCache/5.1.0-SNAPSHOT
+|Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+|Access-Control-Allow-Origin: *
+|Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+|Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+|Content-Length: 0
+|
 ```
 
 In this example, the new resource has the URL
@@ -1749,20 +1746,19 @@ resource creates a new channel.  The new channel is represented by the
 The complete URL of this resource is provided in the `Location` HTTP
 response header:
 
-```console
-paul@sprocket:~$ curl -D- -u paul -X POST \
-        https://dcache.example.org:3880/api/v1/events/channels
-Enter host password for user 'paul':
-HTTP/1.1 201 Created
-Date: Tue, 09 Apr 2019 20:50:07 GMT
-Server: dCache/5.1.0-SNAPSHOT
-Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, DELETE, PUT
-Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
-Content-Length: 0
-
-paul@sprocket:~$
+```console-user
+curl -D- -u paul -X POST \
+|        https://dcache.example.org:3880/api/v1/events/channels
+|Enter host password for user 'paul':
+|HTTP/1.1 201 Created
+|Date: Tue, 09 Apr 2019 20:50:07 GMT
+|Server: dCache/5.1.0-SNAPSHOT
+|Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+|Access-Control-Allow-Origin: *
+|Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+|Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+|Content-Length: 0
+|
 ```
 
 In the above example, the new channel is represented by the resource
@@ -1902,31 +1898,29 @@ receive events.
 Once a client is finished receiving events, it can remove a channel
 by issuing a DELETE request that targets the channel's resource.
 
-```console
-paul@sprocket:~$ curl -u paul -X DELETE \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
-Enter host password for user 'paul':
-paul@sprocket:~$
+```console-user
+curl -u paul -X DELETE \
+|        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+|Enter host password for user 'paul':
 ```
 
 Subsequent attempts to use this channel will return a 404 status code,
 as will attempts to query the channel's status or modify the channel.
 
-```console
-paul@sprocket:~$ curl -D- -u paul -H 'Accept: application/json' \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
-Enter host password for user 'paul':
-HTTP/1.1 404 Not Found
-Date: Tue, 09 Apr 2019 21:11:57 GMT
-Server: dCache/5.1.0-SNAPSHOT
-Content-Type: application/json
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, DELETE, PUT
-Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
-Content-Length: 51
-
-{"errors":[{"message":"Not Found","status":"404"}]}
-paul@sprocket:~$
+```console-user
+curl -D- -u paul -H 'Accept: application/json' \
+|        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+|Enter host password for user 'paul':
+|HTTP/1.1 404 Not Found
+|Date: Tue, 09 Apr 2019 21:11:57 GMT
+|Server: dCache/5.1.0-SNAPSHOT
+|Content-Type: application/json
+|Access-Control-Allow-Origin: *
+|Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+|Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+|Content-Length: 51
+|
+|{"errors":[{"message":"Not Found","status":"404"}]}
 ```
 
 The channel will also no longer appear in the response to GET requests
@@ -1991,21 +1985,20 @@ subscription resource as the `Location` response header.
 The following example shows a subscription to the `metronome` event
 source.
 
-```console
-paul@sprocket:~$ curl -D- -u paul -X POST -H 'Content-Type: application/json' \
-        -d '{"delay":2}' \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome
-Enter host password for user 'paul':
-HTTP/1.1 201 Created
-Date: Tue, 09 Apr 2019 21:29:30 GMT
-Server: dCache/5.1.0-SNAPSHOT
-Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, DELETE, PUT
-Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
-Content-Length: 0
-
-paul@sprocket:~$
+```console-user
+curl -D- -u paul -X POST -H 'Content-Type: application/json' \
+|        -d '{"delay":2}' \
+|        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome
+|Enter host password for user 'paul':
+|HTTP/1.1 201 Created
+|Date: Tue, 09 Apr 2019 21:29:30 GMT
+|Server: dCache/5.1.0-SNAPSHOT
+|Location: https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed
+|Access-Control-Allow-Origin: *
+|Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+|Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+|Content-Length: 0
+|
 ```
 
 The `Location` response header contains a resource that represents
@@ -2040,11 +2033,10 @@ subscription resource.
 
 The following example shows the above subscription being removed.
 
-```console
-paul@sprocket:~$ curl -u paul -X DELETE \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed
-Enter host password for user 'paul':
-paul@sprocket:~$
+```console-user
+curl -u paul -X DELETE \
+|        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome/53db4a4a-d04b-47ec-acee-b475772586ed
+|Enter host password for user 'paul':
 ```
 
 Once the subscription is removed, the channel will stop receiving
@@ -2073,12 +2065,11 @@ First, to receive SSE events, the client makes a GET request to the
 resource representing the channel, specifying it will accept the MIME
 type `text/event-stream`
 
-```console
-paul@sprocket:~$ curl -u paul -H 'Accept: text/event-stream' \
-        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
-Enter host password for user 'paul':
-^C
-paul@sprocket:~$
+```console-user
+curl -u paul -H 'Accept: text/event-stream' \
+|        https://dcache.example.org:3880/api/v1/events/channels/pf_B1dEed98IVKqc9BNa-w
+|Enter host password for user 'paul':
+|^C
 ```
 
 The curl command does not return straight away, but blocks.  Any event
@@ -2096,20 +2087,19 @@ subscription is used to deliver a single event.
 
 First, we create a channel.
 
-```console
-paul@sprocket:~$ curl -u paul -X POST -D- \
-        https://dcache.example.org:3880/api/v1/events/channels
-Enter host password for user 'paul':
-HTTP/1.1 201 Created
-Date: Wed, 10 Apr 2019 10:18:30 GMT
-Server: dCache/5.2.0-SNAPSHOT
-Location: https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, DELETE, PUT
-Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
-Content-Length: 0
-
-paul@sprocket:~$
+```console-user
+curl -u paul -X POST -D- \
+|        https://dcache.example.org:3880/api/v1/events/channels
+|Enter host password for user 'paul':
+|HTTP/1.1 201 Created
+|Date: Wed, 10 Apr 2019 10:18:30 GMT
+|Server: dCache/5.2.0-SNAPSHOT
+|Location: https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw
+|Access-Control-Allow-Origin: *
+|Access-Control-Allow-Methods: GET, POST, DELETE, PUT
+|Access-Control-Allow-Headers: Content-Type, Authorization, Suppress-WWW-Authenticate
+|Content-Length: 0
+|
 ```
 
 The channel resource is `events/channels/MwcXzif2nF3NkHWcjk8sGw`
@@ -2118,10 +2108,10 @@ The channel resource is `events/channels/MwcXzif2nF3NkHWcjk8sGw`
 We now start receiving events by making a GET request to this channel
 resource, accepting a `text/event-stream` response:
 
-```
-paul@sprocket:~$ curl -u paul -H 'Accept: text/event-stream' \
-        https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw
-Enter host password for user 'paul':
+```console-user
+curl -u paul -H 'Accept: text/event-stream' \
+|        https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw
+|Enter host password for user 'paul':
 ```
 
 This event-watching curl command will wait indefinitely to receive
@@ -2131,30 +2121,29 @@ While this is happening, we create a new metronome subscription in a
 separate terminal.  The metronome selector indicates that metronome
 should deliver a single event and then unsubscribe itself.
 
-```console
-paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
-        -d '{"delay":1,"count":1}' \
-	https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome
-Enter host password for user 'paul':
-paul@sprocket:~$
+```console-user
+curl -u paul -X POST -H 'Content-Type: application/json' \
+|        -d '{"delay":1,"count":1}' \
+|	https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome
+|Enter host password for user 'paul':
 ```
 
 When this has been accepted, the output from the (already running)
 event-watching curl command changes:
 
-```console
-paul@sprocket:~$ curl -u paul -H 'Accept: text/event-stream' \
-        https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw
-Enter host password for user 'paul':
-event: SYSTEM
-data: {"type":"NEW_SUBSCRIPTION","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822"}
-
-event: metronome
-id: 0
-data: {"event":"tick","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822"}
-
-event: SYSTEM
-data: {"type":"SUBSCRIPTION_CLOSED","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822"}
+```console-user
+curl -u paul -H 'Accept: text/event-stream' \
+|        https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw
+|Enter host password for user 'paul':
+|event: SYSTEM
+|data: {"type":"NEW_SUBSCRIPTION","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822"}
+|
+|event: metronome
+|id: 0
+|data: {"event":"tick","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822"}
+|
+|event: SYSTEM
+|data: {"type":"SUBSCRIPTION_CLOSED","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822"}
 ```
 
 This output shows three events.  The full description of this output
@@ -2214,12 +2203,11 @@ While keeping the event-watching curl process running, we add an
 inotify subscription by issuing a POST request to
 `events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify`:
 
-```console
-paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
-        -d '{"path": "/Users/paul"}' \
-	https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify
-Enter host password for user 'paul':
-paul@sprocket:~$
+```console-user
+curl -u paul -X POST -H 'Content-Type: application/json' \
+|        -d '{"path": "/Users/paul"}' \
+|	https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify
+|Enter host password for user 'paul':
 ```
 
 The inotify selector is
@@ -2236,9 +2224,9 @@ directory `/Users/paul`.
 The event-watching curl process will see this new subscription as a
 `SYSTEM` event:
 
-```console
-event: SYSTEM
-data: {"type":"NEW_SUBSCRIPTION","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+```console-user
+|event: SYSTEM
+|data: {"type":"NEW_SUBSCRIPTION","subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
 ```
 
 Now, when we create a new directory in the `/Users/paul` directory, we
@@ -2247,21 +2235,20 @@ will see a corresponding event.
 In a separate terminal, we create this new directory using a REST API
 call.
 
-```console
-paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
-        -d '{"action": "mkdir", "name": "new-directory"}' \
-	https://dcache.example.org:3880/api/v1/namespace/Users/paul
-Enter host password for user 'paul':
-{"status":"success"}
-paul@sprocket:~$
+```console-user
+curl -u paul -X POST -H 'Content-Type: application/json' \
+|        -d '{"action": "mkdir", "name": "new-directory"}' \
+|	https://dcache.example.org:3880/api/v1/namespace/Users/paul
+|Enter host password for user 'paul':
+|{"status":"success"}
 ```
 
 In the event-watching curl process, we are notified of this new directory
 
-```console
-event: inotify
-id: 1
-data: {"event":{"name":"new-directory","mask":["IN_CREATE","IN_ISDIR"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+```console-user
+|event: inotify
+|id: 1
+|data: {"event":{"name":"new-directory","mask":["IN_CREATE","IN_ISDIR"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
 ```
 
 Reformatting this event's data, the information is:
@@ -2294,26 +2281,25 @@ The inotify event data for this event:
 We can then rename this new directory from `new-directory` to
 `my-data`.
 
-```console
-paul@sprocket:~$ curl -u paul -X POST -H 'Content-Type: application/json' \
-        -d '{"action": "mv", "destination": "/Users/paul/my-data"}' \
-	https://dcache.example.org:3880/api/v1/namespace/Users/paul/new-directory
-Enter host password for user 'paul':
-{"status":"success"}
-paul@sprocket:~$
+```console-user
+curl -u paul -X POST -H 'Content-Type: application/json' \
+|        -d '{"action": "mv", "destination": "/Users/paul/my-data"}' \
+|	https://dcache.example.org:3880/api/v1/namespace/Users/paul/new-directory
+|Enter host password for user 'paul':
+|{"status":"success"}
 ```
 
 The following two events are delivered to the event-watching curl
 process:
 
-```console
-event: inotify
-id: 2
-data: {"event":{"name":"new-directory","cookie":"0r6/JbKH+oZ0D2ETnzGMQA","mask":["IN_MOVED_FROM","IN_ISDIR"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
-
-event: inotify
-id: 3
-data: {"event":{"name":"my-data","cookie":"0r6/JbKH+oZ0D2ETnzGMQA","mask":["IN_MOVED_TO","IN_ISDIR"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+```console-user
+|event: inotify
+|id: 2
+|data: {"event":{"name":"new-directory","cookie":"0r6/JbKH+oZ0D2ETnzGMQA","mask":["IN_MOVED_FROM","IN_ISDIR"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+|
+|event: inotify
+|id: 3
+|data: {"event":{"name":"my-data","cookie":"0r6/JbKH+oZ0D2ETnzGMQA","mask":["IN_MOVED_TO","IN_ISDIR"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
 ```
 
 The inotify event data for these two events is:
@@ -2349,35 +2335,35 @@ to realise that these two events are from the same rename operation.
 As a final example, we will upload the file `interesting-results.dat`
 using the WebDAV door:
 
-```console
-paul@sprocket:~$ curl -u paul -LT interesting-results.dat https://dcache.example.org/Users/paul/
-Enter host password for user 'paul':
-paul@sprocket:~$
+```console-user
+curl -u paul -LT interesting-results.dat \
+        https://dcache.example.org/Users/paul/
+|Enter host password for user 'paul':
 ```
 
 This generates the following update in the event-watching curl process
 output:
 
-```console
-event: inotify
-id: 4
-data: {"event":{"name":"interesting-results.dat","mask":["IN_CREATE"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
-
-event: inotify
-id: 5
-data: {"event":{"name":"interesting-results.dat","mask":["IN_OPEN"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
-
-event: inotify
-id: 6
-data: {"event":{"name":"interesting-results.dat","mask":["IN_MODIFY"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
-
-event: inotify
-id: 7
-data: {"event":{"name":"interesting-results.dat","mask":["IN_CLOSE_WRITE"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
-
-event: inotify
-id: 8
-data: {"event":{"name":"interesting-results.dat","mask":["IN_ATTRIB"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+```console-user
+|event: inotify
+|id: 4
+|data: {"event":{"name":"interesting-results.dat","mask":["IN_CREATE"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+|
+|event: inotify
+|id: 5
+|data: {"event":{"name":"interesting-results.dat","mask":["IN_OPEN"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+|
+|event: inotify
+|id: 6
+|data: {"event":{"name":"interesting-results.dat","mask":["IN_MODIFY"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+|
+|event: inotify
+|id: 7
+|data: {"event":{"name":"interesting-results.dat","mask":["IN_CLOSE_WRITE"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
+|
+|event: inotify
+|id: 8
+|data: {"event":{"name":"interesting-results.dat","mask":["IN_ATTRIB"]},"subscription":"https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify/AACFqb-WHkhFAYm6_xQY1Jf3"}
 ```
 
 This is five events describing changes within dCache from this upload
