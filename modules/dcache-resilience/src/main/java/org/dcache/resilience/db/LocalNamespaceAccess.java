@@ -247,7 +247,6 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         ResultSet resultSet = null;
         String pool = scan.getPool();
         MessageType type = scan.getType();
-        boolean action = scan.isNewPool();
         Integer group = scan.getGroup();
         Integer storageUnit = scan.getStorageUnit();
         boolean full = scan.isForced();
@@ -264,8 +263,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
 
             while (resultSet.next() && !scan.isCancelled()) {
                 PnfsId pnfsId = new PnfsId(resultSet.getString(1));
-                FileUpdate data = new FileUpdate(pnfsId, pool, type, action,
-                                                 group, full);
+                FileUpdate data = new FileUpdate(pnfsId, pool, type, group, full);
                 try {
                     LOGGER.debug("checking {}, {}.", pool, pnfsId);
                     if (handler.handleScannedLocation(data, storageUnit)) {

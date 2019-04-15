@@ -177,8 +177,6 @@ public final class FileUpdate {
     public final PnfsId  pnfsId;
     public final String  pool;
     public final MessageType     type;
-    public final boolean newPool;
-
     private final boolean isFullScan;
 
     private Integer        group;
@@ -196,14 +194,14 @@ public final class FileUpdate {
                       Integer groupIndex,
                       Integer unitIndex,
                       FileAttributes attributes) {
-        this(pnfsId, pool, type, false, groupIndex, true);
+        this(pnfsId, pool, type, groupIndex, true);
         this.poolIndex = poolIndex;
         this.unitIndex = unitIndex;
         this.attributes = attributes;
     }
 
     public FileUpdate(PnfsId pnfsId, String pool, MessageType type, boolean full) {
-        this(pnfsId, pool, type, false, null, full);
+        this(pnfsId, pool, type, null, full);
     }
 
     /**
@@ -211,7 +209,6 @@ public final class FileUpdate {
      * @param pool   either the source of the message, or the pool being scanned.
      * @param type   CORRUPT_FILE, CLEAR_CACHE_LOCATION, ADD_CACHE_LOCATION,
      *               POOL_STATUS_DOWN, or POOL_STATUS_UP.
-     * @param newPool whether processing files from a new pool.
      * @param group  of the pool, if action is not NONE or MODIFY
      *               (can be <code>null</code>).
      * @param full   if true, set the op count to the computed difference
@@ -219,11 +216,10 @@ public final class FileUpdate {
      *               set the op count to 1.
      */
     public FileUpdate(PnfsId pnfsId, String pool, MessageType type,
-                      boolean newPool, Integer group, boolean full) {
+                      Integer group, boolean full) {
         this.pnfsId = pnfsId;
         this.pool = pool;
         this.type = type;
-        this.newPool = newPool;
         this.group = group;
         fromReload = false;
         isFullScan = full;
@@ -245,10 +241,6 @@ public final class FileUpdate {
         return poolIndex;
     }
 
-    public boolean isNewPool() {
-        return newPool;
-    }
-
     public long getSize() { return attributes.getSize(); }
 
     public Integer getUnitIndex() {
@@ -258,10 +250,6 @@ public final class FileUpdate {
     public Integer getSourceIndex() {
         return type == CORRUPT_FILE ||
                type == CLEAR_CACHE_LOCATION ? null : poolIndex;
-    }
-
-    public boolean isFromReload() {
-        return fromReload;
     }
 
     public boolean isParent() {
@@ -276,17 +264,12 @@ public final class FileUpdate {
         this.fromReload = fromReload;
     }
 
-    public boolean shouldVerifySticky() {
-        return !isFromReload() && type != CLEAR_CACHE_LOCATION &&
-                        (!isParent() || newPool);
-    }
-
     public String toString() {
         return String.format(
                         "(%s)(%s)(%s)(parent %s)(source %s)"
-                                        + "(new pool %s)(group %s)(count %s)",
+                                        + "(group %s)(count %s)",
                         pnfsId, pool, type, isParent(), getSourceIndex(),
-                        newPool, group, count);
+                        group, count);
     }
 
     public boolean validateAttributes(NamespaceAccess access)

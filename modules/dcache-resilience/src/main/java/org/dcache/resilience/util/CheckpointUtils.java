@@ -308,12 +308,11 @@ public final class CheckpointUtils {
             return null;
         }
         PnfsId pnfsId = new PnfsId(parts[0]);
-        boolean newPool = Boolean.valueOf(parts[1]);
         int opCount = Integer.parseInt(parts[2]);
         Integer gindex = map.getGroupIndex(parts[3]);
         FileUpdate update = new FileUpdate(pnfsId, parts[4],
                                            MessageType.ADD_CACHE_LOCATION,
-                                           newPool, gindex, true);
+                                           gindex, true);
         update.setCount(opCount);
         update.setFromReload(true);
         return update;

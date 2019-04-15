@@ -77,12 +77,11 @@ public final class PoolScanTask extends ErrorAwareTask implements Cancellable {
 
     public PoolScanTask(String pool,
                         MessageType type,
-                        boolean newPool,
                         Integer group,
                         Integer storageUnit,
                         boolean forced,
                         PoolOperationHandler handler) {
-        scan = new ScanSummary(pool, type, newPool, group, storageUnit, forced);
+        scan = new ScanSummary(pool, type, group, storageUnit, forced);
         this.handler = handler;
     }
 

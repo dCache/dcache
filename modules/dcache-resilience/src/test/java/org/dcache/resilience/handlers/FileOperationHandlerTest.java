@@ -234,15 +234,6 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     @Test
-    public void shouldNotSendSetStickyMessageOnScan()
-                    throws CacheException, IOException, InterruptedException {
-        setUpTest(false);
-        givenAFileUpdateFromAPoolScan();
-        whenHandleUpdateIsCalled();
-        assertFalse(update.shouldVerifySticky());
-    }
-
-    @Test
     public void shouldReturnCopyWhenRequiredCopyMissing()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
@@ -293,24 +284,6 @@ public final class FileOperationHandlerTest extends TestBase
         whenHandleUpdateIsCalled();
         whenTaskIsCreatedAndCalled();
         assertNotNull(repRmMessage);
-    }
-
-    @Test
-    public void shouldSendSetStickyMessageOnNewLocation()
-                    throws CacheException, IOException, InterruptedException {
-        setUpTest(false);
-        givenAFileUpdateForANewFileOnAPoolWithHostAndRackTags();
-        whenHandleUpdateIsCalled();
-        assertTrue(update.shouldVerifySticky());
-    }
-
-    @Test
-    public void shouldSendSetStickyMessageOnPoolAddedToGroup()
-                    throws CacheException, IOException, InterruptedException {
-        setUpTest(false);
-        givenAFileUpdateFromAPoolScanForPoolAddedToGroup();
-        whenHandleUpdateIsCalled();
-        assertTrue(update.shouldVerifySticky());
     }
 
     @Test
@@ -622,7 +595,7 @@ public final class FileOperationHandlerTest extends TestBase
             String pool = iterator.next();
             Integer group = poolInfoMap.getResilientPoolGroup(
                             poolInfoMap.getPoolIndex(pool));
-            update = new FileUpdate(pnfsId, pool, type, newPool, group, false);
+            update = new FileUpdate(pnfsId, pool, type, group, false);
         } else {
             update = new FileUpdate(pnfsId, null, type, false);
         }

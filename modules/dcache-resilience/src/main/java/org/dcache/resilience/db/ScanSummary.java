@@ -70,7 +70,6 @@ public final class ScanSummary {
 
     private final String          pool;
     private final MessageType     type;
-    private final boolean         newPool;
     private final Integer         group;
     private final Integer         storageUnit;
     private final boolean         forced;
@@ -81,21 +80,15 @@ public final class ScanSummary {
 
     public ScanSummary(String pool,
                        MessageType type,
-                       boolean newPool,
                        Integer group,
                        Integer storageUnit,
                        boolean forced) {
         this.pool = pool;
         this.type = type;
-        this.newPool = newPool;
         this.group = group;
         this.storageUnit = storageUnit;
         this.forced = forced;
         files = 0;
-    }
-
-    public boolean isNewPool() {
-        return newPool;
     }
 
     public int getCount() {

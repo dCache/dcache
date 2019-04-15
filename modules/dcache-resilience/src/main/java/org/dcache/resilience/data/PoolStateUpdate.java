@@ -83,7 +83,6 @@ public final class PoolStateUpdate {
     public final String          pool;
     public final PoolV2Mode      mode;
     public final Integer         group;
-    public final boolean         newPool;
     public final String          storageUnit;
 
     public PoolStateUpdate(Map.Entry<String, PoolV2Mode> entry) {
@@ -111,13 +110,10 @@ public final class PoolStateUpdate {
         this.storageUnit = storageUnit;
         if (addedTo != null) {
             group = addedTo;
-            newPool = true;
         } else if (removedFrom != null) {
             group = removedFrom;
-            newPool = false;
         } else {
             group = null;
-            newPool = false;
         }
     }
 

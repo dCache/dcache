@@ -97,7 +97,6 @@ public final class PoolOperation {
     Integer                 unit;          // Set when unit has changed, or scan
                                            // is periodic or initiated by command
     State                   state;
-    boolean                 newPool;
     PoolStatusForResilience lastStatus;
     PoolStatusForResilience currStatus;
     PoolScanTask            task;
