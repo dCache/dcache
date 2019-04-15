@@ -9,6 +9,9 @@ public class CacheException extends Exception
 {
     private static final long serialVersionUID = 3219663683702355240L;
 
+    /** Requested transfer is not possible on this pool. */
+    public static final int CANNOT_CREATE_MOVER = 27;
+
     /** Requested operation is disabled in pool. */
     public static final int POOL_DISABLED = 104;
 
