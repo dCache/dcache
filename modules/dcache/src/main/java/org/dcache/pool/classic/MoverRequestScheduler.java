@@ -1,8 +1,8 @@
 package org.dcache.pool.classic;
 
-import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -53,6 +53,22 @@ public class MoverRequestScheduler
 
     private static final long DEFAULT_LAST_ACCESSED = 0;
     private static final long DEFAULT_TOTAL = 0;
+
+    /**
+     * A RuntimeException that wraps a CacheException.
+     */
+    private static class UncheckedCacheException extends RuntimeException
+    {
+        private UncheckedCacheException(CacheException cause)
+        {
+            super(cause.getMessage(), cause);
+        }
+
+        private CacheException getCacheException()
+        {
+            return (CacheException) getCause();
+        }
+    }
 
     /**
      * The name of IoScheduler.
@@ -199,7 +215,7 @@ public class MoverRequestScheduler
                                                          try {
                                                              return createRequest(moverSupplier, key, priority);
                                                          } catch (CacheException e) {
-                                                             throw new RuntimeException(e);
+                                                             throw new UncheckedCacheException(e);
                                                          }
                                                      });
 
@@ -217,10 +233,8 @@ public class MoverRequestScheduler
             }
 
             return request.getId();
-        } catch (RuntimeException e) {
-            Throwable t = Throwables.getRootCause(e);
-            Throwables.throwIfInstanceOf(t, CacheException.class);
-            throw e;
+        } catch (UncheckedCacheException e) {
+            throw e.getCacheException();
         }
     }
 
