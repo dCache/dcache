@@ -130,7 +130,8 @@ public class RemoteHttpTransferService extends AbstractMoverProtocolTransferServ
         } else if (info instanceof RemoteHttpDataTransferProtocolInfo) {
             moverProtocol = new RemoteHttpDataTransferProtocol(getCellEndpoint());
         } else {
-            throw new CacheException(27, "Could not create third-party HTTP mover for " + info);
+            throw new CacheException(CacheException.CANNOT_CREATE_MOVER,
+                    "Could not create third-party HTTP mover for " + info);
         }
         return moverProtocol;
     }
