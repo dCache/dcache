@@ -416,12 +416,9 @@ public final class FileOperation {
                         retried, exception == null ? "" : new ExceptionMessage(exception));
     }
 
-    void abortOperation() {
-        synchronized( this) {
-            updateState(ABORTED);
-            opCount = 0;
-        }
-
+    synchronized void abortOperation() {
+        updateState(ABORTED);
+        opCount = 0;
         lastUpdate = System.currentTimeMillis();
         source = NIL;
         target = NIL;
@@ -457,15 +454,13 @@ public final class FileOperation {
         tried.add(target);
     }
 
-    boolean cancelCurrent() {
-        synchronized( this) {
-            if (isInTerminalState()) {
-                return false;
-            }
-
-            updateState(CANCELED);
-            --opCount;
+    synchronized boolean cancelCurrent() {
+        if (isInTerminalState()) {
+            return false;
         }
+
+        updateState(CANCELED);
+        --opCount;
 
         lastUpdate = System.currentTimeMillis();
         if (task != null) {
@@ -503,10 +498,8 @@ public final class FileOperation {
         ++retried;
     }
 
-    void resetOperation() {
-        synchronized (this) {
-            updateState(WAITING);
-        }
+    synchronized void resetOperation() {
+        updateState(WAITING);
         task = null;
         exception = null;
         lastUpdate = System.currentTimeMillis();
@@ -557,7 +550,7 @@ public final class FileOperation {
     }
 
     @VisibleForTesting
-    void setState(String state) {
+    synchronized void setState(String state) {
         switch (state) {
             case "WAITING":     updateState(WAITING);   break;
             case "RUNNING":     updateState(RUNNING);   break;
@@ -583,7 +576,7 @@ public final class FileOperation {
      *    queued, we simply overwrite the appropriate fields on
      *    this one.</p>
      */
-    void updateOperation(FileOperation operation) {
+    synchronized void updateOperation(FileOperation operation) {
         if (operation.storageUnit != NIL) {
             storageUnit = operation.storageUnit;
         }
@@ -602,34 +595,30 @@ public final class FileOperation {
         opCount += operation.opCount;
     }
 
-    boolean updateOperation(CacheException error) {
-        synchronized (this) {
-            if (isInTerminalState()) {
-                return false;
-            }
+    synchronized boolean updateOperation(CacheException error) {
+        if (isInTerminalState()) {
+            return false;
+        }
 
-            if (error != null) {
-                exception = error;
-                updateState(FAILED);
-            } else {
-                updateState(DONE);
-                --opCount;
-                retried = 0;
-            }
+        if (error != null) {
+            exception = error;
+            updateState(FAILED);
+        } else {
+            updateState(DONE);
+            --opCount;
+            retried = 0;
         }
 
         lastUpdate = System.currentTimeMillis();
         return true;
     }
 
-    boolean voidOperation() {
-        synchronized(this) {
-            if (isInTerminalState()) {
-                return false;
-            }
-            updateState(VOID);
-            opCount = 0;
+    synchronized boolean voidOperation() {
+        if (isInTerminalState()) {
+            return false;
         }
+        updateState(DONE);
+        opCount = 0;
         retried = 0;
         source = NIL;
         target = NIL;
