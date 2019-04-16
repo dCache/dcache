@@ -173,10 +173,6 @@
   font-weight: bolder;
 }
 
-.markdown-body img {
-  border-style: none;
-}
-
 .markdown-body code,
 .markdown-body kbd,
 .markdown-body pre {
@@ -485,7 +481,13 @@
 .markdown-body img {
   max-width: 100%;
   box-sizing: content-box;
-  background-color: #fff;
+  background-color: #f5f2f0;
+  margin: 20px 0 20px 0;
+  border-style: solid;
+  padding: 15px 10px;
+  border-width: 1px;
+  border-color: #decca9;
+  border-radius: 10px;
 }
 
 .markdown-body img[align=right] {

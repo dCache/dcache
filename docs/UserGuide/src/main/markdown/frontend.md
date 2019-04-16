@@ -72,29 +72,88 @@ but in a separate admin-focused book.
 ## Swagger
 
 [Swagger](https://swagger.io/ "Swagger homepage") is a standard way of
-describing a REST API using JSON.  In addition to providing online
-documentation of the dCache API, it may also be used to build clients
-in almost any language.
+describing a REST API as a JSON object.  All the REST API calls are
+described, along with the arguments and the possible return values.
 
-Each dCache frontend provides a swagger description of its API at the
-path `/api/v1/swagger.json` (e.g.,
-`https://dcache.example.org:3880/api/v1/swagger.json`).
+A Swagger description of a REST API may be used to build documentation
+for that API.  It may also be used to generate REST clients in almost
+any language.
 
-In addition, dCache frontend comes bundled with the Swagger UI
-application.  This application is a web page that uses your browser's
-JavaScript support to download dCache's Swagger JSON description and
-build a client for trying out the different dCache API calls.  You can
-try the Swagger UI by pointing your browser at `/api/v1/`
+Each dCache frontend provides a swagger description of its API.  The
+swagger JSON description is available with the path
+`/api/v1/swagger.json`; for example, from the URL
+`https://dcache.example.org:3880/api/v1/swagger.json`.  A GET request
+to this location returns a JSON object describing all dCache REST
+operations.
+
+```console-user
+curl -s https://prometheus.desy.de:3880/api/v1/swagger.json | jq .
+|{
+|  "swagger": "2.0",
+|  "info": {
+|    "description": "User and administration interaction with dCache",
+|    "version": "Swagger Server",
+|    "title": "",
+|    "contact": {
+|      "name": "dCache support team",
+|      "email": "support@dCache.org"
+|    },
+|    "license": {
+|      "name": "Apache 2.0",
+|      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+|    }
+|  },
+|  "basePath": "/api/v1",
+|[...]
+|  "externalDocs": {
+|    "description": "Wiki",
+|    "url": "https://github.com/dCache/dcache/wiki/Restful-API"
+|  }
+```
+
+### Swagger UI
+
+The Swagger UI is a JavaScript application that reads the Swagger JSON
+description of a REST API and builds an interactive web-page.  This
+page allows you to explore the API, read the documentation and even
+try out the operations.
+
+dCache frontend comes bundled with the Swagger UI application.  You
+can try the Swagger UI by pointing your browser at `/api/v1/`
 (e.g,. `https://dcache.example.org:3880/api/v1/`).
 
-You can find out more about Swagger UI at [Swagger UI home
-page](https://swagger.io/tools/swagger-ui/).
+![Top of Swagger UI page](images/swagger-ui-1.png)
 
 *Note* the Swagger JSON description of dCache REST API and
 corresponding Swagger UI include all resources, whether they are
 user-focused or admin-focused.  You will see a number of resources
 that are not described here and that regular dCache users are not
 authorised to use.
+
+As an example, by scrolling down the page, you will find a section on
+dCache's namespace operations.
+
+![Overview of namespace operations](images/swagger-ui-2.png)
+
+Clicking on the GET `/namespace/` box expands this operation to reveal
+detailed information about this operation.  This includes which
+parameters this operation accepts and what values might be returned.
+
+![Documentation on GET /namespace operation](images/swagger-ui-3.png)
+
+Clicking on the "Try it out" button modifies the display so that the
+page now accepts values.  A large Execute button also appears.
+Entering the desired values and clicking on the Execute button will
+make a REST request.  The result of the REST operation is also shown.
+
+![Trying out a GET on /namespace](images/swagger-ui-4.png)
+
+You can also enter username and password information by clicking on
+the Authorize button near the top of the page.  Swagger UI will use
+this credential when making subsequent requests.
+
+You can find out more about Swagger UI at [Swagger UI home
+page](https://swagger.io/tools/swagger-ui/).
 
 ## Authentication
 
