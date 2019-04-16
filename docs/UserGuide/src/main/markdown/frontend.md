@@ -1056,7 +1056,7 @@ standard protocol: Server-Sent Events (SSE).
 
 SSE is a protocol that allows an HTTP client to receive events with a
 minimal delay.  It is widely supported, with libraries existing in all
-major languages in addition built-in support in all major web
+major languages in addition to built-in support in all major web
 browsers.
 
 All REST activity to do with storage events target `events` resources
