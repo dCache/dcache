@@ -1794,7 +1794,7 @@ is initially empty:
 ```
 
 In order to receive any events, a client must connect to the channel's
-SSE endpoint.  This requires that a client first creates a
+SSE endpoint.  This requires that a client first create a
 channel.
 
 A POST request to the `events/channels` (`/api/v1/events/channels`)
