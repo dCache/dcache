@@ -190,7 +190,7 @@ the following section, we describe how to use curl with frontend.
 ### Formatting the response JSON
 
 Although a simple `curl` invocation will make a GET request and show
-the response, the format may not be layed out for easy reading.
+the response, the format may not be laid out for easy reading.
 Therefore, it is often useful to reformat the JSON output.  The
 following example shows the JSON response reformatted using the `jq`
 command:
