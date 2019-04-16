@@ -637,9 +637,9 @@ and rename files, and modify a file's or directory's QoS.
 
 ### Discovering metadata
 
-Resources that describe files and directories in dCache are beneath
+Resources that describe files and directories in dCache are found beneath
 the `namespace` resource (`/api/v1/namespace`) by simply appending the
-dCache path this path.  For example, the resource `namespace`
+dCache path to this path.  For example, the resource `namespace`
 (`/api/v1/namespace`) represents the root directory and
 `namespace/upload` (`/api/v1/namespace/upload`) represents the
 `upload` directory.
