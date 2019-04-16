@@ -187,16 +187,10 @@ Whether it is to gain experience or to build a simple script, the
 `curl` command is a simple way to interact with dCache REST API.  In
 the following section, we describe how to use curl with frontend.
 
+### Formatting the response JSON
+
 Although a simple `curl` invocation will make a GET request and show
-the response, the format may not be layed out for easy reading:
-
-```console-user
-curl https://dcache.example.org:3880/api/v1/user
-|{
-|  "status" : "ANONYMOUS"
-|}
-```
-
+the response, the format may not be layed out for easy reading.
 Therefore, it is often useful to reformat the JSON output.  The
 following example shows the JSON response reformatted using the `jq`
 command:
@@ -213,6 +207,8 @@ curl is no longer providing data on standard output (stdout), it
 provides progress information instead.  This would upset the output,
 so the `-s` option is used to tell curl not to emit such progress
 information.
+
+### Including JSON in POST request
 
 When making a POST request with curl that sends JSON as input, it is
 important to specify the `Content-Type` request header.  This is
@@ -237,6 +233,8 @@ curl -u paul -X POST -H 'Content-Type: application/json' \
 |Enter host password for user 'paul':
 |{"status":"success"}
 ```
+
+### Discovering Location response header
 
 In several cases, a POST request will create a new resource with a
 name chosen by dCache.  A common pattern is for dCache to return the
@@ -266,8 +264,9 @@ In this example, the new resource has the URL
 
 ## Active transfers
 
-The `transfers` resource (`/api/v1/transfers`) represents snapshots of
-ongoing transfers.
+The `transfers` resource (`/api/v1/transfers`) represents all ongoing
+transfers.  This information is collected periodically and made
+available as snapshot views of all concurrent transfers.
 
 By default, a GET request returns information about transfers from the
 most recent snapshot.
@@ -2396,7 +2395,7 @@ using the WebDAV door:
 
 ```console-user
 curl -u paul -LT interesting-results.dat \
-        https://dcache.example.org/Users/paul/
+|       https://dcache.example.org/Users/paul/
 |Enter host password for user 'paul':
 ```
 
