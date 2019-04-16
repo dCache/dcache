@@ -173,7 +173,7 @@ e.g. `https://dcache.example.org:3880/api/v1/user?authz=M[...]z`
 
 If the client supplies an X.509 client certificate when establishing
 the secure TLS connection then that identity is used only if no other
-authentication information is available.  If the HTTP request contain
+authentication information is available.  If the HTTP request contains
 the `Authorization` request header or the `authz` query parameter then
 that information is used to authenticate and authorise the request.
 
