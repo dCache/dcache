@@ -2022,7 +2022,7 @@ request targeting this resource.  The POST request entity is the
 selector for this subscription, and must be valid according to this
 eventType selector JSON Schema.
 
-For example, to subscribe `metronome` events with the default message
+For example, to subscribe to `metronome` events with the default message
 every two seconds to the `events/channels/pf_B1dEed98IVKqc9BNa-w`
 channel, the client issues a POST request to
 `events/channels/pf_B1dEed98IVKqc9BNa-w/subscriptions/metronome` with
