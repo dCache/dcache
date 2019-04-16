@@ -1926,7 +1926,7 @@ client remains disconnected for more than five minutes.
 
 The timeout value may be modified by making a PATCH request that
 targets the channel's resource.  This PATCH request must contain a
-JSON object with the `timeout` property provides the updated duration,
+JSON object with the `timeout` property providing the updated duration,
 in seconds, after which the channel is automatically removed.
 
 The following JSON Object is an example of the HTTP entity sent with a
