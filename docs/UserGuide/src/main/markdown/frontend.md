@@ -1577,7 +1577,7 @@ management event.
 
 A move child event is where the subscription's path is a directory and
 either a directory item (a file or directory) is moved into the
-subscription's path, or a directory item is move out of that path.
+subscription's path, or a directory item is moved out of that path.
 Renaming a file within a directory is treated as a move operation and
 generates two move-child events.
 
