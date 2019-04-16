@@ -184,7 +184,7 @@ the request URL is derived), indicate a request type (e.g., GET or
 POST), necessary input (if any) and output (if any).
 
 Whether it is to gain experience or to build a simple script, the
-`curl` command is a simple way to interact with dCache REST API.  In
+`curl` command is a simple way to interact with the dCache REST API.  In
 the following section, we describe how to use curl with frontend.
 
 ### Formatting the response JSON
