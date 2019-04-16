@@ -713,7 +713,7 @@ If the path does not exist, then the HTTP response has a status code
 
 ### Listing directories
 
-A GET request that target's a directory resource URL that includes the
+A GET request that targets a directory resource URL that includes the
 query argument `children=true`.  For example, a request to list the
 root directory would target the resource `/namespace`
 (`/api/v1/namespace`) and the complete path would be
