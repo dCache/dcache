@@ -1942,7 +1942,7 @@ In the above example, the PATCH request attempts to modify this
 channel's timeout to one hour.
 
 After this request is successfully processed, a GET request that
-targets this channel's resource will shows the updated timeout value:
+targets this channel's resource will show the updated timeout value:
 
 ```json
 {
