@@ -295,6 +295,9 @@
   margin-bottom: 0;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
   font-size: 12px;
+  box-shadow: 9px 7px 12px 0px rgba(0,0,0,0.75);
+  -webkit-box-shadow: 9px 7px 12px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 9px 7px 12px 0px rgba(0,0,0,0.75);
 }
 
 .markdown-body .octicon {
@@ -488,6 +491,9 @@
   border-width: 1px;
   border-color: #decca9;
   border-radius: 10px;
+  box-shadow: 11px 11px 12px 0px rgba(0,0,0,0.75);
+  -webkit-box-shadow: 11px 11px 12px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 11px 11px 12px 0px rgba(0,0,0,0.75);
 }
 
 .markdown-body img[align=right] {
