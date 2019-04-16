@@ -1059,7 +1059,7 @@ minimal delay.  It is widely supported, with libraries existing in all
 major languages in addition to built-in support in all major web
 browsers.
 
-All REST activity to do with storage events target `events` resources
+All REST activity to do with storage events targets the `events` resource
 (`/api/v1/events`) with different resources below this having more
 specific roles.
 
