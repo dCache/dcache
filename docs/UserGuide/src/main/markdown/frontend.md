@@ -1831,7 +1831,7 @@ show this channel:
 ]
 ```
 
-A channel may be give an identifier by the client.  Having a client
+A channel may be given an identifier by the client.  Having a client
 identifier is optional and has no impact on how the channel operates;
 instead, it allows a client to discover a channel it created
 previously.
