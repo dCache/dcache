@@ -576,7 +576,7 @@ In this example, three doors are listed: an FTPS door listening on
 port 21, an gsiftp (GridFTP) door listening on port 2811, and a WebDAV
 door listening on port 443.
 
-The `root` property the door's root path.  The value is the absolute
+The `root` property gives the door's root path.  The value is the absolute
 path in dCache equivalent to the door's root path.  For example, if
 the `root` property value is `/data/atlas` and a client downloads the
 file `/2019/data-1.root` through this door then the client will
