@@ -871,7 +871,7 @@ following example requests the target have QoS `tape`:
 }
 ```
 
-A QoS transitions that target a file may take some time to complete.
+QoS transitions that target a file may take some time to complete.
 While the transition is taking place, a GET request on the resource
 representing this file will continue to show the file's QoS unchanged
 but will include an additional field `targetQoS` that indicates to
