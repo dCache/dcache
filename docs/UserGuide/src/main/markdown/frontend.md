@@ -1985,7 +1985,7 @@ The channel will also no longer appear in the response to GET requests
 targeting the `events/channels` resource.
 
 A client is not required to remove the channel it created: dCache will
-automatically delete any left over channel once the client remains
+automatically delete any leftover channel once the client remains
 disconnected for long enough.  However, it is recommended clients
 explicitly delete a channel if the channel is no longer needed.  This
 is because each dCache user is only allowed a limit number of
