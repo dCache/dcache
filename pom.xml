@@ -73,6 +73,12 @@
         <version.netty>4.1.10.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.1.7</version.swagger-ui>
+        <version.logback.contrib>0.1.5</version.logback.contrib>
+        <version.jackson.databind>2.9.5</version.jackson.databind>
+        <version.jackson.version>2.9.5</version.jackson.version>
+        <version.jackson.core>2.9.5</version.jackson.core>
+
+
 
 
         <spring-integration-kafka.version>3.0.1.RELEASE</spring-integration-kafka.version>
@@ -869,6 +875,39 @@
                 <groupId>com.github.danielwegener</groupId>
                 <artifactId>logback-kafka-appender</artifactId>
                 <version>0.2.0-RC1</version>
+            </dependency>
+
+            <!-- ch.qos.logback.contrib.jackson.JacksonJsonFormatter -->
+            <dependency>
+                <groupId>ch.qos.logback.contrib</groupId>
+                <artifactId>logback-jackson</artifactId>
+                <version>${version.logback.contrib}</version>
+            </dependency>
+
+            <!-- ch.qos.logback.contrib.json.classic.JsonLayout -->
+            <dependency>
+                <groupId>ch.qos.logback.contrib</groupId>
+                <artifactId>logback-json-classic</artifactId>
+                <version>${version.logback.contrib}</version>
+            </dependency>
+
+            <!-- com.fasterxml.jackson.databind.ObjectMapper -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson.databind}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${version.jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson.core}</version>
             </dependency>
 
             <dependency>
