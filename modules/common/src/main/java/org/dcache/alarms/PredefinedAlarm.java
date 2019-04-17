@@ -83,7 +83,8 @@ public enum PredefinedAlarm implements Alarm {
    LOST_RESILIENT_FILE,
    FAILED_REPLICATION,
    RESILIENCE_PM_SYNC_FAILURE,
-   RESILIENCE_LOC_SYNC_ISSUE;
+   RESILIENCE_LOC_SYNC_ISSUE,
+   CLIENT_CONNECTION_REJECTED;
 
    @Override
    public String getType() {

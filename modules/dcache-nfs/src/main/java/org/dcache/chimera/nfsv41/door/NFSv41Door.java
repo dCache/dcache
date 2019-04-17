@@ -75,6 +75,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.ChimeraFsException;
@@ -722,6 +724,12 @@ public class NFSv41Door extends AbstractCellComponent implements
                 PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
                 String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
                 _log.error("Client reports error {} on {} for op {}", nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
+
+                // rise an alarm when client can't connect to the pool
+                if (de.de_status == nfsstat.NFSERR_NXIO) {
+                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED, pool),
+                            "Client failed to connect to {}", pool);
+                }
             }
         }
     }
