@@ -33,7 +33,6 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 
 import static java.util.stream.Collectors.toMap;
-import static org.dcache.util.ByteUnit.MiB;
 
 /**
   *
@@ -46,10 +45,6 @@ public class      SystemCell
     implements Thread.UncaughtExceptionHandler
 {
     private static final Logger _log = LoggerFactory.getLogger(SystemCell.class);
-
-    /* Released on OOM to increase the chance that the shutdown succeeds.
-     */
-    private byte[] _oomSafetyBuffer = new byte[MiB.toBytes(2)];
 
    private final CellShell   _cellShell ;
    private final CellNucleus _nucleus ;
@@ -339,7 +334,6 @@ public class      SystemCell
          * fatal error reoccurs.
          */
         if (e instanceof VirtualMachineError) {
-            _oomSafetyBuffer = null;
             kill();
             _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.FATAL_JVM_ERROR,
                                                     getCellDomainName(),
