@@ -433,26 +433,36 @@ public class FileOperationMap extends RunnableModule {
                 operation.setTarget(null);
             }
 
-            if (operation.getOpCount() > 0) {
-                operation.resetOperation();
-                restore(operation, retry);
-            } else {
-                /*
-                 *  If abort is not true, this is being called either
-                 *  because all operations have completed, the task
-                 *  has been VOIDed, or CANCEL was called with forcible
-                 *  removal.
-                 */
-                remove(operation.getPnfsId(), abort);
+            /*
+             *  We need to protect against the situation where
+             *  an incoming file update with this pnfsid sees
+             *  the operation is in the index but does not realize
+             *  it is about to be removed, thus incrementing the count
+             *  on this object instead of adding a fresh instance
+             */
+            synchronized (incoming) {
+                if (operation.getOpCount() > 0) {
+                    operation.resetOperation();
+                    restore(operation, retry);
+                } else {
+                    /*
+                     *  If abort is not true, this is being called either
+                     *  because all operations have completed, the task
+                     *  has been VOIDed, or CANCEL was called with forcible
+                     *  removal.
+                     */
+                    remove(operation.getPnfsId(), abort);
 
-                /*
-                 *  If the operation reported a broken source, pass it off
-                 *  to the handler.
-                 */
-                if (broken) {
-                    pool = poolInfoMap.getPool(operation.getSource());
-                    new BrokenFileTask(operation.getPnfsId(), pool, operationHandler)
-                                    .submit();
+                    /*
+                     *  If the operation reported a broken source, pass it off
+                     *  to the handler.
+                     */
+                    if (broken) {
+                        pool = poolInfoMap.getPool(operation.getSource());
+                        new BrokenFileTask(operation.getPnfsId(), pool,
+                                           operationHandler)
+                                        .submit();
+                    }
                 }
             }
         }
