@@ -310,10 +310,14 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                                         .contains(XrootdProtocolInfo.Flags.POSC);
                     if (opaqueMap.containsKey("tpc.src")) {
                         _log.debug("Request to open {} is as third-party destination.", msg);
+
+                        XrootdTpcInfo tpcInfo = new XrootdTpcInfo(opaqueMap);
+                        tpcInfo.setDelegatedProxy(file.getProtocolInfo().getDelegatedCredential());
+
                         descriptor = new TpcWriteDescriptor(file, posc, ctx,
                                                             _server,
                                                             opaqueMap.get("org.dcache.xrootd.client"),
-                                                            new XrootdTpcInfo(opaqueMap));
+                                                            tpcInfo);
                     } else {
                         descriptor = new WriteDescriptor(file, posc);
                     }

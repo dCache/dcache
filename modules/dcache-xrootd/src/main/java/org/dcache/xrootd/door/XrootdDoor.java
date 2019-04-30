@@ -29,6 +29,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -559,8 +560,9 @@ public class XrootdDoor
             write(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
                     boolean createDir, boolean overwrite, Long size, OptionalLong maxUploadSize,
                     InetSocketAddress local, Subject subject, Restriction restriction,
-                    boolean persistOnSuccessfulClose, FsPath rootPath)
-            throws CacheException, InterruptedException {
+                    boolean persistOnSuccessfulClose, FsPath rootPath,
+                    Serializable delegatedProxy)
+                    throws CacheException, InterruptedException {
 
         if (!isWriteAllowed(path)) {
             throw new PermissionDeniedCacheException("Write permission denied");
@@ -569,15 +571,21 @@ public class XrootdDoor
         XrootdTransfer transfer;
         if (persistOnSuccessfulClose) {
             FsPath uploadPath = getUploadPath(subject, restriction, createDir,
-                    overwrite, size, path, rootPath);
+                                              overwrite, size, path, rootPath);
             transfer = createUploadTransfer(client, path, ioQueue, uuid, local,
-                    subject, restriction, createDir, overwrite, size,
-                    uploadPath);
+                                            subject, restriction, createDir,
+                                            overwrite, size,
+                                            uploadPath);
         } else {
             transfer = createTransfer(client, path, ioQueue, uuid, local,
-                    subject, restriction);
+                                      subject, restriction);
         }
         transfer.setOverwriteAllowed(overwrite);
+        /*
+         *  If this is a destination door/server and the session
+         *  does not contain a proxy, eventually fail downstream.
+         */
+        transfer.setDelegatedCredential(delegatedProxy);
         int handle = transfer.getFileHandle();
         InetSocketAddress address = null;
         _transfers.put(handle, transfer);
@@ -600,20 +608,24 @@ public class XrootdDoor
             }
             maxUploadSize.ifPresent(transfer::setMaximumLength);
             if (size != null) {
-                checkResourceNotMissing(!maxUploadSize.isPresent() || size <= maxUploadSize.getAsLong(),
-                        "File exceeds maximum upload size");
+                checkResourceNotMissing(!maxUploadSize.isPresent() || size
+                                                        <= maxUploadSize.getAsLong(),
+                                        "File exceeds maximum upload size");
                 transfer.setLength(size);
             }
             try {
                 transfer.selectPoolAndStartMover(RETRY_POLICY);
 
-                address = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
+                address = transfer.waitForRedirect(_moverTimeout,
+                                                   _moverTimeoutUnit);
                 if (address == null) {
-                    throw new CacheException(transfer.getPool() + " failed to open TCP socket");
+                    throw new CacheException(transfer.getPool()
+                                                             + " failed to open TCP socket");
                 }
 
                 transfer.setStatus("Mover " + transfer.getPool() + "/"
-                        + transfer.getMoverId() + ": Receiving");
+                                                   + transfer.getMoverId()
+                                                   + ": Receiving");
             } finally {
                 if (address == null) {
                     transfer.deleteNameSpaceEntry();
@@ -626,12 +638,12 @@ public class XrootdDoor
         } catch (InterruptedException e) {
             explanation = "transfer interrupted";
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    "Transfer interrupted");
+                                   "Transfer interrupted");
             throw e;
         } catch (RuntimeException e) {
             explanation = "bug found: " + e.toString();
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    e.toString());
+                                   e.toString());
             throw e;
         } finally {
             if (address == null) {

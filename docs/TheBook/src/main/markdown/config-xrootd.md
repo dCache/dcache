@@ -287,9 +287,34 @@ provider plugin must be loaded by including this in the configuration or layout:
 
                pool.mover.xrootd.tpc-authn-plugins=gsi
 
-Second, until the generally agreed upon solution for proxy delegation is adopted
-and implemented, there are two ways of providing authentication
-capability to these pools.
+#### Credential (proxy) delegation
+
+With the 5.2.0 release, full GSI (X509) credential delegation is available
+in dCache.  This means that the dCache door, when it acts as destination,
+will ask the client to sign a delegation request.
+
+If both endpoints support delegation (dCache 5.2+, XrootD 4.9+), nothing further
+need be done by way of configuration.  dCache keeps the proxy in memory and
+discards it when the session is disconnected.
+
+To indicate that you wish delegation, the xrootd client requires:
+
+                xrdcp --tpc delegate only <source> <destination>
+
+or
+
+                xrdcp --tpc delegate first <source> <destination>
+
+Like the XrootD server and client, dCache can determine whether the endpoint
+with which it is communicating supports delegation, and fail over to the
+pre-delegation protocol if not.
+
+In the case of communication with pre-4.9 XrootD or pre-5.2 dCache instances,
+or when using a pre-4.9 XrootD client, one can still make use of third-party
+copy with a few extra configuration steps.
+
+There are two ways of providing authentication capability to the pools in
+this case:
 
 * Generate a proxy from a credential that will be recognized by the source,
 and arrange to have it placed (and periodically refreshed) on each pool that
@@ -315,7 +340,7 @@ owned) on the basis of the rendezvous token submitted with the request.
 The embedded third-party client will honor signed hash verification if the
 source server indicates it must be observed.
 
-Starting with dCache 5.0, the dCache door/server will also provide the option
+Starting with dCache 5.0, the dCache door/server also provides the option
 to enable signed hash verification.
 
 However, there is a caveat here. Since dCache redirects reads from the door

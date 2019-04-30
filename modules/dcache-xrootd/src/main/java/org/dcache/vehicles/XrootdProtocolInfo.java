@@ -2,6 +2,7 @@ package org.dcache.vehicles;
 
 import com.google.common.collect.Sets;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.UUID;
@@ -42,10 +43,12 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
     private InetSocketAddress _clientSocketAddress;
 
-    public XrootdProtocolInfo(String protocol,  int major,int minor,
-        InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
-            int xrootdFileHandle, UUID uuid,
-            InetSocketAddress doorAddress, Flags... flags)
+    private Serializable delegatedCredential;
+
+    public XrootdProtocolInfo(String protocol, int major, int minor,
+                              InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
+                              int xrootdFileHandle, UUID uuid,
+                              InetSocketAddress doorAddress, Flags... flags)
     {
         _name = protocol;
         _minor = minor;
@@ -57,6 +60,11 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         _uuid = uuid;
         _doorAddress = doorAddress;
         _flags = Sets.newEnumSet(asList(flags), Flags.class);
+    }
+
+    public Serializable getDelegatedCredential()
+    {
+        return delegatedCredential;
     }
 
     @Override
@@ -119,5 +127,10 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
     public EnumSet<Flags> getFlags()
     {
         return _flags;
+    }
+
+    public void setDelegatedCredential(Serializable delegatedCredential)
+    {
+        this.delegatedCredential = delegatedCredential;
     }
 }
