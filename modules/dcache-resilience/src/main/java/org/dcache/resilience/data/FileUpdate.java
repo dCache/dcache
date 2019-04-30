@@ -337,8 +337,10 @@ public final class FileUpdate {
         int required = constraints.getRequired();
 
         /*
-         * Force the file operation into the table if the storage unit matches
-         * the modified one, or if this is a periodic or admin initiated scan.
+         * Files may be in need of migration even if the correct number
+         * exist.  Force the file operation into the table if the
+         * storage unit matches the modified one, or if this is a periodic
+         * or admin initiated scan.
          *
          * In the former case, the scan was triggered by a change in storage
          * unit requirements.  This could be from an altered number of replicas,
@@ -351,10 +353,6 @@ public final class FileUpdate {
          * the required number.  If it turns out this number is more than
          * what is actually needed, the file operation will void itself at
          * that point and quit.
-         * Files may be in need of migration even if the correct number
-         * exist.  Force the file operation into the table if the
-         * storage unit matches the modified one, or if this is a periodic
-         * or admin initiated scan.
          */
         if (storageUnit == ScanSummary.ALL_UNITS
                         || unitIndex.equals(storageUnit)) {
@@ -380,13 +378,6 @@ public final class FileUpdate {
             LOGGER.warn("validateForAction: replica verification for "
                                         + "{} was interrupted; "
                                         + "cancelling operation.", pnfsId);
-            return false;
-        }
-
-        if (!verifier.isSticky(pool, verified)) {
-            LOGGER.debug("validateForAction: replica of {} on source pool {} "
-                                         + "is not sticky; skipping.",
-                         pnfsId, pool);
             return false;
         }
 

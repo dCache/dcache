@@ -199,16 +199,13 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     @Test
-    public void shouldNotProcessNonStickyReplicasOnFileUpdate()
+    public void shouldAlsoProcessNonStickyReplicasOnFileUpdate()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(true);
         givenAFileUpdateForANewFileOnAPoolWithNoTags();
         givenReplicaIsNotSystemStickyOn(update.pool);
         whenHandleUpdateIsCalled();
-        /*
-         * i.e., the operation does not get queued.
-         */
-        assertTrue(noOperationHasBeenAdded());
+        assertFalse(noOperationHasBeenAdded());
     }
 
     @Test

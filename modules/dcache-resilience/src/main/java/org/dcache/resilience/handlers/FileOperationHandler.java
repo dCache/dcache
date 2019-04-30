@@ -944,23 +944,16 @@ public class FileOperationHandler implements CellMessageSender {
                                                           namespaceReadable));
 
         /*
-         *  Now, exclude locations that are not on readable pools that
+         *  Now, exclude locations that are on readable pools that
          *  actually aren't readable (i.e., incomplete).
          */
         verifiedReadable = verifier.areReadable(verifiedReadable, verified);
 
         /*
-         *  Find just the sticky locations.
+         *  While cached copies are excluded from the resilient count, we
+         *  allow them to be included as readable sources.
          */
-        Set<String> stickyReadable = verifier.areSticky(verifiedReadable,
-                                                        verified);
-
-        /*
-         *  Since cached copies are volatile and could disappear, resilience
-         *  ignores them both in terms of its counting and in terms of
-         *  available locations from which to copy.
-         */
-        if (inaccessibleFileHandler.isInaccessible(stickyReadable, operation)) {
+        if (inaccessibleFileHandler.isInaccessible(verifiedReadable, operation)) {
             LOGGER.trace("handleVerification {}, "
                                          + "no valid readable locations found, "
                                          + "checking to see if "
@@ -970,6 +963,12 @@ public class FileOperationHandler implements CellMessageSender {
             }
             return inaccessibleFileHandler.handleInaccessibleFile(operation);
         }
+
+        /*
+         *  Find just the sticky locations.
+         */
+        Set<String> stickyReadable = verifier.areSticky(verifiedReadable,
+                                                        verified);
 
         /*
          *  Tagging of the pools may have changed and/or the requirements on
@@ -1132,9 +1131,9 @@ public class FileOperationHandler implements CellMessageSender {
              *  and the location is valid, the selection is skipped.
              */
             if (missing < 0) {
-                Integer pool = operation.getTarget();
-                if (pool == null || !poolInfoMap.isPoolViable(pool, true)
-                                || !verifier.isRemovable(poolInfoMap.getPool(pool),
+                Integer index = operation.getTarget();
+                if (index == null || !poolInfoMap.isPoolViable(index, true)
+                                || !verifier.isRemovable(poolInfoMap.getPool(index),
                                                          verified)) {
                     Set<String> removable = verifier.areRemovable(stickyReadable,
                                                                   verified);
@@ -1146,21 +1145,40 @@ public class FileOperationHandler implements CellMessageSender {
                 LOGGER.trace("target to remove: {}", target);
                 type = Type.REMOVE;
             } else if (missing > 0) {
-                Integer pool = operation.getTarget();
-                if (pool == null) {
+                Integer viableSource = operation.getSource();
+
+                if (viableSource != null &&
+                                !poolInfoMap.isPoolViable(viableSource,
+                                                          false)) {
+                    viableSource = null;
+                }
+
+                Integer targetIndex = operation.getTarget();
+                if (targetIndex == null) {
                     /*
                      *  See if we can avoid a copy by promoting an existing
                      *  non-sticky replica to sticky.
+                     *
+                     *  If the source pool is actually a non-sticky replica,
+                     *  choose that first.
                      */
+                    if (viableSource != null) {
+                        source = poolInfoMap.getPool(viableSource);
+                        if (nonStickyReadable.contains(source)) {
+                            fileOpMap.updateOperation(pnfsId, null, source);
+                            LOGGER.trace("promoting source to sticky: {}", source);
+                            return Type.SET_STICKY;
+                        }
+                    }
+
                     target = locationSelector.selectPromotionTarget(operation,
                                                                     stickyReadable,
                                                                     nonStickyReadable,
                                                                     tags);
+
                     if (target != null) {
                         fileOpMap.updateOperation(pnfsId, null, target);
-
                         LOGGER.trace("target to promote to sticky: {}", target);
-
                         return Type.SET_STICKY;
                     }
 
@@ -1168,7 +1186,7 @@ public class FileOperationHandler implements CellMessageSender {
                                                                gindex,
                                                                occupied,
                                                                tags);
-                } else if (!poolInfoMap.isPoolViable(pool, true)) {
+                } else if (!poolInfoMap.isPoolViable(targetIndex, true)) {
                     target = locationSelector.selectCopyTarget(operation,
                                                                gindex,
                                                                occupied,
@@ -1177,9 +1195,7 @@ public class FileOperationHandler implements CellMessageSender {
 
                 LOGGER.trace("target to copy: {}", target);
 
-                pool = operation.getSource();
-                if (pool == null || !poolInfoMap.isPoolViable(pool,
-                                                              false)) {
+                if (viableSource == null) {
                     source = locationSelector.selectCopySource(operation,
                                                                stickyReadable);
                 }
