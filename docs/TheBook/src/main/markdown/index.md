@@ -118,6 +118,8 @@ dCache Book
 
     -   [Advanced Tuning](cookbook-advanced.md)
 
+    -   [Transport Security](cookbook-transport-security.md)
+
 -   [Chapter IV. Reference](reference.md)
 
     -   [dCache Clients](rf-clients-srm.md)
