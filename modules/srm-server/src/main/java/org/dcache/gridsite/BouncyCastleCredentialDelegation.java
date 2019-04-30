@@ -18,26 +18,18 @@
 package org.dcache.gridsite;
 
 import eu.emi.security.authn.x509.X509Credential;
-import eu.emi.security.authn.x509.impl.CertificateUtils;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
-import eu.emi.security.authn.x509.proxy.ProxyCSRGenerator;
-import eu.emi.security.authn.x509.proxy.ProxyCertificateOptions;
-import org.bouncycastle.openssl.PEMWriter;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
-import java.util.stream.Stream;
 
 import org.dcache.delegation.gridsite2.DelegationException;
+import org.dcache.gsi.X509DelegationHelper;
 
 /**
  * An in-progress credential delegation that uses BouncyCastle.
@@ -52,7 +44,6 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
 
     protected final KeyPair _keyPair;
 
-
     BouncyCastleCredentialDelegation(KeyPair keypair, DelegationIdentity id, X509Certificate[] certificates)
             throws DelegationException
     {
@@ -61,7 +52,7 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
         _keyPair = keypair;
 
         try {
-            _pemRequest = pemEncode(createRequest(certificates, keypair));
+            _pemRequest = X509DelegationHelper.createRequest(certificates, keypair);
         } catch (GeneralSecurityException e) {
             LOGGER.error("Failed to create CSR: {}", e.toString());
             throw new DelegationException("cannot create certificate-signing" +
@@ -71,24 +62,6 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
             throw new DelegationException("cannot PEM-encode certificate-" +
                     "signing request: " + e.getMessage());
         }
-    }
-
-    private static PKCS10CertificationRequest createRequest(X509Certificate[] chain,
-            KeyPair keyPair) throws GeneralSecurityException
-    {
-        ProxyCertificateOptions options = new ProxyCertificateOptions(chain);
-        options.setPublicKey(keyPair.getPublic());
-        options.setLimited(true);
-        return ProxyCSRGenerator.generate(options, keyPair.getPrivate()).getCSR();
-    }
-
-    private static String pemEncode(Object item) throws IOException
-    {
-        StringWriter writer = new StringWriter();
-        try (PEMWriter pem = new PEMWriter(writer)) {
-            pem.writeObject(item);
-        }
-        return writer.toString();
     }
 
     @Override
@@ -106,24 +79,17 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
     @Override
     public X509Credential acceptCertificate(String encodedCertificate) throws DelegationException
     {
-        X509Certificate certificate;
         try {
-            certificate = CertificateUtils.loadCertificate(
-                    new ByteArrayInputStream(encodedCertificate.getBytes(StandardCharsets.UTF_8)),
-                    CertificateUtils.Encoding.PEM);
-        } catch (IOException e) {
-            LOGGER.debug("Bad certificate: {}", e.getMessage());
-            throw new DelegationException("Supplied certificate is unacceptable: " + e.getMessage());
-        }
-
-        X509Certificate[] newCertificates =
-                Stream.concat(Stream.of(certificate), Stream.of(_certificates))
-                        .toArray(X509Certificate[]::new);
-        try {
+            X509Certificate[] newCertificates
+                            = X509DelegationHelper.finalizeChain(encodedCertificate,
+                                                                 _certificates);
             return new KeyAndCertCredential(_keyPair.getPrivate(), newCertificates);
         } catch (KeyStoreException e) {
             LOGGER.error("Failed to create delegated credential: {}", e.getMessage());
             throw new DelegationException("Unable to create delegated credential: " + e.getMessage());
+        } catch (GeneralSecurityException e) {
+            LOGGER.debug("Bad certificate: {}", e.getMessage());
+            throw new DelegationException("Supplied certificate is unacceptable: " + e.getMessage());
         }
     }
 }

@@ -25,6 +25,7 @@ import org.dcache.util.CertificateFactories;
 import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
+import org.dcache.xrootd.plugins.ProxyDelegationClient;
 
 import static java.util.Arrays.asList;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
@@ -45,9 +46,11 @@ public class LoginAuthenticationHandler
     private LoginStrategy _loginStrategy;
     private CertificateFactory _cf;
 
-    public LoginAuthenticationHandler(AuthenticationFactory authenticationFactory, LoginStrategy loginStrategy)
+    public LoginAuthenticationHandler(AuthenticationFactory authenticationFactory,
+                                      ProxyDelegationClient proxyDelegationClient,
+                                      LoginStrategy loginStrategy)
     {
-        super(authenticationFactory);
+        super(authenticationFactory, proxyDelegationClient);
         _loginStrategy = loginStrategy;
         _cf = CertificateFactories.newX509CertificateFactory();
     }

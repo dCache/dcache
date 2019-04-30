@@ -4,13 +4,19 @@ import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.List;
+import java.util.Properties;
 import java.util.ServiceLoader;
+
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageSender;
 
 import org.dcache.auth.LoginStrategy;
 import org.dcache.xrootd.door.LoginAuthenticationHandlerFactory;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
 import org.dcache.xrootd.plugins.AuthenticationProvider;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.plugins.ProxyDelegationClient;
+import org.dcache.xrootd.plugins.ProxyDelegationClientFactory;
 import org.dcache.xrootd.plugins.authn.none.NoAuthenticationFactory;
 
 import static com.google.common.base.Predicates.containsPattern;
@@ -24,15 +30,26 @@ import static com.google.common.collect.Iterables.*;
  * ChannelHandlerProvider instances.
  */
 public class GplazmaAwareChannelHandlerFactoryFactoryBean
-    extends ChannelHandlerFactoryFactoryBean
+    extends ChannelHandlerFactoryFactoryBean implements CellMessageSender
 {
     private static final ServiceLoader<AuthenticationProvider> _authenticationProviders =
             ServiceLoader.load(AuthenticationProvider.class);
+
+    private static final ServiceLoader<ProxyDelegationClientFactory> _clientFactories =
+            ServiceLoader.load(ProxyDelegationClientFactory.class);
 
     private static final String GPLAZMA_PREFIX = "gplazma:";
 
     private LoginStrategy _loginStrategy;
     private LoginStrategy _anonymousLoginStrategy;
+    private CellEndpoint _endpoint;
+
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _endpoint = endpoint;
+    }
 
     @Required
     public void setPlugins(String plugins)
@@ -93,16 +110,37 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
     {
         if (name.equals("none")) {
             return new LoginAuthenticationHandlerFactory(
-                    GPLAZMA_PREFIX + "none", new NoAuthenticationFactory(), _anonymousLoginStrategy);
+                    GPLAZMA_PREFIX + "none", new NoAuthenticationFactory(),
+                    null, _anonymousLoginStrategy);
         }
 
         for (AuthenticationProvider provider: _authenticationProviders) {
             AuthenticationFactory factory = provider.createFactory(name, _properties);
             if (factory != null) {
-                return new LoginAuthenticationHandlerFactory(
-                        GPLAZMA_PREFIX + name, factory, _loginStrategy);
+                ProxyDelegationClient client = createClient(name, _properties);
+                return new LoginAuthenticationHandlerFactory(GPLAZMA_PREFIX + name,
+                                                             factory,
+                                                             client,
+                                                             _loginStrategy);
             }
         }
+
         throw new IllegalArgumentException("Authentication plugin not found: " + name);
+    }
+
+    private ProxyDelegationClient createClient(String name, Properties properties)
+                    throws Exception
+    {
+        for (ProxyDelegationClientFactory factory: _clientFactories) {
+            ProxyDelegationClient client = factory.createClient(name, properties);
+            if (client != null) {
+                if (client instanceof CellMessageSender) {
+                    ((CellMessageSender)client).setCellEndpoint(_endpoint);
+                }
+                return client;
+            }
+        }
+
+        return null;
     }
 }

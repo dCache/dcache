@@ -20,15 +20,14 @@ package org.dcache.gridsite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertPath;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.gsi.KeyPairCache;
+import org.dcache.gsi.X509Delegation;
+import org.dcache.gsi.X509DelegationHelper;
 
 /**
  * The factory class for generating delegated credentials using Bouncy Castle.
@@ -47,22 +46,19 @@ public class BouncyCastleCredentialDelegationFactory implements CredentialDelega
     @Override
     public CredentialDelegation newDelegation(DelegationIdentity id, CertPath path) throws DelegationException
     {
-        X509Certificate[] certificates = path.getCertificates().stream().toArray(X509Certificate[]::new);
-        if (certificates.length == 0) {
-            throw new DelegationException("Certificate path is empty.");
-        }
-
-        X509Certificate first = certificates[0];
-        int bits = ((RSAPublicKey)first.getPublicKey()).getModulus().bitLength();
-
-        KeyPair keypair;
         try {
-            keypair = _keypairs.getKeyPair(bits);
+            X509Delegation delegation = X509DelegationHelper.newDelegation(path,
+                                                                           _keypairs);
+
+            return new BouncyCastleCredentialDelegation(delegation.getKeyPair(),
+                                                        id,
+                                                        delegation.getCertificates());
+
+        } catch (IllegalArgumentException e) {
+            throw new DelegationException("Certificate path is empty.");
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             LOGGER.error("Failed to create key-pair for request: {}", e.getMessage());
             throw new DelegationException("Internal error: cannot create key-pair.");
         }
-
-        return new BouncyCastleCredentialDelegation(keypair, id, certificates);
     }
 }
