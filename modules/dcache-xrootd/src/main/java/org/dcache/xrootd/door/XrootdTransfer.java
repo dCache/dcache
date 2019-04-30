@@ -2,6 +2,7 @@ package org.dcache.xrootd.door;
 
 import javax.security.auth.Subject;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 
@@ -20,6 +21,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     private UUID _uuid;
     private InetSocketAddress _doorAddress;
     private int _fileHandle;
+    private Serializable _delegatedCredential;
 
     public XrootdTransfer(PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path) {
         super(pnfs, subject, restriction, path);
@@ -41,7 +43,28 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
         _doorAddress = doorAddress;
     }
 
+    public void setDelegatedCredential(Serializable _delegatedCredential) {
+        this._delegatedCredential = _delegatedCredential;
+    }
+
     protected synchronized ProtocolInfo createProtocolInfo() {
+        return createXrootdProtocolInfo();
+    }
+
+    @Override
+    protected ProtocolInfo getProtocolInfoForPoolManager() {
+        return createProtocolInfo();
+    }
+
+    @Override
+    protected ProtocolInfo getProtocolInfoForPool() {
+        XrootdProtocolInfo info = createXrootdProtocolInfo();
+        info.setDelegatedCredential(_delegatedCredential);
+        return info;
+    }
+
+    private XrootdProtocolInfo createXrootdProtocolInfo()
+    {
         InetSocketAddress client = getClientAddress();
         return new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
                                       XrootdDoor.XROOTD_PROTOCOL_MAJOR_VERSION,
@@ -52,15 +75,5 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
                                       _fileHandle,
                                       _uuid,
                                       _doorAddress);
-    }
-
-    @Override
-    protected ProtocolInfo getProtocolInfoForPoolManager() {
-        return createProtocolInfo();
-    }
-
-    @Override
-    protected ProtocolInfo getProtocolInfoForPool() {
-        return createProtocolInfo();
     }
 }

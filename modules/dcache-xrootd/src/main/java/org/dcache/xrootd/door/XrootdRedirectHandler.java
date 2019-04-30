@@ -62,7 +62,7 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.XrootdProtocol.FilePerm;
+import org.dcache.xrootd.protocol.XrootdProtocol.*;
 import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
@@ -270,7 +270,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 transfer = _door.write(remoteAddress, path,
                         ioQueue, uuid, createDir, overwrite, size, _maximumUploadSize,
                         localAddress, req.getSubject(), _authz, persistOnSuccessfulClose,
-                        ((_isLoggedIn) ? _userRootPath : _rootPath));
+                        ((_isLoggedIn) ? _userRootPath : _rootPath),
+                        req.getSession().getDelegatedCredential());
             } else {
                 /*
                  * If this is a tpc transfer, then dCache is source here.
@@ -492,6 +493,9 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
          *  protocol, particularly the rendezvous key, because it is part of
          *  the opaque data, and if any of the opaque tpc info is missing
          *  from redirected call to the pool, the transfer will fail.
+         *
+         *  However, the calling method will need to fetch a delegated
+         *  proxy credential and add that to the protocol.
          */
         if (opaque.containsKey("tpc.src")) {
             _log.debug("Open request {} from client to door as destination: OK;"
