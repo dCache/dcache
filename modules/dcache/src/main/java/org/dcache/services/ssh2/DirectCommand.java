@@ -62,6 +62,8 @@ package org.dcache.services.ssh2;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.session.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +96,7 @@ import org.dcache.util.Strings;
  *
  * @author litvinse
  */
-public class DirectCommand implements Command, Runnable
+public class DirectCommand implements Command, Runnable, SessionAware
 {
     private static final Logger LOGGER =
         LoggerFactory.getLogger(DirectCommand.class);
@@ -221,5 +223,11 @@ public class DirectCommand implements Command, Runnable
                 errorWriter.flush();
             }
         }
+    }
+
+    @Override
+    public void setSession(ServerSession session)
+    {
+        shell.setSession(Sessions.connectionId(session));
     }
 }

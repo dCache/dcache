@@ -3,6 +3,7 @@ package org.dcache.services.ssh2;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
+import com.google.common.io.BaseEncoding;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.NamedFactory;
@@ -50,6 +51,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -265,8 +267,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
         new NetLoggerBuilder(logLevel, "org.dcache.services.ssh2.login")
                 .omitNullValues()
+                .add("session", Sessions.connectionId(session))
                 .add("username", username)
-                .add("remote.socket", session.getClientAddress())
                 .add("method", method)
                 .add("successful", successful)
                 .add("reason", reason)
@@ -432,20 +434,19 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
         @Override
         public void sessionCreated(Session session) {
-            logEvent("org.dcache.services.ssh2.connect", session);
+            new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, "org.dcache.services.ssh2.connect")
+                    .omitNullValues()
+                    .add("session", Sessions.connectionId(session))
+                    .add("remote.socket", session.getIoSession()
+                            .getRemoteAddress())
+                    .toLogger(_accessLog);
         }
 
         @Override
         public void sessionClosed(Session session) {
-            logEvent("org.dcache.services.ssh2.disconnect", session);
-        }
-
-        private void logEvent(String name, Session session) {
-            new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, name)
+            new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, "org.dcache.services.ssh2.disconnect")
                     .omitNullValues()
-                    .add("username", session.getUsername())
-                    .add("remote.socket", session.getIoSession()
-                            .getRemoteAddress())
+                    .add("session", Sessions.connectionId(session))
                     .toLogger(_accessLog);
         }
     }

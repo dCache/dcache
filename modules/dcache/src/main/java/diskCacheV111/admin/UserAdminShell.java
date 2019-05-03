@@ -201,6 +201,8 @@ public class UserAdminShell
      */
     private Completer _completer;
 
+    private String _session;
+
     public UserAdminShell(String prompt)
     {
         _instance = prompt;
@@ -214,6 +216,11 @@ public class UserAdminShell
     protected String getUser()
     {
         return _user;
+    }
+
+    public void setSession(String session)
+    {
+        _session = session;
     }
 
     public void setCellEndpoint(CellEndpoint endpoint)
@@ -1126,7 +1133,7 @@ public class UserAdminShell
         new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, "org.dcache.services.ssh2.exec")
             .omitNullValues()
             .onLogger(ACCESS_LOGGER)
-            .add("username", _user)
+            .add("session", _session)
             .add("cmd.destination", destination.map(Object::toString).orElse(null))
             .add("cmd.args", str)
             .log();

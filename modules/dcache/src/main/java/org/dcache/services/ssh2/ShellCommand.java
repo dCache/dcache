@@ -20,6 +20,8 @@ package org.dcache.services.ssh2;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.session.ServerSession;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +30,7 @@ import java.io.OutputStream;
 
 import diskCacheV111.admin.UserAdminShell;
 
-public class ShellCommand implements Command
+public class ShellCommand implements Command, SessionAware
 {
     private final File historyFile;
     private final int historySize;
@@ -94,5 +96,11 @@ public class ShellCommand implements Command
         if (delegate != null) {
             delegate.destroy();
         }
+    }
+
+    @Override
+    public void setSession(ServerSession session)
+    {
+        shell.setSession(Sessions.connectionId(session));
     }
 }
