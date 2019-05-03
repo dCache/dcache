@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -73,6 +74,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Args;
 import org.dcache.util.Glob;
+import org.dcache.util.NetLoggerBuilder;
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
@@ -101,6 +103,9 @@ public class UserAdminShell
 {
     private static final Logger _log =
             LoggerFactory.getLogger(UserAdminShell.class);
+
+    private static final Logger ACCESS_LOGGER =
+            LoggerFactory.getLogger("org.dcache.access.ssh2");
 
     /**
      * Timeout is milliseconds for the {@literal xyzzy} message sent to cells when connecting
@@ -1115,10 +1120,21 @@ public class UserAdminShell
 
         Args args = new Args(str);
 
-        if (_currentPosition == null || str.startsWith("\\")) {
-            return localCommand(args);
+        Optional<CellPath> destination = _currentPosition == null || str.startsWith("\\") ?
+            Optional.empty() : Optional.ofNullable(_currentPosition.remote);
+
+        new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, "org.dcache.services.ssh2.exec")
+            .omitNullValues()
+            .onLogger(ACCESS_LOGGER)
+            .add("username", _user)
+            .add("cmd.destination", destination.map(Object::toString).orElse(null))
+            .add("cmd.args", str)
+            .log();
+
+        if (destination.isPresent()) {
+            return sendObject(destination.get(), new AuthorizedString(_user, str));
         } else {
-            return sendObject(_currentPosition.remote, new AuthorizedString(_user, str));
+            return localCommand(args);
         }
     }
 
