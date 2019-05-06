@@ -94,6 +94,8 @@
       <property name="dropMessagesAtLimit" value="${billing.db.inserts.drop-messages-at-limit}"/>
       <property name="persistenceManagerFactory" ref="pmf"/>
       <property name="numberOfConsumers" value="${billing.db.consumers}"/>
+      <property name="truncationCutoff" value="${billing.db.fine-grained-truncate-before}"/>
+      <property name="truncationCutoffUnit" value="${billing.db.fine-grained-truncate-before.unit}"/>
     </bean>
 
     <bean id="hourly-aggregata-data-handler" class="org.dcache.services.billing.db.impl.HourlyAggregateDataHandler" init-method="initialize">
@@ -132,11 +134,24 @@
       <property name="shouldUpdate" value="${billing.db.schema.auto}"/>
     </bean>
 
-    <task:scheduled-tasks scheduler="scheduler">
-      <task:scheduled ref="jdbc-billing-info-access" method="aggregateDaily" initial-delay="10000" fixed-delay="#{ T(java.util.concurrent.TimeUnit).DAYS.toMillis(1) }"/>
+    <task:scheduled-tasks scheduler="aggregation-scheduler">
+      <task:scheduled ref="jdbc-billing-info-access" method="aggregateDaily"
+                      initial-delay="10000"
+                      fixed-delay="#{ T(java.util.concurrent.TimeUnit).DAYS.toMillis(1) }"/>
     </task:scheduled-tasks>
 
-    <task:scheduler id="scheduler" pool-size="1"/>
+    <task:scheduler id="aggregation-scheduler" pool-size="1"/>
+
+    <beans profile="db-truncate-true">
+      <task:scheduler id="truncation-scheduler" pool-size="1"/>
+
+      <task:scheduled-tasks scheduler="truncation-scheduler">
+        <task:scheduled ref="jdbc-billing-info-access" method="truncateFineGrained"
+                      initial-delay="#{ T(java.util.concurrent.TimeUnit).DAYS.toMillis(1) }"
+                      fixed-delay="#{ T(java.util.concurrent.TimeUnit).DAYS.toMillis(1) }"/>
+      </task:scheduled-tasks>
+    </beans>
+
   </beans>
 
 </beans>

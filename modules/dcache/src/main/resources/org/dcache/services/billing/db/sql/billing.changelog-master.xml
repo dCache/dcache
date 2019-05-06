@@ -10,4 +10,5 @@
     <include file="org/dcache/services/billing/db/sql/billing.changelog-2.15.xml"/>
     <include file="org/dcache/services/billing/db/sql/billing.changelog-2.16.xml"/>
     <include file="org/dcache/services/billing/db/sql/billing.changelog-3.2.xml"/>
+    <include file="org/dcache/services/billing/db/sql/billing.changelog-5.2.xml"/>
 </databaseChangeLog>

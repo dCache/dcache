@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+  <changeSet id="11.0" author="arossi" context="billing">
+    <comment>function which truncates billinginfo, doorinfo, storaginfo and hitinfo tables</comment>
+    <sql splitStatements="false">
+      CREATE OR REPLACE FUNCTION f_truncate_fine_grained_info(in before bigint) RETURNS integer
+      AS $$
+
+        DECLARE
+          before_date timestamp with time zone;
+          count int;
+          deleted_rows int;
+
+        BEGIN
+          deleted_rows := 0;
+          SELECT timestamp with time zone 'epoch' + (before/1000) * interval '1 second' INTO before_date;
+
+          DELETE FROM billinginfo WHERE before_date >= datestamp;
+          GET DIAGNOSTICS count = ROW_COUNT;
+          deleted_rows = deleted_rows + count;
+
+          DELETE FROM doorinfo WHERE before_date >= datestamp;
+          GET DIAGNOSTICS count = ROW_COUNT;
+          deleted_rows = deleted_rows + count;
+
+          DELETE FROM storageinfo WHERE before_date >= datestamp;
+          GET DIAGNOSTICS count = ROW_COUNT;
+          deleted_rows = deleted_rows + count;
+
+          DELETE FROM hitinfo WHERE before_date >= datestamp;
+          GET DIAGNOSTICS count = ROW_COUNT;
+          deleted_rows = deleted_rows + count;
+
+          RETURN deleted_rows;
+
+        END;
+
+      $$
+      LANGUAGE plpgsql;
+    </sql>
+
+  </changeSet>
+</databaseChangeLog>

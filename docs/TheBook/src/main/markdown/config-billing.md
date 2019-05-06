@@ -154,6 +154,25 @@ and the maximum database batch size.
 
     You can also generate a Java thread dump by issuing the `"dump threads"` command.
 
+### DATABASE AUTOMATIC TRUNCATION OF FINE-GRAINED TABLES
+
+It may be useful to limit the growth of the billing database, which
+can fill up quickly over the course of time if there is a lot of
+door activity.
+
+A built-in cron can be set to run every 24 hours in order to remove
+older rows from the "fine-grained" tables (``billinginfo``, ``doorinfo``,
+``storageinfo``, ``hitinfo``).
+
+The following properties are relevant:
+
+```
+billing.enable.db-truncate (default = false)
+
+billing.db.fine-grained-truncate-before (default = 365)
+billing.db.fine-grained-truncate-before.unit (default = DAYS)
+```
+
 ## BILLING HISTOGRAM DATA
 
 If the database has been enabled, dCache's frontend will regularly collect

@@ -15,7 +15,7 @@ check billing.text.flat-dir
 # Additional params, if 'billing.enable.db' is true
 define env billingToDb.exe endExe
   onerror shutdown
-
+  check -strong billing.enable.db-truncate
   check -strong billing.db.url
   check -strong billing.db.host
   check -strong billing.db.user
@@ -25,6 +25,8 @@ define env billingToDb.exe endExe
   check -strong billing.db.inserts.max-batch-size
   check -strong billing.db.inserts.drop-messages-at-limit
   check -strong billing.db.consumers
+  check -strong billing.db.fine-grained-truncate-before
+  check -strong billing.db.fine-grained-truncate-before.unit
   check -strong billing.limits.data-request-threads
   check billing.db.name
   check billing.db.password
@@ -42,7 +44,7 @@ onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${billing.cell.name} \
         "classpath:org/dcache/services/billing/cells/billing.xml \
-        -profiles=db-${billing.enable.db} \
+        -profiles=db-${billing.enable.db},db-truncate-${billing.enable.db-truncate} \
         -subscribe=${billing.cell.subscribe} \
         -consume=${billing.cell.consume} \
         -billingCellName=${billing.cell.name}.alias"

@@ -151,4 +151,6 @@ public interface IBillingInfoAccess {
                     Object... values);
 
     void aggregateDaily();
+
+    void truncateFineGrained();
 }

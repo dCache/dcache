@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.billing.db.impl.datanucleus;
 
 import org.datanucleus.FetchPlan;
+import org.springframework.beans.factory.annotation.Required;
 
 import javax.jdo.JDOCanRetryException;
 import javax.jdo.JDODataStoreException;
@@ -67,8 +68,11 @@ import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
+
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.IHistogramData;
@@ -83,10 +87,8 @@ import org.dcache.services.billing.db.impl.AbstractBillingInfoAccess;
  */
 public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
 
-    private PersistenceManagerFactory pmf;
-
     private static Query createQuery(PersistenceManager pm, Class<?> type,
-                    String filter, String parameters) {
+                                     String filter, String parameters) {
         Query query = pm.newQuery(type);
 
         if (filter != null) {
@@ -109,6 +111,10 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
             tx.rollback();
         }
     }
+
+    private PersistenceManagerFactory pmf;
+    private long truncationCutoff;
+    private TimeUnit truncationCutoffUnit;
 
     @Override
     public void commit(Collection<IHistogramData> data)
@@ -251,45 +257,81 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
         }
     }
 
+    @Required
     public void setPersistenceManagerFactory(PersistenceManagerFactory pmf)
     {
         this.pmf = pmf;
     }
 
+    @Required
+    public void setTruncationCutoff(long truncationCutoff) {
+        this.truncationCutoff = truncationCutoff;
+    }
+
+    @Required
+    public void setTruncationCutoffUnit(TimeUnit truncationCutoffUnit) {
+        this.truncationCutoffUnit = truncationCutoffUnit;
+    }
 
     @Override
     public void aggregateDaily()
     {
+        logger.info("executing daily aggregation procedure.");
         executeStoredProcedure("f_billing_daily_summary()");
+        logger.info("finished executing daily aggregation procedure.");
     }
 
-    private void executeStoredProcedure(String name)
+    @Override
+    public void truncateFineGrained()
+    {
+        long before = System.currentTimeMillis()
+                        - truncationCutoffUnit.toMillis(truncationCutoff);
+        logger.info("executing fine grained table trunction of rows before {}.",
+                    new Date(before));
+        Object result = executeStoredProcedure("f_truncate_fine_grained_info(" + before + ")");
+        logger.info("finished executing fine grained table trunction of rows, "
+                                    + "removed a total of {} rows.", result);
+    }
+
+    private Object executeStoredProcedure(String name)
     {
         PersistenceManager pm = pmf.getPersistenceManager();
         Transaction tx = pm.currentTransaction();
+        Object result;
+
         try {
             tx.begin();
-            /* TODO: the recommended recipe to execute a stored procedure
-             *       using DataNucleus JDO API is to call
+            /*
+             * REVISIT
              *
-             *  Query query = pm.newQuery("STOREDPROC",name);
+             * The recommended recipe to execute a stored procedure using
+             * DataNucleus JDO API is to call
              *
-             * http://www.datanucleus.org/products/datanucleus/jdo/stored_procedures.html
+             *          Query query = pm.newQuery("STOREDPROC",name);
              *
-             * Unfortunately currently this call translates into "CALL name" query
-             * on a DB backend and therefore does not work for postgresql
+             * http://www.datanucleus.org/products/accessplatform_4_1/jdo/stored_procedures.html
              *
-             *  http://www.datanucleus.org/servlet/forum/viewthread_thread,7968
+             * Unfortunately, currently this call translates into a "CALL name"
+             * query on a DB backend and therefore does not work for postgresql.
              *
-             * until this is fixed, a hack is below
+             * http://www.datanucleus.org/servlet/forum/viewthread_thread,7968
+             *
+             * Until this is fixed, we must use an SQL pass-through hack.
+             *
+             * NOTE:  if the procedure is a function, then the name
+             * must be expressed as:  'function_name(p1, p2 ...)'.
+             *
              */
-            Query query = pm.newQuery("javax.jdo.query.SQL","SELECT "+name);
+            Query query = pm.newQuery("javax.jdo.query.SQL",
+                                      "SELECT " + name);
             try {
-                query.execute();
+                result = query.execute();
             } catch (JDODataStoreException ignore) {
-                query = pm.newQuery("javax.jdo.query.SQL","CALL "+name);
-                query.execute();
+                query = pm.newQuery("javax.jdo.query.SQL",
+                                    "CALL " + name);
+                result = query.execute();
             }
+
             tx.commit();
         } finally {
             try {
@@ -298,5 +340,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
                 pm.close();
             }
         }
+
+        return result;
     }
 }
