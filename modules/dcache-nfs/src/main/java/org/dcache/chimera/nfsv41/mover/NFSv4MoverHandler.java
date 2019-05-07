@@ -5,13 +5,10 @@ import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,7 +22,6 @@ import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.NFSv4OperationFactory;
-import org.dcache.nfs.v4.NfsIdMapping;
 import org.dcache.nfs.v4.OperationBIND_CONN_TO_SESSION;
 import org.dcache.nfs.v4.OperationCREATE_SESSION;
 import org.dcache.nfs.v4.OperationDESTROY_CLIENTID;
@@ -40,15 +36,7 @@ import org.dcache.nfs.v4.OperationSEQUENCE;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.nfs.v4.xdr.nfsace4;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.vfs.FsStat;
-import org.dcache.nfs.vfs.Inode;
-import org.dcache.nfs.vfs.Stat;
-import org.dcache.nfs.vfs.Stat.Type;
-import org.dcache.nfs.vfs.VirtualFileSystem;
-import org.dcache.nfs.vfs.AclCheckable;
-import org.dcache.nfs.vfs.DirectoryStream;
 import org.dcache.util.PortRange;
 import org.dcache.util.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
@@ -69,129 +57,6 @@ import org.dcache.oncrpc4j.rpc.OncRpcException;
 public class NFSv4MoverHandler {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv4MoverHandler.class.getName());
-
-    private final VirtualFileSystem _fs = new VirtualFileSystem() {
-
-        @Override
-        public int access(Inode inode, int mode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void commit(Inode inode, long offset, int count) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Inode create(Inode parent, Type type, String path, Subject subject, int mode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public FsStat getFsStat() throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Inode getRootInode() throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Inode lookup(Inode parent, String path) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Inode link(Inode parent, Inode link, String path, Subject subject) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public DirectoryStream list(Inode inode, byte[] verifier, long cookie) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public byte[] directoryVerifier(Inode inode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Inode mkdir(Inode parent, String path, Subject subject, int mode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public boolean move(Inode src, String oldName, Inode dest, String newName) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Inode parentOf(Inode inode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public int read(Inode inode, byte[] data, long offset, int count) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public String readlink(Inode inode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void remove(Inode parent, String path) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Inode symlink(Inode parent, String path, String link, Subject subject, int mode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public WriteResult write(Inode inode, byte[] data, long offset, int count, StabilityLevel stabilityLevel) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Stat getattr(Inode inode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void setattr(Inode inode, Stat stat) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public nfsace4[] getAcl(Inode inode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void setAcl(Inode inode, nfsace4[] acl) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public boolean hasIOLayout(Inode inode) throws IOException {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public AclCheckable getAclCheckable() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public NfsIdMapping getIdMapper() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-    };
 
     /**
      * RPC service
@@ -222,7 +87,6 @@ public class NFSv4MoverHandler {
 
         _embededDS = new NFSServerV41.Builder()
                 .withOperationFactory(_operationFactory)
-                .withVfs(_fs)
                 .build();
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
