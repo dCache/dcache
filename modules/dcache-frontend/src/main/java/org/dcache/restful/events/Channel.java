@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -105,22 +106,16 @@ public class Channel extends CloseableWithTasks
             this.data = data;
         }
 
-        /**
-         * @return false if the Sink was detected as closed before sending
-         * the event, true otherwise.
-         */
-        public boolean sendEvent()
+        public void sendEvent()
         {
-            if (sse == null || sink == null) {
-                return false;
+            if (sse != null && sink != null) {
+                OutboundSseEvent event = sse.newEventBuilder()
+                        .data(data)
+                        .name(type)
+                        .id(Integer.toString(id))
+                        .build();
+                Channel.this.sendEvent(event);
             }
-
-            OutboundSseEvent event = sse.newEventBuilder()
-                    .data(data)
-                    .name(type)
-                    .id(Integer.toString(id))
-                    .build();
-            return Channel.this.sendEvent(event);
         }
 
         @Override
@@ -170,6 +165,7 @@ public class Channel extends CloseableWithTasks
                     subscriptionsByIdentity.values().forEach(Subscription::close);
                     synchronized (Channel.this) {
                         if (sink != null && !sink.isClosed()) {
+                            LOGGER.debug("Channel close triggering closure of connection with client");
                             sink.close();
                             sink = null;
                             sse = null;
@@ -219,15 +215,19 @@ public class Channel extends CloseableWithTasks
     }
 
     /**
-     * @return false if the Sink was detected as closed before sending the
-     * event, true otherwise.
+     * Send an event.
+     * <p>
+     * @return a CompletionStage that completes normally with a boolean value
+     * describing whether the event was sent.  If the event was not sent then
+     * the sink and sse are both set to null.
      */
     @GuardedBy("this")
-    private boolean sendEvent(OutboundSseEvent event)
+    private CompletionStage<Boolean> sendEvent(OutboundSseEvent event)
     {
         if (sink.isClosed()) {
-            sinkClosed();
-            return false;
+            LOGGER.debug("Discovered client connection closed when about to send an event");
+            sinkClosed(sink);
+            return CompletableFuture.completedFuture(Boolean.FALSE);
         }
 
         int newSize = queueSize.incrementAndGet();
@@ -235,7 +235,8 @@ public class Channel extends CloseableWithTasks
             LOGGER.info("Queue size now {}", newSize);
             // REVISIT should we kick out the client if the client too slow?
         }
-        sink.send(event).handle((o, t) -> {
+        SseEventSink thisSink = sink;
+        return sink.send(event).handle((o, t) -> {
                     queueSize.decrementAndGet();
 
                     // Jersey provides connection errors as normal result.
@@ -245,7 +246,11 @@ public class Channel extends CloseableWithTasks
                     }
 
                     if (t instanceof ClosedChannelException || t instanceof EOFException) {
-                        sinkClosed();
+                        synchronized (Channel.this) {
+                            LOGGER.debug("Discovered client connection closed when event was sent");
+                            sinkClosed(thisSink);
+                            return Boolean.FALSE;
+                        }
                     } else if (t instanceof RuntimeException) {
                         LOGGER.error("Bug detected: please report this to <support@dcache.org>", t);
                     } else if (t instanceof Exception) {
@@ -256,15 +261,14 @@ public class Channel extends CloseableWithTasks
                         LOGGER.warn("Send resulted in {}", o);
                     }
 
-                    return new CompletableFuture();
+                    return Boolean.TRUE;
                 });
-        return true;
     }
 
     @GuardedBy("this")
-    private void sinkClosed()
+    private void sinkClosed(SseEventSink closedSink)
     {
-        if (sink != null) {
+        if (sink == closedSink) {
             sink = null;
             sse = null;
             LOGGER.debug("Client has disconnected");
@@ -282,13 +286,17 @@ public class Channel extends CloseableWithTasks
     {
         checkState(!isClosed());
 
-        if (sink != null && !sink.isClosed()) {
+        if (sink != null) {
             // Permit only one SSE (HTTP GET) operation per channel.
-            sendEvent(sse.newEventBuilder()
+            OutboundSseEvent event = sse.newEventBuilder()
                         .name("SYSTEM")
                         .data("{\"type\":\"COMPETING_CLIENT\"}")
-                        .build());
-            sink.close();
+                        .build();
+            sendEvent(event).thenAccept(wasSent -> {
+                        if (wasSent) {
+                            sink.close();
+                        }
+                    });
         }
 
         if (closeFuture != null) {
