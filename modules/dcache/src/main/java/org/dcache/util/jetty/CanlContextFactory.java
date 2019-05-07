@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -53,7 +53,7 @@ import org.dcache.util.Callables;
  * Can optionally create GSIEngine wrappers for SSLEngine to support GSI delegation. Should be
  * combined with GsiRequestCustomizer to add the delegated credentials to the HttpServletRequest.
  */
-public class CanlContextFactory extends SslContextFactory
+public class CanlContextFactory extends SslContextFactory.Server
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CanlContextFactory.class);
 
@@ -213,7 +213,7 @@ public class CanlContextFactory extends SslContextFactory
      */
     private SslContextFactory createDelegate() throws Exception
     {
-        SslContextFactory factory = new SslContextFactory()
+        SslContextFactory factory = new SslContextFactory.Server()
         {
             private final PEMCredential serverCredential =
                     new PEMCredential(keyPath.toString(), certificatePath.toString(), null);
