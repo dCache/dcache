@@ -219,8 +219,8 @@ For example, to send a POST request with the following JSON input:
 
 ```json
 {
-    "action": "mkdir",
-    "name": "new-dir"
+  "action": "mkdir",
+  "name": "new-dir"
 }
 ```
 
@@ -620,12 +620,15 @@ returned:
 
 ```json
 {
-  "status" : "AUTHENTICATED",
-  "uid" : 2002,
-  "gids" : [ 2002, 0 ],
-  "username" : "paul",
-  "homeDirectory" : "/Users/paul",
-  "rootDirectory" : "/"
+  "status": "AUTHENTICATED",
+  "uid": 2002,
+  "gids": [
+    2002,
+    0
+  ],
+  "username": "paul",
+  "homeDirectory": "/Users/paul",
+  "rootDirectory": "/"
 }
 ```
 
@@ -702,12 +705,12 @@ If the path does not exist, then the HTTP response has a status code
 
 ```json
 {
-    "errors": [
-        {
-	    "message": "Not Found",
-	    "status": "404"
-	}
-    ]
+  "errors": [
+    {
+      "message": "Not Found",
+      "status": "404"
+    }
+  ]
 }
 ```
 
@@ -729,50 +732,55 @@ The following example shows a typical root directory listing.
 
 ```json
 {
-  "fileMimeType" : "application/vnd.dcache.folder",
-  "children" : [ {
-    "fileName" : "lost+found",
-    "fileMimeType" : "application/vnd.dcache.folder",
-    "fileType" : "DIR",
-    "pnfsId" : "000000000000000000000000000000000001",
-    "nlink" : 2,
-    "mtime" : 1554696070327,
-    "creationTime" : 1554696070327,
-    "size" : 512
-  }, {
-    "fileName" : "Users",
-    "fileMimeType" : "application/vnd.dcache.folder",
-    "fileType" : "DIR",
-    "pnfsId" : "00007EF0F064738E420099E7BDA672500DC2",
-    "nlink" : 30,
-    "mtime" : 1554696093632,
-    "creationTime" : 1554696089487,
-    "size" : 512
-  }, {
-    "fileName" : "VOs",
-    "fileMimeType" : "application/vnd.dcache.folder",
-    "fileType" : "DIR",
-    "pnfsId" : "0000F0C3D9A2EA9F4681970BF3D414A311ED",
-    "nlink" : 15,
-    "mtime" : 1554696092837,
-    "creationTime" : 1554696089424,
-    "size" : 512
-  }, {
-    "fileName" : "upload",
-    "fileMimeType" : "application/vnd.dcache.folder",
-    "fileType" : "DIR",
-    "pnfsId" : "00003405A2416C8D4317AA3833352F967A9A",
-    "nlink" : 14,
-    "mtime" : 1554726185595,
-    "creationTime" : 1554697387559,
-    "size" : 512
-  } ],
-  "fileType" : "DIR",
-  "pnfsId" : "000000000000000000000000000000000000",
-  "nlink" : 11,
-  "mtime" : 1554697387559,
-  "creationTime" : 1554696069369,
-  "size" : 512
+  "fileMimeType": "application/vnd.dcache.folder",
+  "children": [
+    {
+      "fileName": "lost+found",
+      "fileMimeType": "application/vnd.dcache.folder",
+      "fileType": "DIR",
+      "pnfsId": "000000000000000000000000000000000001",
+      "nlink": 2,
+      "mtime": 1554696070327,
+      "creationTime": 1554696070327,
+      "size": 512
+    },
+    {
+      "fileName": "Users",
+      "fileMimeType": "application/vnd.dcache.folder",
+      "fileType": "DIR",
+      "pnfsId": "00007EF0F064738E420099E7BDA672500DC2",
+      "nlink": 30,
+      "mtime": 1554696093632,
+      "creationTime": 1554696089487,
+      "size": 512
+    },
+    {
+      "fileName": "VOs",
+      "fileMimeType": "application/vnd.dcache.folder",
+      "fileType": "DIR",
+      "pnfsId": "0000F0C3D9A2EA9F4681970BF3D414A311ED",
+      "nlink": 15,
+      "mtime": 1554696092837,
+      "creationTime": 1554696089424,
+      "size": 512
+    },
+    {
+      "fileName": "upload",
+      "fileMimeType": "application/vnd.dcache.folder",
+      "fileType": "DIR",
+      "pnfsId": "00003405A2416C8D4317AA3833352F967A9A",
+      "nlink": 14,
+      "mtime": 1554726185595,
+      "creationTime": 1554697387559,
+      "size": 512
+    }
+  ],
+  "fileType": "DIR",
+  "pnfsId": "000000000000000000000000000000000000",
+  "nlink": 11,
+  "mtime": 1554697387559,
+  "creationTime": 1554696069369,
+  "size": 512
 }
 ```
 
@@ -794,7 +802,7 @@ file:
 
 ```json
 {
-    "status": "success"
+  "status": "success"
 }
 ```
 
@@ -809,8 +817,8 @@ The following example creates a new directory called `my new dir`.
 
 ```json
 {
-    "action": "mkdir",
-    "name": "my new dir"
+  "action": "mkdir",
+  "name": "my new dir"
 }
 ```
 
@@ -818,7 +826,7 @@ The response, if successful shows the status `success`:
 
 ```json
 {
-    "status": "success"
+  "status": "success"
 }
 ```
 
@@ -838,8 +846,8 @@ The following example renames the source to `new-name`.
 
 ```json
 {
-    "action": "mv",
-    "destination": "new-name"
+  "action": "mv",
+  "destination": "new-name"
 }
 ```
 
@@ -848,7 +856,7 @@ code, and the response entity is the JSON object:
 
 ```json
 {
-    "status": "success"
+  "status": "success"
 }
 ```
 
@@ -866,8 +874,8 @@ following example requests the target have QoS `tape`:
 
 ```json
 {
-    "action": "qos",
-    "target": "tape"
+  "action": "qos",
+  "target": "tape"
 }
 ```
 
@@ -1275,8 +1283,8 @@ and so on.
 
 ```json
 {
-    "message": "Message ${count}",
-    "delay": 2
+  "message": "Message ${count}",
+  "delay": 2
 }
 ```
 
@@ -1285,8 +1293,8 @@ The following JSON object is a valid selector that requests events at
 
 ```json
 {
-    "freqency": 1000,
-    "count": 2000
+  "freqency": 1000,
+  "count": 2000
 }
 ```
 
@@ -1358,7 +1366,7 @@ The following selector selects all inotify events for the directory
 
 ```json
 {
-    "path": "/data/uploads"
+  "path": "/data/uploads"
 }
 ```
 
@@ -1369,15 +1377,14 @@ files, an `IN_CREATE` event is sent at the start of an upload and an
 
 ```json
 {
-    "path": "/Users/paul/docs",
-    "flags":
-        [
-            "IN_CREATE",
-	    "IN_DELETE",
-	    "IN_MOVE_FROM",
-	    "IN_MOVE_TO",
-            "IN_CLOSE_WRITE"
-        ]
+  "path": "/Users/paul/docs",
+  "flags": [
+    "IN_CREATE",
+    "IN_DELETE",
+    "IN_MOVE_FROM",
+    "IN_MOVE_TO",
+    "IN_CLOSE_WRITE"
+  ]
 }
 ```
 
@@ -1590,12 +1597,11 @@ The event might look like:
 
 ```json
 {
-    "name": "example.dat"
-    "mask":
-        [
-            "IN_MOVED_TO"
-        ],
-    "cookie": "123456789abcdef"
+  "name": "example.dat",
+  "mask": [
+    "IN_MOVED_TO"
+  ],
+  "cookie": "123456789abcdef"
 }
 ```
 
@@ -1606,13 +1612,12 @@ that event would look:
 
 ```json
 {
-    "name": "2018"
-    "mask":
-        [
-            "IN_MOVED_TO",
-	    "IN_ISDIR"
-        ],
-    "cookie": "1133557799bbddf"
+  "name": "2018",
+  "mask": [
+    "IN_MOVED_TO",
+    "IN_ISDIR"
+  ],
+  "cookie": "1133557799bbddf"
 }
 ```
 
@@ -1624,12 +1629,11 @@ Here are those two events:
 
 ```json
 {
-    "name": "old-name.txt"
-    "mask":
-        [
-            "IN_MOVED_FROM"
-        ],
-    "cookie": "1111555511115555"
+  "name": "old-name.txt",
+  "mask": [
+    "IN_MOVED_FROM"
+  ],
+  "cookie": "1111555511115555"
 }
 ```
 
@@ -1637,12 +1641,11 @@ and
 
 ```json
 {
-    "name": "new-name.txt"
-    "mask":
-        [
-            "IN_MOVED_TO"
-        ],
-    "cookie": "1111555511115555"
+  "name": "new-name.txt",
+  "mask": [
+    "IN_MOVED_TO"
+  ],
+  "cookie": "1111555511115555"
 }
 ```
 
@@ -1670,11 +1673,10 @@ directory has been created.  This new file has the name
 
 ```json
 {
-    "name": "my-new-file.dat",
-    "mask":
-        [
-	    "IN_CREATE"
-	]
+  "name": "my-new-file.dat",
+  "mask": [
+    "IN_CREATE"
+  ]
 }
 ```
 
@@ -1684,12 +1686,11 @@ directory has been created.  This new directory has the name
 
 ```json
 {
-    "name": "my-new-dir",
-    "mask":
-        [
-	    "IN_CREATE",
-	    "IN_ISDIR"
-	]
+  "name": "my-new-dir",
+  "mask": [
+    "IN_CREATE",
+    "IN_ISDIR"
+  ]
 }
 ```
 
@@ -1699,11 +1700,10 @@ fresh metadata to learn what has changed.
 
 ```json
 {
-    "name": "important.dat",
-    "mask":
-        [
-	    "IN_ATTRIB"
-	]
+  "name": "important.dat",
+  "mask": [
+    "IN_ATTRIB"
+  ]
 }
 ```
 
@@ -1719,11 +1719,10 @@ directory, has moved.
 
 ```json
 {
-    "mask" :
-        [
-	    "IN_MOVE_SELF",
-	    "IN_ISDIR"
-	]
+  "mask": [
+    "IN_MOVE_SELF",
+    "IN_ISDIR"
+  ]
 }
 ```
 
@@ -1732,10 +1731,9 @@ file, has been deleted.
 
 ```json
 {
-    "mask" :
-        [
-	    "IN_DELETE_SELF"
-	]
+  "mask": [
+    "IN_DELETE_SELF"
+  ]
 }
 ```
 
@@ -1753,10 +1751,9 @@ on this subscription.  Here is an example:
 
 ```json
 {
-    "mask":
-        [
-	    "IN_IGNORED"
-	]
+  "mask": [
+    "IN_IGNORED"
+  ]
 }
 ```
 
@@ -1769,10 +1766,9 @@ Here is an example of such an event.
 
 ```json
 {
-    "mask":
-        [
-	    "IN_Q_OVERFLOW"
-	]
+  "mask": [
+    "IN_Q_OVERFLOW"
+  ]
 }
 ```
 
@@ -1842,7 +1838,7 @@ channel by including a JSON object in the POST request with the
 
 ```json
 {
-    "client-id": "test-1"
+  "client-id": "test-1"
 }
 ```
 
@@ -1934,7 +1930,7 @@ PATCH request.
 
 ```json
 {
-    "timeout": 3600
+  "timeout": 3600
 }
 ```
 
@@ -2030,7 +2026,7 @@ the HTTP entity:
 
 ```json
 {
-    "delay": 2
+  "delay": 2
 }
 ```
 
@@ -2236,8 +2232,8 @@ easier to read:
 
 ```json
 {
-    "subscription": "https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822",
-    "event": "tick"
+  "subscription": "https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome/2748b2a8-10f4-4c4b-ac73-8351f5107822",
+  "event": "tick"
 }
 ```
 
@@ -2272,7 +2268,7 @@ The inotify selector is
 
 ```json
 {
-    "path": "/Users/paul"
+  "path": "/Users/paul"
 }
 ```
 
