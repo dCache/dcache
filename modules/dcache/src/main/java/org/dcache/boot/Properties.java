@@ -23,6 +23,7 @@ public class Properties
     public static final String PROPERTY_DOMAIN_SERVICE_BATCH = "dcache.domain.service.batch";
     public static final String PROPERTY_DOMAIN_PRELOAD = "dcache.domain.preload";
     public static final String PROPERTY_LOG_CONFIG = "dcache.log.configuration";
+    public static final String PROPERTY_ZONE = "dcache.zone";
 
     public static final String PROPERTY_ZOOKEPER_CONNECTION = "dcache.zookeeper.connection";
     public static final String PROPERTY_ZOOKEPER_RETRIES = "dcache.zookeeper.max-retries";

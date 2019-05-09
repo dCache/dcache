@@ -10,6 +10,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
+import java.util.Optional;
 import java.util.Properties;
 
 import dmg.cells.nucleus.CellShell;
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 
 public class DomainConfigurationTest
 {
+    private final static Optional<String> NO_ZONE = Optional.empty();
     private final static String DOMAIN_NAME = "domain";
     private final static String SERVICE1_NAME = "service1";
     private final static String SERVICE2_NAME = "service2";
@@ -56,7 +58,7 @@ public class DomainConfigurationTest
                 .thenReturn(Mockito.mock(Listenable.class));
         Mockito.when(mockCurator.getUnhandledErrorListenable())
                 .thenReturn(Mockito.mock(Listenable.class));
-        system = SystemCell.create(DOMAIN_NAME, mockCurator);
+        system = SystemCell.create(DOMAIN_NAME, mockCurator, NO_ZONE);
 
         try {
             system.start().get();

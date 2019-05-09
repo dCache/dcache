@@ -17,6 +17,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -71,9 +72,10 @@ public class      SystemCell
       }
    }
 
-    public static SystemCell create(String cellDomainName, CuratorFramework curatorFramework)
+    public static SystemCell create(String cellDomainName,
+            CuratorFramework curatorFramework, Optional<String> zone)
     {
-        CellNucleus.initCellGlue(cellDomainName, curatorFramework);
+        CellNucleus.initCellGlue(cellDomainName, curatorFramework, zone);
         return new SystemCell();
     }
 
@@ -237,6 +239,7 @@ public class      SystemCell
     public void getInfo(PrintWriter pw)
     {
         pw.append(" CellDomainName   = ").println(getCellDomainName());
+        pw.append(" Zone = ").println(_nucleus.getZone().orElse("(none)"));
         pw.format(" I/O rcv=%d;asw=%d;frw=%d;rpy=%d;exc=%d\n",
                   _packetsReceived, _packetsAnswered, _packetsForwarded,
                   _packetsReplied, _exceptionCounter);

@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -243,10 +244,11 @@ public class CellNucleus implements ThreadFactory
         return nucleus;
     }
 
-    public static void initCellGlue(String cellDomainName, CuratorFramework curatorFramework)
+    public static void initCellGlue(String cellDomainName,
+            CuratorFramework curatorFramework, Optional<String> zone)
     {
         checkState(__cellGlue == null);
-        __cellGlue = new CellGlue(cellDomainName, curatorFramework);
+        __cellGlue = new CellGlue(cellDomainName, curatorFramework, zone);
     }
 
     public static void startCurator()
@@ -1129,6 +1131,12 @@ public class CellNucleus implements ThreadFactory
     public CuratorFramework getCuratorFramework()
     {
         return _curatorFramework;
+    }
+
+    @Nonnull
+    public Optional<String> getZone()
+    {
+        return __cellGlue.getZone();
     }
 
     //

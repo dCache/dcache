@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import dmg.util.TimebasedCounter;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 class CellGlue
 {
@@ -57,9 +59,12 @@ class CellGlue
     private final ListeningExecutorService _emergencyKillerExecutor;
     private final CellAddressCore _domainAddress;
     private final CuratorFramework _curatorFramework;
+    private final Optional<String> _zone;
 
-    CellGlue(String cellDomainName, @Nonnull CuratorFramework curatorFramework)
+    CellGlue(String cellDomainName, @Nonnull CuratorFramework curatorFramework,
+            Optional<String> zone)
     {
+        _zone = requireNonNull(zone);
         String cellDomainNameLocal = cellDomainName;
 
         if (cellDomainName == null || cellDomainName.isEmpty()) {
@@ -203,6 +208,12 @@ class CellGlue
     Map<String, Object> getCellContext()
     {
         return _cellContext;
+    }
+
+    @Nonnull
+    Optional<String> getZone()
+    {
+        return _zone;
     }
 
     Object getCellContext(String str)

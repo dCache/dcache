@@ -27,6 +27,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CDC;
@@ -36,8 +37,8 @@ import dmg.util.CommandException;
 
 import org.dcache.util.Args;
 import org.dcache.util.configuration.ConfigurationProperties;
-import org.dcache.util.Exceptions;
 
+import static com.google.common.base.Strings.emptyToNull;
 import static org.dcache.boot.Properties.*;
 import static org.dcache.util.Exceptions.genericCheck;
 
@@ -121,14 +122,16 @@ public class Domain
         return _services;
     }
 
-    public void start()
-            throws Exception
+    public void start() throws Exception
     {
         initializeLogging();
 
         String domainName = getName();
         CDC.reset(SYSTEM_CELL_NAME, domainName);
-        SystemCell systemCell = SystemCell.create(domainName, createCuratorFramework());
+        String zoneConfiguration = _properties.getValue(PROPERTY_ZONE);
+        Optional<String> zone = Optional.ofNullable(emptyToNull(zoneConfiguration));
+        SystemCell systemCell = SystemCell.create(domainName,
+                createCuratorFramework(), zone);
         systemCell.start().get();
         _log.info("Starting {}", domainName);
 
