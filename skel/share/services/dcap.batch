@@ -114,7 +114,7 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -billing=\"${dcap.service.billing}\" \
              -kafka=\"${dcacp.enable.kafka}\" \
              -bootstrap-server-kafka=\"${dcap.kafka.bootstrap-servers}\" \
-	     -kafka-topic=\"{dcap.kafka.topic}\" \
+	     -kafka-topic=\"${dcap.kafka.topic}\" \
              -kafka-max-block=${dcap.kafka.maximum-block}\
              -kafka-max-block-units=${dcap.kafka.maximum-block.unit}\
              -retries-kafka=0 \
