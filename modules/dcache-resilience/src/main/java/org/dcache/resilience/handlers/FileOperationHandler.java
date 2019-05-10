@@ -865,15 +865,15 @@ public class FileOperationHandler implements CellMessageSender {
             return Type.VOID;
         }
 
-        Collection verified;
+        Collection responsesFromPools;
 
         /*
          * Verify the locations. The pools are sent a message which returns
-         * whether the copy exists, is readable, is removable, and has
+         * whether the copy exists, is waiting, readable, removable, and has
          * the necessary sticky flag owned by system.
          */
         try {
-            verified = verifier.verifyLocations(pnfsId, members, pools);
+            responsesFromPools = verifier.verifyLocations(pnfsId, members, pools);
         } catch (InterruptedException e) {
             LOGGER.warn("handleVerification, replica verification "
                                         + "for {} was interrupted; "
@@ -883,18 +883,18 @@ public class FileOperationHandler implements CellMessageSender {
         }
 
         LOGGER.trace("handleVerification {}, verified replicas: {}",
-                     pnfsId, verified);
+                     pnfsId, responsesFromPools);
 
         /*
          *  First, if there are broken replicas, remove the first one
          *  and iterate.  As with the broken file handler routine, do
          *  not remove the last sticky replica, whatever it is.
          */
-        Set<String> broken = verifier.getBroken(verified);
+        Set<String> broken = verifier.getBroken(responsesFromPools);
         if (!broken.isEmpty()) {
             String target = broken.iterator().next();
-            if (!verifier.isSticky(target, verified)
-                            || verifier.getSticky(verified).size() > 1) {
+            if (!verifier.isSticky(target, responsesFromPools)
+                            || verifier.getSticky(responsesFromPools).size() > 1) {
                 fileOpMap.updateOperation(pnfsId, null, target);
                 operation.incrementCount();
                 return Type.REMOVE;
@@ -908,25 +908,24 @@ public class FileOperationHandler implements CellMessageSender {
         Set<String> namespaceReadable
                         = poolInfoMap.getReadableLocations(members);
 
-        Set<String> verifiedReadable
-                        = verifier.exist(namespaceReadable, verified);
+        Set<String> exist = verifier.exist(namespaceReadable, responsesFromPools);
 
         LOGGER.trace("handleVerification, {}, namespace readable locations {},"
-                                     + "verified readable locations {}", pnfsId,
-                     namespaceReadable, verifiedReadable);
+                                     + "verified locations {}",
+                     pnfsId, namespaceReadable, exist);
 
         /*
          * This should now happen very rarely, since resilience itself
          * no longer sets the files to removed, but rather removes
          * the system sticky flag.
          */
-        if (namespaceReadable.size() != verifiedReadable.size()) {
+        if (namespaceReadable.size() != exist.size()) {
             ACTIVITY_LOGGER.info("The namespace is not in sync with the pool "
                                                  + "repositories for {}: "
                                                  + "namespace locations "
                                                  + "that are readable: {}; "
                                                  + "actually found: {}.",
-                                 pnfsId, namespaceReadable, verifiedReadable);
+                                 pnfsId, namespaceReadable, exist);
             sendOutOfSyncAlarm();
         }
 
@@ -939,21 +938,15 @@ public class FileOperationHandler implements CellMessageSender {
          *  the namespace.  We do this be adding back into the verified
          *  locations the offline replica locations.
          */
-        Set<String> occupied = Sets.union(verifiedReadable,
+        Set<String> occupied = Sets.union(exist,
                                           Sets.difference(members,
                                                           namespaceReadable));
-
-        /*
-         *  Now, exclude locations that are on readable pools that
-         *  actually aren't readable (i.e., incomplete).
-         */
-        verifiedReadable = verifier.areReadable(verifiedReadable, verified);
 
         /*
          *  While cached copies are excluded from the resilient count, we
          *  allow them to be included as readable sources.
          */
-        if (inaccessibleFileHandler.isInaccessible(verifiedReadable, operation)) {
+        if (inaccessibleFileHandler.isInaccessible(exist, operation)) {
             LOGGER.trace("handleVerification {}, "
                                          + "no valid readable locations found, "
                                          + "checking to see if "
@@ -967,8 +960,7 @@ public class FileOperationHandler implements CellMessageSender {
         /*
          *  Find just the sticky locations.
          */
-        Set<String> stickyReadable = verifier.areSticky(verifiedReadable,
-                                                        verified);
+        Set<String> sticky = verifier.areSticky(exist, responsesFromPools);
 
         /*
          *  Tagging of the pools may have changed and/or the requirements on
@@ -978,26 +970,25 @@ public class FileOperationHandler implements CellMessageSender {
          *  are made from the remaining replica.  Again, this operation is
          *  only done on sticky replicas.
          */
-        if (shouldEvictALocation(operation, stickyReadable, verified)) {
+        if (shouldEvictALocation(operation, sticky, responsesFromPools)) {
             LOGGER.trace("handleVerification, a replica should be evicted from {}",
-                         stickyReadable);
+                         sticky);
             return Type.REMOVE;
         }
 
         LOGGER.trace("handleVerification after eviction check, {}, "
                                      + "valid replicas {}",
-                        pnfsId, stickyReadable);
+                        pnfsId, sticky);
 
         /*
-         *  Find the non-sticky locations which are readable.
-         *  Partition the sticky readable locations between usable and excluded.
+         *  Find the non-sticky locations.
+         *  Partition the sticky locations between usable and excluded.
          */
-        Set<String> nonStickyReadable = Sets.difference(verifiedReadable,
-                                                        stickyReadable);
+        Set<String> nonSticky = Sets.difference(exist, sticky);
         Set<String> excluded
                         = verifier.areSticky(poolInfoMap.getExcludedLocationNames(members),
-                                             verified);
-        stickyReadable = Sets.difference(stickyReadable, excluded);
+                                             responsesFromPools);
+        sticky = Sets.difference(sticky, excluded);
 
         LOGGER.trace("handleVerification {}: member pools with a sticky replica  "
                                      + " but which have been manually excluded: {}.",
@@ -1006,9 +997,9 @@ public class FileOperationHandler implements CellMessageSender {
         return determineTypeFromConstraints(operation,
                                             excluded.size(),
                                             occupied,
-                                            stickyReadable,
-                                            nonStickyReadable,
-                                            verified);
+                                            sticky,
+                                            nonSticky,
+                                            responsesFromPools);
     }
 
     @Override
@@ -1078,16 +1069,16 @@ public class FileOperationHandler implements CellMessageSender {
      * @param operation -- on the given pnfsid
      * @param excluded -- number of member pools manually excluded by admins
      * @param occupied -- group member pools with a replica in any state
-     * @param stickyReadable -- readable group member replicas that are sticky
-     * @param nonStickyReadable -- readable group member replicas that are not sticky
+     * @param sticky -- group member replicas that are sticky
+     * @param nonSticky -- group member replicas that are not sticky
      * @param verified -- the messages returned by the pools
      * @return the type of operation which should take place, if any.
      */
     private Type determineTypeFromConstraints(FileOperation operation,
                                               int excluded,
                                               Set<String> occupied,
-                                              Set<String> stickyReadable,
-                                              Set<String> nonStickyReadable,
+                                              Set<String> sticky,
+                                              Set<String> nonSticky,
                                               Collection verified) {
         PnfsId pnfsId = operation.getPnfsId();
         Integer gindex = operation.getPoolGroup();
@@ -1100,7 +1091,7 @@ public class FileOperationHandler implements CellMessageSender {
                         = poolInfoMap.getStorageUnitConstraints(sindex);
 
         int required = constraints.getRequired();
-        int missing = required - stickyReadable.size();
+        int missing = required - sticky.size();
 
         /*
          *  First compute the missing files on the basis of just the readable
@@ -1135,7 +1126,7 @@ public class FileOperationHandler implements CellMessageSender {
                 if (index == null || !poolInfoMap.isPoolViable(index, true)
                                 || !verifier.isRemovable(poolInfoMap.getPool(index),
                                                          verified)) {
-                    Set<String> removable = verifier.areRemovable(stickyReadable,
+                    Set<String> removable = verifier.areRemovable(sticky,
                                                                   verified);
                     target = locationSelector.selectRemoveTarget(operation,
                                                                  removable,
@@ -1164,7 +1155,7 @@ public class FileOperationHandler implements CellMessageSender {
                      */
                     if (viableSource != null) {
                         source = poolInfoMap.getPool(viableSource);
-                        if (nonStickyReadable.contains(source)) {
+                        if (nonSticky.contains(source)) {
                             fileOpMap.updateOperation(pnfsId, null, source);
                             LOGGER.trace("promoting source to sticky: {}", source);
                             return Type.SET_STICKY;
@@ -1172,8 +1163,8 @@ public class FileOperationHandler implements CellMessageSender {
                     }
 
                     target = locationSelector.selectPromotionTarget(operation,
-                                                                    stickyReadable,
-                                                                    nonStickyReadable,
+                                                                    sticky,
+                                                                    nonSticky,
                                                                     tags);
 
                     if (target != null) {
@@ -1195,9 +1186,20 @@ public class FileOperationHandler implements CellMessageSender {
 
                 LOGGER.trace("target to copy: {}", target);
 
+                /*
+                 *  'sticky' may contain both readable and waiting
+                 *  ('from') replicas.  To avoid failure/retry,
+                 *  choose only the readable.  If there is only
+                 *  an incomplete source, then use it tentatively.
+                 */
+                Set<String> strictlyReadable =
+                                verifier.areReadable(sticky, verified);
+
                 if (viableSource == null) {
                     source = locationSelector.selectCopySource(operation,
-                                                               stickyReadable);
+                                                               strictlyReadable.isEmpty()
+                                                                               ? sticky
+                                                                               : strictlyReadable);
                 }
 
                 LOGGER.trace("source: {}", source);

@@ -120,6 +120,10 @@ public class ReplicaVerifier {
         return replies;
     }
 
+    public Set<String> getAccessible(Collection<ReplicaStatusMessage> messages) {
+        return filter(messages, m -> m.isReadable() || m.isWaiting());
+    }
+
     public Set<String> getBroken(Collection<ReplicaStatusMessage> messages) {
         return filter(messages, m -> m.isBroken());
     }
@@ -145,6 +149,11 @@ public class ReplicaVerifier {
         return find(pools, messages, (p -> exists(p, messages)));
     }
 
+    public  Set<String> areAccessible(Collection<String> pools,
+                                      Collection<ReplicaStatusMessage> messages) {
+        return find(pools, messages, (p -> isAccessible(p, messages)));
+    }
+
     public  Set<String> areReadable(Collection<String> pools,
                                     Collection<ReplicaStatusMessage> messages) {
         return find(pools, messages, (p -> isReadable(p, messages)));
@@ -163,6 +172,11 @@ public class ReplicaVerifier {
     public  boolean exists(String pool,
                            Collection<ReplicaStatusMessage> messages) {
         return test(pool, messages, m -> m.exists());
+    }
+
+    public  boolean isAccessible(String pool,
+                                 Collection<ReplicaStatusMessage> messages) {
+        return test(pool, messages, m -> m.isReadable() || m.isWaiting());
     }
 
     public  boolean isBroken(String pool,

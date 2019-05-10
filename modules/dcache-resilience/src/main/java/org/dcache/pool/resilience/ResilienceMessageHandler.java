@@ -133,6 +133,11 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
                 message.setExists(true);
 
                 switch(entry.getState()) {
+                    case FROM_CLIENT:
+                    case FROM_POOL:
+                    case FROM_STORE:
+                        message.setWaiting(true);
+                        break;
                     case CACHED:
                         message.setReadable(true);
                         message.setRemovable(true);

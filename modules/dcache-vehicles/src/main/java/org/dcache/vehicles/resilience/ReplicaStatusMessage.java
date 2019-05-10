@@ -72,6 +72,7 @@ public final class ReplicaStatusMessage extends Message {
     private final        PnfsId pnfsId;
 
     private boolean exists;
+    private boolean waiting;
     private boolean broken;
     private boolean readable;
     private boolean systemSticky;
@@ -108,6 +109,10 @@ public final class ReplicaStatusMessage extends Message {
         return systemSticky;
     }
 
+    public boolean isWaiting() {
+        return waiting;
+    }
+
     public void setBroken(boolean broken) {
         this.broken = broken;
     }
@@ -128,11 +133,15 @@ public final class ReplicaStatusMessage extends Message {
         this.systemSticky = systemSticky;
     }
 
+    public void setWaiting(boolean waiting) {
+        this.waiting = waiting;
+    }
+
     public String toString() {
         return String.format(
-                        "%s: (pool %s) (pnfsid %s) (exists %s) (broken %s) (readable %s) "
+                        "%s: (pool %s) (pnfsid %s) (exists %s) (waiting %s) (broken %s) (readable %s) "
                                         + "(system sticky %s) (removable %s) - %s",
-                        getMessageName(), pool, pnfsId, exists, broken, readable,
+                        getMessageName(), pool, pnfsId, exists, waiting, broken, readable,
                         systemSticky, removable, super.toString());
     }
 }
