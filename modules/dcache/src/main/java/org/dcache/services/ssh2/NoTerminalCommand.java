@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 
 import diskCacheV111.admin.UserAdminShell;
 
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.CommandAclException;
@@ -70,7 +71,8 @@ public class NoTerminalCommand implements Command, Runnable
     @Override
     public void start(Environment env) throws IOException {
         _userAdminShell.setUser(env.getEnv().get(Environment.ENV_USER));
-        _adminShellThread = new Thread(this);
+        CDC cdc = new CDC();
+        _adminShellThread = new Thread(() -> cdc.execute(this));
         _adminShellThread.start();
     }
 

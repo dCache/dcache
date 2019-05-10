@@ -30,6 +30,8 @@ import java.io.OutputStream;
 
 import diskCacheV111.admin.UserAdminShell;
 
+import dmg.cells.nucleus.CDC;
+
 public class ShellCommand implements Command, SessionAware
 {
     private final File historyFile;
@@ -42,6 +44,7 @@ public class ShellCommand implements Command, SessionAware
     private ExitCallback callback;
 
     private Command delegate;
+    private String sessionId;
 
     public ShellCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell)
     {
@@ -78,16 +81,19 @@ public class ShellCommand implements Command, SessionAware
     @Override
     public void start(Environment env) throws IOException
     {
-        if (env.getEnv().get(Environment.ENV_TERM) != null) {
-            delegate = new AnsiTerminalCommand(historyFile, historySize, useColor, shell);
-        } else {
-            delegate = new NoTerminalCommand(shell);
+        try (CDC ignored = new CDC()) {
+            CDC.setSession(sessionId);
+            if (env.getEnv().get(Environment.ENV_TERM) != null) {
+                delegate = new AnsiTerminalCommand(historyFile, historySize, useColor, shell);
+            } else {
+                delegate = new NoTerminalCommand(shell);
+            }
+            delegate.setInputStream(in);
+            delegate.setOutputStream(out);
+            delegate.setErrorStream(err);
+            delegate.setExitCallback(callback);
+            delegate.start(env);
         }
-        delegate.setInputStream(in);
-        delegate.setOutputStream(out);
-        delegate.setErrorStream(err);
-        delegate.setExitCallback(callback);
-        delegate.start(env);
     }
 
     @Override
@@ -101,6 +107,7 @@ public class ShellCommand implements Command, SessionAware
     @Override
     public void setSession(ServerSession session)
     {
-        shell.setSession(Sessions.connectionId(session));
+        sessionId = Sessions.connectionId(session);
+        shell.setSession(sessionId);
     }
 }

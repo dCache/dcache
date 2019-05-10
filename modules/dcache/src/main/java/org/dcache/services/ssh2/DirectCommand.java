@@ -74,6 +74,7 @@ import java.util.List;
 
 import diskCacheV111.admin.UserAdminShell;
 
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
@@ -107,6 +108,7 @@ public class DirectCommand implements Command, Runnable, SessionAware
     private final UserAdminShell shell;
     private List<String> commands;
     private Thread shellThread;
+    private String sessionId;
 
     DirectCommand(List<String> commands,
                   CellEndpoint endpoint,
@@ -151,10 +153,14 @@ public class DirectCommand implements Command, Runnable, SessionAware
     }
 
     @Override
-    public void start(Environment env)  {
-        shell.setUser(env.getEnv().get(Environment.ENV_USER));
-        shellThread = new Thread(this);
-        shellThread.start();
+    public void start(Environment env) {
+        try (CDC ignored = new CDC()) {
+            CDC.setSession(sessionId);
+            shell.setUser(env.getEnv().get(Environment.ENV_USER));
+            CDC cdc = new CDC();
+            shellThread = new Thread(() -> cdc.execute(this));
+            shellThread.start();
+        }
     }
 
     @Override
@@ -228,6 +234,7 @@ public class DirectCommand implements Command, Runnable, SessionAware
     @Override
     public void setSession(ServerSession session)
     {
-        shell.setSession(Sessions.connectionId(session));
+        sessionId = Sessions.connectionId(session);
+        shell.setSession(sessionId);
     }
 }

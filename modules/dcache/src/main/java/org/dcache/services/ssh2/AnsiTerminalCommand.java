@@ -23,6 +23,7 @@ import java.io.PipedOutputStream;
 
 import diskCacheV111.admin.UserAdminShell;
 
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.CommandException;
@@ -121,9 +122,10 @@ public class AnsiTerminalCommand implements Command, Runnable {
                 getOutput().append(s);
             }
         };
-        _adminShellThread = new Thread(this);
+        CDC cdc = new CDC();
+        _adminShellThread = new Thread(() -> cdc.execute(this));
         _adminShellThread.start();
-        _pipeThread = new Thread(new Pipe());
+        _pipeThread = new Thread(() -> cdc.execute(new Pipe()));
         _pipeThread.start();
     }
 
