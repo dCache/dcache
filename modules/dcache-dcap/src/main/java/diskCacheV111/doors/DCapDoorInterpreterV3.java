@@ -70,6 +70,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
@@ -102,7 +103,7 @@ import static org.dcache.namespace.FileType.DIR;
 import static org.dcache.namespace.FileType.REGULAR;
 
 public class DCapDoorInterpreterV3
-        implements KeepAliveListener, CellMessageReceiver, CellInfoProvider, CellCommandListener
+        implements KeepAliveListener, CellMessageReceiver, CellInfoProvider, CellCommandListener, CellLifeCycleAware
 {
 
     private static final int UNDEFINED = -1;
@@ -2470,16 +2471,6 @@ public class DCapDoorInterpreterV3
 
     public void close() {
 
-
-        /*The producer consists of a pool of buffer space that holds records that haven't yet been
-          transmitted to the server as well as a background I/O thread
-          that is responsible for turning these records into requests and transmitting them to the cluster.
-          Failure to close the producer after use will leak these resources. Hence we need to  close Kafka Producer
-         */
-        if (_settings.isKafkaEnabled()) {
-            _kafkaProducer.close();
-        }
-
         for(SessionHandler sh: _sessions.values()) {
             try {
                 sh.removeUs();
@@ -2489,6 +2480,19 @@ public class DCapDoorInterpreterV3
                  */
                 _log.error("failed to removed session: " + sh, e);
             }
+        }
+    }
+
+    @Override
+    public void beforeStop() {
+
+        /*The producer consists of a pool of buffer space that holds records that haven't yet been
+          transmitted to the server as well as a background I/O thread
+          that is responsible for turning these records into requests and transmitting them to the cluster.
+          Failure to close the producer after use will leak these resources. Hence we need to  close Kafka Producer
+         */
+        if (_settings.isKafkaEnabled()) {
+            _kafkaProducer.close();
         }
     }
 
