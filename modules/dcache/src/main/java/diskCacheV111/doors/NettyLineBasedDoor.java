@@ -54,6 +54,7 @@ import diskCacheV111.services.space.Space;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandExitException;
@@ -77,7 +78,7 @@ import static org.dcache.util.ByteUnit.KiB;
  * and accept Strings. These are passed on to an interpreter for processing.
  */
 public class NettyLineBasedDoor
-    extends AbstractCell implements ChannelInboundHandler
+    extends AbstractCell implements ChannelInboundHandler, CellLifeCycleAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyLineBasedDoor.class);
 
@@ -120,6 +121,8 @@ public class NettyLineBasedDoor
      * Line oriented protocol interpreter.
      */
     private LineBasedInterpreter interpreter;
+
+    private Optional<CellLifeCycleAware> lifeCycleAwareInterpreter = Optional.empty();
 
     /**
      * Cell logging context under which protocol lines are interpreted.
@@ -226,6 +229,9 @@ public class NettyLineBasedDoor
                         e.setUseClientMode(false);
                         ctx.pipeline().addFirst("tls", new SslHandler(e, true));
                     });
+        }
+        if (interpreter instanceof CellLifeCycleAware) {
+            lifeCycleAwareInterpreter = Optional.of((CellLifeCycleAware)interpreter);
         }
         start().get(); // Blocking to prevent that we process any commands before the cell is alive
     }
@@ -436,5 +442,35 @@ public class NettyLineBasedDoor
                 }
             }
         }
+    }
+
+    @Override
+    public void afterStart()
+    {
+        lifeCycleAwareInterpreter.ifPresent(i -> i.afterSetup());
+    }
+
+    @Override
+    public void beforeStop()
+    {
+        lifeCycleAwareInterpreter.ifPresent(i -> i.beforeStop());
+    }
+
+    @Override
+    public void beforeSetup()
+    {
+        lifeCycleAwareInterpreter.ifPresent(i -> i.beforeSetup());
+    }
+
+    @Override
+    public void afterSetup()
+    {
+        lifeCycleAwareInterpreter.ifPresent(i -> i.afterSetup());
+    }
+
+    @Override
+    public void setupChanged(int version)
+    {
+        lifeCycleAwareInterpreter.ifPresent(i -> i.setupChanged(version));
     }
 }
