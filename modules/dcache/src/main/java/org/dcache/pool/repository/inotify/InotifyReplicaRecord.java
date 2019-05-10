@@ -25,10 +25,13 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.namespace.events.EventType;
 import org.dcache.pool.repository.ForwardingReplicaRecord;
 import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.RepositoryChannel;
 
 /**
@@ -97,5 +100,22 @@ public class InotifyReplicaRecord extends ForwardingReplicaRecord
         channel.setSuppressDuration(suppressDuration);
         channel.sendOpenEvent();
         return channel;
+    }
+
+    @Override
+    public <T> T update(String why, Update<T> update) throws CacheException
+    {
+        /*
+         * This code relies on this update happening after the namespace is
+         * updated.
+         */
+        boolean wasFromClient = inner.getState() == ReplicaState.FROM_CLIENT;
+        try {
+            return super.update(why, update);
+        } finally {
+            if (wasFromClient && inner.getState() != ReplicaState.FROM_CLIENT) {
+                notification.sendEvent(inner.getPnfsId(), EventType.IN_CLOSE_WRITE);
+            }
+        }
     }
 }
