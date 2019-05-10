@@ -69,7 +69,7 @@ public class InotifyChannel  extends ForwardingRepositoryChannel
 
     private final RepositoryChannel inner;
     private final PnfsId target;
-    private final EventType closeEvent;
+    private final boolean isOpenForRead;
     private final NotificationAmplifier notification;
 
     private Operation lastOperation;
@@ -82,7 +82,7 @@ public class InotifyChannel  extends ForwardingRepositoryChannel
     {
         this.inner = inner;
         this.target = target;
-        closeEvent = openForWrite ? EventType.IN_CLOSE_WRITE : EventType.IN_CLOSE_NOWRITE;
+        isOpenForRead = !openForWrite;
         this.notification = notification;
     }
 
@@ -111,7 +111,13 @@ public class InotifyChannel  extends ForwardingRepositoryChannel
     public void close() throws IOException
     {
         super.close();
-        notification.sendEvent(target, closeEvent);
+
+        // Suppress sending IN_CLOSE_WRITE event until after updating namespace.
+        // For non-write open, send the close event straight away as the pool
+        // only updates the file's atime.
+        if (isOpenForRead) {
+            notification.sendEvent(target, EventType.IN_CLOSE_NOWRITE);
+        }
     }
 
     @Override
