@@ -989,6 +989,10 @@ public class UniversalSpringCell
             ((CellMessageSender) bean).setCellEndpoint(this);
         }
 
+        if (bean instanceof ZoneAware) {
+            ((ZoneAware) bean).setZone(getNucleus().getZone());
+        }
+
         return bean;
     }
 
