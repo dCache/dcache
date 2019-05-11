@@ -4,6 +4,7 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.TreeSet;
@@ -103,6 +105,7 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
+import org.dcache.cells.ZoneAware;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.PoolDataBeanProvider;
@@ -133,13 +136,14 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 
 public class PoolV4
     extends AbstractCellComponent
     implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider,
-                PoolDataBeanProvider<PoolDataDetails>
+                PoolDataBeanProvider<PoolDataDetails>, ZoneAware
 {
     private static final int DUP_REQ_NONE = 0;
     private static final int DUP_REQ_IGNORE = 1;
@@ -150,6 +154,11 @@ public class PoolV4
     private static final int HEARTBEAT = 30;
 
     private static final double DEFAULT_BREAK_EVEN = 0.7;
+
+    public static final String ZONE_TAG = "zone";
+
+    /** These are tags that may not be set by an admin. */
+    private static final Set<String> RESERVED_TAGS = ImmutableSet.of(ZONE_TAG);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolV4.class);
 
@@ -427,8 +436,12 @@ public class PoolV4
                 .split(tags);
 
         newTags.forEach(((key,value) -> {
-            _tags.put(key, value);
-            LOGGER.info("Tag: {}={}", key, value);
+            if (RESERVED_TAGS.contains(key)) {
+                LOGGER.warn("Skipping reserved tag: {}={}", key, value);
+            } else {
+                _tags.put(key, value);
+                LOGGER.info("Tag: {}={}", key, value);
+            }
         }));
     }
 
@@ -460,6 +473,12 @@ public class PoolV4
     public void setEnableHsmFlag(boolean enable)
     {
         _enableHsmFlag = enable;
+    }
+
+    @Override
+    public void setZone(Optional<String> zone)
+    {
+        zone.ifPresent(z -> _tags.put(ZONE_TAG, z));
     }
 
     public void init()
