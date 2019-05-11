@@ -35,6 +35,7 @@ import java.net.Socket;
 import java.nio.channels.AsynchronousCloseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
 import dmg.cells.nucleus.CellAdapter;
@@ -71,7 +72,7 @@ public class LocationMgrTunnel
 
     private final CellNucleus  _nucleus;
 
-    private CellDomainInfo  _localDomainInfo;
+    private final CellDomainInfo  _localDomainInfo;
     private CellDomainInfo  _remoteDomainInfo;
     private boolean _allowForwardingOfRemoteMessages;
 
@@ -100,7 +101,9 @@ public class LocationMgrTunnel
         CellDomainRole role = args.hasOption("role") ? CellDomainRole.valueOf(
                 args.getOption("role").toUpperCase()) : CellDomainRole.SATELLITE;
         _localDomainInfo = new CellDomainInfo(_nucleus.getCellDomainName(),
-                                              Version.of(LocationMgrTunnel.class).getVersion(), role);
+                                              Version.of(LocationMgrTunnel.class).getVersion(),
+                                              role,
+                                              _nucleus.getZone());
     }
 
     @Override
@@ -255,10 +258,24 @@ public class LocationMgrTunnel
             : _remoteDomainInfo.getCellDomainName();
     }
 
+    /**
+     * Return the zone within which the remote site resides.  Returns empty if
+     * the tunnel is disconnected, the handshake has not yet taken place, or the
+     * remote domain is dCache v5.1 (or earlier) or is configured not to have
+     * a zone.
+     * @return the remote domain's zone
+     */
+    public Optional<String> getRemoteZone()
+    {
+        return _remoteDomainInfo == null
+                ? Optional.empty()
+                : _remoteDomainInfo.getZone();
+    }
+
     @Override
     public String toString()
     {
-        return "Connected to " + getRemoteDomainName();
+        return "Connected to " + getRemoteDomainName() + getRemoteZone().map(z -> " in zone " + z).orElse("");
     }
 
     @Override
@@ -272,10 +289,12 @@ public class LocationMgrTunnel
         pw.println("   Name       : " + _localDomainInfo.getCellDomainName());
         pw.println("   Version    : " + _localDomainInfo.getVersion());
         pw.println("   Role       : " + _localDomainInfo.getRole());
+        pw.println("   Zone       : " + _localDomainInfo.getZone().orElse("(none)"));
         pw.println("Peer domain");
         pw.println("   Name       : " + _remoteDomainInfo.getCellDomainName());
         pw.println("   Version    : " + _remoteDomainInfo.getVersion());
         pw.println("   Role       : " + _remoteDomainInfo.getRole());
+        pw.println("   Zone       : " + _remoteDomainInfo.getZone().orElse("(none)"));
     }
 
     /**

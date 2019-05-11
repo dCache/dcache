@@ -18,6 +18,7 @@
 package dmg.cells.nucleus;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 import dmg.util.Releases;
 import dmg.util.Releases.BadVersionException;
@@ -29,13 +30,16 @@ public class CellDomainInfo implements Serializable
     private static final long serialVersionUID = 486982068268709272L;
     private final String _domainName;
     private final String _version;
+    private final String _zone;
     private CellDomainRole _role;
 
-    public CellDomainInfo(String name, String version, CellDomainRole role)
+    public CellDomainInfo(String name, String version, CellDomainRole role,
+            Optional<String> zone)
     {
         _domainName = checkNotNull(name);
         _version = checkNotNull(version);
         _role = checkNotNull(role);
+        _zone = zone.orElse(null);
     }
 
     public String getVersion()
@@ -56,6 +60,18 @@ public class CellDomainInfo implements Serializable
     public CellDomainRole getRole()
     {
         return _role;
+    }
+
+    /**
+     * Returns the optional zone within which the remote domain resides.
+     */
+    public Optional<String> getZone()
+    {
+        // NB. _zone may be null due to either the remote domain being
+        // configured not to be part of a zone, or if the dCache version is
+        // v5.1 or earlier.  In either case returning Optional.empty() correctly
+        // identifies the status of the remote domain.
+        return Optional.ofNullable(_zone);
     }
 
     public String toString()
