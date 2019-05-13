@@ -106,6 +106,12 @@ public class DcapLineBasedInterpreterAdapter
     }
 
     @Override
+    public void messagingClosed()
+    {
+        shutdownKafka();
+    }
+
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("         User  : " + Subjects.getDisplayName(subject));
