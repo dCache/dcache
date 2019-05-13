@@ -210,6 +210,8 @@ public class LineBasedDoor
     @Override
     public void stopped()
     {
+        interpreter.messagingClosed();
+
         /* Closing the input stream will cause the FTP command
          * processing thread to shut down. In case the shutdown was
          * initiated by the FTP client, this will already have
