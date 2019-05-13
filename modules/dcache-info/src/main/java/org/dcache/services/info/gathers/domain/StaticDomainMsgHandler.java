@@ -102,16 +102,17 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
         int idx = line.indexOf(seperator, 3);
         checkArgument(idx != -1, "Seperator character '" + seperator +
                 "' missing");
-        checkArgument(idx != line.length()-1, "Metric has no data");
 
-        String value = line.substring(idx+1);
-        StateValue metric = metricFor(type, value, lifetime);
+        if (idx < line.length()-1) {
+            String value = line.substring(idx+1);
+            StateValue metric = metricFor(type, value, lifetime);
 
-        String name = line.substring(2, idx);
-        StatePath relativePath = StatePath.parsePath(name);
-        StatePath path = parent.newChild(relativePath);
+            String name = line.substring(2, idx);
+            StatePath relativePath = StatePath.parsePath(name);
+            StatePath path = parent.newChild(relativePath);
 
-        update.appendUpdate(path, metric);
+            update.appendUpdate(path, metric);
+        }
     }
 
 

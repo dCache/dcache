@@ -50,5 +50,6 @@ S,java.vm.vendor,${java.vm.vendor}
 S,java.vm.name,${java.vm.name}
 S,java.vm.specification-version,${java.vm.specification.version}
 S,java.vm.info,${java.vm.info}
-enddefine
 
+S,zone,${dcache.zone}
+enddefine
