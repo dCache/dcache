@@ -492,12 +492,18 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             }
         }
 
+        Optional<String> error = Optional.empty();
         try {
             transfer(fileChannel, role, mode);
+        } catch (Exception e) {
+            error = Optional.of(Exceptions.getMessageWithCauses(e));
+            throw e;
         } finally {
             if (_logAbortedTransfer && (!_blockLog.isComplete() || !mode.hasCompletedSuccessfully() || _bytesTransferred < mode.getSize())) {
                 StringWriter sw = new StringWriter();
-                getInfo(new LineIndentingPrintWriter(sw, "    "));
+                PrintWriter pw = new LineIndentingPrintWriter(sw, "    ");
+                error.ifPresent(msg -> pw.println("Cause: " + msg));
+                getInfo(pw);
                 String info = sw.toString();
                 _log.warn("Incomplete transfer; details follow:\n{}",
                         info.substring(0, info.length()-1)); // Strip final '\n'
