@@ -216,11 +216,13 @@ public class BlockLog
 
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("Transferred blocks: " + _blocks.entrySet().stream()
-                .map(e -> e.getKey() + "--" + e.getValue())
-                .collect(Collectors.joining(", ")));
-        pw.println("Transferred blocks: " + _blocks.entrySet().stream()
-                .map(asHumanReadable())
-                .collect(Collectors.joining(", ")));
+        if (!_blocks.isEmpty()) {
+            pw.println("Transferred blocks: " + _blocks.entrySet().stream()
+                    .map(e -> e.getKey() + "--" + e.getValue())
+                    .collect(Collectors.joining(", ")));
+            pw.println("Transferred blocks: " + _blocks.entrySet().stream()
+                    .map(asHumanReadable())
+                    .collect(Collectors.joining(", ")));
+        }
     }
 }
