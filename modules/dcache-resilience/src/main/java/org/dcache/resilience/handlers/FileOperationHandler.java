@@ -79,6 +79,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
@@ -87,6 +88,7 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.SpreadAndWait;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
+import diskCacheV111.vehicles.PoolFileCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -149,6 +151,9 @@ public class FileOperationHandler implements CellMessageSender {
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
                     = ImmutableList.of(
                     new StickyRecord("system", StickyRecord.NON_EXPIRING));
+
+    private static final Predicate<PoolFileCheckable> REPLICA_EXISTS
+                    = (p) -> p.getHave() || p.getWaiting();
 
     private static final RateLimiter LIMITER = RateLimiter.create(0.001);
 
@@ -1005,7 +1010,7 @@ public class FileOperationHandler implements CellMessageSender {
 
         return controller.getReplies().values()
                          .stream()
-                         .filter(PoolCheckFileMessage::getHave)
+                         .filter(REPLICA_EXISTS)
                          .map(PoolCheckFileMessage::getPoolName)
                          .collect(Collectors.toSet());
     }
