@@ -8,6 +8,10 @@ import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -304,10 +308,15 @@ public class PoolMonitorV5
             throw new PermissionDeniedCacheException("File is online, but not in read-allowed pool");
         }
 
-        private String getHostName() {
-            return (_protocolInfo instanceof IpProtocolInfo)
-            ? ((IpProtocolInfo) _protocolInfo).getSocketAddress().getAddress().getHostAddress()
-            : null;
+        @Nullable
+        private String getHostName()
+        {
+            if (_protocolInfo instanceof IpProtocolInfo) {
+                InetSocketAddress socketAddress = ((IpProtocolInfo) _protocolInfo).getSocketAddress();
+                InetAddress addr = socketAddress.getAddress();
+                return addr == null ? null : addr.getHostAddress();
+            }
+            return null;
         }
 
         private String getProtocol() {
