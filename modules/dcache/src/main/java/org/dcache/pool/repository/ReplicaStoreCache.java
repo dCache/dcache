@@ -254,7 +254,10 @@ public class ReplicaStoreCache
         public void setLastAccessTime(long time) throws CacheException
         {
             try {
+                CacheEntry currentEntry = new CacheEntryImpl(_record);
                 _record.setLastAccessTime(time);
+                CacheEntry updatedEntry = new CacheEntryImpl(_record);
+                _stateChangeListener.accessTimeChanged(new EntryChangeEvent(currentEntry, updatedEntry));
             } catch (IllegalArgumentException e) {
                 throw e;
             } catch (RuntimeException | DiskErrorCacheException e) {
