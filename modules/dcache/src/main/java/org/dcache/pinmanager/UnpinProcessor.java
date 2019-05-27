@@ -64,7 +64,7 @@ public class UnpinProcessor implements Runnable
             _logger.error("Database failure while unpinning: {}",
                           e.getMessage());
         } catch (RemoteConnectFailureException e) {
-            _logger.error("Remote connection failure while unpinning: {)", e.getMessage());
+            _logger.error("Remote connection failure while unpinning: {}", e.getMessage());
         } catch (RuntimeException e) {
             _logger.error("Unexpected failure while unpinning", e);
         } finally {
