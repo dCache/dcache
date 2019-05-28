@@ -570,13 +570,13 @@ public class PoolV4
         if (alarm != null) {
             if (cause != null) {
                 LOGGER.error(AlarmMarkerFactory.getMarker(alarm, _poolName),
-                             "Fault occurred in {}: {}. {}, cause: {}",
-                             event.getSource(), event.getMessage(), poolState,
+                             "Pool: {}, fault occurred in {}: {}. {}, cause: {}",
+                             _poolName, event.getSource(), event.getMessage(), poolState,
                              cause.toString());
             } else {
                 LOGGER.error(AlarmMarkerFactory.getMarker(alarm, _poolName),
-                             "Fault occurred in {}: {}. {}",
-                             event.getSource(), event.getMessage(), poolState);
+                             "Pool: {}, fault occurred in {}: {}. {}",
+                             _poolName, event.getSource(), event.getMessage(), poolState);
             }
         }
     }
