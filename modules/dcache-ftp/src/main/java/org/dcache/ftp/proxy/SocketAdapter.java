@@ -559,6 +559,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
              */
             LOGGER.debug("Accepting output connection on {}",
                          outputSock.socket().getLocalSocketAddress());
+            outputSock.configureBlocking(true);
             SocketChannel output = outputSock.accept();
             sockets.add(output);
             if (_bufferSize > 0) {

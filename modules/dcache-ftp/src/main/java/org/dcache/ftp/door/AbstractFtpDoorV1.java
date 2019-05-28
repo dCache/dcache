@@ -3658,6 +3658,7 @@ public abstract class AbstractFtpDoorV1
         case PASSIVE:
             replyDelayedPassive(_delayedPassive, (InetSocketAddress) _passiveModeServerSocket.getLocalAddress());
             reply("150 Ready to accept ASCII mode data connection");
+            _passiveModeServerSocket.configureBlocking(true);
             _dataSocket = _passiveModeServerSocket.accept().socket();
             break;
         case ACTIVE:
