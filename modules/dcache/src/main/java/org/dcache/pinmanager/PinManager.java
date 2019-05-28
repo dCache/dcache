@@ -181,6 +181,7 @@ public class PinManager
         @Override
         public void isLeader()
         {
+            _log.info("Assuming leader role. Scheduling Expiration and Unpin tasks.");
             expirationFuture = executor.scheduleWithFixedDelay(
                     new FireAndForgetTask(expirationTask),
                     INITIAL_EXPIRATION_DELAY,
@@ -196,6 +197,7 @@ public class PinManager
         @Override
         public void notLeader()
         {
+            _log.info("Not assuming leader role. Probably there is another PinManager that already is entitled to the leader role.");
             expirationFuture.cancel(false);
             unpinFuture.cancel(true);
         }
