@@ -197,7 +197,7 @@ public class PinManager
         @Override
         public void notLeader()
         {
-            _log.info("Not assuming leader role. Probably there is another PinManager that already is entitled to the leader role.");
+            _log.info("Dropping leader role. Cancelling Expiration and Unpin tasks.");
             expirationFuture.cancel(false);
             unpinFuture.cancel(true);
         }
