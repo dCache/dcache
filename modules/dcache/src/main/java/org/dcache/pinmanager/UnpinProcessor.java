@@ -81,8 +81,10 @@ public class UnpinProcessor implements Runnable
     private void upin(Semaphore idle, Executor executor, Pin pin) throws InterruptedException
     {
         if (pin.getPool() == null) {
+            _logger.debug("No pool found for pin {}, pnfsid {}; no sticky flags to clear", pin.getPinId(), pin.getPnfsId());
             _dao.delete(pin);
         } else {
+            _logger.debug("Clearing sticky flag for pin {}, pnfsid {}", pin.getPinId(), pin.getPnfsId());
             clearStickyFlag(idle, pin, executor);
         }
     }
@@ -92,7 +94,7 @@ public class UnpinProcessor implements Runnable
     {
         PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(pin.getPool());
         if (pool == null || !pool.isActive()) {
-            _logger.warn("Unable to clear sticky flag because pool {} is unavailable", pin.getPool());
+            _logger.warn("Unable to clear sticky flag for pin {} on pnfsid {} because pool {} is unavailable", pin.getPinId(), pin.getPnfsId(), pin.getPool());
             return;
         }
 
@@ -110,6 +112,7 @@ public class UnpinProcessor implements Runnable
                                  public void success(PoolSetStickyMessage msg)
                                  {
                                      idle.release();
+                                     _logger.debug("Deleting pin {}, pnfsid {}", pin.getPinId(), pin.getPnfsId());
                                      _dao.delete(pin);
                                  }
 
@@ -119,6 +122,7 @@ public class UnpinProcessor implements Runnable
                                      idle.release();
                                      switch (rc) {
                                      case CacheException.FILE_NOT_IN_REPOSITORY:
+                                         _logger.debug("Deleting pin {}, pnfsid {}", pin.getPinId(), pin.getPnfsId());
                                          _dao.delete(pin);
                                          break;
                                      default:
