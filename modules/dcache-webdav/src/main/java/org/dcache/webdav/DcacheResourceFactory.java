@@ -92,6 +92,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
+import org.dcache.auth.Origin;
 import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
@@ -1243,7 +1244,25 @@ public class DcacheResourceFactory
 
     private Subject roleAwareSubject()
     {
-        return isAdmin() ? Subjects.ROOT : getSubject();
+        Subject subject = getSubject();
+
+        if (isAdmin()) {
+            Origin origin = Subjects.getOrigin(subject);
+
+            if (origin == null) {
+                return Subjects.ROOT;
+            } else {
+                Subject adminSubject = new Subject(false,
+                        Subjects.ROOT.getPrincipals(),
+                        Subjects.ROOT.getPublicCredentials(),
+                        Subjects.ROOT.getPrivateCredentials());
+                adminSubject.getPrincipals().add(origin);
+                adminSubject.setReadOnly();
+                return adminSubject;
+            }
+        } else {
+            return subject;
+        }
     }
 
     private Restriction roleAwareRestriction()
