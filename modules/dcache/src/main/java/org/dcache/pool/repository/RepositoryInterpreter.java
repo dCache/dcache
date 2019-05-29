@@ -99,7 +99,7 @@ public class RepositoryInterpreter
         boolean all;
 
         @Override
-        public String call() throws CacheException, InterruptedException
+        public String call() throws CacheException, InterruptedException, IllegalArgumentException
         {
             long expire;
             switch (state) {
@@ -110,6 +110,9 @@ public class RepositoryInterpreter
                 expire = 0;
                 break;
             default:
+                if (pnfsId == null) {
+                    throw new IllegalArgumentException("No sticky state provided.");
+                }
                 throw new IllegalArgumentException("Invalid sticky state : " + state);
             }
 

@@ -205,7 +205,7 @@ public class P2PClient
                                          CacheFileAvailable callback,
                                          boolean forceSourceMode,
                                          Long atime)
-        throws IOException, CacheException, InterruptedException
+        throws IOException, CacheException, InterruptedException, IllegalStateException
     {
         if (getCellEndpoint() == null) {
             throw new IllegalStateException("Endpoint not initialized");
@@ -384,7 +384,7 @@ public class P2PClient
 
         @Override
         public String call() throws
-                IOException, CacheException, InterruptedException
+                IOException, CacheException, InterruptedException, IllegalStateException
         {
             List<StickyRecord> stickyRecords = Collections.emptyList();
             newCompanion(pool, FileAttributes.ofPnfsId(pnfsId), ReplicaState.CACHED,
