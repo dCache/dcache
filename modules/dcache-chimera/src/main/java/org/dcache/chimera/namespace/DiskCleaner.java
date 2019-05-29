@@ -13,6 +13,8 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import java.io.PrintWriter;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,6 +47,7 @@ import dmg.util.command.Command;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
+import org.dcache.util.TimeUtils;
 
 import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.google.common.util.concurrent.Futures.allAsList;
@@ -320,7 +323,9 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
         try {
             List<String> files = new ArrayList<>(_processAtOnce);
-            _db.query("SELECT ipnfsid FROM t_locationinfo_trash WHERE ilocation=? AND itype=1 ORDER BY iatime",
+            Timestamp graceTime = Timestamp.from(Instant.now().minusSeconds(_gracePeriod.getSeconds()));
+            _log.info("Removing files deleted before {} from pool {}", graceTime, poolName);
+            _db.query("SELECT ipnfsid FROM t_locationinfo_trash WHERE ilocation=? AND itype=1 AND ictime<?",
                     rs -> {
                         try {
                             files.add(rs.getString("ipnfsid"));
@@ -332,7 +337,8 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                             throw new UncheckedExecutionException(e);
                         }
                     },
-                    poolName);
+                    poolName,
+                    graceTime);
         } catch (UncheckedExecutionException e) {
             throwIfInstanceOf(e.getCause(), InterruptedException.class);
             throwIfInstanceOf(e.getCause(), CacheException.class);
@@ -350,6 +356,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         pw.printf("Disk Cleaner Info : \n");
         pw.printf("Refresh Interval: %s\n", _refreshInterval);
         pw.printf("Refresh Interval Unit: %s\n", _refreshIntervalUnit);
+        pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
         pw.printf("Reply Timeout:  %d\n", _poolStub.getTimeout());
         pw.printf("Number of files processed at once:  %d\n", _processAtOnce);
         pw.printf("Delete notification targets:  %s\n", Arrays.toString(_deleteNotificationTargets));

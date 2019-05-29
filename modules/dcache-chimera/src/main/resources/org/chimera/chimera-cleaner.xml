@@ -94,6 +94,8 @@
         <property name="reportRemove" value="${cleaner.destination.remove-notification}"/>
         <property name="refreshInterval" value="${cleaner.limits.period}"/>
         <property name="refreshIntervalUnit" value="${cleaner.limits.period.unit}"/>
+        <property name="gracePeriod"
+                  value="#{ T(org.dcache.util.TimeUtils).durationOf('${cleaner.service.grace-period}', '${cleaner.service.grace-period.unit}')}"/>
 
     </bean>
 

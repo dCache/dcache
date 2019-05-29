@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -27,6 +27,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +64,11 @@ public abstract class AbstractCleaner
     protected long _refreshInterval;
     protected TimeUnit _refreshIntervalUnit;
 
+    /**
+     * Time period that cleaner have to wait before deleted file is
+     * removed by cleaner.
+     */
+    protected Duration _gracePeriod;
 
     @Required
     public void setExecutor(ScheduledExecutorService executor)
@@ -108,6 +114,11 @@ public abstract class AbstractCleaner
     public void setRefreshIntervalUnit(TimeUnit refreshIntervalUnit)
     {
         _refreshIntervalUnit = refreshIntervalUnit;
+    }
+
+    @Required
+    public void setGracePeriod(Duration gracePeriod) {
+        _gracePeriod = gracePeriod;
     }
 
     protected abstract void runDelete() throws InterruptedException;
