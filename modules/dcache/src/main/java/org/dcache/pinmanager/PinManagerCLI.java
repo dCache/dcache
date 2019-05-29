@@ -326,7 +326,7 @@ public class PinManagerCLI
         @Override
         public String call()
         {
-            if (id == 0) {
+            if (id == null) {
                 StringBuilder sb = new StringBuilder();
                 for (Map.Entry<Integer,BulkJob> entry: _jobs.entrySet()) {
                     int id = entry.getKey();
