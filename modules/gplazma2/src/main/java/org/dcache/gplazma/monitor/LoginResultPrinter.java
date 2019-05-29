@@ -98,7 +98,9 @@ public class LoginResultPrinter
                     .put("1.3.6.1.5.5.7.3.7", "IPSec user")
                     .put("1.3.6.1.5.5.7.3.8", "time stamp")
                     .put("1.3.6.1.5.5.7.3.9", "OCSP signing")
+                    .put("1.3.6.1.4.1.311.10.3.3", "Microsoft SGC")
                     .put("1.3.6.1.4.1.311.10.3.4", "Microsoft EPS")
+                    .put("2.16.840.1.113730.4.1", "Netscape SGC")
 
                     // Certificate extensions
                     .put("1.3.6.1.4.1.8005.100.100.4", "VOMS FQANs")
