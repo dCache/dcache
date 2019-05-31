@@ -19,12 +19,14 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfos;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.SweeperData;
@@ -308,7 +310,15 @@ public class SpaceSweeper2
         for (PnfsId id : list) {
             try {
                 CacheEntry entry = _repository.getEntry(id);
-                Long lvalue = now - entry.getLastAccessTime();
+                Long lastAccess = entry.getLastAccessTime();
+                Long lvalue = now - lastAccess;
+                if (lvalue < 0L) {
+                    throw new RuntimeException("repository last access time for "
+                                                + id + " is later than current "
+                                                + "system time! - now "
+                                                + now + ", last access "
+                                                + lastAccess + "; this is a bug.");
+                }
                 fileLifetime.add(lvalue.doubleValue());
             } catch (FileNotInCacheException e) {
                 // Ignored
