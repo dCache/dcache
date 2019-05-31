@@ -565,9 +565,13 @@ public class TimeUtils
 
         long diff = Math.abs(when - current);
         sb.append(" (");
-        appendDuration(sb, diff, MILLISECONDS, format);
-        sb.append(' ');
-        sb.append(when < current ? "ago" : "in the future");
+        if (diff > 0) {
+            appendDuration(sb, diff, MILLISECONDS, format);
+            sb.append(' ');
+            sb.append(when < current ? "ago" : "in the future");
+        } else {
+            sb.append("now");
+        }
         sb.append(')');
         return sb;
     }
