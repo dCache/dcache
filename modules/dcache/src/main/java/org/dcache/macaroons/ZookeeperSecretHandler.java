@@ -38,6 +38,7 @@ import java.util.function.Supplier;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.zookeeper.CDCLeaderLatchListener;
 
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.util.FireAndForgetTask;
@@ -145,7 +146,7 @@ public class ZookeeperSecretHandler implements SecretHandler,
     {
         try {
             leaderLatch = new LeaderLatch(client, zkPath, address.toString());
-            leaderLatch.addListener(new LeaderListener());
+            leaderLatch.addListener(new CDCLeaderLatchListener(new LeaderListener()));
             leaderLatch.start();
         } catch (Exception e) {
             Throwables.throwIfUnchecked(e);
