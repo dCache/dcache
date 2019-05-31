@@ -12,6 +12,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.util.CacheException;
@@ -23,6 +24,8 @@ import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.CDCExecutorServiceDecorator;
+import org.dcache.util.NDC;
 
 /**
  * Performs the work of unpinning files.
@@ -41,6 +44,7 @@ public class UnpinProcessor implements Runnable
     private final PinDao _dao;
     private final CellStub _poolStub;
     private final PoolMonitor _poolMonitor;
+    private final AtomicInteger _count = new AtomicInteger();
 
     public UnpinProcessor(PinDao dao, CellStub poolStub,
                           PoolMonitor poolMonitor)
@@ -53,7 +57,8 @@ public class UnpinProcessor implements Runnable
     @Override
     public void run()
     {
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final ExecutorService executor = new CDCExecutorServiceDecorator(Executors.newSingleThreadExecutor());
+        NDC.push("BackgroundUnpinner-" + _count.incrementAndGet());
         try {
             Semaphore idle = new Semaphore(MAX_RUNNING);
             unpin(idle, executor);
@@ -69,6 +74,7 @@ public class UnpinProcessor implements Runnable
             _logger.error("Unexpected failure while unpinning", e);
         } finally {
             executor.shutdown();
+            NDC.pop();
         }
     }
 

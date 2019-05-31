@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 
@@ -30,6 +31,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.NDC;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -152,9 +154,12 @@ public class PinManager
 
     private class ExpirationTask implements Runnable
     {
+        private AtomicInteger count = new AtomicInteger();
+
         @Override
         public void run()
         {
+            NDC.push("BackgroundExpiration-" + count.incrementAndGet());
             try {
                 dao.update(dao.where()
                                     .expirationTimeBefore(new Date())
@@ -166,6 +171,8 @@ public class PinManager
                            e.getMessage());
             } catch (RuntimeException e) {
                 _log.error("Unexpected failure while expiring pins", e);
+            } finally {
+                NDC.pop();
             }
         }
     }
