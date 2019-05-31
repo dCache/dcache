@@ -62,7 +62,13 @@ package org.dcache.util.histograms;
 import org.apache.commons.math3.util.FastMath;
 import org.junit.Test;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -70,6 +76,24 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 
 public final class CountingHistogramTest extends HistogramModelTest {
+    static final String     LAST_ACCESS = "org/dcache/util/histograms/last-access.txt";
+    static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+    @Test
+    public void shouldProcessSweeperLsSuccessfully()
+                    throws Exception
+    {
+        givenCountingHistogram();
+        givenBinCountOf(61);
+        givenBinUnitOf((double) TimeUnit.DAYS.toMillis(1));
+        givenBinLabelOf(TimeUnit.DAYS.name());
+        givenDataLabelOf("Number of Files");
+        givenHistogramTypeOf("Time Since Last Access");
+        givenFilelifetimeValuesFromSweeperLs();
+        whenConfigureIsCalled();
+        assertThatBuildSucceeded();
+    }
+
     @Test
     public void binUnitShouldBe1ForMaxValue50Days()
                     throws Exception {
@@ -105,6 +129,22 @@ public final class CountingHistogramTest extends HistogramModelTest {
                     throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(101);
+        givenBinCountOf(51);
+        givenBinUnitOf((double) TimeUnit.DAYS.toMillis(1));
+        givenBinLabelOf(TimeUnit.DAYS.name());
+        givenDataLabelOf("COUNT");
+        givenHistogramTypeOf("File Lifetime Count");
+        whenConfigureIsCalled();
+        assertThatBuildSucceeded();
+        assertThatBinWidthIs(3);
+    }
+
+    @Test
+    public void binUnitShouldBe3ForMaxValue100AndMinNeg14Days()
+                throws Exception {
+        givenCountingHistogram();
+        givenFilelifetimeValuesFor(100);
+        givenAValueForNegativeDays(14);
         givenBinCountOf(51);
         givenBinUnitOf((double) TimeUnit.DAYS.toMillis(1));
         givenBinLabelOf(TimeUnit.DAYS.name());
@@ -185,5 +225,28 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     private void givenFilelifetimeValuesFor(int units) {
         model.setData(getRawLifetimes(units));
+    }
+
+    private void givenAValueForNegativeDays(int days) {
+        model.getData().add(-1.0 * TimeUnit.DAYS.toMillis(days));
+    }
+
+    private void givenFilelifetimeValuesFromSweeperLs() throws Exception {
+        List<Double> fileLifetime = new ArrayList<>();
+        InputStream stream = this.getClass()
+                                 .getClassLoader()
+                                 .getResourceAsStream(LAST_ACCESS);
+        BufferedReader r = new BufferedReader(new InputStreamReader(stream));
+        Long now = System.currentTimeMillis();
+        while (true) {
+            String timestamp = r.readLine();
+            if (timestamp == null) {
+                break;
+            }
+            Date d = DATE_FORMAT.parse(timestamp);
+            Long lvalue = now - d.toInstant().toEpochMilli();
+            fileLifetime.add(lvalue.doubleValue());
+        }
+        model.setData(fileLifetime);
     }
 }

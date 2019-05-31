@@ -78,11 +78,11 @@ public abstract class HistogramModel implements Serializable {
                     "Template was not properly configured: "
                                     + "bin count %s does not match data size %s.";
 
-    protected Integer binCount;
-    protected Integer binWidth;
-    protected Double  binUnit;
-    protected Double  highestBin;
-    protected Double  lowestBin;
+    protected Integer binCount;     // number of bins
+    protected Integer binWidth;     // number of units per bin
+    protected Double  binUnit;      // measure for values
+    protected Double  highestBin;   // value for highest bin
+    protected Double  lowestBin;    // value for lowest bin
     protected String  identifier;
     protected String  binUnitLabel;
     protected String  dataUnitLabel;
