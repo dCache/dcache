@@ -18,6 +18,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.CommandException;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -32,6 +33,7 @@ import org.dcache.vehicles.FileAttributes;
 import static java.util.stream.Collectors.joining;
 import static org.dcache.util.ByteUnit.*;
 import static org.dcache.util.ByteUnits.jedecPrefix;
+import static dmg.util.CommandException.checkCommand;
 
 public class RepositoryInterpreter
     implements CellCommandListener
@@ -99,7 +101,7 @@ public class RepositoryInterpreter
         boolean all;
 
         @Override
-        public String call() throws CacheException, InterruptedException, IllegalArgumentException
+        public String call() throws CacheException, InterruptedException, CommandException
         {
             long expire;
             switch (state) {
@@ -110,24 +112,19 @@ public class RepositoryInterpreter
                 expire = 0;
                 break;
             default:
-                if (pnfsId == null) {
-                    throw new IllegalArgumentException("No sticky state provided.");
-                }
-                throw new IllegalArgumentException("Invalid sticky state : " + state);
+                checkCommand(pnfsId != null, "No sticky state provided.");
+                throw new CommandException("Invalid sticky state : " + state);
             }
 
             if (pnfsId != null) {
-                if (!matches(pnfsId)) {
-                    throw new IllegalArgumentException("Replica does not match filter conditions.");
-                }
+                checkCommand(matches(pnfsId), "Replica does not match filter conditions.");
                 _repository.setSticky(pnfsId, owner, expire, true);
                 return _repository.getEntry(pnfsId).getStickyRecords().stream()
                         .filter(StickyRecord::isValid).map(Object::toString).collect(joining("\n"));
             }
 
-            if (al == null && rp == null && storage == null && cache == null && !all) {
-                throw new IllegalArgumentException("Use -all to change sticky flag for all replicas.");
-            }
+            checkCommand(al != null || rp != null || storage != null || cache != null || all,
+                    "Use -all to change sticky flag for all replicas.");
 
             long cnt = 0;
             for (PnfsId id : _repository) {
