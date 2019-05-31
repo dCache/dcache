@@ -146,9 +146,14 @@
         <property name="shouldUpdate" value="${pinmanager.db.schema.auto}"/>
     </bean>
 
-    <bean id="dao" class="org.dcache.pinmanager.JdbcDao">
+    <bean id="dao" class="org.dcache.pinmanager.LoggingDao">
         <description>Data access object</description>
-        <property name="dataSource" ref="data-source"/>
+
+        <constructor-arg>
+            <bean class="org.dcache.pinmanager.JdbcDao">
+                <property name="dataSource" ref="data-source"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
