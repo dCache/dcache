@@ -144,11 +144,6 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
         this(cellName, new Args(arguments), executor);
     }
 
-    public AbstractCell(String cellName, Args arguments)
-    {
-        this(cellName, getCellType(arguments), arguments, null);
-    }
-
     public AbstractCell(String cellName, Args arguments, Executor executor)
     {
         this(cellName, getCellType(arguments), arguments, executor);
