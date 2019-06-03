@@ -61,6 +61,8 @@ package org.dcache.util.histograms;
 
 import com.google.common.base.Preconditions;
 import org.apache.commons.math3.util.FastMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
@@ -75,6 +77,8 @@ public class CountingHistogram extends HistogramModel {
     private static final String UNSUPPORTED_UPDATE =
                     "update not supported on this histogram type: "
                                     + CountingHistogram.class;
+    private static final Logger LOGGER
+                    = LoggerFactory.getLogger(CountingHistogram.class);
 
     public CountingHistogram() {
     }
@@ -112,8 +116,16 @@ public class CountingHistogram extends HistogramModel {
          *  values that are multiples of the bin unit.
          */
         Double max = metadata.getMaxValue().orElse(null);
-        double maxValueIndex = max == null ? binCount - 1 : FastMath.floor(max / binSize);
-        binWidth = (int) FastMath.ceil(maxValueIndex / (binCount - 1));
+
+        /*
+         *  Histograms with only non-negative values always have their
+         *  first bin at 0.  Negative values will create the necessary
+         *  number of bins to the left of 0.
+         */
+        Double min = FastMath.min(0.0D, metadata.getMinValue().orElse(0.0D));
+
+        double maxIndex = max == null ? binCount - 1 : FastMath.floor((max-min) / binSize);
+        binWidth = (int) FastMath.ceil(maxIndex / (binCount - 1));
 
         /**
          * Re-adjust size on the basis of the adjusted width.
@@ -125,8 +137,13 @@ public class CountingHistogram extends HistogramModel {
          */
         long[] histogram = new long[binCount];
 
+        LOGGER.debug("Preparing to compute bin values from dataset; "
+                                     + "bin size {}, bin count {}, "
+                                     + "min value {}, max value {}, max index.",
+                        binSize, binCount, min, max, maxIndex);
+
         for (Double d : data) {
-            ++histogram[(int) FastMath.floor(d / binSize)];
+            ++histogram[(int) FastMath.floor((d-min) / binSize)];
         }
 
         data = new ArrayList<>();
@@ -135,12 +152,11 @@ public class CountingHistogram extends HistogramModel {
             data.add((double) d);
         }
 
-        lowestBin = 0.0D;
+        lowestBin = min;
         setHighestFromLowest();
-
         int computedCount = (int) binSize == 0 ?
                         binCount :
-                        (int) FastMath.ceil((highestBin - lowestBin) / binSize);
+                        (int) FastMath.ceil((highestBin - lowestBin) / binSize) + 1;
 
         if (computedCount > binCount) {
             throw new RuntimeException("bin count " + binCount
