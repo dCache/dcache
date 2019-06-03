@@ -692,15 +692,16 @@ public class FsSqlDriver {
         if (ids.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, ids.size());
         }
+        Timestamp now = new Timestamp(System.currentTimeMillis());
         String id = ids.get(0);
         _jdbc.update("INSERT INTO t_locationinfo_trash (ipnfsid,itype,ilocation,ipriority,ictime,iatime,istate) " +
-                     "(SELECT ?,l.itype,l.ilocation,l.ipriority,l.ictime,l.iatime,l.istate " +
+                     "(SELECT ?,l.itype,l.ilocation,l.ipriority,?,l.iatime,l.istate " +
                      "FROM t_locationinfo l WHERE l.inumber=?)",
                      ps -> {
                          ps.setString(1, id);
-                         ps.setLong(2, inode.ino());
+                         ps.setTimestamp(2, now);
+                         ps.setLong(3, inode.ino());
                      });
-        Timestamp now = new Timestamp(System.currentTimeMillis());
         _jdbc.update(
                 "INSERT INTO t_locationinfo_trash (ipnfsid,itype,ilocation,ipriority,ictime,iatime,istate) VALUES (?,2,'',0,?,?,1)",
                 ps -> {

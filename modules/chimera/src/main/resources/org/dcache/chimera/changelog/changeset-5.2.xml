@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="27" author="tigran" dbms="postgresql">
+        <comment>Preserve location trash entry creation timestamp</comment>
+
+        <createProcedure>
+            DROP TRIGGER IF EXISTS tgr_locationinfo_trash ON t_inodes;
+
+            --
+            -- store location of deleted inodes in trash table
+            --
+
+            CREATE OR REPLACE FUNCTION f_locationinfo2trash() RETURNS TRIGGER AS $t_inodes_trash$
+            BEGIN
+                IF (TG_OP = 'DELETE') THEN
+                    INSERT INTO t_locationinfo_trash
+                        SELECT
+                            OLD.ipnfsid,
+                            itype,
+                            ilocation,
+                            ipriority,
+                            now(),
+                            iatime,
+                            istate
+                        FROM t_locationinfo
+                        WHERE inumber = OLD.inumber
+                      UNION
+                        SELECT OLD.ipnfsid, 2, '', 0, now(), now(), 1;
+                END IF;
+
+                RETURN OLD;
+            END;
+
+            $t_inodes_trash$ LANGUAGE plpgsql;
+
+
+            --
+            -- trigger to store removed inodes
+            --
+
+            CREATE TRIGGER tgr_locationinfo_trash BEFORE DELETE ON t_inodes
+                FOR EACH ROW EXECUTE PROCEDURE f_locationinfo2trash();
+        </createProcedure>
+
+        <rollback />
+    </changeSet>
+</databaseChangeLog>
