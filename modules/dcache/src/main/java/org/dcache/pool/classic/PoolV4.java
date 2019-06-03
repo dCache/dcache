@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -105,6 +106,7 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
+import org.dcache.cells.ThreadCreator;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.PoolDataBeanProvider;
@@ -141,7 +143,7 @@ import static org.dcache.namespace.FileAttribute.CHECKSUM;
 public class PoolV4
     extends AbstractCellComponent
     implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider,
-                PoolDataBeanProvider<PoolDataDetails>
+                PoolDataBeanProvider<PoolDataDetails>, ThreadCreator
 {
     private static final int DUP_REQ_NONE = 0;
     private static final int DUP_REQ_IGNORE = 1;
@@ -224,6 +226,8 @@ public class PoolV4
     private boolean _enableHsmFlag;
 
     private Consumer<RemoveFileInfoMessage> _kafkaSender = (s) -> {};
+
+    private ThreadFactory _threadFactory;
 
 
     protected void assertNotRunning(String error)
@@ -475,6 +479,12 @@ public class PoolV4
         _enableHsmFlag = enable;
     }
 
+    @Override
+    public void setThreadFactory(ThreadFactory factory)
+    {
+        _threadFactory = factory;
+    }
+
     public void init()
     {
         assertNotRunning("Cannot initialize several times");
@@ -500,9 +510,7 @@ public class PoolV4
     {
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Awaiting initialization");
         _pingThread.start();
-        new Thread() {
-            @Override
-            public void run() {
+        _threadFactory.newThread(() -> {
                 int mode;
                 try {
                     _repository.init();
@@ -534,8 +542,7 @@ public class PoolV4
                 }
 
                 LOGGER.info("Repository finished");
-            }
-        }.start();
+            }).start();
     }
 
     @Override

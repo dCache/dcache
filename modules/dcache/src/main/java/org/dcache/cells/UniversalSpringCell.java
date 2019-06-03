@@ -989,6 +989,10 @@ public class UniversalSpringCell
             ((CellMessageSender) bean).setCellEndpoint(this);
         }
 
+        if (bean instanceof ThreadCreator) {
+            ((ThreadCreator) bean).setThreadFactory(getNucleus());
+        }
+
         return bean;
     }
 
