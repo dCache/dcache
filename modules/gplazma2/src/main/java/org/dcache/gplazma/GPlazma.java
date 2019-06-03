@@ -1,8 +1,9 @@
 package org.dcache.gplazma;
 
-import com.google.common.collect.Iterables;
+import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
+import org.globus.gsi.gssapi.jaas.SimplePrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +12,7 @@ import javax.security.auth.Subject;
 import java.lang.reflect.Modifier;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
@@ -60,6 +63,7 @@ import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Collections2.filter;
 import static com.google.common.collect.Iterables.*;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class GPlazma
 {
@@ -108,17 +112,21 @@ public class GPlazma
          * support this, principals may be added that contain
          * non-sensitive information contained in a private credential.
          */
-        private static void addPrincipalsForPrivateCredentials(
-                Set<Principal> principals, Set<Object> privateCredentials)
+        private static void addPrincipalsForPrivateCredentials(Set<Principal> principals,
+                Set<Object> privateCredentials)
         {
-            PasswordCredential password =
-                    getFirst(Iterables.filter(privateCredentials,
-                    PasswordCredential.class), null);
-
-            if(password != null) {
-                Principal loginName =
-                        new LoginNamePrincipal(password.getUsername());
-                principals.add(loginName);
+            for (Object credential : privateCredentials) {
+                if (credential instanceof PasswordCredential) {
+                    String username = ((PasswordCredential)credential).getUsername();
+                    Principal loginName = new LoginNamePrincipal(username);
+                    principals.add(loginName);
+                } else if (credential instanceof BearerTokenCredential) {
+                    String token = ((BearerTokenCredential)credential).getToken();
+                    byte[] hashBytes = Hashing.goodFastHash(128).hashBytes(token.getBytes(US_ASCII)).asBytes();
+                    String hash = Base64.getEncoder().encodeToString(hashBytes);
+                    Principal p = new SimplePrincipal(hash);
+                    principals.add(p);
+                }
             }
         }
 
