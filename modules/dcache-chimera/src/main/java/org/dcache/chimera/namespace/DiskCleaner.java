@@ -1,6 +1,5 @@
 package org.dcache.chimera.namespace;
 
-import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -47,6 +46,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
 
+import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -334,10 +334,10 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                     },
                     poolName);
         } catch (UncheckedExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), InterruptedException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
-            throw Throwables.propagate(e.getCause());
+            throwIfInstanceOf(e.getCause(), InterruptedException.class);
+            throwIfInstanceOf(e.getCause(), CacheException.class);
+            throwIfInstanceOf(e.getCause(), NoRouteToCellException.class);
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -421,10 +421,10 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                     },
                     pnfsid);
         } catch (UncheckedExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), InterruptedException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
-            throw Throwables.propagate(e.getCause());
+            throwIfInstanceOf(e.getCause(), InterruptedException.class);
+            throwIfInstanceOf(e.getCause(), CacheException.class);
+            throwIfInstanceOf(e.getCause(), NoRouteToCellException.class);
+            throw new RuntimeException(e.getCause());
         }
         return "";
     }
