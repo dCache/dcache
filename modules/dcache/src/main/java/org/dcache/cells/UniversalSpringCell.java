@@ -993,6 +993,10 @@ public class UniversalSpringCell
             ((ZoneAware) bean).setZone(getNucleus().getZone());
         }
 
+        if (bean instanceof ThreadCreator) {
+            ((ThreadCreator) bean).setThreadFactory(getNucleus());
+        }
+
         return bean;
     }
 
