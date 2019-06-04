@@ -51,11 +51,15 @@
     </bean>
 
     <bean id="scheduled-thread-pool"
-        class="java.util.concurrent.Executors"
-        factory-method="newScheduledThreadPool"
-        destroy-method="shutdown">
+          class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
+          destroy-method="shutdown">
         <description>Thread pool for scheduled activities</description>
-        <constructor-arg value="1"/>
+        <constructor-arg>
+            <bean class="java.util.concurrent.Executors"
+                  factory-method="newScheduledThreadPool">
+                <constructor-arg value="1"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
