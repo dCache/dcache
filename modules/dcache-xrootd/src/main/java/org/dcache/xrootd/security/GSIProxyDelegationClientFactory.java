@@ -31,10 +31,16 @@ public class GSIProxyDelegationClientFactory implements
 {
     private static final String PROTOCOL = "gsi";
 
+    private ProxyDelegationStore gsiDelegationProvider;
+
     @Override
     public X509ProxyDelegationClient
         createClient(String name, Properties properties) {
-        return PROTOCOL.equals(name) ?
-                        new GSIProxyDelegationClient(properties) : null;
+        return  PROTOCOL.equals(name) ?
+                        new GSIProxyDelegationClient(gsiDelegationProvider) : null;
+    }
+
+    public void setProvider(ProxyDelegationStore gsiDelegationProvider) {
+        this.gsiDelegationProvider = gsiDelegationProvider;
     }
 }

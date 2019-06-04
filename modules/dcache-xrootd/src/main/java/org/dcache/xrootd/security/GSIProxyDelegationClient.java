@@ -17,15 +17,11 @@
  */
 package org.dcache.xrootd.security;
 
-import eu.emi.security.authn.x509.X509CertChainValidatorExt;
+import com.google.common.base.Preconditions;
 import eu.emi.security.authn.x509.X509Credential;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
 import org.italiangrid.voms.ac.VOMSValidationResult;
-import org.italiangrid.voms.store.VOMSTrustStore;
-import org.italiangrid.voms.store.VOMSTrustStores;
-import org.italiangrid.voms.util.CertificateValidatorBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +34,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.gsi.KeyPairCache;
@@ -71,24 +64,13 @@ public class GSIProxyDelegationClient extends X509ProxyDelegationClient
     private final Map<String, X509Delegation> delegations;
     private final KeyPairCache                keyPairCache;
 
-    GSIProxyDelegationClient(Properties properties)
+    GSIProxyDelegationClient(ProxyDelegationStore store)
     {
-        delegations = new ConcurrentHashMap<>();
-        keyPairCache = new KeyPairCache(1L, TimeUnit.MINUTES);
-        String vomsDir = properties.getProperty("xrootd.gsi.vomsdir.dir");
-        String caCertificatePath = properties.getProperty("xrootd.gsi.ca.path");
-        long trustAnchorRefreshInterval
-            = Long.parseLong(properties.getProperty("xrootd.gsi.ca.refresh"));
-        VOMSTrustStore vomsTrustStore
-                        = VOMSTrustStores.newTrustStore(asList(vomsDir));
-        X509CertChainValidatorExt certChainValidator
-                        = new CertificateValidatorBuilder()
-                        .lazyAnchorsLoading(false)
-                        .trustAnchorsUpdateInterval(trustAnchorRefreshInterval)
-                        .trustAnchorsDir(caCertificatePath)
-                        .build();
-        vomsValidator = VOMSValidators.newValidator(vomsTrustStore,
-                                                    certChainValidator);
+        Preconditions.checkNotNull(store, "GSIProxyDelegationClient "
+                        + "cannot be constructed with null store.");
+        vomsValidator = store.vomsValidator;
+        delegations = store.delegations;
+        keyPairCache = store.keyPairCache;
     }
 
     @Override
@@ -102,9 +84,7 @@ public class GSIProxyDelegationClient extends X509ProxyDelegationClient
     @Override
     public void close()
     {
-        if (vomsValidator != null) {
-            vomsValidator.shutdown();
-        }
+        // NOP
     }
 
     @Override

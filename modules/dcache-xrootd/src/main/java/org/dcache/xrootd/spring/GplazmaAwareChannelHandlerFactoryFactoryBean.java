@@ -1,23 +1,22 @@
 package org.dcache.xrootd.spring;
 
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.List;
-import java.util.Properties;
 import java.util.ServiceLoader;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessageSender;
 
 import org.dcache.auth.LoginStrategy;
 import org.dcache.xrootd.door.LoginAuthenticationHandlerFactory;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
 import org.dcache.xrootd.plugins.AuthenticationProvider;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.dcache.xrootd.plugins.ProxyDelegationClient;
+import org.dcache.xrootd.plugins.InvalidHandlerConfigurationException;
 import org.dcache.xrootd.plugins.ProxyDelegationClientFactory;
-import org.dcache.xrootd.plugins.authn.none.NoAuthenticationFactory;
+import org.dcache.xrootd.security.GSIProxyDelegationClientFactory;
+import org.dcache.xrootd.security.ProxyDelegationStore;
 
 import static com.google.common.base.Predicates.containsPattern;
 import static com.google.common.collect.Iterables.*;
@@ -28,28 +27,25 @@ import static com.google.common.collect.Iterables.*;
  * A ChannelHandlerFactory is created by an ChannelHandlerProvider.
  * The FactoryBean uses the Java 6 ServiceLoader system to obtain
  * ChannelHandlerProvider instances.
+ *
  */
 public class GplazmaAwareChannelHandlerFactoryFactoryBean
-    extends ChannelHandlerFactoryFactoryBean implements CellMessageSender
+    extends ChannelHandlerFactoryFactoryBean
 {
+    private static final Logger LOGGER
+                    = LoggerFactory.getLogger(GplazmaAwareChannelHandlerFactoryFactoryBean.class);
+
     private static final ServiceLoader<AuthenticationProvider> _authenticationProviders =
             ServiceLoader.load(AuthenticationProvider.class);
 
     private static final ServiceLoader<ProxyDelegationClientFactory> _clientFactories =
-            ServiceLoader.load(ProxyDelegationClientFactory.class);
+                    ServiceLoader.load(ProxyDelegationClientFactory.class);
 
     private static final String GPLAZMA_PREFIX = "gplazma:";
 
-    private LoginStrategy _loginStrategy;
-    private LoginStrategy _anonymousLoginStrategy;
-    private CellEndpoint _endpoint;
-
-
-    @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
-        _endpoint = endpoint;
-    }
+    private LoginStrategy        _loginStrategy;
+    private LoginStrategy        _anonymousLoginStrategy;
+    private ProxyDelegationStore _gsiDelegationProvider;
 
     @Required
     public void setPlugins(String plugins)
@@ -84,6 +80,12 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         _anonymousLoginStrategy = anonymousLoginStrategy;
     }
 
+    @Required
+    public void setGsiDelegationProvider(ProxyDelegationStore gsiDelegationProvider)
+    {
+        _gsiDelegationProvider = gsiDelegationProvider;
+    }
+
     @Override
     public List<ChannelHandlerFactory> getObject()
         throws Exception
@@ -109,38 +111,45 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
             String name) throws Exception
     {
         if (name.equals("none")) {
-            return new LoginAuthenticationHandlerFactory(
-                    GPLAZMA_PREFIX + "none", new NoAuthenticationFactory(),
-                    null, _anonymousLoginStrategy);
+            return new LoginAuthenticationHandlerFactory(GPLAZMA_PREFIX + "none",
+                                                                        _anonymousLoginStrategy);
         }
 
         for (AuthenticationProvider provider: _authenticationProviders) {
-            AuthenticationFactory factory = provider.createFactory(name, _properties);
-            if (factory != null) {
-                ProxyDelegationClient client = createClient(name, _properties);
+            AuthenticationFactory authnFactory = provider.createFactory(name, _properties);
+            if (authnFactory != null) {
+                ProxyDelegationClientFactory clientFactory
+                                = createProxyDelegationClientFactory(name);
                 return new LoginAuthenticationHandlerFactory(GPLAZMA_PREFIX + name,
-                                                             factory,
-                                                             client,
-                                                             _loginStrategy);
+                                                                    name,
+                                                                    clientFactory,
+                                                                    _properties,
+                                                                     authnFactory,
+                                                                    _loginStrategy);
             }
         }
 
         throw new IllegalArgumentException("Authentication plugin not found: " + name);
     }
 
-    private ProxyDelegationClient createClient(String name, Properties properties)
-                    throws Exception
+    private ProxyDelegationClientFactory createProxyDelegationClientFactory(String name)
     {
         for (ProxyDelegationClientFactory factory: _clientFactories) {
-            ProxyDelegationClient client = factory.createClient(name, properties);
-            if (client != null) {
-                if (client instanceof CellMessageSender) {
-                    ((CellMessageSender)client).setCellEndpoint(_endpoint);
+            try {
+                if (factory instanceof GSIProxyDelegationClientFactory) {
+                    ((GSIProxyDelegationClientFactory)factory)
+                                    .setProvider(_gsiDelegationProvider);
                 }
-                return client;
+                if (factory.createClient(name, _properties) != null) {
+                    return factory;
+                }
+            } catch (InvalidHandlerConfigurationException e) {
+                LOGGER.debug("Could not create client for {} using factory {}: {}.",
+                             name, factory, e.toString());
             }
         }
 
+        LOGGER.debug("No delegation client for {}.", name);
         return null;
     }
 }
