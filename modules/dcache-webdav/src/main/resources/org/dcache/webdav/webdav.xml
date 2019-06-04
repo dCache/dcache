@@ -96,10 +96,16 @@
   </bean>
 
 
-  <bean id="scheduled-thread-pool" class="java.util.concurrent.Executors"
-        factory-method="newScheduledThreadPool" destroy-method="shutdown">
+  <bean id="scheduled-thread-pool"
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
+        destroy-method="shutdown">
       <description>Thread pool for scheduled activities</description>
-      <constructor-arg value="2"/>
+      <constructor-arg>
+          <bean class="java.util.concurrent.Executors"
+                factory-method="newScheduledThreadPool">
+              <constructor-arg value="2"/>
+          </bean>
+      </constructor-arg>
   </bean>
 
   <bean id="cache-login-strategy" class="org.dcache.auth.CachingLoginStrategy">
