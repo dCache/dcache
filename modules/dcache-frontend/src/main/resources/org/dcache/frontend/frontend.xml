@@ -367,52 +367,60 @@
                         </bean>
                     </property>
                 </bean>
-                <bean class="org.dcache.http.AuthenticationHandler">
-                    <property name="handler">
-                        <bean class="org.eclipse.jetty.server.handler.HandlerList">
-                            <property name="handlers">
+                <bean class="org.dcache.restful.LoggingHandler">
+                    <property name="handler" ref="authentication-handler"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="authentication-handler" class="org.dcache.http.AuthenticationHandler">
+        <description>Handler that authenticates a request</description>
+        <property name="handler" ref="authorised-handlers"/>
+        <property name="loginStrategy" ref="cache-login-strategy"/>
+        <property name="readOnly" value="${frontend.authz.readonly}"/>
+        <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
+        <property name="realm" value="${frontend.authn.realm}"/>
+        <property name="acceptBearerTokenUnencrypted"
+                  value="${frontend.macaroons.accept-over-unencrypted-channel}"/>
+    </bean>
+
+    <bean id="authorised-handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <description>All handlers that may require authentication.</description>
+        <property name="handlers">
+            <list>
+                <bean class="org.eclipse.jetty.servlet.ServletContextHandler">
+                    <property name="contextPath" value="/api"/>
+                    <property name="eventListeners">
+                        <list>
+                            <bean class="org.springframework.web.context.request.RequestContextListener"/>
+                        </list>
+                    </property>
+                    <property name="servletHandler">
+                        <bean class="org.dcache.restful.util.SpringWebServletHandler">
+                            <property name="servlets">
                                 <list>
-                                    <bean class="org.eclipse.jetty.servlet.ServletContextHandler">
-                                        <property name="contextPath" value="/api"/>
-                                        <property name="eventListeners">
+                                    <ref bean="swagger-servlet"/>
+                                    <ref bean="jersey-servlet"/>
+                                </list>
+                            </property>
+                            <property name="servletMappings">
+                                <list>
+                                    <bean class="org.eclipse.jetty.servlet.ServletMapping">
+                                        <property name="servletName" value="rest"/>
+                                        <property name="pathSpecs">
                                             <list>
-                                                <bean class="org.springframework.web.context.request.RequestContextListener"/>
+                                                <value>/v1/*</value>
                                             </list>
-                                        </property>
-                                        <property name="servletHandler">
-                                            <bean class="org.dcache.restful.util.SpringWebServletHandler">
-                                                <property name="servlets">
-                                                    <list>
-                                                        <ref bean="swagger-servlet"/>
-                                                        <ref bean="jersey-servlet"/>
-                                                    </list>
-                                                </property>
-                                                <property name="servletMappings">
-                                                    <list>
-                                                        <bean class="org.eclipse.jetty.servlet.ServletMapping">
-                                                            <property name="servletName" value="rest"/>
-                                                            <property name="pathSpecs">
-                                                                <list>
-                                                                    <value>/v1/*</value>
-                                                                </list>
-                                                            </property>
-                                                        </bean>
-                                                    </list>
-                                                </property>
-                                            </bean>
                                         </property>
                                     </bean>
                                 </list>
                             </property>
                         </bean>
                     </property>
-                    <property name="loginStrategy" ref="cache-login-strategy"/>
-                    <property name="readOnly" value="${frontend.authz.readonly}"/>
-                    <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
-                    <property name="realm" value="${frontend.authn.realm}"/>
-                    <property name="acceptBearerTokenUnencrypted"
-                              value="${frontend.macaroons.accept-over-unencrypted-channel}"/>
                 </bean>
+
+                <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
             </list>
         </property>
     </bean>
