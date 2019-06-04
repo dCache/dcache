@@ -138,10 +138,15 @@
       <property name="topic" value="${frontend.loginbroker.request-topic}"/>
   </bean>
 
-  <bean id="scheduling-service" class="java.util.concurrent.ScheduledThreadPoolExecutor"
-          destroy-method="shutdownNow">
-        <description>Used to execute periodic data collection (admin services)</description>
-        <constructor-arg value="5"/>
+  <bean id="scheduling-service"
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
+        destroy-method="shutdownNow">
+      <description>Used to execute periodic data collection (admin services)</description>
+      <constructor-arg>
+          <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
+              <constructor-arg value="5"/>
+          </bean>
+      </constructor-arg>
   </bean>
 
   <bean id="transfer-collector" class="org.dcache.restful.util.transfers.TransferCollector">
