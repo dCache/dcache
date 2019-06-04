@@ -6,6 +6,7 @@ import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import org.dcache.restful.filters.ResponseHeaderFilter;
+import org.dcache.restful.interceptors.LoggingInterceptor;
 import org.dcache.restful.providers.ErrorResponseProvider;
 import org.dcache.restful.providers.ObjectMapperProvider;
 import org.dcache.restful.qos.QosManagement;
@@ -61,6 +62,8 @@ public class DcacheRestApplication extends ResourceConfig
         register(ObjectMapperProvider.class);
         register(EntityFilteringFeature.class);
         register(ErrorResponseProvider.class);
+
+        register(LoggingInterceptor.class);
 
         /*
          * The Jersey support for content-encoding (in particular, compression)

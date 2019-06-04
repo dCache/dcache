@@ -20,7 +20,12 @@ package org.dcache.restful;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.dcache.http.AbstractLoggingHandler;
+import org.dcache.restful.interceptors.LoggingInterceptor;
+import org.dcache.util.NetLoggerBuilder;
 
 /**
  * Frontend door specific logging.
@@ -39,5 +44,15 @@ public class LoggingHandler extends AbstractLoggingHandler
     protected String requestEventName()
     {
         return "org.dcache.frontend.request";
+    }
+
+    @Override
+    protected void describeOperation(NetLoggerBuilder log,
+            HttpServletRequest request, HttpServletResponse response)
+    {
+        super.describeOperation(log, request, response);
+
+        log.add("request.entity", LoggingInterceptor.getRequestEntity(request));
+        log.add("response.entity", LoggingInterceptor.getResponseEntity(request));
     }
 }
