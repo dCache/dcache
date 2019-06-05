@@ -303,9 +303,8 @@ public class SpaceSweeper2
             info.setLruTimestamp(System.currentTimeMillis() - getLru());
         }
 
-        long now = System.currentTimeMillis();
-
         List<Double> fileLifetime = new ArrayList<>();
+        Long now = System.currentTimeMillis();
 
         for (PnfsId id : list) {
             try {
@@ -313,11 +312,15 @@ public class SpaceSweeper2
                 Long lastAccess = entry.getLastAccessTime();
                 Long lvalue = now - lastAccess;
                 if (lvalue < 0L) {
-                    throw new RuntimeException("repository last access time for "
-                                                + id + " is later than current "
-                                                + "system time! - now "
-                                                + now + ", last access "
-                                                + lastAccess + "; this is a bug.");
+                    now = System.currentTimeMillis();
+                    lvalue = now -lastAccess;
+                    if (lvalue < 0L) {
+                        _log.warn("repository last access time for {}"
+                                                  + " is later than current "
+                                                  + "system time - now {}, "
+                                                  + "last access {}",
+                                  id, now, lastAccess);
+                    }
                 }
                 fileLifetime.add(lvalue.doubleValue());
             } catch (FileNotInCacheException e) {
