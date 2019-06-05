@@ -138,6 +138,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                                      info,
                                      this,
                                      service.getThirdPartyShutdownExecutor());
+        client.setResponseTimeout(service.getTpcServerResponseTimeoutInSeconds());
         group = service.getThirdPartyClientGroup();
         authPlugins = service.getTpcClientPlugins();
         isFirstSync = true;
