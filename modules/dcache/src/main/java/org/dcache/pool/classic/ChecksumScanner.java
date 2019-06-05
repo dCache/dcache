@@ -27,6 +27,7 @@ import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
@@ -40,6 +41,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.Exceptions;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static dmg.util.CommandException.checkCommand;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 public class ChecksumScanner
@@ -592,13 +594,16 @@ public class ChecksumScanner
         String pnfsID;
 
         @Override
-        public String call() throws
-                CacheException, InterruptedException,
-                IOException, NoSuchAlgorithmException
+        public String call() throws CommandException, CacheException,
+                InterruptedException, IOException, NoSuchAlgorithmException
         {
             if (pnfsID.equals("*")) {
+                checkCommand(!_fullScan.isActive(),
+                        "Existing full scan is still active: %s", _fullScan);
                 _fullScan.start();
             } else {
+                checkCommand(!_singleScan.isActive(),
+                        "Existing single scan is still active: %s", _singleScan);
                 _singleScan.go(new PnfsId(pnfsID));
             }
             return "Started ...; check 'csm status' for status";
