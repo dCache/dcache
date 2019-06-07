@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -37,13 +38,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
@@ -96,22 +102,56 @@ import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
  *   third-party embedded clients.
  */
 public class XrootdTransferService extends NettyTransferService<XrootdProtocolInfo>
+                implements CellCommandListener
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(XrootdTransferService.class);
 
-    private int                               maxFrameSize;
-    private List<ChannelHandlerFactory>       plugins;
-    private List<ChannelHandlerFactory>       accessLogPlugins;
-    private List<ChannelHandlerFactory>       tpcClientPlugins;
-    private Map<String, String>               queryConfig;
-    private NioEventLoopGroup                 thirdPartyClientGroup;
-    private ScheduledExecutorService          thirdPartyShutdownExecutor;
-    private SigningPolicy                     signingPolicy;
+    @Command(name = "xrootd set server response timeout",
+                    hint = "time in seconds a server has to reply "
+                                    + "to the third-party client",
+                    description = "Sets the timeout on the third-party client.  "
+                                    + "The default mirrors the aggressive "
+                                    + "behavior of the SLAC xrootd "
+                                    + "server; see the property ")
+    class TimeoutCommand implements Callable<String> {
+            @Argument(usage = "Timeout.")
+            Long timeout = 2L;
+
+            @Option(name = "unit",
+                    usage = "Time unit for the timeout.")
+            TimeUnit unit;
+
+            @Override
+            public String call() throws Exception {
+                tpcServerResponseTimeout = timeout;
+                if (unit != null) {
+                    tpcServerResponseTimeoutUnit = unit;
+                }
+                return "Timeout now set to " + getTpcServerResponseTimeoutInSeconds()
+                                + " seconds; this affects only future transfers, "
+                                + "not those currently running.";
+            }
+    }
+
+    private int                         maxFrameSize;
+    private List<ChannelHandlerFactory> plugins;
+    private List<ChannelHandlerFactory> accessLogPlugins;
+    private List<ChannelHandlerFactory> tpcClientPlugins;
+    private Map<String, String>         queryConfig;
+    private NioEventLoopGroup           thirdPartyClientGroup;
+    private ScheduledExecutorService    thirdPartyShutdownExecutor;
+    private SigningPolicy               signingPolicy;
+    private long                        tpcServerResponseTimeout;
+    private TimeUnit                    tpcServerResponseTimeoutUnit;
 
     public XrootdTransferService()
     {
         super("xrootd");
+    }
+
+    public long getTpcServerResponseTimeoutInSeconds() {
+        return tpcServerResponseTimeoutUnit.toSeconds(tpcServerResponseTimeout);
     }
 
     public NioEventLoopGroup getThirdPartyClientGroup()
@@ -155,6 +195,18 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public void setSigningPolicy(SigningPolicy signingPolicy)
     {
         this.signingPolicy = signingPolicy;
+    }
+
+    @Resource
+    public void setTpcServerResponseTimeout(long timeout)
+    {
+        this.tpcServerResponseTimeout = timeout;
+    }
+
+    @Resource
+    public void setTpcServerResponseTimeoutUnit(TimeUnit unit)
+    {
+        this.tpcServerResponseTimeoutUnit = unit;
     }
 
     @Required

@@ -395,7 +395,9 @@
           </bean>
       </property>
       <property name="thirdPartyShutdownExecutor" ref="workerThreadPool"/>
-    <property name="signingPolicy" ref="signing-policy"/>
+      <property name="signingPolicy" ref="signing-policy"/>
+      <property name="tpcServerResponseTimeout" value="${pool.mover.xrootd.tpc-server-response-timeout}"/>
+      <property name="tpcServerResponseTimeoutUnit" value="${pool.mover.xrootd.tpc-server-response-timeout.unit}"/>
   </bean>
 
   <bean id="http-transfer-service-parent" class="org.dcache.http.HttpTransferService"
