@@ -406,7 +406,8 @@ Example:
 
 Now you can make a space reservation for the VO `desy`.
 
-    (SpaceManager) admin > reserve space -owner=/desy/Role=production -desc=DESY_TEST -lifetime=10000 -lg=spacemanager_WriteLinkGroup 5MB
+    (SpaceManager) admin > reserve space -owner=/desy/Role=production -desc=DESY_TEST -lifetime=10000   -lg=spacemanager_WriteLinkGroup 5MB
+    
     110000 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE linkGroupId:0 size:5000000 created:Fri Dec 09 12:43:48 CET 2011 lifetime:10000000ms expiration:Fri Dec 09 15:30:28 CET 2011 description:DESY_TEST state:RESERVED used:0 allocated:0
 
 The space token of the reservation is `110000`.
