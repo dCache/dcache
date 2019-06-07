@@ -33,6 +33,8 @@ check -strong pool.mover.xrootd.timeout.idle
 check -strong pool.mover.xrootd.timeout.idle.unit
 check -strong pool.mover.xrootd.timeout.connect
 check -strong pool.mover.xrootd.timeout.connect.unit
+check -strong pool.mover.xrootd.tpc-server-response-timeout
+check -strong pool.mover.xrootd.tpc-server-response-timeout.unit
 check -strong pool.mover.xrootd.frame-size
 check -strong pool.mover.xrootd.port.min
 check -strong pool.mover.xrootd.port.max
