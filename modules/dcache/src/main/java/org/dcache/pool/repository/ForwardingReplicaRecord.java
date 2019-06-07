@@ -86,7 +86,7 @@ public abstract class ForwardingReplicaRecord implements ReplicaRecord
     @Override
     public void setLastAccessTime(long time) throws CacheException
     {
-        delegate().getLastAccessTime();
+        delegate().setLastAccessTime(time);
     }
 
     @Override

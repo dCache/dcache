@@ -406,17 +406,18 @@ Example:
 
 Now you can make a space reservation for the VO `desy`.
 
-   (SrmSpaceManager) admin > reserve space -owner=/desy/Role=production -desc=DESY_TEST -lifetime=10000 -lg=spacemanager_WriteLinkGroup 5MB
-110000 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE linkGroupId:0 size:5000000 created:Fri Dec 09 12:43:48 CET 2011 lifetime:10000000ms expiration:Fri Dec 09 15:30:28 CET 2011 description:DESY_TEST state:RESERVED used:0 allocated:0
+    (SpaceManager) admin > reserve space -owner=/desy/Role=production -desc=DESY_TEST -lifetime=10000   -lg=spacemanager_WriteLinkGroup 5MB
+    
+    110000 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE linkGroupId:0 size:5000000 created:Fri Dec 09 12:43:48 CET 2011 lifetime:10000000ms expiration:Fri Dec 09 15:30:28 CET 2011 description:DESY_TEST state:RESERVED used:0 allocated:0
 
 The space token of the reservation is `110000`.
 Check the status of the reservation by
 
-    (SrmSpaceManager) admin > ls spaces -e -h
- TOKEN RETENTION LATENCY FILES ALLO   USED   FREE   SIZE             EXPIRES DESCRIPTION
-110000 CUSTODIAL NEARLINE    0   0B +   0B + 5.0M = 5.0M 2011-12-09 12:43:48 DESY_TEST
+    (SpaceManager) admin > ls spaces -e -h
+    TOKEN RETENTION LATENCY FILES ALLO   USED   FREE   SIZE             EXPIRES DESCRIPTION
+    110000 CUSTODIAL NEARLINE    0   0B +   0B + 5.0M = 5.0M 2011-12-09 12:43:48 DESY_TEST
 
-(SrmSpaceManager) admin > ls link groups -h
+(SpaceManager) admin > ls link groups -h
 FLAGS CNT RESVD   AVAIL   FREE             UPDATED NAME
 --rc:no 1  5.0M +  7.3G = 7.3G 2011-11-28 12:12:51 spacemanager_WriteLinkGroup
 
@@ -429,7 +430,7 @@ Now you can check via the [Webadmin Interface](config-frontend.md) or the [Web I
 
 There are several parameters to be specified for a space reservation.
 
-    (SrmSpaceManager) admin > reserve space [-al=online|nearline] [-desc=<string>] -lg=<name>
+    (SpaceManager) admin > reserve space [-al=online|nearline] [-desc=<string>] -lg=<name>
     [-lifetime=<seconds>] [-owner=<user>|<fqan>] [-rp=output|replica|custodial] <size>
 
 [-owner=<user>|<fqan>]
@@ -457,15 +458,15 @@ The life time of the space reservation should be specified in seconds. If no lif
 
 If a space reservation is not needed anymore it can be released with
 
-    (SrmSpaceManager) admin > release space <spaceTokenId>
+    (SpaceManager) admin > release space <spaceTokenId>
 
 Example:
 
-       (SrmSpaceManager) admin > reserve space -owner=/desy -desc=DESY_TEST -lifetime=600 5000000
+       (SpaceManager) admin > reserve space -owner=/desy -desc=DESY_TEST -lifetime=600 5000000
         110042 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE linkGroupId:0 size:5000000
 	created:Thu Dec 15 12:00:35 CET 2011 lifetime:600000ms expiration:Thu Dec 15 12:10:35 CET 2011 description:DESY_TEST
 	state:RESERVED used:0 allocated:0
-       (SrmSpaceManager) admin > release space 110042
+       (SpaceManager) admin > release space 110042
         110042 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE linkGroupId:0 size:5000000
 	created:Thu Dec 15 12:00:35 CET 2011 lifetime:600000ms expiration:Thu Dec 15 12:10:35 CET 2011 description:DESY_TEST
 	state:RELEASED used:0 allocated:0

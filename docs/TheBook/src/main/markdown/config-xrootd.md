@@ -305,6 +305,31 @@ it is also rather clunky in that it requires the hostcert DNs of all the pools
 to be mapped on the source server end.
 
 
+* Note:  For reading the file in dCache (dCache
+as TPC source), the third-party server needs only a valid certificate issued
+by a recognized CA; anonymous read access is granted to files (even privately
+owned) on the basis of the rendezvous token submitted with the request.
+
+#### Client timeout control
+
+The Third-party embedded client has a timer which will interrupt and return
+an error if the response from the server does not arrive after a given
+amount of time.
+
+The default values for this can be controlled by the properties:
+
+    pool.mover.xrootd.tpc-server-response-timeout
+    pool.mover.xrootd.tpc-server-response-timeout.unit
+
+These are set to 2 seconds to match the aggressive behavior of the SLAC
+implementation.  However, dCache allows you to control this dynamically
+as well, using the admin command:
+
+    \s <xrootd-door> xrootd set server response timeout
+
+This could conceivably be necessary under heavier load.
+
+
 ### Signed hash verification support
 
 The embedded third-party client will honor signed hash verification if the
@@ -339,6 +364,7 @@ also would need to include the unix service provider plugin in all the relevant
 pool configurations:
 
             pool.mover.xrootd.tpc-authn-plugins=gsi,unix
+
 
 <!--  [???]: #intouch-web
   []: http://people.web.psi.ch/feichtinger/doc/authz.pdf
