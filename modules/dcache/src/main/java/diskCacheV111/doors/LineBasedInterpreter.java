@@ -44,7 +44,19 @@ public interface LineBasedInterpreter
     void execute(String cmd) throws CommandExitException;
 
     /**
-     * Signals that the connection with the client is being terminated.
+     * Signals that the connection with the client is being terminated.  The
+     * implementation is still able to send and receive cell messages.
      */
     void shutdown();
+
+    /**
+     * Signals that this cell will receive no further cell messages.  Sending
+     * cell messages is also no longer supported.  The network connection to
+     * the client has not yet been closed, but the client might not accept any
+     * more data.
+     */
+    default void messagingClosed()
+    {
+        // do nothing.
+    }
 }
