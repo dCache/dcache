@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2017 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2019 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -95,6 +95,7 @@ import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_EXTEND;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_MODIFY;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Interface to a virtual file system.
@@ -637,7 +638,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 break;
 
             case TAG:
-                String tag = new String(handle, b.position(), opaqueLen);
+                String tag = new String(handle, b.position(), opaqueLen, UTF_8);
                 inode = new FsInode_TAG(fs, ino, tag);
                 break;
 
@@ -685,7 +686,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
     private static String[] getArgs(ByteBuffer b, int opaqueLen) {
 
-        StringTokenizer st = new StringTokenizer(new String(b.array(), b.position(), opaqueLen), "[:]");
+        StringTokenizer st = new StringTokenizer(new String(b.array(), b.position(), opaqueLen, UTF_8), "[:]");
         int argc = st.countTokens();
         String[] args = new String[argc];
         for (int i = 0; i < argc; i++) {
