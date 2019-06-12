@@ -87,8 +87,10 @@ public class UnpinProcessor implements Runnable
     private void upin(Semaphore idle, Executor executor, Pin pin) throws InterruptedException
     {
         if (pin.getPool() == null) {
+            _logger.debug("No pool found for pin {}, pnfsid {}; no sticky flags to clear", pin.getPinId(), pin.getPnfsId());
             _dao.delete(pin);
         } else {
+            _logger.debug("Clearing sticky flag for pin {}, pnfsid {} on pool {}", pin.getPinId(), pin.getPnfsId(), pin.getPool());
             clearStickyFlag(idle, pin, executor);
         }
     }
@@ -98,7 +100,7 @@ public class UnpinProcessor implements Runnable
     {
         PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(pin.getPool());
         if (pool == null || !pool.isActive()) {
-            _logger.warn("Unable to clear sticky flag because pool {} is unavailable", pin.getPool());
+            _logger.warn("Unable to clear sticky flag for pin {} on pnfsid {} because pool {} is unavailable", pin.getPinId(), pin.getPnfsId(), pin.getPool());
             return;
         }
 
