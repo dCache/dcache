@@ -183,7 +183,7 @@ public abstract class TransferManager extends AbstractCellComponent
                 Matcher m = p.matcher(String.valueOf(id));
                 if (m.matches()) {
                     log.debug("pattern: \"{}\" matches id=\"{}\"", args.argv(0), id);
-                    if (pool != null && pool.equals(handler.getPool())) {
+                    if (pool != null && pool.equals(handler.getPool().getName())) {
                         handlersToKill.add(handler);
                     } else if (pool == null) {
                         handlersToKill.add(handler);
