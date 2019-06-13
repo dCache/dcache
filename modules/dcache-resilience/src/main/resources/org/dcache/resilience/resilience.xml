@@ -8,6 +8,7 @@
            http://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:property-placeholder/>
+    <context:annotation-config/>
 
     <bean id="permission-handler"
           class="org.dcache.namespace.ChainedPermissionHandler">
@@ -28,17 +29,26 @@
     </bean>
 
     <bean id="ConnectionPool" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
-      <description>Database connection pool</description>
-      <constructor-arg>
-        <bean class="com.zaxxer.hikari.HikariConfig">
-          <property name="jdbcUrl" value="${resilience.db.url}"/>
-          <property name="username" value="${resilience.db.user}"/>
-          <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${resilience.db.password.file}', '${resilience.db.url}', '${resilience.db.user}', '${resilience.db.password}') }"/>
-          <property name="minimumIdle" value="${resilience.db.connections.idle}"/>
-          <property name="maximumPoolSize" value="${resilience.db.connections.max}"/>
-          <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
-        </bean>
-      </constructor-arg>
+        <description>Database connection pool</description>
+        <constructor-arg>
+            <bean class="com.zaxxer.hikari.HikariConfig">
+                <constructor-arg>
+                    <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                        <property name="prefix" value="resilience.db.hikari-properties"/>
+                        <property name="staticEnvironment">
+                            <map>
+                                <entry key="jdbcUrl" value="${resilience.db.url}"/>
+                                <entry key="username" value="${resilience.db.user}"/>
+                                <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${resilience.db.password.file}', '${resilience.db.url}', '${resilience.db.user}', '${resilience.db.password}') }"/>
+                                <entry key="minimumIdle" value="${resilience.db.connections.idle}"/>
+                                <entry key="maximumPoolSize" value="${resilience.db.connections.max}"/>
+                                <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                            </map>
+                        </property>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
   </bean>
 
   <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">

@@ -123,9 +123,18 @@
             <description>Database connection pool</description>
             <constructor-arg>
                 <bean class="com.zaxxer.hikari.HikariConfig">
-                    <property name="jdbcUrl" value="${alarms.db.url}"/>
-                    <property name="username" value="${alarms.db.user}"/>
-                    <property name="password" value="${alarms.db.password}"/>
+                    <constructor-arg>
+                        <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                            <property name="prefix" value="alarms.db.hikari-properties"/>
+                            <property name="staticEnvironment">
+                                <map>
+                                    <entry key="jdbcUrl" value="${alarms.db.url}"/>
+                                    <entry key="username" value="${alarms.db.user}"/>
+                                    <entry key="password" value="${alarms.db.password}"/>
+                                </map>
+                            </property>
+                        </bean>
+                    </constructor-arg>
                  </bean>
             </constructor-arg>
         </bean>

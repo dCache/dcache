@@ -128,13 +128,22 @@
         <description>Database connection pool</description>
         <constructor-arg>
             <bean class="com.zaxxer.hikari.HikariConfig">
-                <property name="jdbcUrl" value="${pinmanager.db.url}"/>
-                <property name="username" value="${pinmanager.db.user}"/>
-                <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }"/>
-                <property name="autoCommit" value="true"/>
-                <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
-                <property name="minimumIdle" value="${pinmanager.db.connections.idle}"/>
-                <property name="maximumPoolSize" value="${pinmanager.db.connections.max}"/>
+                <constructor-arg>
+                    <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                        <property name="prefix" value="pinmanager.db.hikari-properties"/>
+                        <property name="staticEnvironment">
+                            <map>
+                                <entry key="jdbcUrl" value="${pinmanager.db.url}"/>
+                                <entry key="username" value="${pinmanager.db.user}"/>
+                                <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pinmanager.db.password.file}', '${pinmanager.db.url}', '${pinmanager.db.user}', '${pinmanager.db.password}') }"/>
+                                <entry key="autoCommit" value="true"/>
+                                <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                                <entry key="minimumIdle" value="${pinmanager.db.connections.idle}"/>
+                                <entry key="maximumPoolSize" value="${pinmanager.db.connections.max}"/>
+                            </map>
+                        </property>
+                    </bean>
+                </constructor-arg>
             </bean>
         </constructor-arg>
     </bean>

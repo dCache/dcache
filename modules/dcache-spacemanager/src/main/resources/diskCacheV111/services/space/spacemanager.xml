@@ -61,13 +61,22 @@
             <bean class="com.zaxxer.hikari.HikariDataSource">
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="jdbcUrl" value="${spacemanager.db.url}"/>
-                        <property name="username" value="${spacemanager.db.user}"/>
-                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>
-                        <property name="minimumIdle" value="${spacemanager.db.connections.idle}"/>
-                        <property name="maximumPoolSize" value="${spacemanager.db.connections.max}"/>
-                        <property name="autoCommit" value="true"/>
-                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                        <constructor-arg>
+                            <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                                <property name="prefix" value="spacemanager.db.hikari-properties"/>
+                                <property name="staticEnvironment">
+                                    <map>
+                                        <entry key="jdbcUrl" value="${spacemanager.db.url}"/>
+                                        <entry key="username" value="${spacemanager.db.user}"/>
+                                        <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>
+                                        <entry key="minimumIdle" value="${spacemanager.db.connections.idle}"/>
+                                        <entry key="maximumPoolSize" value="${spacemanager.db.connections.max}"/>
+                                        <entry key="autoCommit" value="true"/>
+                                        <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                                    </map>
+                               </property>
+                            </bean>
+                        </constructor-arg>
                     </bean>
                 </constructor-arg>
             </bean>

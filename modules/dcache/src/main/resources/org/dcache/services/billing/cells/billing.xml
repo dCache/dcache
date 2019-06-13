@@ -62,13 +62,22 @@
         <bean class="com.zaxxer.hikari.HikariDataSource">
           <constructor-arg>
             <bean class="com.zaxxer.hikari.HikariConfig">
-              <property name="jdbcUrl" value="${billing.db.url}"/>
-              <property name="username" value="${billing.db.user}"/>
-              <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
-              <property name="autoCommit" value="true"/>
-              <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
-              <property name="minimumIdle" value="${billing.db.connections.idle}"/>
-              <property name="maximumPoolSize" value="${billing.db.connections.max}"/>
+              <constructor-arg>
+                <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                  <property name="prefix" value="billing.db.hikari-properties"/>
+                  <property name="staticEnvironment">
+                    <map>
+		      <entry key="jdbcUrl" value="${billing.db.url}"/>
+		      <entry key="username" value="${billing.db.user}"/>
+		      <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
+		      <entry key="autoCommit" value="true"/>
+		      <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+		      <entry key="minimumIdle" value="${billing.db.connections.idle}"/>
+		      <entry key="maximumPoolSize" value="${billing.db.connections.max}"/>
+                    </map>
+                  </property>
+                </bean>
+              </constructor-arg>
             </bean>
           </constructor-arg>
         </bean>

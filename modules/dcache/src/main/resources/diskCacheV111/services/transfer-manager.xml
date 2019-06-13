@@ -94,9 +94,18 @@
             <bean id="hikariDataSource" class="com.zaxxer.hikari.HikariDataSource">
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="jdbcUrl" value="${transfermanagers.db.url}"/>
-                        <property name="username" value="${transfermanagers.db.user}"/>
-                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${transfermanagers.db.password.file}', '${transfermanagers.db.url}', '${transfermanagers.db.user}', '${transfermanagers.db.password}') }"/>
+                        <constructor-arg>
+                            <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                                <property name="prefix" value="transfer-manager.db.hikari-properties"/>
+                                <property name="staticEnvironment">
+                                    <map>
+                                        <entry key="jdbcUrl" value="${transfermanagers.db.url}"/>
+                                        <entry key="username" value="${transfermanagers.db.user}"/>
+                                        <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${transfermanagers.db.password.file}', '${transfermanagers.db.url}', '${transfermanagers.db.user}', '${transfermanagers.db.password}') }"/>
+                                    </map>
+				</property>
+                            </bean>
+                        </constructor-arg>
                     </bean>
                 </constructor-arg>
             </bean>

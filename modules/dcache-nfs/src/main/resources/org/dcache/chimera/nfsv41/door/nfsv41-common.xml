@@ -70,13 +70,22 @@
             <bean class="com.zaxxer.hikari.HikariDataSource">
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="jdbcUrl" value="${nfs.db.url}"/>
-                        <property name="username" value="${nfs.db.user}"/>
-                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${nfs.db.password.file}', '${nfs.db.url}', '${nfs.db.user}', '${nfs.db.password}') }"/>
-                        <property name="minimumIdle" value="${nfs.db.connections.idle}"/>
-                        <property name="maximumPoolSize" value="${nfs.db.connections.max}"/>
-                        <property name="autoCommit" value="true"/>
-                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                        <constructor-arg>
+                            <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                                <property name="prefix" value="nfs.db.hikari-properties"/>
+                                <property name="staticEnvironment">
+                                    <map>
+                                        <entry key="jdbcUrl" value="${nfs.db.url}"/>
+                                        <entry key="username" value="${nfs.db.user}"/>
+                                        <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${nfs.db.password.file}', '${nfs.db.url}', '${nfs.db.user}', '${nfs.db.password}') }"/>
+                                        <entry key="minimumIdle" value="${nfs.db.connections.idle}"/>
+                                        <entry key="maximumPoolSize" value="${nfs.db.connections.max}"/>
+                                        <entry key="autoCommit" value="true"/>
+                                        <entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                                    </map>
+                               </property>
+                            </bean>
+                        </constructor-arg>
                     </bean>
                 </constructor-arg>
             </bean>

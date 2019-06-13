@@ -6,6 +6,7 @@
            http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:property-placeholder/>
+    <context:annotation-config/>
 
     <bean id="permission-handler"
           class="org.dcache.namespace.ChainedPermissionHandler">
@@ -47,13 +48,22 @@
             <bean class="com.zaxxer.hikari.HikariDataSource">
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="jdbcUrl" value="${pnfsmanager.db.url}"/>
-                        <property name="username" value="${pnfsmanager.db.user}"/>
-                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pnfsmanager.db.password.file}', '${pnfsmanager.db.url}', '${pnfsmanager.db.user}', '${pnfsmanager.db.password}') }"/>
-                        <property name="minimumIdle" value="${pnfsmanager.db.connections.idle}"/>
-                        <property name="maximumPoolSize" value="${pnfsmanager.db.connections.max}"/>
-                        <property name="autoCommit" value="true"/>
-                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                        <constructor-arg>
+                            <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                                <property name="prefix" value="pnfsmanager.db.hikari-properties"/>
+                                <property name="staticEnvironment">
+                                    <map>
+					<entry key="jdbcUrl" value="${pnfsmanager.db.url}"/>
+					<entry key="username" value="${pnfsmanager.db.user}"/>
+					<entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pnfsmanager.db.password.file}', '${pnfsmanager.db.url}', '${pnfsmanager.db.user}', '${pnfsmanager.db.password}') }"/>
+					<entry key="minimumIdle" value="${pnfsmanager.db.connections.idle}"/>
+					<entry key="maximumPoolSize" value="${pnfsmanager.db.connections.max}"/>
+					<entry key="autoCommit" value="true"/>
+					<entry key="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                                    </map>
+                               </property>
+                            </bean>
+                        </constructor-arg>
                     </bean>
                 </constructor-arg>
             </bean>

@@ -49,12 +49,20 @@
             <bean class="com.zaxxer.hikari.HikariDataSource">
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="jdbcUrl" value="${cleaner.db.url}"/>
-                        <property name="username" value="${cleaner.db.user}"/>
-                        <property name="password" value="${cleaner.db.password}"/>
-                        <property name="minimumIdle" value="${cleaner.db.connections.idle}"/>
-                        <property name="maximumPoolSize" value="${cleaner.db.connections.max}"/>
-
+                        <constructor-arg>
+                            <bean class="org.dcache.util.configuration.ConfigurationPropertiesFactoryBean">
+                                <property name="prefix" value="cleaner.db.hikari-properties"/>
+                                <property name="staticEnvironment">
+                                    <map>
+                                        <entry key="jdbcUrl" value="${cleaner.db.url}"/>
+                                        <entry key="username" value="${cleaner.db.user}"/>
+                                        <entry key="password" value="${cleaner.db.password}"/>
+                                        <entry key="minimumIdle" value="${cleaner.db.connections.idle}"/>
+                                        <entry key="maximumPoolSize" value="${cleaner.db.connections.max}"/>
+                                    </map>
+                               </property>
+                            </bean>
+                        </constructor-arg>
                     </bean>
                 </constructor-arg>
             </bean>
