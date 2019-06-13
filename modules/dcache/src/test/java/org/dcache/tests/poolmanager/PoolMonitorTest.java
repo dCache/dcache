@@ -5,6 +5,8 @@ import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import diskCacheV111.poolManager.CostModuleV1;
@@ -15,6 +17,7 @@ import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
@@ -30,7 +33,7 @@ import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class PoolMonitorTest
 {
@@ -109,5 +112,111 @@ public class PoolMonitorTest
          */
         assertTrue(pools.contains(availableLocations.selectReadPool().name()));
         assertTrue(pools.contains(availableLocations.selectPinPool().name()));
+    }
+
+    @Test
+    public void testLinkFallbackEnable() throws Exception {
+
+        _poolMonitor.setEnableLinkFallback(true);
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+
+        List<String> pools = Arrays.asList("pool1", "pool2");
+
+        /*
+         * pre-configure pool selection unit. pool2 has higher pref.
+         */
+        PoolMonitorHelper.prepareLinkPerPool(_selectionUnit, _access, pools);
+
+        long serialId = System.currentTimeMillis();
+
+        /*
+         * make pools know to 'PoolManager'
+         */
+        PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
+
+        PoolCostInfo poolCost1 = new PoolCostInfo("pool1", IoQueueManager.DEFAULT_QUEUE);
+        PoolCostInfo poolCost2 = new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE);
+
+        poolCost1.setSpaceUsage(100, 20, 30, 50);
+        poolCost2.setSpaceUsage(100, 20, 30, 50);
+
+        PoolManagerPoolUpMessage pool1UpMessage = new PoolManagerPoolUpMessage("pool1",
+                serialId, poolMode, poolCost1);
+
+        PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
+                serialId, poolMode, poolCost2);
+
+        CellMessage envelope1 = new CellMessage(new CellAddressCore("PoolManager"), null);
+        envelope1.addSourceAddress(new CellAddressCore("pool1"));
+        CellMessage envelope2 = new CellMessage(new CellAddressCore("PoolManager"), null);
+        envelope2.addSourceAddress(new CellAddressCore("pool2"));
+
+        _costModule.messageArrived(envelope1, pool1UpMessage);
+        _costModule.messageArrived(envelope2, pool2UpMessage);
+
+        /*
+         * exercise
+         */
+        Collection<String> location = Collections.singleton("pool1");
+        FileAttributes attributes = FileAttributes.of().pnfsId(pnfsId).locations(location).build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+        PoolSelector availableLocations
+                = _poolMonitor.getPoolSelector(attributes, _protocolInfo, null);
+
+        assertEquals("pool1", availableLocations.selectReadPool().name());
+    }
+
+    @Test(expected=PermissionDeniedCacheException.class)
+    public void testLinkFallbackDisabled() throws Exception {
+
+        _poolMonitor.setEnableLinkFallback(false);
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+
+        List<String> pools = Arrays.asList("pool1", "pool2");
+
+        /*
+         * pre-configure pool selection unit. pool2 has higher pref.
+         */
+        PoolMonitorHelper.prepareLinkPerPool(_selectionUnit, _access, pools);
+
+        long serialId = System.currentTimeMillis();
+
+        /*
+         * make pools know to 'PoolManager'
+         */
+        PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
+
+        PoolCostInfo poolCost1 = new PoolCostInfo("pool1", IoQueueManager.DEFAULT_QUEUE);
+        PoolCostInfo poolCost2 = new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE);
+
+        poolCost1.setSpaceUsage(100, 20, 30, 50);
+        poolCost2.setSpaceUsage(100, 20, 30, 50);
+
+        PoolManagerPoolUpMessage pool1UpMessage = new PoolManagerPoolUpMessage("pool1",
+                serialId, poolMode, poolCost1);
+
+        PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
+                serialId, poolMode, poolCost2);
+
+        CellMessage envelope1 = new CellMessage(new CellAddressCore("PoolManager"), null);
+        envelope1.addSourceAddress(new CellAddressCore("pool1"));
+        CellMessage envelope2 = new CellMessage(new CellAddressCore("PoolManager"), null);
+        envelope2.addSourceAddress(new CellAddressCore("pool2"));
+
+        _costModule.messageArrived(envelope1, pool1UpMessage);
+        _costModule.messageArrived(envelope2, pool2UpMessage);
+
+        /*
+         * exercise
+         */
+        Collection<String> location = Collections.singleton("pool1");
+        FileAttributes attributes = FileAttributes.of().pnfsId(pnfsId).locations(location).build();
+        StorageInfos.injectInto(_storageInfo, attributes);
+        PoolSelector availableLocations
+                = _poolMonitor.getPoolSelector(attributes, _protocolInfo, null);
+
+        availableLocations.selectReadPool();
     }
 }

@@ -65,6 +65,12 @@ public class PoolMonitorV5
     private CostModule        _costModule    ;
     private PartitionManager  _partitionManager ;
 
+    /**
+     * Should reading from a link with a lower preference be allowed if there
+     * is a link with a higher read priority, but no linked pool has the file.
+     */
+    private boolean _enableLinkFallback;
+
     @Override
     public PoolSelectionUnit getPoolSelectionUnit()
     {
@@ -74,6 +80,11 @@ public class PoolMonitorV5
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
     {
         _selectionUnit = selectionUnit;
+    }
+
+    public void setEnableLinkFallback(boolean enable)
+    {
+        _enableLinkFallback = enable;
     }
 
     @Override
@@ -220,13 +231,13 @@ public class PoolMonitorV5
             Collection<String> locations = _fileAttributes.getLocations();
             _log.debug("[read] Expected from pnfs: {}", locations);
 
-            Map<String,PoolInfo> onlinePools =
+            Map<String,PoolInfo> onlinePoolsWithFile =
                 _costModule.getPoolInfoAsMap(locations);
-            _log.debug("[read] Online pools: {}", onlinePools);
+            _log.debug("[read] Online pools: {}", onlinePoolsWithFile);
 
             /* Is the file in any of the online pools?
              */
-            if (onlinePools.isEmpty()){
+            if (onlinePoolsWithFile.isEmpty()){
                 throw new FileNotInCacheException("File not in any pool");
             }
 
@@ -257,16 +268,21 @@ public class PoolMonitorV5
             CostException fallback = null;
 
             for (int prio = 0; prio < level.length; prio++) {
-                List<String> poolNames = level[prio].getPoolList();
+                List<String> poolsInCurrentLevel = level[prio].getPoolList();
                 _log.debug("[read] Allowed pools at level {}: {}",
-                           prio, poolNames);
+                           prio, poolsInCurrentLevel);
+
+                if (poolsInCurrentLevel.isEmpty()) {
+                    // No pools in this level....skip it.
+                    continue;
+                }
 
                 /* Reduce the set to the pools that are supposed to
                  * contain the file and which are online.
                  */
-                List<PoolInfo> pools = new ArrayList<>(poolNames.size());
-                for (String poolName: poolNames) {
-                    PoolInfo info = onlinePools.get(poolName);
+                List<PoolInfo> pools = new ArrayList<>(poolsInCurrentLevel.size());
+                for (String pool: poolsInCurrentLevel) {
+                    PoolInfo info = onlinePoolsWithFile.get(pool);
                     if (info != null) {
                         pools.add(info);
                     }
@@ -274,18 +290,22 @@ public class PoolMonitorV5
                 _log.debug("[read] Available pools at level {}: {}",
                            prio, pools);
 
+                /* If allowed, fallback to next link if current link doesn't point
+                 * to any pool holding the file.
+                 */
+                if (pools.isEmpty()) {
+                    if (_enableLinkFallback) {
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+
                 /* The caller may want to know which partition we used
                  * to select a pool.
                  */
                 _partition =
                     _partitionManager.getPartition(level[prio].getTag());
-
-                /* Fallback to next link if current link doesn't point
-                 * to any available pools.
-                 */
-                if (pools.isEmpty()) {
-                    continue;
-                }
 
                 /* The actual pool selection is delegated to the
                  * Partition.

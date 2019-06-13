@@ -57,6 +57,7 @@
     <property name="poolSelectionUnit" ref="psu"/>
     <property name="costModule" ref="cm"/>
     <property name="partitionManager" ref="pm"/>
+    <property name="enableLinkFallback" value="${poolmanager.enable.link-fallback}" />
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">

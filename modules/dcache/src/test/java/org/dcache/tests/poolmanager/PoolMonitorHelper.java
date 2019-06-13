@@ -66,4 +66,47 @@ public class PoolMonitorHelper {
 
     }
 
+    /**
+     * Populate Selection unit with pools
+     *
+     * @param unit selection unit to populate
+     * @param pools list of pools
+     */
+    public static void prepareLinkPerPool(PoolSelectionUnit unit,
+            PoolSelectionUnitAccess access,
+            List<String> pools) throws CommandException {
+        CommandInterpreter ci = new CommandInterpreter(access);
+
+        ci.command(new Args("psu create unit -store  *@*"));
+        ci.command(new Args("psu create unit -protocol */*"));
+        ci.command(new Args("psu create unit -net    0.0.0.0/0.0.0.0"));
+
+        ci.command(new Args("psu create ugroup any-store"));
+        ci.command(new Args("psu addto ugroup any-store *@*"));
+
+        ci.command(new Args("psu create ugroup world-net"));
+        ci.command(new Args("psu addto ugroup world-net 0.0.0.0/0.0.0.0"));
+
+        ci.command(new Args("psu create ugroup all-protocols"));
+        ci.command(new Args("psu addto ugroup  all-protocols */*"));
+
+        ci.command(new Args("psu create pgroup all-pools"));
+
+        int pref = 0;
+        for (String pool : pools) {
+            pref++;
+            ci.command(new Args("psu create pool " + pool));
+            unit.getPool(pool).setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
+            ci.command(new Args("psu set active " + pool));
+            ci.command(new Args("psu set pool " + pool + " ping"));
+
+            ci.command(new Args("psu create link " + pool +"-link any-store world-net all-protocols"));
+            ci.command(new Args("psu set link " + pool +"-link -writepref=" + pref + "  -readpref=" + pref + " -cachepref=" + pref));
+            ci.command(new Args("psu add link " + pool +"-link " + pool));
+
+        }
+
+        ci.command("psu set allpoolsactive on");
+    }
+
 }
