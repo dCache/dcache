@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -141,7 +141,7 @@ public class ZooKeeperCell extends AbstractCell
         // object has been created.
         int purgeIntervalHours = (int) TimeUnit.HOURS.convert(autoPurgeInterval, autoPurgeIntervalUnit);
         DatadirCleanupManager purgeMgr =
-                new DatadirCleanupManager(dataDir.getAbsolutePath(), dataLogDir.getAbsolutePath(),
+                new DatadirCleanupManager(dataDir.getAbsoluteFile(), dataLogDir.getAbsoluteFile(),
                                           autoPurgeRetainCount, purgeIntervalHours);
         purgeMgr.start();
     }
