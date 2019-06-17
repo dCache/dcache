@@ -52,7 +52,7 @@ public class ConfigurationMapFactoryBeanTest {
         configuration.setEnvironment(env);
         configuration.buildMap();
 
-        ImmutableMap<String, String> effectiveEnv = configuration.getObject();
+        Map<String, String> effectiveEnv = configuration.getObject();
 
         assertFalse(effectiveEnv.containsKey(envKey));
         assertEquals(value, effectiveEnv.get(realKey));
@@ -79,9 +79,7 @@ public class ConfigurationMapFactoryBeanTest {
 
         Class<?> effectiveEnvType = configuration.getObjectType();
 
-        assertEquals(ImmutableMap.class, effectiveEnvType);
-
-
+        assertEquals(Map.class, effectiveEnvType);
     }
 
     @Test
@@ -124,7 +122,7 @@ public class ConfigurationMapFactoryBeanTest {
         configuration.setEnvironment(env);
         configuration.buildMap();
 
-        ImmutableMap<String, String> effectiveEnv = configuration.getObject();
+        Map<String, String> effectiveEnv = configuration.getObject();
 
         assertEquals(null, effectiveEnv.get(realKey));
 
@@ -154,7 +152,7 @@ public class ConfigurationMapFactoryBeanTest {
         configuration.setEnvironment(env);
         configuration.buildMap();
 
-        ImmutableMap<String, String> effectiveEnv = configuration.getObject();
+        Map<String, String> effectiveEnv = configuration.getObject();
 
         assertTrue(effectiveEnv.isEmpty());
 
@@ -180,7 +178,7 @@ public class ConfigurationMapFactoryBeanTest {
         );
 
 
-        Map<String, Object> constants = ImmutableMap.of(
+        Map<String, String> constants = ImmutableMap.of(
                 statisEnvKey, statisEnvValue
 
         );
@@ -191,7 +189,7 @@ public class ConfigurationMapFactoryBeanTest {
 
         configuration.buildMap();
 
-        ImmutableMap<String, String> effectiveEnv = configuration.getObject();
+        Map<String, String> effectiveEnv = configuration.getObject();
 
         assertFalse(effectiveEnv.containsKey(envKey));
         assertEquals(statisEnvValue, effectiveEnv.get(statisEnvKey));
@@ -216,7 +214,7 @@ public class ConfigurationMapFactoryBeanTest {
         Map<String, Object> env = new HashMap<>();
         env.put(envKey, value);
 
-        Map<String, Object> constants = new HashMap<>();
+        Map<String, String> constants = new HashMap<>();
         constants.put(staticEnvKey, staticEnvValue);
 
         configuration.setPrefix(prefix);
@@ -225,7 +223,7 @@ public class ConfigurationMapFactoryBeanTest {
 
         configuration.buildMap();
 
-        ImmutableMap<String, String> effectiveEnv = configuration.getObject();
+        Map<String, String> effectiveEnv = configuration.getObject();
 
 
         assertEquals(staticEnvValue, effectiveEnv.get(realKey));

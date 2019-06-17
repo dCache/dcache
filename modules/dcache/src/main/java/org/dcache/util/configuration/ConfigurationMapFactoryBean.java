@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,19 +17,10 @@
  */
 package org.dcache.util.configuration;
 
-import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.PostConstruct;
 
 import java.util.Map;
 
-import dmg.cells.nucleus.EnvironmentAware;
-import dmg.util.Formats;
-import dmg.util.Replaceable;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * The ConfigurationMapFactoryBean builds a Map from some (possibly empty)
@@ -38,76 +29,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * prefix are used to build the map, all others are ignored.  The map entries
  * are created by removing the prefix from matching property keys to form the
  * map-entry's key.  The corresponding map-entry's value is the property value.
+ * <p>
+ * The created Map bean is immutable.
  */
-public class ConfigurationMapFactoryBean implements EnvironmentAware,
-        FactoryBean<ImmutableMap<String,String>>
+public class ConfigurationMapFactoryBean extends AbstractPrefixFactoryBean
+        implements FactoryBean<Map<String,String>>
 {
-    private String _prefix;
-    private Map<String,Object> _environment;
-    private ImmutableMap<String,String> _object;
-    private Map<String,? extends Object> _staticEnvironment;
-
     @Override
-    public void setEnvironment(Map<String, Object> environment)
+    public Map<String, String> getObject()
     {
-        _environment = environment;
-    }
-
-    public void setStaticEnvironment(Map<String, Object> staticEnvironment)
-    {
-        _staticEnvironment = staticEnvironment;
-    }
-
-    @Required
-    public void setPrefix(String value)
-    {
-        _prefix = checkNotNull(value) + ConfigurationProperties.PREFIX_SEPARATOR;
-    }
-
-    @PostConstruct
-    public void buildMap()
-    {
-        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
-
-        Replaceable replaceable = name -> {
-            Object value =  _environment.get(name);
-            return (value == null) ? null : value.toString().trim();
-        };
-
-        int prefixLength = _prefix.length();
-        for (Map.Entry<String,Object> item : _environment.entrySet()) {
-            String name = item.getKey();
-            if (item.getValue() instanceof String && name.startsWith(_prefix)) {
-                String value = (String) item.getValue();
-                String key = name.substring(prefixLength);
-                if (!key.isEmpty() && (_staticEnvironment == null || !_staticEnvironment.containsKey(key))) {
-                    builder.put(key, Formats.replaceKeywords(value, replaceable));
-                }
-            }
-        }
-
-        if (_staticEnvironment != null) {
-            builder.putAll((Map<? extends String, ? extends String>) _staticEnvironment);
-        }
-
-        _object = builder.build();
-    }
-
-    @Override
-    public ImmutableMap<String, String> getObject()
-    {
-        return _object;
+        return configuration();
     }
 
     @Override
     public Class<?> getObjectType()
     {
-        return ImmutableMap.class;
-    }
-
-    @Override
-    public boolean isSingleton()
-    {
-        return true;
+        return Map.class;
     }
 }
