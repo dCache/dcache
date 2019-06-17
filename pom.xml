@@ -63,7 +63,7 @@
         <version.milton>2.7.3.0-dcache-1</version.milton>
         <version.spring>4.3.8.RELEASE</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
-        <version.aspectj>1.8.10</version.aspectj>
+        <version.aspectj>1.9.2</version.aspectj>
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.4.18.v20190429</version.jetty>
