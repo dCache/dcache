@@ -243,7 +243,9 @@ public class NettyLineBasedDoor
     @Override
     public void stopped()
     {
-        interpreter.messagingClosed();
+        if (interpreter != null) {
+            interpreter.messagingClosed();
+        }
 
         channel.close().syncUninterruptibly();
 
