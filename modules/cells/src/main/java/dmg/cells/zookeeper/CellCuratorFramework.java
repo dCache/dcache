@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,37 +17,51 @@
  */
 package dmg.cells.zookeeper;
 
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+
 import org.apache.curator.CuratorZookeeperClient;
+
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.WatcherRemoveCuratorFramework;
 import org.apache.curator.framework.api.ACLBackgroundPathAndBytesable;
 import org.apache.curator.framework.api.ACLCreateModeBackgroundPathAndBytesable;
 import org.apache.curator.framework.api.ACLCreateModePathAndBytesable;
+import org.apache.curator.framework.api.ACLCreateModeStatBackgroundPathAndBytesable;
 import org.apache.curator.framework.api.ACLPathAndBytesable;
 import org.apache.curator.framework.api.ACLable;
+import org.apache.curator.framework.api.ACLableExistBuilderMain;
 import org.apache.curator.framework.api.BackgroundCallback;
 import org.apache.curator.framework.api.BackgroundPathAndBytesable;
 import org.apache.curator.framework.api.BackgroundPathable;
 import org.apache.curator.framework.api.BackgroundVersionable;
 import org.apache.curator.framework.api.ChildrenDeletable;
 import org.apache.curator.framework.api.CreateBackgroundModeACLable;
+import org.apache.curator.framework.api.CreateBackgroundModeStatACLable;
 import org.apache.curator.framework.api.CreateBuilder;
+import org.apache.curator.framework.api.CreateBuilder2;
+import org.apache.curator.framework.api.CreateBuilderMain;
+import org.apache.curator.framework.api.CreateProtectACLCreateModePathAndBytesable;
 import org.apache.curator.framework.api.CuratorListener;
 import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.framework.api.DeleteBuilder;
+import org.apache.curator.framework.api.DeleteBuilderMain;
 import org.apache.curator.framework.api.ErrorListenerPathAndBytesable;
 import org.apache.curator.framework.api.ErrorListenerPathable;
 import org.apache.curator.framework.api.ExistsBuilder;
 import org.apache.curator.framework.api.ExistsBuilderMain;
 import org.apache.curator.framework.api.GetACLBuilder;
 import org.apache.curator.framework.api.GetChildrenBuilder;
+import org.apache.curator.framework.api.GetConfigBuilder;
 import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.curator.framework.api.GetDataWatchBackgroundStatable;
 import org.apache.curator.framework.api.PathAndBytesable;
 import org.apache.curator.framework.api.Pathable;
-import org.apache.curator.framework.api.ProtectACLCreateModePathAndBytesable;
+import org.apache.curator.framework.api.ProtectACLCreateModeStatPathAndBytesable;
+import org.apache.curator.framework.api.ReconfigBuilder;
+import org.apache.curator.framework.api.RemoveWatchesBuilder;
 import org.apache.curator.framework.api.SetACLBuilder;
 import org.apache.curator.framework.api.SetDataBackgroundVersionable;
 import org.apache.curator.framework.api.SetDataBuilder;
@@ -55,6 +69,7 @@ import org.apache.curator.framework.api.SyncBuilder;
 import org.apache.curator.framework.api.UnhandledErrorListener;
 import org.apache.curator.framework.api.VersionPathAndBytesable;
 import org.apache.curator.framework.api.WatchPathable;
+import org.apache.curator.framework.api.transaction.CuratorMultiTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransactionBridge;
 import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
@@ -62,21 +77,29 @@ import org.apache.curator.framework.api.transaction.CuratorTransactionResult;
 import org.apache.curator.framework.api.transaction.TransactionCheckBuilder;
 import org.apache.curator.framework.api.transaction.TransactionCreateBuilder;
 import org.apache.curator.framework.api.transaction.TransactionDeleteBuilder;
+import org.apache.curator.framework.api.transaction.TransactionOp;
 import org.apache.curator.framework.api.transaction.TransactionSetDataBuilder;
+import org.apache.curator.framework.api.transaction.TransactionCreateBuilder2;
 import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.listen.Listenable;
+import org.apache.curator.framework.schema.SchemaSet;
+import org.apache.curator.framework.state.ConnectionStateErrorPolicy;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.utils.EnsurePath;
 import org.apache.curator.utils.ThreadUtils;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.server.quorum.flexible.QuorumVerifier;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -247,9 +270,33 @@ public class CellCuratorFramework implements CuratorFramework
     }
 
     @Override
+    public ReconfigBuilder reconfig()
+    {
+        return inner.reconfig();
+    }
+
+    @Override
+    public GetConfigBuilder getConfig()
+    {
+        return inner.getConfig();
+    }
+
+    @Override
     public CuratorTransaction inTransaction()
     {
         return new CuratorTransactionDecorator(inner.inTransaction());
+    }
+
+    @Override
+    public CuratorMultiTransaction transaction()
+    {
+        return inner.transaction();
+    }
+
+    @Override
+    public TransactionOp transactionOp()
+    {
+        return inner.transactionOp();
     }
 
     @Override
@@ -269,6 +316,12 @@ public class CellCuratorFramework implements CuratorFramework
     public SyncBuilder sync()
     {
         return new SyncBuilderDecorator(inner.sync());
+    }
+
+    @Override
+    public RemoveWatchesBuilder watches()
+    {
+        return inner.watches();
     }
 
     @Override
@@ -343,6 +396,42 @@ public class CellCuratorFramework implements CuratorFramework
         inner.blockUntilConnected();
     }
 
+    @Override
+    public WatcherRemoveCuratorFramework newWatcherRemoveCuratorFramework()
+    {
+        return inner.newWatcherRemoveCuratorFramework();
+    }
+
+    @Override
+    public ConnectionStateErrorPolicy getConnectionStateErrorPolicy()
+    {
+        return inner.getConnectionStateErrorPolicy();
+    }
+
+    @Override
+    public QuorumVerifier getCurrentConfig()
+    {
+        return inner.getCurrentConfig();
+    }
+
+    @Override
+    public SchemaSet getSchemaSet()
+    {
+        return inner.getSchemaSet();
+    }
+
+    @Override
+    public boolean isZk34CompatibilityMode()
+    {
+        return inner.isZk34CompatibilityMode();
+    }
+
+    @Override
+    public CompletableFuture<Void> runSafe(Runnable runnable)
+    {
+        return CompletableFuture.runAsync(runnable, executor);
+    }
+
     private static class ListenableDecorator<T> implements Listenable<T>
     {
         private final Listenable<T> listenable;
@@ -384,13 +473,13 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public ProtectACLCreateModePathAndBytesable<String> creatingParentsIfNeeded()
+        public ProtectACLCreateModeStatPathAndBytesable<String> creatingParentsIfNeeded()
         {
             return new ProtectACLCreateModePathAndBytesableDecorator<>(inner.creatingParentsIfNeeded());
         }
 
         @Override
-        public ProtectACLCreateModePathAndBytesable<String> creatingParentContainersIfNeeded()
+        public ProtectACLCreateModeStatPathAndBytesable<String> creatingParentContainersIfNeeded()
         {
             return new ProtectACLCreateModePathAndBytesableDecorator<>(inner.creatingParentContainersIfNeeded());
         }
@@ -402,9 +491,9 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public ACLCreateModeBackgroundPathAndBytesable<String> withProtection()
+        public ACLCreateModeStatBackgroundPathAndBytesable<String> withProtection()
         {
-            return new ACLCreateModeBackgroundPathAndBytesableDecorator<>(inner.withProtection());
+            return new ACLCreateModeStatBackgroundPathAndBytesableDecorator<>(inner.withProtection());
         }
 
         @Override
@@ -450,12 +539,6 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public CreateBackgroundModeACLable compressed()
-        {
-            return new CreateBackgroundModeACLableDecorator(inner.compressed());
-        }
-
-        @Override
         public ACLBackgroundPathAndBytesable<String> withMode(CreateMode mode)
         {
             return new ACLBackgroundPathAndBytesableDecorator<>(inner.withMode(mode));
@@ -471,6 +554,42 @@ public class CellCuratorFramework implements CuratorFramework
         public String forPath(String path) throws Exception
         {
             return inner.forPath(path);
+        }
+
+        @Override
+        public CreateBuilderMain withTtl(long l)
+        {
+            return inner.withTtl(l);
+        }
+
+        @Override
+        public CreateBuilder2 orSetData()
+        {
+            return inner.orSetData();
+        }
+
+        @Override
+        public CreateBuilder2 orSetData(int i)
+        {
+            return inner.orSetData(i) ;
+        }
+
+        @Override
+        public BackgroundPathAndBytesable<String> withACL(List<ACL> list, boolean b)
+        {
+            return inner.withACL(list, b);
+        }
+
+        @Override
+        public CreateProtectACLCreateModePathAndBytesable<String> storingStatIn(Stat stat)
+        {
+            return inner.storingStatIn(stat);
+        }
+
+        @Override
+        public CreateBackgroundModeStatACLable compressed()
+        {
+            return new CreateBackgroundModeACLableDecorator(inner.compressed());
         }
     }
 
@@ -542,13 +661,19 @@ public class CellCuratorFramework implements CuratorFramework
         {
             return inner.withVersion(version);
         }
+
+        @Override
+        public DeleteBuilderMain quietly()
+        {
+            return inner.quietly();
+        }
     }
 
     private class ExistsBuilderMainDecorator implements ExistsBuilderMain
     {
-        protected final ExistsBuilderMain inner;
+        protected final ExistsBuilder inner;
 
-        public ExistsBuilderMainDecorator(ExistsBuilderMain inner)
+        public ExistsBuilderMainDecorator(ExistsBuilder inner)
         {
             this.inner = inner;
         }
@@ -622,9 +747,15 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public ExistsBuilderMain creatingParentContainersIfNeeded()
+        public ACLableExistBuilderMain creatingParentsIfNeeded()
         {
-            return new ExistsBuilderMainDecorator(((ExistsBuilder) inner).creatingParentContainersIfNeeded());
+            return inner.creatingParentsIfNeeded();
+        }
+
+        @Override
+        public ACLableExistBuilderMain creatingParentContainersIfNeeded()
+        {
+            return inner.creatingParentContainersIfNeeded();
         }
     }
 
@@ -972,17 +1103,17 @@ public class CellCuratorFramework implements CuratorFramework
 
     private class TransactionCreateBuilderDecorator implements TransactionCreateBuilder
     {
-        private final TransactionCreateBuilder inner;
+        private final TransactionCreateBuilder<CuratorTransactionBridge> inner;
 
-        public TransactionCreateBuilderDecorator(TransactionCreateBuilder inner)
+        public TransactionCreateBuilderDecorator(TransactionCreateBuilder<CuratorTransactionBridge> inner)
         {
             this.inner = inner;
         }
 
         @Override
-        public PathAndBytesable<CuratorTransactionBridge> withACL(List<ACL> aclList)
+        public PathAndBytesable<CuratorTransactionBridge> withACL(List list)
         {
-            return new PathAndBytesableDecorator<>(inner.withACL(aclList));
+            return new PathAndBytesableDecorator<>(inner.withACL(list));
         }
 
         @Override
@@ -1008,13 +1139,25 @@ public class CellCuratorFramework implements CuratorFramework
         {
             return new CuratorTransactionBridgeDecorator(inner.forPath(path));
         }
+
+        @Override
+        public TransactionCreateBuilder2 withTtl(long l)
+        {
+            return inner.withTtl(l);
+        }
+
+        @Override
+        public PathAndBytesable<CuratorTransactionBridge> withACL(List list, boolean b)
+        {
+            return new PathAndBytesableDecorator<>(inner.withACL(list, b));
+        }
     }
 
     private class TransactionDeleteBuilderDecorator implements TransactionDeleteBuilder
     {
-        private final TransactionDeleteBuilder inner;
+        private final TransactionDeleteBuilder<CuratorTransactionBridge> inner;
 
-        public TransactionDeleteBuilderDecorator(TransactionDeleteBuilder inner)
+        public TransactionDeleteBuilderDecorator(TransactionDeleteBuilder<CuratorTransactionBridge> inner)
         {
             this.inner = inner;
         }
@@ -1034,9 +1177,9 @@ public class CellCuratorFramework implements CuratorFramework
 
     private class TransactionSetDataBuilderDecorator implements TransactionSetDataBuilder
     {
-        private final TransactionSetDataBuilder inner;
+        private final TransactionSetDataBuilder<CuratorTransactionBridge> inner;
 
-        public TransactionSetDataBuilderDecorator(TransactionSetDataBuilder inner)
+        public TransactionSetDataBuilderDecorator(TransactionSetDataBuilder<CuratorTransactionBridge> inner)
         {
             this.inner = inner;
         }
@@ -1068,9 +1211,9 @@ public class CellCuratorFramework implements CuratorFramework
 
     private class TransactionCheckBuilderDecorator implements TransactionCheckBuilder
     {
-        private final TransactionCheckBuilder inner;
+        private final TransactionCheckBuilder<CuratorTransactionBridge> inner;
 
-        public TransactionCheckBuilderDecorator(TransactionCheckBuilder inner)
+        public TransactionCheckBuilderDecorator(TransactionCheckBuilder<CuratorTransactionBridge> inner)
         {
             this.inner = inner;
         }
@@ -1196,11 +1339,11 @@ public class CellCuratorFramework implements CuratorFramework
         }
     }
 
-    private class ProtectACLCreateModePathAndBytesableDecorator<T> implements ProtectACLCreateModePathAndBytesable<T>
+    private class ProtectACLCreateModePathAndBytesableDecorator<T> implements ProtectACLCreateModeStatPathAndBytesable<T>
     {
-        private final ProtectACLCreateModePathAndBytesable<T> inner;
+        private final ProtectACLCreateModeStatPathAndBytesable<T> inner;
 
-        public ProtectACLCreateModePathAndBytesableDecorator(ProtectACLCreateModePathAndBytesable<T> inner)
+        public ProtectACLCreateModePathAndBytesableDecorator(ProtectACLCreateModeStatPathAndBytesable<T> inner)
         {
             this.inner = inner;
         }
@@ -1271,6 +1414,18 @@ public class CellCuratorFramework implements CuratorFramework
         {
             return inner.forPath(path);
         }
+
+        @Override
+        public BackgroundPathAndBytesable<T> withACL(List<ACL> list, boolean b)
+        {
+            return new BackgroundPathAndBytesableDecorator<>(inner.withACL(list, b));
+        }
+
+        @Override
+        public ACLBackgroundPathAndBytesable<T> storingStatIn(Stat stat)
+        {
+            return new ACLBackgroundPathAndBytesableDecorator<>(inner.storingStatIn(stat));
+        }
     }
 
     private static class ACLPathAndBytesableDecorator<T> implements ACLPathAndBytesable<T>
@@ -1298,6 +1453,12 @@ public class CellCuratorFramework implements CuratorFramework
         public T forPath(String path) throws Exception
         {
             return inner.forPath(path);
+        }
+
+        @Override
+        public PathAndBytesable<T> withACL(List<ACL> list, boolean b)
+        {
+            return  new PathAndBytesableDecorator<>(inner.withACL(list, b));
         }
     }
 
@@ -1368,6 +1529,95 @@ public class CellCuratorFramework implements CuratorFramework
         public T forPath(String path) throws Exception
         {
             return inner.forPath(path);
+        }
+
+        @Override
+        public BackgroundPathAndBytesable<T> withACL(List<ACL> list, boolean b)
+        {
+            return  new BackgroundPathAndBytesableDecorator<>(inner.withACL(list, b));
+        }
+
+    }
+
+    private class ACLCreateModeStatBackgroundPathAndBytesableDecorator<T> implements ACLCreateModeStatBackgroundPathAndBytesable<T>
+    {
+        private final ACLCreateModeStatBackgroundPathAndBytesable<T> inner;
+
+        public ACLCreateModeStatBackgroundPathAndBytesableDecorator(ACLCreateModeStatBackgroundPathAndBytesable<T> inner)
+        {
+            this.inner = inner;
+        }
+
+        @Override
+        public BackgroundPathAndBytesable<T> withACL(List<ACL> aclList)
+        {
+            return new BackgroundPathAndBytesableDecorator<>(inner.withACL(aclList));
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<T> inBackground()
+        {
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<T> inBackground(Object context)
+        {
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback)
+        {
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
+        {
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
+        {
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        {
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+        }
+
+        @Override
+        public ACLBackgroundPathAndBytesable<T> withMode(CreateMode mode)
+        {
+            return new ACLBackgroundPathAndBytesableDecorator<>(inner.withMode(mode));
+        }
+
+        @Override
+        public T forPath(String path, byte[] data) throws Exception
+        {
+            return inner.forPath(path, data);
+        }
+
+        @Override
+        public T forPath(String path) throws Exception
+        {
+            return inner.forPath(path);
+        }
+
+        @Override
+        public BackgroundPathAndBytesable<T> withACL(List<ACL> list, boolean b)
+        {
+            return  new BackgroundPathAndBytesableDecorator<>(inner.withACL(list, b));
+        }
+
+        @Override
+        public ACLCreateModeBackgroundPathAndBytesable<T> storingStatIn(Stat stat)
+        {
+            return new ACLCreateModeBackgroundPathAndBytesableDecorator<>(inner.storingStatIn(stat));
         }
     }
 
@@ -1502,11 +1752,11 @@ public class CellCuratorFramework implements CuratorFramework
         }
     }
 
-    private class CreateBackgroundModeACLableDecorator implements CreateBackgroundModeACLable
+    private class CreateBackgroundModeACLableDecorator implements CreateBackgroundModeStatACLable
     {
-        private final CreateBackgroundModeACLable inner;
+        private final CreateBackgroundModeStatACLable inner;
 
-        public CreateBackgroundModeACLableDecorator(CreateBackgroundModeACLable inner)
+        public CreateBackgroundModeACLableDecorator(CreateBackgroundModeStatACLable inner)
         {
             this.inner = inner;
         }
@@ -1588,6 +1838,18 @@ public class CellCuratorFramework implements CuratorFramework
         {
             return inner.forPath(path);
         }
+
+        @Override
+        public BackgroundPathAndBytesable<String> withACL(List<ACL> list, boolean b)
+        {
+            return new BackgroundPathAndBytesableDecorator<>(inner.withACL(list, b));
+        }
+
+        @Override
+        public CreateBackgroundModeACLable storingStatIn(Stat stat)
+        {
+            return inner.storingStatIn(stat);
+        }
     }
 
     private class ACLBackgroundPathAndBytesableDecorator<T> implements ACLBackgroundPathAndBytesable<T>
@@ -1652,6 +1914,12 @@ public class CellCuratorFramework implements CuratorFramework
         {
             return inner.forPath(path);
         }
+
+        @Override
+        public BackgroundPathAndBytesable<T> withACL(List<ACL> list, boolean b)
+        {
+            return  new BackgroundPathAndBytesableDecorator<>(inner.withACL(list, b));
+        }
     }
 
     private static class ACLCreateModePathAndBytesableDecorator<T> implements ACLCreateModePathAndBytesable<T>
@@ -1685,6 +1953,12 @@ public class CellCuratorFramework implements CuratorFramework
         public T forPath(String path) throws Exception
         {
             return inner.forPath(path);
+        }
+
+        @Override
+        public PathAndBytesable<T> withACL(List<ACL> list, boolean b)
+        {
+            return new PathAndBytesableDecorator<>(inner.withACL(list, b));
         }
     }
 
