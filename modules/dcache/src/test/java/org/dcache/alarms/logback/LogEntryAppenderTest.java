@@ -60,14 +60,12 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -89,16 +87,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
- * Tests filtering and storing of logging events on the basis
- * of back-end definitions.<br>
+ * Tests filtering and storing of logging events.<br>
  * <br>
- *
- * Requires <code>ch.qos.logback.classic.Logger</code>.
  *
  * @author arossi
  */
 public class LogEntryAppenderTest {
-    private static Logger logger;
 
     static class Receiver extends AppenderBase<ILoggingEvent> {
         LogEntryHandler handler;
@@ -167,6 +161,7 @@ public class LogEntryAppenderTest {
     };
 
     private LogEntry            lastEntry;
+    private Receiver            appender;
 
     @Before
     public void setup() throws Exception {
@@ -206,14 +201,7 @@ public class LogEntryAppenderTest {
         pmap.initialize();
         handler.setPriorityMap(pmap);
         handler.setConverter(converter);
-        Receiver appender = new Receiver(handler);
-        LoggerContext context
-            = (LoggerContext) LoggerFactory.getILoggerFactory();
-        appender.setContext(context);
-        appender.start();
-        logger = context.getLogger(LogEntryAppenderTest.class);
-        logger.addAppender(appender);
-        logger.setLevel(Level.ERROR);
+        appender = new Receiver(handler);
     }
 
     @Test
@@ -235,11 +223,6 @@ public class LogEntryAppenderTest {
         String message = givenLoggingMessageWhichMatchesType(null);
         whenMessageIsLogged(null, message, null);
         assertNull(lastEntry);
-    }
-
-    @After
-    public void teardown() throws Exception {
-        logger.detachAndStopAllAppenders();
     }
 
     private void clearLast() {
@@ -267,10 +250,19 @@ public class LogEntryAppenderTest {
     }
 
     private void whenMessageIsLogged(Marker marker, String message, Throwable e) {
-            if (marker != null) {
-                logger.error(marker, message, e);
-            } else {
-                logger.error(message, e);
-            }
+        LoggingEvent event = new LoggingEvent();
+        event.setLevel(Level.ERROR);
+        event.setLoggerName(this.getClass().getCanonicalName());
+        if (marker != null) {
+            event.setMarker(marker);
+        }
+        event.setMessage(message);
+        event.setThreadName(Thread.currentThread().getName());
+        event.setTimeStamp(System.currentTimeMillis());
+        if (e != null) {
+            event.setThrowableProxy(new ThrowableProxy(e));
+        }
+
+        appender.append(event);
     }
 }
