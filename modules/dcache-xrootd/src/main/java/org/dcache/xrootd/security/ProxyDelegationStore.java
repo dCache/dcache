@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.gsi.KeyPairCache;
 import org.dcache.gsi.X509Delegation;
@@ -43,18 +44,21 @@ public class ProxyDelegationStore
     VOMSACValidator             vomsValidator;
     KeyPairCache                keyPairCache;
 
-    private String vomsDir;
-    private String caCertificatePath;
-    private long   trustAnchorRefreshInterval;
+    private String   vomsDir;
+    private String   caCertificatePath;
+    private long     trustAnchorRefreshInterval;
+    private TimeUnit trustAnchorRefreshIntervalUnit;
 
     public void initialize()
     {
+        long refresh = trustAnchorRefreshIntervalUnit
+                        .toMillis(trustAnchorRefreshInterval);
         VOMSTrustStore vomsTrustStore
                         = VOMSTrustStores.newTrustStore(asList(vomsDir));
         X509CertChainValidatorExt certChainValidator
                         = new CertificateValidatorBuilder()
                         .lazyAnchorsLoading(false)
-                        .trustAnchorsUpdateInterval(trustAnchorRefreshInterval)
+                        .trustAnchorsUpdateInterval(refresh)
                         .trustAnchorsDir(caCertificatePath)
                         .build();
         vomsValidator = VOMSValidators.newValidator(vomsTrustStore,
@@ -82,6 +86,12 @@ public class ProxyDelegationStore
     public void setTrustAnchorRefreshInterval(long trustAnchorRefreshInterval)
     {
         this.trustAnchorRefreshInterval = trustAnchorRefreshInterval;
+    }
+
+    @Required
+    public void setTrustAnchorRefreshIntervalUnit(TimeUnit trustAnchorRefreshIntervalUnit)
+    {
+        this.trustAnchorRefreshIntervalUnit = trustAnchorRefreshIntervalUnit;
     }
 
     public void shutdown()
