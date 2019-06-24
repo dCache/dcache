@@ -138,6 +138,7 @@
         init-method="initialize" destroy-method="shutdown">
     <property name="caCertificatePath" value="${xrootd.gsi.ca.path}"/>
     <property name="trustAnchorRefreshInterval" value="${xrootd.gsi.ca.refresh}"/>
+    <property name="trustAnchorRefreshIntervalUnit" value="${xrootd.gsi.ca.refresh.unit}"/>
     <property name="vomsDir" value="${xrootd.gsi.vomsdir.dir}"/>
     <property name="keyPairCache">
       <bean class="org.dcache.gsi.KeyPairCache">
