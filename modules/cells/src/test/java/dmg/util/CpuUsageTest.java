@@ -22,7 +22,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -93,6 +93,18 @@ public class CpuUsageTest
         assertThat(usage.getTotal(), is(equalTo(Duration.ZERO)));
     }
 
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectNegativeSystem()
+    {
+        new CpuUsage(Duration.of(-2, SECONDS), Duration.of(2, SECONDS));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectNegativeUser()
+    {
+        new CpuUsage(Duration.of(2, SECONDS), Duration.of(-2, SECONDS));
+    }
+
     @Test
     public void shouldHoldNonZeroDurationWhenCreationWithNonZeroDurations()
     {
@@ -108,55 +120,23 @@ public class CpuUsageTest
     {
         given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
 
-        when(advanceTo(cpuUsage().withSystem(3, SECONDS).withUser(5, SECONDS)));
+        when(plus(cpuUsage().withSystem(3, SECONDS).withUser(5, SECONDS)));
 
-        assertThat(usage.getSystem(), is(equalTo(Duration.of(3, SECONDS))));
-        assertThat(usage.getUser(), is(equalTo(Duration.of(5, SECONDS))));
-        assertThat(usage.getTotal(), is(equalTo(Duration.of(8, SECONDS))));
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectNewDurationsWithRetrogradeSystem()
-    {
-        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
-
-        when(advanceTo(cpuUsage().withSystem(1, SECONDS).withUser(5, SECONDS)));
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectNewDurationsWithRetrogradeUser()
-    {
-        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
-
-        when(advanceTo(cpuUsage().withSystem(3, SECONDS).withUser(1, SECONDS)));
+        assertThat(usage.getSystem(), is(equalTo(Duration.of(5, SECONDS))));
+        assertThat(usage.getUser(), is(equalTo(Duration.of(8, SECONDS))));
+        assertThat(usage.getTotal(), is(equalTo(Duration.of(13, SECONDS))));
     }
 
     @Test
-    public void shouldAcceptValidIncrease()
+    public void shouldMinus()
     {
-        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
+        given(cpuUsage().withSystem(2, SECONDS).withUser(5, SECONDS));
 
-        when(increaseBy(cpuUsage().withSystem(1, SECONDS).withUser(2, SECONDS)));
+        when(minus(cpuUsage().withSystem(1, SECONDS).withUser(2, SECONDS)));
 
-        assertThat(usage.getSystem(), is(equalTo(Duration.of(3, SECONDS))));
-        assertThat(usage.getUser(), is(equalTo(Duration.of(5, SECONDS))));
-        assertThat(usage.getTotal(), is(equalTo(Duration.of(8, SECONDS))));
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectNegativeSystemIncrease()
-    {
-        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
-
-        when(increaseBy(cpuUsage().withSystem(-1, SECONDS).withUser(2, SECONDS)));
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectNegativeUserIncrease()
-    {
-        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
-
-        when(increaseBy(cpuUsage().withSystem(1, SECONDS).withUser(-2, SECONDS)));
+        assertThat(usage.getSystem(), is(equalTo(Duration.of(1, SECONDS))));
+        assertThat(usage.getUser(), is(equalTo(Duration.of(3, SECONDS))));
+        assertThat(usage.getTotal(), is(equalTo(Duration.of(4, SECONDS))));
     }
 
     private static CpuUsageBuilder cpuUsage()
@@ -164,14 +144,14 @@ public class CpuUsageTest
         return new CpuUsageBuilder();
     }
 
-    private static Consumer<CpuUsage> advanceTo(CpuUsageBuilder builder)
+    private static Function<CpuUsage,CpuUsage> plus(CpuUsageBuilder builder)
     {
-        return u -> u.advanceTo(builder.build());
+        return u -> u.plus(builder.build());
     }
 
-    private static Consumer<CpuUsage> increaseBy(CpuUsageBuilder builder)
+    private static Function<CpuUsage,CpuUsage> minus(CpuUsageBuilder builder)
     {
-        return u -> u.increaseBy(builder.build());
+        return u -> u.minus(builder.build());
     }
 
     private void given(CpuUsageBuilder builder)
@@ -179,8 +159,8 @@ public class CpuUsageTest
         usage = builder.build();
     }
 
-    private void when(Consumer<CpuUsage> operation)
+    private void when(Function<CpuUsage,CpuUsage> operation)
     {
-        operation.accept(usage);
+        usage = operation.apply(usage);
     }
 }

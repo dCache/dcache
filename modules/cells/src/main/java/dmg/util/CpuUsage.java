@@ -23,7 +23,7 @@ import java.time.Duration;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * A non-thread-safe mutable store of CPU usage. CPU usage reports three metrics
+ * An immutable store of CPU usage. CPU usage reports three metrics
  * with the following identity always holding:
  *
  *     total = user + system.
@@ -37,55 +37,46 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class CpuUsage
 {
-    private Duration _system;
-    private Duration _user;
+    private final Duration _system;
+    private final Duration _user;
 
     public CpuUsage()
     {
         this(Duration.ZERO, Duration.ZERO);
     }
 
+    private static Duration requireNonNegative(Duration value, String message)
+    {
+        if (value.isNegative()) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
     public CpuUsage(Duration system, Duration user)
     {
-        this._system = system;
-        this._user = user;
+        this._system = requireNonNegative(system, "system CPU usage may not be negative");
+        this._user = requireNonNegative(user, "user CPU usage may not be negative");
     }
 
     /**
-     * Increase the storage usage by some non-negative delta.
-     * @param delta the amount to increase the stored value
-     * @throws IllegalArgumentException if delta contains negative values
+     * Return a CpuUsage that is the sum of this and other.
+     * @param other the amount to increase the stored value
+     * @return the combined CPU usage.
      */
-    public void increaseBy(CpuUsage delta)
+    public CpuUsage plus(CpuUsage other)
     {
-        checkArgument(!delta._system.isNegative(), "increasing system duration by a negative value is not allowed");
-        checkArgument(!delta._user.isNegative(), "increasing user duration by a negative value is not allowed");
-        _system = _system.plus(delta._system);
-        _user = _user.plus(delta._user);
+        return new CpuUsage(_system.plus(other._system), _user.plus(other._user));
     }
 
     /**
-     * Increase the usage values to some new value.  The new values must not
-     * be less than the existing stored values.
-     * @param newValue the updated values
-     * @throws IllegalArgumentException if new values are less than existing values
-     * @return the difference between the current value and the updated value.
+     * Return a CpuUsage that is the difference between this and other.
+     * @param other the amount to subtract from the stored value
+     * @return the difference in CPU usage.
      */
-    public CpuUsage advanceTo(CpuUsage newValue)
+    public CpuUsage minus(CpuUsage other)
     {
-        checkArgument(newValue._system.compareTo(_system) >= 0, "retrograde clock adjust to system duration");
-        checkArgument(newValue._user.compareTo(_user) >= 0, "retrograde clock adjust to user duration");
-
-        Duration oldSystem = _system;
-        Duration oldUser = _user;
-
-        _system = newValue._system;
-        _user = newValue._user;
-
-        Duration diffSystem = newValue._system.minus(oldSystem);
-        Duration diffUser = newValue._user.minus(oldUser);
-
-        return new CpuUsage(diffSystem, diffUser);
+        return new CpuUsage(_system.minus(other._system), _user.minus(other._user));
     }
 
     public Duration getTotal()

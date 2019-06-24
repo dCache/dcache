@@ -109,7 +109,7 @@ public class CpuMonitoringTask implements Runnable
     private static class ThreadInfo
     {
         private final String _cell;
-        private final CpuUsage _cpuUsage = new CpuUsage();
+        private CpuUsage _cpuUsage = new CpuUsage();
 
         ThreadInfo(String cell)
         {
@@ -138,7 +138,9 @@ public class CpuMonitoringTask implements Runnable
 
         public CpuUsage advanceTo(CpuUsage newValue)
         {
-            return _cpuUsage.advanceTo(newValue);
+            CpuUsage difference = newValue.minus(_cpuUsage);
+            _cpuUsage = newValue;
+            return difference;
         }
     }
 
@@ -150,7 +152,7 @@ public class CpuMonitoringTask implements Runnable
     private ScheduledFuture _task;
     private boolean _isFirstRun;
     private Instant _lastUpdate;
-    private boolean _threadMonitoringWasEnabled;
+    private boolean _wasThreadCpuTimeEnabled;
 
     private Duration _delayBetweenUpdates = DEFAULT_DELAY_BETWEEN_UPDATES;
 
@@ -167,10 +169,10 @@ public class CpuMonitoringTask implements Runnable
                     "monitoring not available in this JVM");
         }
 
-        if (!_threadMonitoring.isThreadCpuTimeEnabled()) {
+        _wasThreadCpuTimeEnabled = _threadMonitoring.isThreadCpuTimeEnabled();
+        if (!_wasThreadCpuTimeEnabled) {
             LOGGER.debug("Per-thread CPU monitoring not enabled; enabling it...");
             _threadMonitoring.setThreadCpuTimeEnabled(true);
-            _threadMonitoringWasEnabled = true;
         }
 
         if (_task == null) {
@@ -214,14 +216,11 @@ public class CpuMonitoringTask implements Runnable
             LOGGER.debug("cancelling CPU profiling");
             _task.cancel(true);
             _task = null;
-            _glue.setAccumulatedCellCpuUsage(Collections.<String,CpuUsage>emptyMap());
-            _glue.setCurrentCellCpuUsage(Collections.<String,FractionalCpuUsage>emptyMap());
+            _glue.setAccumulatedCellCpuUsage(Collections.emptyMap());
+            _glue.setCurrentCellCpuUsage(Collections.emptyMap());
         }
 
-        if (_threadMonitoringWasEnabled) {
-            _threadMonitoring.setThreadCpuTimeEnabled(false);
-            _threadMonitoringWasEnabled = false;
-        }
+        _threadMonitoring.setThreadCpuTimeEnabled(_wasThreadCpuTimeEnabled);
     }
 
     @Override
@@ -237,15 +236,14 @@ public class CpuMonitoringTask implements Runnable
             for (Thread thread : liveThreads) {
                 ThreadId id = new ThreadId(thread);
                 liveThreadIds.add(id);
-                ThreadInfo info = getOrCreateThreadInfo(id);
+                ThreadInfo info = _threadInfos.computeIfAbsent(id, i -> new ThreadInfo(_glue.cellNameFor(i.group)));
 
                 Optional<CpuUsage> cumulativeUsage = cumulativeUsage(thread);
 
                 cumulativeUsage.ifPresent(u -> {
                             CpuUsage increaseUsage = info.advanceTo(u);
                             String cell = info.getCellName();
-                            cellCpuUsage.computeIfAbsent(cell, c -> new CpuUsage())
-                                    .increaseBy(increaseUsage);
+                            cellCpuUsage.compute(cell, (k,v) -> v == null ? increaseUsage : v.plus(increaseUsage));
                         });
             }
 
@@ -254,7 +252,7 @@ public class CpuMonitoringTask implements Runnable
             thisUpdate = Instant.now();
             Duration elapsed = Duration.between(_lastUpdate, thisUpdate);
 
-            _glue.setAccumulatedCellCpuUsage(ImmutableMap.copyOf(cellCpuUsage));
+            _glue.setAccumulatedCellCpuUsage(cellCpuUsage);
 
             if (!_isFirstRun) {
                 Map<String,FractionalCpuUsage> fractionalUsage = cellCpuUsage.entrySet().stream()
@@ -277,7 +275,7 @@ public class CpuMonitoringTask implements Runnable
         long userNanos = _threadMonitoring.getThreadUserTime(thread.getId());
 
         if (totalNanos == -1 || userNanos == -1) {
-            // thread died between getOrCreateThreadInfo and getThread* methods
+            // thread died between getOrCreateThreadInfo and getThread*Time methods
             return Optional.empty();
         }
 
@@ -292,11 +290,6 @@ public class CpuMonitoringTask implements Runnable
         Duration system = Duration.ofNanos(totalNanos-userNanos);
 
         return Optional.of(new CpuUsage(system, user));
-    }
-
-    private ThreadInfo getOrCreateThreadInfo(ThreadId id)
-    {
-        return _threadInfos.computeIfAbsent(id, i -> new ThreadInfo(_glue.cellNameFor(i.group)));
     }
 
     private List<Thread> discoverAllThreads()

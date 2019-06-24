@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -695,7 +696,7 @@ class CellGlue
 
     void setAccumulatedCellCpuUsage(Map<String,CpuUsage> usage)
     {
-        accumulatedCellCpuUsage = usage;
+        accumulatedCellCpuUsage = ImmutableMap.copyOf(usage);
     }
 
 
@@ -706,7 +707,7 @@ class CellGlue
 
     void setCurrentCellCpuUsage(Map<String,FractionalCpuUsage> usage)
     {
-        fractionalCellCpuUsage = usage;
+        fractionalCellCpuUsage = ImmutableMap.copyOf(usage);
     }
 
     Map<String,FractionalCpuUsage> getCurrentCellCpuUsage()
