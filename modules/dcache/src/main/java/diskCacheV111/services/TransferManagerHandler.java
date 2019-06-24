@@ -837,7 +837,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             public void onFailure(Throwable e)
             {
                 reply.fail(message, CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                        "failed to query pool: " + e.getMessage());
+                        "failed to query pool " + pool.getName() + ": " + e.getMessage());
             }
         }, MoreExecutors.directExecutor());
 
