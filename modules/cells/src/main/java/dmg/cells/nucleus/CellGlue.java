@@ -63,6 +63,9 @@ class CellGlue
     private final CellAddressCore _domainAddress;
     private final CuratorFramework _curatorFramework;
     private final Optional<String> _zone;
+    private volatile Map<String,CpuUsage> accumulatedCellCpuUsage = Collections.emptyMap();
+    private volatile Map<String,FractionalCpuUsage> fractionalCellCpuUsage = Collections.emptyMap();
+
 
     CellGlue(String cellDomainName, @Nonnull CuratorFramework curatorFramework,
             Optional<String> zone)
@@ -692,16 +695,37 @@ class CellGlue
 
     void setAccumulatedCellCpuUsage(Map<String,CpuUsage> usage)
     {
+        accumulatedCellCpuUsage = usage;
+    }
 
+
+    Map<String,CpuUsage> getAccumulatedCellCpuUsage()
+    {
+        return accumulatedCellCpuUsage;
     }
 
     void setCurrentCellCpuUsage(Map<String,FractionalCpuUsage> usage)
     {
-
+        fractionalCellCpuUsage = usage;
     }
 
-    String cellNameFor(Thread thread)
+    Map<String,FractionalCpuUsage> getCurrentCellCpuUsage()
     {
-        return "";
+        return fractionalCellCpuUsage;
+    }
+
+    String cellNameFor(ThreadGroup group)
+    {
+        if (group == null) {
+            return "UNKNOWN";
+        }
+
+        Optional<String> cell = _cellList.entrySet().stream()
+                .filter(e -> e.getValue().getThreadGroup().equals(group))
+                .map(Map.Entry::getKey)
+                .findAny();
+
+
+        return cell.orElse(cellNameFor(group.getParent()));
     }
 }

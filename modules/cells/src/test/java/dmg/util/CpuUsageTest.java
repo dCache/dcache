@@ -21,49 +21,142 @@ package dmg.util;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.temporal.TemporalUnit;
+import java.util.function.Consumer;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Objects.requireNonNull;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 public class CpuUsageTest
 {
+    /**
+     * Fluent builder class for CpuUsage instances.
+     */
     private static class CpuUsageBuilder
     {
-        private CpuUsage usage;
+        private Duration user;
+        private Duration system;
+
+        public CpuUsageBuilder withUser(long amount, TemporalUnit unit)
+        {
+            return this.withUser(Duration.of(amount, unit));
+        }
 
         public CpuUsageBuilder withUser(Duration duration)
         {
-            usage.addUser(duration);
+            user = requireNonNull(duration);
             return this;
         }
 
-        public CpuUsageBuilder withCombined(Duration duration)
+        public CpuUsageBuilder withSystem(long amount, TemporalUnit unit)
         {
-            usage.addCombined(duration);
+            return this.withSystem(Duration.of(amount, unit));
+        }
+
+        public CpuUsageBuilder withSystem(Duration duration)
+        {
+            system = requireNonNull(duration);
             return this;
         }
 
         public CpuUsage build()
         {
-            return null;
+            checkState(user != null, "Must specify user duration");
+            checkState(system != null, "Must specify system duration");
+            return new CpuUsage(system, user);
         }
     }
 
     private CpuUsage usage;
 
     @Test
-    public void shouldNotFailAssertAfterCreation()
+    public void shouldInitiallyHoldZeroDurations()
     {
-        given(cpuUsage());
+        usage = new CpuUsage();
 
-        usage.assertValues();
+        assertThat(usage.getSystem(), is(equalTo(Duration.ZERO)));
+        assertThat(usage.getUser(), is(equalTo(Duration.ZERO)));
+        assertThat(usage.getTotal(), is(equalTo(Duration.ZERO)));
     }
 
     @Test
-    public void shouldNotFailAssertWithUser()
+    public void shouldHoldZeroDurationWhenCreationWithExplicitZeros()
     {
-        given(cpuUsage().withUser(Duration.ofSeconds(1)));
+        given(cpuUsage().withSystem(Duration.ZERO).withUser(Duration.ZERO));
 
-        usage.assertValues();
+        assertThat(usage.getSystem(), is(equalTo(Duration.ZERO)));
+        assertThat(usage.getUser(), is(equalTo(Duration.ZERO)));
+        assertThat(usage.getTotal(), is(equalTo(Duration.ZERO)));
+    }
+
+    @Test
+    public void shouldHoldNonZeroDurationWhenCreationWithNonZeroDurations()
+    {
+        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
+
+        assertThat(usage.getSystem(), is(equalTo(Duration.of(2, SECONDS))));
+        assertThat(usage.getUser(), is(equalTo(Duration.of(3, SECONDS))));
+        assertThat(usage.getTotal(), is(equalTo(Duration.of(5, SECONDS))));
+    }
+
+    @Test
+    public void shouldAcceptValidNewDurations()
+    {
+        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
+
+        when(advanceTo(cpuUsage().withSystem(3, SECONDS).withUser(5, SECONDS)));
+
+        assertThat(usage.getSystem(), is(equalTo(Duration.of(3, SECONDS))));
+        assertThat(usage.getUser(), is(equalTo(Duration.of(5, SECONDS))));
+        assertThat(usage.getTotal(), is(equalTo(Duration.of(8, SECONDS))));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectNewDurationsWithRetrogradeSystem()
+    {
+        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
+
+        when(advanceTo(cpuUsage().withSystem(1, SECONDS).withUser(5, SECONDS)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectNewDurationsWithRetrogradeUser()
+    {
+        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
+
+        when(advanceTo(cpuUsage().withSystem(3, SECONDS).withUser(1, SECONDS)));
+    }
+
+    @Test
+    public void shouldAcceptValidIncrease()
+    {
+        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
+
+        when(increaseBy(cpuUsage().withSystem(1, SECONDS).withUser(2, SECONDS)));
+
+        assertThat(usage.getSystem(), is(equalTo(Duration.of(3, SECONDS))));
+        assertThat(usage.getUser(), is(equalTo(Duration.of(5, SECONDS))));
+        assertThat(usage.getTotal(), is(equalTo(Duration.of(8, SECONDS))));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectNegativeSystemIncrease()
+    {
+        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
+
+        when(increaseBy(cpuUsage().withSystem(-1, SECONDS).withUser(2, SECONDS)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectNegativeUserIncrease()
+    {
+        given(cpuUsage().withSystem(2, SECONDS).withUser(3, SECONDS));
+
+        when(increaseBy(cpuUsage().withSystem(1, SECONDS).withUser(-2, SECONDS)));
     }
 
     private static CpuUsageBuilder cpuUsage()
@@ -71,13 +164,23 @@ public class CpuUsageTest
         return new CpuUsageBuilder();
     }
 
+    private static Consumer<CpuUsage> advanceTo(CpuUsageBuilder builder)
+    {
+        return u -> u.advanceTo(builder.build());
+    }
+
+    private static Consumer<CpuUsage> increaseBy(CpuUsageBuilder builder)
+    {
+        return u -> u.increaseBy(builder.build());
+    }
+
     private void given(CpuUsageBuilder builder)
     {
         usage = builder.build();
     }
 
-    private CpuUsageBuilder givenCpuUsage()
+    private void when(Consumer<CpuUsage> operation)
     {
-        return new CpuUsageBuilder();
+        operation.accept(usage);
     }
 }

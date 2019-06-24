@@ -21,74 +21,76 @@ package dmg.util;
 import java.time.Duration;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Store the accumulated CPU usage.  Models CPU usage as:
+ * A non-thread-safe mutable store of CPU usage. CPU usage reports three metrics
+ * with the following identity always holding:
  *
- *     combined = user + system.
+ *     total = user + system.
  *
- * Allows stored time to advance in two ways: by specifying a new value (which
- * return the increment) or by specifying an increment (which returns the new
- * value).
- *
- * Since user and combined values may be updated independently, there is a
- * separate assert method that may be called once both values have been
- * updated.
+ * User and system values are independently adjustable and non-negative
+ * durations.
+ * <p>
+ * The stored CPU usage is not allowed to decreased and may be advanced in two
+ * ways: by specifying a new value for both system and user usage, or by
+ * specifying an increment to system and user usage.
  */
-public class CpuUsage implements Cloneable
+public class CpuUsage
 {
-    private Duration _combined;
+    private Duration _system;
     private Duration _user;
 
-    public void reset()
+    public CpuUsage()
     {
-        _combined = Duration.ZERO;
-        _user = Duration.ZERO;
+        this(Duration.ZERO, Duration.ZERO);
     }
 
-    @Override
-    public CpuUsage clone()
+    public CpuUsage(Duration system, Duration user)
     {
-        CpuUsage cloned = new CpuUsage();
-        cloned._combined = _combined;
-        cloned._user = _user;
-        return cloned;
+        this._system = system;
+        this._user = user;
     }
 
-    public Duration addCombined(Duration delta)
+    /**
+     * Increase the storage usage by some non-negative delta.
+     * @param delta the amount to increase the stored value
+     * @throws IllegalArgumentException if delta contains negative values
+     */
+    public void increaseBy(CpuUsage delta)
     {
-        checkArgument(!delta.isNegative(), "negative delta not allowed");
-        _combined = _combined.plus(delta);
-        return _combined;
+        checkArgument(!delta._system.isNegative(), "increasing system duration by a negative value is not allowed");
+        checkArgument(!delta._user.isNegative(), "increasing user duration by a negative value is not allowed");
+        _system = _system.plus(delta._system);
+        _user = _user.plus(delta._user);
     }
 
-    public Duration addUser(Duration delta)
+    /**
+     * Increase the usage values to some new value.  The new values must not
+     * be less than the existing stored values.
+     * @param newValue the updated values
+     * @throws IllegalArgumentException if new values are less than existing values
+     * @return the difference between the current value and the updated value.
+     */
+    public CpuUsage advanceTo(CpuUsage newValue)
     {
-        checkArgument(!delta.isNegative(), "negative delta not allowed");
-        _user = _user.plus(delta);
-        return _user;
+        checkArgument(newValue._system.compareTo(_system) >= 0, "retrograde clock adjust to system duration");
+        checkArgument(newValue._user.compareTo(_user) >= 0, "retrograde clock adjust to user duration");
+
+        Duration oldSystem = _system;
+        Duration oldUser = _user;
+
+        _system = newValue._system;
+        _user = newValue._user;
+
+        Duration diffSystem = newValue._system.minus(oldSystem);
+        Duration diffUser = newValue._user.minus(oldUser);
+
+        return new CpuUsage(diffSystem, diffUser);
     }
 
-    public Duration setCombined(Duration newValue)
+    public Duration getTotal()
     {
-        Duration oldValue = _combined;
-        checkArgument(newValue.compareTo(oldValue) >= 0, "retrograde clock detected");
-        _combined = newValue;
-        return newValue.minus(oldValue);
-    }
-
-    public Duration setUser(Duration newValue)
-    {
-        Duration oldValue = _user;
-        checkArgument(newValue.compareTo(oldValue) >= 0, "retrograde clock detected");
-        _user = newValue;
-        return newValue.minus(oldValue);
-    }
-
-    public Duration getCombined()
-    {
-        return _combined;
+        return _user.plus(_system);
     }
 
     public Duration getUser()
@@ -98,11 +100,6 @@ public class CpuUsage implements Cloneable
 
     public Duration getSystem()
     {
-        return _combined.minus(_user);
-    }
-
-    public void assertValues()
-    {
-        checkState(_combined.compareTo(_user) >= 0, "user value greater than combined");
+        return _system;
     }
 }

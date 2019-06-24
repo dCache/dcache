@@ -18,23 +18,20 @@
  */
 package dmg.cells.nucleus;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import com.google.common.collect.ImmutableMap;
 
-import com.google.common.primitives.Longs;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import dmg.util.CpuUsage;
 import dmg.util.FractionalCpuUsage;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
@@ -45,9 +42,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
- *  Provides the engine for calculating the CPU activity per cell.
+ * Provides the engine for calculating the CPU activity per cell.  Each domain
+ * needs at most one instance of this class.
  */
 public class CpuMonitoringTask implements Runnable
 {
@@ -58,18 +57,62 @@ public class CpuMonitoringTask implements Runnable
     private static final Duration MAXIMUM_DELAY_BETWEEN_UPDATES = Duration.ofSeconds(60);
 
     /**
-     * Holds information about a thread: caching information and allowing
-     * calculation the amount of CPU used since last time.
+     * An identifier for a thread.  Each thread has a numerical ID; however,
+     * that id may be reused once the thread dies.  To mitigate against this
+     * potential reuse, the thread's name and ThreadGroup are also compared.
+     */
+    private static class ThreadId
+    {
+        private final long id;
+        private final String name;
+        private final ThreadGroup group;
+
+        ThreadId(Thread thread)
+        {
+            id = thread.getId();
+            name = thread.getName();
+            group = thread.getThreadGroup();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return (int) id
+                    ^ (int)(id >> 32)
+                    ^ name.hashCode()
+                    ^ group.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object other)
+        {
+            if (other == this) {
+                return true;
+            }
+
+            if (!(other instanceof ThreadId)) {
+                return false;
+            }
+
+            ThreadId otherId = (ThreadId) other;
+            return otherId.id == this.id
+                    && otherId.name.equals(this.name)
+                    && otherId.group.equals(this.group);
+        }
+    }
+
+    /**
+     * Holds information about a live thread.  This includes caching in which
+     * cell the thread belongs, and the cumulative CPU usage as discovered
+     * during the last run.
      */
     private static class ThreadInfo
     {
-        private final WeakReference<Thread> _thread;
         private final String _cell;
         private final CpuUsage _cpuUsage = new CpuUsage();
 
-        ThreadInfo(Thread thread, String cell)
+        ThreadInfo(String cell)
         {
-            _thread = new WeakReference<>(thread);
             _cell = cell;
         }
 
@@ -78,15 +121,9 @@ public class CpuMonitoringTask implements Runnable
             return _cell;
         }
 
-        public boolean isAlive()
-        {
-            Thread thread = _thread.get();
-            return thread != null && thread.isAlive();
-        }
-
         public Duration getTotal()
         {
-            return _cpuUsage.getCombined();
+            return _cpuUsage.getTotal();
         }
 
         public Duration getUser()
@@ -94,33 +131,26 @@ public class CpuMonitoringTask implements Runnable
             return _cpuUsage.getUser();
         }
 
-        public Duration setTotal(Duration newValue)
+        public Duration getSystem()
         {
-            return _cpuUsage.setCombined(newValue);
+            return _cpuUsage.getSystem();
         }
 
-        public Duration setUser(Duration newValue)
+        public CpuUsage advanceTo(CpuUsage newValue)
         {
-            return _cpuUsage.setUser(newValue);
-        }
-
-        public void assertValues()
-        {
-            _cpuUsage.assertValues();
+            return _cpuUsage.advanceTo(newValue);
         }
     }
 
-    private final ThreadMXBean _threads = ManagementFactory.getThreadMXBean();
-    private final Map<Long,ThreadInfo> _threadInfos = new HashMap<>();
-    private final Map<String,CpuUsage> _cellCpuUsage = new HashMap<>();
+    private final ThreadMXBean _threadMonitoring = ManagementFactory.getThreadMXBean();
+    private final Map<ThreadId,ThreadInfo> _threadInfos = new HashMap<>();
     private final CellGlue _glue;
     private final ScheduledExecutorService _executor;
 
     private ScheduledFuture _task;
-    private List<Thread> _allThreads;
     private boolean _isFirstRun;
     private Instant _lastUpdate;
-    private boolean _threadMonitoringEnabled;
+    private boolean _threadMonitoringWasEnabled;
 
     private Duration _delayBetweenUpdates = DEFAULT_DELAY_BETWEEN_UPDATES;
 
@@ -132,19 +162,20 @@ public class CpuMonitoringTask implements Runnable
 
     public void start()
     {
-        if(!_threads.isThreadCpuTimeSupported()) {
+        if (!_threadMonitoring.isThreadCpuTimeSupported()) {
             throw new UnsupportedOperationException("Per-thread CPU " +
                     "monitoring not available in this JVM");
         }
 
-        if(!_threads.isThreadCpuTimeEnabled()) {
+        if (!_threadMonitoring.isThreadCpuTimeEnabled()) {
             LOGGER.debug("Per-thread CPU monitoring not enabled; enabling it...");
-            _threads.setThreadCpuTimeEnabled(true);
-            _threadMonitoringEnabled = true;
+            _threadMonitoring.setThreadCpuTimeEnabled(true);
+            _threadMonitoringWasEnabled = true;
         }
 
-        if(_task == null) {
+        if (_task == null) {
             LOGGER.debug("scheduling for every {}", _delayBetweenUpdates);
+            _isFirstRun = true;
             _task = scheduleTask();
         }
     }
@@ -173,7 +204,6 @@ public class CpuMonitoringTask implements Runnable
 
     private ScheduledFuture scheduleTask()
     {
-        _isFirstRun = true;
         return _executor.scheduleWithFixedDelay(this, _delayBetweenUpdates.toMillis(),
                 _delayBetweenUpdates.toMillis(), TimeUnit.MILLISECONDS);
     }
@@ -188,9 +218,9 @@ public class CpuMonitoringTask implements Runnable
             _glue.setCurrentCellCpuUsage(Collections.<String,FractionalCpuUsage>emptyMap());
         }
 
-        if (_threadMonitoringEnabled) {
-            _threads.setThreadCpuTimeEnabled(false);
-            _threadMonitoringEnabled = false;
+        if (_threadMonitoringWasEnabled) {
+            _threadMonitoring.setThreadCpuTimeEnabled(false);
+            _threadMonitoringWasEnabled = false;
         }
     }
 
@@ -200,23 +230,36 @@ public class CpuMonitoringTask implements Runnable
         Instant thisUpdate = Instant.now();
 
         try {
-            resetForQuantum();
+            List<Thread> liveThreads = discoverAllThreads();
 
-            long[] threads = _threads.getAllThreadIds();
+            List<ThreadId> liveThreadIds = new ArrayList<>(liveThreads.size());
+            Map<String,CpuUsage> cellCpuUsage = new HashMap<>();
+            for (Thread thread : liveThreads) {
+                ThreadId id = new ThreadId(thread);
+                liveThreadIds.add(id);
+                ThreadInfo info = getOrCreateThreadInfo(id);
 
-            for (long id : threads) {
-                updateCellFromThread(id);
+                Optional<CpuUsage> cumulativeUsage = cumulativeUsage(thread);
+
+                cumulativeUsage.ifPresent(u -> {
+                            CpuUsage increaseUsage = info.advanceTo(u);
+                            String cell = info.getCellName();
+                            cellCpuUsage.computeIfAbsent(cell, c -> new CpuUsage())
+                                    .increaseBy(increaseUsage);
+                        });
             }
 
-            Duration duration = Duration.between(_lastUpdate, Instant.now());
+            _threadInfos.keySet().retainAll(liveThreadIds);
 
-            _cellCpuUsage.keySet().retainAll(aliveCellsAndNull());
-            _threadInfos.keySet().retainAll(Longs.asList(threads));
+            thisUpdate = Instant.now();
+            Duration elapsed = Duration.between(_lastUpdate, thisUpdate);
 
-            _glue.setAccumulatedCellCpuUsage(accumulatedCellCpuUsage());
+            _glue.setAccumulatedCellCpuUsage(ImmutableMap.copyOf(cellCpuUsage));
 
-            if(!_isFirstRun) {
-                _glue.setCurrentCellCpuUsage(fractionalCellCpuUsage(duration));
+            if (!_isFirstRun) {
+                Map<String,FractionalCpuUsage> fractionalUsage = cellCpuUsage.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> new FractionalCpuUsage(e.getValue(), elapsed)));
+                _glue.setCurrentCellCpuUsage(fractionalUsage);
             }
 
         } catch (RuntimeException e) {
@@ -228,155 +271,37 @@ public class CpuMonitoringTask implements Runnable
     }
 
 
-    private List<String> aliveCellsAndNull()
+    private Optional<CpuUsage> cumulativeUsage(Thread thread)
     {
-        List<String> cells = _glue.getCellNames();
-        cells.add(null);
-        return cells;
-    }
+        long totalNanos = _threadMonitoring.getThreadCpuTime(thread.getId());
+        long userNanos = _threadMonitoring.getThreadUserTime(thread.getId());
 
-
-    private Map<String,CpuUsage> accumulatedCellCpuUsage()
-    {
-        Map<String,CpuUsage> result = new HashMap<>();
-        for(Map.Entry<String,CpuUsage> e : _cellCpuUsage.entrySet()) {
-            result.put(e.getKey(), e.getValue().clone());
-        }
-        return result;
-    }
-
-
-    private Map<String,FractionalCpuUsage> fractionalCellCpuUsage(Duration duration)
-    {
-        Map<String,FractionalCpuUsage> result = new HashMap<>();
-        for(Map.Entry<String,CpuUsage> e : _cellCpuUsage.entrySet()) {
-            String cell = e.getKey();
-            CpuUsage usage = e.getValue();
-
-            try {
-                result.put(cell, new FractionalCpuUsage(usage, duration));
-            } catch (RuntimeException re) {
-                LOGGER.warn("Failed for {}: {}", cell, re.getMessage());
-            }
-        }
-        return result;
-    }
-
-
-    private void updateCellFromThread(long id)
-    {
-        Optional<ThreadInfo> maybeInfo = getOrCreateThreadInfo(id);
-
-        if (!maybeInfo.isPresent()) {
-            // Give up: we couldn't identify this thread.
-            return;
-        }
-
-        ThreadInfo info = maybeInfo.get();
-
-        long totalNanos = _threads.getThreadCpuTime(id);
-        long userNanos = _threads.getThreadUserTime(id);
-
-        if(totalNanos == -1 || userNanos == -1) {
+        if (totalNanos == -1 || userNanos == -1) {
             // thread died between getOrCreateThreadInfo and getThread* methods
-            return;
+            return Optional.empty();
         }
 
-        Duration total = Duration.ofNanos(totalNanos);
+        if (userNanos > totalNanos) {
+            // This shouldn't happen, but some JVM implementations have
+            // different resolutions for different types and seem to round value
+            // up.  To compensate, we limit 'user' to 'total'.
+            userNanos = totalNanos;
+        }
+
         Duration user = Duration.ofNanos(userNanos);
+        Duration system = Duration.ofNanos(totalNanos-userNanos);
 
-        if (user.compareTo(total) > 0) {
-            // This shouldn't happen, but some JVM implementations have different
-            // resolutions for different types and seem to round-up.  We limit
-            // the 'user' value at 'total' to compensate.
-            user = total;
-        }
-
-        Duration diffTotal = info.setTotal(total);
-        Duration diffUser = info.setUser(user);
-        info.assertValues();
-
-
-        if (diffUser.compareTo(diffTotal) > 0) {
-            // Again, this shouldn't happen, but due to resolution and
-            // rounding problems, it does.  Use the same compensation strategy
-            // of limiting diffUser to diffTotal.
-            diffUser = diffTotal;
-        }
-
-        CpuUsage cellUsage = getOrCreateCpuUsageForCell(info.getCellName());
-
-        cellUsage.addCombined(diffTotal);
-        cellUsage.addUser(diffUser);
-        cellUsage.assertValues();
+        return Optional.of(new CpuUsage(system, user));
     }
 
-    private void resetForQuantum()
+    private ThreadInfo getOrCreateThreadInfo(ThreadId id)
     {
-        _cellCpuUsage.values().stream().forEach(CpuUsage::reset);
-        _allThreads = discoverAllThreadsFromStackTraces();
+        return _threadInfos.computeIfAbsent(id, i -> new ThreadInfo(_glue.cellNameFor(i.group)));
     }
 
-    private CpuUsage getOrCreateCpuUsageForCell(String cellName)
+    private List<Thread> discoverAllThreads()
     {
-        CpuUsage usage;
-
-        if(_cellCpuUsage.containsKey(cellName)) {
-            usage = _cellCpuUsage.get(cellName);
-        } else {
-            usage = new CpuUsage();
-            _cellCpuUsage.put(cellName, usage);
-        }
-
-        return usage;
-    }
-
-    private Optional<ThreadInfo> getOrCreateThreadInfo(long id)
-    {
-        Optional<ThreadInfo> info = Optional.ofNullable(_threadInfos.get(id));
-
-        if (!info.isPresent() || !info.get().isAlive()) {
-            info = addNewThread(id);
-        }
-
-        return info;
-    }
-
-    private Optional<Thread> getThreadFromId(long id)
-    {
-        return _allThreads.stream()
-                .filter(t -> t.getId() == id)
-                .findAny();
-    }
-
-    private List<Thread> discoverAllThreadsFromStackTraces()
-    {
-        Set<Thread> threads = Thread.getAllStackTraces().keySet();
-        return new ArrayList<>(threads);
-    }
-
-
-    private List<Thread> discoverAllThreadsFromThreadGroup()
-    {
-        ThreadGroup tg = Thread.currentThread().getThreadGroup();
-        while(tg.getParent() != null) {
-            tg = tg.getParent();
-        }
-
-        Thread[] list;
-        do {
-            list = new Thread[tg.activeCount()+20];
-        } while(tg.enumerate(list) == list.length);
-
-        return Arrays.asList(list);
-    }
-
-
-    private Optional<ThreadInfo> addNewThread(long id)
-    {
-        Optional<ThreadInfo> info = getThreadFromId(id)
-                .map(t -> new ThreadInfo(t, _glue.cellNameFor(t)));
-        info.ifPresent(i -> _threadInfos.put(id, i));
-        return info;
+        Map<Thread,StackTraceElement[]> stacktraces = Thread.getAllStackTraces();
+        return new ArrayList<>(stacktraces.keySet());
     }
 }

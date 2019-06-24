@@ -23,59 +23,42 @@ import java.time.Duration;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * Represents a fractions of CPU time within some time-period.  Models CPU usage
- * logically as combined = user + system, with 'combined', 'user' and 'system'
- * as integers >= 0.
+ * Represents the percentage CPU usage within some time-period.  The values are
+ * scaled by the number of cores, so the durations never exceed the quantum.
  *
  * A computer's CPU may have multiple cores while a single thread can utilise
  * only one core at any time.  Therefore a thread may be using 100% of the
  * available CPU, yet the computer will not be utilising 100% of available
  * resources.
- *
- * The model here looks at the CPU usage of the system as a whole; therefore
- * on a n-core machine, a thread can use, at most, 100/n percent of the
- * available CPU.
- *
- * Returned usage numbers are from  [0..1] with 'user' less than or equal to
- * 'combined'.
  */
 public class FractionalCpuUsage
 {
-    private final double _combinedCpuUsage;
-    private final double _userCpuUsage;
+    private final double _systemUsage;
+    private final double _userUsage;
     private final Duration _quantum;
 
     /**
-     *  quantum is the duration in which the CpuUsage was consumed.  The number
-     * of cores is that of the machine that the JVM is running that creates
-     * this object.
+     * Create a new FractionalCpuUsage for CPU usage over some period.  The
+     * CPU usage is scaled by the number of cores, so the time never exceeds
+     * quantum.
+     * @param usage The increase of CPU usage over a period
+     * @param quantum The period over which CPU was consumed.
      */
     public FractionalCpuUsage(CpuUsage usage, Duration quantum)
     {
-        this(usage.getCombined(), usage.getUser(), quantum,
-                Runtime.getRuntime().availableProcessors());
-    }
+        int cores = Runtime.getRuntime().availableProcessors();
 
-    public FractionalCpuUsage(Duration totalCpuUsage, Duration userCpuUsage,
-            Duration quantum, int cores)
-    {
-        /* Since max CPU usage for quantum in NUMBER_OF_CORES*quantum, we
-         * normalise the usage by averaging over the number or cores.  This
-         * means that on a multi-core machine, a single thread will never
-         * consume 100%
-         */
-        Duration totalPerCore = totalCpuUsage.dividedBy(cores);
-        Duration userPerCore = userCpuUsage.dividedBy(cores);
+        Duration systemPerCore = usage.getSystem().dividedBy(cores);
+        Duration userPerCore = usage.getUser().dividedBy(cores);
 
-        checkArgument(totalPerCore.compareTo(quantum) <= 0,
-                "total (%s) usage exceeds quantum (%s)", totalPerCore, quantum);
+        checkArgument(systemPerCore.compareTo(quantum) <= 0,
+                "system usage (%s) exceeds quantum (%s)", systemPerCore, quantum);
         checkArgument(userPerCore.compareTo(quantum) <= 0,
-                "user usage exceeds quantum");
-        checkArgument(userPerCore.compareTo(totalPerCore) <= 0,
-                "user usage (%s) exceeds total (%s)", userPerCore, totalPerCore);
+                "user usage (%s) exceeds quantum (%s)", userPerCore, quantum);
+
         _quantum = quantum;
-        _combinedCpuUsage = totalPerCore.toNanos() / (double)quantum.toNanos();
-        _userCpuUsage = userPerCore.toNanos() / (double)quantum.toNanos();
+        _systemUsage = systemPerCore.toNanos() / (double)quantum.toNanos();
+        _userUsage = userPerCore.toNanos() / (double)quantum.toNanos();
     }
 
 
@@ -83,9 +66,9 @@ public class FractionalCpuUsage
      * Fraction of time in quantum where CPU was active.
      * @return number [0..1]
      */
-    public double getCombinedCpuUsage()
+    public double getTotalUsage()
     {
-        return _combinedCpuUsage;
+        return _systemUsage + _userUsage;
     }
 
 
@@ -93,9 +76,9 @@ public class FractionalCpuUsage
      * Fraction of time in quantum where CPU was active with user activity.
      * @return number [0..1]
      */
-    public double getUserCpuUsage()
+    public double getUserUsage()
     {
-        return _userCpuUsage;
+        return _userUsage;
     }
 
 
@@ -103,14 +86,15 @@ public class FractionalCpuUsage
      * Fraction of time in quantum where CPU was active with system activity.
      * @return number [0..1]
      */
-    public double getSystemCpuUsage()
+    public double getSystemUsage()
     {
-        return _combinedCpuUsage - _userCpuUsage;
+        return _systemUsage;
     }
 
 
     /**
-     * Length of quantum.
+     * Duration between the two CPU consumption observations described by
+     * this object.
      */
     public Duration getQuantum()
     {
