@@ -20,7 +20,6 @@ package dmg.util;
 
 import java.time.Duration;
 
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * An immutable store of CPU usage. CPU usage reports three metrics
@@ -76,7 +75,12 @@ public class CpuUsage
      */
     public CpuUsage minus(CpuUsage other)
     {
-        return new CpuUsage(_system.minus(other._system), _user.minus(other._user));
+        try {
+            return new CpuUsage(_system.minus(other._system), _user.minus(other._user));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Failed to subtract " + other
+                    + " from " + this + ": " + e.getMessage());
+        }
     }
 
     public Duration getTotal()
@@ -92,5 +96,11 @@ public class CpuUsage
     public Duration getSystem()
     {
         return _system;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "S:" + _system + ",U:" + _user;
     }
 }

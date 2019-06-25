@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +28,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import dmg.util.AuthorizedString;
+import dmg.util.CpuUsage;
+import dmg.util.FractionalCpuUsage;
+import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.Option;
 import dmg.util.logback.FilterShell;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.util.ColumnWriter;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -142,6 +148,96 @@ public class      SystemCell
             } catch (UnknownHostException ex) {
                 return "localhost";
             }
+        }
+    }
+
+    @Command(name="cpu monitoring start", hint="start monitoring CPU usage per cell")
+    public class CpuMonitoringStartCommand implements Callable<String>
+    {
+        @Override
+        public String call() throws Exception
+        {
+            CellNucleus.startCpuMonitoring();
+            return "started";
+        }
+    }
+
+    @Command(name="cpu monitoring stop", hint="stop monitoring CPU usage per cell")
+    public class CpuMonitoringStopCommand implements Callable<String>
+    {
+        @Override
+        public String call() throws Exception
+        {
+            CellNucleus.stopCpuMonitoring();
+            return "stopped";
+        }
+    }
+
+    @Command(name="cpu monitoring set update", hint="adjust how often CPU statistics are updated")
+    public class CpuMonitoringSetUpdateCommand implements Callable<String>
+    {
+        @Argument
+        long value;
+
+        @Override
+        public String call() throws Exception
+        {
+            CellNucleus.setCpuMonitoringDelay(Duration.ofMillis(value));
+            return "updating CPU usage every " + value;
+        }
+    }
+
+    @Command(name="cpu monitoring get update", hint="show how often CPU statistics are updated")
+    public class CpuMonitoringGetUpdateCommand implements Callable<String>
+    {
+        @Argument
+        long value;
+
+        @Override
+        public String call() throws Exception
+        {
+            CellNucleus.setCpuMonitoringDelay(Duration.ofMillis(value));
+            return "updating CPU usage every " + value;
+        }
+    }
+
+    @Command(name="cpu monitoring ls", hint="show CPU statistics")
+    public class CpuMonitoringLsCommand implements Callable<String>
+    {
+        @Option(name="cumulative")
+        private boolean isCumulative;
+
+        @Override
+        public String call() throws Exception
+        {
+            ColumnWriter columns = new ColumnWriter();
+            columns.left("CELL").space().right("TOTAL").space().right("SYSTEM").space().right("USER");
+
+            if (isCumulative) {
+                Map<String,CpuUsage> map = CellNucleus.getAccumulatedCellCpuUsage();
+
+                for (Map.Entry<String,CpuUsage> e : map.entrySet()) {
+                    String cell = e.getKey();
+                    CpuUsage usage = e.getValue();
+                    String totalUsage = usage.getTotal().toString();
+                    String systemUsage = usage.getSystem().toString();
+                    String userUsage = usage.getUser().toString();
+                    columns.row().value("CELL", cell).value("TOTAL", totalUsage).value("SYSTEM", systemUsage).value("USER", userUsage);
+                }
+            } else {
+                Map<String,FractionalCpuUsage> map = CellNucleus.getFractionalCellCpuUsage();
+
+                for (Map.Entry<String,FractionalCpuUsage> e : map.entrySet()) {
+                    String cell = e.getKey();
+                    FractionalCpuUsage usage = e.getValue();
+                    String totalUsage = String.format("%.1f%", usage.getTotalUsage()*100);
+                    String systemUsage = String.format("%.1f%", usage.getSystemUsage()*100);
+                    String userUsage = String.format("%.1f%", usage.getUserUsage()*100);
+                    columns.row().value("CELL", cell).value("TOTAL", totalUsage).value("SYSTEM", systemUsage).value("USER", userUsage);
+                }
+            }
+
+            return columns.toString();
         }
     }
 

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,7 +28,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -67,6 +70,9 @@ class CellGlue
     private volatile Map<String,CpuUsage> accumulatedCellCpuUsage = Collections.emptyMap();
     private volatile Map<String,FractionalCpuUsage> fractionalCellCpuUsage = Collections.emptyMap();
 
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+    private final CpuMonitoringTask cpuMonitor;
+
 
     CellGlue(String cellDomainName, @Nonnull CuratorFramework curatorFramework,
             Optional<String> zone)
@@ -102,6 +108,7 @@ class CellGlue
                                        killerThreadFactory);
         emergencyKillerExecutor.prestartCoreThread();
         _emergencyKillerExecutor = MoreExecutors.listeningDecorator(emergencyKillerExecutor);
+        cpuMonitor = new CpuMonitoringTask(this, executor);
     }
 
     private static CuratorFramework withMonitoring(CuratorFramework curator)
@@ -133,6 +140,46 @@ class CellGlue
                     EVENT_LOGGER.warn("[CURATOR: {}] unhandled error \"{}\": {}",
                             curator.getState(), m, e.getMessage()));
         return curator;
+    }
+
+    void startCpuMonitoring()
+    {
+        cpuMonitor.start();
+    }
+
+    void stopCpuMonitoring()
+    {
+        cpuMonitor.stop();
+    }
+
+    Duration getUpdateDelay()
+    {
+        return cpuMonitor.getUpdateDelay();
+    }
+
+    void setUpdateDelay(Duration delay)
+    {
+        cpuMonitor.setUpdateDelay(delay);
+    }
+
+    void setAccumulatedCellCpuUsage(Map<String,CpuUsage> usage)
+    {
+        accumulatedCellCpuUsage = ImmutableMap.copyOf(usage);
+    }
+
+    Map<String,CpuUsage> getAccumulatedCellCpuUsage()
+    {
+        return accumulatedCellCpuUsage;
+    }
+
+    void setCurrentCellCpuUsage(Map<String,FractionalCpuUsage> usage)
+    {
+        fractionalCellCpuUsage = ImmutableMap.copyOf(usage);
+    }
+
+    Map<String,FractionalCpuUsage> getFractionalCellCpuUsage()
+    {
+        return fractionalCellCpuUsage;
     }
 
     static Thread newThread(ThreadGroup threadGroup, Runnable r)
@@ -692,27 +739,6 @@ class CellGlue
     {
         _curatorFramework.close();
         _killerExecutor.shutdown();
-    }
-
-    void setAccumulatedCellCpuUsage(Map<String,CpuUsage> usage)
-    {
-        accumulatedCellCpuUsage = ImmutableMap.copyOf(usage);
-    }
-
-
-    Map<String,CpuUsage> getAccumulatedCellCpuUsage()
-    {
-        return accumulatedCellCpuUsage;
-    }
-
-    void setCurrentCellCpuUsage(Map<String,FractionalCpuUsage> usage)
-    {
-        fractionalCellCpuUsage = ImmutableMap.copyOf(usage);
-    }
-
-    Map<String,FractionalCpuUsage> getCurrentCellCpuUsage()
-    {
-        return fractionalCellCpuUsage;
     }
 
     String cellNameFor(ThreadGroup group)

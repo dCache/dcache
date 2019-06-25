@@ -99,6 +99,11 @@ public class CpuMonitoringTask implements Runnable
                     && otherId.name.equals(this.name)
                     && otherId.group.equals(this.group);
         }
+
+        public String toString()
+        {
+            return id + name + group;
+        }
     }
 
     /**
@@ -138,9 +143,29 @@ public class CpuMonitoringTask implements Runnable
 
         public CpuUsage advanceTo(CpuUsage newValue)
         {
+            if (newValue.getSystem().compareTo(getSystem()) < 0
+                    || newValue.getUser().compareTo(getUser()) < 0) {
+                // WTF, cpu usage has reduced.
+                LOGGER.error("WORK_AROUND for updating {} to {}", _cpuUsage, newValue);
+                Duration system = newValue.getSystem();
+                if (system.compareTo(getSystem()) < 0) {
+                    system = getSystem();
+                }
+                Duration user = newValue.getUser();
+                if (user.compareTo(getUser()) < 0) {
+                    user = getUser();
+                }
+                newValue = new CpuUsage(system, user);
+            }
             CpuUsage difference = newValue.minus(_cpuUsage);
             _cpuUsage = newValue;
             return difference;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "C:" + _cell + ",CU:" + _cpuUsage;
         }
     }
 
@@ -151,7 +176,7 @@ public class CpuMonitoringTask implements Runnable
 
     private ScheduledFuture _task;
     private boolean _isFirstRun;
-    private Instant _lastUpdate;
+    private volatile Instant _lastUpdate;
     private boolean _wasThreadCpuTimeEnabled;
 
     private Duration _delayBetweenUpdates = DEFAULT_DELAY_BETWEEN_UPDATES;
@@ -229,16 +254,17 @@ public class CpuMonitoringTask implements Runnable
         Instant thisUpdate = Instant.now();
 
         try {
-            List<Thread> liveThreads = discoverAllThreads();
+            List<ThreadId> threadIds = discoverAllThreads();
 
-            List<ThreadId> liveThreadIds = new ArrayList<>(liveThreads.size());
+            _threadInfos.keySet().retainAll(threadIds);
+
             Map<String,CpuUsage> cellCpuUsage = new HashMap<>();
-            for (Thread thread : liveThreads) {
-                ThreadId id = new ThreadId(thread);
-                liveThreadIds.add(id);
+            for (ThreadId id : threadIds) {
                 ThreadInfo info = _threadInfos.computeIfAbsent(id, i -> new ThreadInfo(_glue.cellNameFor(i.group)));
 
-                Optional<CpuUsage> cumulativeUsage = cumulativeUsage(thread);
+                Optional<CpuUsage> cumulativeUsage = cumulativeUsage(id);
+
+                LOGGER.error("Thread {} advanced from {} to {}", id, info, cumulativeUsage);
 
                 cumulativeUsage.ifPresent(u -> {
                             CpuUsage increaseUsage = info.advanceTo(u);
@@ -246,8 +272,6 @@ public class CpuMonitoringTask implements Runnable
                             cellCpuUsage.compute(cell, (k,v) -> v == null ? increaseUsage : v.plus(increaseUsage));
                         });
             }
-
-            _threadInfos.keySet().retainAll(liveThreadIds);
 
             thisUpdate = Instant.now();
             Duration elapsed = Duration.between(_lastUpdate, thisUpdate);
@@ -269,10 +293,10 @@ public class CpuMonitoringTask implements Runnable
     }
 
 
-    private Optional<CpuUsage> cumulativeUsage(Thread thread)
+    private Optional<CpuUsage> cumulativeUsage(ThreadId thread)
     {
-        long totalNanos = _threadMonitoring.getThreadCpuTime(thread.getId());
-        long userNanos = _threadMonitoring.getThreadUserTime(thread.getId());
+        long totalNanos = _threadMonitoring.getThreadCpuTime(thread.id);
+        long userNanos = _threadMonitoring.getThreadUserTime(thread.id);
 
         if (totalNanos == -1 || userNanos == -1) {
             // thread died between getOrCreateThreadInfo and getThread*Time methods
@@ -292,9 +316,10 @@ public class CpuMonitoringTask implements Runnable
         return Optional.of(new CpuUsage(system, user));
     }
 
-    private List<Thread> discoverAllThreads()
+    private List<ThreadId> discoverAllThreads()
     {
-        Map<Thread,StackTraceElement[]> stacktraces = Thread.getAllStackTraces();
-        return new ArrayList<>(stacktraces.keySet());
+        return Thread.getAllStackTraces().keySet().stream()
+                .map(ThreadId::new)
+                .collect(Collectors.toList());
     }
 }
