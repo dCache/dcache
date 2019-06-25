@@ -122,7 +122,7 @@ public class CellThresholdFilter extends TurboFilter
             return FilterReply.NEUTRAL;
         }
 
-        String cell = MDC.get(CDC.MDC_CELL);
+        String cell = getOrDiscoverCell();
         CellNucleus nucleus = CellNucleus.getLogTargetForCell(cell);
         if (nucleus == null) {
             return FilterReply.NEUTRAL;
@@ -144,5 +144,22 @@ public class CellThresholdFilter extends TurboFilter
         } else {
             return _onLower;
         }
+    }
+
+    private String getOrDiscoverCell()
+    {
+        String cellName = getCell();
+
+        if (cellName == null) {
+            CDC.discoverAndReset();
+            cellName = getCell();
+        }
+
+        return cellName;
+    }
+
+    private String getCell()
+    {
+        return MDC.get(CDC.MDC_CELL);
     }
 }

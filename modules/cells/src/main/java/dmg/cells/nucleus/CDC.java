@@ -177,6 +177,18 @@ public class CDC implements AutoCloseable
     }
 
     /**
+     * Discover the current thread's cell and reset its CDC.  If the current
+     * thread was created outside of a cell's ThreadGroup then it is "inherited"
+     * by the System cell.
+     */
+    public static void discoverAndReset()
+    {
+        CellNucleus nucleus = CellNucleus.findForThread(Thread.currentThread())
+                .orElseGet(() -> CellNucleus.getLogTargetForCell(null));
+        CDC.reset(nucleus);
+    }
+
+    /**
      * Setup the cell diagnostic context of the calling
      * thread. Threads created from the calling thread automatically
      * inherit this information. The old diagnostic context is

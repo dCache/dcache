@@ -319,6 +319,29 @@ class CellGlue
         }
     }
 
+    /**
+     * Discover to which cell a thread belongs.
+     * @param thread The Thread to identify
+     * @return Optionally the CellNucleus for this thread
+     */
+    Optional<CellNucleus> findCellNucleus(Thread thread)
+    {
+        ThreadGroup targetGroup = thread.getThreadGroup();
+        Optional<CellNucleus> result = findCellNucleus(targetGroup);
+        while (!result.isPresent() && targetGroup.getParent() != null) {
+            targetGroup = targetGroup.getParent();
+            result = findCellNucleus(targetGroup);
+        }
+        return result;
+    }
+
+    private Optional<CellNucleus> findCellNucleus(ThreadGroup targetGroup)
+    {
+        return _cellList.values().stream()
+                .filter(n -> n.getThreadGroup().equals(targetGroup))
+                .findAny();
+    }
+
     void listKillerThreadGroup()
     {
         listThreadGroup(_killerThreadGroup);

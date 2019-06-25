@@ -203,6 +203,8 @@ public class CellNucleus implements ThreadFactory
 
         setPinboard(new Pinboard(PINBOARD_DEFAULT_SIZE));
 
+        _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(), _cellName + "-threads");
+
         __cellGlue.registerCell(this);
 
         /* Instantiate management component for log filtering.
@@ -214,8 +216,6 @@ public class CellNucleus implements ThreadFactory
                         ? RootFilterThresholds.getInstance()
                         : parentNucleus.getLoggingThresholds();
         setLoggingThresholds(new FilterThresholdSet(parentThresholds));
-
-        _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(), _cellName + "-threads");
 
         _messageExecutor = (executor == null) ? new BoundedCachedExecutor(this, 1) : new BoundedExecutor(executor, 1);
 
@@ -242,6 +242,11 @@ public class CellNucleus implements ThreadFactory
             }
         }
         return nucleus;
+    }
+
+    public static Optional<CellNucleus> findForThread(Thread thread)
+    {
+        return __cellGlue.findCellNucleus(thread);
     }
 
     public static void initCellGlue(String cellDomainName,
