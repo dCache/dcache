@@ -540,6 +540,7 @@
       <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
     </bean>
     <bean class="org.dcache.restful.resources.cells.CellInfoResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.doors.DoorsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.identity.UserResource" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.FileResources" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
