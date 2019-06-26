@@ -23,11 +23,15 @@ import java.util.Set;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.util.Strings;
+
 /**
  * A ReplicaStore that delegates all operations to some delegate.
  */
 public abstract class ForwardingReplicaStore implements ReplicaStore
 {
+    private static final String NAME_SUFFIX = "ReplicaStore";
+
     protected abstract ReplicaStore delegate();
 
     @Override
@@ -83,5 +87,32 @@ public abstract class ForwardingReplicaStore implements ReplicaStore
     public long getTotalSpace()
     {
         return delegate().getTotalSpace();
+    }
+
+    private String name()
+    {
+        String name = getClass().getSimpleName();
+        return name.endsWith(NAME_SUFFIX)
+                ? name.substring(0, name.length() - NAME_SUFFIX.length())
+                : name;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder(name());
+
+        String innerName = delegate().toString();
+        boolean isInBrackets = Strings.isInBrackets(innerName);
+
+        if (!isInBrackets) {
+            sb.append('[');
+        }
+        sb.append(innerName);
+        if (!isInBrackets) {
+            sb.append(']');
+        }
+
+        return sb.toString();
     }
 }

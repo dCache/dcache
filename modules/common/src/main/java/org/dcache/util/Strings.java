@@ -345,6 +345,20 @@ public final class Strings {
     }
 
     /**
+     * Return whether the supplied string starts with an open-bracket character
+     * and ends with the corresponding close-bracket character.
+     * @param target
+     * @return
+     */
+    public static boolean isInBrackets(String target)
+    {
+        return target.startsWith("(") && target.endsWith(")")
+                || target.startsWith("[") && target.endsWith("]")
+                || target.startsWith("<") && target.endsWith(">")
+                || target.startsWith("{") && target.endsWith("}");
+    }
+
+    /**
      * Provide a description of the observed distribution of bandwidth
      * measurements.  If the minimum and maximum values are the same (all
      * measurements having the same value) or the standard deviation is exactly

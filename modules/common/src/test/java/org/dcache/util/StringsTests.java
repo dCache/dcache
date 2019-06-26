@@ -5,8 +5,7 @@ import org.junit.Test;
 import static org.dcache.util.Strings.plainLength;
 import static org.dcache.util.Strings.wrap;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -151,5 +150,83 @@ public class StringsTests {
                         + "\u001B[1mThe quick brown\u001B[1m \u001B[1mfox jumps over the lazy dog.\u001B[1m", 15),
                 is("  \u001B[1mThe quick\n  brown\u001B[1m \u001B[1mfox\n  jumps over\n  the lazy dog.\u001B[1m\n  \n"
                            + "  \u001B[1mThe quick\n  brown\u001B[1m \u001B[1mfox\n  jumps over\n  the lazy dog.\u001B[1m\n"));
+    }
+
+    @Test
+    public void shouldNotIdentifyNonBracketString()
+    {
+        assertFalse(Strings.isInBrackets("foo"));
+    }
+
+    @Test
+    public void shouldIdentifyParenthesisString()
+    {
+        assertTrue(Strings.isInBrackets("(foo)"));
+    }
+
+    @Test
+    public void shouldNotIdentifyMissingEndParenthesisString()
+    {
+        assertFalse(Strings.isInBrackets("(foo"));
+    }
+
+    @Test
+    public void shouldNotIdentifyMissingStartParenthesisString()
+    {
+        assertFalse(Strings.isInBrackets("foo)"));
+    }
+
+    @Test
+    public void shouldIdentifySquareBracketString()
+    {
+        assertTrue(Strings.isInBrackets("[foo]"));
+    }
+
+    @Test
+    public void shouldNotIdentifyMissingEndSquareBracketString()
+    {
+        assertFalse(Strings.isInBrackets("[foo"));
+    }
+
+    @Test
+    public void shouldNotIdentifyMissingStartSquareBracketString()
+    {
+        assertFalse(Strings.isInBrackets("foo]"));
+    }
+
+    @Test
+    public void shouldIdentifyAngleBracketString()
+    {
+        assertTrue(Strings.isInBrackets("<foo>"));
+    }
+
+    @Test
+    public void shouldNotIdentifyMissingEndAngleBracketString()
+    {
+        assertFalse(Strings.isInBrackets("<foo"));
+    }
+
+    @Test
+    public void shouldNotIdentifyMissingStartAngleBracketString()
+    {
+        assertFalse(Strings.isInBrackets("foo>"));
+    }
+
+    @Test
+    public void shouldIdentifyCurlyBracketString()
+    {
+        assertTrue(Strings.isInBrackets("{foo}"));
+    }
+
+    @Test
+    public void shouldNotIdentifyMissingEndCurlyBracketString()
+    {
+        assertFalse(Strings.isInBrackets("{foo"));
+    }
+
+    @Test
+    public void shouldNotIdentifyMissingStartCurlyBracketString()
+    {
+        assertFalse(Strings.isInBrackets("foo}"));
     }
 }

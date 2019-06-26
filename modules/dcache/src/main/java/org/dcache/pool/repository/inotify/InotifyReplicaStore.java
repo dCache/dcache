@@ -21,7 +21,6 @@ import java.nio.file.OpenOption;
 import java.time.Duration;
 import java.util.Set;
 
-import diskCacheV111.namespace.EventReceiver;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
@@ -80,11 +79,5 @@ public class InotifyReplicaStore extends ForwardingReplicaStore
         InotifyReplicaRecord record = new InotifyReplicaRecord(innerRecord, notification, id);
         record.setSuppressDuration(suppression);
         return record;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "InotifyMonitoring[" + inner.toString() + "]";
     }
 }

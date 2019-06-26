@@ -85,4 +85,14 @@ public interface ReplicaStore extends Closeable
      * containing the data files.
      */
     long getTotalSpace();
+
+    /**
+     * Implementations are expected to provide a meaningful name.  Decorator
+     * classes may return just the decorated class' toString output, otherwise
+     * the suggested format is {@literal XXX[YYY]} where {@literal XXX} is an
+     * identifier for the decorator and {@literal YYY} is the decorated class'
+     * toString response.
+     */
+    @Override
+    String toString();
 }
