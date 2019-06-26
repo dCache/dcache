@@ -91,7 +91,9 @@ public class LocationManager extends CellAdapter
     private static final Logger LOGGER =
             LoggerFactory.getLogger(LocationManager.class);
 
+    // legacy support. remove in 7.0
     private static final String ZK_CORES_PLAIN = "/dcache/lm/cores";
+
     private static final String ZK_CORES_URI = "/dcache/lm/cores-uri";
     private static final String ZK_CORE_CONFIG = "/dcache/lm/core-config";
 
@@ -109,22 +111,33 @@ public class LocationManager extends CellAdapter
 
     public enum ConnectionType
     {
-        PLAIN("none"),
-        TLS("tls");
+        PLAIN("none", "tcp"),
+        TLS("tls", "tls");
 
         private static final ImmutableMap<String,ConnectionType> CONFIG_TO_VALUE =
-                ImmutableMap.of(PLAIN._config, PLAIN, TLS._config, TLS);
+                ImmutableMap.of(PLAIN.config, PLAIN, TLS.config, TLS);
 
-        private final String _config;
+        private final String config;
+        private final String scheme;
 
-        ConnectionType(String config)
+        ConnectionType(String config, String scheme)
         {
-            _config = config;
+            this.config = config;
+            this.scheme = scheme;
         }
 
         public static Optional<ConnectionType> fromConfig(String value)
         {
             return Optional.ofNullable(CONFIG_TO_VALUE.get(value));
+        }
+
+        /**
+         * Get url scheme corresponding to given connection type.
+         * @return scheme corresponding to connection type.
+         */
+        public String getConnectionScheme()
+        {
+            return scheme;
         }
     }
 
@@ -199,50 +212,63 @@ public class LocationManager extends CellAdapter
         }
     }
 
-    enum Type {
-        URI,
-        PLAIN
-    }
-
     private static class CoreDomainInfo
     {
-        protected URI tls;            // tls://hostname:port
-        protected URI tcp;            // tcp://hostname:port
+        private final Set<URI> endpoints;
 
-        protected CoreDomainInfo() {
+        public CoreDomainInfo() {
+            endpoints = new HashSet<>();
+        }
+
+        public CoreDomainInfo(byte[] bytes) {
+            this();
+
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                    DataInputStream in = new DataInputStream(bais)) {
+                while (in.available() > 0) {
+                    String info = in.readUTF();
+                    URI entry = URI.create(info);
+                    switch (entry.getScheme()) {
+                        case "tls":
+                        case "tcp":
+                            endpoints.add(entry);
+                            break;
+                        default:
+                            LOGGER.warn("Unknown Scheme for LocationManager Cores: {}", entry);
+                            break;
+                    }
+                }
+            } catch (IOException ie) {
+                throw new IllegalArgumentException("Failed deserializing LocationManager Cores as uri: {}", ie.getCause());
+            }
         }
 
         void addCore(String scheme, String host, int port)
         {
             switch (scheme) {
             case "tls":
-                tls = URI.create(String.format("%s://%s:%s", scheme, host, port));
-                break;
             case "tcp":
-                tcp = URI.create(String.format("%s://%s:%s", scheme, host, port));
+                endpoints.add(URI.create(String.format("%s://%s:%s", scheme, host, port)));
                 break;
             default:
-                LOGGER.warn("Unknown Scheme {} for LocationManager Cores", scheme);
+                throw new RuntimeException("Unknown Scheme " + scheme + " for LocationManager Cores");
             }
         }
 
         public void removeTcp() {
-            tcp = null;
+            endpoints.removeIf(u -> u.getScheme().equalsIgnoreCase("tcp"));
         }
 
         public void removeTls() {
-            tls = null;
+            endpoints.removeIf(u -> u.getScheme().equalsIgnoreCase("tls"));
         }
 
         byte[] toBytes()
         {
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(baos)) {
-                if (tls != null) {
-                    out.writeUTF(tls.toString());
-                }
-                if (tcp != null) {
-                    out.writeUTF(tcp.toString());
+                for(URI uri: endpoints) {
+                    out.writeUTF(uri.toString());
                 }
                 return baos.toByteArray();
             } catch (IOException ie) {
@@ -251,36 +277,12 @@ public class LocationManager extends CellAdapter
             return new byte[0];
         }
 
-        Optional<HostAndPort> tcpPort()
+        public Optional<HostAndPort> getEndpointForSchema(String schema)
         {
-            return Optional.ofNullable(tcp).map(tcp -> HostAndPort.fromParts(tcp.getHost(), tcp.getPort()));
-        }
-
-        Optional<HostAndPort> tlsPort()
-        {
-            return Optional.ofNullable(tls).map(tls -> HostAndPort.fromParts(tls.getHost(), tls.getPort()));
-        }
-
-        boolean isCompatible(CoreDomainInfo other)
-        {
-            return Optional.ofNullable(other)
-                           .map(o -> tlsPort().map(h -> o.tlsPort()
-                                                         .map(h::equals)
-                                                         .orElse(true))
-                                              .orElse(true)
-                                  && tcpPort().map(p -> o.tcpPort()
-                                                         .map(p::equals)
-                                                         .orElse(true))
-                                              .orElse(true))
-                           .orElse(false);
-        }
-
-        public static Type infoTypefromZKPath(String path) {
-            if (ZKPaths.getPathAndNode(path).getPath().equals(ZK_CORES_URI)) {
-                return Type.URI;
-            } else {
-                return Type.PLAIN;
-            }
+            return endpoints.stream()
+                    .filter(u -> u.getScheme().equalsIgnoreCase(schema))
+                    .findAny()
+                    .map(u -> HostAndPort.fromParts(u.getHost(), u.getPort()));
         }
 
         @Override
@@ -293,53 +295,17 @@ public class LocationManager extends CellAdapter
             }
 
             CoreDomainInfo that = (CoreDomainInfo) other;
-            return Objects.equals(tls, that.tls) && Objects.equals(tcp, that.tcp);
+            return Objects.equals(endpoints, that.endpoints);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(tls, tcp);
+            return endpoints.hashCode();
         }
 
         @Override
         public String toString() {
-            return String.format("%s, %s", tls, tcp);
-        }
-    }
-
-    private static class CoreDomainInfoUri extends CoreDomainInfo
-    {
-        public CoreDomainInfoUri(byte[] bytes)
-        {
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                 DataInputStream in = new DataInputStream(bais)) {
-                while (in.available() > 0) {
-                    String info = in.readUTF();
-                    URI entry = URI.create(info);
-                    switch (entry.getScheme()) {
-                        case "tls":
-                            tls = entry;
-                            break;
-                        case "tcp":
-                            tcp = entry;
-                            break;
-                        default:
-                            LOGGER.warn("Unknown Scheme for LocationManager Cores: {}; tried URI and HostAndPort", entry);
-                            break;
-                    }
-                }
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("Failed deserializing LocationManager Cores as uri: {}", ie.getCause());
-            }
-        }
-    }
-
-    private static class CoreDomainInfoPlain extends CoreDomainInfo
-    {
-        public CoreDomainInfoPlain(byte[] bytes)
-        {
-            HostAndPort hostAndPort = toHostAndPort(bytes);
-            tcp = URI.create(String.format("%s://%s:%s", "tcp", hostAndPort.getHost(), hostAndPort.getPort()));
+            return endpoints.toString();
         }
     }
 
@@ -367,8 +333,8 @@ public class LocationManager extends CellAdapter
 
 
         /* Only created if the local domain is a core. */
-        private LmPersistentNode localPlain;
-        private LmPersistentNode localUri;
+        private LmPersistentNode<HostAndPort> localLegacy; // remove with 7.0
+        private LmPersistentNode<CoreDomainInfo> localUri;
 
         protected CoreDomains(String domainName, CuratorFramework client, PathChildrenCache cores)
         {
@@ -383,14 +349,7 @@ public class LocationManager extends CellAdapter
             LOGGER.info("Creating CoreDomains: {}, {}", domainName, mode);
             ConnectionType type = ConnectionType.fromConfig(mode).orElseThrow(() -> new BadConfigException("Bad mode " + mode));
 
-            switch (type) {
-            case PLAIN:
-                return new CoreDomainsPlain(domainName, client);
-            case TLS:
-                return new CoreDomainsTls(domainName, client);
-            default:
-                throw new BadConfigException("Unexpected mode " + mode);
-            }
+            return new CoreDomainLocations(domainName, client, type);
         }
 
         void onChange(Consumer<PathChildrenCacheEvent> consumer)
@@ -407,22 +366,12 @@ public class LocationManager extends CellAdapter
         public void close() throws IOException
         {
             CloseableUtils.closeQuietly(cores);
-            if (localPlain != null) {
-                CloseableUtils.closeQuietly(localPlain);
+            if (localLegacy != null) {
+                CloseableUtils.closeQuietly(localLegacy);
             }
             if (localUri != null) {
                 CloseableUtils.closeQuietly(localUri);
             }
-        }
-
-        void setCoreDomainInfo(CoreDomainInfo coreDomainInfo) throws PersistentNodeException
-        {
-            // For backwards compatibility by adding zookeeper hostname:port to /dcache/lm/cores
-            setCoreDomainInfoOld(coreDomainInfo);
-
-            // Add zookeeper entries in the format scheme://hostname:port to /dcache/lm/cores-uri
-            // e.g. tls://hostname:port, tcp://hostname:port
-            setCoreDomainInfoUri(coreDomainInfo);
         }
 
         Map<String,CoreDomainInfo> cores()
@@ -442,26 +391,28 @@ public class LocationManager extends CellAdapter
                                                         coreDomainInfo,
                                                         CoreDomainInfo::toBytes,
                                                         localUri);
-        }
 
-        private void setCoreDomainInfoOld(CoreDomainInfo coreDomainInfo) throws PersistentNodeException
-        {
-            if (coreDomainInfo.tcpPort().isPresent()) {
-                localPlain = LmPersistentNode.createOrUpdate(client,
+            // produce legacy file for backward compatibility. Remove with 7.0
+            Optional<HostAndPort> plainConnection = coreDomainInfo.getEndpointForSchema("tcp");
+            if (plainConnection.isPresent()) {
+                localLegacy = LmPersistentNode.createOrUpdate(client,
                                                             pathOf(ZK_CORES_PLAIN, domainName),
-                                                            coreDomainInfo.tcpPort().get(),
+                                                            plainConnection.get(),
                                                             address -> address.toString()
                                                                               .getBytes(StandardCharsets.US_ASCII),
-                                                            localPlain);
+                                                            localLegacy);
             }
+
         }
     }
 
-    private static class CoreDomainsTls extends CoreDomains
+    private static class CoreDomainLocations extends CoreDomains
     {
-        CoreDomainsTls(String domainName, CuratorFramework client)
+        private final ConnectionType connectionType;
+        CoreDomainLocations(String domainName, CuratorFramework client, ConnectionType connectionType)
         {
             super(domainName, client, new PathChildrenCache(client, ZK_CORES_URI, true));
+            this.connectionType = connectionType;
         }
 
         @Override
@@ -469,25 +420,11 @@ public class LocationManager extends CellAdapter
         {
             Map<String, CoreDomainInfo> coresInfo = new HashMap<>();
             for (ChildData d: cores.getCurrentData()) {
-                coresInfo.put(ZKPaths.getNodeFromPath(d.getPath()), new CoreDomainInfoUri(d.getData()));
-            }
-            return coresInfo;
-        }
-    }
+                CoreDomainInfo urlInfo =  new CoreDomainInfo(d.getData());
 
-    private static class CoreDomainsPlain extends CoreDomains
-    {
-        CoreDomainsPlain(String domainName, CuratorFramework client)
-        {
-            super(domainName, client, new PathChildrenCache(client, ZK_CORES_PLAIN, true));
-        }
-
-        @Override
-        Map<String,CoreDomainInfo> cores()
-        {
-            Map<String, CoreDomainInfo> coresInfo = new HashMap<>();
-            for (ChildData d: cores.getCurrentData()) {
-                coresInfo.put(ZKPaths.getNodeFromPath(d.getPath()), new CoreDomainInfoPlain(d.getData()));
+                if (urlInfo.getEndpointForSchema(connectionType.getConnectionScheme()).isPresent()) {
+                    coresInfo.put(ZKPaths.getNodeFromPath(d.getPath()), urlInfo);
+                }
             }
             return coresInfo;
         }
@@ -595,8 +532,6 @@ public class LocationManager extends CellAdapter
     public class Client implements CellEventListener
     {
         private final Map<String, String> connectors = new HashMap<>();
-        private Map<String, CoreDomainInfo> infoFromPlain = new HashMap<>();
-        private Map<String, CoreDomainInfo> infoFromUri = new HashMap<>();
 
         public Client()
         {
@@ -666,42 +601,8 @@ public class LocationManager extends CellAdapter
             }
         }
 
-        protected CoreDomainInfo infoFromZKEvent(PathChildrenCacheEvent event)
-        {
-            String path = event.getData().getPath();
-            String domain = ZKPaths.getNodeFromPath(path);
-
-            CoreDomainInfo info;
-            CoreDomainInfo plain = infoFromPlain.get(domain);
-            CoreDomainInfo uri = infoFromUri.get(domain);
-
-            switch (CoreDomainInfo.infoTypefromZKPath(path))
-            {
-            case PLAIN:
-                info = new CoreDomainInfoPlain(event.getData().getData());
-                infoFromPlain.put(domain, info);
-                logCompatibilityCheck(event, info, uri);
-                break;
-            case URI:
-                info = new CoreDomainInfoUri(event.getData().getData());
-                infoFromUri.put(domain, info);
-                logCompatibilityCheck(event, info, plain);
-                break;
-            default:
-                LOGGER.error("CoreDomainInfo can't be extracted from ZK Event");
-                info = new CoreDomainInfo();
-            }
-            return info;
-        }
-
-        private void logCompatibilityCheck(PathChildrenCacheEvent event,
-                                           CoreDomainInfo received,
-                                           CoreDomainInfo existing)
-        {
-            if (existing != null && !received.isCompatible(existing)) {
-                LOGGER.warn("CoreDomainInfo received from ZK Node {} which is different from the previously " +
-                            "received values, check core domain configuration", event.getData().getPath());
-            }
+        protected CoreDomainInfo infoFromZKEvent(PathChildrenCacheEvent event) {
+            return new CoreDomainInfo(event.getData().getData());
         }
 
         protected boolean shouldConnectTo(String domain)
@@ -750,7 +651,7 @@ public class LocationManager extends CellAdapter
             default:
                 throw new IllegalArgumentException("Mode " + coreConfig.getMode() + "not supported for Core Domain");
             }
-            coreDomains.setCoreDomainInfo(info);
+            coreDomains.setCoreDomainInfoUri(info);
         }
 
         @Override
@@ -787,7 +688,7 @@ public class LocationManager extends CellAdapter
                         // should not happen
                         break;
                 }
-                coreDomains.setCoreDomainInfo(info);
+                coreDomains.setCoreDomainInfoUri(info);
             } catch (PersistentNodeException e) {
                 LOGGER.error("Failed to reset location manager on CoreConfig update: {}", e.getMessage());
             }  catch (InterruptedException e) {
@@ -939,12 +840,12 @@ public class LocationManager extends CellAdapter
         switch(mode) {
         case PLAIN:
             LOGGER.info("Starting Connection in mode: PLAIN with {}", args.getArguments());
-            where = domainInfo.tcpPort().orElseThrow(BadConfigException::new);
+            where = domainInfo.getEndpointForSchema("tcp").orElseThrow(BadConfigException::new);
             socketFactory = SocketFactory.getDefault();
             break;
         case TLS:
             LOGGER.info("Starting Connection in mode: TLS with {}", args.getArguments());
-            where = domainInfo.tlsPort().orElseThrow(BadConfigException::new);
+            where = domainInfo.getEndpointForSchema("tls").orElseThrow(BadConfigException::new);
             try {
                 switch (role) {
                 case CORE:
@@ -1002,7 +903,7 @@ public class LocationManager extends CellAdapter
                     .header("PORT").right("port");
             for (Map.Entry<String, CoreDomainInfo> entry : coreDomains.cores().entrySet()) {
                 CoreDomainInfo info = entry.getValue();
-                info.tcpPort().ifPresent( tcp -> {
+                info.getEndpointForSchema("tcp").ifPresent( tcp -> {
                     writer.row()
                           .value("name", entry.getKey())
                           .value("protocol", "PLAIN")
@@ -1010,7 +911,7 @@ public class LocationManager extends CellAdapter
                           .value("port", tcp.getPort());
                 });
 
-                info.tlsPort().ifPresent(tls -> {
+                info.getEndpointForSchema("tls").ifPresent(tls -> {
                     writer.row()
                           .value("name", entry.getKey())
                           .value("protocol", "TLS")
@@ -1079,10 +980,5 @@ public class LocationManager extends CellAdapter
         {
             return new String(getCuratorFramework().getData().forPath(ZK_CORE_CONFIG), UTF_8);
         }
-    }
-
-    private static HostAndPort toHostAndPort(byte[] bytes)
-    {
-        return (bytes == null) ? null : HostAndPort.fromString(new String(bytes, StandardCharsets.US_ASCII));
     }
 }
