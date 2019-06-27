@@ -5,14 +5,16 @@ import com.google.common.collect.Iterables;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.FileNameMap;
+import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -22,12 +24,16 @@ import dmg.util.HttpRequest;
 
 import org.dcache.services.httpd.util.StandardHttpRequest;
 
+import static javax.servlet.http.HttpServletResponse.*;
+
 /**
  * Provides HTML or .css content from static file.
  *
  * @author arossi
  */
-public class PathHandler extends AbstractHandler {
+public class PathHandler extends AbstractHandler
+{
+    private static final Logger LOGGER = LoggerFactory.getLogger(PathHandler.class);
 
     private static final FileNameMap mimeTypeMap = URLConnection.getFileNameMap();
 
@@ -40,17 +46,26 @@ public class PathHandler extends AbstractHandler {
     @Override
     public void handle(String target, Request baseRequest,
                     HttpServletRequest request, HttpServletResponse response)
-                    throws IOException, ServletException {
+                    throws IOException
+    {
         try {
             HttpRequest proxy = new StandardHttpRequest(request, response);
             sendFile(path, proxy);
-        } catch (Exception t) {
-            throw new ServletException("PathHandler failure", t);
+        } catch (RuntimeException | IOException e) {
+            throw e;
+        } catch (HttpException e) {
+            LOGGER.debug("Failing request {}: {} {}", request, e.getErrorCode(),
+                    e.getMessage());
+            response.sendError(e.getErrorCode(), e.getMessage());
+        } catch (URISyntaxException e) {
+            LOGGER.debug("Failing request {}: {}", request, e.getMessage());
+            response.sendError(SC_INTERNAL_SERVER_ERROR, "Bad URI: " + e.getMessage());
         }
     }
 
 
-    private void sendFile(File base, HttpRequest proxy) throws Exception {
+    private void sendFile(File base, HttpRequest proxy) throws HttpException, IOException
+    {
         String filename;
         String[] tokens = proxy.getRequestTokens();
         if (tokens.length < 2) {
@@ -61,13 +76,11 @@ public class PathHandler extends AbstractHandler {
         final File f = base.isFile() ? base : new File(base, filename);
         if (!f.getCanonicalFile().getAbsolutePath().startsWith(
                         base.getCanonicalFile().getAbsolutePath())) {
-            throw new HttpException(HttpServletResponse.SC_FORBIDDEN,
-                            "Forbidden");
+            throw new HttpException(SC_FORBIDDEN, "Forbidden");
         }
 
         if (!f.isFile()) {
-            throw new HttpException(HttpServletResponse.SC_NOT_FOUND,
-                            "Not found : " + filename);
+            throw new HttpException(SC_NOT_FOUND, "Not found : " + filename);
         }
 
         try {
