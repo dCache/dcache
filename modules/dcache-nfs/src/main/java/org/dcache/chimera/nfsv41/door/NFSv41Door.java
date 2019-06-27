@@ -266,8 +266,15 @@ public class NFSv41Door extends AbstractCellComponent implements
     /**
      * Retry policy used for accessing files.
      */
-    private static final TransferRetryPolicy POOL_SELECTION_RETRY_POLICY =
+    private static final TransferRetryPolicy READ_POOL_SELECTION_RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, STAGE_REQUEST_TIMEOUT);
+
+    /**
+     * Retry policy used selecting write pools. Effectively, we don't retry
+     * write request and propagate error to the clients, who decide retry of fail.
+     */
+    private static final TransferRetryPolicy WRITE_POOL_SELECTION_RETRY_POLICY
+            = new TransferRetryPolicy(1, NFS_REQUEST_BLOCKING, NFS_REQUEST_BLOCKING);
 
     private VfsCacheConfig _vfsCacheConfig;
 
@@ -1141,7 +1148,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
                 } else {
                     _log.debug("looking a {} pool for {}", (isWrite() ? "WRITE" : "READ"), getPnfsId());
-                    _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
+                    _redirectFuture = selectPoolAndStartMoverAsync(isWrite() ?
+                            WRITE_POOL_SELECTION_RETRY_POLICY: READ_POOL_SELECTION_RETRY_POLICY);
                 }
             }
 
@@ -1179,7 +1187,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 // kick stage/ p2p
                 setOnlineFilesOnly(false);
-                _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
+                _redirectFuture = selectPoolAndStartMoverAsync(READ_POOL_SELECTION_RETRY_POLICY);
                 throw new LayoutTryLaterException("File is not online: stage or p2p required");
             }
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());

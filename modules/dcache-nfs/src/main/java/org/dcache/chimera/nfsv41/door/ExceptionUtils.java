@@ -67,6 +67,7 @@ public class ExceptionUtils {
             case PERMISSION_DENIED:
                 return new PermException(e.getMessage(), e);
             case NO_POOL_CONFIGURED:
+            case RESOURCE:
                 return new NoSpcException(e.getMessage(), e);
             case TIMEOUT:
                 return new DelayException(e.getMessage(), e);
