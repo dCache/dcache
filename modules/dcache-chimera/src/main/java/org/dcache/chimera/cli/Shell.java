@@ -347,16 +347,17 @@ public class Shell extends ShellApplication
                 }
             }
 
-            console.println("total " + totalBlocks);
-            printEntry(dot);
-            printEntry(dotdot);
+            StringBuilder sb = new StringBuilder();
+            sb.append("total ").append(totalBlocks).append('\n');
+            printEntry(sb, dot);
+            printEntry(sb, dotdot);
             for (HimeraDirectoryEntry entry : entries) {
-                printEntry(entry);
+                printEntry(sb, entry);
             }
-            return null;
+            return sb.toString();
         }
 
-        private void printEntry(HimeraDirectoryEntry entry) throws IOException
+        private void printEntry(StringBuilder sb, HimeraDirectoryEntry entry) throws IOException
         {
             if (entry != null) {
                 Stat stat = entry.getStat();
@@ -390,7 +391,7 @@ public class Shell extends ShellApplication
                                          dateOf(time),
                                          entry.getName());
 
-                console.println(s);
+                sb.append(s).append('\n');
             }
         }
 
@@ -502,12 +503,13 @@ public class Shell extends ShellApplication
         @Override
         public Serializable call() throws IOException
         {
+            StringBuilder sb = new StringBuilder();
             String[] tags = fs.tags(lookup(path));
-            console.println("Total: " + tags.length);
+            sb.append("Total: ").append(tags.length).append('\n');
             for (String tag : tags) {
-                console.println(tag);
+                sb.append(tag).append('\n');
             }
-            return null;
+            return sb.toString();
         }
     }
 
@@ -658,8 +660,7 @@ public class Shell extends ShellApplication
             Stat stat = fs.statTag(inode, tag);
             byte[] data = new byte[(int) stat.getSize()];
             fs.getTag(inode, tag, data, 0, data.length);
-            console.println(new String(data));
-            return null;
+            return new String(data) + '\n';
         }
     }
 
@@ -676,8 +677,7 @@ public class Shell extends ShellApplication
             ExtendedInode inode = new ExtendedInode(fs, lookup(path));
             AccessLatency accessLatency = extractor.getAccessLatency(inode);
 
-            console.println(accessLatency.toString());
-            return null;
+            return accessLatency + "\n";
         }
     }
 
@@ -696,8 +696,7 @@ public class Shell extends ShellApplication
             ExtendedInode inode = new ExtendedInode(fs, lookup(path));
             RetentionPolicy retentionPolicy = extractor.getRetentionPolicy(inode);
 
-            console.println(retentionPolicy.toString());
-            return null;
+            return retentionPolicy + "\n";
         }
     }
 
@@ -723,6 +722,30 @@ public class Shell extends ShellApplication
                 fs.createTag(inode, tag);
             }
 
+            /* REVISIT: this supports the tag data in the command line, whether
+             * this is as arguments to 'chimera' command:
+             *
+             *     chimera writetag / tag-name tag-data
+             *
+             * within the interactive shell, or when the command is supplied
+             * on stdin:
+             *
+             *     echo writetag / tag-name tag-data | chimera
+             *
+             * It also works when just the tag data is provided in stdin:
+             *
+             *     echo tag-data | chimera writetag / tag-name
+             *
+             * However, it does not detect invalid invocations; e.g.,
+             *
+             *     echo writetag / tag-name | chimera
+             *
+             *     chimera writetag / tag-name
+             *
+             * The last option could work (taking input from stdin), but there
+             * does not appear to be a way to trigger console.getInput to
+             * return.
+             */
             byte[] bytes = (data == null)
                     ? toByteArray(console.getInput())
                     : newLineTerminated(data).getBytes();
@@ -875,10 +898,13 @@ public class Shell extends ShellApplication
         {
             FsInode inode = lookup(path);
             List<ACE> acl = fs.getACL(inode);
+
+            StringBuilder sb = new StringBuilder();
             for (ACE ace : acl) {
-                console.println(ace.toExtraFormat(inode.isDirectory() ? RsType.DIR : RsType.FILE));
+                sb.append(ace.toExtraFormat(inode.isDirectory() ? RsType.DIR : RsType.FILE))
+                        .append('\n');
             }
-            return null;
+            return sb.toString();
         }
     }
 
@@ -936,10 +962,12 @@ public class Shell extends ShellApplication
         public Serializable call() throws IOException
         {
             FsInode inode = lookup(path);
+
+            StringBuilder sb = new StringBuilder();
             for (Checksum checksum : fs.getInodeChecksums(inode)) {
-                    console.println(checksum.getType().getName() + ':' + checksum.getValue());
+                    sb.append(checksum.getType().getName()).append(':').append(checksum.getValue()).append('\n');
             }
-            return null;
+            return sb.toString();
         }
     }
 
@@ -956,12 +984,12 @@ public class Shell extends ShellApplication
         public Serializable call() throws IOException
         {
             FsInode inode = lookup(path);
-            console.println(fs.getInodeChecksums(inode).stream()
+            String checksumValue = fs.getInodeChecksums(inode).stream()
                     .filter(c -> c.getType() == type)
                     .map(Checksum::getValue)
                     .findFirst()
-                    .orElseGet(() -> "No checksum of type " + type.getName()));
-            return null;
+                    .orElseGet(() -> "No checksum of type " + type.getName());
+            return checksumValue + '\n';
         }
     }
 
