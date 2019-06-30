@@ -65,6 +65,7 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -83,6 +84,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
 import org.dcache.chimera.nfsv41.door.proxy.NfsProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
@@ -118,6 +120,7 @@ import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
+import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.device_addr4;
 import org.dcache.nfs.v4.xdr.deviceid4;
@@ -133,11 +136,20 @@ import org.dcache.nfs.v4.xdr.length4;
 import org.dcache.nfs.v4.ff.ff_ioerr4;
 import org.dcache.nfs.v4.ff.ff_layoutreturn4;
 import org.dcache.nfs.v4.ff.flex_files_prot;
+import org.dcache.nfs.v4.xdr.GETDEVICELIST4args;
+import org.dcache.nfs.v4.xdr.GETDEVICEINFO4args;
+import org.dcache.nfs.v4.xdr.LAYOUTCOMMIT4args;
+import org.dcache.nfs.v4.xdr.LAYOUTERROR4args;
+import org.dcache.nfs.v4.xdr.LAYOUTGET4args;
+import org.dcache.nfs.v4.xdr.LAYOUTRETURN4args;
+import org.dcache.nfs.v4.xdr.LAYOUTSTATS4args;
+import org.dcache.nfs.v4.xdr.layoutreturn_type4;
 import org.dcache.nfs.v4.xdr.device_error4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.offset4;
 import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.vfs.Inode;
+import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
 import org.dcache.pool.assumption.Assumptions;
@@ -298,6 +310,11 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private boolean _manageGids;
 
+    /**
+     * NFSv4 operation executer with requests statistics.
+     */
+    private StatsDecoratedOperationExecutor _executor;
+
     public void setEventNotifier(EventNotifier notifier) {
         _eventNotifier = notifier;
     }
@@ -408,19 +425,21 @@ public class NFSv41Door extends AbstractCellComponent implements
                 case V41:
                     final NFSv41DeviceManager _dm = this;
                     _proxyIoFactory = new NfsProxyIoFactory(_dm);
+                    _executor = new StatsDecoratedOperationExecutor(
+                            new DoorOperationFactory(
+                            _proxyIoFactory,
+                            _chimeraVfs,
+                            _fileFileSystemProvider,
+                            _manageGids ? Optional.of(_idMapper)
+                                    : Optional.empty(),
+                            _accessLogMode)
+                    );
+
                     _nfs4 = new NFSServerV41.Builder()
                             .withDeviceManager(_dm)
-                            .withExportFile(_exportFile)
+                            .withExportTable(_exportFile)
                             .withVfs(_vfs)
-                            .withOperationFactory(
-                                    new DoorOperationFactory(
-                                            _proxyIoFactory,
-                                            _chimeraVfs,
-                                            _fileFileSystemProvider,
-                                            _manageGids ? Optional.of(_idMapper)
-                                                    : Optional.empty(),
-                                            _accessLogMode)
-                            )
+                            .withOperationExecutor(_executor)
                             .build();
 
                     oncRpcSvcBuilder.withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
@@ -562,11 +581,12 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
 
     @Override
-    public device_addr4 getDeviceInfo(CompoundContext context, deviceid4 deviceId, layouttype4 layoutType) throws ChimeraNFSException {
+    public device_addr4 getDeviceInfo(CompoundContext context, GETDEVICEINFO4args args) throws ChimeraNFSException {
 
+        layouttype4 layoutType = layouttype4.valueOf(args.gdia_layout_type);
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
-        PoolDS ds = _poolDeviceMap.getByDeviceId(deviceId);
+        PoolDS ds = _poolDeviceMap.getByDeviceId(args.gdia_device_id);
         if( ds == null) {
             return null;
         }
@@ -597,8 +617,13 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @throws IOException in case of any other errors
      */
     @Override
-    public Layout layoutGet(CompoundContext context, Inode nfsInode, layouttype4 layoutType, int ioMode, stateid4 stateid)
+    public Layout layoutGet(CompoundContext context, LAYOUTGET4args args)
             throws IOException {
+
+
+        Inode nfsInode = context.currentInode();
+        layouttype4 layoutType = layouttype4.valueOf(args.loga_layout_type);
+        final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, args.loga_stateid);
 
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
@@ -641,7 +666,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 NfsTransfer transfer = _ioMessages.get(openStateId.stateid());
                 if (transfer == null) {
-                    transfer = ioMode == layoutiomode4.LAYOUTIOMODE4_RW ?
+                    transfer = args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW ?
 
                             new WriteTransfer(_pnfsHandler, client, openStateId, nfsInode,
                             context.getRpcCall().getCredential().getSubject())
@@ -687,13 +712,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             //  -1 is special value, which means entire file
             layout4 layout = new layout4();
-            layout.lo_iomode = ioMode;
+            layout.lo_iomode = args.loga_iomode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
             layout.lo_content = layoutDriver.getLayoutContent(stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), devices);
 
             layoutStateId.bumpSeqid();
-            if (ioMode == layoutiomode4.LAYOUTIOMODE4_RW) {
+            if (args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW) {
                 // in case of WRITE, invalidate vfs cache on close
                 layoutStateId.addDisposeListener(state -> {
                     _vfsCache.invalidateStatCache(nfsInode);
@@ -723,11 +748,11 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     @Override
-    public List<deviceid4> getDeviceList(CompoundContext context) {
+    public List<deviceid4> getDeviceList(CompoundContext context, GETDEVICELIST4args args) {
         return Lists.newArrayList(_poolDeviceMap.getDeviceIds());
     }
 
-    private void logLayoutErrors(ff_layoutreturn4 lr) {
+    private void logLayoutErrors(CompoundContext context, ff_layoutreturn4 lr) {
         for (ff_ioerr4 ioerr : lr.fflr_ioerr_report) {
             for (device_error4 de : ioerr.ffie_errors) {
                 PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
@@ -749,30 +774,72 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @see org.dcache.chimera.nfsv4.NFSv41DeviceManager#releaseDevice(stateid4 stateid)
      */
     @Override
-    public void layoutReturn(CompoundContext context, stateid4 stateid, layouttype4 layoutType, byte[] body) throws IOException {
+    public void layoutReturn(CompoundContext context, LAYOUTRETURN4args args) throws IOException {
 
-        final NFS4Client client;
-        if (context.getMinorversion() > 0) {
-            client = context.getSession().getClient();
-        } else {
-            // v4.0 client use proxy adapter, which calls layoutreturn
-            client = context.getStateHandler().getClientIdByStateId(stateid);
+        if (args.lora_layout_type == layoutreturn_type4.LAYOUTRETURN4_FILE) {
+            layouttype4 layoutType = layouttype4.valueOf(args.lora_layout_type);
+            final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, args.lora_layoutreturn.lr_layout.lrf_stateid);
+
+            final NFS4Client client;
+            if (context.getMinorversion() > 0) {
+                client = context.getSession().getClient();
+            } else {
+                // v4.0 client use proxy adapter, which calls layoutreturn
+                client = context.getStateHandler().getClientIdByStateId(stateid);
+            }
+
+            final NFS4State layoutState = client.state(stateid);
+            final NFS4State openState = layoutState.getOpenState();
+
+            _log.debug("Releasing layout by stateid: {}, open-state: {}", stateid,
+                    openState.stateid());
+
+            getLayoutDriver(layoutType).acceptLayoutReturnData(context, args.lora_layoutreturn.lr_layout.lrf_body);
+
+            NfsTransfer transfer = _ioMessages.get(openState.stateid());
+            if (transfer != null) {
+                transfer.shutdownMover();
+            }
+            // any further use of this layout-stateid must fail with NFS4ERR_BAD_STATEID
+            client.releaseState(stateid);
         }
+    }
+
+    @Override
+    public OptionalLong layoutCommit(CompoundContext context, LAYOUTCOMMIT4args args) throws IOException {
+
+        final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, args.loca_stateid);
+        final NFS4Client client = context.getStateHandler().getClientIdByStateId(stateid);
 
         final NFS4State layoutState = client.state(stateid);
         final NFS4State openState = layoutState.getOpenState();
 
-        _log.debug("Releasing layout by stateid: {}, open-state: {}", stateid,
-                openState.stateid());
+        Inode nfsInode = context.currentInode();
 
-        getLayoutDriver(layoutType).acceptLayoutReturnData(body);
+        _log.debug("Committing layout by stateid: {}, open-state: {}", stateid, openState.stateid());
 
-        NfsTransfer transfer = _ioMessages.get(openState.stateid());
-        if (transfer != null) {
-            transfer.shutdownMover();
+        if (args.loca_last_write_offset.no_newoffset) {
+            long currentSize = _chimeraVfs.getattr(nfsInode).getSize();
+            long newSize = args.loca_last_write_offset.no_offset.value + 1;
+            if (newSize > currentSize) {
+                Stat newStat = new Stat();
+                newStat.setSize(newSize);
+                _chimeraVfs.setattr(nfsInode, newStat);
+                _vfsCache.invalidateStatCache(nfsInode);
+                return OptionalLong.of(newSize);
+            }
         }
-        // any further use of this layout-stateid must fail with NFS4ERR_BAD_STATEID
-        client.releaseState(stateid);
+        return OptionalLong.empty();
+    }
+
+    @Override
+    public void layoutError(CompoundContext context, LAYOUTERROR4args args) throws IOException {
+        // NOP for now. Forced by interface
+    }
+
+    @Override
+    public void layoutStats(CompoundContext context, LAYOUTSTATS4args args) throws IOException {
+        // NOP for now. Forced by interface
     }
 
     /*
@@ -848,9 +915,9 @@ public class NFSv41Door extends AbstractCellComponent implements
             Stream<FsExport> exports;
             if (host != null) {
                 InetAddress address = InetAddress.getByName(host);
-                exports = _exportFile.exportsFor(address);
+                exports = _exportFile.exports(address);
             } else {
-                exports = _exportFile.getExports();
+                exports = _exportFile.exports();
             }
             return exports
                     .map(Object::toString)
@@ -1443,7 +1510,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() {
-            RequestExecutionTimeGauges<String> gauges = _nfs4.getStatistics();
+            RequestExecutionTimeGauges<String> gauges = _executor.getStatistics();
             StringBuilder sb = new StringBuilder();
             sb.append("Stats:").append("\n").append(gauges.toString("ns"));
 
@@ -1569,7 +1636,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     private void updateLbPaths() {
-        List<String> exportPaths = _exportFile.getExports().map(FsExport::getPath).distinct().collect(toList());
+        List<String> exportPaths = _exportFile.exports().map(FsExport::getPath).distinct().collect(toList());
         _loginBrokerPublisher.setReadPaths(exportPaths);
         _loginBrokerPublisher.setWritePaths(exportPaths);
     }

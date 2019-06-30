@@ -291,7 +291,7 @@ public class NfsTransferService
         @Override
         public String call()
         {
-            RequestExecutionTimeGauges<String> gauges = _nfsIO.getNFSServer().getStatistics();
+            RequestExecutionTimeGauges<String> gauges = _nfsIO.getStatistics();
             StringBuilder sb = new StringBuilder();
             sb.append("Stats:").append("\n").append(gauges.toString("ns"));
             if (clearStats) {

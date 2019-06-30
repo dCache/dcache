@@ -16,12 +16,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
+import org.dcache.nfs.v4.AbstractOperationExecutor;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv4Defaults;
-import org.dcache.nfs.v4.NFSv4OperationFactory;
 import org.dcache.nfs.v4.OperationBIND_CONN_TO_SESSION;
 import org.dcache.nfs.v4.OperationCREATE_SESSION;
 import org.dcache.nfs.v4.OperationDESTROY_CLIENTID;
@@ -64,7 +66,12 @@ public class NFSv4MoverHandler {
     private final OncRpcSvc _rpcService;
 
     private final Map<stateid4, NfsMover> _activeIO = new ConcurrentHashMap<>();
-    private final NFSv4OperationFactory _operationFactory = new EDSNFSv4OperationFactory();
+
+    /**
+     * NFSv4 operation executer with requests statistics.
+     */
+    private final StatsDecoratedOperationExecutor _operationFactory =
+            new StatsDecoratedOperationExecutor(new EDSNFSv4OperationFactory());
 
     private final NFSServerV41 _embededDS;
 
@@ -86,7 +93,7 @@ public class NFSv4MoverHandler {
             throws IOException , GSSException, OncRpcException {
 
         _embededDS = new NFSServerV41.Builder()
-                .withOperationFactory(_operationFactory)
+                .withOperationExecutor(_operationFactory)
                 .build();
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
@@ -141,10 +148,15 @@ public class NFSv4MoverHandler {
         _activeIO.remove(mover.getStateId());
     }
 
-    private class EDSNFSv4OperationFactory implements NFSv4OperationFactory {
+
+    RequestExecutionTimeGauges<String> getStatistics() {
+        return _operationFactory.getStatistics();
+    }
+
+    private class EDSNFSv4OperationFactory extends AbstractOperationExecutor {
 
         @Override
-        public AbstractNFSv4Operation getOperation(nfs_argop4 op) {
+        protected AbstractNFSv4Operation getOperation(nfs_argop4 op) {
 
             switch (op.argop) {
                 case nfs_opnum4.OP_COMMIT:

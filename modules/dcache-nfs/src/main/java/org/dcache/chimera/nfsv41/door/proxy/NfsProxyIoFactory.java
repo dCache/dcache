@@ -21,13 +21,24 @@ import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.client.GetDeviceListStub;
 import org.dcache.nfs.v4.client.LayoutgetStub;
+import org.dcache.nfs.v4.xdr.GETDEVICEINFO4args;
+import org.dcache.nfs.v4.xdr.LAYOUTGET4args;
+import org.dcache.nfs.v4.xdr.LAYOUTRETURN4args;
+import org.dcache.nfs.v4.xdr.bitmap4;
+import org.dcache.nfs.v4.xdr.count4;
 import org.dcache.nfs.v4.xdr.device_addr4;
 import org.dcache.nfs.v4.xdr.deviceid4;
+import org.dcache.nfs.v4.xdr.layoutreturn4;
+import org.dcache.nfs.v4.xdr.layoutreturn_file4;
+import org.dcache.nfs.v4.xdr.layoutreturn_type4;
 import org.dcache.nfs.v4.xdr.layoutiomode4;
 import org.dcache.nfs.v4.xdr.layouttype4;
+import org.dcache.nfs.v4.xdr.length4;
 import org.dcache.nfs.v4.xdr.netaddr4;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout4;
 import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
+import org.dcache.nfs.v4.xdr.offset4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory;
@@ -95,14 +106,30 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
     @Override
     public ProxyIoAdapter createIoAdapter (Inode inode, stateid4 stateid, CompoundContext context, boolean isWrite) throws IOException {
         _log.info("creating new proxy-io adapter for {} {}", inode, context.getRemoteSocketAddress().getAddress().getHostAddress());
-        Layout layout = deviceManager.layoutGet(context, inode,
-                layouttype4.LAYOUT4_NFSV4_1_FILES,
-                isWrite ? layoutiomode4.LAYOUTIOMODE4_RW : layoutiomode4.LAYOUTIOMODE4_READ, stateid);
+
+        LAYOUTGET4args lgArgs = new LAYOUTGET4args();
+        lgArgs.loga_iomode = isWrite ? layoutiomode4.LAYOUTIOMODE4_RW : layoutiomode4.LAYOUTIOMODE4_READ;
+        lgArgs.loga_layout_type = layouttype4.LAYOUT4_NFSV4_1_FILES.getValue();
+        lgArgs.loga_length = new length4(nfs4_prot.NFS4_UINT64_MAX); // EOF
+        lgArgs.loga_maxcount = new count4(1); // one layout segment
+        lgArgs.loga_minlength = new length4(0);
+        lgArgs.loga_offset = new offset4(0);
+        lgArgs.loga_signal_layout_avail = false;
+        lgArgs.loga_stateid = stateid;
+
+        Layout layout = deviceManager.layoutGet(context, lgArgs);
 
         // we assume only one segment as dcache doesn't support striping
         nfsv4_1_file_layout4 fileLayoutSegment = LayoutgetStub.decodeLayoutId(layout.getLayoutSegments()[0].lo_content.loc_body);
         deviceid4 dsId = fileLayoutSegment.nfl_deviceid;
-        device_addr4 deviceAddr = deviceManager.getDeviceInfo(context, dsId, layouttype4.LAYOUT4_NFSV4_1_FILES);
+
+        GETDEVICEINFO4args gdiArgs = new GETDEVICEINFO4args();
+        gdiArgs.gdia_device_id = dsId;
+        gdiArgs.gdia_layout_type = layouttype4.LAYOUT4_NFSV4_1_FILES.getValue();
+        gdiArgs.gdia_maxcount = new count4(1);
+        gdiArgs.gdia_notify_types = new bitmap4();
+
+        device_addr4 deviceAddr = deviceManager.getDeviceInfo(context, gdiArgs);
         nfsv4_1_file_layout_ds_addr4 nfs4DeviceAddr = GetDeviceListStub.decodeFileDevice(deviceAddr.da_addr_body);
 
         Stopwatch connectStopwatch = Stopwatch.createStarted();
@@ -138,7 +165,20 @@ retry:  while (true) {
          }
 
         _log.error("Failed to connect to pool {} within {}, Giving up!", toString(nfs4DeviceAddr.nflda_multipath_ds_list[0].value), connectStopwatch);
-        deviceManager.layoutReturn(context, stateid, layouttype4.LAYOUT4_NFSV4_1_FILES, new byte[0]);
+
+        LAYOUTRETURN4args lrArgs = new LAYOUTRETURN4args();
+        lrArgs.lora_iomode = layoutiomode4.LAYOUTIOMODE4_ANY;
+        lrArgs.lora_layout_type = layouttype4.LAYOUT4_NFSV4_1_FILES.getValue();
+        lrArgs.lora_layoutreturn = new layoutreturn4();
+        lrArgs.lora_layoutreturn.lr_returntype = layoutreturn_type4.LAYOUTRETURN4_FILE;
+        lrArgs.lora_layoutreturn.lr_layout = new layoutreturn_file4();
+        lrArgs.lora_layoutreturn.lr_layout.lrf_stateid = stateid;
+        lrArgs.lora_layoutreturn.lr_layout.lrf_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
+        lrArgs.lora_layoutreturn.lr_layout.lrf_offset = new offset4(0);
+        lrArgs.lora_layoutreturn.lr_layout.lrf_body = new byte[0];
+        lrArgs.lora_reclaim = false;
+
+        deviceManager.layoutReturn(context, lrArgs);
         context.getStateHandler().getClientIdByStateId(stateid).releaseState(layout.getStateid());
         throw new NfsIoException("can't connect to pool");
     }

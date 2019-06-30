@@ -32,34 +32,22 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.posix.Stat;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
-import org.dcache.nfs.status.BadLayoutException;
-import org.dcache.nfs.status.NotSuppException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
-import org.dcache.nfs.v4.MDSOperationFactory;
+import org.dcache.nfs.v4.MDSOperationExecutor;
 import org.dcache.nfs.v4.OperationREMOVE;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.AttributeMap;
-import org.dcache.nfs.v4.NFS4Client;
-import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.OperationCREATE;
 import org.dcache.nfs.v4.OperationGETATTR;
 import org.dcache.nfs.v4.OperationOPEN;
 import org.dcache.nfs.v4.OperationRENAME;
 import org.dcache.nfs.v4.OperationSETATTR;
-import org.dcache.nfs.v4.Stateids;
-import org.dcache.nfs.v4.xdr.LAYOUTCOMMIT4res;
-import org.dcache.nfs.v4.xdr.LAYOUTCOMMIT4resok;
-import org.dcache.nfs.v4.xdr.length4;
-import org.dcache.nfs.v4.xdr.newsize4;
-import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.opentype4;
-import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.oncrpc4j.rpc.OncRpcException;
@@ -83,7 +71,7 @@ import org.dcache.chimera.nfsv41.door.proxy.ProxyIoWRITE;
  * A version of {@link MDSOperationFactory} which will adds dCache specific
  * behavior, like access log file and proxy-io.
  */
-public class DoorOperationFactory extends MDSOperationFactory {
+public class DoorOperationFactory extends MDSOperationExecutor {
 
     private static final Logger LOG = LoggerFactory.getLogger(DoorOperationFactory.class);
     private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.nfs");
@@ -190,7 +178,7 @@ public class DoorOperationFactory extends MDSOperationFactory {
     }
 
     @Override
-    public AbstractNFSv4Operation getOperation(nfs_argop4 op) {
+    protected AbstractNFSv4Operation getOperation(nfs_argop4 op) {
 
         final AbstractNFSv4Operation operation;
         switch (op.argop) {
@@ -214,9 +202,6 @@ public class DoorOperationFactory extends MDSOperationFactory {
                 break;
             case nfs_opnum4.OP_SETATTR:
                 operation = setattrOp.apply(op);
-                break;
-            case nfs_opnum4.OP_LAYOUTCOMMIT:
-                operation = new OpLayoutCommit(op);
                 break;
             default:
                 operation = super.getOperation(op);
@@ -256,57 +241,6 @@ public class DoorOperationFactory extends MDSOperationFactory {
             }
         };
 
-    }
-
-    // FIXME: Remove with migration to nfs4j-0.19
-    private class OpLayoutCommit extends AbstractNFSv4Operation {
-
-        public OpLayoutCommit(nfs_argop4 args) {
-            super(args, nfs_opnum4.OP_LAYOUTCOMMIT);
-        }
-
-        @Override
-        public void process(CompoundContext context, nfs_resop4 result) throws ChimeraNFSException, IOException, OncRpcException {
-
-            context.getDeviceManager()
-                    .orElseThrow(() -> new NotSuppException("pNFS device manager not configured"));
-
-            NFS4Client client = context.getSession().getClient();
-            stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, _args.oplayoutcommit.loca_stateid);
-            NFS4State state = client.state(stateid);
-            Inode inode = context.currentInode();
-
-            // ensure open-for-write
-            int shareAccess = context.getStateHandler()
-                    .getFileTracker()
-                    .getShareAccess(client, inode, state.getOpenState().stateid());
-
-            if ((shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) == 0) {
-                throw new BadLayoutException("Invalid open mode");
-            }
-
-            FsInode cInode = _vfs.inodeFromBytes(inode.getFileId());
-
-            final LAYOUTCOMMIT4res res = result.oplayoutcommit;
-
-            res.locr_resok4 = new LAYOUTCOMMIT4resok();
-            res.locr_resok4.locr_newsize = new newsize4();
-            res.locr_resok4.locr_newsize.ns_sizechanged = false;
-
-            if (_args.oplayoutcommit.loca_last_write_offset.no_newoffset) {
-                long currentSize = _jdbcFs.stat(cInode).getSize();
-                long newSize = _args.oplayoutcommit.loca_last_write_offset.no_offset.value + 1;
-                if (newSize > currentSize) {
-                    Stat newStat = new Stat();
-                    newStat.setSize(newSize);
-                    _jdbcFs.setInodeAttributes(cInode, 0, newStat);
-                    res.locr_resok4.locr_newsize.ns_sizechanged = true;
-                    res.locr_resok4.locr_newsize.ns_size = new length4(newSize);
-                }
-            }
-
-            res.locr_status = nfsstat.NFS_OK;
-        }
     }
 
     private class OpSetattr extends OperationSETATTR {
