@@ -644,8 +644,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 NfsTransfer transfer = _ioMessages.get(openStateId.stateid());
                 if (transfer == null) {
-                    transfer = new NfsTransfer(_pnfsHandler, client, openStateId, nfsInode,
-                            context.getRpcCall().getCredential().getSubject(), ioMode);
+                    transfer = ioMode == layoutiomode4.LAYOUTIOMODE4_RW ?
+
+                            new WriteTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                            context.getRpcCall().getCredential().getSubject())
+                            :
+                            new ReadTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                            context.getRpcCall().getCredential().getSubject());
 
                     transfer.setProtocolInfo(protocolInfo);
                     transfer.setCellAddress(getCellAddress());
@@ -1026,18 +1031,156 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    private class NfsTransfer extends RedirectedTransfer<PoolDS> {
+
+    private class ReadTransfer extends NfsTransfer {
+
+        public ReadTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+                Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
+            super(pnfs, client, openStateId, nfsInode, ioSubject);
+        }
+
+        @Override
+        protected String getModeStr() {
+            return "READ";
+        }
+
+        @Override
+        deviceid4[] getPoolDataServersIntern(long timeout, boolean isFirstAttempt) throws
+                InterruptedException, ExecutionException,
+                TimeoutException, CacheException, ChimeraNFSException {
+
+            if (isFirstAttempt) {
+                readNameSpaceEntry(false);
+                FileAttributes attr = getFileAttributes();
+
+                if (attr.getLocations().isEmpty()
+                        && !attr.getStorageInfo().isStored()) {
+                    throw new NfsIoException("lost file " + getPnfsId());
+                }
+
+                /*
+                 * We start new request with an assumption, that file is available
+                 * and can be directly accessed by the client, e.q. no stage
+                 * or p2p is required.
+                 */
+                setOnlineFilesOnly(true);
+                _log.debug("looking a {} pool for {}", getModeStr(), getPnfsId());
+                _redirectFuture = selectPoolAndStartMoverAsync(READ_POOL_SELECTION_RETRY_POLICY);
+            }
+
+            try {
+                _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
+            } catch (ExecutionException e) {
+
+                /*
+                 * PERMISSION_DENIED on read indicates that pool manager was not allowed to run p2p or stage.
+                 */
+                Throwable t = e.getCause();
+                if (!(t instanceof CacheException)) {
+                    throw e;
+                }
+
+                CacheException ce = (CacheException) t;
+                if (ce.getRc() != CacheException.PERMISSION_DENIED) {
+                    throw e;
+                }
+
+                // kick stage/ p2p
+                setOnlineFilesOnly(false);
+                _redirectFuture = selectPoolAndStartMoverAsync(READ_POOL_SELECTION_RETRY_POLICY);
+                throw new LayoutTryLaterException("File is not online: stage or p2p required");
+            }
+            _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
+
+            deviceid4 ds = waitForRedirect(NFS_REQUEST_BLOCKING).getDeviceId();
+            return new deviceid4[]{ds};
+        }
+    }
+
+    private class WriteTransfer extends NfsTransfer {
+
+        public WriteTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+                Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
+            super(pnfs, client, openStateId, nfsInode, ioSubject);
+        }
+
+        @Override
+        protected String getModeStr() {
+            return "WRITE";
+        }
+
+        @Override
+        deviceid4[] getPoolDataServersIntern(long timeout, boolean isFirstAttempt) throws
+                InterruptedException, ExecutionException,
+                TimeoutException, CacheException, ChimeraNFSException {
+
+            if (isFirstAttempt) {
+                readNameSpaceEntry(true);
+                FileAttributes attr = getFileAttributes();
+
+                /*
+                 * allow writes only into new files
+                 */
+                if (!attr.getStorageInfo().isCreatedOnly()) {
+                    throw new PermException("Can't modify existing file");
+                }
+
+                // REVISIT: this have to go into Transfer class.
+                if (getFileAttributes().isDefined(FileAttribute.LOCATIONS) && !getFileAttributes().getLocations().isEmpty()) {
+
+                    /*
+                     * If we need to start a write-mover for a file which already has
+                     * a location assigned to it, then we stick that location and by-pass
+                     * any pool selection step.
+                     */
+                    Collection<String> locations = getFileAttributes().getLocations();
+                    if (locations.size() > 1) {
+                        /*
+                         * Huh! We don't support mirroring (yet), thus there
+                         * can't by multiple locations, unless some something
+                         * went wrong!
+                         */
+                        throw new ServerFaultException("multiple locations for: " + getPnfsId() + " : " + locations);
+                    }
+                    String location = locations.iterator().next();
+                    _log.debug("Using pre-existing WRITE pool {} for {}", location, getPnfsId());
+                    // REVISIT: here we knoe that pool name and address are the same thing
+                    setPool(new Pool(location, new CellAddressCore(location), Assumptions.none()));
+                    _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
+                } else {
+                    _log.debug("looking a {} pool for {}", getModeStr(), getPnfsId());
+                    _redirectFuture = selectPoolAndStartMoverAsync(WRITE_POOL_SELECTION_RETRY_POLICY);
+                }
+            }
+
+            /*
+             * If already have triggered selection process, then there are no
+             * reasons to block. The async reply will update _redirectFuture when
+             * it's timed out or ready.
+             */
+            if (!isFirstAttempt && !_redirectFuture.isDone()) {
+                throw new LayoutTryLaterException("Waiting for pool to become ready.");
+            }
+
+            _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
+            _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
+
+            deviceid4 ds = waitForRedirect(NFS_REQUEST_BLOCKING).getDeviceId();
+            return new deviceid4[]{ds};
+        }
+    }
+
+    abstract private class NfsTransfer extends RedirectedTransfer<PoolDS> {
 
         private final Inode _nfsInode;
         private final NFS4State _stateid;
         private final NFS4State _openStateid;
-        private ListenableFuture<Void> _redirectFuture;
-        private AtomicReference<ChimeraNFSException> _errorHolder = new AtomicReference<>();
+        protected ListenableFuture<Void> _redirectFuture;
+        protected AtomicReference<ChimeraNFSException> _errorHolder = new AtomicReference<>();
         private final NFS4Client _client;
-        private final int _ioMode;
 
-        NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId, Inode nfsInode, Subject ioSubject, int ioMode)
-                throws ChimeraNFSException {
+        NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
+                Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
             super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  FsPath.ROOT);
 
             _nfsInode = nfsInode;
@@ -1046,7 +1189,6 @@ public class NFSv41Door extends AbstractCellComponent implements
             _stateid = client.createState(openStateId.getStateOwner(), openStateId);
             _openStateid = openStateId;
             _client = client;
-            _ioMode = ioMode;
         }
 
         @Override
@@ -1063,7 +1205,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     DateTimeFormatter.ISO_OFFSET_DATE_TIME
                             .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(getCreationTime()), timeZone)),
                     getPnfsId(),
-                    isWrite() ? "WRITE" : "READ",
+                    getModeStr(),
                     getMoverId(),
                     Optional.ofNullable(getPool()).map(Pool::getName).orElse("N/A"),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
@@ -1071,6 +1213,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                     status,
                     getRedirect() != null);
         }
+
+        protected abstract String getModeStr();
 
         Inode getInode() {
             return _nfsInode;
@@ -1095,64 +1239,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             ChimeraNFSException error = _errorHolder.get();
             if (error != null) {
-                throw  error;
+                throw error;
             }
+
 
             boolean isFirstAttempt = _redirectFuture == null;
-            if (isFirstAttempt) {
-
-                readNameSpaceEntry(_ioMode == layoutiomode4.LAYOUTIOMODE4_RW);
-
-                FileAttributes attr = getFileAttributes();
-
-                /*
-                 * allow writes only into new files
-                 */
-                if ((_ioMode == layoutiomode4.LAYOUTIOMODE4_RW) && !attr.getStorageInfo().isCreatedOnly()) {
-                    throw new PermException("Can't modify existing file");
-                }
-
-                if (!isWrite() && attr.getLocations().isEmpty()
-                        && !attr.getStorageInfo().isStored()) {
-                    throw new NfsIoException("lost file " + getPnfsId());
-                }
-
-                /*
-                 * We start new request with an assumption, that file is available
-                 * and can be directly accessed by the client, e.q. no stage
-                 * or p2p is required.
-                 */
-                setOnlineFilesOnly(true);
-                // REVISIT: this have to go into Transfer class.
-                if (isWrite() && getFileAttributes().isDefined(FileAttribute.LOCATIONS) && !getFileAttributes().getLocations().isEmpty()) {
-
-                    /*
-                     * If we need to start a write-mover for a file which already has
-                     * a location assigned to it, then we stick that location and by-pass
-                     * any pool selection step.
-                     */
-
-                    Collection<String> locations = getFileAttributes().getLocations();
-                    if (locations.size() > 1) {
-                        /*
-                         * Huh! We don't support mirroring (yet), thus there
-                         * can't by multiple locations, unless some something
-                         * went wrong!
-                         */
-                        throw new ServerFaultException("multiple locations for: " + getPnfsId() + " : " + locations);
-                    }
-                    String location = locations.iterator().next();
-                    _log.debug("Using pre-existing WRITE pool {} for {}", location, getPnfsId());
-                    // REVISIT: here we knoe that pool name and address are the same thing
-                    setPool(new Pool(location, new CellAddressCore(location), Assumptions.none()));
-                    _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
-                } else {
-                    _log.debug("looking a {} pool for {}", (isWrite() ? "WRITE" : "READ"), getPnfsId());
-                    _redirectFuture = selectPoolAndStartMoverAsync(isWrite() ?
-                            WRITE_POOL_SELECTION_RETRY_POLICY: READ_POOL_SELECTION_RETRY_POLICY);
-                }
-            }
-
             /*
              * If already have triggered selection process, then there are no
              * reasons to block. The async reply will update _redirectFuture when
@@ -1162,39 +1253,12 @@ public class NFSv41Door extends AbstractCellComponent implements
                 throw new LayoutTryLaterException("Waiting for pool to become ready.");
             }
 
-            try {
-                _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
-            } catch (ExecutionException e) {
-
-                /*
-                 * PERMISSION_DENIED on read indicates that pool manager was not allowed to run p2p or stage.
-                 */
-
-                 // No fancy things on write.
-                if(isWrite()) {
-                    throw e;
-                }
-
-                Throwable t = e.getCause();
-                if (!(t instanceof CacheException)) {
-                    throw e;
-                }
-
-                CacheException ce = (CacheException) t;
-                if (ce.getRc() != CacheException.PERMISSION_DENIED) {
-                    throw e;
-                }
-
-                // kick stage/ p2p
-                setOnlineFilesOnly(false);
-                _redirectFuture = selectPoolAndStartMoverAsync(READ_POOL_SELECTION_RETRY_POLICY);
-                throw new LayoutTryLaterException("File is not online: stage or p2p required");
-            }
-            _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
-
-            deviceid4 ds = waitForRedirect(NFS_REQUEST_BLOCKING).getDeviceId();
-            return new deviceid4[] {ds};
+            return getPoolDataServersIntern(timeout, isFirstAttempt);
         }
+
+        abstract deviceid4[] getPoolDataServersIntern(long timeout, boolean firstAttempt) throws
+                InterruptedException, ExecutionException,
+                TimeoutException, CacheException, ChimeraNFSException;
 
         /**
          * Retry transfer.
