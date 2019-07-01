@@ -944,7 +944,10 @@ public class ChimeraNameSpaceProvider
                 attributes.setLocations(Lists.newArrayList(inode.getLocations(StorageGenericLocation.DISK)));
                 break;
             case FLAGS:
-                attributes.setFlags(Maps.newHashMap(inode.getFlags()));
+                stat = inode.statCache();
+                if (stat.getState() != FileState.CREATED) {
+                    attributes.setFlags(Maps.newHashMap(inode.getFlags()));
+                }
                 break;
             case SIMPLE_TYPE:
             case TYPE:
