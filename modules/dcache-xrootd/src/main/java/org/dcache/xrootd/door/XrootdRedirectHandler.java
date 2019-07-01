@@ -181,6 +181,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
      * to the pool and calls kXR_open there, a third-party client will
      * be started which does read requests from the source and then writes
      * the data to the mover channel.
+     *
+     * NOTE:  with the changed TPC Lite protocol, the client is not required
+     * to open the source again during the copy phase (2) if delegation is being
+     * used.
      */
     @Override
     protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx, OpenRequest req)
@@ -356,6 +360,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
      * redirect to the pool by returning <code>null</code>.
      * Also verifies the rendezvous information in the case of the destination
      * server contacting dCache as source.</p>
+     *
+     * <p>With the modified TPC lite (delegation) protocol, there is no
+     * need to wait for the rendezvous destination check by comparing
+     * the open from the source.</p>
      */
     private XrootdResponse<OpenRequest>
         conditionallyHandleThirdPartyRequest(OpenRequest req,
@@ -385,6 +393,16 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         String tpcKey = opaque.get("tpc.key");
         if (tpcKey == null) {
             _log.debug("{} –– not a third-party request.", req);
+            return null;  // proceed as usual with mover + redirect
+        }
+
+        /*
+         * Check the session for the delegated credential to avoid hanging
+         * in the case that tpc cgi have been passed by the destination
+         * server even with TPC with delegation.
+         */
+        if (req.getSession().getDelegatedCredential() != null) {
+            _log.debug("{} –– third-party request with delegation.", req);
             return null;  // proceed as usual with mover + redirect
         }
 
