@@ -758,10 +758,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                      * Indicate support for third-party copy by responding
                      * with the protocol version.
                      */
-                    s.append(XrootdProtocol.PROTOCOL_VERSION);
+                    s.append(XrootdProtocol.TPC_VERSION);
                     break;
                 case "tpcdlg":
-                    //TODO NOT YET SUPPORTED
+                    s.append("gsi");
+                    break;
                 default:
                     s.append(_queryConfig.getOrDefault(name, name));
                     break;
