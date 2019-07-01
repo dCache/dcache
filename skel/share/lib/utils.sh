@@ -285,7 +285,7 @@ stringToGiB() # in $1 = size, out $2 = size in GiB
             ;;
 
         *)
-            checkInt "${1%?}"
+            checkInt "$1"
             gib=$(($1/(1024*1024*1024)))
             ;;
     esac
