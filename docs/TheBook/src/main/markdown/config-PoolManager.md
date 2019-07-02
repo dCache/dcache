@@ -433,12 +433,12 @@ This is the pool selection algorithm used in the versions of dCache prior to ver
 This pool selection algorithm selects a pool randomly from the set of available pools.
 
 **lru**:
-This pool selection algorithm selects the pool that has not been used the longest.
+This pool selection algorithm selects the "least recently used" pool, i.e. the one that has not been used the longest.
 
 **wass**:
 This pool selection algorithm selects pools randomly weighted by available space, while incorporating age and amount of garbage collectible files and information about load.
 
-This is the partition type of the default partition. See [How to Pick a Pool](https://www.dcache.org/articles/wass.html) for more details.
+This is the partition type of the default partition.
 
 Commands related to dCache partitioning:
 
