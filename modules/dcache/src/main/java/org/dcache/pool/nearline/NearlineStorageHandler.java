@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -41,7 +41,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.URI;
 import java.nio.channels.CompletionHandler;
-import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -138,8 +137,6 @@ public class NearlineStorageHandler
                 PoolDataBeanProvider<StorageHandlerData>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NearlineStorageHandler.class);
-
-    private static final Set<? extends OpenOption> NO_FLAGS = Collections.emptySet();
 
     private final FlushRequestContainer flushRequests = new FlushRequestContainer();
     private final StageRequestContainer stageRequests = new StageRequestContainer();
