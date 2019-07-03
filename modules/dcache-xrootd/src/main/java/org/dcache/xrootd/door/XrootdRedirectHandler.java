@@ -31,6 +31,7 @@ import java.nio.channels.ClosedChannelException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
@@ -84,6 +85,7 @@ import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.tpc.XrootdTpcInfo.Status;
+import org.dcache.xrootd.util.ChecksumInfo;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
@@ -791,18 +793,36 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
         case kXR_Qcksum:
             try {
-                Set<Checksum> checksums = _door.getChecksums(createFullPath(msg.getArgs()),
+                ChecksumInfo info = new ChecksumInfo(msg.getArgs());
+                Set<Checksum> checksums = _door.getChecksums(createFullPath(info.getPath()),
                                                              msg.getSubject(),
                                                              _authz);
                 if (!checksums.isEmpty()) {
-                    Checksum checksum = Checksums.preferrredOrder().min(checksums);
+                    Optional<String> type = info.getType();
+                    Optional<Checksum> result;
+
+                    if (type.isPresent()) {
+                        result = checksums.stream()
+                                          .filter((c) -> type.get()
+                                                             .equalsIgnoreCase(c.getType()
+                                                                                .getName()))
+                                          .findFirst();
+                    } else {
+                        result = Optional.of(Checksums.preferrredOrder().min(checksums));
+                    }
+
                     /**
                      * xrdcp expects lower case names for checksum algorithms
                      * https://github.com/xrootd/xrootd/issues/459
                      * TODO: remove toLowerCase() call when above issue is addressed
                      */
-                    return new QueryResponse(msg,
-                                             checksum.getType().getName().toLowerCase() + " " + checksum.getValue());
+                    if (result.isPresent()) {
+                        Checksum checksum = result.get();
+                        return new QueryResponse(msg,checksum.getType().getName()
+                                                             .toLowerCase()
+                                                             + " "
+                                                             + checksum.getValue());
+                    }
                 }
             } catch (FileNotFoundCacheException e) {
                 throw new XrootdException(kXR_NotFound, e.getMessage());
