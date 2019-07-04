@@ -1,24 +1,24 @@
 package org.dcache.util;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.Arrays.asList;
-
 /**
  *  Various useful cryptographic utility method
  */
 public class Crypto
 {
-    public enum CipherFlag
+    private enum CipherFlag
     {
         DISABLE_EC,
         DISABLE_RC4,
-        DISABLE_WEAK_CIPHERS,
+        DISABLE_RFC_7540_BANNED_CIPHERS,
+        ENABLE_WEAK_CIPHERS_FOR_SL7_CLIENTS,
     }
 
     private static final Splitter CIPHER_FLAG_SPLITTER =
@@ -89,7 +89,7 @@ public class Crypto
      */
     //    sed -n '/add.*TLS_ECDHE/s/.*add(\([^,]*\).*/        \1,/p'
     //    sun/security/ssl/CipherSuite.java | sort
-    public static final String[] EC_CIPHERS = {
+    public static final List<String> EC_CIPHERS = ImmutableList.of(
             "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
             "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
             "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
@@ -116,8 +116,7 @@ public class Crypto
             "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",
             "TLS_ECDHE_PSK_WITH_NULL_SHA",
             "TLS_ECDHE_PSK_WITH_NULL_SHA256",
-            "TLS_ECDHE_PSK_WITH_NULL_SHA384"
-    };
+            "TLS_ECDHE_PSK_WITH_NULL_SHA384");
 
     /**
      * A list of Ciphers that make use of the RC4 (Rivest Cipher 4) stream
@@ -128,7 +127,7 @@ public class Crypto
      *
      * sed -n 's%^.*add( *"\([^"]*_RC4_[^"]*\)".*%            "\1",%p'  sun/security/ssl/CipherSuite.java|sort
      */
-    public static final String[] RC4_CIPHERS = {
+    public static final List<String> RC4_CIPHERS = ImmutableList.of(
             "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
             "SSL_DH_anon_WITH_RC4_128_MD5",
             "SSL_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",
@@ -149,11 +148,28 @@ public class Crypto
             "TLS_KRB5_WITH_RC4_128_MD5",
             "TLS_KRB5_WITH_RC4_128_SHA",
             "TLS_PSK_WITH_RC4_128_SHA",
-            "TLS_RSA_PSK_WITH_RC4_128_SHA",
-    };
+            "TLS_RSA_PSK_WITH_RC4_128_SHA");
 
-    /* List taken from jetty-http2/http2-common/src/main/java/org/eclipse/jetty/http2/HTTP2Cipher.java */
-    public static final String[] WEAK_CIPHERS = {
+    /**
+     * This is a subset of the ciphers that an Scientific Linux 7 client
+     * advertised it supported.  The same list will likely also work for
+     * RHEL 7 and CentOS 7 clients.  In theory, a single cipher should be
+     * sufficient; multiple ciphers are included as a hedge against client
+     * configuration.
+     *
+     * The specific ciphers were selected by hand as (hopefully) the most secure
+     * of the ciphers that SL7 supports.
+     */
+    private static final List<String> WEAK_CIPHERS_NEEDED_FOR_SL7_CLIENTS = ImmutableList.of(
+            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+            "TLS_DH_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_DH_RSA_WITH_AES_256_CBC_SHA",
+            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
+
+    /* List taken from RFC 7540 */
+    public static final List<String> RFC_7540_BANNED_CIPHERS = ImmutableList.of(
         "TLS_NULL_WITH_NULL_NULL",
         "TLS_RSA_WITH_NULL_MD5",
         "TLS_RSA_WITH_NULL_SHA",
@@ -429,8 +445,7 @@ public class Crypto
         "TLS_PSK_WITH_AES_128_CCM",
         "TLS_PSK_WITH_AES_256_CCM",
         "TLS_PSK_WITH_AES_128_CCM_8",
-        "TLS_PSK_WITH_AES_256_CCM_8"
-    };
+        "TLS_PSK_WITH_AES_256_CCM_8");
 
     /**
      * @throws IllegalArgumentException if the value could not be parsed
@@ -451,16 +466,19 @@ public class Crypto
         for (CipherFlag flag : flags) {
             switch (flag) {
             case DISABLE_EC:
-                banned.addAll(asList(EC_CIPHERS));
+                banned.addAll(EC_CIPHERS);
                 break;
             case DISABLE_RC4:
-                banned.addAll(asList(RC4_CIPHERS));
+                banned.addAll(RC4_CIPHERS);
                 break;
-            case DISABLE_WEAK_CIPHERS:
-                banned.addAll(asList(WEAK_CIPHERS));
+            case DISABLE_RFC_7540_BANNED_CIPHERS:
+                banned.addAll(RFC_7540_BANNED_CIPHERS);
+                break;
+            case ENABLE_WEAK_CIPHERS_FOR_SL7_CLIENTS:
+                banned.removeAll(WEAK_CIPHERS_NEEDED_FOR_SL7_CLIENTS);
+                break;
             }
         }
         return banned.toArray(new String[banned.size()]);
     }
-
 }
