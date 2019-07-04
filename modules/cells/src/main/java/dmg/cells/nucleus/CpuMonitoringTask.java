@@ -274,11 +274,11 @@ public class CpuMonitoringTask implements Runnable
             }
 
             thisUpdate = Instant.now();
-            Duration elapsed = Duration.between(_lastUpdate, thisUpdate);
 
             _glue.setAccumulatedCellCpuUsage(cellCpuUsage);
 
             if (!_isFirstRun) {
+                Duration elapsed = Duration.between(_lastUpdate, thisUpdate);
                 Map<String,FractionalCpuUsage> fractionalUsage = cellCpuUsage.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, e -> new FractionalCpuUsage(e.getValue(), elapsed)));
                 _glue.setCurrentCellCpuUsage(fractionalUsage);
@@ -320,6 +320,7 @@ public class CpuMonitoringTask implements Runnable
     {
         return Thread.getAllStackTraces().keySet().stream()
                 .map(ThreadId::new)
+                .filter(i -> i.group != null)
                 .collect(Collectors.toList());
     }
 }
