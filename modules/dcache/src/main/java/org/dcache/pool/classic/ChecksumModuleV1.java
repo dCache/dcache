@@ -508,16 +508,8 @@ public class ChecksumModuleV1
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
     {
         try (RepositoryChannel channel = handle.createChannel()) {
-            return verifyChecksum(channel, handle.getChecksums());
+            return verifyChecksum(channel, handle.getChecksums(), Double.POSITIVE_INFINITY);
         }
-    }
-
-    @Nonnull
-    @Override
-    public Iterable<Checksum> verifyChecksum(RepositoryChannel channel, Iterable<Checksum> expectedChecksums)
-            throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
-    {
-        return verifyChecksum(channel, expectedChecksums, Double.POSITIVE_INFINITY);
     }
 
     public Iterable<Checksum> verifyChecksumWithThroughputLimit(ReplicaDescriptor handle)

@@ -29,9 +29,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
-import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
 
 /**
  * Encapsulates checksum policies.
@@ -119,21 +117,5 @@ public interface ChecksumModule
      */
     @Nonnull
     Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
-            throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException;
-
-    /**
-     * Verifies the checksum of a file.
-     *
-     * @param channel A repository channel
-     * @param checksums Expected checksums for file
-     * @throws CacheException If the checksums could not be verified
-     * @throws FileCorruptedCacheException If checksums do not match
-     * @throws NoSuchAlgorithmException If no suitable checksum algorithm is supported
-     * @throws IOException If an I/O error happened while computing the checksum
-     * @throws InterruptedException If the thread is interrupted
-     * @return Any checksum computed for the file
-     */
-    @Nonnull
-    Iterable<Checksum> verifyChecksum(RepositoryChannel channel, @Nonnull Iterable<Checksum> checksums)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException;
 }
