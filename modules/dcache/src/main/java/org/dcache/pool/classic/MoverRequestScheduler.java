@@ -776,9 +776,14 @@ public class MoverRequestScheduler
             }
 
             if (_cancellable != null) {
-                _cancellable.cancel(explanation);
+                String why = explanation == null
+                        ? "Active transfer cancelled"
+                        : ("Active transfer cancelled: " + explanation);
+                _cancellable.cancel(why);
             } else {
-                String why = explanation == null ? "Transfer cancelled" : ("Transfer cancelled: " + explanation);
+                String why = explanation == null
+                        ? "Queued transfer cancelled"
+                        : ("Queued transfer cancelled: " + explanation);
                 _mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, why);
             }
             _state = CANCELED;
