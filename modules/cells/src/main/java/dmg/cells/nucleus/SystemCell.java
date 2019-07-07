@@ -230,9 +230,9 @@ public class      SystemCell
                 for (Map.Entry<String,FractionalCpuUsage> e : map.entrySet()) {
                     String cell = e.getKey();
                     FractionalCpuUsage usage = e.getValue();
-                    String totalUsage = String.format("%.1f%", usage.getTotalUsage()*100);
-                    String systemUsage = String.format("%.1f%", usage.getSystemUsage()*100);
-                    String userUsage = String.format("%.1f%", usage.getUserUsage()*100);
+                    String totalUsage = String.format("%.1f%%", usage.getTotalUsage()*100);
+                    String systemUsage = String.format("%.1f%%", usage.getSystemUsage()*100);
+                    String userUsage = String.format("%.1f%%", usage.getUserUsage()*100);
                     columns.row().value("CELL", cell).value("TOTAL", totalUsage).value("SYSTEM", systemUsage).value("USER", userUsage);
                 }
             }
