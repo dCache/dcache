@@ -201,46 +201,6 @@ public class      SystemCell
         }
     }
 
-    @Command(name="cpu monitoring ls", hint="show CPU statistics")
-    public class CpuMonitoringLsCommand implements Callable<String>
-    {
-        @Option(name="cumulative")
-        private boolean isCumulative;
-
-        @Override
-        public String call() throws Exception
-        {
-            ColumnWriter columns = new ColumnWriter();
-            columns.left("CELL").space().right("TOTAL").space().right("SYSTEM").space().right("USER");
-
-            if (isCumulative) {
-                Map<String,CpuUsage> map = CellNucleus.getAccumulatedCellCpuUsage();
-
-                for (Map.Entry<String,CpuUsage> e : map.entrySet()) {
-                    String cell = e.getKey();
-                    CpuUsage usage = e.getValue();
-                    String totalUsage = usage.getTotal().toString();
-                    String systemUsage = usage.getSystem().toString();
-                    String userUsage = usage.getUser().toString();
-                    columns.row().value("CELL", cell).value("TOTAL", totalUsage).value("SYSTEM", systemUsage).value("USER", userUsage);
-                }
-            } else {
-                Map<String,FractionalCpuUsage> map = CellNucleus.getFractionalCellCpuUsage();
-
-                for (Map.Entry<String,FractionalCpuUsage> e : map.entrySet()) {
-                    String cell = e.getKey();
-                    FractionalCpuUsage usage = e.getValue();
-                    String totalUsage = String.format("%.1f%%", usage.getTotalUsage()*100);
-                    String systemUsage = String.format("%.1f%%", usage.getSystemUsage()*100);
-                    String userUsage = String.format("%.1f%%", usage.getUserUsage()*100);
-                    columns.row().value("CELL", cell).value("TOTAL", totalUsage).value("SYSTEM", systemUsage).value("USER", userUsage);
-                }
-            }
-
-            return columns.toString();
-        }
-    }
-
     private void shutdownSystem()
     {
         List<String> names = _nucleus.getCellNames();
