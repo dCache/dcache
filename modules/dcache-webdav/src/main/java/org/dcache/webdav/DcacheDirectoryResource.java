@@ -46,10 +46,10 @@ import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.MissingResourceCacheException;
+import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.vehicles.FileAttributes;
-
 
 import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
 
@@ -154,6 +154,8 @@ public class DcacheDirectoryResource
             throw WebDavExceptions.permissionDenied(this);
         } catch (FileExistsCacheException e) {
             throw new ConflictException(this);
+        } catch (NotFileCacheException e) { // Attempt to replace directory with file
+            throw new MethodNotAllowedException("Resource exists as collection", e, null);
         } catch (MissingResourceCacheException e) {
             if (FULL_POOL_MESSAGE.contains(e.getMessage())) {
                 throw new InsufficientStorageException(e.getMessage(), e, this);

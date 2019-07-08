@@ -99,6 +99,8 @@ public class DcacheStandardFilter implements Filter
             response.setLocationHeader(e.getUrl());
         } catch (MethodNotAllowedException e) {
             responseHandler.respondMethodNotAllowed(e.getResource(), response, request);
+            // Work-around: milton doesn't allow non-standard text, so we update the value here.
+            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED, e.getMessage());
         } catch (WebDavException e) {
             log.warn("Internal server error: {}", e.toString());
             responseHandler.respondServerError(request, response, e.getMessage());
