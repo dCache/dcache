@@ -102,7 +102,7 @@ public class CpuMonitoringTask implements Runnable
 
         public String toString()
         {
-            return id + name + group;
+            return "{id=" + id + ", name=" + name + ", group=" + group + "}";
         }
     }
 
@@ -156,6 +156,7 @@ public class CpuMonitoringTask implements Runnable
                     user = getUser();
                 }
                 newValue = new CpuUsage(system, user);
+                LOGGER.error("    updated new value {}", newValue);
             }
             CpuUsage difference = newValue.minus(_cpuUsage);
             _cpuUsage = newValue;
@@ -304,6 +305,7 @@ public class CpuMonitoringTask implements Runnable
         }
 
         if (userNanos > totalNanos) {
+            LOGGER.error("WORK_AROUND: userNanos ({}) larger than totalNanos ({})", userNanos, totalNanos);
             // This shouldn't happen, but some JVM implementations have
             // different resolutions for different types and seem to round value
             // up.  To compensate, we limit 'user' to 'total'.
