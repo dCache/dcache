@@ -444,11 +444,24 @@ public class ChimeraNameSpaceProvider
     private void checkAllowed(Set<FileType> allowed,
                               ExtendedInode inode) throws ChimeraFsException, NotDirCacheException, NotFileCacheException
     {
-        if (!allowed.contains(inode.getFileType())) {
-            if (allowed.contains(FileType.DIR)) {
-                throw new NotDirCacheException("Path exists but is not of the expected type");
+        FileType type = inode.getFileType();
+        if (!allowed.contains(type)) {
+            StringBuilder sb = new StringBuilder("Path exists and has type ")
+                    .append(type).append(", which is not ");
+            if (allowed.size() == 1) {
+                FileType allowedType = allowed.iterator().next();
+                sb.append(allowedType);
             } else {
-                throw new NotFileCacheException("Path exists but is not of the expected type");
+                String description = allowed.stream()
+                        .map(FileType::toString)
+                        .collect(Collectors.joining(", ", "{", "}"));
+                sb.append("one of ").append(description);
+            }
+
+            if (allowed.contains(FileType.DIR)) {
+                throw new NotDirCacheException(sb.toString());
+            } else {
+                throw new NotFileCacheException(sb.toString());
             }
         }
     }
