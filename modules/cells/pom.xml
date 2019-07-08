@@ -58,8 +58,9 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>com.google.code.findbugs</groupId>
-        <artifactId>annotations</artifactId>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-annotations</artifactId>
+        <scope>compile</scope>
     </dependency>
 
     <dependency>
