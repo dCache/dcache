@@ -1141,15 +1141,6 @@
                     <version>2.5.2</version>
                 </plugin>
                 <plugin>
-                    <groupId>com.github.spotbugs</groupId>
-                    <artifactId>spotbugs-maven-plugin</artifactId>
-                    <version>3.1.12</version>
-                    <configuration>
-                      <fork>true</fork>
-                      <jvmArgs>-Xmx2g</jvmArgs>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>org.datanucleus</groupId>
                     <artifactId>datanucleus-maven-plugin</artifactId>
                     <version>${datanucleus.plugin.version}</version>
@@ -1279,6 +1270,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>3.1.12</version>
                 <configuration>
                     <omitVisitors>FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods</omitVisitors>
                 </configuration>
@@ -1312,14 +1304,6 @@
                         </reports>
                     </reportSet>
                 </reportSets>
-            </plugin>
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>3.1.12</version>
-                <configuration>
-                    <omitVisitors>FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods</omitVisitors>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
