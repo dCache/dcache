@@ -10,6 +10,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
 
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.util.TimeUtils.TimeUnitFormat;
 
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
@@ -78,7 +79,10 @@ public class RedirectedTransfer<T> extends Transfer
             if (waitForMover(0)) {
                 throw new CacheException("Mover finished without redirect");
             } else if (!_isRedirected) {
-                throw new TimeoutCacheException("No redirect from mover");
+                StringBuilder sb = new StringBuilder("No redirect from mover on pool ")
+                        .append(getPool()).append(" after ");
+                TimeUtils.appendDuration(sb, millis, TimeUnit.MILLISECONDS, TimeUnitFormat.SHORT);
+                throw new TimeoutCacheException(sb.toString());
             }
         } finally {
             setStatus(null);
