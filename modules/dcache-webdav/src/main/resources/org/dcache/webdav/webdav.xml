@@ -263,6 +263,9 @@
       <description>List of handlers for HTTP requests</description>
       <property name="handlers">
           <list>
+              <bean class="org.dcache.webdav.CrossOriginResourceSharingHandler">
+                  <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
+              </bean>
               <bean class="org.eclipse.jetty.server.handler.ContextHandler">
                   <property name="contextPath" value="${webdav.static-content.location}"/>
                   <property name="handler">
@@ -524,7 +527,6 @@
 
                     <bean class="org.dcache.webdav.MiltonHandler">
                         <property name="httpManager" ref="http-manager"/>
-                        <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
                     </bean>
                     <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
                 </list>
@@ -555,7 +557,6 @@
                 <list>
                     <bean class="org.dcache.webdav.MiltonHandler">
                         <property name="httpManager" ref="http-manager"/>
-                        <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
                     </bean>
                     <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
                 </list>
