@@ -3,7 +3,12 @@ span.layout_precious
   color: red;
 }
 
-span.layout_used
+span.layout_sticky
+{
+  color: magenta;
+}
+
+span.layout_cached
 {
   color: green;
 }

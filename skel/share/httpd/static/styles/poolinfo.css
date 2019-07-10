@@ -62,7 +62,12 @@ span.layout_precious
   color: red;
 }
 
-span.layout_used
+span.layout_sticky
+{
+  color: magenta;
+}
+
+span.layout_cached
 {
   color: green;
 }
@@ -87,14 +92,14 @@ div.layout_precious
   height: 10px;
 }
 
-div.layout_rest
+div.layout_sticky
 {
   float: left;
   background: #ff00ff;
   height: 10px;
 }
 
-div.layout_used
+div.layout_cached
 {
   float: left;
   background: green;

@@ -35,7 +35,7 @@ public class PoolGroupInfoTableWriter
         double red     = round(100 * precious / (float)total);
         double green   = round(100 * removable / (float)total);
         double yellow  = round(100 * freespace / (float)total);
-        double blue    = Math.max(0, 100 - red - green - yellow);
+        double magenta = Math.max(0, 100 - red - green - yellow);
 
         _html.beginRow(classes);
         _html.td("group",    group);
@@ -45,8 +45,8 @@ public class PoolGroupInfoTableWriter
         _html.td("layout",
                 "<div>",
                 "<div class=\"layout_precious\" style=\"width: ", String.format(Locale.US, "%.1f", red), "%\"></div>",
-                "<div class=\"layout_rest\" style=\"width: ", String.format(Locale.US, "%.1f", blue), "%\"></div>",
-                "<div class=\"layout_used\" style=\"width: ", String.format(Locale.US, "%.1f", green), "%\"></div>",
+                "<div class=\"layout_sticky\" style=\"width: ", String.format(Locale.US, "%.1f", magenta), "%\"></div>",
+                "<div class=\"layout_cached\" style=\"width: ", String.format(Locale.US, "%.1f", green), "%\"></div>",
                 "<div class=\"layout_free\" style=\"width: ", String.format(Locale.US, "%.1f", yellow), "%\"></div>",
                 "</div>");
         _html.endRow();
@@ -62,7 +62,8 @@ public class PoolGroupInfoTableWriter
                          "precious", "Precious Space/MB",
                          "layout",   "<span>Layout   " +
                           "(<span class=\"layout_precious\">precious/</span>" +
-                          "<span class=\"layout_used\">used/</span>" +
+                          "<span class=\"layout_sticky\">sticky/</span>" +
+                          "<span class=\"layout_cached\">cached/</span>" +
                           "<span class=\"layout_free\">free</span>)</span>");
 
         for (Map.Entry<String,Collection<Object>> entry : info.entrySet()) {
