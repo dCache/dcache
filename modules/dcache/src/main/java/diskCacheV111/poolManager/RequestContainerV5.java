@@ -1653,9 +1653,9 @@ public class RequestContainerV5
               break ;
               case ST_WAITING_FOR_POOL_2_POOL :
                  _log.debug( "stateEngine: case ST_WAITING_FOR_POOL_2_POOL");
-                 if( inputObject instanceof Message ){
+                 if( inputObject instanceof Pool2PoolTransferMsg ){
 
-                    if( ( rc =  exercisePool2PoolReply((Message)inputObject) ) == RequestStatusCode.OK ){
+                    if( ( rc =  exercisePool2PoolReply((Pool2PoolTransferMsg)inputObject) ) == RequestStatusCode.OK ){
                         if (_parameter._p2pForTransfer && ! _enforceP2P) {
                             setError(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to p2p transfer");
@@ -1685,14 +1685,18 @@ public class RequestContainerV5
                     _log.info("Ping reported that request died.");
                     setError(CacheException.TIMEOUT, "Replication timed out");
                     errorHandler();
+                } else if (inputObject != null) {
+                    _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
+                    setError(102,"Unexpected message type " + inputObject.getClass());
+                    errorHandler() ;
                 }
 
               break ;
               case ST_WAITING_FOR_STAGING :
                  _log.debug( "stateEngine: case ST_WAITING_FOR_STAGING" );
-                 if( inputObject instanceof Message ){
+                 if( inputObject instanceof PoolFetchFileMessage ){
 
-                    if( ( rc =  exerciseStageReply( (Message)inputObject ) ) == RequestStatusCode.OK ){
+                    if( ( rc =  exerciseStageReply( (PoolFetchFileMessage)inputObject ) ) == RequestStatusCode.OK ){
                         if (_parameter._p2pForTransfer) {
                             setError(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to stage");
@@ -1716,6 +1720,10 @@ public class RequestContainerV5
                     _log.info("Ping reported that request died.");
                     setError(CacheException.TIMEOUT, "Staging timed out");
                     errorHandler();
+                } else if (inputObject != null) {
+                     _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
+                     setError(102,"Unexpected message type " + inputObject.getClass());
+                     errorHandler() ;
                 }
                 break;
             case ST_SUSPENDED:
@@ -1824,89 +1832,44 @@ public class RequestContainerV5
             }
         }
 
-        private RequestStatusCode exerciseStageReply( Message messageArrived ){
-           try{
+        private RequestStatusCode exerciseStageReply(PoolFetchFileMessage reply) {
 
-              if( messageArrived instanceof PoolFetchFileMessage ){
-                 PoolFetchFileMessage reply = (PoolFetchFileMessage)messageArrived ;
+            RequestStatusCode rc;
+            _currentRc = reply.getReturnCode();
 
-                 RequestStatusCode rc;
-                 _currentRc = reply.getReturnCode();
+            switch (_currentRc) {
+                case 0:
+                    // best candidate is the right one
+                    rc = RequestStatusCode.OK;
+                    break;
+                case CacheException.HSM_DELAY_ERROR:
+                    _currentRm = "Suspend by HSM request : " + reply.getErrorObject() == null
+                            ? "No info" : reply.getErrorObject().toString();
+                    rc = RequestStatusCode.DELAY;
+                    break;
+                default:
+                    _currentRm = reply.getErrorObject() == null
+                            ? ("Error=" + _currentRc) : reply.getErrorObject().toString();
 
-                 switch(_currentRc) {
-                     case 0:
-                         // best candidate is the right one
-                         rc = RequestStatusCode.OK;
-                         break;
-                     case CacheException.HSM_DELAY_ERROR:
-                         _currentRm = "Suspend by HSM request : " + reply.getErrorObject() == null ?
-                                 "No info" : reply.getErrorObject().toString() ;
-                         rc = RequestStatusCode.DELAY;
-                         break;
-                     default:
-                         _currentRm = reply.getErrorObject() == null ?
-                                 ( "Error="+_currentRc ) : reply.getErrorObject().toString() ;
+                    rc = RequestStatusCode.ERROR;
+            }
 
-                         rc =  RequestStatusCode.ERROR ;
-                 }
-
-                 return rc;
-
-              }else{
-                 throw new
-                 CacheException(204,"Invalid message arrived : "+
-                                messageArrived.getClass().getName());
-
-              }
-           } catch (CacheException e) {
-              _currentRc = e.getRc();
-              _currentRm = e.getMessage();
-              _log.warn("exerciseStageReply: {} ", e.toString());
-              return RequestStatusCode.ERROR;
-           } catch (RuntimeException e) {
-              _currentRc = 102;
-              _currentRm = e.getMessage();
-              _log.error("exerciseStageReply", e) ;
-              return RequestStatusCode.ERROR;
-           }
+            return rc;
         }
 
-        private RequestStatusCode exercisePool2PoolReply( Message messageArrived ){
-           try{
+        private RequestStatusCode exercisePool2PoolReply(Pool2PoolTransferMsg reply) {
 
-              if( messageArrived instanceof Pool2PoolTransferMsg ){
-                 Pool2PoolTransferMsg reply = (Pool2PoolTransferMsg)messageArrived ;
-                 _log.info("Pool2PoolTransferMsg replied with : {}", reply);
-                 if( ( _currentRc = reply.getReturnCode() ) == 0 ){
-                     _poolCandidate = _p2pDestinationPool;
-                    return RequestStatusCode.OK ;
+            _log.info("Pool2PoolTransferMsg replied with : {}", reply);
+            if ((_currentRc = reply.getReturnCode()) == 0) {
+                _poolCandidate = _p2pDestinationPool;
+                return RequestStatusCode.OK;
 
-                 }else{
+            } else {
+                _currentRm = reply.getErrorObject() == null
+                        ? ("Error=" + _currentRc) : reply.getErrorObject().toString();
 
-                    _currentRm = reply.getErrorObject() == null ?
-                                 ( "Error="+_currentRc ) : reply.getErrorObject().toString() ;
-
-                    return RequestStatusCode.ERROR ;
-
-                 }
-              }else{
-
-                 throw new
-                 CacheException(205,"Invalid message arrived : "+
-                                messageArrived.getClass().getName());
-
-              }
-           } catch (CacheException e) {
-               _currentRc = e.getRc();
-               _currentRm = e.getMessage();
-               _log.warn("exercisePool2PoolReply: {}", e.toString());
-               return RequestStatusCode.ERROR;
-           } catch (RuntimeException e) {
-               _currentRc = 102;
-               _currentRm = e.getMessage();
-               _log.error("exercisePool2PoolReply", e);
-               return RequestStatusCode.ERROR;
-           }
+                return RequestStatusCode.ERROR;
+            }
         }
         //
         //  calculate :
