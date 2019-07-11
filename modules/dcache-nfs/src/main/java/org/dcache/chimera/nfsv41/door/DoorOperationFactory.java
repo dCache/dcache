@@ -48,8 +48,8 @@ import org.dcache.nfs.v4.AttributeMap;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.OperationCREATE;
-import org.dcache.nfs.v4.OperationOPEN;
 import org.dcache.nfs.v4.OperationGETATTR;
+import org.dcache.nfs.v4.OperationOPEN;
 import org.dcache.nfs.v4.OperationRENAME;
 import org.dcache.nfs.v4.OperationSETATTR;
 import org.dcache.nfs.v4.Stateids;
@@ -63,18 +63,29 @@ import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.oncrpc4j.rpc.OncRpcException;
+import org.dcache.oncrpc4j.rpc.RpcAuthType;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.google.common.base.Throwables.getRootCause;
+import java.security.Principal;
+import java.security.PrivilegedAction;
+import java.util.Optional;
+import javax.security.auth.Subject;
+import org.dcache.auth.Origin;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
+import org.dcache.chimera.nfsv41.door.proxy.ProxyIoREAD;
+import org.dcache.chimera.nfsv41.door.proxy.ProxyIoWRITE;
+
 
 /**
- * A version of {@link MDSOperationFactory} which will record access log
- * for operation which modify backend file system (CREATE, REMOVE, RENAME
- * and SETATTR).
+ * A version of {@link MDSOperationFactory} which will adds dCache specific
+ * behavior, like access log file and proxy-io.
  */
-public class AccessLogAwareOperationFactory extends MDSOperationFactory {
+public class DoorOperationFactory extends MDSOperationFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AccessLogAwareOperationFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DoorOperationFactory.class);
     private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.nfs");
 
     private static final String[] TYPES = {
@@ -95,8 +106,22 @@ public class AccessLogAwareOperationFactory extends MDSOperationFactory {
     private final LoadingCache<FsInode, String> _pathCache;
     private final AccessLogMode _accessLogMode;
     private final Function<FsInode, String> _inode2path;
+    private final ProxyIoFactory _proxyIoFactory;
 
-    public AccessLogAwareOperationFactory(ChimeraVfs fs, JdbcFs jdbcFs, AccessLogMode accessLogMode) {
+    private final Function<nfs_argop4, AbstractNFSv4Operation> createOp;
+    private final Function<nfs_argop4, AbstractNFSv4Operation> openOp;
+    private final Function<nfs_argop4, AbstractNFSv4Operation> removeOp;
+    private final Function<nfs_argop4, AbstractNFSv4Operation> renameOp;
+    private final Function<nfs_argop4, AbstractNFSv4Operation> setattrOp;
+
+    private final Optional<LoadingCache<Principal, Subject>> _subjectCache;
+
+
+    public DoorOperationFactory(ProxyIoFactory proxyIoFactory, ChimeraVfs fs,
+            JdbcFs jdbcFs, Optional<StrategyIdMapper> subjectMapper,
+            AccessLogMode accessLogMode) {
+
+        _proxyIoFactory = proxyIoFactory;
         _vfs = fs;
         _jdbcFs = jdbcFs;
         _pathCache = CacheBuilder.newBuilder()
@@ -104,9 +129,24 @@ public class AccessLogAwareOperationFactory extends MDSOperationFactory {
                 .expireAfterWrite(30, TimeUnit.SECONDS)
                 .softValues()
                 .build(new ParentPathLoader());
+
         _accessLogMode = accessLogMode;
 
-        switch(_accessLogMode) {
+        if (accessLogMode == AccessLogMode.NONE) {
+            createOp = (a) -> super.getOperation(a);
+            openOp = (a) -> super.getOperation(a);
+            removeOp = (a) -> super.getOperation(a);
+            renameOp = (a) -> super.getOperation(a);
+            setattrOp = (a) -> super.getOperation(a);
+        } else {
+            createOp = (a) -> new OpCreate(a);
+            openOp = (a) -> new OpOpen(a);
+            removeOp = (a) -> new OpRemove(a);
+            renameOp = (a) -> new OpRename(a);
+            setattrOp = (a) -> new OpSetattr(a);
+        }
+
+        switch (_accessLogMode) {
             case FULL:
                 _inode2path = i -> {
                     try {
@@ -122,38 +162,100 @@ public class AccessLogAwareOperationFactory extends MDSOperationFactory {
                 _inode2path = i -> "inode:" + i;
                 break;
             case NONE:
-                 _inode2path = i -> {
-                     throw new RuntimeException("AccessLog mode NONE should not use inode mapping");
-                 };
-                 break;
+                _inode2path = i -> {
+                    throw new RuntimeException("AccessLog mode NONE should not use inode mapping");
+                };
+                break;
             default:
                 throw new RuntimeException("Never reached");
+        }
+
+        if (subjectMapper.isPresent()) {
+            CacheLoader<Principal, Subject> loader = new CacheLoader<Principal, Subject>() {
+                @Override
+                public Subject load(Principal key) throws Exception {
+                    Subject in = new Subject();
+                    in.getPrincipals().add(key);
+                    return subjectMapper.get().login(in);
+                }
+            };
+
+            _subjectCache = Optional.of(CacheBuilder.newBuilder()
+                    .maximumSize(2048)
+                    .expireAfterWrite(10, TimeUnit.MINUTES)
+                    .build(loader));
+        } else {
+            _subjectCache = Optional.empty();
         }
     }
 
     @Override
     public AbstractNFSv4Operation getOperation(nfs_argop4 op) {
 
-        if (_accessLogMode == AccessLogMode.NONE) {
-            return super.getOperation(op);
+        final AbstractNFSv4Operation operation;
+        switch (op.argop) {
+            case nfs_opnum4.OP_READ:
+                operation = new ProxyIoREAD(op, _proxyIoFactory);
+                break;
+            case nfs_opnum4.OP_WRITE:
+                operation = new ProxyIoWRITE(op, _proxyIoFactory);
+                break;
+            case nfs_opnum4.OP_REMOVE:
+                operation = removeOp.apply(op);
+                break;
+            case nfs_opnum4.OP_CREATE:
+                operation = createOp.apply(op);
+                break;
+            case nfs_opnum4.OP_RENAME:
+                operation = renameOp.apply(op);
+                break;
+            case nfs_opnum4.OP_OPEN:
+                operation = openOp.apply(op);
+                break;
+            case nfs_opnum4.OP_SETATTR:
+                operation = setattrOp.apply(op);
+                break;
+            case nfs_opnum4.OP_LAYOUTCOMMIT:
+                operation = new OpLayoutCommit(op);
+                break;
+            default:
+                operation = super.getOperation(op);
         }
 
-        switch (op.argop) {
-            case nfs_opnum4.OP_REMOVE:
-                return new OpRemove(op);
-            case nfs_opnum4.OP_CREATE:
-                return new OpCreate(op);
-            case nfs_opnum4.OP_RENAME:
-                return new OpRename(op);
-            case nfs_opnum4.OP_OPEN:
-                return new OpOpen(op);
-            case nfs_opnum4.OP_SETATTR:
-                return new OpSetattr(op);
-            case nfs_opnum4.OP_LAYOUTCOMMIT:
-                return new OpLayoutCommit(op);
-            default:
-                return super.getOperation(op);
-        }
+        return new AbstractNFSv4Operation(op, op.argop) {
+            @Override
+            public void process(CompoundContext context, nfs_resop4 result) throws ChimeraNFSException, IOException, OncRpcException {
+                Optional<IOException> optionalException = Subject.doAs(context.getSubject(), (PrivilegedAction<Optional<IOException>>) () -> {
+                    try {
+                        Subject subject = context.getSubject();
+
+                        if (!subject.isReadOnly()) {
+
+                            if (_subjectCache.isPresent() && context.getRpcCall().getCredential().type() == RpcAuthType.UNIX) {
+                                long[] gids = Subjects.getGids(subject);
+                                if (gids.length >= 16) {
+                                    long uid = Subjects.getUid(subject);
+                                    UidPrincipal uidPrincipal = new UidPrincipal(uid);
+                                    subject = _subjectCache.get().getUnchecked(uidPrincipal);
+                                    context.getSubject().getPrincipals().addAll(subject.getPrincipals());
+                                }
+                            }
+
+                            context.getSubject().getPrincipals().add(new Origin(context.getRemoteSocketAddress().getAddress()));
+                        }
+                        operation.process(context, result);
+                    } catch (IOException e) {
+                        return Optional.of(e);
+                    }
+                    return Optional.empty();
+                });
+
+                if (optionalException.isPresent()) {
+                    throw optionalException.get();
+                }
+            }
+        };
+
     }
 
     // FIXME: Remove with migration to nfs4j-0.19

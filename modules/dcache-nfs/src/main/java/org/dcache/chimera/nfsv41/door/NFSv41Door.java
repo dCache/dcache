@@ -85,7 +85,6 @@ import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.nfsv41.door.proxy.NfsProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
-import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.poolmanager.PoolManagerStub;
@@ -414,15 +413,13 @@ public class NFSv41Door extends AbstractCellComponent implements
                             .withExportFile(_exportFile)
                             .withVfs(_vfs)
                             .withOperationFactory(
-                                    new ProxyIoMdsOpFactory(
+                                    new DoorOperationFactory(
                                             _proxyIoFactory,
-                                            new AccessLogAwareOperationFactory(
-                                                    _chimeraVfs,
-                                                    _fileFileSystemProvider,
-                                                    _accessLogMode),
+                                            _chimeraVfs,
+                                            _fileFileSystemProvider,
                                             _manageGids ? Optional.of(_idMapper)
-                                                    : Optional.empty()
-                                    )
+                                                    : Optional.empty(),
+                                            _accessLogMode)
                             )
                             .build();
 
