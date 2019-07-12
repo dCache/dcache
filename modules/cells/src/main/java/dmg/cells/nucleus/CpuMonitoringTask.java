@@ -44,6 +44,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import dmg.util.ThreadGroups;
+
 import static dmg.util.ThreadGroups.rootThreadGroup;
 import static java.util.Arrays.asList;
 
@@ -208,31 +210,30 @@ public class CpuMonitoringTask implements Runnable
         Instant thisUpdate = Instant.now();
 
         try {
-            List<Thread> liveThreads = discoverAllThreads();
+            List<Thread> liveThreads = ThreadGroups.threadsInGroup(_rootThreadGroup);
 
-            List<Long> liveIds = new ArrayList<>(_threadInfos.size());
+            List<Long> liveIds = new ArrayList<>(liveThreads.size());
 
             Map<String,CpuUsage> cellCpuUsage = new HashMap<>();
             for (Thread liveThread : liveThreads) {
-                Long id = liveThread.getId();
-                liveIds.add(id);
+                Optional<CpuUsage> cumulativeUsage = cumulativeUsage(liveThread.getId());
 
-                Optional<CpuUsage> cumulativeUsage = cumulativeUsage(id);
+                cumulativeUsage.ifPresent(u -> {
+                            Long id = liveThread.getId();
 
-                if (cumulativeUsage.isPresent()) {
-                    ThreadInfo info = _threadInfos.computeIfAbsent(id, i -> {
-                                String cell = _glue.cellNameFor(liveThread.getThreadGroup()).orElse("UNKNOWN");
-                                return new ThreadInfo(cell);
-                            });
+                            liveIds.add(id);
 
-                    LOGGER.error("Thread {} advanced from {} to {}", id, info, cumulativeUsage);
+                            ThreadInfo info = _threadInfos.computeIfAbsent(id, i -> {
+                                        String cell = _glue.cellNameFor(liveThread.getThreadGroup()).orElse("UNKNOWN");
+                                        return new ThreadInfo(cell);
+                                    });
 
-                    CpuUsage increaseUsage = info.advanceTo(cumulativeUsage.get());
-                    String cell = info.getCellName();
-                    cellCpuUsage.compute(cell, (k,v) -> v == null ? increaseUsage : v.plus(increaseUsage));
-                } else {
-                    liveIds.remove(id);
-                }
+                            LOGGER.error("Thread {} advanced from {} to {}", id, info, u);
+
+                            CpuUsage increaseUsage = info.advanceTo(u);
+                            String cell = info.getCellName();
+                            cellCpuUsage.compute(cell, (k,v) -> v == null ? increaseUsage : v.plus(increaseUsage));
+                        });
             }
 
             _threadInfos.keySet().retainAll(liveIds);
@@ -279,18 +280,5 @@ public class CpuMonitoringTask implements Runnable
         Duration system = Duration.ofNanos(totalNanos-userNanos);
 
         return Optional.of(new CpuUsage(system, user));
-    }
-
-    private List<Thread> discoverAllThreads()
-    {
-        int arraySize = _rootThreadGroup.activeCount() + 10; // +10 to allow for slightly more threads than activeCount
-        Thread[] allThreads = new Thread[arraySize];
-        int threadCount = _rootThreadGroup.enumerate(allThreads);
-        while (threadCount == arraySize) {
-            arraySize += 10;
-            allThreads = new Thread[arraySize];
-            threadCount = _rootThreadGroup.enumerate(allThreads);
-        }
-        return asList(allThreads).subList(0, threadCount);
     }
 }
