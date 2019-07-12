@@ -217,16 +217,16 @@ public class CpuMonitoringTask implements Runnable
                 Long id = liveThread.getId();
                 liveIds.add(id);
 
-                ThreadInfo info = _threadInfos.computeIfAbsent(id, i -> {
-                            String cell = _glue.cellNameFor(liveThread.getThreadGroup());
-                            return new ThreadInfo(cell);
-                        });
-
                 Optional<CpuUsage> cumulativeUsage = cumulativeUsage(id);
 
-                LOGGER.error("Thread {} advanced from {} to {}", id, info, cumulativeUsage);
-
                 if (cumulativeUsage.isPresent()) {
+                    ThreadInfo info = _threadInfos.computeIfAbsent(id, i -> {
+                                String cell = _glue.cellNameFor(liveThread.getThreadGroup()).orElse("UNKNOWN");
+                                return new ThreadInfo(cell);
+                            });
+
+                    LOGGER.error("Thread {} advanced from {} to {}", id, info, cumulativeUsage);
+
                     CpuUsage increaseUsage = info.advanceTo(cumulativeUsage.get());
                     String cell = info.getCellName();
                     cellCpuUsage.compute(cell, (k,v) -> v == null ? increaseUsage : v.plus(increaseUsage));

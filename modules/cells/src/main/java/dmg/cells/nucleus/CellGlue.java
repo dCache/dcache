@@ -741,10 +741,10 @@ class CellGlue
         _killerExecutor.shutdown();
     }
 
-    String cellNameFor(ThreadGroup group)
+    Optional<String> cellNameFor(ThreadGroup group)
     {
         if (group == null) {
-            return "UNKNOWN";
+            return Optional.empty();
         }
 
         Optional<String> cell = _cellList.entrySet().stream()
@@ -753,6 +753,6 @@ class CellGlue
                 .findAny();
 
 
-        return cell.orElse(cellNameFor(group.getParent()));
+        return cell.isPresent() ? cell : cellNameFor(group.getParent());
     }
 }
