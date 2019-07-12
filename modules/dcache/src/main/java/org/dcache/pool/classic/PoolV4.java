@@ -78,7 +78,6 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -1226,13 +1225,6 @@ public class PoolV4
         }
 
         return null;
-    }
-
-    public PoolUpdateCacheStatisticsMessage
-        messageArrived(PoolUpdateCacheStatisticsMessage msg)
-    {
-        msg.setSucceeded();
-        return msg;
     }
 
     public Reply messageArrived(CellMessage envelope, PoolRemoveFilesMessage msg)
