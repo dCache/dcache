@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -45,7 +45,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.OutOfDiskException;
@@ -87,8 +86,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     private volatile Optional<RepositoryChannel> _channel = Optional.empty();
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-                         TransferService<M> transferService,
-                         ChecksumModule checksumModule)
+                         TransferService<M> transferService)
     {
         TypeToken<M> type = new TypeToken<M>(getClass()) {};
         checkArgument(type.isSupertypeOf(getClass()));

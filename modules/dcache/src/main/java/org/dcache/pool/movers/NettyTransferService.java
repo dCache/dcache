@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -64,7 +64,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -125,9 +124,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     /** Service to post process movers. */
     private PostTransferService postTransferService;
 
-    /** Service to calculate and verify checksums. */
-    protected ChecksumModule checksumModule;
-
     /** Timeout for when to disconnect an idle client. */
     protected long clientIdleTimeout;
     protected TimeUnit clientIdleTimeoutUnit;
@@ -144,12 +140,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     public NettyTransferService(String name)
     {
         this.name = name;
-    }
-
-    @Required
-    public void setChecksumModule(ChecksumModule checksumModule)
-    {
-        this.checksumModule = checksumModule;
     }
 
     @Required
@@ -356,7 +346,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                                 CellPath pathToDoor) throws CacheException
     {
         return new NettyMover<>(handle, message, pathToDoor, this,
-                                createUuid((P) message.getProtocolInfo()), checksumModule);
+                                createUuid((P) message.getProtocolInfo()));
     }
 
     @Override
