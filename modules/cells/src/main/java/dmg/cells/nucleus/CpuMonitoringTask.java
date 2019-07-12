@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static dmg.util.ThreadGroups.rootThreadGroup;
 import static java.util.Arrays.asList;
 
 /**
@@ -278,17 +279,6 @@ public class CpuMonitoringTask implements Runnable
         Duration system = Duration.ofNanos(totalNanos-userNanos);
 
         return Optional.of(new CpuUsage(system, user));
-    }
-
-    private ThreadGroup rootThreadGroup()
-    {
-        ThreadGroup root = Thread.currentThread().getThreadGroup();
-        ThreadGroup parent = root.getParent();
-        while (parent != null) {
-            root = parent;
-            parent = root.getParent();
-        }
-        return root;
     }
 
     private List<Thread> discoverAllThreads()

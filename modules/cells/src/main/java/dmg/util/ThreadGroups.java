@@ -32,6 +32,17 @@ public class ThreadGroups
         // Utility class should not be instantiated.
     }
 
+    public static ThreadGroup rootThreadGroup()
+    {
+        ThreadGroup root = Thread.currentThread().getThreadGroup();
+        ThreadGroup parent = root.getParent();
+        while (parent != null) {
+            root = parent;
+            parent = root.getParent();
+        }
+        return root;
+    }
+
     public static List<Thread> threadsInGroup(ThreadGroup threadgroup)
     {
         /*
