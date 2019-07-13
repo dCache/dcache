@@ -276,10 +276,10 @@ class CellGlue
         return (nucleus == null) ? null : nucleus._getCellInfo();
     }
 
-    Thread[] getThreads(String name)
+    Optional<List<Thread>> getThreads(String name)
     {
-        CellNucleus nucleus = getCell(name);
-        return (nucleus == null) ? null : nucleus.getThreads();
+        Optional<CellNucleus> nucleus = Optional.ofNullable(getCell(name));
+        return nucleus.map(CellNucleus::getThreads);
     }
 
     private void sendToAll(CellEvent event)

@@ -24,6 +24,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import dmg.util.AuthorizedString;
 import dmg.util.command.Command;
@@ -245,18 +246,11 @@ public class      SystemCell
         pw.println(" Cells (Threads)");
         for (String name: _nucleus.getCellNames()) {
             pw.append(" ").append(name).append("(");
-            Thread[] threads = _nucleus.getThreads(name);
-            if (threads != null) {
-                boolean first = true;
-                for (Thread thread: threads) {
-                    pw.print(thread.getName());
-                    if (first) {
-                        first = false;
-                    } else {
-                        pw.print(",");
-                    }
-                }
-            }
+            _nucleus.getThreads(name)
+                    .map(threads -> threads.stream()
+                                .map(Thread::getName)
+                                .collect(Collectors.joining(",")))
+                    .ifPresent(pw::append);
             pw.println(")");
         }
     }

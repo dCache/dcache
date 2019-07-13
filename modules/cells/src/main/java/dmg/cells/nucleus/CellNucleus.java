@@ -47,6 +47,7 @@ import java.util.function.BiConsumer;
 
 import dmg.cells.zookeeper.CellCuratorFramework;
 import dmg.util.Pinboard;
+import dmg.util.ThreadGroups;
 import dmg.util.logback.FilterThresholdSet;
 import dmg.util.logback.RootFilterThresholds;
 
@@ -806,24 +807,12 @@ public class CellNucleus implements ThreadFactory
     //
     //  package
     //
-    Thread [] getThreads(String cellName) {
+    Optional<List<Thread>> getThreads(String cellName) {
         return __cellGlue.getThreads(cellName);
     }
     public ThreadGroup getThreadGroup() { return _threads; }
-    Thread [] getThreads() {
-        if (_threads == null) {
-            return new Thread[0];
-        }
-
-        int threadCount = _threads.activeCount();
-        Thread [] list  = new Thread[threadCount];
-        int rc = _threads.enumerate(list);
-        if (rc == list.length) {
-            return list;
-        }
-        Thread [] ret = new Thread[rc];
-        System.arraycopy(list, 0, ret, 0, rc);
-        return ret;
+    List<Thread> getThreads() {
+        return ThreadGroups.threadsInGroup(_threads);
     }
 
     private String getUnique() {

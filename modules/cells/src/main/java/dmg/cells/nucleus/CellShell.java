@@ -1050,13 +1050,11 @@ public class CellShell extends CommandInterpreter
                                 .header("Name").left("name").space()
                                 .header("Priority").right("priority").space()
                                 .header("State").left("state");
-                        Thread[] threads = _nucleus.getThreads(name);
-                        for (int j = 0; j < threads.length && threads[j] != null; j++) {
-                            Thread t = threads [j];
-                            threadsInfo.row().value("name", t.getName())
-                                    .value("priority", t.getPriority())
-                                    .value("state", (t.isAlive() ? "A" : "-") + (t.isDaemon() ? "D" : "-") + (t.isInterrupted() ? "I" : "-"));
-                        }
+                        _nucleus.getThreads(name).ifPresent(threads -> threads.forEach(t ->
+                                    threadsInfo.row().value("name", t.getName())
+                                            .value("priority", t.getPriority())
+                                            .value("state", (t.isAlive() ? "A" : "-") + (t.isDaemon() ? "D" : "-") + (t.isInterrupted() ? "I" : "-"))
+                                ));
 
                         sb.append('\n').append(firstIndentation).append("-- Threads --\n").append(threadsInfo);
 
