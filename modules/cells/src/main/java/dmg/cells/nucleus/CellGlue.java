@@ -9,7 +9,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -18,26 +17,20 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 import java.io.Serializable;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import dmg.util.CpuUsage;
-import dmg.util.FractionalCpuUsage;
 import dmg.util.TimebasedCounter;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -67,12 +60,6 @@ class CellGlue
     private final CellAddressCore _domainAddress;
     private final CuratorFramework _curatorFramework;
     private final Optional<String> _zone;
-    private volatile Map<String,CpuUsage> accumulatedCellCpuUsage = Collections.emptyMap();
-    private volatile Map<String,FractionalCpuUsage> fractionalCellCpuUsage = Collections.emptyMap();
-
-    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-    private final CpuMonitoringTask cpuMonitor;
-
 
     CellGlue(String cellDomainName, @Nonnull CuratorFramework curatorFramework,
             Optional<String> zone)
@@ -108,7 +95,6 @@ class CellGlue
                                        killerThreadFactory);
         emergencyKillerExecutor.prestartCoreThread();
         _emergencyKillerExecutor = MoreExecutors.listeningDecorator(emergencyKillerExecutor);
-        cpuMonitor = new CpuMonitoringTask(this, executor);
     }
 
     private static CuratorFramework withMonitoring(CuratorFramework curator)
@@ -140,46 +126,6 @@ class CellGlue
                     EVENT_LOGGER.warn("[CURATOR: {}] unhandled error \"{}\": {}",
                             curator.getState(), m, e.getMessage()));
         return curator;
-    }
-
-    void startCpuMonitoring()
-    {
-        cpuMonitor.start();
-    }
-
-    void stopCpuMonitoring()
-    {
-        cpuMonitor.stop();
-    }
-
-    Duration getUpdateDelay()
-    {
-        return cpuMonitor.getUpdateDelay();
-    }
-
-    void setUpdateDelay(Duration delay)
-    {
-        cpuMonitor.setUpdateDelay(delay);
-    }
-
-    void setAccumulatedCellCpuUsage(Map<String,CpuUsage> usage)
-    {
-        accumulatedCellCpuUsage = ImmutableMap.copyOf(usage);
-    }
-
-    Map<String,CpuUsage> getAccumulatedCellCpuUsage()
-    {
-        return accumulatedCellCpuUsage;
-    }
-
-    void setCurrentCellCpuUsage(Map<String,FractionalCpuUsage> usage)
-    {
-        fractionalCellCpuUsage = ImmutableMap.copyOf(usage);
-    }
-
-    Map<String,FractionalCpuUsage> getFractionalCellCpuUsage()
-    {
-        return fractionalCellCpuUsage;
     }
 
     static Thread newThread(ThreadGroup threadGroup, Runnable r)
@@ -330,10 +276,10 @@ class CellGlue
         return (nucleus == null) ? null : nucleus._getCellInfo();
     }
 
-    Optional<List<Thread>> getThreads(String name)
+    Thread[] getThreads(String name)
     {
-        Optional<CellNucleus> nucleus = Optional.ofNullable(getCell(name));
-        return nucleus.map(CellNucleus::getThreads);
+        CellNucleus nucleus = getCell(name);
+        return (nucleus == null) ? null : nucleus.getThreads();
     }
 
     private void sendToAll(CellEvent event)
@@ -739,20 +685,5 @@ class CellGlue
     {
         _curatorFramework.close();
         _killerExecutor.shutdown();
-    }
-
-    Optional<String> cellNameFor(ThreadGroup group)
-    {
-        if (group == null) {
-            return Optional.empty();
-        }
-
-        Optional<String> cell = _cellList.entrySet().stream()
-                .filter(e -> e.getValue().getThreadGroup().equals(group))
-                .map(Map.Entry::getKey)
-                .findAny();
-
-
-        return cell.isPresent() ? cell : cellNameFor(group.getParent());
     }
 }

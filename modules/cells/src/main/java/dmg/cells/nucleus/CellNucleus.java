@@ -19,7 +19,6 @@ import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,10 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import dmg.cells.zookeeper.CellCuratorFramework;
-import dmg.util.CpuUsage;
-import dmg.util.FractionalCpuUsage;
 import dmg.util.Pinboard;
-import dmg.util.ThreadGroups;
 import dmg.util.logback.FilterThresholdSet;
 import dmg.util.logback.RootFilterThresholds;
 
@@ -259,38 +255,6 @@ public class CellNucleus implements ThreadFactory
         checkState(__cellGlue == null);
         __cellGlue = new CellGlue(cellDomainName, curatorFramework, zone);
     }
-
-    public static void startCpuMonitoring()
-    {
-        __cellGlue.startCpuMonitoring();
-    }
-
-    public static void stopCpuMonitoring()
-    {
-        __cellGlue.stopCpuMonitoring();
-    }
-
-    public static void setCpuMonitoringDelay(Duration delay)
-    {
-        __cellGlue.setUpdateDelay(delay);
-    }
-
-    public static Duration getCpuMonitoringDelay()
-    {
-        return __cellGlue.getUpdateDelay();
-    }
-
-    public static Map<String,CpuUsage> getAccumulatedCellCpuUsage()
-    {
-        return __cellGlue.getAccumulatedCellCpuUsage();
-    }
-
-
-    public static Map<String,FractionalCpuUsage> getFractionalCellCpuUsage()
-    {
-        return __cellGlue.getFractionalCellCpuUsage();
-    }
-
 
     public static void startCurator()
     {
@@ -842,12 +806,24 @@ public class CellNucleus implements ThreadFactory
     //
     //  package
     //
-    Optional<List<Thread>> getThreads(String cellName) {
+    Thread [] getThreads(String cellName) {
         return __cellGlue.getThreads(cellName);
     }
     public ThreadGroup getThreadGroup() { return _threads; }
-    List<Thread> getThreads() {
-        return ThreadGroups.threadsInGroup(_threads);
+    Thread [] getThreads() {
+        if (_threads == null) {
+            return new Thread[0];
+        }
+
+        int threadCount = _threads.activeCount();
+        Thread [] list  = new Thread[threadCount];
+        int rc = _threads.enumerate(list);
+        if (rc == list.length) {
+            return list;
+        }
+        Thread [] ret = new Thread[rc];
+        System.arraycopy(list, 0, ret, 0, rc);
+        return ret;
     }
 
     private String getUnique() {

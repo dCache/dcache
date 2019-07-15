@@ -14,7 +14,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,19 +24,13 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import dmg.util.AuthorizedString;
-import dmg.util.CpuUsage;
-import dmg.util.FractionalCpuUsage;
-import dmg.util.command.Argument;
 import dmg.util.command.Command;
-import dmg.util.command.Option;
 import dmg.util.logback.FilterShell;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
-import org.dcache.util.ColumnWriter;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -151,56 +144,6 @@ public class      SystemCell
         }
     }
 
-    @Command(name="cpu monitoring start", hint="start monitoring CPU usage per cell")
-    public class CpuMonitoringStartCommand implements Callable<String>
-    {
-        @Override
-        public String call() throws Exception
-        {
-            CellNucleus.startCpuMonitoring();
-            return "started";
-        }
-    }
-
-    @Command(name="cpu monitoring stop", hint="stop monitoring CPU usage per cell")
-    public class CpuMonitoringStopCommand implements Callable<String>
-    {
-        @Override
-        public String call() throws Exception
-        {
-            CellNucleus.stopCpuMonitoring();
-            return "stopped";
-        }
-    }
-
-    @Command(name="cpu monitoring set update", hint="adjust how often CPU statistics are updated")
-    public class CpuMonitoringSetUpdateCommand implements Callable<String>
-    {
-        @Argument
-        long value;
-
-        @Override
-        public String call() throws Exception
-        {
-            CellNucleus.setCpuMonitoringDelay(Duration.ofMillis(value));
-            return "updating CPU usage every " + value;
-        }
-    }
-
-    @Command(name="cpu monitoring get update", hint="show how often CPU statistics are updated")
-    public class CpuMonitoringGetUpdateCommand implements Callable<String>
-    {
-        @Argument
-        long value;
-
-        @Override
-        public String call() throws Exception
-        {
-            CellNucleus.setCpuMonitoringDelay(Duration.ofMillis(value));
-            return "updating CPU usage every " + value;
-        }
-    }
-
     private void shutdownSystem()
     {
         List<String> names = _nucleus.getCellNames();
@@ -302,11 +245,18 @@ public class      SystemCell
         pw.println(" Cells (Threads)");
         for (String name: _nucleus.getCellNames()) {
             pw.append(" ").append(name).append("(");
-            _nucleus.getThreads(name)
-                    .map(threads -> threads.stream()
-                                .map(Thread::getName)
-                                .collect(Collectors.joining(",")))
-                    .ifPresent(pw::append);
+            Thread[] threads = _nucleus.getThreads(name);
+            if (threads != null) {
+                boolean first = true;
+                for (Thread thread: threads) {
+                    pw.print(thread.getName());
+                    if (first) {
+                        first = false;
+                    } else {
+                        pw.print(",");
+                    }
+                }
+            }
             pw.println(")");
         }
     }

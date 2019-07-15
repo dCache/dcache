@@ -54,10 +54,8 @@ import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
-import dmg.util.CpuUsage;
 import dmg.util.Exceptions;
 import dmg.util.Formats;
-import dmg.util.FractionalCpuUsage;
 import dmg.util.PropertiesBackedReplaceable;
 import dmg.util.Replaceable;
 import dmg.util.ReplaceableBackedProperties;
@@ -71,7 +69,6 @@ import dmg.util.command.Option;
 
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
-import org.dcache.util.ColumnWriter.TabulatedRow;
 import org.dcache.util.Glob;
 
 import static dmg.util.CommandException.checkCommand;
@@ -981,58 +978,33 @@ public class CellShell extends CommandInterpreter
        public String call()
        {
             if (names == null) {
-                List<String> list = _nucleus.getCellNames();
-                if (full) {
-                    Map<String,FractionalCpuUsage> cellCpuUsage = CellNucleus.getFractionalCellCpuUsage();
-
-                    ColumnWriter table = new ColumnWriter().headersInColumns()
+               List<String> list = _nucleus.getCellNames();
+               if (full) {
+                   ColumnWriter table = new ColumnWriter().headersInColumns()
                            .header("Name").left("name").space()
                            .header("State").centre("state").space()
                            .header("Queue").right("queue-length").space()
                            .header("Q-time/ms").right("queue-time").space()
-                           .header("Threads").right("thread").space();
-                    if (!cellCpuUsage.isEmpty()) {
-                        table.header("System CPU").right("system-cpu").space()
-                                .header("User CPU").right("user-cpu").space();
-                    }
-
-                   table.header("Class").left("class").space()
+                           .header("Threads").right("thread").space()
+                           .header("Class").left("class").space()
                            .header("Additional info").left("short-info");
                    for (String name: list) {
                        CellInfo info = _nucleus.getCellInfo(name);
-                       FractionalCpuUsage cpuUsage = cellCpuUsage.get(name);
                        if (info == null) {
                            table.row("name " + name);
                        } else {
-                            // Work around cells where toString shows only
-                            // the cell name.
-                            String shortInfo = info.getShortInfo().equals(name) ? "" : info.getShortInfo();
-
-                            TabulatedRow row = table.row().value("name", name)
+                           // Work around cells where toString shows only
+                           // the cell name.
+                           String shortInfo = info.getShortInfo().equals(name) ? "" : info.getShortInfo();
+                           table.row().value("name", name)
                                    .value("state", info.getStateName().substring(0,1))
                                    .value("queue-length", info.getEventQueueSize())
                                    .value("queue-time", info.getExpectedQueueTime())
                                    .value("thread", info.getThreadCount())
                                    .value("class", info.getCellSimpleClass())
                                    .value("short-info", shortInfo);
-
-                            if (cpuUsage != null) {
-                                String systemUsage = String.format("%.1f%%", cpuUsage.getSystemUsage()*100);
-                                String userUsage = String.format("%.1f%%", cpuUsage.getUserUsage()*100);
-                                row.value("system-cpu", systemUsage)
-                                        .value("user-cpu", userUsage);
-                            }
                        }
                    }
-                    FractionalCpuUsage unknownUsage = cellCpuUsage.get("UNKNOWN");
-                    if (unknownUsage != null) {
-                        String systemUsage = String.format("%.1f%%", unknownUsage.getSystemUsage()*100);
-                        String userUsage = String.format("%.1f%%", unknownUsage.getUserUsage()*100);
-                        table.row().value("name", "UNKNOWN")
-                                .value("system-cpu", systemUsage)
-                                .value("user-cpu", userUsage);
-                    }
-
                    sb.append(table);
                } else {
                    for (String name: list) {
@@ -1078,11 +1050,13 @@ public class CellShell extends CommandInterpreter
                                 .header("Name").left("name").space()
                                 .header("Priority").right("priority").space()
                                 .header("State").left("state");
-                        _nucleus.getThreads(name).ifPresent(threads -> threads.forEach(t ->
-                                    threadsInfo.row().value("name", t.getName())
-                                            .value("priority", t.getPriority())
-                                            .value("state", (t.isAlive() ? "A" : "-") + (t.isDaemon() ? "D" : "-") + (t.isInterrupted() ? "I" : "-"))
-                                ));
+                        Thread[] threads = _nucleus.getThreads(name);
+                        for (int j = 0; j < threads.length && threads[j] != null; j++) {
+                            Thread t = threads [j];
+                            threadsInfo.row().value("name", t.getName())
+                                    .value("priority", t.getPriority())
+                                    .value("state", (t.isAlive() ? "A" : "-") + (t.isDaemon() ? "D" : "-") + (t.isInterrupted() ? "I" : "-"));
+                        }
 
                         sb.append('\n').append(firstIndentation).append("-- Threads --\n").append(threadsInfo);
 
