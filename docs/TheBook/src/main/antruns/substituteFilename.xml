@@ -41,5 +41,13 @@
 	<replace file='${fileName}'
 		 token='&lt;pre>&lt;code class="language-console-user">'
 	         value='&lt;pre class="command-line" data-user="paul" data-host="sprocket" data-filter-output="|">&lt;code class="language-shell">'/>
+
+	<replace file='${fileName}'
+		 token='&lt;pre>&lt;code class="language-console-root">'
+	         value='&lt;pre class="command-line" data-user="root" data-host="dcache.example.org" data-filter-output="|">&lt;code class="language-shell">'/>
+
+	<replace file='${fileName}'
+		 token='&lt;pre>&lt;code class="language-console-admin">'
+	         value='&lt;pre class="command-line" data-prompt="(local) admin > " data-filter-output="|">&lt;code class="language-shell">'/>
     </target>
 </project>
