@@ -49,7 +49,6 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
-import diskCacheV111.repository.RepositoryCookie;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -1371,45 +1370,6 @@ public class PoolV4
                 true);
         msg.setSucceeded();
         return msg;
-    }
-
-    private List<CacheRepositoryEntryInfo> getRepositoryListing()
-        throws CacheException, InterruptedException
-    {
-        List<CacheRepositoryEntryInfo> listing = new ArrayList<>();
-        for (PnfsId pnfsid : _repository) {
-            try {
-                switch (_repository.getState(pnfsid)) {
-                case PRECIOUS:
-                case CACHED:
-                case BROKEN:
-                    listing.add(getCacheRepositoryEntryInfo(pnfsid));
-                    break;
-                default:
-                    break;
-                }
-            } catch (FileNotInCacheException e) {
-                /* The file was deleted before we got a chance to add
-                 * it to the list. Since deleted files are not
-                 * supposed to be on the list, the exception is not a
-                 * problem.
-                 */
-            } catch (IllegalStateException e) {
-                /*
-                 * For the purposes of this listing, ignore files
-                 * with incomplete metadata (accessing an undefined file
-                 * attribute throws this exception).
-                 *
-                 * Otherwise the loading of the pool into the replica manager
-                 * database will fail and the pool will be marked offline when
-                 * it reality it is accessible (this method is only
-                 * used by DCacheCoreControllerV2).
-                 */
-                LOGGER.warn("Skipping {} when listing contents of pool {}: {}.",
-                            pnfsid, _poolName, e.getMessage());
-            }
-        }
-        return listing;
     }
 
     public CacheRepositoryEntryInfo getCacheRepositoryEntryInfo(PnfsId pnfsid)
