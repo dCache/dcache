@@ -78,7 +78,6 @@
               value="${pool.tags}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="repository" ref="rep"/>
-    <property name="checksumModule" ref="csm"/>
     <property name="storageQueue" ref="queue"/>
     <property name="storageHandler" ref="storagehandler"/>
     <property name="HSMSet" ref="hsmset"/>

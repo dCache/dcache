@@ -208,7 +208,6 @@ public class PoolV4
     private boolean _hybridInventoryActive;
     private int _hybridCurrent;
 
-    private ChecksumModule _checksumModule;
     private final ReplicationHandler _replicationHandler = new ReplicationHandler();
 
     private ReplicaStatePolicy _replicaStatePolicy;
@@ -379,13 +378,6 @@ public class PoolV4
     {
         assertNotRunning("Cannot set account after initialization");
         _account = account;
-    }
-
-    @Required
-    public void setChecksumModule(ChecksumModule module)
-    {
-        assertNotRunning("Cannot set checksum module after initialization");
-        _checksumModule = module;
     }
 
     @Required
