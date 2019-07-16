@@ -23,8 +23,10 @@ Running this service is essential for the delivery of histogram data from the
 frontend.  It can be run out of the box with no special properties
 set:
 
-    [historyDomain]
-    [historyDomain/history]
+```ini
+[historyDomain]
+[historyDomain/history]
+```
 
 While it is not required to run this service in its own domain, it is usually
 good practice to isolate a non-essential service this way, allowing 

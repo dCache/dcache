@@ -237,9 +237,8 @@ Properties
 
  The `krb5` plug-in maps a kerberos principal to a username by removing the domain part from the principal.
 
-Example:
-
-                    user@KRB-DOMAIN.EXAMPLE.ORG to user
+Example: the Kerberos principal `user@KRB-DOMAIN.EXAMPLE.ORG` is
+mapped to the user `user`.
 
 
 ##### nsswitch
@@ -720,7 +719,7 @@ At [http://operations-portal.egi.eu/vo](https://operations-portal.egi.eu/vo) you
 
 Example:
 
-For example, the file /etc/grid-security/vomsdir/desy/grid-voms.desy.de.lsc contains:
+For example, the file `/etc/grid-security/vomsdir/desy/grid-voms.desy.de.lsc` contains:
 
     /C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de
     /C=DE/O=GermanGrid/CN=GridKa-CA
@@ -1114,11 +1113,13 @@ Check your WebDAV settings: enable the HTTP access, disallow the
 anonymous access, disable requesting and requiring the client
 authentication and activate basic authentication.
 
-    webdav.authn.protocol=http
-    webdav.authz.anonymous-operations=NONE
-    webdav.authn.accept-client-cert=false
-    webdav.authn.require-client-cert=false
-    webdav.authn.basic=true
+```ini
+webdav.authn.protocol=http
+webdav.authz.anonymous-operations=NONE
+webdav.authn.accept-client-cert=false
+webdav.authn.require-client-cert=false
+webdav.authn.basic=true
+```
 
 Adjust the `/etc/dcache/gplazma.conf` to use the `kpwd` plug-in (for
 more information see also [the section called
@@ -1167,7 +1168,9 @@ To activate the use of the _admin_ role, the following steps are necessary.
 
 1) Define the admin role using the property:  
 
-    gplazma.roles.admin-gid=<gid>
+```ini
+gplazma.roles.admin-gid=<gid>
+```
     
 2) Add the _admin_ gid to the set of gids for any user who should have this capability.
 

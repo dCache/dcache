@@ -366,17 +366,21 @@ Adapt the name of the pool in the layout files of your dCache installation to in
 Example:
 For example, to rename a pool from `swimmingPool` to `carPool`, change your layout file from
 
-    [poolDomain]
-    [poolDomain/pool]
-    name=swimmingPool
-    path=/pool/
+```ini
+[poolDomain]
+[poolDomain/pool]
+name=swimmingPool
+path=/pool/
+```
 
 to
 
-    [poolDomain]
-    [poolDomain/pool]
-    name=carPool
-    path=/pool/
+```ini
+[poolDomain]
+[poolDomain/pool]
+name=carPool
+path=/pool/
+```
 
 > **Warning**
 >
@@ -417,15 +421,21 @@ This command does:
 
 dCache pools can be configured to store files on locally mounted file systems or use CEPH as a back-end. The property `pool.backend` is used to control which back-end should be used:
 
-    pool.backend = ceph
+```ini
+pool.backend = ceph
+```
 
 dCache uses CEPH's block devices interface, know as `RBD`, to store data. The dCache pools map one-to-one onto CEPH pools. The CEPH pool must be manually created and, if required, configured before dCache can use it.
 
-    $ rados mkpool <pool-name>
+```console-root
+rados mkpool <pool-name>
+```
 
 By default, the CEPH pool name is expected to match the dCache pool name. This can be changed by using
 
-    pool.backend.ceph.pool-name = ceph-pool-to-use
+```ini
+pool.backend.ceph.pool-name = ceph-pool-to-use
+```
 
 dCache uses a locally configured ceph client to operate. The location to client configuration files is controlled by `pool.backend.ceph.config` property and defaults to _/etc/ceph/ceph.conf_.
 
@@ -448,13 +458,17 @@ In order to speed up database operations for metadata, dCache pools (starting fr
 
 Usage of MongoDB is enabled by setting
 
-    pool.plugins.meta=org.dcache.pool.repository.meta.mongo.MongoDbMetadataRepository
+```ini
+pool.plugins.meta=org.dcache.pool.repository.meta.mongo.MongoDbMetadataRepository
+```
 
 and the connection can be configured through the properties
 
-    pool.plugins.meta.mongo.url=mongodb://localhost:27017
-    pool.plugins.meta.mongo.db=pdm
-    pool.plugins.meta.mongo.collection=poolMetadata
+```ini
+pool.plugins.meta.mongo.url=mongodb://localhost:27017
+pool.plugins.meta.mongo.db=pdm
+pool.plugins.meta.mongo.collection=poolMetadata
+```
 
 The database will greatly profit from an index on `pnfsid` and `pool`:
 

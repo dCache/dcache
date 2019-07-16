@@ -19,10 +19,11 @@ In addition to the hourly statistics, files are produced reporting on the daily,
 
 Define the statistics service in the domain, where the httpd is running.
 
-    [httpdDomain]
-    [httpdDomain/httpd]
-    ...
-    [httpdDomain/statistics]
+```ini
+[httpdDomain]
+[httpdDomain/httpd]
+[httpdDomain/statistics]
+```
 
 The statistics service automatically creates a directory tree, structured according to years, months and days.
 

@@ -30,16 +30,20 @@ The info-provider takes as much information as possible from dCache. To achieve 
 
 The traditional (pre-1.9.7) allocation of services to domains has the `info` cell running in the `infoDomain` domain. A dCache system that has been migrated from this old configuration will have the following fragment in the node's layout file:
 
-    [infoDomain]
-    [infoDomain/info]
+```ini
+[infoDomain]
+[infoDomain/info]
+```
 
 It is also possible to run the `info` service inside a domain that runs other services. The following example show the N domain that hosts the `admin, httpd, topo`  and `info` services.
 
-    [information]
-    [information/admin]
-    [information/httpd]
-    [information/topo]
-    [information/info]
+```ini
+[information]
+[information/admin]
+[information/httpd]
+[information/topo]
+[information/info]
+```
 
 For more information on configuring dCache layout files, see [the section called “Defining domains and services”](install.md#defining-domains-and-services).
 
@@ -63,18 +67,22 @@ In this example, the `info` service is added to the `example` domain. Note that 
 
 The layouts file for this node includes the following definition for the `example` domain:
 
-    [example]
-    [example/admin]
-    [example/httpd]
-    [example/topo]
+```ini
+[example]
+[example/admin]
+[example/httpd]
+[example/topo]
+```
 
 By adding the extra line [example/info] to the layouts file, in future, the example domain will host the info service.
 
-    [example]
-    [example/admin]
-    [example/httpd]
-    [example/topo]
-    [example/info]
+```ini
+[example]
+[example/admin]
+[example/httpd]
+[example/topo]
+[example/info]
+```
 
 To actually start the CELL-INFO cell, the DOMAIN-EXAMPLE domain must be restarted.
 
@@ -83,7 +91,6 @@ dcache restart example
 |Stopping example (pid=30471) 0 done
 |Starting example done
 ```
-
 
 With the `example`domain restarted, the `info` service is now running.
 

@@ -45,19 +45,20 @@ can only communicate with one such service.
 
 Add the `alarms` service to a domain in the layout file in the usual manner:
 
-        [alarmsDomain]
-        [alarmsDomain/alarms]
-        alarms.db.type=rdbms
-        ...
+```ini
+[alarmsDomain]
+[alarmsDomain/alarms]
+alarms.db.type=rdbms
+```
 
 OR
 
-        [someotherDomain]
-        [someotherDomain/alarms]
-        alarms.db.type=rdbms
-        [someotherDomain/someotherservice]
-        ...
-
+```ini
+[someotherDomain]
+[someotherDomain/alarms]
+alarms.db.type=rdbms
+[someotherDomain/someotherservice]
+```
 
 Note that the storage type setting `alarms.db.type` must be defined
 either in the layout or `/etc/dcache/dcache.conf` file because its
@@ -95,9 +96,11 @@ events to the server. In each domain, the `/etc/dcache/logback.xml`
 configuration references the following properties to control remote
 logging:
 
-            dcache.log.level.remote=off
-            dcache.log.server.host=localhost
-            dcache.log.server.port=9867
+```ini
+dcache.log.level.remote=off
+dcache.log.server.host=localhost
+dcache.log.server.port=9867
+```
 
 As with the `alarms` service database type, remote logging is turned off by
 default. Under normal circumstances it should be sufficient to set this to `warn`
@@ -121,10 +124,12 @@ service is running on. From inspection of the
 `/usr/share/dcache/alarms.properties` file, you can see that the
 alarms-specific properties mirror the logger properties:
 
-         #  ---- Host on which this service is running
-         alarms.net.host=${dcache.log.server.host}
-         #  ---- TCP port the alarms service listens on
-         alarms.net.port=${dcache.log.server.port}
+```ini
+#  ---- Host on which this service is running
+alarms.net.host=${dcache.log.server.host}
+#  ---- TCP port the alarms service listens on
+alarms.net.port=${dcache.log.server.port}
+```
 
 The first property should not need any adjustment, but if `alarms.net.port`
 is modified, be sure to modify the `dcache.log.server.port` property on the other
@@ -136,7 +141,9 @@ An example of a dCache which consists of a head node, some door nodes and some p
 If the head node contains the alarms service, set the property
 `dcache.log.server.host` on the pool nodes and on the door nodes to:
 
-                dcache.log.server.host=<head-node>
+```ini
+dcache.log.server.host=<head-node>
+```
 
 ### TYPES OF ALARMS
 
@@ -227,7 +234,7 @@ Send an alarm to the alarm service.
 >
 > It is possible to change the file location by setting the
 alarms.priority-mapping.path and/or alarms.dir properties
-in the layout or /etc/dcache/dcache.conf. As can be seen from the admin commands,
+in the layout or `/etc/dcache/dcache.conf`. As can be seen from the admin commands,
 it is also possible to specify the path as an option on the respective
 save and reload commands. Note, however, that this is meant mainly for temporary
 or back-up purposes, as the path defined in the local dcache configuration
@@ -238,7 +245,7 @@ reloaded from there once again whenever the domain is restarted.
 >
 > Any changes made via the priority set default command are in-memory only.
 To change this default permanently, set the <variable>alarms.priority-mapping.default</variable>
-property in the layout or /etc/dcache/dcache.conf.
+property in the layout or `/etc/dcache/dcache.conf`.
 
 
 ### WORKING WITH ALARMS: THE DCACHE-VIEW ALARMS TAB

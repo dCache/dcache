@@ -28,10 +28,12 @@ This example shows an extract of the
 `/etc/dcache/layouts/mylayout.conf` file in order to run dCache with
 `NFSv3`.
 
-    [namespaceDomain]
-    [namespaceDomain/pnfsmanager]
-    [namespaceDomain/nfs]
-    nfs.version=3
+```ini
+[namespaceDomain]
+[namespaceDomain/pnfsmanager]
+[namespaceDomain/nfs]
+nfs.version=3
+```
 
 Example:
 
@@ -39,17 +41,21 @@ If you want to run the NFSv4.1 server you need to add the
 corresponding nfs service to a domain in the
 `/etc/dcache/layouts/mylayout.conf` file and start this domain.
 
-    [namespaceDomain]
-    [namespaceDomain/pnfsmanager]
-    [namespaceDomain/nfs]
-    nfs.version = 4.1
+```ini
+[namespaceDomain]
+[namespaceDomain/pnfsmanager]
+[namespaceDomain/nfs]
+nfs.version = 4.1
+```
 
 If you wish dCache to access your Chimera with a PostgreSQL user other
 than chimera then you must specify the username and password in
 `/etc/dcache/dcache.conf`.
 
-    chimera.db.user=myuser
-    chimera.db.password=secret
+```ini
+chimera.db.user=myuser
+chimera.db.password=secret
+```
 
 ## MOUNTING CHIMERA THROUGH NFS
 

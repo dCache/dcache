@@ -16,24 +16,29 @@ stage permission configuration will result in permission denied errors
 
 The stage protection rules are captured in stage configuration file which
 is pointed to by  the variable :
+
+```ini
+dcache.authz.staging = <path>/StageConfiguration.conf
 ```
-   dcache.authz.staging = <path>/StageConfiguration.conf
-```
+
 The stage protection policy enforcement point (PEP) can be
- `PoolManager` or `doors`. Configurable using the following variable:
-```
-   dcache.authz.staging.pep
-```
+`PoolManager` or `doors`. Configurable using the variable
+`dcache.authz.staging.pep`.
+
 If set to `PoolManager` like so:
+
+```ini
+dcache.authz.staging.pep = PoolManager
 ```
-   dcache.authz.staging.pep = PoolManager
-```
+
 then the stage protection applies to all transfers in the system and stage protection
 configuration file naturally has to be available on the host running `PoolManager`, if
 set for `doors` like:
+
+```ini
+dcache.authz.staging.pep = doors
 ```
-   dcache.authz.staging.pep = doors
-```
+
 then the stage protection applies only to transfers performed by doors on hosts that have
 `dcache.authz.staging` defined and the file present. The host running `PinManager` also has to have
 `dcache.authz.staging` defined and the file present.
@@ -57,12 +62,11 @@ the [Java Pattern class](http://docs.oracle.com/javase/6/docs/api/java/util/rege
 
 
 Some examples of the White List Records:
-```
+
    ".*" "/atlas/Role=production"
    "/C=DE/O=DESY/CN=Kermit the frog"
    "/C=DE/O=DESY/CN=Beaker" "/desy"
    "/O=GermanGrid/.*" "/desy/Role=.*"
-```
 
 This example authorizes a number of different groups of users:
 
@@ -74,10 +78,9 @@ This example authorizes a number of different groups of users:
 If a storage group is specified, three parameters must be provided. The regular expression `".*"` may be used to authorize any DN or any FQAN. Consider the following example:
 
 Example:
-```
+
     ".*" "/atlas/Role=production" "h1:raw@osm"
     "/C=DE/O=DESY/CN=Scooter" ".*" "sql:chimera@osm"
-```
 
 In the example above:
 
@@ -90,14 +93,11 @@ In the example above:
     `/C=DE/O=DESY/CN=Scooter`, irrespective of which VOMS groups he belongs to, is allowed to stage files located in the storage group
     `sql:chimera@osm`.
 
-If protocol is specified all four parameters must be provided.
+If protocol is specified all four parameters must be provided; for
+example:
 
-   Example:
-
-```
     ".*" "/atlas/Role=production" "h1:raw@osm" "Htt.*"
     "/C=DE/O=DESY/CN=Scooter" ".*" "sql:chimera@osm"  "GFtp.*"
-```
 
 In the example above:
 
@@ -120,9 +120,9 @@ carry null for DN and FQAN. A `"""` expression will match nulls.
 
 In order to allow all users using `dCap` protocol to stage data for any storage
 group the list configuration would look like:
-```
+
    ""  "" ".*" "DCap.*"
-```
+
 NB: Once stage protection configuration exists, the PEP will process it for match and if
 no match found staging will be denied. Therefore an empty stage configuration file will
 effectively deny staging for all.
@@ -148,11 +148,9 @@ in the example above as root user still will be able to stage `nova` data using 
 The `!` notation is a convenience feature, the same setup can be expressed in using proper
 Java regular expression for negation:
 
-```
    ".+"
    "" "" "^(?:(?!nova).)*$"
    "" "" "nova.*"          "^(?:(?!NFS4).)*$"
-```
 
 The stage protection configuration file can be edited on the running system at anytime and
 the policies will take effect once file is saved to disk.

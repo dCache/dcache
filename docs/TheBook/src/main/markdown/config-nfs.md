@@ -21,19 +21,19 @@ To allow file transfers in and out of dCache using NFSv4.1/pNFS, a new NFSv4.1 d
 
 To enable the NFSv4.1 door, you have to change the layout file corresponding to your dCache-instance. Enable the NFS within the domain that you want to run it by adding the following line
 
-    ..
-    [<domainName>/nfs]
-    nfs.version = 4.1
-    ..
+```ini
+[<domainName>/nfs]
+nfs.version = 4.1
+```
 
 Example:
 You can just add the following lines to the layout file:
 
-    ..
-    [nfs-${host.name}Domain]
-    [nfs-${host.name}Domain/nfs]
-    nfs.version = 4.1
-    ..
+```ini
+[nfs-${host.name}Domain]
+[nfs-${host.name}Domain/nfs]
+nfs.version = 4.1
+```
 
 ### Exporting file system
 
@@ -136,10 +136,12 @@ DOOR-NFS4 must have a `/etc/krb5.keytab` with `nfs` service principal:
 The `/etc/dcache/dcache.conf` on pool nodes and node running `NFSv4.1
 door` must enable kerberos and RPCSEC_GSS:
 
-    nfs.rpcsec_gss=true
-    dcache.authn.kerberos.realm=<YOUR.REALM>
-    dcache.authn.jaas.config=/etc/dcache/gss.conf
-    dcache.authn.kerberos.key-distribution-center-list=your.kdc.server
+```ini
+nfs.rpcsec_gss=true
+dcache.authn.kerberos.realm=<YOUR.REALM>
+dcache.authn.jaas.config=/etc/dcache/gss.conf
+dcache.authn.kerberos.key-distribution-center-list=your.kdc.server
+```
 
 The `/etc/dcache/gss.conf` on pool nodes and node running `NFSv4.1`
 door must configure Java’s security module:
@@ -154,7 +156,7 @@ door must configure Java’s security module:
     principal="nfs/host.domain@<YOUR.REALM>";
     };
 
-Now your `NFS` client can securely access dCache.
+Now your NFS client can securely access dCache.
 
 ## Configuring principal-id mapping for NFS access
 
@@ -182,17 +184,17 @@ for cache size and life time are good enough for typical
 installation. Nevertheless they can be overriden in `dcache.conf` or
 layoutfile:
 
-    ..
-    # maximal number of entries in the cache
-    nfs.idmap.cache.size = 512
+```ini
+# maximal number of entries in the cache
+nfs.idmap.cache.size = 512
 
-    # cache entry maximal lifetime
-    nfs.idmap.cache.timeout = 30
+# cache entry maximal lifetime
+nfs.idmap.cache.timeout = 30
 
-    # time unit used for timeout. Valid values are:
-    # SECONDS, MINUTES, HOURS and DAYS
-    nfs.idmap.cache.timeout.unit = SECONDS
-    ..
+# time unit used for timeout. Valid values are:
+# SECONDS, MINUTES, HOURS and DAYS
+nfs.idmap.cache.timeout.unit = SECONDS
+```
 
 ## Managing group ids
 
@@ -203,7 +205,7 @@ is the sixteen groups limit. To overcome this limitation dCache nfs server can
 query gplazma to discover additional groups that the client might have.
 To enable it the `nfs.idmap.manage-gids` property can be used.
 
-```
+```ini
 nfs.idmap.manage-gids = true
 ```
 

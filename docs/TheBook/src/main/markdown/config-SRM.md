@@ -68,12 +68,14 @@ Example:
 
 To enable SRM in dCache, add the following lines to your layout file:
 
-    [<srm-${host.name}Domain>]
-    [<srm-${host.name}Domain>/srm]
+```ini
+[<srm-${host.name}Domain>]
+[<srm-${host.name}Domain>/srm]
 
-    [srmmanager-${host.name}Domain]
-    [srmmanager-${host.name}Domain/srmmanager]
-    [srmmanager-${host.name}Domain/transfermanagers]
+[srmmanager-${host.name}Domain]
+[srmmanager-${host.name}Domain/srmmanager]
+[srmmanager-${host.name}Domain/transfermanagers]
+```
 
 The additional `transfermanagers` service is required to perform 3rd party copy transfers initiated by SRM or WebDAV.
 This service is not required to be co-located with SRM service (domain or host).
@@ -111,14 +113,18 @@ Example:
 
 Change the value for `srm.db.host` in the layout file.
 
-    [srm-${host.name}Domain]
-    [srm-${host.name}Domain/srmmanager]
-    srmmanager.db.host=hostname
+```ini
+[srm-${host.name}Domain]
+[srm-${host.name}Domain/srmmanager]
+srmmanager.db.host=hostname
+```
 
 The property `srm.request.copy.threads` controls number of copy requests in the running state. Copy requests are 3-rd party srm transfers and therefore the property `transfermanagers.limits.external-transfers` is best to be set to the same value as shown below.
 
-    srm.request.copy.threads=250
-    transfermanagers.limits.external-transfers=${srm.request.copy.threads}
+```ini
+srm.request.copy.threads=250
+transfermanagers.limits.external-transfers=${srm.request.copy.threads}
+```
 
 The common value should be the roughly equal to the maximum number of the SRM - to -SRM copies your system can sustain.
 
@@ -126,15 +132,19 @@ Example:
 
 So if you think about 3 gridftp transfers per pool and you have 30 pools then the number should be 3x30=90.
 
-    srm.request.copy.threads=90
-    transfermanagers.limits.external-transfers=90
+```ini
+srm.request.copy.threads=90
+transfermanagers.limits.external-transfers=90
+```
 
 Example:
 
 US-CMS T1 has:
 
-    srm.request.copy.threads=2000
-    transfermanagers.limits.external-transfers=2000
+```ini
+srm.request.copy.threads=2000
+transfermanagers.limits.external-transfers=2000
+```
 
 ## UTILIZATION OF SPACE RESERVATIONS FOR DATA STORAGE
 
@@ -177,7 +187,9 @@ Edit the file `/etc/dcache/dcache.conf` to change the default value.
 Example:
 Change the default value to `REPLICA`.
 
-    dcache.default-retention-policy=REPLICA
+```ini
+dcache.default-retention-policy=REPLICA
+```
 
 
 **Access latency**
@@ -196,7 +208,9 @@ Edit the file `/etc/dcache/dcache.conf` to change the default value.
 Example:
 Change the default value to `ONLINE`.
 
-    dcache.default-access-latency=ONLINE
+```ini
+dcache.default-access-latency=ONLINE
+```
 
 
 ## dCache SPECIFIC CONCEPTS
@@ -205,8 +219,10 @@ Change the default value to `ONLINE`.
 
 In order to enable the `SRM SpaceManager` you need to add the `spacemanager` service to your layout file
 
-   [dCacheDomain]
-   [dCacheDomain/spacemanager]
+```ini
+[dCacheDomain]
+[dCacheDomain/spacemanager]
+```
 
 Unless you have reason not to, we recommend placing the `spacemanager` service in the same domain as the `poolmanager` service.
 
@@ -325,10 +341,12 @@ In this example we will create a link group for the VO desy. In order to do so w
 
 Define a pool in your layout file, add it to your pool directory and restart the `poolDomain`.
 
-    [poolDomain]
-    [poolDomain/pool]
-    path=/srv/dcache/spacemanager-pool
-    name=spacemanager-pool
+```ini
+[poolDomain]
+[poolDomain/pool]
+path=/srv/dcache/spacemanager-pool
+name=spacemanager-pool
+```
 
 ```console-root
 mkdir -p /srv/dcache/spacemanager-pool
@@ -373,7 +391,9 @@ that are permitted to make reservations in a given link group.
 Specify the location of the `LinkGroupAuthorization.conf` file in the
 `/etc/dcache/dcache.conf` file.
 
-    spacemanager.authz.link-group-file-name=/path/to/LinkGroupAuthorization.conf
+```ini
+spacemanager.authz.link-group-file-name=/path/to/LinkGroupAuthorization.conf
+```
 
 The file `LinkGroupAuthorization.conf` has following syntax:
 
@@ -566,7 +586,9 @@ If a client uses a regular grid proxy, created with `grid-proxy-init`, and not a
 Edit the file `/etc/dcache/dcache.conf` to enable space reservation
 for non-SRM transfers.
 
-    spacemanager.enable.reserve-space-for-non-srm-transfers=true
+```ini
+spacemanager.enable.reserve-space-for-non-srm-transfers=true
+```
 
 If the `spacemanager` is enabled, `spacemanager.enable.reserve-space-for-non-srm-transfers` is set to true, and if the transfer request comes from a door, and there was no prior space reservation made for this file, the `SpaceManager` will try to reserve space before satisfying the request.
 
@@ -588,7 +610,9 @@ Possible values are `true` and `false`. Default is `true`.
 
 Usage example:
 
-    dcache.enable.space-reservation=true
+```ini
+dcache.enable.space-reservation=true
+```
 
 #### srm.enable.space-reservation.implicit
 
@@ -598,8 +622,9 @@ Possible values are `true` and `false`. This is enabled by default. It has no ef
 
 Usage example:
 
-
-    srm.enable.space-reservation.implicit=true
+```ini
+srm.enable.space-reservation.implicit=true
+```
 
 #### dcache.enable.overwrite
 
@@ -609,7 +634,9 @@ Possible values are `true` and `false`. Default is `false`.
 
 Usage example:
 
-    dcache.enable.overwrite=true
+```ini
+dcache.enable.overwrite=true
+```
 
 #### srm.enable.overwrite-by-default
 
@@ -619,8 +646,9 @@ Possible values are `true` and `false`. Default is `false`.
 
 Usage example:
 
-
-    srm.enable.overwrite-by-default=false
+```ini
+srm.enable.overwrite-by-default=false
+```
 
 #### srm.db.host
 
@@ -630,8 +658,9 @@ Default value is `localhost`.
 
 Usage example:
 
-
-    srm.db.host=database-host.example.org
+```ini
+srm.db.host=database-host.example.org
+```
 
 #### spaceManagerDatabaseHost
 
@@ -641,7 +670,9 @@ Default value is `localhost`.
 
 Usage example:
 
-    spaceManagerDatabaseHost=database-host.example.org
+```ini
+spaceManagerDatabaseHost=database-host.example.org
+```
 
 #### pinmanager.db.host
 
@@ -651,8 +682,9 @@ Default value is `localhost`.
 
 Usage example:
 
-
-    pinmanager.db.host=database-host.example.org
+```ini
+pinmanager.db.host=database-host.example.org
+```
 
 #### srm.db.name
 
@@ -662,8 +694,9 @@ Default value is `srm`.
 
 Usage example:
 
-
-    srm.db.name=srm
+```ini
+srm.db.name=srm
+```
 
 #### srm.db.user
 
@@ -673,8 +706,9 @@ Default value is `dcache`.
 
 Usage example:
 
-
-    srm.db.user=dcache
+```ini
+srm.db.user=dcache
+```
 
 #### srm.db.password
 
@@ -682,8 +716,9 @@ Usage example:
 
 Usage example:
 
-
-    srm.db.password=NotVerySecret
+```ini
+srm.db.password=NotVerySecret
+```
 
 #### srm.db.password.file
 
@@ -693,8 +728,9 @@ This option is not set by default.
 
 Usage example:
 
-
-    srm.db.password.file=/root/.pgpass
+```ini
+srm.db.password.file=/root/.pgpass
+```
 
 #### srm.request.enable.history-database
 
@@ -704,7 +740,9 @@ Possible values are `true` and `false`. Default is `false`.
 
 Usage example:
 
-    srm.request.enable.history-database=true
+```ini
+srm.request.enable.history-database=true
+```
 
 #### transfermanagers.enable.log-to-database
 
@@ -714,7 +752,9 @@ Possible values are `true` and `false`. Default is `false`.
 
 Usage example:
 
-    transfermanagers.enable.log-to-database=false
+```ini
+transfermanagers.enable.log-to-database=false
+```
 
 #### srmVersion
 
@@ -730,7 +770,9 @@ Default value is `/`.
 
 Usage example:
 
-    srm.root="/pnfs/fnal.gov/data/experiment"
+```ini
+srm.root="/pnfs/fnal.gov/data/experiment"
+```
 
 #### srm.limits.parallel-streams
 
@@ -740,7 +782,9 @@ Default value is `10`.
 
 Usage example:
 
-    srm.limits.parallel-streams=20
+```ini
+srm.limits.parallel-streams=20
+```
 
 #### srm.limits.transfer-buffer.size
 
@@ -750,7 +794,9 @@ Default value is `1048576`.
 
 Usage example:
 
-    srm.limits.transfer-buffer.size=1048576
+```ini
+srm.limits.transfer-buffer.size=1048576
+```
 
 #### srm.limits.transfer-tcp-buffer.size
 
@@ -760,7 +806,9 @@ Default value is `1048576`.
 
 Usage example:
 
-    srm.limits.transfer-tcp-buffer.size=1048576
+```ini
+srm.limits.transfer-tcp-buffer.size=1048576
+```
 
 #### srm.service.gplazma.cache.timeout
 
@@ -770,7 +818,9 @@ Default value is `120`.
 
 Usage example:
 
-    srm.service.gplazma.cache.timeout=60
+```ini
+srm.service.gplazma.cache.timeout=60
+```
 
 #### srm.limits.request.bring-online.lifetime, srm.limits.request.put.lifetime and srm.limits.request.copy.lifetime
 
@@ -780,9 +830,11 @@ Default value is `14400000` (4 hours)
 
 Usage example:
 
-    srm.limits.request.bring-online.lifetime=14400000
-    srm.limits.request.put.lifetime=14400000
-    srm.limits.request.copy.lifetime=14400000
+```ini
+srm.limits.request.bring-online.lifetime=14400000
+srm.limits.request.put.lifetime=14400000
+srm.limits.request.copy.lifetime=14400000
+```
 
 #### srm.limits.request.scheduler.ready.max, srm.limits.request.put.scheduler.ready.max, srm.limits.request.scheduler.ready-queue.size and srm.limits.request.put.scheduler.ready-queue.size
 
@@ -790,10 +842,12 @@ Usage example:
 
 Usage example:
 
-    srm.limits.request.scheduler.ready-queue.size=10000
-    srm.limits.request.scheduler.ready.max=2000
-    srm.limits.request.put.scheduler.ready-queue.size=10000
-    srm.limits.request.put.scheduler.ready.max=1000
+```ini
+srm.limits.request.scheduler.ready-queue.size=10000
+srm.limits.request.scheduler.ready.max=2000
+srm.limits.request.put.scheduler.ready-queue.size=10000
+srm.limits.request.put.scheduler.ready.max=1000
+```
 
 #### srm.limits.request.copy.scheduler.thread.pool.size and transfermanagers.limits.external-transfers
 
@@ -801,8 +855,10 @@ Usage example:
 
 Usage example:
 
-    srm.limits.request.copy.scheduler.thread.pool.size=250
-    transfermanagers.limits.external-transfers=260
+```ini
+srm.limits.request.copy.scheduler.thread.pool.size=250
+transfermanagers.limits.external-transfers=260
+```
 
 #### srm.enable.custom-get-host-by-address
 
@@ -810,7 +866,9 @@ Usage example:
 
 Usage example:
 
-    srm.enable.custom-get-host-by-address=true
+```ini
+srm.enable.custom-get-host-by-address=true
+```
 
 #### srm.enable.recursive-directory-creation
 
@@ -820,7 +878,9 @@ Automatic directory creation is allowed by default.
 
 Usage example:
 
-    srm.enable.recursive-directory-creation=true
+```ini
+srm.enable.recursive-directory-creation=true
+```
 
 #### hostCertificateRefreshPeriod
 
@@ -832,7 +892,9 @@ Please note that the value of this parameter has to be specified in seconds.
 
 Usage example:
 
-    hostCertificateRefreshPeriod=86400
+```ini
+hostCertificateRefreshPeriod=86400
+```
 
 #### trustAnchorRefreshPeriod
 
@@ -848,7 +910,9 @@ Please note that the value of this parameter has to be specified in seconds.
 
 Usage example:
 
-    trustAnchorRefreshPeriod=3600
+```ini
+trustAnchorRefreshPeriod=3600
+```
 
 ## CONFIGURING THE POSTGRESQL DATABASE
 

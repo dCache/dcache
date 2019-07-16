@@ -36,8 +36,10 @@ As dCache currently does not support authentication, all information written int
 
 To start a single server ZooKeeper as an embedded dCache service, place the `zookeeper` service inside a dCache domain:
 
-    [zookeeperDomain]
-    [zookeeperDomain/zookeeper]
+```ini
+[zookeeperDomain]
+[zookeeperDomain/zookeeper]
+```
 
 FHS packages of dCache default to `/var/lib/dcache/zookeeper` for the ZooKeeper persistent state.
 

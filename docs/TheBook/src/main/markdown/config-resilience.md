@@ -11,10 +11,10 @@ some domain.
 Resilience communicates directly with Chimera, so `chimera.db.host` should be
 set explicitly if Resilience is not running on the same host as the database.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```ini
 [someDomain/resilience]
 chimera.db.host=<host-where-chimera-runs>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
 
 ### Memory requirements
 
@@ -159,7 +159,7 @@ It is possible to share pools between a resilient group and a group backed by an
 HSM. The files can be mixed, and the HSM files will not be replicated. This
 diagram illustrates a simple example:
 
-![Pool Sharing](https://github.com/alrossi/dcache-miscellany/blob/master/docs/Slide4.png)
+![Pool Sharing](images/resilience-pool-sharing.png)
 
 Because Resilience checks whether the `AccessLatency` attribute is `ONLINE`, the
 `NEARLINE` files belonging to `hsmunit` are ignored. This pertains to pool scans
@@ -197,20 +197,21 @@ Several important advantages result from these changes.
 
 There is still one caveat about resilient pools:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-WARNING:        If a pool is part of a resilient pool group, it should NOT
-                carry the large file store configuration
-
-                pool.lfs=volatile
-
-                This is because as a resilient pool group member, this pool
-                could be chosen by the Pool Manager as the location of the
-                original (new) copy, in which case the system "sticky" flag
-                required for ONLINE files will actually be suppressed.  This
-                will cause resilience to treat this file as "missing" (since
-                it ignores cached replicas in its file count), and to send
-                an alarm before any further replicas can be made.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> **WARNING**
+>
+> If a pool is part of a resilient pool group, it should NOT carry the
+> large file store configuration
+> ```ini
+> pool.lfs=volatile
+> ```
+>
+> This is because as a resilient pool group member, this pool could be
+> chosen by the Pool Manager as the location of the original (new)
+> copy, in which case the system "sticky" flag required for ONLINE
+> files will actually be suppressed.  This will cause resilience to
+> treat this file as "missing" (since it ignores cached replicas in
+> its file count), and to send an alarm before any further replicas
+> can be made.
 
 ## Resilience home
 

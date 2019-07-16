@@ -21,9 +21,11 @@ door to either fail the request or retry (which makes sense only if
 the file has been fetched from some external source). 
 Currently only the `WebDAV` door provides this supports interaction with 
 `MissingFile` service. The interaction is enabled by setting :
+
+```ini
+dcache.enable.missing-files = true
 ```
-   dcache.enable.missing-files = true
-```
+
 The `MissingFiles` service is pluggable.  It takes a list of plugins
 and instantiates them.  These plugins are used to determine how
 dCache should react when a user attempts to read a missing file.
@@ -38,21 +40,24 @@ request.
 
 To instantiate `MissignFiles` service the following line needs to be added to your 
 layout file.  
-```
-   ..
-   [<domainName>/missing-files]
-   ..
+
+```ini
+[<domainName>/missing-files]
 ```
 
 Additionally the service must be enabled:
+
+```ini
+dcache.enable.missing-files = true
 ```
-   dcache.enable.missing-files = true
-```
+
 The behavior of `MissignFiles` service is determined by plugins that need 
 to be specified as comma separated names:
+
+```ini
+missing-files.plugins =
 ```
-   missing-files.plugins =
-``` 
+
 Currently no plugins are available and `MissingFiles` service simply  instructs the door 
 to fail the request. 
 

@@ -48,12 +48,16 @@ several queues and the doors have to be configured to use one of
 these. It makes sense to create the same queues on all pools. This is
 done by the following change to the file `/etc/dcache/dcache.conf`:
 
-    pool.queues=queueA,queueB
+```ini
+pool.queues=queueA,queueB
+```
 
 Each door may be configured to use a particular mover queue. The pool, selected for this request, does not depend on the selected mover queue. So a request may go to a pool which does not have the particular mover queue configured and will consequently end up in the default mover queue of that pool.
 
-    ftp.mover.queue=queueA
-    dcap.mover.queue=queueB
+```ini
+ftp.mover.queue=queueA
+dcap.mover.queue=queueB
+```
 
 All requests send from this kind of door will ask to be scheduled to the given mover queue. The selection of the pool is not affected.
 
@@ -64,9 +68,11 @@ Example:
 
 Create the queues `queueA` and `queueB`, where `queueA` shall be the queue for the `GridFTP` transfers and `queueB` for `dCap`.
 
-    pool.queues=queueA,queueB
-    ftp.mover.queue=queueA
-    dcap.mover.queue=queueB
+```ini
+pool.queues=queueA,queueB
+ftp.mover.queue=queueA
+dcap.mover.queue=queueB
+```
 
 If the pools should not all have the same queues you can define queues for pools in the layout file. Here you might as well define that a specific door is using a specific queue.
 
@@ -74,18 +80,20 @@ Example:
 
 In this example `queueC`is defined for `pool1` and `queueD` is defined for `pool2`. The GRIDFTP door running in the domain `myDoors` is using the queue `queueB`.
 
-    [myPools]
-    [myPools/pool1]
-    pool.queues=queueC
-    [myPools/pool2]
-    pool.queues=queueD
+```ini
+[myPools]
+[myPools/pool1]
+pool.queues=queueC
+[myPools/pool2]
+pool.queues=queueD
 
-    [myDoors]
-    [myDoors/dcap]
-    dcap.mover.queue=queueC
-    [myDoors/ftp]
-    ftp.authn.protocol = gsi
-    ftp.mover.queue=queueD
+[myDoors]
+[myDoors/dcap]
+dcap.mover.queue=queueC
+[myDoors/ftp]
+ftp.authn.protocol = gsi
+ftp.mover.queue=queueD
+```
 
 There is always a default queue called `regular`. Transfers not requesting a particular mover queue or requesting a mover queue not existing on the selected pool, are handled by the `regular` queue.
 
@@ -100,9 +108,11 @@ Example:
 
 Create the queues `queueA` and `queue_dccp`, where `queueA` shall be the queue for `dCap`.
 
-    pool.queues=queueA,queue_dccp
-    dcap.mover.queue=queueA
-    dcap.authz.mover-queue-overwrite=allowed
+```ini
+pool.queues=queueA,queue_dccp
+dcap.mover.queue=queueA
+dcap.authz.mover-queue-overwrite=allowed
+```
 
 With the `dccp` command the queue can now be specified as follows:
 

@@ -739,7 +739,7 @@ Example:
 
 To set the space cost factor on the `default` partition to `0.3`, use the following command:
 
-                      pm set default -spacecostfactor=0.3
+    pm set default -spacecostfactor=0.3
 
 
 | Command                                       | Meaning                                                                                                                                                                                                                                                                                                                 | Type    |

@@ -231,29 +231,32 @@ This is currently disabled by default, but may be controlled with the
 
 Hosting an FTP server in a domain is as simple as:
 
-    ..
-    [<domainName>/ftp]
-    ..
+
+```ini
+[<domainName>/ftp]
+```
 
 The 'ftp.authn.protocol' configuration property controls which flavour
 of FTP server should be started; for example, to start a gsiftp server:
 
-    ..
-    [<domainName>/nfs]
-    ftp.authn.protocol = gsi
-    ..
+
+```ini
+[<domainName>/nfs]
+ftp.authn.protocol = gsi
+```
 
 There are distinct default TCP ports on which the different flavours
 of FTP server will listen, so a single host may run multiple FTP doors
 without requiring any port configuration:
 
-    ..
-    [<domainName>/nfs]
-    ftp.authn.protocol = plain
-    [<domainName>/nfs]
-    ftp.authn.protocol = gsi
-    [<domainName>/nfs]
-    ftp.authn.protocol = kerberos
-    [<domainName>/nfs]
-    ftp.authn.protocol = tls
-    ..
+
+```ini
+[<domainName>/nfs]
+ftp.authn.protocol = plain
+[<domainName>/nfs]
+ftp.authn.protocol = gsi
+[<domainName>/nfs]
+ftp.authn.protocol = kerberos
+[<domainName>/nfs]
+ftp.authn.protocol = tls
+```

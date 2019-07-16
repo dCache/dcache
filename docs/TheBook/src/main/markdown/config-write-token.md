@@ -9,7 +9,9 @@ Chapter 21.  Using Space Reservations without SRM
 
 If you are using space reservations, i.e. you set
 
-    dcache.enable.space-reservation=true
+```ini
+dcache.enable.space-reservation=true
+```
 
 in your configuration file and all of your pools are in [link groups](config-PoolManager.md#link-groups), then you can only write into dCache if a link group is available for your transfer. Using the `SRM` you can specify the link group to write into. If you want to use another protocol like `curl` or `xrootd` you cannot specify a link group. In this case you need to use the `WriteToken` directory tag.
 
@@ -19,7 +21,9 @@ Before you can create a `WriteToken` tag you need to have a space reservation.
 
 Space reservations are made for link groups. The file [`LinkGroupAuthorization.conf`](config-SRM.md#the spacemanagerlinkgroupauthorizationfile) needs to contain the link groups that can be used for space reservations. You need to specify the location of the file in the `/etc/dcache/dcache.conf` file.
 
-    spacemanager.authz.link-group-file-name=/etc/dcache/LinkGroupAuthorization.conf
+```ini
+spacemanager.authz.link-group-file-name=/etc/dcache/LinkGroupAuthorization.conf
+```
 
 Example:
 

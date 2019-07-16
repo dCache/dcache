@@ -79,31 +79,33 @@ The `srm` and the `gridftp` service have to be configured with the property `lis
 
 In this example we show a setup for two `GridFTP` doors serving two network interfaces with the hostnames `door-internal` (111.111.111.5) and `door-external` (222.222.222.5) which are served by two GRIDFTP doors in two domains.
 
-    [internalDomain]
-    listen=111.111.111.5
-    dcache.authn.hostcert.cert=PATH-ODE-ED/interface-cert-internal.pem
-    dcache.authn.hostcert.key=PATH-ODE-ED/interface-key-internal.pem
-    [internalDomain/srm]
-    srm.cell.name=srm-internal
-    srm.protocols.loginbroker=loginbroker-internal
-    srm.net.host=door-internal
-    [internalDomain/ftp]
-    ftp.authn.protocol = gsi
-    ftp.cell.name=GFTP-door-internal
-    dcache.service.loginbroker=loginbroker-internal
+```ini
+[internalDomain]
+listen=111.111.111.5
+dcache.authn.hostcert.cert=PATH-ODE-ED/interface-cert-internal.pem
+dcache.authn.hostcert.key=PATH-ODE-ED/interface-key-internal.pem
+[internalDomain/srm]
+srm.cell.name=srm-internal
+srm.protocols.loginbroker=loginbroker-internal
+srm.net.host=door-internal
+[internalDomain/ftp]
+ftp.authn.protocol = gsi
+ftp.cell.name=GFTP-door-internal
+dcache.service.loginbroker=loginbroker-internal
 
-    [externalDomain]
-    listen=222.222.222.5
-    dcache.authn.hostcert.cert=PATH-ODE-ED/interface-cert-external.pem
-    dcache.authn.hostcert.key=PATH-ODE-ED/interface-key-external.pem
-    [externalDomain/srm]
-    srm.cell.name=srm-external
-    srm.protocols.loginbroker=loginbroker-external
-    srm.net.host=door-external
-    [externalDomain/ftp]
-    ftp.authn.protocol = gsi
-    ftp.cell.name=GFTP-door-external
-    dcache.service.loginbroker=loginbroker-external
+[externalDomain]
+listen=222.222.222.5
+dcache.authn.hostcert.cert=PATH-ODE-ED/interface-cert-external.pem
+dcache.authn.hostcert.key=PATH-ODE-ED/interface-key-external.pem
+[externalDomain/srm]
+srm.cell.name=srm-external
+srm.protocols.loginbroker=loginbroker-external
+srm.net.host=door-external
+[externalDomain/ftp]
+ftp.authn.protocol = gsi
+ftp.cell.name=GFTP-door-external
+dcache.service.loginbroker=loginbroker-external
+```
 
 ## GRIDFTP with Pools in a Private Subnet
 
@@ -121,7 +123,9 @@ Example:
 
 E.g. if the pools should connect to the secondary interface of the `GridFTP` door host which has the IP address `10.0.1.1`, set
 
-    ftp.net.internal=10.0.1.1
+```ini
+ftp.net.internal=10.0.1.1
+```
 
 in the `/etc/dcache/dcache.conf` file.
 

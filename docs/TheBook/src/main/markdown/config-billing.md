@@ -22,11 +22,11 @@ These options can be enabled simultaneously. If the database option is selected,
 
 If you installed dCache following the instructions in the Chapter [Installing dCache](install.md) you enabled the BILLING in the domain where the HTTPD service is running (see the extract of the layout file).
 
-    ...
-    [httpdDomain]
-    [httpdDomain/billing]
-    [httpdDomain/httpd]
-    ...
+```ini
+[httpdDomain]
+[httpdDomain/billing]
+[httpdDomain/httpd]
+```
 
 Use the property `billing.text.dir` to set the location of the log files and the property `billing.enable.text` to control whether the plain-text log files are generated.
 
@@ -120,11 +120,13 @@ over the database configuration.
 
     The current database values can be checked with the `dcache database ls` command.
 
-        # dcache database ls
-        DOMAIN          CELL        DATABASE HOST      USER      MANAGEABLE AUTO
-        namespaceDomain PnfsManager chimera  localhost dcache    Yes        Yes
-        namespaceDomain cleaner     chimera  localhost dcache    No         No
-        billingDomain   billing     billing  localhost dcache   Yes        Yes
+    ```console-root
+    dcache database ls
+    |DOMAIN          CELL        DATABASE HOST      USER    MANAGEABLE AUTO
+    |namespaceDomain PnfsManager chimera  localhost dcache  Yes        Yes
+    |namespaceDomain cleaner     chimera  localhost dcache  No         No
+    |billingDomain   billing     billing  localhost dcache  Yes        Yes
+    ```
 
 -   Database inserts are batched for performance. Since 2.8, improvements
 have been made to the way the billing service handles these inserts, which can

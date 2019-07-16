@@ -16,8 +16,8 @@ In the example of [the section called “Installing a dCache instance”](instal
 this domain is called  adminDoorDomain:
 
 ```ini
-    [adminDoorDomain]
-    [adminDoorDomain/admin]
+[adminDoorDomain]
+[adminDoorDomain/admin]
 ```
 
 > **Note**
@@ -92,8 +92,8 @@ Public key based authorization is default with a fallback to `gPlazma` `kpwd` pl
 To use `gPlazma` make sure that you added it to your layout file :
 
 ```ini
-        [gplazmaDomain]
-        [gplazmaDomain/gplazma]
+[gplazmaDomain]
+[gplazmaDomain/gplazma]
 ```
 
 The `gPlazma` configuration file `/etc/dcache/gplazma.conf` has to

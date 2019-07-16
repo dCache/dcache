@@ -53,15 +53,17 @@ The mode of a replicated file can either be determined by settings in the destin
 
 To enable replication on arrival by the `PoolManager` set the property `pool.destination.replicate` to `PoolManager` for the particular pool
 
-    [exampleDomain]
-    [exampleDomain/pool]
-    ...
-    pool.destination.replicate=PoolManager
+```ini
+[exampleDomain]
+[exampleDomain/pool]
+pool.destination.replicate=PoolManager
+```
 
 or for several pools in the `/etc/dcache/dcache.conf` file.
 
-    ...
-    pool.destination.replicate=PoolManager
+```ini
+pool.destination.replicate=PoolManager
+```
 
 File hopping configuration instructs a pool to send a `replicateFile` request to the `PoolManager` as the result of a file arriving on that pool from some external client. All arriving files will be treated the same. The `PoolManager` will process this transfer request by trying to find a matching link (Please find detailed information at [Chapter 7, The poolmanager Service](config-PoolManager.md).
 
@@ -72,18 +74,20 @@ Assume that we want to have all files, arriving on pool `ocean` to be immediatel
 Other than that, files arriving at the pool `mountain` should be replicated to all read pools from which farm nodes on the `131.169.10.0/24` subnet are allowed to read.
 The layout file defining the pools `ocean` and `mountain` should read like this:
 
-    [exampleDomain]
-    [exampleDomain/pool]
+```ini
+[exampleDomain]
+[exampleDomain/pool]
+name=ocean
+path=/path/to/pool-ocean
+pool.wait-for-files=${path}/data
+pool.destination.replicate=PoolManager
 
-    name=ocean
-    path=/path/to/pool-ocean
-    pool.wait-for-files=${path}/data
-    pool.destination.replicate=PoolManager
-
-    name=mountain
-    path=/path/to/pool-mountain
-    pool.wait-for-files=${path}/data
-    pool.destination.replicate=PoolManager
+[exampleDomain/pool]
+name=mountain
+path=/path/to/pool-mountain
+pool.wait-for-files=${path}/data
+pool.destination.replicate=PoolManager
+```
 
 In the layout file it is defined that all files arriving on the pools
 `ocean` or `mountain` should be replicated immediately. The following
@@ -196,8 +200,10 @@ With the `HoppingManager` you have several configuration options for file `hoppi
 
 Add the `hoppingManager` service to a domain in your layout file and restart the domain.
 
-    [<DomainName>]
-    [<DomainName>/hoppingmanager]
+```ini
+[<DomainName>]
+[<DomainName>/hoppingmanager]
+```
 
 Initially no rules are configured for the HoppingManager. You may add
 rules by either edit the file
@@ -211,15 +217,17 @@ modifications by the save command into the `HoppingManager.conf`
 
 To enable replication on arrival by the CELL-HOPMNGR set the property `pool.destination.replicate` to `HoppingManager` for the particular pool
 
-    [exampleDomain]
-    [exampleDomain/pool]
-    ...
-    pool.destination.replicate=HoppingManager
+```ini
+[exampleDomain]
+[exampleDomain/pool]
+pool.destination.replicate=HoppingManager
+```
 
 or for several pools in the `/etc/dcache/dcache.conf` file.
 
-    ...
-    pool.destination.replicate=HoppingManager
+```ini
+pool.destination.replicate=HoppingManager
+```
 
 #### HoppingManager Configuration Introduction
 
@@ -245,16 +253,16 @@ or for several pools in the `/etc/dcache/dcache.conf` file.
 
 #### HoppingManager Configuration Reference
 
-             define hop OPTIONS <name> <pattern> precious|cached|keep
-                OPTIONS
-                  -destination=<cellDestination> # default : PoolManager
-                  -overwrite
-                  -continue
-                  -source=write|restore|*   #  !!!! for experts only      StorageInfoOptions
-                  -host=<destinationHostIp>
-                  -protType=dCap|ftp...
-                  -protMinor=<minorProtocolVersion>
-                  -protMajor=<majorProtocolVersion>
+    define hop OPTIONS <name> <pattern> precious|cached|keep
+    OPTIONS
+        -destination=<cellDestination> # default : PoolManager
+        -overwrite
+        -continue
+        -source=write|restore|*   #  !!!! for experts only      StorageInfoOptions
+        -host=<destinationHostIp>
+        -protType=dCap|ftp...
+        -protMinor=<minorProtocolVersion>
+        -protMajor=<majorProtocolVersion>
 
 **name**
 This is the name of the hopping rule. Rules are checked in alphabetic order concerning their names.
@@ -287,14 +295,14 @@ Specify the protocol which should be used to access the replicated files.
 
 In order to instruct a particular pool to send a `replicateFile` message to the HOPPINGMANAGER service, you need to add the line `pool.destination.replicate=HoppingManager` to the layout file.
 
-    [exampleDomain]
-    [exampleDomain/pool]
-
-    name=write-pool
-    path=/path/to/write-pool-exp-a
-    pool.wait-for-files=${path}/data
-    pool.destination.replicate=HoppingManager
-    ...
+```ini
+[exampleDomain]
+[exampleDomain/pool]
+name=write-pool
+path=/path/to/write-pool-exp-a
+pool.wait-for-files=${path}/data
+pool.destination.replicate=HoppingManager
+```
 
 Assume that all files of experiment-a will be written to an expensive write pool and subsequently flushed to tape. Now some of these files need to be accessed without delay. The files that need fast acceess possibility will be given the storage class `exp-a:need-fast-access@osm`.
 

@@ -55,39 +55,38 @@ layout file. You can define this service in an extra domain,
 e.g. [webdavDomain] or add it to another domain to the file
 `/etc/dcache/layouts/mylayout.conf`.
 
-
-    [webdavDomain]
-    [webdavDomain/webdav]
-    webdav.authz.anonymous-operations=FULL
-
-
-
+```ini
+[webdavDomain]
+[webdavDomain/webdav]
+webdav.authz.anonymous-operations=FULL
+```
 
 > **NOTE**
 >
 > Depending on the client you might need to set `webdav.redirect.on-read=false` and/or ` webdav.redirect.on-write=false`.
+> ```ini
+> #  ---- Whether to redirect GET requests to a pool
+> #
+> #   If true, WebDAV doors will respond with a 302 redirect pointing to
+> #   a pool holding the file. This requires that a pool can accept
+> #   incoming TCP connections and that the client follows the
+> #   redirect. If false, data is relayed through the door. The door
+> #   will establish a TCP connection to the pool.
+> #
+> (one-of?true|false)webdav.redirect.on-read=true
 >
->     #  ---- Whether to redirect GET requests to a pool
->     #
->     #   If true, WebDAV doors will respond with a 302 redirect pointing to
->     #   a pool holding the file. This requires that a pool can accept
->     #   incoming TCP connections and that the client follows the
->     #   redirect. If false, data is relayed through the door. The door
->     #   will establish a TCP connection to the pool.
->     #
->     (one-of?true|false)webdav.redirect.on-read=true
->
->     #  ---- Whether to redirect PUT requests to a pool
->     #
->     #   If true, WebDAV doors will respond with a 307 redirect pointing to
->     #   a pool to which to upload the file. This requires that a pool can
->     #   accept incoming TCP connections and that the client follows the
->     #   redirect. If false, data is relayed through the door. The door
->     #   will establish a TCP connection to the pool. Only clients that send
->     #   a Expect: 100-Continue header will be redirected - other requests
->     #   will always be proxied through the door.
->     #
->     (one-of?true|false)webdav.redirect.on-write=true
+> #  ---- Whether to redirect PUT requests to a pool
+> #
+> #   If true, WebDAV doors will respond with a 307 redirect pointing to
+> #   a pool to which to upload the file. This requires that a pool can
+> #   accept incoming TCP connections and that the client follows the
+> #   redirect. If false, data is relayed through the door. The door
+> #   will establish a TCP connection to the pool. Only clients that send
+> #   a Expect: 100-Continue header will be redirected - other requests
+> #   will always be proxied through the door.
+> #
+> (one-of?true|false)webdav.redirect.on-write=true
+> ```
 
 Now you can start the WEBDAV domain
 
@@ -118,14 +117,18 @@ curl http://webdav-door.example.org:2880/data/world-writable/testfile.txt
 
 To be able to use dCap you need to have the dCap door running in a domain.
 
-    [dCacheDomain]
-    [dCacheDomain/dcap]
+```ini
+[dCacheDomain]
+[dCacheDomain/dcap]
+```
 
 For anonymous access you need to set the property `dcap.authz.anonymous-operations` to `FULL`.
 
-        [dCacheDomain]
-        [dCacheDomain/dcap]
-          dcap.authz.anonymous-operations=FULL
+```ini
+[dCacheDomain]
+[dCacheDomain/dcap]
+dcap.authz.anonymous-operations=FULL
+```
 
 For this tutorial install dCap on your worker node. This can be the machine where your dCache is running.
 
@@ -189,9 +192,9 @@ It is useful to run the admin service in its own separate domain.
 In the example of [the section called “Installing a dCache instance”](install.md)
 this domain is called  adminDoorDomain:
 
-```
-    [adminDoorDomain]
-    [adminDoorDomain/admin]
+```ini
+[adminDoorDomain]
+[adminDoorDomain/admin]
 ```
 
 > **Note**
@@ -212,17 +215,18 @@ The `admin` service embeds `ssh` server listening on port 22224 (configurable) a
 
 The mechanisms can be enabled by setting the following variable:
 
+```ini
+admin.ssh.authn.enabled = password,publickey,kerberos
 ```
-   admin.ssh.authn.enabled = password,publickey,kerberos
 
-```
 (that is comma separated mechanism names). By default `publickey` and `password` are enabled.
 To enable `kerberos` it needs to be added to the list.
 To complete `kerberos` setup the following variable needs to be defined:
-```
-   dcache.authn.kerberos.realm=EXAMPLE.ORG
 
+```ini
+dcache.authn.kerberos.realm=EXAMPLE.ORG
 ```
+
 and `admin.ssh.authn.kerberos.keytab-file` should point existing keytab file. Default is `/etc/krb5.keytab`.
 
 There are two ways of authorizing administrators to access the dCache `ssh` admin interface - public key based
@@ -251,14 +255,12 @@ breaks) and should have a standard format, such as:
 > You may omit the part behind the equal sign as it is just a comment and not used by dCache.
 
 Now you can login to the admin interface by
-```
 
       [user] $ ssh -p 22224 -l admin headnode.example.org
       dCache (<version>)
       Type "\?" for help.
 
       [headnode] (local) admin >
-```
 
 Public key based authorization is default with a fallback to `gPlazma` `kpwd` plugin.
 
@@ -267,9 +269,9 @@ Public key based authorization is default with a fallback to `gPlazma` `kpwd` pl
 
 To use `gPlazma` make sure that you added it to your layout file :
 
-```
-        [gplazmaDomain]
-        [gplazmaDomain/gplazma]
+```ini
+[gplazmaDomain]
+[gplazmaDomain/gplazma]
 ```
 
 The `gPlazma` configuration file `/etc/dcache/gplazma.conf` has to look like:
@@ -294,17 +296,13 @@ Add a user `admin` to the `/etc/dcache/dcache.kpwd` file using the `dcache` scri
 After you ran the above command the following like appears in
 `/etc/dcache/dcache.kpwd` file:
 
-```
    # set pwd
    passwd admin 4091aba7 read-write 12345 1000 / /
-
-```
 
 For more information about `gPlazma` see [Chapter 10, Authorization in dCache](config-gplazma.md).
 
 Now the user `admin` can login to the admin interface with his password `password` by:
 
-```
     [user] $ ssh -l admin -p 22224 headnode.example.org
     admin@headnode.example.org's password:
     dCache (<version>)
@@ -312,29 +310,22 @@ Now the user `admin` can login to the admin interface with his password `passwor
 
     [headnode] (local) admin >
 
-```
-
 To utilize kerberos authentication mechanism the following lines need
 to be added to `/etc/dcache/dcache.kpwd` file:
 
-```
    mapping "johndoe@EXAMPLE.ORG" admin
 
    login admin read-write 0 0 / / /
       johndoe@EXAMPLE.ORG
 
-```
-
 Then, you can access dCache having obtained kerberos ticket:
 
-```
    [user] $ kinit johndoe@EXAMPLE.ORG
    [user] $ ssh -l admin -p 22224 headnode.example.org
    dCache (<version>)
      Type "\?" for help.
 
    [headnode] (local) admin >
-```
 
 
 To allow other users access to the admin interface add them to the `/etc/dcache/dcache.kpwd` file as described above.
@@ -351,7 +342,6 @@ See [the section called “Create a new user”](#create-a-new-user) to learn ho
 Admin interface allows you to execute shell commands, connect to other cells and execute their supported commands or
 send supported cell commands to other cells. Once logged in you are prompted to use help `Type "\?" for help`.
 
-```
    [headnode] (local) admin > \?
    \? [command]...  # display help for shell commands
    \c cell[@domain] [user]  # connect to cell
@@ -366,12 +356,10 @@ send supported cell commands to other cells. Once logged in you are prompted to 
    \timeout [seconds]  # sets the command timeout
 
    [headnode] (local) admin >
-```
 
 Shell commands are always available at command prompt, whereas in order to execute cell commands you have to either connect to the cell
 using `\c cell[@domain]` and execute command or send command to the cell using `\s [OPTIONS] (cell[@domain]|pool/poolgroup)[,(cell[@domain]|pool/poolgroup)]... command...`. For instance:
 
-```
    [headnode] (local) enstore > \? \c
    NAME
           \c -- connect to cell
@@ -389,7 +377,6 @@ using `\c cell[@domain]` and execute command or send command to the cell using `
                  Account to connect with.
 
    [headnode] (local) enstore >
-```
 
 The `\l` command executed without arguments lists all well-known cells in the system. In general cells are
 addressed by their full name `<name>@<domainName>`. For well-known cells the `@<domainName>` part can be omitted.
@@ -404,20 +391,16 @@ Each cell implements `help [command]` (also aliased as `\h [command]`) which, wh
 without parameters,  displays a set of commands supported by the cell. When provided with command name as an argument
 it shows that command syntax like so:
 
-```
    [headnode] (local) admin > \s pool_1 help log set
    Sets the log level of <appender>.
-```
 
 > **NOTE**
 >
 > You can send (`\s`) `help` command to a cell but you can't send `\h` command to a cell. The `\h` command can be executed only after connecting to a cell using `\c` command:
 
-```
    [headnode] (local) admin > \c pool_1
    [headnode] (pool_1@poolDomain) admin > \h log set
    Sets the log level of <appender>.
-```
 
 > **WARNING**
 >
@@ -482,7 +465,6 @@ for troubleshooting.
 The most useful command of the pool cells is [rep ls](reference.md#rep-ls). It lists the file replicas
  which are stored in the pool by their `pnfs` IDs:
 
-```
    (RoutingMgr@dCacheDoorDomain) admin >  \s pool_1  rep ls
    000100000000000000001120 <-P---------(0)[0]> 485212 si={myStore:STRING}
    000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING}
@@ -493,7 +475,6 @@ The most useful command of the pool cells is [rep ls](reference.md#rep-ls). It l
    (pool_1) admin > rep ls
    000100000000000000001120 <-P---------(0)[0]> 485212 si={myStore:STRING}
    000100000000000000001230 <C----------(0)[0]> 1222287360 si={myStore:STRING}
-```
 
 Each file replica  in a pool has one of the 4 primary states: “cached” (<C---), “precious” (<-P--), “from client” (<--C-), and        “from store” (<---S).
 
@@ -504,13 +485,11 @@ The most important commands in the `PoolManager` are: `rc ls` and `cm ls -r`.
 
 `rc ls` lists the requests currently handled by the `PoolManager`. A typical line of output for a read request with an error condition is (all in one line):
 
-```
    (pool_1) admin > \c PoolManger
    (PoolManager) admin > rc ls
    000100000000000000001230@0.0.0.0/0.0.0.0 m=1 r=1 [<unknown>]
    [Waiting 08.28 19:14:16]
    {149,No pool candidates available or configured for 'staging'}
-```
 
 As the error message at the end of the line indicates, no pool was found containing the file replica
  and no pool could be used for staging the file from a tertiary storage system.
@@ -521,7 +500,6 @@ See [the section called “Obtain information via the dCache Command Line Admin 
 
 Finally, [cm ls](reference.md#cm-ls) with the option `-r` gives the information about the pools currently stored in the cost module of the pool manager. A typical output is:
 
-```
    (PoolManager) admin > cm ls -r
    pool_1={R={a=0;m=2;q=0};S={a=0;m=2;q=0};M={a=0;m=100;q=0};PS={a=0;m=20;q=0};PC={a=0;m=20;q=0};
        (...continues...)   SP={t=2147483648;f=924711076;p=1222772572;r=0;lru=0;{g=20000000;b=0.5}}}
@@ -529,7 +507,6 @@ Finally, [cm ls](reference.md#cm-ls) with the option `-r` gives the information 
    pool_2={R={a=0;m=2;q=0};S={a=0;m=2;q=0};M={a=0;m=100;q=0};PS={a=0;m=20;q=0};PC={a=0;m=20;q=0};
        (...continues...)   SP={t=2147483648;f=2147483648;p=0;r=0;lru=0;{g=4294967296;b=250.0}}}
    pool_2={Tag={{hostname=example.org}};size=0;SC=2.7939677238464355E-4;CC=0.0;}
-```
 
 
 While the first line for each pool gives the information stored in the cache of the cost module, the second line gives the    costs (SC: [space cost](rf-glossary.md#space-cost), CC: [performance cost](rf-glossary.md#performance-cost)) calculated for a (hypothetical) file of zero size. For details on how these are calculated and their meaning, see [the section called “Classic Partitions”](#config-poolmanager.md#classic-partitions).
@@ -538,11 +515,9 @@ While the first line for each pool gives the information stored in the cache of 
 
 To create a new user, <new-user> and set a new password for the user `\c` from the local prompt `((local) admin >)` to the acm, the access control manager, and run following command sequence:
 
-```
     (local) admin > \c acm
     (acm) admin > create user <new-user>
     (acm) admin > set passwd -user=<new-user> <newPasswd> <newPasswd>
-```
 
 For the newly created users there will be an entry in the directory
 `/etc/dcache/admin/users/meta`.
@@ -556,63 +531,57 @@ For the newly created users there will be an entry in the directory
 Example:
 Give the new user access to the PnfsManager.
 
-```
       (acm) admin > create acl cell.PnfsManager.execute
       (acm) admin > add access -allowed cell.PnfsManager.execute <new-user>
-```
 
 Now you can check the permissions by:
 
-```
       (acm) admin > check cell.PnfsManager.execute <new-user>
       Allowed
       (acm) admin > show acl cell.PnfsManager.execute
       <noinheritance>
       <new-user> -> true
-```
 
 The following commands allow access to every cell for a user <new-user>:
 
-```
     (acm) admin > create acl cell.*.execute
     (acm) admin > add access -allowed cell.*.execute <new-user>
-```
 
 
 The following command makes a user as powerful as admin (dCache’s equivalent to the root user):
 
-```
     (acm) admin > create acl *.*.*
     (acm) admin > add access -allowed *.*.* <new-user>
-```
 
 
 ### USE OF THE SSH ADMIN INTERFACE BY SCRIPTS
 
 In scripts, one can use a “Here Document” to list the commands, or supply them to `ssh` as standard-input (stdin). The following demonstrates using a Here Document:
 
-```
-    #!/bin/sh
-    #
-    #  Script to automate dCache administrative activity
+```shell
+#!/bin/sh
+#
+#  Script to automate dCache administrative activity
 
-    outfile=/tmp/$(basename $0).$$.out
+outfile=/tmp/$(basename $0).$$.out
 
-    ssh -p 22224 admin@adminNode  > $outfile << EOF
-    \c PoolManager
-    cm ls -r
-    \q
-    EOF
+ssh -p 22224 admin@adminNode  > $outfile << EOF
+\c PoolManager
+cm ls -r
+\q
+EOF
 ```
+
 Or, the equivalent as stdin.
-```
-    #!/bin/bash
-    #
-    #   Script to automate dCache administrative activity.
 
-    echo -e '\c pool_1\nrep ls\n(more commands here)\n\q' \
-      | ssh -p 22224 admin@adminNode \
-      | tr -d '\r' > rep_ls.out
+```shell
+#!/bin/bash
+#
+#   Script to automate dCache administrative activity.
+
+echo -e '\c pool_1\nrep ls\n(more commands here)\n\q' \
+  | ssh -p 22224 admin@adminNode \
+  | tr -d '\r' > rep_ls.out
 ```
 
 
@@ -724,8 +693,10 @@ Now you can generate your voms proxy containing your VO.
 
 Authentication and authorization in dCache is done by the GPLAZMA service. Define this service in the layout file.
 
-      [gPlazmaDomain]
-      [gPlazmaDomain/gplazma]
+```ini
+[gPlazmaDomain]
+[gPlazmaDomain/gplazma]
+```
 
 In this tutorial we will use the [gplazmalite-vorole-mapping
 plugin](config-gplazma.md#the-gplazmalite-vorole-mapping-plug-in). To
@@ -768,9 +739,11 @@ If you want to copy files into dCache with GSIdCap, SRM or WebDAV with certifica
 
 To use `GSIdCap` you must run a `GSIdCap` door. This is achieved by including the `gsidcap` service in your layout file on the machine you wish to host the door.
 
-    [gsidcapDomain]
-    [gsidcapDomain/dcap]
-    dcap.authn.protocol=gsi
+```ini
+[gsidcapDomain]
+[gsidcapDomain/dcap]
+dcap.authn.protocol=gsi
+```
 
 In addition, you need to have libdcap-tunnel-gsi installed on your worker node, which is contained in the gLite-UI.
 
@@ -805,8 +778,10 @@ and copy it back.
 
 To use the `SRM` you need to define the `srm` service in your layout file.
 
-    [srmDomain]
-    [srmDomain/srm]
+```ini
+[srmDomain]
+[srmDomain/srm]
+```
 
 In addition, the user needs to install an `SRM` client for example the `dcache-srmclient`, which is contained in the gLite-UI, on the worker node and set the `PATH` environment variable.
 
@@ -835,18 +810,22 @@ If the grid functionality is not required the file can be deleted with the `NFS`
 To use `WebDAV` with certificates you change the entry in
 `/etc/dcache/layouts/mylayout.conf` from
 
-    [webdavDomain]
-    [webdavDomain/webdav]
-    webdav.authz.anonymous-operations=FULL
-    webdav.root=/data/world-writable
+```ini
+[webdavDomain]
+[webdavDomain/webdav]
+webdav.authz.anonymous-operations=FULL
+webdav.root=/data/world-writable
+```
 
 to
 
-    [webdavDomain]
-    [webdavDomain/webdav]
-    webdav.authz.anonymous-operations=NONE
-    webdav.root=/data/world-writable
-    webdav.authn.protocol=https
+```ini
+[webdavDomain]
+[webdavDomain/webdav]
+webdav.authz.anonymous-operations=NONE
+webdav.root=/data/world-writable
+webdav.authn.protocol=https
+```
 
 Then you will need to import the host certificate into the dCache keystore using the command
 
@@ -879,12 +858,14 @@ your browser.
 
 You can also choose to have secure and insecure access to your files at the same time. You might for example allow access without authentication for reading and access with authentication for reading and writing.
 
-    [webdavDomain]
-    [webdavDomain/webdav]
-    webdav.root=/data/world-writable
-    webdav.authz.anonymous-operations=READONLY
-    port=2880
-    webdav.authn.protocol=https
+```ini
+[webdavDomain]
+[webdavDomain/webdav]
+webdav.root=/data/world-writable
+webdav.authz.anonymous-operations=READONLY
+port=2880
+webdav.authn.protocol=https
+```
 
 You can access your files via https://<dcache.example.org>:2880 with your browser.
 

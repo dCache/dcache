@@ -27,25 +27,30 @@ https://www.apache.org/dyn/closer.cgi?path=/kafka/0.9.0.0/kafka_2.11-0.9.0.0.tgz
 
 Extract the tar file
 
-    cd opt/
-    tar -zxf kafka_2.11.0.9.0.0 tar.gz
-    cd kafka_2.11.0.9.0.0
-
+```console-root
+cd opt/
+tar -zxf kafka_2.11.0.9.0.0 tar.gz
+cd kafka_2.11.0.9.0.0
+```
 
 ### 2. Enable kafka in dCache.
 
 
-    (one-of?true|false)dcache.enable.kafka = true
-
+```ini
+dcache.enable.kafka = true
+```
 
 Set the broker address, or list of broker addresses
 
-    (one-of?true|false)dcache.enable.kafka = true
-    dcache.kafka.bootstrap-servers = localhost:9092
+```ini
+dcache.kafka.bootstrap-servers = localhost:9092
+```
 
 Set kafka topic name
 
-    dcache.kafka.topic = billing
+```ini
+dcache.kafka.topic = billing
+```
 
 "billing" is default. The following serice level variables
 reference dcache.kafka.topic:
@@ -57,26 +62,18 @@ reference dcache.kafka.topic:
    webdav.kafka.topic = ${dcache.kafka.topic}
    xrootd.kafka.topic = ${dcache.kafka.topic}
 
-
-
-
-
-
-
 ### 3. Start Server
 
-
-
-    bin/kafka-server-start.sh config/server.properties
-
-
-
+```console-root
+bin/kafka-server-start.sh config/server.properties
+```
 
 ### 4. Start consumer
 
 
-
-    bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic billing --from-beginning
+```console-root
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic billing --from-beginning
+```
 
 
 

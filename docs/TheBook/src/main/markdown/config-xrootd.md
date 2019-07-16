@@ -35,18 +35,18 @@ To allow file transfers in and out of dCache using xrootd, a new `xrootd door` m
 
 To enable the `xrootd door`, you have to change the layout file corresponding to your dCache-instance. Enable the xrootd-service within the domain that you want to run it by adding the following line
 
-       ..
-       [<domainName>/xrootd]
-       ..
+```ini
+[<domainName>/xrootd]
+```
 
 Example:
 
 You can just add the following lines to the layout file:
 
-    ..
-    [xrootd-${host.name}Domain]
-    [xrootd-${host.name}Domain/xrootd]
-    ..
+```ini
+[xrootd-${host.name}Domain]
+[xrootd-${host.name}Domain/xrootd]
+```
 
 After a restart of the domain running the DOOR-XROOTD, done e.g. by executing
 
@@ -67,15 +67,19 @@ The default port the `xrootd door` is listening on is 1094. This can be changed 
 xrootd door in a separate line (a restart of the domain(s) running the
 xrootd door is required):
 
-        [xrootd-${host.name}Domain]
-        [xrootd-${host.name}Domain/xrootd]
-            port = 1095
+```ini
+[xrootd-${host.name}Domain]
+[xrootd-${host.name}Domain/xrootd]
+port = 1095
+```
 
 2.  *Globally:* Edit `/etc/dcache/dcache.conf` and add the variable
 `xrootd.net.port` with the desired value (a restart of the domain(s)
 running the `xroot door` is required):
 
-        xrootd.net.port=1095
+```ini
+xrootd.net.port=1095
+```
 
 For controlling the `TCP`-portrange within which `xrootd`-movers will
 start listening in the <pool>Domain, you can add the properties
@@ -84,10 +88,10 @@ start listening in the <pool>Domain, you can add the properties
 preferences. The default values can be viewed in
 `/usr/share/dcache/defaults/dcache.properties`.
 
-    ..
-    dcache.net.lan.port.min=30100
-    dcache.net.lan.port.max=30200
-    ..
+```ini
+dcache.net.lan.port.min=30100
+dcache.net.lan.port.max=30200
+```
 
 ## QUICK TESTS
 
@@ -149,9 +153,9 @@ To read it back into ROOT from dCache:
 To enable read-write access, add the following line to
 `${dCacheHome}/etc/dcache.conf`
 
-    ..
-    xrootdIsReadOnly=false
-    ..
+```ini
+xrootdIsReadOnly=false
+```
 
 and restart any domain(s) running a `xrootd door`.
 
@@ -161,12 +165,15 @@ Please note that due to the unauthenticated nature of this access mode, files ca
 
  To overcome the security issue of uncontrolled `xrootd` read and write access mentioned in the previous section, it is possible to restrict read and write access on a per-directory basis (including subdirectories).
 
-To activate this feature, a colon-seperated list containing the full paths of authorized directories must be added to `/etc/dcache/dcache.conf`. You will need to specify the read and write permissions separately.
+To activate this feature, a colon-seperated list containing the full
+paths of authorized directories must be added to
+`/etc/dcache/dcache.conf`. You will need to specify the read and write
+permissions separately.
 
-   	 ..
-	 xrootd.authz.read-paths=/pnfs/<example.org>/rpath1:/pnfs/<example.org>/rpath2
- 	 xrootd.authz.write-paths=/pnfs/<example.org>/wpath1:/pnfs/<example.org>/wpath2
-  	  ..
+```ini
+xrootd.authz.read-paths=/pnfs/<example.org>/rpath1:/pnfs/<example.org>/rpath2
+xrootd.authz.write-paths=/pnfs/<example.org>/wpath1:/pnfs/<example.org>/wpath2
+```
 
 A restart of the `xrootd` door is required to make the changes take effect. As soon as any of the above properties are set, all read or write requests to directories not matching the allowed path lists will be refused. Symlinks are however not restricted to these prefixes.
 
@@ -221,10 +228,10 @@ Only the last two lines are performing the actual conversion, therefore you can 
 To enable the plugin, it is necessary to add the following two lines
 to the file `/etc/dcache/dcache.conf`, so that it looks like
 
-        ..
-        xrootdAuthzPlugin=org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
-	xrootdAuthzKeystore=<Path_to_your_Keystore>
-	..
+```ini
+xrootdAuthzPlugin=org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
+xrootdAuthzKeystore=<Path_to_your_Keystore>
+```
 
 After doing a restart of dCache, any requests without an appropriate token should result in an error saying "authorization check failed: No authorization token found in open request, access denied.(error code: 3010)".
 
@@ -239,15 +246,15 @@ Example:
 For instance, to enable `GSI` authentication in `xrootd`, add the
 following line to `/etc/dcache/dcache.conf`:
 
-    ..
-    xrootdAuthNPlugin=gsi
-    ..
+```ini
+xrootdAuthNPlugin=gsi
+```
 
 When using `GSI` authentication, depending on your setup, you may or may not want dCache to fail if the host certificate chain can not be verified against trusted certificate authorities. Whether dCache performs this check can be controlled by setting the option `dcache.authn.hostcert.verify`:
 
-    ..
-    dcache.authn.hostcert.verify=true
-    ..
+```ini
+dcache.authn.hostcert.verify=true
+```
 
 *Authorization* of the user information obtained by strong authentication is performed by contacting the gPlazma service. Please refer to [Chapter 10, Authorization in dCache](config-gplazma.md) for instructions about how to configure gPlazma.
 
@@ -287,11 +294,11 @@ using the client provided by SLAC (xrdcp or xrdcopy).
 
 To enforce third-party copy, one must execute the transfer using
 
-                xrdcp --tpc only <source> <destination>
+    xrdcp --tpc only <source> <destination>
 
 One can also try third party and fail over to one-hop two-party (through the client) by using
 
-                xrdcp --tpc first <source> <destination>
+    xrdcp --tpc first <source> <destination>
 
 #### TPC from dCache to another xrootd server
 
@@ -323,7 +330,9 @@ To use dCache as TPC destination, some additional steps need to be taken.
 First, for all pools that will receive files through xrootd TPC, the GSI service
 provider plugin must be loaded by including this in the configuration or layout:
 
-               pool.mover.xrootd.tpc-authn-plugins=gsi
+```ini
+pool.mover.xrootd.tpc-authn-plugins=gsi
+```
 
 #### Credential (proxy) delegation
 
@@ -337,11 +346,11 @@ discards it when the session is disconnected.
 
 To indicate that you wish delegation, the xrootd client requires:
 
-                xrdcp --tpc delegate only <source> <destination>
+    xrdcp --tpc delegate only <source> <destination>
 
 or
 
-                xrdcp --tpc delegate first <source> <destination>
+    xrdcp --tpc delegate first <source> <destination>
 
 Like the XrootD server and client, dCache can determine whether the endpoint
 with which it is communicating supports delegation, and fail over to the
@@ -359,7 +368,9 @@ and arrange to have it placed (and periodically refreshed) on each pool that
 may be the recipient of files transfered via xrootd TPC. The proxy path must
 be indicated to dCache by setting this property:
 
-              xrootd.gsi.tpc.proxy.path={path-to-proxy}
+```ini
+xrootd.gsi.tpc.proxy.path={path-to-proxy}
+```
 
 * If this property is left undefined, dCache will auto-generate a proxy from
 the `hostcert.pem` / `hostkey.pem` of the node on which the pool is running.
@@ -378,10 +389,9 @@ The Third-party embedded client has a timer which will interrupt and return
 an error if the response from the server does not arrive after a given
 amount of time.
 
-The default values for this can be controlled by the properties:
-
-    pool.mover.xrootd.tpc-server-response-timeout
-    pool.mover.xrootd.tpc-server-response-timeout.unit
+The default values for this can be controlled by the properties
+`pool.mover.xrootd.tpc-server-response-timeout` and
+`pool.mover.xrootd.tpc-server-response-timeout.unit`.
 
 These are set to 2 seconds to match the aggressive behavior of the SLAC
 implementation.  However, dCache allows you to control this dynamically
@@ -417,16 +427,19 @@ requests (open, read, etc.) are made to the pool, not the door.
 dCache 5.0 will provide the following properties to control security level
 and force unencrypted signing:
 
-            dcache.xrootd.security.level={0-4}
-            dcache.xrootd.security.force-signing={true,false}
+```ini
+dcache.xrootd.security.level={0-4}
+dcache.xrootd.security.force-signing={true,false}
+```
 
 In the case that the latter is set to true, and one anticipates there will be
 xrootd TPC transfers between two dCache instances or two dCache doors, one
 also would need to include the unix service provider plugin in all the relevant
 pool configurations:
 
-            pool.mover.xrootd.tpc-authn-plugins=gsi,unix
-
+```ini
+pool.mover.xrootd.tpc-authn-plugins=gsi,unix
+```
 
 <!--  [???]: #intouch-web
   []: http://people.web.psi.ch/feichtinger/doc/authz.pdf

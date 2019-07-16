@@ -45,10 +45,11 @@ settings are are described in this section.
 
 To enable ACL support set `pnfsmanager.enable.acl`=`true` in the layout file.
 
-    ..
-    [<domainName>/pnfsmanager]
-    pnfsmanager.enable.acl=true
-    ..
+
+```ini
+[<domainName>/pnfsmanager]
+pnfsmanager.enable.acl=true
+```
 
 As NFSv4.0 protocol specification has a native ACL support, dCache's NFS door doesn't use this option and relays on `acl` option in export configurations. See [Exporting filesystem](config-nfs.md#exporting-filesystem) for details.
 
@@ -56,9 +57,8 @@ As NFSv4.0 protocol specification has a native ACL support, dCache's NFS door do
 
 Altering dCache ACL behaviour is achieved by connecting to the `PnfsManager` [well-known cell](rf-glossary.md#well-known-cell) using the administrator interface. For further details about how to use the administrator interface, see [the section called “The Admin Interface”](intouch.md#the-admin-interface).
 
-The `setfacl` command is used to set a new ACL. This command accepts arguments with the following form:
-
-    setfacl <ID> <ACE> [<ACE>...]
+The `setfacl` command is used to set a new ACL. This command accepts
+arguments with the following form `setfacl <ID> <ACE> [<ACE>...]`
 
 The *ID* argument is either a pnfs-ID or the absolute path of some file or directory in dCache. The `setfacl` command requires ordered list of one or more *ACE* separated by spaces. Any existing ACEs for that *ID* will be replaced. The format and description of these ACE values are described below.
 
