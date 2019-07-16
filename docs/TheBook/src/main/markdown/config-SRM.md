@@ -62,7 +62,7 @@ same server multiple times.
 The SRM service is split between a front end `srm`  and a backend `smrmanager` for scalability. To instantiate
 SRM service both cells need to be started. Not necessarily on the same host.
 
-Like other services, the srm service can be enabled in the layout file **/etc/dcache/layouts/mylayout** of your dCache installation. For an overview of the layout file format, please see [the section called “Defining domains and services”](install.md#defining-domains-and-services).
+Like other services, the srm service can be enabled in the layout file `/etc/dcache/layouts/mylayout` of your dCache installation. For an overview of the layout file format, please see [the section called “Defining domains and services”](install.md#defining-domains-and-services).
 
 Example:
 
@@ -98,10 +98,14 @@ and delete it
 
 ### IMPORTANT SRM CONFIGURATION OPTIONS
 
-The defaults for the following configuration parameters can be found in the **srmmanager.properties**  and **srm.properties** ]
-**transfermanagers.properties*** files located in the directory **/usr/share/dcache/defaults**.
+The defaults for the following configuration parameters can be found
+in the `srmmanager.properties` and `srm.properties` ]
+`transfermanagers.properties` files located in the directory
+`/usr/share/dcache/defaults`.
 
-If you want to modify parameters, copy them to **/etc/dcache/dcache.conf** or to your layout file **/etc/dcache/layouts/mylayout** and update their value.
+If you want to modify parameters, copy them to
+`/etc/dcache/dcache.conf` or to your layout file
+`/etc/dcache/layouts/mylayout` and update their value.
 
 Example:
 
@@ -153,7 +157,8 @@ A space reservation has a retention policy and an access latency.
 
 Retention policy describes the quality of the storage service that will be provided for the data (files) stored in the space reservation and access latency describes the availability of this data. The `SRM` specification requires that if a space reservation is given on upload, then the specified retention policy and access latency must match those of the space reservation.
 
-The default values for the retention policy and access latency can be changed in the file **/etc/dcache/dcache.conf**.
+The default values for the retention policy and access latency can be
+changed in the file `/etc/dcache/dcache.conf`.
 
 **Retention policy**
 The values of retention policy supported by dCache are `REPLICA` and `CUSTODIAL`.
@@ -167,7 +172,7 @@ Once a file is written into a given space reservation, it inherits the reservati
 If the space reservation request does not specify a retention policy, we will assign a value given
 by `dcache.default-retention-policy`. The default value is `CUSTODIAL`.
 
-Edit the file **/etc/dcache/dcache.conf** to change the default value.
+Edit the file `/etc/dcache/dcache.conf` to change the default value.
 
 Example:
 Change the default value to `REPLICA`.
@@ -186,7 +191,7 @@ In case of dCache `ONLINE` means that there will always be a copy of the file on
 
 If a space reservation request does not specify an access latency, we will assign a value given by `dcache.default-access-latency`. The default value is `NEARLINE`.
 
-Edit the file **/etc/dcache/dcache.conf** to change the default value.
+Edit the file `/etc/dcache/dcache.conf` to change the default value.
 
 Example:
 Change the default value to `ONLINE`.
@@ -230,7 +235,17 @@ Implicit space reservation means that the `srm` will create a space reservation 
 
 The reason dCache cannot just allow the file to be uploaded to the link group without any space reservation at all is, that we have to guarantee, that space already allocated for other reservations isn’t used by the file being uploaded. The best way to guarantee that there is enough space for the file is to make a space reservation to which to upload it.
 
-In case of `SRM` version 1.1 data transfers, where the access latency and retention policy cannot be specified, and in case of `SRM` V2.2 clients, when the access latency and retention policy are not specified, default values will be used. First `SRM` will attempt to use the values of access latency and retention policy tags from the directory to which a file is being written. If the tags are not present, then the access latency and retention policy will be set on basis of `pnfsmanager` defaults controlled by `pnfsmanager.default-retention-policy` and `pnfsmanager.default-access-latency` variables in **/etc/dcache/dcache.conf**.
+In case of `SRM` version 1.1 data transfers, where the access latency
+and retention policy cannot be specified, and in case of `SRM` V2.2
+clients, when the access latency and retention policy are not
+specified, default values will be used. First `SRM` will attempt to
+use the values of access latency and retention policy tags from the
+directory to which a file is being written. If the tags are not
+present, then the access latency and retention policy will be set on
+basis of `pnfsmanager` defaults controlled by
+`pnfsmanager.default-retention-policy` and
+`pnfsmanager.default-access-latency` variables in
+`/etc/dcache/dcache.conf`.
 
 You can check if the `AccessLatency` and `RetentionPolicy` tags are present by using the following command:
 
@@ -341,13 +356,16 @@ The link group `spacemanager_WriteLinkGroup` was created. Here the flags indicat
 
 ##### The `SpaceManagerLinkGroupAuthorizationFile`
 
-Now you need to edit the **LinkGroupAuthorization.conf** file. This file contains a list of the link groups and all the VOs and the VO Roles that are permitted to make reservations in a given link group.
+Now you need to edit the `LinkGroupAuthorization.conf` file. This file
+contains a list of the link groups and all the VOs and the VO Roles
+that are permitted to make reservations in a given link group.
 
-Specify the location of the **LinkGroupAuthorization.conf** file in the **/etc/dcache/dcache.conf** file.
+Specify the location of the `LinkGroupAuthorization.conf` file in the
+`/etc/dcache/dcache.conf` file.
 
     spacemanager.authz.link-group-file-name=/path/to/LinkGroupAuthorization.conf
 
-The file **LinkGroupAuthorization.conf** has following syntax:
+The file `LinkGroupAuthorization.conf` has following syntax:
 
 LinkGroup <NameOfLinkGroup> followed by the list of the Fully Qualified Attribute Names (FQANs). Each FQAN is on a separate line, followed by an empty line, which is used as a record separator, or by the end of the file.
 
@@ -474,7 +492,9 @@ You can see that the value for `state` has changed from `RESERVED` to `RELEASED`
 
 #### Making and Releasing a Space Reservation as a User
 
-If so authorized, a user can make a space reservation through the SRM protocol. A user is authorized to do so using the **LinkGroupAuthorization.conf** file.
+If so authorized, a user can make a space reservation through the SRM
+protocol. A user is authorized to do so using the
+`LinkGroupAuthorization.conf` file.
 
 ##### VO based Authorization Prerequisites
 
@@ -533,7 +553,8 @@ If a client uses a regular grid proxy, created with `grid-proxy-init`, and not a
 
 ##### Space Reservation for non SRM Transfers
 
-Edit the file **/etc/dcache/dcache.conf** to enable space reservation for non `SRM` transfers.
+Edit the file `/etc/dcache/dcache.conf` to enable space reservation
+for non-SRM transfers.
 
     spacemanager.enable.reserve-space-for-non-srm-transfers=true
 
@@ -545,7 +566,9 @@ This is analogous to implicit space reservations performed by the srm, except th
 
 ### SRM CONFIGURATION FOR EXPERTS
 
-There are a few parameters in **/usr/share/dcache/defaults/*.properties** that you might find useful for nontrivial `SRM` deployment.
+There are a few parameters in
+`/usr/share/dcache/defaults/*.properties` that you might find useful
+for nontrivial `SRM` deployment.
 
 #### dcache.enable.space-reservation
 
@@ -823,12 +846,14 @@ We highly recommend to make sure that PSQL database files are stored on a separa
 
 ### SRM OR SRM MONITORING ON A SEPARATE NODE
 
-If `SRM` or srm monitoring is going to be installed on a separate node, you need to add an entry in the file **/var/lib/pgsql/data/pg_hba.conf** for this node as well:
+If `SRM` or srm monitoring is going to be installed on a separate
+node, you need to add an entry in the file
+`/var/lib/pgsql/data/pg_hba.conf` for this node as well:
 
     host    all         all       <monitoring node>    trust
     host    all         all       <srm node>           trust
 
-The file **postgresql.conf** should contain the following:
+The file `postgresql.conf` should contain the following:
 
     #to enable network connection on the default port
     max_connections = 100

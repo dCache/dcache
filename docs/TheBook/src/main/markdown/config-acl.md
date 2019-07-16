@@ -39,7 +39,9 @@ Inheritance is optional. Within a directory's ACL some ACEs may be inherited whi
 
 ## Configuring ACL support
 
-The **dcache.conf** and layout files contain a number of settings that may be adjusted to configure dCache's permission settings. These settings are are described in this section.
+The `dcache.conf` and layout files contain a number of settings that
+may be adjusted to configure dCache's permission settings. These
+settings are are described in this section.
 
 To enable ACL support set `pnfsmanager.enable.acl`=`true` in the layout file.
 
@@ -260,7 +262,9 @@ This section gives some specific examples of how to set ACLs to achieve some spe
 
 ACL allowing specific user to delete files in a directory
 
-This example demonstrates how to configure a directory-ACL so user 3750 can delete any file within the directory **/pnfs/example.org/data/exampleDir**.
+This example demonstrates how to configure a directory-ACL so user
+3750 can delete any file within the directory
+`/pnfs/example.org/data/exampleDir`.
 
     (PnfsManager) admin > setfacl /pnfs/example.org/data/exampleDir EVERYONE@:+l USER:3750:D
         (...line continues...)   USER:3750:+d:of
@@ -298,15 +302,28 @@ This example is an extension to [Example 18.1, “ACL allowing specific user to 
    (PnfsManager) admin > setfacl /pnfs/example.org/data/exampleDir USER:3750:+D:d
         (...line continues...)    USER:3750:+d:odf
 
-The first ACE is `USER:3750:+D:d`. This authorises user 3750 to delete any contents of directory **/pnfs/example.org/data/exampleDir** that has an ACL authorising them with `d` operation.
+The first ACE is `USER:3750:+D:d`. This authorises user 3750 to delete
+any contents of directory `/pnfs/example.org/data/exampleDir` that has
+an ACL authorising them with `d` operation.
 
 The first ACE also contains the inheritance flag `d` so newly created subdirectories will inherit this ACE. Since the inherited ACE will also contain the `d` inheritance flag, this ACE will be copied to all subdirectories when they are created.
 
-The second ACE is `USER:3750:+d:odf`. The ACE authorises user 3750 to delete whichever item the ACL containing this ACE is associated with. However, since the ACE contains the `o` in the inheritance flags, user 3750 is *not* authorised to delete the directory **/pnfs/example.org/data/exampleDir**
+The second ACE is `USER:3750:+d:odf`. The ACE authorises user 3750 to
+delete whichever item the ACL containing this ACE is associated
+with. However, since the ACE contains the `o` in the inheritance
+flags, user 3750 is *not* authorised to delete the directory
+`/pnfs/example.org/data/exampleDir`
 
-Since the second ACE has both the `d` and `f` inheritance flags, it will be inherited by all files and subdirectories of **/pnfs/example.org/data/exampleDir**, but without the `o` flag. This authorises user 3750 to delete these items.
+Since the second ACE has both the `d` and `f` inheritance flags, it
+will be inherited by all files and subdirectories of
+`/pnfs/example.org/data/exampleDir`, but without the `o` flag. This
+authorises user 3750 to delete these items.
 
-Subdirectories (and files) will inherit the second ACE with both `d` and `f` inheritance flags. This implies that all files and sub-subdirecties within a subdirectory of **/pnfs/example.org/data/exampleDir** will also inherit this ACE, so will also be deletable by user 3750.
+Subdirectories (and files) will inherit the second ACE with both `d`
+and `f` inheritance flags. This implies that all files and
+sub-subdirecties within a subdirectory of
+`/pnfs/example.org/data/exampleDir` will also inherit this ACE, so
+will also be deletable by user 3750.
 
 ### Example 4
 

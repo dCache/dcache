@@ -48,8 +48,10 @@ Create the root of the Chimera namespace and a world-writable directory by
 
 ### WEBDAV
 
-To use **WebDAV** you need to define a **WebDAV** service in your layout file. You can define this service in an extra domain, e.g. [webdavDomain] or add it to another domain to the file /etc/dcache
-/layouts/mylayout.conf.
+To use **WebDAV** you need to define a **WebDAV** service in your
+layout file. You can define this service in an extra domain,
+e.g. [webdavDomain] or add it to another domain to the file
+`/etc/dcache/layouts/mylayout.conf`.
 
 
     [webdavDomain]
@@ -127,7 +129,10 @@ Get the GLITE repository (which contains dCap) and install DCAP using `yum`.
 
 Create the root of the Chimera namespace and a world-writable directory for **dCap** to write into as described [above](#dcache-without-mounted-namespace).
 
-Copy the data (here **/bin/sh** is used as example data) using the **dccp** command and the **dCap** protocol describing the location of the file using a URL, where <dcache.example.org> is the host on which the dCache is running
+Copy the data (here `/bin/sh` is used as example data) using the
+`dccp` command and the **dCap** protocol describing the location of
+the file using a URL, where <dcache.example.org> is the host on which
+the dCache is running
 
        [root] # dccp -H /bin/sh dcap://<dcache.example.org>/data/world-writable/my-test-file-1
        [##########################################################################################] 100% 718 kiB
@@ -177,7 +182,10 @@ this domain is called  adminDoorDomain:
 
 > **Note**
 >
-> All configurable values of the ssh admin interface can be found in the **/usr/share/dcache/defaults/admin.properties** file. Please do NOT change any value in this file. Instead enter the key value combination in the **/etc/dcache/dcache.conf**.
+> All configurable values of the ssh admin interface can be found in
+> the `/usr/share/dcache/defaults/admin.properties` file. Please do
+> NOT change any value in this file. Instead enter the key value
+> combination in the `/etc/dcache/dcache.conf`.
 
 
 ### ACCESS WITH SSH
@@ -210,10 +218,12 @@ described below.
 
 #### Public Key Authorization
 
-To authorize administrators by their public key insert the key into the file **authorized_keys2** which should
-be placed in the directory **/etc/dcache/admin** as specified in the file **/usr/share/dcache/defaults/admin.properties**
-under `admin.paths.authorized-keys`. Each key has to be one line (no line breaks) and should have a standard format,
-such as:
+To authorize administrators by their public key insert the key into
+the file `authorized_keys2` which should be placed in the directory
+`/etc/dcache/admin` as specified in the file
+`/usr/share/dcache/defaults/admin.properties` under
+`admin.paths.authorized-keys`. Each key has to be one line (no line
+breaks) and should have a standard format, such as:
 
     ssh-dss AAAAB3....GWvM= /Users/JohnDoe/.ssh/id_dsa
 
@@ -239,7 +249,7 @@ Now you can login to the admin interface by
 Public key based authorization is default with a fallback to `gPlazma` `kpwd` plugin.
 
 
-#### Access via **gPlazma** and the **dcache.kpwd** File
+#### Access via **gPlazma** and the `dcache.kpwd` file
 
 To use `gPlazma` make sure that you added it to your layout file :
 
@@ -248,7 +258,7 @@ To use `gPlazma` make sure that you added it to your layout file :
         [gplazmaDomain/gplazma]
 ```
 
-The `gPlazma` configuration file **/etc/dcache/gplazma.conf** has to look like:
+The `gPlazma` configuration file `/etc/dcache/gplazma.conf` has to look like:
 
 ```
 auth    sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
@@ -256,7 +266,7 @@ map     sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
 session sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
 ```
 
-Add a user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dcache` script.
+Add a user `admin` to the `/etc/dcache/dcache.kpwd` file using the `dcache` script.
 
 >    Example:
 >    [user] $ dcache kpwd dcuseradd admin -u 12345 -g 1000 -h / -r / -f / -w read-write -p password
@@ -267,7 +277,8 @@ Add a user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dcache` 
 >
 >    [user] $
 
-After you ran the above command the following like appears in **/etc/dcache/dcache.kpwd** file:
+After you ran the above command the following like appears in
+`/etc/dcache/dcache.kpwd` file:
 
 ```
    # set pwd
@@ -289,7 +300,8 @@ Now the user `admin` can login to the admin interface with his password `passwor
 
 ```
 
-To utilize kerberos authentication mechanism the following lines need to be added to     **/etc/dcache/dcache.kpwd** file:
+To utilize kerberos authentication mechanism the following lines need
+to be added to `/etc/dcache/dcache.kpwd` file:
 
 ```
    mapping "johndoe@EXAMPLE.ORG" admin
@@ -313,7 +325,9 @@ Then, you can access dCache having obtained kerberos ticket:
 
 To allow other users access to the admin interface add them to the `/etc/dcache/dcache.kpwd` file as described above.
 
-Just adding a user in the **dcache.kpwd** file is not sufficient. The generated user also needs access priileges that can only be set within the admin interface itself.
+Just adding a user in the `dcache.kpwd` file is not sufficient. The
+generated user also needs access priileges that can only be set within
+the admin interface itself.
 
 See [the section called “Create a new user”](#create-a-new-user) to learn how to create the user in the admin interface and set the rights.
 
@@ -516,11 +530,14 @@ To create a new user, <new-user> and set a new password for the user `\c` from t
     (acm) admin > set passwd -user=<new-user> <newPasswd> <newPasswd>
 ```
 
-For the newly created users there will be an entry in the directory **/etc/dcache/admin/users/meta.**
+For the newly created users there will be an entry in the directory
+`/etc/dcache/admin/users/meta`.
 
 > **NOTE**
 >
-> As the initial user `admin` has not been created with the above command you will not find him in the directory **/etc/dcache/admin/users/meta.**
+> As the initial user `admin` has not been created with the above
+> command you will not find him in the directory
+> `/etc/dcache/admin/users/meta`.
 
 Example:
 Give the new user access to the PnfsManager.
@@ -608,7 +625,14 @@ In dCache digital certificates are used for authentication and authorisation. To
       CA
       ...
 
-You will need a server certificate for the host on which your dCache is running and a user certificate. The host certificate needs to be copied to the directory **/etc/grid-security/** on your server and converted to **hostcert.pem** and **hostkey.pem** as described in [Using X.509 Certificates](config-gplazma.md#using-x509-certificates). Your user certificate is usually located in **.globus**. If it is not there you should copy it from your browser to **.globus** and convert the **.p12** file to **usercert.pem** and **userkey.pem**.
+You will need a server certificate for the host on which your dCache
+is running and a user certificate. The host certificate needs to be
+copied to the directory `/etc/grid-security/` on your server and
+converted to `hostcert.pem` and `hostkey.pem` as described in [Using
+X.509 Certificates](config-gplazma.md#using-x509-certificates). Your
+user certificate is usually located in `.globus`. If it is not there
+you should copy it from your browser to `.globus` and convert the
+`.p12` file to `usercert.pem` and `userkey.pem`.
 
 Example:
 
@@ -647,7 +671,12 @@ Generate a proxy certificate using the command `voms-proxy-init`.
     Your proxy is valid until Mon Mar  7 22:06:15 2011
 
 
-With `voms-proxy-init -voms <yourVO>` you can add VOMS attributes to the proxy. A user’s roles (Fully Qualified Attribute Names) are read from the certificate chain found within the proxy. These attributes are signed by the user’s VOMS server when the proxy is created. For the `voms-proxy-init -voms` command you need to have the file **/etc/vomses** which contains entries about the VOMS servers like
+With `voms-proxy-init -voms <yourVO>` you can add VOMS attributes to
+the proxy. A user’s roles (Fully Qualified Attribute Names) are read
+from the certificate chain found within the proxy. These attributes
+are signed by the user’s VOMS server when the proxy is created. For
+the `voms-proxy-init -voms` command you need to have the file
+`/etc/vomses` which contains entries about the VOMS servers like
 
 
     Example:
@@ -675,17 +704,21 @@ Authentication and authorization in dCache is done by the GPLAZMA service. Defin
       [gPlazmaDomain]
       [gPlazmaDomain/gplazma]
 
-In this tutorial we will use the [gplazmalite-vorole-mapping plugin](config-gplazma.md#the-gplazmalite-vorole-mapping-plug-in). To this end you need to edit the **/etc/grid-security/grid-vorolemap** and the **/etc/grid-security/storage-authzdb** as well as the **/etc/dcache/dcachesrm-gplazma.policy**.
+In this tutorial we will use the [gplazmalite-vorole-mapping
+plugin](config-gplazma.md#the-gplazmalite-vorole-mapping-plug-in). To
+this end you need to edit the `/etc/grid-security/grid-vorolemap` and
+the `/etc/grid-security/storage-authzdb` as well as the
+`/etc/dcache/dcachesrm-gplazma.policy`.
 
 Example:
-The **/etc/grid-security/grid-vorolemap:**
+The `/etc/grid-security/grid-vorolemap`:
       "/C=DE/O=GermanGrid/OU=DESY/CN=John Doe" "/desy" doegroup
-The **/etc/grid-security/storage-authzdb:**
+The `/etc/grid-security/storage-authzdb`:
       version 2.1
 
       authorize  doegroup read-write 12345 1234 / / /
 
-The **/etc/dcache/dcachesrm-gplazma.policy:**
+The `/etc/dcache/dcachesrm-gplazma.policy`:
       # Switches
       xacml-vo-mapping="OFF"
       saml-vo-mapping="OFF"
@@ -771,7 +804,8 @@ If the grid functionality is not required the file can be deleted with the `NFS`
 
 ### WEBDAV WITH CERTIFICATES
 
-To use `WebDAV` with certificates you change the entry in **/etc/dcache/layouts/mylayout.conf** from
+To use `WebDAV` with certificates you change the entry in
+`/etc/dcache/layouts/mylayout.conf` from
 
     [webdavDomain]
     [webdavDomain/webdav]
@@ -823,13 +857,20 @@ You can access your files via https://<dcache.example.org>:2880 with your browse
 
 In this section we will have a look at the configuration and log files of dCache.
 
-The dCache software is installed in various directories according to the Filesystem Hierarchy Standard. All configuration files can be found in  **/etc/dcache**.
+The dCache software is installed in various directories according to
+the Filesystem Hierarchy Standard. All configuration files can be
+found in `/etc/dcache`.
 
-Log files of domains are by default stored in **/var/log/dcache/<domainName>.log.**
+Log files of domains are by default stored in
+`/var/log/dcache/<domainName>.log`.
 
 More details about domains and cells can be found in [Cell Message passing.](config-message-passing.md)
 
-The most central component of a dCache instance is the PoolManager cell. It reads additional configuration information from the file **/var/lib/dcache/config/poolmanager.conf** at start-up. However, it is not necessary to restart the domain when changing the file. We will see an example of this below.
+The most central component of a dCache instance is the PoolManager
+cell. It reads additional configuration information from the file
+`/var/lib/dcache/config/poolmanager.conf` at start-up. However, it is
+not necessary to restart the domain when changing the file. We will
+see an example of this below.
 
 <!--
   [???]: #in-install

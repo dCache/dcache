@@ -31,11 +31,11 @@ contains some pointers to extended features.
 
 In the following the installation of a dCache instance will be
 described. The Chimera namespace provider, some management components,
-and the **SRM** need a PSQL server installed. We recommend running
-this PSQL on the local node. The first section describes the
-configuration of a PSQL server. After that the installation of CHIMERA
-and of the dCache components will follow. During the whole
-installation process root access is required.
+and the SRM need a PSQL server installed. We recommend running this
+PSQL on the local node. The first section describes the configuration
+of a PSQL server. After that the installation of CHIMERA and of the
+dCache components will follow. During the whole installation process
+root access is required.
 
 ### PREREQUISITES
 
@@ -139,7 +139,7 @@ associated meta data. Where pools in dCache store the content of
 files, Chimera stores the names and meta data of those files. Chimera
 itself stores the data in the PostgreSQL database we just set up. The
 properties of Chimera are defined in
-**/usr/share/dcache/defaults/chimera.properties**. See [Chapter 4,
+`/usr/share/dcache/defaults/chimera.properties`. See [Chapter 4,
 Chimera](config-chimera.md) for more information.
 
 
@@ -168,8 +168,7 @@ createuser -U postgres --no-superuser --no-createrole --createdb --pwprompt dcac
 ```
 
 Several management components running on the head node as well as the
-**SRM** will use the database dcache for storing their state
-information:
+SRM will use the database dcache for storing their state information:
 
 ```console-root
 createdb -U dcache dcache
@@ -198,7 +197,7 @@ dcache database update
 Now the configuration of Chimera is done.
 
 Before the first start of dCache replace the file
-**/etc/dcache/gplazma.conf** with an empty file.
+`/etc/dcache/gplazma.conf` with an empty file.
 
 ```console-root
 mv /etc/dcache/gplazma.conf /etc/dcache/gplazma.conf.bak
@@ -240,16 +239,15 @@ data transfer protocol like FTP or NFS.
 In the setup of dCache, there are three main places for configuration
 files:
 
--   **/usr/share/dcache/defaults**
--   **/etc/dcache/dcache.conf**
--   **/etc/dcache/layouts**
+-   `/usr/share/dcache/defaults/`
+-   `/etc/dcache/dcache.conf`
+-   `/etc/dcache/layouts/`
 
-The folder **/usr/share/dcache/defaults** contains the default
-settings of the dCache. If one of the default configuration values
-needs to be changed, copy the default setting of this value from one
-of the files in **/usr/share/dcache/defaults** to the file
-**/etc/dcache/dcache.conf**, which initially is empty and update the
-value.
+The folder `/usr/share/dcache/defaults/` contains the default settings
+of the dCache. If one of the default configuration values needs to be
+changed, copy the default setting of this value from one of the files
+in `/usr/share/dcache/defaults` to the file `/etc/dcache/dcache.conf`,
+which initially is empty and update the value.
 
 > **NOTE**
 >
@@ -257,7 +255,7 @@ value.
 > connected to a tape system. Therefore please change the values for
 > pnfsmanager.default-retention-policy and
 > pnfsmanager.default-access-latency in the file
-> **/etc/dcache/dcache.conf**.
+> `/etc/dcache/dcache.conf`.
 
 
 >```ini
@@ -267,15 +265,15 @@ value.
 
 Layouts describe which domains to run on a host and which services to
 run in each domain. For the customized configuration of your dCache
-you will have to create a layout file in **/etc/dcache/layouts**. In
-this tutorial we will call it the **mylayout.conf** file.
+you will have to create a layout file in `/etc/dcache/layouts`. In
+this tutorial we will call it the `mylayout.conf` file.
 
 > **IMPORTANT**
 >
 > Do not update configuration values in the files in the defaults
 > folder, since changes to these files will be overwritten by updates.
 
-As the files in **/usr/share/dcache/defaults/** do serve as succinct
+As the files in `/usr/share/dcache/defaults/` do serve as succinct
 documentation for all available configuration parameters and their
 default values it is quite useful to have a look at them.
 
@@ -305,17 +303,16 @@ service that is to run in a domain. Lines starting with a hash-symbol
 
 There may be several layout files in the layout directory, but only
 one of them is read by dCache when starting up. By default it is the
-**${hostname}.conf**. If the dCache should be started with another
+`${hostname}.conf`. If the dCache should be started with another
 layout file you will have to make this configuration in
-**/etc/dcache/dcache.conf**.
+`/etc/dcache/dcache.conf`.
 
 ```ini
 dcache.layout=mylayout
 ```
 
-This entry in **/etc/dcache/dcache.conf** will instruct dCache to read
-the layout file **/etc/dcache/layouts/mylayout.conf** when starting
-up.
+This entry in `/etc/dcache/dcache.conf` will instruct dCache to read
+the layout file `/etc/dcache/layouts/mylayout.conf` when starting up.
 
 
 In the same file you may specifiy the logging level:
@@ -325,8 +322,8 @@ dcache.log.level.events=info
 ```
 
 There is an example layout file available at
-**/usr/share/dcache/examples/layouts/single.conf**. Looking at its
-first lines can serve as an example for the notation defined above:
+`/usr/share/dcache/examples/layouts/single.conf`. Looking at its first
+lines can serve as an example for the notation defined above:
 
 ```ini
 [dCacheDomain]
@@ -334,14 +331,13 @@ first lines can serve as an example for the notation defined above:
 [dCacheDomain/poolmanager]
 ```
 
-[dCacheDomain] defines a domain called dCacheDomain. In this example
-only one domain is defined. All the services are running in that
-domain.  [dCacheDomain/admin] declares that the admin service is to be
-run in the dCacheDomain domain.
+The line `[dCacheDomain]` defines a domain called *dCacheDomain*. In
+this example only one domain is defined. All the services are running
+in that domain.  The line `[dCacheDomain/admin]` declares that an
+instance of the *admin* service will run in the *dCacheDomain* domain.
 
-Example:
-This is an example for the **mylayout.conf** file of a single node
-dCache with several domains.
+The following is an example layout file for a single node dCache with
+six domains.
 
 ```ini
 [dCacheDomain]
@@ -378,9 +374,9 @@ coordinate message communication between satellite domains. In a big
 installations it's recommended to have more than one core domain for
 redundancy.
 
-The role of the domain can be changed with **dcache.broker.scheme**
+The role of the domain can be changed with `dcache.broker.scheme`
 property, which is described in
-**/usr/share/dcache/defaults/dcache.properties** file.
+`/usr/share/dcache/defaults/dcache.properties` file.
 
 #### Creating and configuring pools
 
@@ -416,7 +412,7 @@ dcache pool create /srv/dcache/p1 pool1 poolDomain
 ```
 
 In this example we create a pool called pool1 in the directory
-**`/srv/dcache/p1`**. The created pool will be running in the domain
+`/srv/dcache/p1`. The created pool will be running in the domain
 `poolDomain`.
 
 > **MIND THE GAP!**
@@ -436,8 +432,8 @@ in it and can thus safely be undone or repeated.
 
 #### Starting dCache
 
-Restart dCache to start the newly configured components **dcache
-restart** and check the status of dCache with **dcache status**.
+Restart dCache to start the newly configured components `dcache
+restart` and check the status of dCache with `dcache status`.
 
 ```console-root
 dcache restart
@@ -478,7 +474,7 @@ dcache.java.memory.heap=512m
 dcache.java.memory.direct=512m
 ```
 
-Again, these values can be changed in **/etc/dcache/dcache.conf**.
+Again, these values can be changed in `/etc/dcache/dcache.conf`.
 
 For optimization of your dCache you can define the Java heap size in
 the layout file separately for every domain.
@@ -504,7 +500,7 @@ dcache.java.memory.direct=16m
 >
 > If `JAVA_HOME` or `JAVA` cannot be defined as global environment
 > variables in the operating system, then they can be defined in
-> either **/etc/default/dcache** or **/etc/dcache.env**. These two
+> either `/etc/default/dcache` or `/etc/dcache.env`. These two
 > files are sourced by the init script and allow `JAVA_HOME`, `JAVA`
 > and `dCache_HOME` to be defined.
 
@@ -515,13 +511,13 @@ installing it on a single node. Think about how dCache should be
 organised regarding services and domains. Then adapt the layout files,
 as described in [in the section called “Defining domains and
 services”](install.md#defining-domains-and-services), to the layout
-that you have in mind. The files **/etc/dcache/layouts/head.conf** and
-**/etc/dcache/layouts/pool.conf** contain examples for a dCache
+that you have in mind. The files `/etc/dcache/layouts/head.conf` and
+`/etc/dcache/layouts/pool.conf` contain examples for a dCache
 head-node and a dCache pool respectively.
 
 > **IMPORTANT**
 >
-> You must configure a domain called **dCacheDomain** but the other
+> You must configure a domain called *dCacheDomain* but the other
 > domain names can be chosen freely.
 
 > Please make sure that the domain names that you choose are
@@ -530,7 +526,7 @@ head-node and a dCache pool respectively.
 
 On any other nodes than the head node, the property
 `dcache.broker.host` has to be added to the file
-**/etc/dcache/dcache.conf.** This property should point to the host
+`/etc/dcache/dcache.conf`. This property should point to the host
 containing the special domain dCacheDomain, because that domain acts
 implicitly as a broker.
 

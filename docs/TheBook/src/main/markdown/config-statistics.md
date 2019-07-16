@@ -26,7 +26,11 @@ Define the statistics service in the domain, where the httpd is running.
 
 The statistics service automatically creates a directory tree, structured according to years, months and days.
 
-Once per hour, a **total.raw** file is produced underneath the active **year**, **month** and **day** directories, containing the sum over all pools and storage classes of the corresponding time interval. The **day** directory contains detailed statistics per hour and for the whole day.
+Once per hour, a `total.raw` file is produced underneath the active
+`year`, `month` and `day` directories, containing the sum over all
+pools and storage classes of the corresponding time interval. The
+`day` directory contains detailed statistics per hour and for the
+whole day.
 
     /var/lib/dcache/statistics/YYYY/total.raw
     /var/lib/dcache/statistics/YYYY/MM/total.raw
@@ -40,7 +44,9 @@ In the same directory tree the HTML files are created for each day, month and ye
     /var/lib/dcache/statistics/YYYY/MM/index.html
     /var/lib/dcache/statistics/YYYY/MM/DD/index.html
 
-By default the path for the statistics data is **/var/lib/dcache/statistics**. You can modify this path by setting the property **dcache.paths.statistics** to a different value.
+By default the path for the statistics data is
+`/var/lib/dcache/statistics`. You can modify this path by setting the
+property **dcache.paths.statistics** to a different value.
 
 ## THE STATISTICS WEB PAGE
 
@@ -81,11 +87,18 @@ On the `Statistics Help Page`  http://<head-node.example.org>:2288/docs/statisti
 
 ## EXPLANATION OF THE FILE FORMAT OF THE XXX.RAW FILES
 
-The file formats of the **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw** and the **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-day.raw** files are similar. The file **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw** does not contain columns 2 and 3 as these are related to the day and not to the hour.
+The file formats of the
+`/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw` and the
+`/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-day.raw` files are
+similar. The file
+`/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw` does not
+contain columns 2 and 3 as these are related to the day and not to the
+hour.
 
 Example:
 
-The file format of the **/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-day.raw** files:
+The file format of the
+`/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-day.raw` files:
 
     #
     # timestamp=1361364900897

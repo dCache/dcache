@@ -69,7 +69,9 @@ To delete files with GSI-FTP use the `edg-gridftp-rm` command.
 
     [user] $ edg-gridftp-rm gsiftp://gridftp-door.example.org/pnfs/example.org/data/dteam/filler_test20050811160948926780000
 
-This deletes the file **filler_test20050811160948926780000** from the **/pnfs/example.org/data/dteam** using the door running on the host gridftp-door.example.org within the dCache cluster example.org
+This deletes the file `filler_test20050811160948926780000` from the
+`/pnfs/example.org/data/dteam` using the door running on the host
+gridftp-door.example.org within the dCache cluster example.org
 
 ### Copying files
 
@@ -80,8 +82,9 @@ globus-url-copy
 ...
 Copying file with `globus-url-copy` follows the syntax source, destination.
 
-Example:
-The following example copies the file **/etc/group** into dCache as the file **/pnfs/example.org/data/dteam/test_GlobusUrlCopy.clinton.504.22080.20071102160121.2**
+Example: The following example copies the file `/etc/group` into
+dCache as the file
+`/pnfs/example.org/data/dteam/test_GlobusUrlCopy.clinton.504.22080.20071102160121.2`
 
     [user] $ globus-url-copy \
     file://///etc/group \
@@ -95,14 +98,19 @@ When using `dccp` client or using the interposition library the errors `Command 
 
 ### DCCP
 
-The following example shows `dccp` being used to copy the file **/etc/group** into dCache as the the file **/pnfs/example.org/data/dteam/test6**. The `dccp` program will connect to dCache without authenticating.
+The following example shows `dccp` being used to copy the file
+`/etc/group` into dCache as the the file
+`/pnfs/example.org/data/dteam/test6`. The `dccp` program will connect
+to dCache without authenticating.
 
      [user] $ /opt/d-cache/dcap/bin/dccp /etc/group dcap://dcap-door.example.org:22125/pnfs/example.org/data/dteam/test6
      Command failed!
      Server error message for [1]: "path /pnfs/example.org/data/dteam/test6 not found" (errno 10001).
      597 bytes in 0 seconds
 
-The following example shows `dccp` being used to upload the file **/etc/group**. In this example, dccp will authenticate with dCache using the GSI protocol.
+The following example shows `dccp` being used to upload the file
+`/etc/group`. In this example, dccp will authenticate with dCache
+using the GSI protocol.
 
     [user] $ /opt/d-cache/dcap/bin/dccp /etc/group gsidcap://gsidcap-door.example.org:22128/pnfs/example.org/data/dteam/test5
     Command failed!
@@ -229,7 +237,8 @@ Usage:
 
 Example:
 
-The following example creates the directory **/pnfs/example.org/data/dteam/myDir**.
+The following example creates the directory
+`/pnfs/example.org/data/dteam/myDir`.
 
     [user] $ srmmkdir srm://srm-door.example.org:8443/pnfs/example.org/data/dteam/myDir
 

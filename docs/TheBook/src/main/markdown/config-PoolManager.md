@@ -25,11 +25,22 @@ A new copy can either be created by a `pool to pool transfer` (p2p) or by fetchi
 
 The behaviour of the `poolmanager` service is highly configurable. In order to exploit the full potential of the software it is essential to understand the mechanisms used and how they are configured. The `poolmanager` service creates the `PoolManager` cell, which is a unique cell in dCache and consists of several sub-modules: The important ones are the `pool selection unit` (PSU) and the load balancing policy as defined by the partition manager (PM).
 
-The `poolmanager` can be configured by either directly editing the file **/var/lib/dcache/config/poolmanager.conf** or via the Admin Interface. Changes made via the [Admin Interface](intouch.md#admin-interface) will be saved in the file **/var/lib/dcache/config/poolmanager.conf** by the `save` command. This file will be parsed, whenever the dCache starts up. It is a simple text file containing the corresponding Admin Interface commands. It can therefore also be edited before the system is started. It can also be loaded into a running system with the `reload` command. In this chapter we will describe the commands allowed in this file.
+The `poolmanager` can be configured by either directly editing the
+file `/var/lib/dcache/config/poolmanager.conf` or via the Admin
+Interface. Changes made via the [Admin
+Interface](intouch.md#admin-interface) will be saved in the file
+`/var/lib/dcache/config/poolmanager.conf` by the `save` command. This
+file will be parsed, whenever the dCache starts up. It is a simple
+text file containing the corresponding Admin Interface commands. It
+can therefore also be edited before the system is started. It can also
+be loaded into a running system with the `reload` command. In this
+chapter we will describe the commands allowed in this file.
 
 > **NOTE**
 >
-> Starting from  version 2.16 dCache stores the configuration of `poolmanager` in zookeeper and reads **poolmanager.conf** file only if configuration in zookeeper is missing, e.g. on the first start.
+> Starting from version 2.16 dCache stores the configuration of
+> `poolmanager` in zookeeper and reads `poolmanager.conf` file only if
+> configuration in zookeeper is missing, e.g. on the first start.
 
 ## THE POOL SELECTION MECHANISM
 
@@ -45,7 +56,7 @@ Actually maintaining such a table in memory (and as user in a configuration file
 
 A link consists of a set of unit groups and a list of pools. If all the unit groups are matched, the pools belonging to the link are added to the list of allowable pools.
 
-A link is defined in the file **/var/lib/dcache/config/poolmanager.conf** by
+A link is defined in the file `/var/lib/dcache/config/poolmanager.conf` by
 
       psu create link <link> <unitgroup>
       psu set link <link> -readpref=<rpref> -writepref=<wpref> -cachepref=<cpref> -p2ppref=<ppref>
@@ -806,15 +817,19 @@ To create a new link group login to the [Admin Interface](intouch.md#the-admin-i
     (PoolManager) admin > save
 
 
-With `save` the changes will be saved to the file **/var/lib/dcache/config/poolmanager.conf**.
+With `save` the changes will be saved to the file
+`/var/lib/dcache/config/poolmanager.conf`.
 
 > **NOTE**
 >
-> You can also edit the file **/var/lib/dcache/config/poolmanager.conf** to create a new link group. Please make sure that it already exists. Otherwise you will have to create it first via the Admin Interface by
+> You can also edit the file `/var/lib/dcache/config/poolmanager.conf`
+> to create a new link group. Please make sure that it already
+> exists. Otherwise you will have to create it first via the Admin
+> Interface by
 >
 >     (PoolManager) admin > save
 >
-> Edit the file **/var/lib/dcache/config/poolmanager.conf**
+> Edit the file `/var/lib/dcache/config/poolmanager.conf`
 >
 >     psu create linkGroup <linkgroup>
 >     psu addto linkGroup <linkgroup> <link>
@@ -829,7 +844,12 @@ With `save` the changes will be saved to the file **/var/lib/dcache/config/poolm
 
 A space reservation has a *retention policy* and an *access latency*, where retention policy describes the quality of the storage service that will be provided for files in the space reservation and access latency describes the availability of the files. See [the section called “Properties of Space Reservation”](config-SRM.md#properties-of-space-reservation) for further details.
 
-A link group has five boolean properties called `replicaAllowed, outputAllowed, custodialAllowed, onlineAllowed` and `nearlineAllowed`, which determine the access latencies and retention policies allowed in the link group. The values of these properties (true or false) can be configured via the Admin Interface or directly in the file **/var/lib/dcache/config/poolmanager.conf**.
+A link group has five boolean properties called `replicaAllowed,
+outputAllowed, custodialAllowed, onlineAllowed` and `nearlineAllowed`,
+which determine the access latencies and retention policies allowed in
+the link group. The values of these properties (true or false) can be
+configured via the Admin Interface or directly in the file
+`/var/lib/dcache/config/poolmanager.conf`.
 
 For a space reservation to be allowed in a link group, the the retention policy and access latency of the space reservation must be allowed in the link group.
 

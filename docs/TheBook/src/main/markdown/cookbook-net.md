@@ -123,7 +123,7 @@ E.g. if the pools should connect to the secondary interface of the `GridFTP` doo
 
     ftp.net.internal=10.0.1.1
 
-in the **/etc/dcache/dcache.conf** file.
+in the `/etc/dcache/dcache.conf` file.
 
 ## Using IPv6 with dCache
 
@@ -159,7 +159,8 @@ In order to properly match IPv6 connections, a IPv6 NET unit must be added to an
 
 This will update your system live, but these changes will be lost when you next restart the domain hosting poolmanager.  Therefore you must make these changes persistent.
 
-The file /var/lib/dcache/config/poolmanager.conf contains the poolmanager configuration.
+The file `/var/lib/dcache/config/poolmanager.conf` contains the
+poolmanager configuration.
 
 If you maintain the contents of this file outside of dCache then you need to add the above two commands in the file.  Take care to add them in the correct order (the `psu addto command must be after the 'world-net' ugroup and the '::/0' unit are created).
 

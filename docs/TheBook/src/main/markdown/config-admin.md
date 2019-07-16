@@ -22,7 +22,10 @@ this domain is called  adminDoorDomain:
 
 > **Note**
 >
-> All configurable values of the ssh admin interface can be found in the **/usr/share/dcache/defaults/admin.properties** file. Please do NOT change any value in this file. Instead enter the key value combination in the **/etc/dcache/dcache.conf**.
+> All configurable values of the ssh admin interface can be found in
+> the `/usr/share/dcache/defaults/admin.properties` file. Please do
+> NOT change any value in this file. Instead enter the key value
+> combination in the `/etc/dcache/dcache.conf`.
 
 
 ## ACCESS WITH SSH
@@ -53,10 +56,12 @@ described below.
 
 ### Public Key Authorization
 
-To authorize administrators by their public key insert the key into the file **authorized_keys2** which should
-be placed in the directory **/etc/dcache/admin** as specified in the file **/usr/share/dcache/defaults/admin.properties**
-under `admin.paths.authorized-keys`. Each key has to be one line (no line breaks) and should have a standard format,
-such as:
+To authorize administrators by their public key insert the key into
+the file `authorized_keys2` which should be placed in the directory
+`/etc/dcache/admin` as specified in the file
+`/usr/share/dcache/defaults/admin.properties` under
+`admin.paths.authorized-keys`. Each key has to be one line (no line
+breaks) and should have a standard format, such as:
 
     ssh-dss AAAAB3....GWvM= /Users/JohnDoe/.ssh/id_dsa
 
@@ -82,7 +87,7 @@ Now you can login to the admin interface by
 Public key based authorization is default with a fallback to `gPlazma` `kpwd` plugin.
 
 
-### Access via **gPlazma** and the **dcache.kpwd** File
+### Access via gPlazma and the `dcache.kpwd` file
 
 To use `gPlazma` make sure that you added it to your layout file :
 
@@ -91,7 +96,8 @@ To use `gPlazma` make sure that you added it to your layout file :
         [gplazmaDomain/gplazma]
 ```
 
-The `gPlazma` configuration file **/etc/dcache/gplazma.conf** has to look like:
+The `gPlazma` configuration file `/etc/dcache/gplazma.conf` has to
+look like:
 
 ```
 auth    sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
@@ -99,7 +105,8 @@ map     sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
 session sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
 ```
 
-Add a user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dcache` script.
+Add a user `admin` to the `/etc/dcache/dcache.kpwd` file using the
+`dcache` script.
 
 >    Example:
 >    [user] $ dcache kpwd dcuseradd admin -u 12345 -g 1000 -h / -r / -f / -w read-write -p password
@@ -110,7 +117,8 @@ Add a user `admin` to the **`/etc/dcache/dcache.kpwd`** file using the `dcache` 
 >
 >    [user] $
 
-After you ran the above command the following like appears in **/etc/dcache/dcache.kpwd** file:
+After you ran the above command the following like appears in
+`/etc/dcache/dcache.kpwd` file:
 
 ```console
    # set pwd
@@ -132,7 +140,8 @@ Now the user `admin` can login to the admin interface with his password `passwor
 
 ```
 
-To utilize kerberos authentication mechanism the following lines need to be added to     **/etc/dcache/dcache.kpwd** file:
+To utilize kerberos authentication mechanism the following lines need
+to be added to `/etc/dcache/dcache.kpwd` file:
 
 ```
    mapping "johndoe@EXAMPLE.ORG" admin
@@ -156,7 +165,7 @@ Then, you can access dCache having obtained kerberos ticket:
 
 To allow other users access to the admin interface add them to the `/etc/dcache/dcache.kpwd` file as described above.
 
-Just adding a user in the **dcache.kpwd** file is not sufficient. The generated user also needs access priileges that can only be set within the admin interface itself.
+Just adding a user in the `dcache.kpwd` file is not sufficient. The generated user also needs access priileges that can only be set within the admin interface itself.
 
 See [the section called “Create a new user”](#create-a-new-user) to learn how to create the user in the admin interface and set the rights.
 
@@ -359,11 +368,14 @@ To create a new user, <new-user> and set a new password for the user `\c` from t
     (acm) admin > set passwd -user=<new-user> <newPasswd> <newPasswd>
 ```
 
-For the newly created users there will be an entry in the directory **/etc/dcache/admin/users/meta.**
+For the newly created users there will be an entry in the directory
+`/etc/dcache/admin/users/meta`.
 
 > **NOTE**
 >
-> As the initial user `admin` has not been created with the above command you will not find him in the directory **/etc/dcache/admin/users/meta.**
+> As the initial user `admin` has not been created with the above
+> command you will not find him in the directory
+> `/etc/dcache/admin/users/meta`.
 
 Give the new user access to the PnfsManager.
 

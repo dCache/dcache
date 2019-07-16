@@ -25,7 +25,11 @@ File hopping is a collective term in dCache, summarizing the possibility of havi
 
 *File Hopping on arrival* is a term, denoting the possibility of initiating a pool to pool transfer as the result of a file successfully arriving on a pool from some external client. Files restored from HSM or arriving on a pool as the result of a pool to pool transfer will not yet be forwarded.
 
-Forwarding of incoming files can be enabled by setting the `pool.destination.replicate` property in the **/etc/dcache/dcache.conf** file or per pool in the layout file. It can be set to on, `PoolManager` or `HoppingManager`, where on does the same as `PoolManager`.
+Forwarding of incoming files can be enabled by setting the
+`pool.destination.replicate` property in the `/etc/dcache/dcache.conf`
+file or per pool in the layout file. It can be set to on,
+`PoolManager` or `HoppingManager`, where on does the same as
+`PoolManager`.
 
 The pool is requested to send a `replicateFile` message to either the `PoolManager` or to the `HoppingManager`, if available. The different approaches are briefly described below and in more detail in the subsequent sections.
 
@@ -54,7 +58,7 @@ To enable replication on arrival by the `PoolManager` set the property `pool.des
     ...
     pool.destination.replicate=PoolManager
 
-or for several pools in the **/etc/dcache/dcache.conf** file.
+or for several pools in the `/etc/dcache/dcache.conf` file.
 
     ...
     pool.destination.replicate=PoolManager
@@ -81,7 +85,14 @@ The layout file defining the pools `ocean` and `mountain` should read like this:
     pool.wait-for-files=${path}/data
     pool.destination.replicate=PoolManager
 
-In the layout file it is defined that all files arriving on the pools `ocean` or `mountain` should be replicated immediately. The following **PoolManager.conf** file contains instructions for the CELL-POOLMNGR how to replicate these files. Files arriving at the `ocean` pool will be replicated to the `ocean-copies` subset of the read pools and files arriving at the pool `mountain` will be replicated to all read pools from which farm nodes on the 131.169.10.0/24 subnet are allowed to read.
+In the layout file it is defined that all files arriving on the pools
+`ocean` or `mountain` should be replicated immediately. The following
+`PoolManager.conf` file contains instructions for the CELL-POOLMNGR
+how to replicate these files. Files arriving at the `ocean` pool will
+be replicated to the `ocean-copies` subset of the read pools and files
+arriving at the pool `mountain` will be replicated to all read pools
+from which farm nodes on the 131.169.10.0/24 subnet are allowed to
+read.
 
     #
     # define the units
@@ -188,7 +199,11 @@ Add the `hoppingManager` service to a domain in your layout file and restart the
     [<DomainName>]
     [<DomainName>/hoppingmanager]
 
-Initially no rules are configured for the HoppingManager. You may add rules by either edit the file **/var/lib/dcache/config/HoppingManager.conf** and restart the hoppingmanager service, or use the admin interface and `save` the modifications by the save command into the **HoppingManager.conf**
+Initially no rules are configured for the HoppingManager. You may add
+rules by either edit the file
+`/var/lib/dcache/config/HoppingManager.conf` and restart the
+hoppingmanager service, or use the admin interface and `save` the
+modifications by the save command into the `HoppingManager.conf`
 
 
 
@@ -201,7 +216,7 @@ To enable replication on arrival by the CELL-HOPMNGR set the property `pool.dest
     ...
     pool.destination.replicate=HoppingManager
 
-or for several pools in the **/etc/dcache/dcache.conf** file.
+or for several pools in the `/etc/dcache/dcache.conf` file.
 
     ...
     pool.destination.replicate=HoppingManager
@@ -285,13 +300,15 @@ Assume that all files of experiment-a will be written to an expensive write pool
 
 In this example we will configure the file hopping such that a user who wants to access a file that has the above storage info with the NFSv4.1 protocol will be able to do so.
 
-Define a rule for hopping in the **/var/lib/dcache/config/HoppingManager.conf ** file.
+Define a rule for hopping in the
+`/var/lib/dcache/config/HoppingManager.conf` file.
 
     define hop nfs-hop exp-a:need-fast-access@osm cached -protType=nfs -protMajor=4 -protMinor=1
 
 This assumes that the storage class of the file is `exp-a:nfs@osm`. The mode of the file, which was `precious` on the write pool will have to be changed to `cached` on the read pool.
 
-The corresponding **/var/lib/dcache/config/poolmanager.conf** file could read like this:
+The corresponding `/var/lib/dcache/config/poolmanager.conf` file could
+read like this:
 
     #
     # define the units

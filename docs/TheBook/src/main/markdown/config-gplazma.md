@@ -40,7 +40,17 @@ The door collects the credential information from the user and sends a login req
 
 ## Configuration
 
-`gPlazma2` is configured by the PAM-style configuration file **/etc/dcache/gplazma.conf**. Each line of the file is either a comment (i.e., starts with #, is empty, or defines a plugin. Plugin defining lines start with the plugin stack type (one of `auth, map, account, session identity`), followed by a PAM-style modifier (one of `optional, sufficient, required, requisite`), the plugin name and an optional list of key-value pairs of parameters. During the login process they will be executed in the order `auth, map, account` and `session`. The `identity` plugins are not used during login, but later on to map from UID+GID back to user names (e.g., for NFS). Within these groups they are used in the order they are specified.
+`gPlazma2` is configured by the PAM-style configuration file
+`/etc/dcache/gplazma.conf`. Each line of the file is either a comment
+(i.e., starts with #, is empty, or defines a plugin. Plugin defining
+lines start with the plugin stack type (one of `auth, map, account,
+session identity`), followed by a PAM-style modifier (one of
+`optional, sufficient, required, requisite`), the plugin name and an
+optional list of key-value pairs of parameters. During the login
+process they will be executed in the order `auth, map, account` and
+`session`. The `identity` plugins are not used during login, but later
+on to map from UID+GID back to user names (e.g., for NFS). Within
+these groups they are used in the order they are specified.
 
     auth|map|account|session|identity optional|required|requisite|sufficient plug-in ["key=value" ...]
 
@@ -88,7 +98,7 @@ Like `required`, however, in the case that such a plug-in returns a failure, con
 
 ### Plug-ins
 
-`gPlazma2` functionality is configured by combining different types of plug-ins to work together in a way that matches your requirements. For this purpose there are five different types of plug-ins. These types correspond to the keywords `auth, map, account, session` and `identity` as described in the previous section. The plug-ins can be configured via properties that may be set in **dcache.conf**, the layout-file or in **gplazma.conf**.
+`gPlazma2` functionality is configured by combining different types of plug-ins to work together in a way that matches your requirements. For this purpose there are five different types of plug-ins. These types correspond to the keywords `auth, map, account, session` and `identity` as described in the previous section. The plug-ins can be configured via properties that may be set in `dcache.conf`, the layout-file or in `gplazma.conf`.
 
 #### auth Plug-ins
 
@@ -102,7 +112,7 @@ Properties
 **gplazma.kpwd.file**
 
 Path to   **dcache.kpwd**
-Default:  **/etc/dcache/dcache.kpwd**
+Default:  `/etc/dcache/dcache.kpwd`
 
 
 ##### voms
@@ -116,14 +126,14 @@ Properties
 **gplazma.vomsdir.ca**
 
    Path to ca certificates
-   Default: **/etc/grid-security/certificates**
+   Default: `/etc/grid-security/certificates`
 
 
 
 **gplazma.vomsdir.dir**
 
   Path to **vomsdir**
-  Default: **/etc/grid-security/vomsdir**
+  Default: `/etc/grid-security/vomsdir`
 
 ##### X.509 plug-in
 
@@ -148,7 +158,7 @@ Properties:
 **dcache.authn.jaas.config**
 
   Path to jass config file
-  Default: /etc/dcache/jgss.conf
+  Default: `/etc/dcache/jgss.conf`
 
 **gplazma.jaas.name**
 
@@ -176,7 +186,7 @@ Properties
   **gplazma.kpwd.file**
 
      Path to **dcache.kpwd**
-     Default: **/etc/dcache/dcache.kpwd**
+     Default: `/etc/dcache/dcache.kpwd`
 
 
 
@@ -189,7 +199,7 @@ The GP2-AUTHZDB takes a username and maps it to UID+GID using the `storage-authz
 **gplazma.authzdb.file**
 
    Path to **storage-authzdb**
-   Default: **/etc/grid-security/storage-authzdb**
+   Default: `/etc/grid-security/storage-authzdb`
 
 
 
@@ -204,7 +214,7 @@ Properties
 **gplazma.gridmap.file**
 
    Path to `grid-mapfile`
-   Default: **/etc/grid-security/grid-mapfile**
+   Default: `/etc/grid-security/grid-mapfile`
 
 
 
@@ -219,7 +229,7 @@ Properties
 **gplazma.vorolemap.file**
 
    Path to **grid-vorolemap**
-   **/etc/grid-security/grid-vorolemap**
+   Default: `/etc/grid-security/grid-vorolemap`
 
 
 
@@ -321,14 +331,14 @@ Properties
 **gplazma.argus.hostcert**
 
    Path to host certificate
-   Default: **/etc/grid-security/hostcert.pem**
+   Default: `/etc/grid-security/hostcert.pem`
 
 
 
 **gplazma.argus.hostkey**
 
    Path to host key
-   Default:  **/etc/grid-security/hostkey.pem**
+   Default: `/etc/grid-security/hostkey.pem`
 
 
 
@@ -342,14 +352,14 @@ Properties
 **gplazma.argus.ca**
 
    Path to CA certificates
-   Default:  **/etc/grid-security/certificates**
+   Default: `/etc/grid-security/certificates`
 
 
 
 **gplazma.argus.endpoint**
 
    URL of PEP service
-   Default: **https://localhost:8154/authz**
+   Default: `https://localhost:8154/authz`
 
 
 
@@ -383,11 +393,11 @@ Properties
 **gplazma.banfile.path**
 
    Path to configuration file
-   Default: **/etc/dcache/ban.conf**
+   Default: `/etc/dcache/ban.conf`
 
 
 
-To activate the `banfile` it has to be added to **gplazma.conf**:
+To activate the `banfile` it has to be added to `gplazma.conf`:
 
 Example:
 
@@ -415,13 +425,14 @@ Properties
 **gplazma.kpwd.file**
 
    Path to **dcache.kpwd**
-   Default: **/etc/dcache/dcache.kpwd**
+   Default: `/etc/dcache/dcache.kpwd`
 
 
 
 ##### authzdb
 
-The `authzdb` plug-in adds root and home path information to the session, based and username using the **storage-authzdb** file.
+The `authzdb` plug-in adds root and home path information to the
+session, based and username using the `storage-authzdb` file.
 
 
 
@@ -430,7 +441,7 @@ Properties
 **gplazma.authzdb.file**
 
    Path to **storage-authzdb**
-   Default: **/etc/grid-security/storage-authzdb**
+   Default: `/etc/grid-security/storage-authzdb`
 
 
 
@@ -597,18 +608,30 @@ To install the CERN CA certificates follow the following steps:
     [root] # wget http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.repo
     [root] # yum install lcg-CA
 
-This will create the directory **/etc/grid-security/certificates** which contains the Grid CA certificates.
+This will create the directory `/etc/grid-security/certificates` which
+contains the Grid CA certificates.
 
-Certificates which have been revoked are collected in certificate revocation lists (CRLs). To get the CRLs install the **fetch-crl** command as described below.
+Certificates which have been revoked are collected in certificate
+revocation lists (CRLs). To get the CRLs install the `fetch-crl`
+command as described below.
 
     [root] # yum install fetch-crl
     [root] # /usr/sbin/fetch-crl
 
-**fetch-crl** adds `X.509` CRLs  to **/etc/grid-security/certificates**. It is recommended to set up a cron job to periodically update the CRLs.
+`fetch-crl` adds X.509 CRLs to `/etc/grid-security/certificates`. It
+is recommended to set up a cron job to periodically update the CRLs.
 
 ### User Certificate
 
-If you do not have a valid grid user certificate yet, you have to request one from your CA. Follow the instructions from your CA on how to get a certificate. After your request was accepted you will get a URL pointing to your new certificate. Install it into your browser to be able to access grid resources with it. Once you have the certificate in your browser, make a backup and name it **userCertificate.p12**. Copy the user certificate to the directory **~/.globus/** on your worker node and convert it to **usercert.pem** and **userkey.pem** as described below.
+If you do not have a valid grid user certificate yet, you have to
+request one from your CA. Follow the instructions from your CA on how
+to get a certificate. After your request was accepted you will get a
+URL pointing to your new certificate. Install it into your browser to
+be able to access grid resources with it. Once you have the
+certificate in your browser, make a backup and name it
+`userCertificate.p12`. Copy the user certificate to the directory
+`~/.globus/` on your worker node and convert it to `usercert.pem`
+and `userkey.pem` as described below.
 
    [user] $ openssl pkcs12 -clcerts -nokeys -in <userCertificate>.p12 -out usercert.pem
    Enter Import Password:
@@ -636,7 +659,12 @@ Now change the file permissions to make the key only readable by you and the cer
 
 To request a host certificate for your server host, follow again the instructions of your CA.
 
-The conversion to **hostcert.pem** and **hostkey.pem** works analogous to the user certificate. For the hostkey you have to remove the pass phrase. How to do this is also explained in the previous section. Finally copy the **host*.pem** files to **/etc/grid-security/** as `root` and change the file permissions in favour of the user running the grid application.
+The conversion to `hostcert.pem` and `hostkey.pem` works analogous to
+the user certificate. For the hostkey you have to remove the pass
+phrase. How to do this is also explained in the previous
+section. Finally copy the `host*.pem` files to `/etc/grid-security/`
+as `root` and change the file permissions in favour of the user
+running the grid application.
 
 ### VOMS Proxy Certificate
 
@@ -648,7 +676,8 @@ For very large groups of people, it is often more convenient to authorise people
 
 #### `Creating a VOMS proxy`
 
-To create a VOMS proxy for your user certificate you need to execute the **voms-proxy-init** as a user.
+To create a VOMS proxy for your user certificate you need to execute
+the `voms-proxy-init` as a user.
 
 Example:
 
@@ -663,7 +692,18 @@ Example:
 
 ##### Certifying your membership of a VO
 
- You can certify your membership of a VO by using the command **voms-proxy-init -voms <yourVO>**. This is useful as in dCache authorization can be done by VO (see [the section called “Authorizing a VO”](#authorizing-a-vo)). To be able to use the extension **-voms <yourVO>** you need to be able to access VOMS servers. To this end you need the the VOMS server’s and the CA’s DN. Create a file **/etc/grid-security/vomsdir/<VO>/<hostname>.lsc** per VOMS server containing on the 1st line the VOMS server’s DN and on the 2nd line, the corresponding CA’s DN. The name of this file should be the fully qualified hostname followed by an **.lsc** extension and the file must appear in a subdirectory **/etc/grid-security/vomsdir/<VO>** for each VO that is supported by that VOMS server and by the site.
+ You can certify your membership of a VO by using the command
+ `voms-proxy-init -voms <yourVO>`. This is useful as in dCache
+ authorization can be done by VO (see [the section called “Authorizing
+ a VO”](#authorizing-a-vo)). To be able to use the extension `-voms
+ <yourVO>` you need to be able to access VOMS servers. To this end you
+ need the the VOMS server’s and the CA’s DN. Create a file
+ `/etc/grid-security/vomsdir/<VO>/<hostname>.lsc` per VOMS server
+ containing on the 1st line the VOMS server’s DN and on the 2nd line,
+ the corresponding CA’s DN. The name of this file should be the fully
+ qualified hostname followed by an `.lsc` extension and the file must
+ appear in a subdirectory `/etc/grid-security/vomsdir/<VO>` for each
+ VO that is supported by that VOMS server and by the site.
 
 At [http://operations-portal.egi.eu/vo](https://operations-portal.egi.eu/vo) you can search for a VO and find this information.
 
@@ -677,11 +717,12 @@ For example, the file /etc/grid-security/vomsdir/desy/grid-voms.desy.de.lsc cont
 
 where the first entry is the DN of the DESY VOMS server and the second entry is the DN of the CA which signed the DESY VOMS server's certificate.
 
-In addition, you need to have a file **/opt/glite/etc/vomses** containing your VO's VOMS server.
+In addition, you need to have a file `/opt/glite/etc/vomses`
+containing your VO's VOMS server.
 
 Example:
 
-For DESY the file **/opt/glite/etc/vomses�**` should contain the entry
+For DESY the file `/opt/glite/etc/vomses` should contain the entry
 
     "desy" "grid-voms.desy.de" "15104" "/C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de" "desy" "24"
 
@@ -690,7 +731,8 @@ The first entry “desy” is the real name or a nickname of your VO. “grid-vo
 
 Example:
 
-Use the command **voms-proxy-init -voms** to create a VOMS proxy with VO “desy”.
+Use the command `voms-proxy-init -voms` to create a VOMS proxy with VO
+“desy”.
 
     [user] $ voms-proxy-init -voms desy
     Enter GRID pass phrase:
@@ -700,7 +742,7 @@ Use the command **voms-proxy-init -voms** to create a VOMS proxy with VO “desy
     Creating proxy .................................... Done
     Your proxy is valid until Mon Mar  7 23:52:13 2011
 
-View the information about your VOMS proxy with **voms-proxy-info**
+View the information about your VOMS proxy with `voms-proxy-info`
 
     [user] $ voms-proxy-info
     subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe/CN=proxy
@@ -724,7 +766,8 @@ If your proxy is expired you will get
     path      : /tmp/x509up_u500
     timeleft  : 0:00:00
 
-The command **voms-proxy-info -all** gives you information about the proxy and about the VO.
+The command `voms-proxy-info -all` gives you information about the
+proxy and about the VO.
 
     [user] $ voms-proxy-info -all
     subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe/CN=proxy
@@ -743,7 +786,7 @@ The command **voms-proxy-info -all** gives you information about the proxy and a
     timeleft  : 11:24:57
     uri       : grid-voms.desy.de:15104
 
-Use the command **voms-proxy-destroy** to destroy your VOMS proxy.
+Use the command `voms-proxy-destroy` to destroy your VOMS proxy.
 
     [user] $ voms-proxy-destroy
     [user] $ voms-proxy-info
@@ -836,7 +879,9 @@ In `gPlazma`, except for the `kpwd` plug-in, authorization is a two-step process
 
 #### Preparing **storage-authzdb**
 
-The default location of the **storage-authzdb** is **/etc/grid-security**. Before the mapping entries there has to be a line specifying the version of the used file format.
+The default location of the **storage-authzdb** is
+`/etc/grid-security`. Before the mapping entries there has to be a
+line specifying the version of the used file format.
 
 Example:
 
@@ -921,7 +966,10 @@ Example:
 
 In that case, any DN with the corresponding role will match. It should be noted that a match is first attempted with the explicit DN. Therefore if both DN and `"*"` matches can be made, the DN match will take precedence. This is true for the revocation matches as well (see below).
 
-Thus a user with subject `/C=DE/O=GermanGrid/OU=DESY/CN=John Doe` and role `/desy/Role=production` will be mapped to username `desyprod` via the above **storage-authzdb** line with `"*"` for the DN, except if there is also a line such as
+Thus a user with subject `/C=DE/O=GermanGrid/OU=DESY/CN=John Doe` and
+role `/desy/Role=production` will be mapped to username `desyprod` via
+the above `storage-authzdb` line with `"*"` for the DN, except if
+there is also a line such as
 
     "/C=DE/O=GermanGrid/OU=DESY/CN=John Doe" "/desy/Role=production" desyprod2
 
@@ -939,24 +987,37 @@ Since DN is matched first, if a user would be authorized by his VO membership th
 
 #### More Examples
 
-Suppose that there are users in production roles that are expected to write into the storage system data which will be read by other users. In that case, to protect the data the non-production users would be given read-only access. Here in **/etc/grid-security/grid-vorolemap** the production role maps to username `cmsprod`, and the role which reads the data maps to `cmsuser`.
+Suppose that there are users in production roles that are expected to
+write into the storage system data which will be read by other
+users. In that case, to protect the data the non-production users
+would be given read-only access. Here in
+`/etc/grid-security/grid-vorolemap` the production role maps to
+username `cmsprod`, and the role which reads the data maps to
+`cmsuser`.
 
     "*" "/cms/uscms/Role=cmsprod" cmsprod "*" "/cms/uscms/Role=cmsuser" cmsuser
 
-The read-write privilege is controlled by the third field in the lines of **/etc/grid-security/storage-authzdb**
+The read-write privilege is controlled by the third field in the lines
+of `/etc/grid-security/storage-authzdb`
 
     authorize cmsprod  read-write  9811 5063 / /data /
     authorize cmsuser  read-only  10001 6800 / /data /
 
 Example:
 
-Another use case is when users are to have their own directories within the storage system. This can be arranged within the CELL-GPLAZMA configuration files by mapping each user's DN to a unique username and then mapping each username to a unique root path. As an example, lines from **/etc/grid-security/grid-vorolemap** would therefore be written
+Another use case is when users are to have their own directories
+within the storage system. This can be arranged within the
+CELL-GPLAZMA configuration files by mapping each user's DN to a unique
+username and then mapping each username to a unique root path. As an
+example, lines from `/etc/grid-security/grid-vorolemap` would
+therefore be written
 
     "/DC=org/DC=doegrids/OU=People/CN=Selby Booth" "/cms" cms821
     "/DC=org/DC=doegrids/OU=People/CN=Kenja Kassi" "/cms" cms822
     "/DC=org/DC=doegrids/OU=People/CN=Ameil Fauss" "/cms" cms823
 
-and the corresponding lines from **/etc/grid-security/storage-authzdb** would be
+and the corresponding lines from `/etc/grid-security/storage-authzdb`
+would be
 
     authorize cms821 read-write 10821 7000 / /data/cms821 /
     authorize cms822 read-write 10822 7000 / /data/cms822 /
@@ -964,17 +1025,21 @@ and the corresponding lines from **/etc/grid-security/storage-authzdb** would be
 
 ### The kpwd plug-in
 
-The section in the `gPlazma` policy file for the kpwd plug-in specifies the location of the **dcache.kpwd** file, for example
+The section in the `gPlazma` policy file for the kpwd plug-in
+specifies the location of the `dcache.kpwd` file, for example
 
 Example:
     # dcache.kpwd
     kpwdPath="/etc/dcache/dcache.kpwd"
 
- To maintain only one such file, make sure that this is the same location as defined in **/usr/share/dcache/defaults/dcache.properties**.
+To maintain only one such file, make sure that this is the same
+location as defined in `/usr/share/dcache/defaults/dcache.properties`.
 
-Use **/usr/share/dcache/examples/gplazma/dcache.kpwd** to create this file.
+Use `/usr/share/dcache/examples/gplazma/dcache.kpwd` to create this
+file.
 
-To be able to alter entries in the **dcache.kpwd** file conveniantly the dcache script offers support for doing this.
+To be able to alter entries in the `dcache.kpwd` file conveniantly the
+dcache script offers support for doing this.
 
 Example:
     [user] $dcache kpwd dcuseradd testuser -u 12345 -g 1000 -h / -r / -f / -w read-write -p password
@@ -1003,23 +1068,39 @@ Example:
 
     "/C=DE/O=GermanGrid/OU=DESY/CN=John Doe" johndoe
 
-When using the `gridmap`, the **storage-authzdb** file must also be configured. See [the section called “storage-authzdb”](config-gplazma.md#storage-authzdb) for details.
+When using the `gridmap`, the `storage-authzdb` file must also be
+configured. See [the section called
+“storage-authzdb”](config-gplazma.md#storage-authzdb) for details.
 
 ## gPlazma specific dCache configuration
 
-dCache has many parameters that can be used to configure the systems behaviour. You can find all these parameters well documented and together with their default values in the properties files in **/usr/share/dcache/defaults/**. To use non-default values, you have to set the new values in **/etc/dcache/dcache.conf** or in the layout file. Do not change the defaults in the properties files! After changing a parameter you have to restart the concerned cells.
+dCache has many parameters that can be used to configure the systems
+behaviour. You can find all these parameters well documented and
+together with their default values in the properties files in
+`/usr/share/dcache/defaults/`. To use non-default values, you have to
+set the new values in `/etc/dcache/dcache.conf` or in the layout
+file. Do not change the defaults in the properties files! After
+changing a parameter you have to restart the concerned cells.
 
-Refer to the file **gplazma.properties** for a full list of properties for `gPlazma` One commonly used property is `gplazma.cell.limits.threads`, which is used to set the maximum number of concurrent requests to gPlazma. The default value is `30`.
+Refer to the file `gplazma.properties` for a full list of properties
+for `gPlazma` One commonly used property is
+`gplazma.cell.limits.threads`, which is used to set the maximum number
+of concurrent requests to gPlazma. The default value is `30`.
 
 Setting the value for `gplazma.cell.limits.threads` too high may result in large spikes of CPU activity and the potential to run out of memory. Setting the number too low results in potentially slow login activity.
 
 ### Enabling Username/Password Access for WEBDAV
 
-This section describes how to activate the Username/Password access for `WebDAV`. It uses **dcache.kwpd** file as an example format for storing Username/Password information. First make sure `gPlazma2` is enabled in the **/etc/dcache/dcache.conf ** or in the layout file.
+This section describes how to activate the Username/Password access
+for `WebDAV`. It uses `dcache.kwpd` file as an example format for
+storing Username/Password information. First make sure `gPlazma2` is
+enabled in the `/etc/dcache/dcache.conf` or in the layout file.
 
 Example:
 
-Check your `WebDAV` settings: enable the `HTTP` access, disallow the anonymous access, disable requesting and requiring the client authentication and activate basic authentication.
+Check your WebDAV settings: enable the HTTP access, disallow the
+anonymous access, disable requesting and requiring the client
+authentication and activate basic authentication.
 
     webdav.authn.protocol=http
     webdav.authz.anonymous-operations=NONE
@@ -1027,7 +1108,9 @@ Check your `WebDAV` settings: enable the `HTTP` access, disallow the anonymous a
     webdav.authn.require-client-cert=false
     webdav.authn.basic=true
 
-Adjust the **/etc/dcache/gplazma.conf** to use the `kpwd` plug-in (for more information see also [the section called “Plug-ins”](config-gplazma.md#plug-ins).
+Adjust the `/etc/dcache/gplazma.conf` to use the `kpwd` plug-in (for
+more information see also [the section called
+“Plug-ins”](config-gplazma.md#plug-ins).
 
 It will look something like this:
 
@@ -1035,7 +1118,10 @@ It will look something like this:
     map requisite kpwd
     session requisite kpwd
 
-The **/etc/dcache/dcache.kpwd** file is the place where you can specify the username/password record. It should contain the username and the password hash, as well as UID, GID, access mode and the home, root and fsroot directories:
+The `/etc/dcache/dcache.kpwd` file is the place where you can specify
+the username/password record. It should contain the username and the
+password hash, as well as UID, GID, access mode and the home, root and
+fsroot directories:
 
     # set passwd
     passwd tanja 6a4cd089 read-write 500 100 / / /

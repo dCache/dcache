@@ -59,23 +59,23 @@ OR
         ...
 
 
-Note that the storage type setting `alarms.db.type` must be defined either
-in the layout or **/etc/dcache/dcache.conf** file because its default value
-is `off`; this can be set to either `xml`, or `rdbms`. In the latter case,
-the standard set of properties can be used to configure the connection url,
-db user, and so forth. Before using the `rdbms` option for the first time,
- be sure to run:
+Note that the storage type setting `alarms.db.type` must be defined
+either in the layout or `/etc/dcache/dcache.conf` file because its
+default value is `off`; this can be set to either `xml`, or
+`rdbms`. In the latter case, the standard set of properties can be
+used to configure the connection url, db user, and so forth. Before
+using the `rdbms` option for the first time, be sure to run:
 
             createdb -U alarms.db.user alarms
 
 to create the database; as usual, the actual schema will be initialized
 automatically when the service is started.
 
-For the XML option, the storage file is usually found in the shared directory
-for alarms (corresponding to `alarms.dir`); the usual path
-is **/var/lib/dcache/store.xml**, but the location can be changed by
-setting `alarms.db.xml.path`. This will automatically be propagated
-to `alarms.db.url`.
+For the XML option, the storage file is usually found in the shared
+directory for alarms (corresponding to `alarms.dir`); the usual path
+is `/var/lib/dcache/store.xml`, but the location can be changed by
+setting `alarms.db.xml.path`. This will automatically be propagated to
+`alarms.db.url`.
 
 As a rule of thumb, the choice between XML and RDBMS is dictated by
 how much history is to be preserved. While the XML option is more lightweight
@@ -89,10 +89,11 @@ may be worth the effort.
 
 ### CONFIGURE WHERE THE ALARMS SERVICE IS RUNNING
 
-The alarms infrastructure is actually a wrapper around the logging layer
-and makes use of a simple tcp socket logger to transmit logging events to the
-server. In each domain, the **/etc/dcache/logback.xml** configuration
-references the following properties to control remote logging:
+The alarms infrastructure is actually a wrapper around the logging
+layer and makes use of a simple tcp socket logger to transmit logging
+events to the server. In each domain, the `/etc/dcache/logback.xml`
+configuration references the following properties to control remote
+logging:
 
             dcache.log.level.remote=off
             dcache.log.server.host=localhost
@@ -107,17 +108,18 @@ INFO level, all events are filtered for being marked as alarms in the client
 before being sent over the wire; however, at present there is no need to set
 the level any lower.
 
-For the alarms endpoint, if all of your dCache domains run on the same host,
-then the default `localhost` value will work. But usually your dCache will
-not be configured to run on a single node, so each node will need to know
-the destination of the remote logging events. On all the nodes except where
-the actual `alarms` service resides, you will thus need
-to modify the **/etc/dcache/dcache.conf** file or the layout file to
-set the `dcache.log.server.host` property (and restart dCache if it is already up).
-The default port should usually not need to be modified; in any case, it needs
-to correspond to whatever port the service is running on. From inspection of
-the **/usr/share/dcache/alarms.properties** file, you can see that the alarms-specific
-properties mirror the logger properties:
+For the alarms endpoint, if all of your dCache domains run on the same
+host, then the default `localhost` value will work. But usually your
+dCache will not be configured to run on a single node, so each node
+will need to know the destination of the remote logging events. On all
+the nodes except where the actual `alarms` service resides, you will
+thus need to modify the `/etc/dcache/dcache.conf` file or the layout
+file to set the `dcache.log.server.host` property (and restart dCache
+if it is already up).  The default port should usually not need to be
+modified; in any case, it needs to correspond to whatever port the
+service is running on. From inspection of the
+`/usr/share/dcache/alarms.properties` file, you can see that the
+alarms-specific properties mirror the logger properties:
 
          #  ---- Host on which this service is running
          alarms.net.host=${dcache.log.server.host}
@@ -301,14 +303,14 @@ IP, and it will need to be static in that case.
 Only one sender may be listed, but multiple recipients can be indicated
 by a comma-separated list of email addresses.
 
-See the shared defaults **/usr/share/dcache/alarms.properties** file
-for additional settings.
+See the shared defaults `/usr/share/dcache/alarms.properties` file for
+additional settings.
 
 ## Miscellaneous Properties of the ALARMS Service
 
-There are a number of other settings avaible for customization;
-check the files **/usr/share/dcache/alarms.properties** for the complete
-list with explanations.
+There are a number of other settings avaible for customization; check
+the files `/usr/share/dcache/alarms.properties` for the complete list
+with explanations.
 
 ## ALARMS SPI (service provider interface)
 

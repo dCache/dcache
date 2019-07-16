@@ -5,9 +5,13 @@ The following terms are used in dCache.
 
 ## The dcache.conf File
 
-This is the primary configuration file of a dCache. It is located at **/etc/dcache/dcache.conf.**
+This is the primary configuration file of a dCache. It is located at
+`/etc/dcache/dcache.conf`.
 
-The **dcache.conf** file is initially empty. If one of the default configuration values needs to be changed, copy the default setting of this value from one of the [properties files](#properties-files) in **/usr/share/dcache/defaults** to this file and update the value.
+The `dcache.conf` file is initially empty. If one of the default
+configuration values needs to be changed, copy the default setting of
+this value from one of the [properties files](#properties-files) in
+`/usr/share/dcache/defaults` to this file and update the value.
 
 ## The layout File
 

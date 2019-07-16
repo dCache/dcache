@@ -105,12 +105,12 @@ Details about [writing an HSM plugin](../cookbook-writing-hsm-plugins/) can be f
 
 #### Storage Information
 
-	The <storage-information> is a string in the format
-   	 -si=size=bytes;new=true/false;stored=true/false;sClass=StorageClass;\
-   	 cClass0CacheClass;hsm=StorageType;key=value;[key=value;[...]]
+The `<storage-information>` is a string in the format
+`-si=size=bytes;new=true/false;stored=true/false;sClass=StorageClass;cClass0CacheClass;hsm=StorageType;key=value;[key=value;[...]]`
 
-	Example:
-   	 -si=size=1048576000;new=true;stored=false;sClass=desy:cms-sc3;cClass=-;hsm=osm;Host=desy;
+Here is an example:
+
+    -si=size=1048576000;new=true;stored=false;sClass=desy:cms-sc3;cClass=-;hsm=osm;Host=desy;
 
 Mandatory storage information’s keys
 
@@ -216,7 +216,7 @@ The `executable` interacting with the Tertiary Storage System (TSS), as describe
 
 The following files have to be modified to allow dCache to interact with the TSS.
 
--   The **/var/lib/dcache/config/poolmanager.conf** file (one per system)
+-   The `/var/lib/dcache/config/poolmanager.conf` file (one per system)
 -   The pool layout file (one per pool host)
 -   The pool 'setup' file (one per pool)
 -   The namespaceDomain layout file (one per system)
@@ -229,7 +229,7 @@ After the layout files and the various 'setup' files have been corrected, the fo
 
 ### The dCache layout files
 
-#### The **/var/lib/dcache/config/poolmanager.conf** file
+#### The `/var/lib/dcache/config/poolmanager.conf` file
 
 To be able to read a file from the tape in case the cached file has been deleted from all pools, enable the restore-option. The best way to do this is to log in to the Admin Interface and run the following commands:
 
@@ -239,7 +239,7 @@ To be able to read a file from the tape in case the cached file has been deleted
 
  A restart of the dCacheDomain is not necessary in this case.
 
- Alternatively, if the file **/var/lib/dcache/config/poolmanager.conf** already exists then you can add the entry
+ Alternatively, if the file `/var/lib/dcache/config/poolmanager.conf` already exists then you can add the entry
 
     pm set -stage allowed=yes
 
@@ -247,15 +247,23 @@ and restart the DOMAIN-dCache.
 
 > **Warning**
 >
-> Do not create the file **/var/lib/dcache/config/poolmanager.conf** with this single entry! This will result in an error.
+> Do not create the file `/var/lib/dcache/config/poolmanager.conf` with this single entry! This will result in an error.
 
 #### The pool layout
 
-The dCache layout file must be modified for each pool node connected to a TSS. If your pool nodes have been configured correctly to work without TSS, you will find the entry lfs=precious in the layout file (that is located in **/etc/dcache/layouts** and in the file **/etc/dcache/dcache.conf** respectively) for each pool service. This entry is a disk-only-option and has to be removed for each pool which should be connected to a TSS. This will default the lfs parameter to hsm which is exactly what we need.
+The dCache layout file must be modified for each pool node connected
+to a TSS. If your pool nodes have been configured correctly to work
+without TSS, you will find the entry lfs=precious in the layout file
+(that is located in `/etc/dcache/layouts` and in the file
+`/etc/dcache/dcache.conf` respectively) for each pool service. This
+entry is a disk-only-option and has to be removed for each pool which
+should be connected to a TSS. This will default the lfs parameter to
+hsm which is exactly what we need.
 
 #### The pool 'setup' file
 
-The pool 'setup' file is the file **$poolHomeDir/$poolName/setup**. It mainly defines 3 details related to TSS connectivity.
+The pool 'setup' file is the file `$poolHomeDir/$poolName/setup`. It
+mainly defines 3 details related to TSS connectivity.
 
 -   Pointer to the `executable` which is launched on storing and fetching files.
 -   The maximum number of concurrent `STORE FILE` requests allowed per pool.
@@ -290,7 +298,11 @@ Both numbers must be non zero to allow the pool to perform transfers.
 
 Example:
 
-We provide a [script](#example-of-an-executable-to-simulate-a-tape-backend) to simulate a connection to a TSS. To use this script place it in the directory **/usr/share/dcache/lib**, and create a directory to simulate the base of the TSS.
+We provide a
+[script](#example-of-an-executable-to-simulate-a-tape-backend) to
+simulate a connection to a TSS. To use this script place it in the
+directory `/usr/share/dcache/lib`, and create a directory to simulate
+the base of the TSS.
 
     [root] # mkdir -p /hsmTape/data
 
@@ -402,17 +414,28 @@ This section briefly describes the commands and mechanisms to monitor the TSS `P
 
 By default dCache is configured to only log information if something unexpected happens. However, to get familiar with Tertiary Storage System interactions you might be interested in more details. This section provides advice on how to obtain this kind of information.
 
-#### The **executable** log file
+#### The executable log file
 
 Since you provide the `executable`, interfacing dCache and the TSS, it is in your responsibility to ensure sufficient logging information to be able to trace possible problems with either dCache or the TSS. Each request should be printed with the full set of parameters it receives, together with a timestamp. Furthermore information returned to dCache should be reported.
 
 #### dCache log files in general
 
-In dCache, each domain (e.g. dCacheDomain, <pool>Domain etc) prints logging information into its own log file named after the domain. The location of those log files it typically the **/var/log** or **/var/log/dCache** directory depending on the individual configuration. In the default logging setup only errors are reported. This behavior can be changed by either modifying **/etc/dcache/logback.xml** or using the dCache CLI to increase the log level of particular components as described [below](#obtain-information-via-the-dcache-command-line-admin-interface).
+In dCache, each domain (e.g. dCacheDomain, <pool>Domain etc) prints
+logging information into its own log file named after the domain. The
+location of those log files it typically the `/var/log` or
+`/var/log/dCache` directory depending on the individual
+configuration. In the default logging setup only errors are
+reported. This behavior can be changed by either modifying
+`/etc/dcache/logback.xml` or using the dCache CLI to increase the log
+level of particular components as described
+[below](#obtain-information-via-the-dcache-command-line-admin-interface).
 
-##### Increase the dCache log level by changes in **/etc/dcache/logback.xml**
+##### Increase the dCache log level by changes in `/etc/dcache/logback.xml`
 
-If you intend to increase the log level of all components on a particular host you would need to change the **/etc/dcache/logback.xml** file as described below. dCache components need to be restarted to activate the changes.
+If you intend to increase the log level of all components on a
+particular host you would need to change the `/etc/dcache/logback.xml`
+file as described below. dCache components need to be restarted to
+activate the changes.
 
     <threshold>
          <appender>stdout</appender>

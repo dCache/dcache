@@ -124,14 +124,23 @@ This means that the `info` service is not running. Follow the instructions for s
 
 ## CONFIGURING THE INFO PROVIDER
 
-In the directory **/etc/dcache** you will find the file **info-provider.xml**. This file is where you configure the info-provider. It provides information that is difficult or impossible to obtain from the running dCache directly.
+In the directory `/etc/dcache` you will find the file
+`info-provider.xml`. This file is where you configure the
+info-provider. It provides information that is difficult or impossible
+to obtain from the running dCache directly.
 
-You must edit the **info-provider.xml** to customise its content to match your dCache instance. In some places, the file contains place-holder values. These place-holder values must be changed to the correct values for your dCache instance.
+You must edit the `info-provider.xml` to customise its content to
+match your dCache instance. In some places, the file contains
+place-holder values. These place-holder values must be changed to the
+correct values for your dCache instance.
 
 
 > **CAREFUL WITH < AND & CHARATERS**
 >
-> Take care when editing the **info-provider.xml** file! After changing the contents, the file must remain valid, well-formed XML. In particular, be very careful when writing a less-than symbol (`<`) or an ampersand symbol (`&`).
+> Take care when editing the `info-provider.xml` file! After changing
+> the contents, the file must remain valid, well-formed XML. In
+> particular, be very careful when writing a less-than symbol (`<`) or
+> an ampersand symbol (`&`).
 >
 > -   Only use an ampersand symbol (`&`) if it is part of an entity reference. An entity reference is a sequence that starts with an ampersand symbol and is terminated with a semi-colon (`;`), for example `&gt;` and `&apos;` are entity markups.
 >
@@ -150,8 +159,11 @@ You must edit the **info-provider.xml** to customise its content to match your d
 >     (typically &lt; 20 users)</constant>
 >
 > The `SE-NAME` constant is configured to have the value “Simple & small dCache instance for small VOs (typically &lt; 20 users)”. This illustrates how to include ampersand and less-than characters in an XML file.
->
-When editing the **info-provider.xml** file, you should *only* edit text between two elements or add more elements (for lists and mappings). You should *never* alter the text inside double-quote marks.
+
+When editing the `info-provider.xml` file, you should *only* edit text
+between two elements or add more elements (for lists and
+mappings). You should *never* alter the text inside double-quote
+marks.
 
 Example:
 This example shows how to edit the `SITE-UNIQUE-ID` constant. This constant has a default value `EXAMPLESITE-ID`, which is a place-holder value and must be edited.
@@ -162,11 +174,15 @@ To edit the constant's value, you must change the text between the start- and en
 
     <constant id="SITE-UNIQUE-ID">DESY-HH</constant>
 
-The **info-provider.xml** contains detailed descriptions of all the properties that are editable. You should refer to this documentation when editing the **info-provider.xml**.
+The `info-provider.xml` contains detailed descriptions of all the
+properties that are editable. You should refer to this documentation
+when editing the `info-provider.xml`.
 
 ## TESTING THE INFO PROVIDER
 
-Once you have configured **info-provider.xml** to reflect your site's configuration, you may test that the info provider produces meaningful results.
+Once you have configured `info-provider.xml` to reflect your site's
+configuration, you may test that the info provider produces meaningful
+results.
 
 Running the info-provider script should produce GLUE information in LDIF format; for example:
 
@@ -191,9 +207,12 @@ Running the info-provider script should produce GLUE information in LDIF format;
     GlueSEImplementationVersion: dCache-PATCH-VERSION (ns=Chimera)
     GlueSESizeTotal: 86
 
-The actual values you see will be site-specific and depend on the contents of the **info-provider.xml** file and your dCache configuration.
+The actual values you see will be site-specific and depend on the
+contents of the `info-provider.xml` file and your dCache
+configuration.
 
-To verify that there are no problems, redirect standard-out to **/dev/null** to show only the error messages:
+To verify that there are no problems, redirect standard-out to
+`/dev/null` to show only the error messages:
 
     [root] # dcache-info-provider >/dev/null
 
@@ -207,7 +226,12 @@ then it is likely that either the `httpd` or `info` service has not been started
 
 ## PUBLISHING dCache INFORMATION
 
-BDII obtains information by querying different sources. One such source of information is by running an info-provider command and taking the resulting LDIF output. To allow BDII to obtain dCache information, you must allow BDII to run the dCache info-provider. This is achieved by symbolically linking the **dcache-info-provider ** script into the BDII plugins directory:
+BDII obtains information by querying different sources. One such
+source of information is by running an info-provider command and
+taking the resulting LDIF output. To allow BDII to obtain dCache
+information, you must allow BDII to run the dCache info-provider. This
+is achieved by symbolically linking the `dcache-info-provider` script
+into the BDII plugins directory:
 
     root] # ln -s /usr/sbin/dcache-info-provider
     /opt/glite/etc/gip/provider/
@@ -249,9 +273,17 @@ The LDAP query uses the `o=grid` object as the base; all reported objects are de
 
 The above `ldapsearch` command queries BDII using the `(objectClass=GlueSE)` filter. This filter selects only objects that provide the highest-level summary information about a storage-element. Since each storage-element has only one such object and this BDII instance only describes a single dCache instance, the command returns only the single LDAP object.
 
-To see all GLUE v1.3 objects in BDII, repeat the above `ldapsearch` command but omit the `(objectClass=GlueSE)` filter: **ldapsearch -LLL -x -H ldap://EXAMPLE-HOST:2170 -b o=grid**. This command will output all GLUE v1.3 LDAP objects, which includes all the GLUE v1.3 objects from the info-provider.
+To see all GLUE v1.3 objects in BDII, repeat the above `ldapsearch`
+command but omit the `(objectClass=GlueSE)` filter: `ldapsearch -LLL
+-x -H ldap://EXAMPLE-HOST:2170 -b o=grid`. This command will output
+all GLUE v1.3 LDAP objects, which includes all the GLUE v1.3 objects
+from the info-provider.
 
-Searching for all GLUE v2.0 objects in BDII is achieved by repeating the above `ldapsearch` command but omitting the `(objectClass=GlueSE)` filter and changing the search base to `o=glue`: **ldapsearch -LLL -x -H ldap://EXAMPLE-HOST:2170 -b       o=glue**. This command returns a completely different set of objects from the GLUE v1.3 queries.
+Searching for all GLUE v2.0 objects in BDII is achieved by repeating
+the above `ldapsearch` command but omitting the `(objectClass=GlueSE)`
+filter and changing the search base to `o=glue`: `ldapsearch -LLL -x
+-H ldap://EXAMPLE-HOST:2170 -b o=glue`. This command returns a
+completely different set of objects from the GLUE v1.3 queries.
 
 You should be able to compare this output with the output from running the info-provider script manually: BDII should contain all the objects that the dCache info-provider is supplying. Unfortunately, the order in which the objects are returned and the order of an object's properties is not guaranteed; therefore a direct comparison of the output isn't possible. However, it is possible to calculate the number of objects in GLUE v1.3 and GLUE v2.0.
 
@@ -277,7 +309,11 @@ If there is a discrepancy in the pair of numbers obtains in the above commands t
 
 ## Troubleshooting BDII problems
 
-The BDII log file should explain why objects are not accepted; for example, due to a badly formatted attribute. The default location of the log file is **/var/log/bdii/bdii-update.log**, but the location is configured by the `BDII_LOG_FILE` option in the **/opt/bdii/etc/bdii.conf** file.
+The BDII log file should explain why objects are not accepted; for
+example, due to a badly formatted attribute. The default location of
+the log file is `/var/log/bdii/bdii-update.log`, but the location is
+configured by the `BDII_LOG_FILE` option in the
+`/opt/bdii/etc/bdii.conf` file.
 
 The BDII log files may show entries like:
 
@@ -285,13 +321,29 @@ The BDII log files may show entries like:
     2011-05-11 04:04:58,711: [WARNING] ldapadd: Invalid syntax (21)
     2011-05-11 04:04:58,711: [WARNING] additional info: objectclass: value #1 invalid per syntax
 
-This problem comes when BDII is attempting to inject new information. Unfortunately, the information isn't detailed enough for further investigation. To obtain more detailed information from BDII, switch the `BDII_LOG_LEVEL` option in **/opt/bdii/etc/bdii.conf** to `DEBUG`. This will provide more information in the BDII log file.
+This problem comes when BDII is attempting to inject new
+information. Unfortunately, the information isn't detailed enough for
+further investigation. To obtain more detailed information from BDII,
+switch the `BDII_LOG_LEVEL` option in `/opt/bdii/etc/bdii.conf` to
+`DEBUG`. This will provide more information in the BDII log file.
 
-Logging at `DEBUG` level has another effect; BDII no longer deletes some temporary files. These temporary files are located in the directory controlled by the `BDII_VAR_DIR` option. This is **/var/run/bdii** by default.
+Logging at `DEBUG` level has another effect; BDII no longer deletes
+some temporary files. These temporary files are located in the
+directory controlled by the `BDII_VAR_DIR` option. This is
+`/var/run/bdii` by default.
 
-There are several temporary files located in the **/var/run/bdii** directory. When BDII decides which objects to add, modify and remove, it creates LDIF instructions inside temporary files **add.ldif**, **modify.ldif** and **delete.ldif** respectively. Any problems in the attempt to add, modify and delete LDAP objects are logged to corresponding error files: errors with **add.ldif** are logged to **add.err`, `modify.ldif` to `modify.err** and so on.
+There are several temporary files located in the `/var/run/bdii`
+directory. When BDII decides which objects to add, modify and remove,
+it creates LDIF instructions inside temporary files `add.ldif`,
+`modify.ldif` and `delete.ldif` respectively. Any problems in the
+attempt to add, modify and delete LDAP objects are logged to
+corresponding error files: errors with `add.ldif` are logged to
+`add.err`, `modify.ldif` to `modify.err` and so on.
 
-Once information in BDII has stablised, the only new, incoming objects for BDII come from those objects that it was unable to add previously. This means that **add.ldif** will contain these badly formatted objects and **add.err** will contain the corresponding errors.
+Once information in BDII has stablised, the only new, incoming objects
+for BDII come from those objects that it was unable to add
+previously. This means that `add.ldif` will contain these badly
+formatted objects and `add.err` will contain the corresponding errors.
 
 ## UPDATING INFORMATION
 
@@ -299,6 +351,9 @@ The information contained within the `info` service may take a short time to ach
 
 The information presented by the LDAP server is updated periodically by BDII requesting fresh information from the info-provider. The info-provider obtains this information by requesting dCache's current status from CELL-INFO service. By default, BDII will query the info-provider every 60 seconds. This will introduce an additional delay between a change in dCache's state and that information propagating.
 
-Some information is hard-coded within the **info-provider.xml** file; that is, you will need to edit this file before the published value(s) will change. These values are ones that typically a site-admin must choose independently of dCache's current operations.
+Some information is hard-coded within the `info-provider.xml` file;
+that is, you will need to edit this file before the published value(s)
+will change. These values are ones that typically a site-admin must
+choose independently of dCache's current operations.
 
   [???]: #in-install-layout

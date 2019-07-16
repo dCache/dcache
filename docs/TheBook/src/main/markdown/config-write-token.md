@@ -17,7 +17,7 @@ in your configuration file and all of your pools are in [link groups](config-Poo
 
 Before you can create a `WriteToken` tag you need to have a space reservation.
 
-Space reservations are made for link groups. The file [`LinkGroupAuthorization.conf`](config-SRM.md#the spacemanagerlinkgroupauthorizationfile) needs to contain the link groups that can be used for space reservations. You need to specify the location of the file in the **/etc/dcache/dcache.conf** file.
+Space reservations are made for link groups. The file [`LinkGroupAuthorization.conf`](config-SRM.md#the spacemanagerlinkgroupauthorizationfile) needs to contain the link groups that can be used for space reservations. You need to specify the location of the file in the `/etc/dcache/dcache.conf` file.
 
     spacemanager.authz.link-group-file-name=/etc/dcache/LinkGroupAuthorization.conf
 
@@ -69,7 +69,7 @@ Currently there are no space reservations and no link groups. We create the link
     total number of bytes reserved  : 0
     last time all link groups were updated: Wed Aug 07 15:42:03 CEST 2013(1375882923234)
 
-A space reservation can only be made, when there is a link group in the **LinkGroupAuthorization.conf** that can be used for the space reservation. Therefore, we configure the **LinkGroupAuthorization.conf** such that the link group `WriteToken_LinkGroup` can be used.
+A space reservation can only be made, when there is a link group in the `LinkGroupAuthorization.conf` that can be used for the space reservation. Therefore, we configure the `LinkGroupAuthorization.conf` such that the link group `WriteToken_LinkGroup` can be used.
 
     #SpaceManagerLinkGroupAuthorizationFile
     # this is comment and is ignored
@@ -103,7 +103,8 @@ The `WriteToken` tag is a [directory tag](config-chimera.md#directory-tag). Crea
 
 Example:
 
-In the beginning of the Book we created the directory **/data** and the subdirectory **/data/world-writable**.
+In the beginning of the Book we created the directory `/data` and the
+subdirectory `/data/world-writable`.
 
     [root] # /usr/bin/chimera ls /data/
     total 3
@@ -111,7 +112,7 @@ In the beginning of the Book we created the directory **/data** and the subdirec
     drwxrwxrwx  3 0 0 512 Jul 24 14:33 ..
     drwxrwxrwx 12 0 0 512 Jul 24 14:41 world-writable
 
-Now, we create the directory **data/write-token** into which we want to write
+Now, we create the directory `data/write-token` into which we want to write
 
     [root] # /usr/bin/chimera mkdir /data/write-token
     [root] # /usr/bin/chimera 777 chmod /data/write-token

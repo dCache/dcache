@@ -60,20 +60,27 @@ the xrootd door should be running. A few minutes later it should appear at the w
 
 The default port the `xrootd door` is listening on is 1094. This can be changed two ways:
 
-1.  *Per door*: Edit your instance’s layout file, for example **/etc/dcache/layouts/example.conf** and add the desired port for the xrootd door in a separate line (a restart of the domain(s) running the xrootd door is required):
-        ..
+1.  *Per door*: Edit your instance’s layout file, for example
+`/etc/dcache/layouts/example.conf` and add the desired port for the
+xrootd door in a separate line (a restart of the domain(s) running the
+xrootd door is required):
+
         [xrootd-${host.name}Domain]
         [xrootd-${host.name}Domain/xrootd]
             port = 1095
-        ..
 
-2.  *Globally:* Edit **/etc/dcache/dcache.conf ** and add the variable `xrootd.net.port` with the desired value (a restart of the domain(s) running the `xroot door` is required):
+2.  *Globally:* Edit `/etc/dcache/dcache.conf` and add the variable
+`xrootd.net.port` with the desired value (a restart of the domain(s)
+running the `xroot door` is required):
 
-        ..
         xrootd.net.port=1095
-        ..
 
- For controlling the `TCP`-portrange within which `xrootd`-movers will start listening in the <pool>Domain, you can add the properties `dcache.net.lan.port.min` and dcache.net.lan.port.max to **/etc/dcache/dcache.conf** and adapt them according to your preferences. The default values can be viewed in **/usr/share/dcache/defaults/dcache.properties**.
+For controlling the `TCP`-portrange within which `xrootd`-movers will
+start listening in the <pool>Domain, you can add the properties
+`dcache.net.lan.port.min` and dcache.net.lan.port.max to
+`/etc/dcache/dcache.conf` and adapt them according to your
+preferences. The default values can be viewed in
+`/usr/share/dcache/defaults/dcache.properties`.
 
     ..
     dcache.net.lan.port.min=30100
@@ -137,7 +144,8 @@ To read it back into ROOT from dCache:
     061024 18:43:06 001 Xrd: Close: File not opened.
     Error accessing path/file for root://ford//pnfs/desy.de/data/asdfas
 
-To enable read-write access, add the following line to **${dCacheHome}/etc/dcache.conf**
+To enable read-write access, add the following line to
+`${dCacheHome}/etc/dcache.conf`
 
     ..
     xrootdIsReadOnly=false
@@ -151,7 +159,7 @@ Please note that due to the unauthenticated nature of this access mode, files ca
 
  To overcome the security issue of uncontrolled `xrootd` read and write access mentioned in the previous section, it is possible to restrict read and write access on a per-directory basis (including subdirectories).
 
-To activate this feature, a colon-seperated list containing the full paths of authorized directories must be added to **/etc/dcache/dcache.conf.** You will need to specify the read and write permissions separately.
+To activate this feature, a colon-seperated list containing the full paths of authorized directories must be added to `/etc/dcache/dcache.conf`. You will need to specify the read and write permissions separately.
 
    	 ..
 	 xrootd.authz.read-paths=/pnfs/<example.org>/rpath1:/pnfs/<example.org>/rpath2
@@ -164,7 +172,17 @@ A restart of the `xrootd` door is required to make the changes take effect. As s
 
 The `xrootd` dCache implementation includes a generic mechanism to plug in different authorization handlers. The only plugin available so far implements token-based authorization as suggested in [http://people.web.psi.ch/feichtinger/doc/authz.pdf](https://www.psi.ch/search/phonebook-and-e-mail-directory?q=feichtinger).
 
-The first thing to do is to setup the keystore. The keystore file basically specifies all RSA-keypairs used within the authorization process and has exactly the same syntax as in the native xrootd tokenauthorization implementation. In this file, each line beginning with the keyword KEY corresponds to a certain Virtual Organisation (VO) and specifies the remote public (owned by the file catalogue) and the local private key belonging to that VO. A line containing the statement `"KEY VO:*"` defines a default keypair that is used as a fallback solution if no VO is specified in token-enhanced `xrootd` requests. Lines not starting with the KEY keyword are ignored. A template can be found in **/usr/share/dcache/examples/xrootd/keystore.**
+The first thing to do is to setup the keystore. The keystore file
+basically specifies all RSA-keypairs used within the authorization
+process and has exactly the same syntax as in the native xrootd
+tokenauthorization implementation. In this file, each line beginning
+with the keyword KEY corresponds to a certain Virtual Organisation
+(VO) and specifies the remote public (owned by the file catalogue) and
+the local private key belonging to that VO. A line containing the
+statement `"KEY VO:*"` defines a default keypair that is used as a
+fallback solution if no VO is specified in token-enhanced `xrootd`
+requests. Lines not starting with the KEY keyword are ignored. A
+template can be found in `/usr/share/dcache/examples/xrootd/keystore`.
 
 The keys itself have to be converted into a certain format in order to be loaded into the authorization plugin. dCache expects both keys to be binary DER-encoded (Distinguished Encoding Rules for ASN.1). Furthermore the private key must be PKCS #8-compliant and the public key must follow the X.509-standard.
 
@@ -186,7 +204,8 @@ The following example demonstrates how to create and convert a keypair using Ope
 
 Only the last two lines are performing the actual conversion, therefore you can skip the previous lines in case you already have a keypair. Make sure that your keystore file correctly points to the converted keys.
 
-To enable the plugin, it is necessary to add the following two lines to the file **/etc/dcache/dcache.conf**, so that it looks like
+To enable the plugin, it is necessary to add the following two lines
+to the file `/etc/dcache/dcache.conf`, so that it looks like
 
         ..
         xrootdAuthzPlugin=org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
@@ -203,7 +222,8 @@ The `xrootd`-implementation in dCache includes a pluggable authentication framew
 
 Example:
 
-For instance, to enable `GSI` authentication in `xrootd`, add the following line to **/etc/dcache/dcache.conf: **
+For instance, to enable `GSI` authentication in `xrootd`, add the
+following line to `/etc/dcache/dcache.conf`:
 
     ..
     xrootdAuthNPlugin=gsi
@@ -237,7 +257,11 @@ To allow local site’s administrators to override remote security settings, wri
 
 ### Other configuration options
 
-The `xrootd-door` has several other configuration properties. You can configure various timeout parameters, the thread pool sizes on pools, queue buffer sizes on pools, the `xrootd` root path, the xrootd user and the `xrootd` IO queue. Full descriptions on the effect of those can be found in **/usr/share/dcache/defaults/xrootd.properties.**
+The `xrootd-door` has several other configuration properties. You can
+configure various timeout parameters, the thread pool sizes on pools,
+queue buffer sizes on pools, the `xrootd` root path, the xrootd user
+and the `xrootd` IO queue. Full descriptions on the effect of those
+can be found in `/usr/share/dcache/defaults/xrootd.properties`.
 
 
 ## XROOTD Third-party Transfer

@@ -16,11 +16,17 @@ CHIMERA
 
 The inner dCache components talk to the namespace via a module called `PnfsManager`, which in turn communicates with the Chimera database using a thin Java layer. In addition to `PnfsManager` a direct access to the file system view is provided by an `NFSv3` and `NFSv4.1` server. Clients can `NFS`-mount the namespace locally. This offers the opportunity to use OS-level tools like `ls, mkdir, mv` for Chimera. Direct I/O-operations like `cp` and `cat` are possible with the `NFSv4.1 door`.
 
-The properties of Chimera are defined in **/usr/share/dcache/defaults/chimera.properties**. For customisation the files **/etc/dcache/layouts/mylayout.conf** or **/etc/dcache/dcache.conf** should be modified (see [the section called “Defining domains and services”](install.md#defining-domains-and-services).
+The properties of Chimera are defined in
+`/usr/share/dcache/defaults/chimera.properties`. For customisation the
+files `/etc/dcache/layouts/mylayout.conf` or `/etc/dcache/dcache.conf`
+should be modified (see [the section called “Defining domains and
+services”](install.md#defining-domains-and-services).
 
 Example:
 
-This example shows an extract of the **/etc/dcache/layouts/mylayout.conf** file in order to run dCache with `NFSv3`.
+This example shows an extract of the
+`/etc/dcache/layouts/mylayout.conf` file in order to run dCache with
+`NFSv3`.
 
     [namespaceDomain]
     [namespaceDomain/pnfsmanager]
@@ -29,14 +35,18 @@ This example shows an extract of the **/etc/dcache/layouts/mylayout.conf** file 
 
 Example:
 
-If you want to run the NFSv4.1 server you need to add the corresponding nfs service to a domain in the **/etc/dcache/layouts/mylayout.conf** file and start this domain.
+If you want to run the NFSv4.1 server you need to add the
+corresponding nfs service to a domain in the
+`/etc/dcache/layouts/mylayout.conf` file and start this domain.
 
     [namespaceDomain]
     [namespaceDomain/pnfsmanager]
     [namespaceDomain/nfs]
     nfs.version = 4.1
 
-If you wish dCache to access your Chimera with a PostgreSQL user other than chimera then you must specify the username and password in **/etc/dcache/dcache.conf**.
+If you wish dCache to access your Chimera with a PostgreSQL user other
+than chimera then you must specify the username and password in
+`/etc/dcache/dcache.conf`.
 
     chimera.db.user=myuser
     chimera.db.password=secret
@@ -45,7 +55,10 @@ If you wish dCache to access your Chimera with a PostgreSQL user other than chim
 
 dCache does not need the Chimera filesystem to be mounted, but a mounted file system is convenient for administrative access. This offers the opportunity to use OS-level tools like `ls` and `mkdir` for Chimera. However, direct I/O-operations like `cp` are not possible, since the `NFSv3` interface provides the namespace part only. This section describes how to start the Chimera `NFSv3` server and mount the name space.
 
-If you want to mount Chimera for easier administrative access, you need to edit the **/etc/exports** file as the Chimera `NFS` server uses it to manage exports. If this file doesn’t exist it must be created. The typical **exports** file looks like this:
+If you want to mount Chimera for easier administrative access, you
+need to edit the `/etc/exports` file as the Chimera `NFS` server uses
+it to manage exports. If this file doesn’t exist it must be
+created. The typical exports file looks like this:
 
     / localhost(rw)
     /data
@@ -58,7 +71,8 @@ On RHEL6 based systems you need to add
 
     RPCBIND_ARGS="-i"
 
-into **/etc/sysconfig/rpcbind** and restart `rpcbind`. Check your OS manual for details.
+into `/etc/sysconfig/rpcbind` and restart `rpcbind`. Check your OS
+manual for details.
 
     [root] # service rpcbind restart
     Stopping rpcbind:                                          [  OK  ]
@@ -95,7 +109,11 @@ You can now add directory tags. For more information on tags see [the section ca
 
 ### USING DCAP WITH A MOUNTED FILE SYSTEM
 
-If you plan to use `dCap` with a mounted file system instead of the URL-syntax (e.g. `dccp` **/data/file1 /tmp/file1**), you need to mount the root of Chimera locally (remote mounts are not allowed yet). This will allow us to establish wormhole files so `dCap` clients can discover the `dCap` doors.
+If you plan to use `dCap` with a mounted file system instead of the
+URL-syntax (e.g. `dccp /data/file1 /tmp/file1`), you need to mount
+the root of Chimera locally (remote mounts are not allowed yet). This
+will allow us to establish wormhole files so `dCap` clients can
+discover the `dCap` doors.
 
     [root] # mount localhost:/ /mnt
     [root] # mkdir /mnt/admin/etc/config/dCache
@@ -104,7 +122,11 @@ If you plan to use `dCap` with a mounted file system instead of the URL-syntax (
     [root] # echo "<door host>:<port>" > /mnt/admin/etc/config/dCache/dcache.conf
 
 
-The default values for ports can be found in [Chapter 29, dCache Default Port Values](rf-ports.md) (for `dCap` the default port is 22125) and in the file **/usr/share/dcache/defaults/dcache.properties**. They can be altered in **/etc/dcache/dcache.conf**
+The default values for ports can be found in [Chapter 29, dCache
+Default Port Values](rf-ports.md) (for `dCap` the default port is
+22125) and in the file
+`/usr/share/dcache/defaults/dcache.properties`. They can be altered in
+`/etc/dcache/dcache.conf`
 
 Create the directory in which the users are going to store their data and change to this directory.
 
@@ -133,16 +155,26 @@ When the configuration is complete you can unmount Chimera:
 
 > **NOTE**
 >
-> Please note that whenever you need to change the configuration, you have to remount the root `localhost:/` to a temporary location like **/mnt**.
+> Please note that whenever you need to change the configuration, you
+> have to remount the root `localhost:/` to a temporary location like
+> `/mnt`.
 
 ## COMMUNICATING WITH CHIMERA
 
-Many configuration parameters of Chimera and the application specific meta data is accessed by reading, writing, or creating files of the form .(command)(para). For example, the following prints the ChimeraID of the file **/data/some/dir/file.dat**:
+Many configuration parameters of Chimera and the application specific
+meta data is accessed by reading, writing, or creating files of the
+form `.(command)(para)`. For example, the following prints the
+ChimeraID of the file `/data/some/dir/file.dat`:
 
      [user] $ cat /data/any/sub/directory/'.(id)(file.dat)'
      0004000000000000002320B8 [user] $
 
-From the point of view of the `NFS` protocol, the file **.(id)(file.dat)** in the directory **/data/some/dir/** is read. However, Chimera interprets it as the command id with the parameter file.dat executed in the directory **/data/some/dir/**. The quotes are important, because the shell would otherwise try to interpret the parentheses.
+From the point of view of the `NFS` protocol, the file
+**.(id)(file.dat)** in the directory `/data/some/dir/` is
+read. However, Chimera interprets it as the command id with the
+parameter file.dat executed in the directory `/data/some/dir/`. The
+quotes are important, because the shell would otherwise try to
+interpret the parentheses.
 
 Some of these command files have a second parameter in a third pair of parentheses. Note, that files of the form .(command)(para) are not really files. They are not shown when listing directories with `ls`. However, the command files are listed when they appear in the argument list of `ls` as in
 
@@ -331,19 +363,30 @@ In the examples above two tags have been created.
      OSMTemplate
      sGroup
 
-As the tag OSMTemplate was created the tag HSMType is assumed to be osm.
-The storage class of the files which are copied into the directory **/data** after the tags have been set will be myStore:myGroup@osm.
+As the tag OSMTemplate was created the tag HSMType is assumed to be
+osm.  The storage class of the files which are copied into the
+directory `/data` after the tags have been set will be
+`myStore:myGroup@osm`.
 
 If directory tags are used to control the behaviour of dCache and/or a tertiary storage system, it is a good idea to plan the directory structure in advance, thereby considering the necessary tags and how they should be set up. Moving directories should be done with great care or even not at all. Inherited tags can only be created by creating a new directory.
 
 Example:
 
-Assume that data of two experiments, experiment-a and experiment-b is written into a namespace tree with subdirectories **/data/experiment-a** and **/data/experiment-b**. As some pools of the dCache are financed by experiment-a and others by experiment-b they probably do not like it if they are also used by the other group. To avoid this the directories of experiment-a and experiment-b can be tagged.
+Assume that data of two experiments, experiment-a and experiment-b is
+written into a namespace tree with subdirectories `/data/experiment-a`
+and `/data/experiment-b`. As some pools of the dCache are financed by
+experiment-a and others by experiment-b they probably do not like it
+if they are also used by the other group. To avoid this the
+directories of experiment-a and experiment-b can be tagged.
 
      [user] $ /usr/bin/chimera writetag /data/experiment-a OSMTemplate "StoreName exp-a"
      [user] $ /usr/bin/chimera writetag /data/experiment-b OSMTemplate "StoreName exp-b"
 
-Data from experiment-a taken in 2010 shall be written into the directory **/data/experiment-a/2010** and data from experiment-a taken in 2011 shall be written into **/data/experiment-a/2011**. Data from experiment-b shall be written into **/data/experiment-b**. Tag the directories correspondingly.
+Data from experiment-a taken in 2010 shall be written into the
+directory `/data/experiment-a/2010` and data from experiment-a taken
+in 2011 shall be written into `/data/experiment-a/2011`. Data from
+experiment-b shall be written into `/data/experiment-b`. Tag the
+directories correspondingly.
 
      [user] $ /usr/bin/chimera writetag /data/experiment-a/2010 sGroup "run2010"
      [user] $ /usr/bin/chimera writetag /data/experiment-a/2011 sGroup "run2011"
@@ -367,11 +410,13 @@ List the content of the tags by
 As the tag OSMTemplate was created the HSMType is assumed to be osm.
 The storage classes of the files which are copied into these directories after the tags have been set will be
 
-- exp-a:run2010@osm for the files in **/data/experiment-a/2010**
-- exp-a:run2011@osm for the files in **/data/experiment-a/2011**
-- exp-b:alldata@osm for the files in */data/experiment-b**
+- `exp-a:run2010@osm` for the files in `/data/experiment-a/2010`
+- `exp-a:run2011@osm` for the files in `/data/experiment-a/2011`
+- `exp-b:alldata@osm` for the files in `/data/experiment-b`
 
-To see how storage classes are used for pool selection have a look at the example ’Reserving Pools for Storage and Cache Classes’ in the PoolManager chapter.
+To see how storage classes are used for pool selection have a look at
+the example ’Reserving Pools for Storage and Cache Classes’ in the
+PoolManager chapter.
 
 There are more tags used by dCache if the `HSMType` is `enstore`.
 

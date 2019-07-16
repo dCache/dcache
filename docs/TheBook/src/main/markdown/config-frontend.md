@@ -1,12 +1,12 @@
 CHAPTER 17. dCache Frontend Service
 =====================================
 
-The Frontend service is the dCache service (cell) responsible for serving
-data to clients via HTTP/REST.  The default port on which it runs is 3880.
-The default protocol is https (TLS).  As usual, these, as well as other
-values for timeouts, enabling proxies, and anonymous user access, can be
-configured; see **/usr/share/dcache/defaults/frontend.properties** for
-details.
+The Frontend service is the dCache service (cell) responsible for
+serving data to clients via HTTP/REST.  The default port on which it
+runs is 3880.  The default protocol is https (TLS).  As usual, these,
+as well as other values for timeouts, enabling proxies, and anonymous
+user access, can be configured; see
+`/usr/share/dcache/defaults/frontend.properties` for details.
 
 The API delivered by the frontend is easily consulted once the service
 is running.   It is provided by a Swagger page found at

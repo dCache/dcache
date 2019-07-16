@@ -19,7 +19,9 @@ The preferred way to set up a PSQL server should be the installation of the vers
 
 Install the PSQL server, client and JDBC support with the tools of the operating system.
 
-Initialize the database directory (for PSQL version 9.2 this is **/var/lib/pgsql/9.2/data/**) , start the database server, and make sure that it is started at system start-up.
+Initialize the database directory (for PSQL version 9.2 this is
+`/var/lib/pgsql/9.2/data/`) , start the database server, and make sure
+that it is started at system start-up.
 
     [root] # service postgresql-9.2 initdb
     Initializing database:                                     [  OK  ]
@@ -29,7 +31,12 @@ Initialize the database directory (for PSQL version 9.2 this is **/var/lib/pgsql
 
 ## Configuring Access to PSQL
 
-In the installation guide instructions are given for configuring one PSQL server on the admin node for all the above described purposes with generous access rights. This is done to make the installation as easy as possible. The access rights are configured in the file  **<database_directory_name>/data/pg_hba.conf**. According to the installation guide the end of the file should look like
+In the installation guide instructions are given for configuring one
+PSQL server on the admin node for all the above described purposes
+with generous access rights. This is done to make the installation as
+easy as possible. The access rights are configured in the file
+`<database_directory_name>/data/pg_hba.conf`. According to the
+installation guide the end of the file should look like
 
     ...
     # TYPE  DATABASE    USER        IP-ADDRESS        IP-MASK           METHOD
@@ -60,7 +67,8 @@ And the password for e.g. the user `pnfsserver` can be set with
 
     [postgres] # psql template1 -c "ALTER USER pnfsserver WITH PASSWORD '<yourPassword>'"
 
-The PNFS server is made aware of this password by changing the variable `dbConnectString` in the file **/usr/etc/pnfsSetup**:
+The PNFS server is made aware of this password by changing the
+variable `dbConnectString` in the file `/usr/etc/pnfsSetup`:
 
     ...
     export dbConnectString="user=pnfsserver password=<yourPassword>"

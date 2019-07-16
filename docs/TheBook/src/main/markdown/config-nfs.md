@@ -37,9 +37,16 @@ You can just add the following lines to the layout file:
 
 ### Exporting file system
 
-In addition to run an NFSv4.1 door you need to add exports to the **exports** file. The location of exports file is controlled by **nfs.export.file** property and defaults to **/etc/exports**.
+In addition to run an NFSv4.1 door you need to add exports to the
+exports file. The location of exports file is controlled by
+**nfs.export.file** property and defaults to `/etc/exports`.
 
-After reading exports file dCache will read the content of the directory with additional export tables. The location of directory defined by **nfs.export.dir** property and default to **/etc/exports.d**. Only files ending with *.exports* are considered. Files staring with a dot are ignored. The format of the export tables is similar to the one which is provided by Linux:
+After reading exports file dCache will read the content of the
+directory with additional export tables. The location of directory
+defined by **nfs.export.dir** property and default to
+`/etc/exports.d`. Only files ending with *.exports* are
+considered. Files staring with a dot are ignored. The format of the
+export tables is similar to the one which is provided by Linux:
 
     #
     <path> [host [(options)]]
@@ -117,20 +124,25 @@ If there are multiple path specifications, the shortest matching path wins. If t
 
 ## Configuring NFSv4.1 door with GSS-API support
 
-Adding `sec=krb5` into **/etc/exports** is not sufficient to get kerberos authentication to work.
+Adding `sec=krb5` into `/etc/exports` is not sufficient to get
+kerberos authentication to work.
 
-All clients, pool nodes and node running DOOR-NFS4 must have a valid kerberos configuration. Each clients, pool node and node running DOOR-NFS4 must have a **/etc/krb5.keytab** with `nfs` service principal:
+All clients, pool nodes and node running DOOR-NFS4 must have a valid
+kerberos configuration. Each clients, pool node and node running
+DOOR-NFS4 must have a `/etc/krb5.keytab` with `nfs` service principal:
 
     nfs/host.domain@<YOUR.REALM>
 
-The **/etc/dcache/dcache.conf** on pool nodes and node running `NFSv4.1 door` must enable kerberos and RPCSEC_GSS:
+The `/etc/dcache/dcache.conf` on pool nodes and node running `NFSv4.1
+door` must enable kerberos and RPCSEC_GSS:
 
     nfs.rpcsec_gss=true
     dcache.authn.kerberos.realm=<YOUR.REALM>
     dcache.authn.jaas.config=/etc/dcache/gss.conf
     dcache.authn.kerberos.key-distribution-center-list=your.kdc.server
 
-The **/etc/dcache/gss.conf** on pool nodes and node running `NFSv4.1` door must configure Java’s security module:
+The `/etc/dcache/gss.conf` on pool nodes and node running `NFSv4.1`
+door must configure Java’s security module:
 
     com.sun.security.jgss.accept {
     com.sun.security.auth.module.Krb5LoginModule required
@@ -150,11 +162,25 @@ The `NFSv4.1` uses utf8 based strings to represent user and group names:
 
    user@DOMAIN.NAME
 
-This is the case even for non-kerberos based accesses. Nevertheless UNIX based clients as well as dCache internally use numbers to represent uid and gids. A special service, called `idmapd`, takes care for principal-id mapping. On the client nodes the file **/etc/idmapd.conf** is usually responsible for consistent mapping on the client side. On the server side, in case of dCache mapping done through gplazma2. The `identity` type of plug-in required by id-mapping service. Please refer to [Chapter 10, Authorization in dCache](config-gplazma.md) for instructions about how to configure `gPlazma.
+This is the case even for non-kerberos based accesses. Nevertheless
+UNIX based clients as well as dCache internally use numbers to
+represent uid and gids. A special service, called `idmapd`, takes care
+for principal-id mapping. On the client nodes the file
+`/etc/idmapd.conf` is usually responsible for consistent mapping on
+the client side. On the server side, in case of dCache mapping done
+through gplazma2. The `identity` type of plug-in required by
+id-mapping service. Please refer to [Chapter 10, Authorization in
+dCache](config-gplazma.md) for instructions about how to configure
+`gPlazma.
 
 For correct user id mapping nfs4 requires that server and client use the same naming scope, called nfs4domain. This implies a consistent configuration on both sides. To reduce deployment overhead a special auto-discovery mechanism was introduced by SUN Microsystems - a [DNS TXT](http://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html) record. dCache supports this discovery mechanism. When `nfs.domain` property is set, it gets used. If it’s left unset, then DNS TXT record for `_nfsv4idmapdomain` is taken or the default `localdomain` is used when DNS record is absent.
 
-To avoid big latencies and avoiding multiple queries for the same information, like ownership of a files in a big directory, the results from `gPlazma` are cached within `NFSv4.1 door`. The default values for cache size and life time are good enough for typical installation. Nevertheless they can be overriden in **dcache.conf** or layoutfile:
+To avoid big latencies and avoiding multiple queries for the same
+information, like ownership of a files in a big directory, the results
+from `gPlazma` are cached within `NFSv4.1 door`. The default values
+for cache size and life time are good enough for typical
+installation. Nevertheless they can be overriden in `dcache.conf` or
+layoutfile:
 
     ..
     # maximal number of entries in the cache

@@ -11,14 +11,13 @@ restart, the existing files are read back.
 The Frontend service contacts the history service using normal dCache messaging
 in order to serve this data through the RESTful API.
 
-Currently, pool state information is saved by the History service into a
-set of .json files; their default location is
+Currently, pool state information is saved by the History service into
+a set of .json files; their default location is
+`/var/lib/dcache/pool-history`
 
-    /var/lib/dcache/pool-history
-
-on the file system local to the node running the service.  This location, along
-with the collection intervals, can be configured from properties;
-see **/usr/share/dcache/defaults/history.properties**.
+on the file system local to the node running the service.  This
+location, along with the collection intervals, can be configured from
+properties; see `/usr/share/dcache/defaults/history.properties`.
 
 Running this service is essential for the delivery of histogram data from the
 frontend.  It can be run out of the box with no special properties

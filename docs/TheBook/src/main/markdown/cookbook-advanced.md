@@ -43,7 +43,10 @@ In the above example, two separate queues for fast `GridFTP`  transfers and slow
 
 ### Configuration
 
-For a multi mover queue setup, the pools have to be told to start several queues and the doors have to be configured to use one of these. It makes sense to create the same queues on all pools. This is done by the following change to the file **/etc/dcache/dcache.conf: **
+For a multi mover queue setup, the pools have to be told to start
+several queues and the doors have to be configured to use one of
+these. It makes sense to create the same queues on all pools. This is
+done by the following change to the file `/etc/dcache/dcache.conf`:
 
     pool.queues=queueA,queueB
 
@@ -88,7 +91,10 @@ There is always a default queue called `regular`. Transfers not requesting a par
 
 The pool cell commands [mover ls](reference.md#mover-ls) and [mover set max active ](reference.md#mover-set-max-active) have a `-queue` option to select the mover queue to operate on. Without this option, [mover set max active](reference.md#mover-set-max-active) will act on the default queue while [mover ls](reference.md#mover-ls) will list all active and waiting client transfer requests.
 
-For the `dCap` protocol, it is possible to allow the client to choose another queue name than the one defined in the file **dcache.conf**. To achieve this the property `dcap.authz.mover-queue-overwrite` needs to be set to allowed.
+For the `dCap` protocol, it is possible to allow the client to choose
+another queue name than the one defined in the file `dcache.conf`. To
+achieve this the property `dcap.authz.mover-queue-overwrite` needs to
+be set to allowed.
 
 Example:
 
