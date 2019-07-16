@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,7 +24,6 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.classic.ChecksumModule;
 
 /**
  * A Mover implementation based on the MoverProtocol interface.
@@ -38,9 +37,9 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
 
     public MoverProtocolMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
                     TransferService<MoverProtocolMover> transferService,
-                    MoverProtocol moverProtocol, ChecksumModule checksumModule)
+                    MoverProtocol moverProtocol)
     {
-        super(handle, message, pathToDoor, transferService, checksumModule);
+        super(handle, message, pathToDoor, transferService);
         _moverProtocol = moverProtocol;
     }
 

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -58,14 +58,8 @@ public abstract class AbstractMoverProtocolTransferService
             new CDCExecutorServiceDecorator<>(
                     Executors.newCachedThreadPool(
                             new ThreadFactoryBuilder().setNameFormat(getClass().getSimpleName() + "-transfer-service-%d").build()));
-    private ChecksumModule _checksumModule;
     private PostTransferService _postTransferService;
 
-    @Required
-    public void setChecksumModule(ChecksumModule checksumModule)
-    {
-        _checksumModule = checksumModule;
-    }
 
     @Required
     public void setPostTransferService(PostTransferService postTransferService)
@@ -80,7 +74,7 @@ public abstract class AbstractMoverProtocolTransferService
         ProtocolInfo info = message.getProtocolInfo();
         try {
             MoverProtocol moverProtocol = createMoverProtocol(info);
-            return new MoverProtocolMover(handle, message, pathToDoor, this, moverProtocol, _checksumModule);
+            return new MoverProtocolMover(handle, message, pathToDoor, this, moverProtocol);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
             String causeError = cause instanceof Exception

@@ -74,7 +74,6 @@ public class NfsTransferService
     private final long _bootVerifier = System.currentTimeMillis();
     private boolean _sortMultipathList;
     private PnfsHandler _pnfsHandler;
-    private ChecksumModule _checksumModule;
     private int _minTcpPort;
     private int _maxTcpPort;
     private IoStrategy _ioStrategy;
@@ -175,11 +174,6 @@ public class NfsTransferService
     }
 
     @Required
-    public void setChecksumModule(ChecksumModule checksumModule) {
-        _checksumModule = checksumModule;
-    }
-
-    @Required
     public void setMinTcpPort(int minPort) {
         _minTcpPort = minPort;
     }
@@ -210,7 +204,7 @@ public class NfsTransferService
     @Override
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
     {
-        return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler, _checksumModule);
+        return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler);
     }
 
     @Override
