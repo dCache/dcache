@@ -195,23 +195,28 @@ The storage class is a string of the form `StoreName:StorageGroup@type-of-storag
 
 Consider for example the following setup:
 
-    Example:
+```console-root
+chimera lstag /data/experiment-a
+|Total: 2
+|OSMTemplate
+|sGroup
+chimera readtag /data/experiment-a OSMTemplate
+|StoreName myStore
+chimera readtag /data/experiment-a sGroup
+|STRING
+```
 
-    [root] # /usr/bin/chimera lstag /data/experiment-a
-    Total: 2
-    OSMTemplate
-    sGroup
-    [root] # /usr/bin/chimera readtag /data/experiment-a OSMTemplate
-    StoreName myStore
-    [root] # /usr/bin/chimera readtag /data/experiment-a sGroup
-    STRING
+This is the setup after a fresh installation and it will lead to the
+storage class `myStore:STRING@osm`. An adjustment to more sensible
+values will look like
 
-This is the setup after a fresh installation and it will lead to the storage class `myStore:STRING@osm`. An adjustment to more sensible values will look like
+```console-root
+chimera writetag /data/experiment-a OSMTemplate "StoreName exp-a"
+chimera writetag /data/experiment-a sGroup "run2010"
+```
 
-    [root] # /usr/bin/chimera writetag /data/experiment-a OSMTemplate "StoreName exp-a"
-    [root] # /usr/bin/chimera writetag /data/experiment-a sGroup "run2010"
-
-and will result in the storage class `exp-a:run2010@osm` for any data stored in the `/data/experiment-a` directory.
+and will result in the storage class `exp-a:run2010@osm` for any data
+stored in the `/data/experiment-a` directory.
 
 To summarize: The storage class depends on the directory the data is stored in and is configurable.
 
@@ -223,21 +228,24 @@ Consider for example a situation, where data produced by an experiment always ha
 
 The cache class of a directory is set by the tag `cacheClass` as follows:
 
-    Example:
+```console-root
+chimera writetag /data/experiment-a cacheClass "metaData"
+```
 
-    [root] # /usr/bin/chimera writetag /data/experiment-a cacheClass "metaData"
-
-    In this example the meta-data is stored in directories which are tagged in this way.
+In this example the meta-data is stored in directories which are
+tagged in this way.
 
 Check the existing tags of a directory and their content by:
 
-    [root] # /usr/bin/chimera lstag /path/to/directory
-    Total: numberOfTags
-    tag1
-    tag2
-    ...
-    [root] # /usr/bin/chimera readtag /path/to/directory tag1
-    contentOfTag1
+```console-root
+chimera lstag /path/to/directory
+|Total: numberOfTags
+|tag1
+|tag2
+|...
+chimera readtag /path/to/directory tag1
+|contentOfTag1
+```
 
 > **NOTE**
 >

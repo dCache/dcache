@@ -23,11 +23,13 @@ Initialize the database directory (for PSQL version 9.2 this is
 `/var/lib/pgsql/9.2/data/`) , start the database server, and make sure
 that it is started at system start-up.
 
-    [root] # service postgresql-9.2 initdb
-    Initializing database:                                     [  OK  ]
-    [root] # service postgresql-9.2 start
-    Starting postgresql-9.2 service:                           [  OK  ]
-    [root] # chkconfig postgresql-9.2 on
+```console-root
+service postgresql-9.2 initdb
+|Initializing database:                  [  OK  ]
+service postgresql-9.2 start
+|Starting postgresql-9.2 service:        [  OK  ]
+chkconfig postgresql-9.2 on
+```
 
 ## Configuring Access to PSQL
 
@@ -60,8 +62,9 @@ The databases can be secured by restricting access with this file. E.g.
 
 To make the server aware of this you need to reload the configuration file as the user `postgres` by:
 
-    [root] # su - postgres
-    [postgres] # pg_ctl reload
+```console-root
+su -s `which pg_ctl` postgres reload
+```
 
 And the password for e.g. the user `pnfsserver` can be set with
 
@@ -75,7 +78,9 @@ variable `dbConnectString` in the file `/usr/etc/pnfsSetup`:
 
 User access should be prohibited to this file with
 
-    [root] # chmod go-rwx /usr/etc/pnfsSetup
+```console-root
+chmod go-rwx /usr/etc/pnfsSetup
+```
 
 ## Performance of the PostgreSQL Server
 

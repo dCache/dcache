@@ -97,36 +97,42 @@ Now we can make a space reservation for that link group.
 
 ## The `WriteToken` Tag
 
-The `WriteToken` tag is a [directory tag](config-chimera.md#directory-tag). Create the `WriteToken` tag with
-
-    [root] # /usr/bin/chimera writetag <directory> WriteToken [<IdOfSpaceReservation>]
+The `WriteToken` tag is a [directory
+tag](config-chimera.md#directory-tag). Create the `WriteToken` tag
+with `chimera writetag <directory> WriteToken
+[<IdOfSpaceReservation>]`
 
 Example:
 
 In the beginning of the Book we created the directory `/data` and the
 subdirectory `/data/world-writable`.
 
-    [root] # /usr/bin/chimera ls /data/
-    total 3
-    drwxr-xr-x  3 0 0 512 Jul 23 14:59 .
-    drwxrwxrwx  3 0 0 512 Jul 24 14:33 ..
-    drwxrwxrwx 12 0 0 512 Jul 24 14:41 world-writable
+```console-root
+chimera ls /data/
+|total 3
+|drwxr-xr-x  3 0 0 512 Jul 23 14:59 .
+|drwxrwxrwx  3 0 0 512 Jul 24 14:33 ..
+|drwxrwxrwx 12 0 0 512 Jul 24 14:41 world-writable
+```
 
 Now, we create the directory `data/write-token` into which we want to write
 
-    [root] # /usr/bin/chimera mkdir /data/write-token
-    [root] # /usr/bin/chimera 777 chmod /data/write-token
-    [root] # /usr/bin/chimera ls /data/
-    total 4
-    drwxr-xr-x  4 0 0 512 Aug 09 12:48 .
-    drwxrwxrwx  3 0 0 512 Jul 24 14:33 ..
-    drwxrwxrwx 12 0 0 512 Jul 24 14:41 world-writable
-    drwxrwxrwx  2 0 0 512 Aug 09 12:48 write-token
+```console-root
+chimera mkdir /data/write-token
+chimera 777 chmod /data/write-token
+chimera ls /data/
+|total 4
+|drwxr-xr-x  4 0 0 512 Aug 09 12:48 .
+|drwxrwxrwx  3 0 0 512 Jul 24 14:33 ..
+|drwxrwxrwx 12 0 0 512 Jul 24 14:41 world-writable
+|drwxrwxrwx  2 0 0 512 Aug 09 12:48 write-token
+```
 
 and echo the space reservation into the WriteToken tag.
 
-    [root] # /usr/bin/chimera writetag /data/write-token WriteToken [10000]
-
+```console-root
+chimera writetag /data/write-token WriteToken [10000]
+```
 
 ## Copy a File into the `WriteToken`
 
@@ -136,8 +142,9 @@ Example:
 
 In the above example we echoed the id of a space reservation into the `WriteToken` tag. We can now copy a file into this space reservation.
 
-    [root] # curl -T test.txt http://webdav-door.example.org:2880/data/write-token/curl-test.txt
-    [root] #
+```console-root
+curl -T test.txt http://webdav-door.example.org:2880/data/write-token/curl-test.txt
+```
 
  <!-- [link groups]: #cf-pm-linkgroups
   [`LinkGroupAuthorization.conf`]: #cf-srm-linkgroupauthfile

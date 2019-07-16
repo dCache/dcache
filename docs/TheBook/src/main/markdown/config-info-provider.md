@@ -45,12 +45,16 @@ For more information on configuring dCache layout files, see [the section called
 
 Use the `dcache services` command to see if a particular node is configured to run the `info` service. The following shows the output if the node has an `information`  domain that is configured to run the `info`  cell.
 
-    [root] # dcache services | grep info
-    information info        info               /var/log/dCache/information.log
+```console-root
+dcache services | grep info
+|information info info /var/log/dCache/information.log
+```
 
 If a node has no domain configured to host the CELL-INFO service then the above `dcache services` command will give no output:
 
-    [root] # dcache services | grep info
+```console-root
+dcache services | grep info
+```
 
 If no running domain within *any* node of your dCache instance is running the `info` service then you must add the service to a domain and restart that domain.
 
@@ -74,9 +78,11 @@ By adding the extra line [example/info] to the layouts file, in future, the exam
 
 To actually start the CELL-INFO cell, the DOMAIN-EXAMPLE domain must be restarted.
 
-    [root] # dcache restart example
-    Stopping example (pid=30471) 0 done
-    Starting example done
+```console-root
+dcache restart example
+|Stopping example (pid=30471) 0 done
+|Starting example done
+```
 
 
 With the `example`domain restarted, the `info` service is now running.
@@ -85,40 +91,46 @@ You can also verify both the `httpd` and `info` services are running using the `
 
 The following example shows the output from the `wget` when the `info` service is running correctly:
 
-    [root] # wget -O/dev/null http://localhost:2288/info
-    --17:57:38--  http://localhost:2288/info
-    Resolving localhost... 127.0.0.1
-    Connecting to localhost|127.0.0.1|:2288... connected.
-    HTTP request sent, awaiting response... 200 Document follows
-    Length: 372962 (364K) [application/xml]
-    Saving to: `/dev/null'
+```console-root
+wget -O/dev/null http://localhost:2288/info
+|--17:57:38--  http://localhost:2288/info
+|Resolving localhost... 127.0.0.1
+|Connecting to localhost|127.0.0.1|:2288... connected.
+|HTTP request sent, awaiting response... 200 Document follows
+|Length: 372962 (364K) [application/xml]
+|Saving to: `/dev/null'
+|
+|100%[==============================================================================>] 372,962 --.-K/s in 0.001s
+|
+|17:57:38 (346 MB/s) - `/dev/null' saved [372962/372962]
+```
 
-    100%[===========================================================================
-    ===>] 372,962     --.-K/s   in 0.001s
+If the `httpd` service isn't running then the command will generate
+the following output:
 
-    17:57:38 (346 MB/s) - `/dev/null' saved [372962/372962]
-
-If the `httpd` service isn't running then the command will generate the following output:
-
-    [root] # wget -O/dev/null http://localhost:2288/info
-      --10:05:35--  http://localhost:2288/info
-                 => `/dev/null'
-      Resolving localhost... 127.0.0.1
-      Connecting to localhost|127.0.0.1|:2288... failed: Connection refused.
+```console-root
+wget -O/dev/null http://localhost:2288/info
+|--10:05:35--  http://localhost:2288/info
+|            => `/dev/null'
+|Resolving localhost... 127.0.0.1
+|Connecting to localhost|127.0.0.1|:2288... failed: Connection refused.
+```
 
 To fix the problem, ensure that the `httpd` service is running within your dCache instance. This is the service that provides the web server monitoring within dCache. To enable the service, follow the same procedure for enabling the `info` cell, but add the `httpd` service within one of the domains in dCache.
 
 If running the `wget` command gives an error message with `Unable to contact the info cell. Please ensure the info cell is running`:
 
-    [root] # wget -O/dev/null http://localhost:2288/info
-      --10:03:13--  http://localhost:2288/info
-                 => `/dev/null'
-      Resolving localhost... 127.0.0.1
-      Connecting to localhost|127.0.0.1|:2288... connected.
-      HTTP request sent, awaiting response... 503 Unable to contact the info cell.  Pl
-    ease ensure the info cell is running.
-      10:03:13 ERROR 503: Unable to contact the info cell.  Please ensure the info cel
-    l is running..
+```console-root
+wget -O/dev/null http://localhost:2288/info
+|--10:03:13--  http://localhost:2288/info
+|            => `/dev/null'
+| Resolving localhost... 127.0.0.1
+| Connecting to localhost|127.0.0.1|:2288... connected.
+| HTTP request sent, awaiting response... 503 Unable to contact the info
+| cell.  Please ensure the info cell is running.
+| 10:03:13 ERROR 503: Unable to contact the info cell.  Please ensure
+| the info cell is running..
+```
 
 This means that the `info` service is not running. Follow the instructions for starting the `info` service given above.
 
@@ -186,26 +198,27 @@ results.
 
 Running the info-provider script should produce GLUE information in LDIF format; for example:
 
-    [root] # dcache-info-provider | head -20
-    #
-    #  LDIF generated by Xylophone v0.2
-    #
-    #  XSLT processing using SAXON 6.5.5 from Michael Kay 1 (http://saxon.sf.ne
-     t/)
-    #   at: 2011-05-11T14:08:45+02:00
-    #
-
-    dn: GlueSEUniqueID=EXAMPLE-FQDN,mds-vo-name=resource,o=grid
-    objectClass: GlueSETop
-    objectClass: GlueSE
-    objectClass: GlueKey
-    objectClass: GlueSchemaVersion
-    GlueSEStatus: Production
-    GlueSEUniqueID: EXAMPLE-FQDN
-    GlueSEImplementationName: dCache
-    GlueSEArchitecture: multidisk
-    GlueSEImplementationVersion: dCache-PATCH-VERSION (ns=Chimera)
-    GlueSESizeTotal: 86
+```console-root
+dcache-info-provider | head -20
+|#
+|#  LDIF generated by Xylophone v0.2
+|#
+|#  XSLT processing using SAXON 6.5.5 from Michael Kay 1 (http://saxon.sf.net/)
+|#   at: 2011-05-11T14:08:45+02:00
+|#
+|
+|dn: GlueSEUniqueID=EXAMPLE-FQDN,mds-vo-name=resource,o=grid
+|objectClass: GlueSETop
+|objectClass: GlueSE
+|objectClass: GlueKey
+|objectClass: GlueSchemaVersion
+|GlueSEStatus: Production
+|GlueSEUniqueID: EXAMPLE-FQDN
+|GlueSEImplementationName: dCache
+|GlueSEArchitecture: multidisk
+|GlueSEImplementationVersion: dCache-PATCH-VERSION (ns=Chimera)
+|GlueSESizeTotal: 86
+```
 
 The actual values you see will be site-specific and depend on the
 contents of the `info-provider.xml` file and your dCache
@@ -214,13 +227,17 @@ configuration.
 To verify that there are no problems, redirect standard-out to
 `/dev/null` to show only the error messages:
 
-    [root] # dcache-info-provider >/dev/null
+```console-root
+dcache-info-provider >/dev/null
+```
 
 If you see error messages (which may be repeated several times) of the form:
 
-    [root] # dcache-info-provider >/dev/null
-    Recoverable error
-    Failure reading http://localhost:2288/info: no more input
+```console-root
+dcache-info-provider >/dev/null
+|Recoverable error
+|Failure reading http://localhost:2288/info: no more input
+```
 
 then it is likely that either the `httpd` or `info` service has not been started. Use the above `wget` test to check that both services are running. You can also see which services are available by running the `dcache services` and `dcache status` commands.
 
@@ -233,35 +250,39 @@ information, you must allow BDII to run the dCache info-provider. This
 is achieved by symbolically linking the `dcache-info-provider` script
 into the BDII plugins directory:
 
-    root] # ln -s /usr/sbin/dcache-info-provider
-    /opt/glite/etc/gip/provider/
+```console-root
+ln -s /usr/sbin/dcache-info-provider \
+|/opt/glite/etc/gip/provider/
+```
 
 If the BDII daemons are running, then you will see the information appear in BDII after a short delay; by default this is (at most) 60 seconds.
 
 You can verify that information is present in BDII by querying BDII using the `ldapsearch` command. Here is an example that queries for GLUE v1.3 objects:
 
-    PROMPT-ROOT ldapsearch -LLL -x -H ldap://EXAMPLE-HOST:2170 -b o=grid \
-    '(objectClass=GlueSE)'
-    dn: GlueSEUniqueID=EXAMPLE-FQDN,Mds-Vo-name=resource,o=grid
-    GlueSEStatus: Production
-    objectClass: GlueSETop
-    objectClass: GlueSE
-    objectClass: GlueKey
-    objectClass: GlueSchemaVersion
-    GlueSETotalNearlineSize: 0
-    GlueSEArchitecture: multidisk
-    GlueSchemaVersionMinor: 3
-    GlueSEUsedNearlineSize: 0
-    GlueChunkKey: GlueSEUniqueID=EXAMPLE-FQDN
-    GlueForeignKey: GlueSiteUniqueID=example.org
-    GlueSchemaVersionMajor: 1
-    GlueSEImplementationName: dCache
-    GlueSEUniqueID: EXAMPLE-FQDN
-    GlueSEImplementationVersion: dCache-VERSION-3 (ns=Chimera)
-    GlueSESizeFree: 84
-    GlueSEUsedOnlineSize: 2
-    GlueSETotalOnlineSize: 86
-    GlueSESizeTotal: 86
+```console-root
+ldapsearch -LLL -x -H ldap://EXAMPLE-HOST:2170 -b o=grid \
+|'(objectClass=GlueSE)'
+|dn: GlueSEUniqueID=EXAMPLE-FQDN,Mds-Vo-name=resource,o=grid
+|GlueSEStatus: Production
+|objectClass: GlueSETop
+|objectClass: GlueSE
+|objectClass: GlueKey
+|objectClass: GlueSchemaVersion
+|GlueSETotalNearlineSize: 0
+|GlueSEArchitecture: multidisk
+|GlueSchemaVersionMinor: 3
+|GlueSEUsedNearlineSize: 0
+|GlueChunkKey: GlueSEUniqueID=EXAMPLE-FQDN
+|GlueForeignKey: GlueSiteUniqueID=example.org
+|GlueSchemaVersionMajor: 1
+|GlueSEImplementationName: dCache
+|GlueSEUniqueID: EXAMPLE-FQDN
+|GlueSEImplementationVersion: dCache-VERSION-3 (ns=Chimera)
+|GlueSESizeFree: 84
+|GlueSEUsedOnlineSize: 2
+|GlueSETotalOnlineSize: 86
+|GlueSESizeTotal: 86
+```
 
 > **CAREFUL WITH THE HOSTNAME**
 >
@@ -287,23 +308,30 @@ completely different set of objects from the GLUE v1.3 queries.
 
 You should be able to compare this output with the output from running the info-provider script manually: BDII should contain all the objects that the dCache info-provider is supplying. Unfortunately, the order in which the objects are returned and the order of an object's properties is not guaranteed; therefore a direct comparison of the output isn't possible. However, it is possible to calculate the number of objects in GLUE v1.3 and GLUE v2.0.
 
-First, calculate the number of GLUE v1.3 objects in BDII and compare that to the number of GLUE v1.3 objects that the info-provider supplies.
+First, calculate the number of GLUE v1.3 objects in BDII and compare
+that to the number of GLUE v1.3 objects that the info-provider
+supplies.
 
-    [root] # ldapsearch -LLL -x -H ldap://<dcache-host>:2170 -b o=grid \
-    '(objectClass=GlueSchemaVersion)' | grep ^dn | wc -l
-    10
-    PROMPT-ROOT CMD-INFO-PROVIDER | \
-    grep -i "objectClass: GlueSchemaVersion" | wc -l
-    10
+```console-root
+ldapsearch -LLL -x -H ldap://<dcache-host>:2170 -b o=grid \
+|'(objectClass=GlueSchemaVersion)' | grep ^dn | wc -l
+|10
+dcache-info-provider | grep -i "objectClass: GlueSchemaVersion" | wc -l
+|10
+```
 
-Now calculate the number of GLUE v2.0 objects in BDII describing your dCache instance and compare that to the number provided by the info-provider:
+Now calculate the number of GLUE v2.0 objects in BDII describing your
+dCache instance and compare that to the number provided by the
+info-provider:
 
-    [root] # ldapsearch -LLL -x -H ldap://<dcache-host>:2170 -b o=glue | perl -p00e 's/\n //g' | \
-    grep dn.*GLUE2ServiceID | wc -l
-    27
-    PROMPT-ROOT CMD-INFO-PROVIDER | perl -p00e 's/\n //g' | \
-    grep ^dn.*GLUE2ServiceID | wc -l
-    27
+```console-root
+ldapsearch -LLL -x -H ldap://<dcache-host>:2170 -b o=glue | perl -p00e 's/\n //g' | \
+|grep dn.*GLUE2ServiceID | wc -l
+|27
+dcache-info-provider | perl -p00e 's/\n //g' | \
+|grep ^dn.*GLUE2ServiceID | wc -l
+|27
+```
 
 If there is a discrepancy in the pair of numbers obtains in the above commands then BDII has rejecting some of the objects. This is likely due to malformed LDAP objects from the info-provider.
 

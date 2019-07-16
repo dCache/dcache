@@ -304,7 +304,9 @@ simulate a connection to a TSS. To use this script place it in the
 directory `/usr/share/dcache/lib`, and create a directory to simulate
 the base of the TSS.
 
-    [root] # mkdir -p /hsmTape/data
+```console-root
+mkdir -p /hsmTape/data
+```
 
 Login to the Admin Interface to change the entry of the pool 'setup' file for a pool named pool\_1.
 

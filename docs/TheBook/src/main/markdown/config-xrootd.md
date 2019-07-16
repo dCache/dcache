@@ -50,9 +50,11 @@ You can just add the following lines to the layout file:
 
 After a restart of the domain running the DOOR-XROOTD, done e.g. by executing
 
-    [root] # ${dCacheHome}/bin/dcache restart xrootd-babelfishDomain
-    Stopping xrootd-babelfishDomain (pid=30246) 0 1 2 3 4 5 6 7 done
-    Starting xrootd-babelfishDomain done
+```console-root
+dcache restart xrootd-babelfishDomain
+|Stopping xrootd-babelfishDomain (pid=30246) 0 1 2 3 4 5 6 7 done
+|Starting xrootd-babelfishDomain done
+```
 
 the xrootd door should be running. A few minutes later it should appear at the web monitoring interface under "Cell Services" (see [the section called “The Web Interface for Monitoring dCache”).](intouch.md#the-web-interface-for-monitoring-dcache)
 
@@ -188,19 +190,31 @@ The keys itself have to be converted into a certain format in order to be loaded
 
 The following example demonstrates how to create and convert a keypair using OpenSSL:
 
-    Generate new RSA private key
-    [root] # openssl genrsa -rand 12938467 -out key.pem 1024
+Generate new RSA private key
 
-    Create certificate request
-    [root] # openssl req -new -inform PEM -key key.pem -outform PEM -out certreq.pem
+```console-root
+openssl genrsa -rand 12938467 -out key.pem 1024
+```
 
-    Create certificate by self-signing certificate request
-    [root] # openssl x509 -days 3650 -signkey key.pem -in certreq.pem -req -out cert.pem
+Create certificate request
 
-    Extract public key from certificate
-    [root] # openssl x509 -pubkey -in cert.pem -out pkey.pem
-    [root] # openssl pkcs8 -in key.pem -topk8 -nocrypt -outform DER -out <new_private_key>
-    [root] # openssl enc -base64 -d -in pkey.pem -out <new_public_key>
+```console-root
+openssl req -new -inform PEM -key key.pem -outform PEM -out certreq.pem
+```
+
+Create certificate by self-signing certificate request
+
+```console-root
+openssl x509 -days 3650 -signkey key.pem -in certreq.pem -req -out cert.pem
+```
+
+Extract public key from certificate
+
+```console-root
+openssl x509 -pubkey -in cert.pem -out pkey.pem
+openssl pkcs8 -in key.pem -topk8 -nocrypt -outform DER -out <new_private_key>
+openssl enc -base64 -d -in pkey.pem -out <new_public_key>
+```
 
 Only the last two lines are performing the actual conversion, therefore you can skip the previous lines in case you already have a keypair. Make sure that your keystore file correctly points to the converted keys.
 

@@ -74,37 +74,49 @@ On RHEL6 based systems you need to add
 into `/etc/sysconfig/rpcbind` and restart `rpcbind`. Check your OS
 manual for details.
 
-    [root] # service rpcbind restart
-    Stopping rpcbind:                                          [  OK  ]
-    Starting rpcbind:                                          [  OK  ]
+```console-root
+service rpcbind restart
+|Stopping rpcbind:                     [  OK  ]
+|Starting rpcbind:                     [  OK  ]
+```
 
 If your OS does not provide `rpcbind` Chimera `NFS` can use an embedded `rpcbind`. This requires to disable the `portmap` service if it exists.
 
-    PROMPT-ROOT /etc/init.d/portmap stop
-    Stopping portmap: portmap
+```console-root
+/etc/init.d/portmap stop
+|Stopping portmap: portmap
+```
 
 and restart the domain in which the `NFS` server is running.
 
-    Example:
-
-    [root] # dcache restart namespaceDomain
+```console-root
+dcache restart namespaceDomain
+```
 
 Now you can mount Chimera by
 
-    [root] # mount localhost:/ /mnt
+```console-root
+mount localhost:/ /mnt
+```
 
 and create the root of the CHIMERA namespace which you can call **data**:
 
-    [root] # mkdir -p /mnt/data
+```console-root
+mkdir -p /mnt/data
+```
 
 If you don’t want to mount chimera you can create the root of the Chimera namespace by
 
-    [root] # /usr/bin/chimera mkdir /data
+```console-root
+chimera mkdir /data
+```
 
 You can now add directory tags. For more information on tags see [the section called “Directory Tags”](config-chimera.md#directory-tags).
 
-    [root] # /usr/bin/chimera writetag /data sGroup "chimera"
-    [root] # /usr/bin/chimera writetag /data OSMTemplate "StoreName sql"
+```console-root
+chimera writetag /data sGroup "chimera"
+chimera writetag /data OSMTemplate "StoreName sql"
+```
 
 
 ### USING DCAP WITH A MOUNTED FILE SYSTEM
@@ -115,12 +127,13 @@ the root of Chimera locally (remote mounts are not allowed yet). This
 will allow us to establish wormhole files so `dCap` clients can
 discover the `dCap` doors.
 
-    [root] # mount localhost:/ /mnt
-    [root] # mkdir /mnt/admin/etc/config/dCache
-    [root] # touch /mnt/admin/etc/config/dCache/dcache.conf
-    [root] # touch /mnt/admin/etc/config/dCache/'.(fset)(dcache.conf)(io)(on)'
-    [root] # echo "<door host>:<port>" > /mnt/admin/etc/config/dCache/dcache.conf
-
+```console-root
+mount localhost:/ /mnt
+mkdir /mnt/admin/etc/config/dCache
+touch /mnt/admin/etc/config/dCache/dcache.conf
+touch /mnt/admin/etc/config/dCache/'.(fset)(dcache.conf)(io)(on)'
+echo "<door host>:<port>" > /mnt/admin/etc/config/dCache/dcache.conf
+```
 
 The default values for ports can be found in [Chapter 29, dCache
 Default Port Values](rf-ports.md) (for `dCap` the default port is
@@ -130,28 +143,38 @@ Default Port Values](rf-ports.md) (for `dCap` the default port is
 
 Create the directory in which the users are going to store their data and change to this directory.
 
-    [root] # mkdir -p /mnt/data
-    [root] # cd /mnt/data
+```console-root
+mkdir -p /mnt/data
+cd /mnt/data
+```
 
 Now you can copy a file into your dCache
 
-    [root] # dccp /bin/sh test-file
-    735004 bytes (718 kiB) in 0 seconds
+```console-root
+dccp /bin/sh test-file
+|735004 bytes (718 kiB) in 0 seconds
+```
 
 and copy the data back using the `dccp` command.
 
-    [root] # dccp test-file /tmp/testfile
-    735004 bytes (718 kiB) in 0 seconds
+```console-root
+dccp test-file /tmp/testfile
+|735004 bytes (718 kiB) in 0 seconds
+```
 
 The file has been transferred succesfully.
 
 Now remove the file from the dCache.
 
-    [root] # rm  test-file
+```console-root
+rm  test-file
+```
 
 When the configuration is complete you can unmount Chimera:
 
-    [root] # umount /mnt
+```console-root
+umount /mnt
+```
 
 > **NOTE**
 >

@@ -42,9 +42,11 @@ Reading and writing data to and from a dCache instance can be done with a number
 
 Create the root of the Chimera namespace and a world-writable directory by
 
-    [root] # /usr/bin/chimera mkdir /data
-    [root] # /usr/bin/chimera mkdir /data/world-writable
-    [root] # /usr/bin/chimera chmod 777 /data/world-writable
+```console-root
+chimera mkdir /data
+chimera mkdir /data/world-writable
+chimera chmod 777 /data/world-writable
+```
 
 ### WEBDAV
 
@@ -89,7 +91,9 @@ e.g. [webdavDomain] or add it to another domain to the file
 
 Now you can start the WEBDAV domain
 
-    [root] # dcache start webdavDomain
+```console-root
+dcache start webdavDomain
+```
 
 and access your files via http://<webdav-door.example.org>:2880 with your browser.
 
@@ -100,11 +104,15 @@ To use curl to copy a file into your dCache you will need to set webdav.redirect
 
 Write the file `test.txt`
 
-    [root] # curl -T test.txt http://webdav-door.example.org:2880/data/world-writable/
+```console-root
+curl -T test.txt http://webdav-door.example.org:2880/data/world-writable/
+```
 
 and read it
 
-    [root] # curl http://webdav-door.example.org:2880/data/world-writable/testfile.txt
+```console-root
+curl http://webdav-door.example.org:2880/data/world-writable/testfile.txt
+```
 
 ### DCAP
 
@@ -123,9 +131,11 @@ For this tutorial install dCap on your worker node. This can be the machine wher
 
 Get the GLITE repository (which contains dCap) and install DCAP using `yum`.
 
-       [root] # cd /etc/yum.repos.d/
-       [root] # wget http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/glite-UI.repo
-       [root] # yum install dcap
+```console-root
+cd /etc/yum.repos.d/
+wget http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/glite-UI.repo
+yum install dcap
+```
 
 Create the root of the Chimera namespace and a world-writable directory for **dCap** to write into as described [above](#dcache-without-mounted-namespace).
 
@@ -134,15 +144,19 @@ Copy the data (here `/bin/sh` is used as example data) using the
 the file using a URL, where <dcache.example.org> is the host on which
 the dCache is running
 
-       [root] # dccp -H /bin/sh dcap://<dcache.example.org>/data/world-writable/my-test-file-1
-       [##########################################################################################] 100% 718 kiB
-       735004 bytes (718 kiB) in 0 seconds
+```console-root
+dccp -H /bin/sh dcap://<dcache.example.org>/data/world-writable/my-test-file-1
+|[###############################] 100% 718 kiB
+|735004 bytes (718 kiB) in 0 seconds
+```
 
 and copy the file back.
 
-       [root] # dccp -H dcap://<dcache.example.org>/data/world-writable/my-test-file-1 /tmp/mytestfile1
-       [##########################################################################################] 100% 718 kiB
-       735004 bytes (718 kiB) in 0 seconds
+```console-root
+dccp -H dcap://<dcache.example.org>/data/world-writable/my-test-file-1 /tmp/mytestfile1
+|[###############################] 100% 718 kiB
+|735004 bytes (718 kiB) in 0 seconds
+```
 
 To remove the file you will need to mount the namespace.
 
@@ -606,24 +620,26 @@ Or, the equivalent as stdin.
 
 In dCache digital certificates are used for authentication and authorisation. To be able to verify the chain of trust when using the non-commercial grid-certificates you should install the list of certificates of grid Certification Authorities (CAs). In case you are using commercial certificates you will find the list of CAs in your browser.
 
-      [root] # wget http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.repo
-      --2011-02-10 10:26:10--  http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.repo
-      Resolving grid-deployment.web.cern.ch... 137.138.142.33, 137.138.139.19
-      Connecting to grid-deployment.web.cern.ch|137.138.142.33|:80... connected.
-      HTTP request sent, awaiting response... 200 OK
-      Length: 449 [text/plain]
-      Saving to: `lcg-CA.repo'
-
-      100%[====================================================================>] 449         --.-K/s   in 0s
-
-      2011-02-10 10:26:10 (61.2 MB/s) - `lcg-CA.repo' saved [449/449]
-      [root] # mv lcg-CA.repo /etc/yum.repos.d/
-      [root] # yum install lcg-CA
-      Loaded plugins: allowdowngrade, changelog, kernel-module
-      CA                                                                                     |  951 B     00:00
-      CA/primary                                                                             |  15 kB     00:00
-      CA
-      ...
+```console-root
+wget http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.repo
+|--2011-02-10 10:26:10--  http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.repo
+|Resolving grid-deployment.web.cern.ch... 137.138.142.33, 137.138.139.19
+|Connecting to grid-deployment.web.cern.ch|137.138.142.33|:80... connected.
+|HTTP request sent, awaiting response... 200 OK
+|Length: 449 [text/plain]
+|Saving to: `lcg-CA.repo'
+|
+|100%[=============>] 449         --.-K/s   in 0s
+|
+|2011-02-10 10:26:10 (61.2 MB/s) - `lcg-CA.repo' saved [449/449]
+mv lcg-CA.repo /etc/yum.repos.d/
+yum install lcg-CA
+|Loaded plugins: allowdowngrade, changelog, kernel-module
+|CA                            |  951 B     00:00
+|CA/primary                    |  15 kB     00:00
+|CA
+|...
+```
 
 You will need a server certificate for the host on which your dCache
 is running and a user certificate. The host certificate needs to be
@@ -639,16 +655,22 @@ Example:
 If you have the clients installed on the machine on which your dCache is running you will need to add a user to that machine in order to be able to execute the `voms-proxy-init` command and execute `voms-proxy-init` as this user.
 
 
-      [root] # useradd johndoe
+```console-root
+useradd johndoe
+```
 
-Change the password of the new user in order to be able to copy files to this account.
+Change the password of the new user in order to be able to copy files
+to this account.
 
-      [root] # passwd johndoe
-      Changing password for user johndoe.
-      New UNIX password:
-      Retype new UNIX password:
-      passwd: all authentication tokens updated successfully.
-      [root] # su johndoe
+```console-root
+passwd johndoe
+|Changing password for user johndoe.
+|New UNIX password:
+|Retype new UNIX password:
+|passwd: all authentication tokens updated successfully.
+su johndoe
+```
+
       [user] $ cd
       [user] $ mkdir .globus
 
@@ -658,11 +680,12 @@ Copy your key files from your local machine to the new user on the machine where
 
 Install glite-security-voms-clients (contained in the gLite-UI).
 
-      [root] # yum install glite-security-voms-clients
+```console-root
+yum install glite-security-voms-clients
+```
 
 Generate a proxy certificate using the command `voms-proxy-init`.
 
-    Example:
     [user] $ voms-proxy-init
     Enter GRID pass phrase:
     Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
@@ -756,12 +779,15 @@ In addition, you need to have libdcap-tunnel-gsi installed on your worker node, 
 >
 > As ScientificLinux 5 32bit is not supported by GLITE there is no libdcap-tunnel-gsi for SL5 32bit.
 
-    [root] # yum install libdcap-tunnel-gsi
+```console-root
+yum install libdcap-tunnel-gsi
+```
 
 It is also available on the [dCap downloads page](https://www.dcache.org/downloads/dcap/).
 
-    Example:
-    [root] # rpm -i http://www.dcache.org/repository/yum/sl5/x86_64/RPMS.stable//libdcap-tunnel-gsi-2.47.5-0.x86_64.rpm
+```console-root
+rpm -i http://www.dcache.org/repository/yum/sl5/x86_64/RPMS.stable//libdcap-tunnel-gsi-2.47.5-0.x86_64.rpm
+```
 
 The machine running the GSIdCap door needs to have a host certificate and you need to have a valid user certificate. In addition, you should have created a [voms proxy](config-gplazma.md#creating-a-voms-proxy) as mentioned [above](#authentication-and-authorization-in-dcache).
 
@@ -784,7 +810,9 @@ To use the `SRM` you need to define the `srm` service in your layout file.
 
 In addition, the user needs to install an `SRM` client for example the `dcache-srmclient`, which is contained in the gLite-UI, on the worker node and set the `PATH` environment variable.
 
-    [root] # yum install dcache-srmclient
+```console-root
+yum install dcache-srmclient
+```
 
 You can now copy a file into your dCache using the SRM,
 
@@ -822,17 +850,24 @@ to
 
 Then you will need to import the host certificate into the dCache keystore using the command
 
-    [root] # dcache import hostcert
+```console-root
+dcache import hostcert
+```
 
 and initialise your truststore by
 
-    [root] # dcache import cacerts
+```console-root
+dcache import cacerts
+```
 
 Now you need to restart the WEBDAV domain
 
-    [root] # dcache restart webdavDomain
+```console-root
+dcache restart webdavDomain
+```
 
-and access your files via https://<dcache.example.org>:2880 with your browser.
+and access your files via `https://<dcache.example.org>:2880` with
+your browser.
 
 
 

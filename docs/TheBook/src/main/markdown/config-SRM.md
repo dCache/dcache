@@ -247,32 +247,40 @@ basis of `pnfsmanager` defaults controlled by
 `pnfsmanager.default-access-latency` variables in
 `/etc/dcache/dcache.conf`.
 
-You can check if the `AccessLatency` and `RetentionPolicy` tags are present by using the following command:
+You can check if the `AccessLatency` and `RetentionPolicy` tags are
+present by using the following command:
 
-        [root] # /usr/bin/chimera lstag /path/to/directory
-	Total: numberOfTags
-	tag1
-	tag2
-	..
-	AccessLatency
-	RetentionPolicy
+```console-root
+chimera lstag /path/to/directory
+|Total: numberOfTags
+|tag1
+|tag2
+|..
+|AccessLatency
+|RetentionPolicy
+```
 
-If the output contains the lines AccessLatency and RetentionPolicy then the tags are already present and you can get the actual values of these tags by executing the following commands, which are shown together with example outputs:
+If the output contains the lines AccessLatency and RetentionPolicy
+then the tags are already present and you can get the actual values of
+these tags by executing the following commands, which are shown
+together with example outputs:
 
-     Example:
+```console-root
+chimera readtag /data/experiment-a AccessLatency
+|ONLINE
+chimera readtag /data/experiment-a RetentionPolicy
+|CUSTODIAL
+```
 
-     [root] # /usr/bin/chimera readtag /data/experiment-a AccessLatency
-     ONLINE
-     [root] # /usr/bin/chimera readtag /data/experiment-a RetentionPolicy
-     CUSTODIAL
-
-The valid `AccessLatency` values are `ONLINE` and `NEARLINE`, valid `RetentionPolicy` values are `REPLICA` and `CUSTODIAL`.
+The valid `AccessLatency` values are `ONLINE` and `NEARLINE`, valid
+`RetentionPolicy` values are `REPLICA` and `CUSTODIAL`.
 
 To create/change the values of the tags, please execute :
 
-    [root] # /usr/bin/chimera writetag /path/to/directory AccessLatency "<New AccessLatency>"
-    [root] # /usr/bin/chimera writetag /path/to/directory RetentionPolicy "<New RetentionPolicy>"
-
+```console-root
+chimera writetag /path/to/directory AccessLatency "<New AccessLatency>"
+chimera writetag /path/to/directory RetentionPolicy "<New RetentionPolicy>"
+```
 
 > **NOTE**
 >
@@ -322,8 +330,10 @@ Define a pool in your layout file, add it to your pool directory and restart the
     path=/srv/dcache/spacemanager-pool
     name=spacemanager-pool
 
-    [root] # mkdir -p /srv/dcache/spacemanager-pool
-    [root] # /usr/bin/dcache restart
+```console-root
+mkdir -p /srv/dcache/spacemanager-pool
+dcache restart
+```
 
 In the admin interface, `\c` to the CELL-POOLMNGR and create a pool group, a link and a link group.
 

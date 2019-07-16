@@ -356,9 +356,10 @@ Now the files on the pools have to be unregistered on the namespace server with
 
 Even if the pool contains precious files, this is no problem, since we will register them again in a moment. The files might not be available for a short moment, though. Log out of the pool, and stop the domain running the pool:
 
-    [root] # dcache stop <poolDomain>
-     Stopping <poolDomain> (pid=6070) 0 1 2 3 done
-    [root] #
+```console-root
+dcache stop <poolDomain>
+|Stopping <poolDomain> (pid=6070) 0 1 2 3 done
+```
 
 Adapt the name of the pool in the layout files of your dCache installation to include your new pool-name. For a general overview of layout-files see [ the section called “Defining domains and services”. ](install.md#defining-domains-and-services).
 
@@ -383,9 +384,10 @@ to
 
 Start the domain running the pool:
 
-    [root] # dcache start <poolDomain>
-    Starting poolDomain done
-    [root] #
+```console-root
+dcache start <poolDomain>
+|Starting poolDomain done
+```
 
 Register the files on the pool with
 
