@@ -103,8 +103,10 @@ A simple way to get files in and out of dCache via `xrootd` is the command xrdcp
 
 To transfer a single file in and out of dCache, just issue
 
-    [user] $ xrdcp /bin/sh root://<xrootd-door.example.org>/pnfs/<example.org>/data/xrd_test
-    [user] $ xrdcp root://<xrootd-door.example.org>/pnfs/<example.org>/data/xrd_test /dev/null
+```console-user
+xrdcp /bin/sh root://<xrootd-door.example.org>/pnfs/<example.org>/data/xrd_test
+xrdcp root://<xrootd-door.example.org>/pnfs/<example.org>/data/xrd_test /dev/null
+```
 
 ### Accessing files from within ROOT
 
@@ -136,19 +138,21 @@ To read it back into ROOT from dCache:
 
  Per default dCache xrootd is restricted to read-only, because plain xrootd is completely unauthenticated. A typical error message on the clientside if the server is read-only looks like:
 
-    [user] $ xrdcp -d 1 /bin/sh root://ford.desy.de//pnfs/desy.de/data/xrd_test2
-    Setting debug level 1
-    061024 18:43:05 001 Xrd: main: (C) 2004 SLAC INFN xrdcp 0.2 beta
-    061024 18:43:05 001 Xrd: Create: (C) 2004 SLAC INFN XrdClient kXR_ver002+kXR_asyncap
-    061024 18:43:05 001 Xrd: ShowUrls: The converted URLs count is 1
-    061024 18:43:05 001 Xrd: ShowUrls: URL n.1: root://ford.desy.de:1094//pnfs/desy.de/data/asdfas.
-    061024 18:43:05 001 Xrd: Open: Access to server granted.
-    061024 18:43:05 001 Xrd: Open: Opening the remote file /pnfs/desy.de/data/asdfas
-    061024 18:43:05 001 Xrd: XrdClient::TryOpen: doitparallel=1
-    061024 18:43:05 001 Xrd: Open: File open in progress.
-    061024 18:43:06 5819 Xrd: SendGenCommand: Server declared: Permission denied. Access is read only.(error code: 3003)
-    061024 18:43:06 001 Xrd: Close: File not opened.
-    Error accessing path/file for root://ford//pnfs/desy.de/data/asdfas
+```console-user
+xrdcp -d 1 /bin/sh root://ford.desy.de//pnfs/desy.de/data/xrd_test2
+|Setting debug level 1
+|061024 18:43:05 001 Xrd: main: (C) 2004 SLAC INFN xrdcp 0.2 beta
+|061024 18:43:05 001 Xrd: Create: (C) 2004 SLAC INFN XrdClient kXR_ver002+kXR_asyncap
+|061024 18:43:05 001 Xrd: ShowUrls: The converted URLs count is 1
+|061024 18:43:05 001 Xrd: ShowUrls: URL n.1: root://ford.desy.de:1094//pnfs/desy.de/data/asdfas.
+|061024 18:43:05 001 Xrd: Open: Access to server granted.
+|061024 18:43:05 001 Xrd: Open: Opening the remote file /pnfs/desy.de/data/asdfas
+|061024 18:43:05 001 Xrd: XrdClient::TryOpen: doitparallel=1
+|061024 18:43:05 001 Xrd: Open: File open in progress.
+|061024 18:43:06 5819 Xrd: SendGenCommand: Server declared: Permission denied. Access is read only.(error code: 3003)
+|061024 18:43:06 001 Xrd: Close: File not opened.
+|Error accessing path/file for root://ford//pnfs/desy.de/data/asdfas
+```
 
 To enable read-write access, add the following line to
 `${dCacheHome}/etc/dcache.conf`

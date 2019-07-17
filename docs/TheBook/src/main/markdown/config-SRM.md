@@ -88,15 +88,21 @@ You can now copy a file into your dCache using the SRM,
 >
 > Please make sure to use latest srmcp client otherwise you will need to specify `-2` in order to use the right version.
 
-    [user] $ srmcp file:////bin/sh srm://<dcache.example.org>:<8443>/data/world-writable/srm-test-file
+```console-user
+srmcp file:////bin/sh srm://dcache.example.org/data/world-writable/srm-test-file
+```
 
 copy it back
 
-    [user] $ srmcp srm://<dcache.example.org>:<8443>/data/world-writable/srm-test-file file:////tmp/srmtestfile.tmp
+```console-user
+srmcp srm://dcache.example.org/data/world-writable/srm-test-file file:////tmp/srmtestfile.tmp
+```
 
 and delete it
 
-    [user] $ srmrm srm://<dcache.example.org>:<8443>/data/world-writable/srm-test-file
+```console-user
+srmrm srm://dcache.example.org/data/world-writable/srm-test-file
+```
 
 ### IMPORTANT SRM CONFIGURATION OPTIONS
 
@@ -322,8 +328,11 @@ Now that the `SRM SpaceManager` is activated you can make a space reservation. A
 
 Login to the [admin interface](intouch.md#the-admin-interface) and connect to the cell `SrmSpaceManager`.
 
-    [user] $ ssh -p 22224 -l admin admin.example.org
-    (local) admin > \c SrmSpaceManager
+
+```console-user
+ssh -p 22224 -l admin admin.example.org
+|(local) admin > \c SrmSpaceManager
+```
 
 Type `ls link groups` to get information about link groups.
 
@@ -471,7 +480,9 @@ FLAGS CNT RESVD   AVAIL   FREE             UPDATED NAME
 Here the `-h` option indicates that approximate, but human readable, byte sizes are to be used, and `-e` indicates that ephemeral (time limited) reservations should be displayed too (by default time limited reservations are not displayed as they are often implicit reservations). As can be seen, 5 MB are now reserved in the link group, although with approximate byte sizes, 5 MB do not make a visible difference in the 7.3 GB total size.
 You can now copy a file into that space token.
 
-   [user] $ srmcp file:////bin/sh srm://<dcache.example.org>:8443/data/world-writable/space-token-test-file -space_token=110000
+```console-user
+srmcp file:////bin/sh srm://dcache.example.org/data/world-writable/space-token-test-file -space_token=110000
+```
 
 Now you can check via the [Webadmin Interface](config-frontend.md) or the [Web Interface](intouch.md#the-web-interface-for-monitoring-dcache) that the file has been copied to the pool `spacemanager-pool`.
 
@@ -552,25 +563,32 @@ Once a space reservation is created, no access control is performed, any user ca
 
 A user who is given the rights in the `SpaceManagerLinkGroupAuthorizationFile` can make a space reservation by
 
-    [user] $ srm-reserve-space -retention_policy=<RetentionPolicy> -lifetime=<lifetimeInSecs> -desired_size=<sizeInBytes> -guaranteed_size=<sizeInBytes>  srm://<example.org>:8443
-Space token =SpaceTokenId
+```console-user
+srm-reserve-space -retention_policy=<RetentionPolicy> -lifetime=<lifetimeInSecs> -desired_size=<sizeInBytes> -guaranteed_size=<sizeInBytes>  srm://example.dcache.org/
+|Space token =SpaceTokenId
+```
 
 and release it by
 
-    [user] $ srm-release-space srm://<example.org>:8443 -space_token=SpaceTokenId
+```console-user
+srm-release-space srm://dcache.example.org/ -space_token=SpaceTokenId
+```
 
 > **NOTE**
 >
 > Please note that it is obligatory to specify the retention policy while it is optional to specify the access latency.
 
 Example:
-    [user] $ srm-reserve-space -retention_policy=REPLICA -lifetime=300 -desired_size=5500000 -guaranteed_size=5500000  srm://srm.example.org:8443
-Space token =110044
+```console-user
+srm-reserve-space -retention_policy=REPLICA -lifetime=300 -desired_size=5500000 -guaranteed_size=5500000  srm://dcache.example.org
+|Space token =110044
+```
 
 The space reservation can be released by:
 
-    [user] $ srm-release-space srm://srm.example.org:8443 -space_token=110044
-
+```console-user
+srm-release-space srm://dcache.example.org -space_token=110044
+```
 
 
 ##### Space Reservation without VOMS certificate

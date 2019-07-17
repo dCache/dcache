@@ -636,16 +636,20 @@ certificate in your browser, make a backup and name it
 `~/.globus/` on your worker node and convert it to `usercert.pem`
 and `userkey.pem` as described below.
 
-   [user] $ openssl pkcs12 -clcerts -nokeys -in <userCertificate>.p12 -out usercert.pem
-   Enter Import Password:
-   MAC verified OK
+```console-user
+openssl pkcs12 -clcerts -nokeys -in <userCertificate>.p12 -out usercert.pem
+|Enter Import Password:
+|MAC verified OK
+```
 
 During the backup your browser asked you for a password to encrypt the certificate. Enter this password here when asked for a password. This will create your user certificate.
 
-    [user] $ openssl pkcs12 -nocerts -in <userCertificate>.p12 -out userkey.pem
-    Enter Import Password:
-    MAC verified OK
-    Enter PEM pass phrase:
+```console-user
+openssl pkcs12 -nocerts -in <userCertificate>.p12 -out userkey.pem
+|Enter Import Password:
+|MAC verified OK
+|Enter PEM pass phrase:
+```
 
 In this step you need to again enter the backup password. When asked for the PEM pass phrase choose a secure password. If you want to use your key without having to type in the pass phrase every time, you can remove it by executing the following command.
 
@@ -690,13 +694,15 @@ the `voms-proxy-init` as a user.
 
 Example:
 
-    [user] $ export PATH=/opt/glite/bin/:$PATH
-    [user] $ voms-proxy-init
-    Enter GRID pass phrase:
-    Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-
-    Creating proxy ........................................................................Done
-    Your proxy is valid until Mon Mar  7 22:06:15 2011
+```console-user
+export PATH=/opt/glite/bin/:$PATH
+voms-proxy-init
+|Enter GRID pass phrase:
+|Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+|
+|Creating proxy ..................................Done
+|Your proxy is valid until Mon Mar  7 22:06:15 2011
+```
 
 
 ##### Certifying your membership of a VO
@@ -743,64 +749,74 @@ Example:
 Use the command `voms-proxy-init -voms` to create a VOMS proxy with VO
 “desy”.
 
-    [user] $ voms-proxy-init -voms desy
-    Enter GRID pass phrase:
-    Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-    Creating temporary proxy ....................................................... Done
-    Contacting  grid-voms.desy.de:15104 [/C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de] "desy" Done
-    Creating proxy .................................... Done
-    Your proxy is valid until Mon Mar  7 23:52:13 2011
+```console-user
+voms-proxy-init -voms desy
+|Enter GRID pass phrase:
+|Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+|Creating temporary proxy ....................................................... Done
+|Contacting  grid-voms.desy.de:15104 [/C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de] "desy" Done
+|Creating proxy .................................... Done
+|Your proxy is valid until Mon Mar  7 23:52:13 2011
+```
 
 View the information about your VOMS proxy with `voms-proxy-info`
 
-    [user] $ voms-proxy-info
-    subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe/CN=proxy
-    issuer    : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-    identity  : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-    type      : proxy
-    strength  : 1024 bits
-    path      : /tmp/x509up_u500
-    timeleft  : 11:28:02
+```console-user
+voms-proxy-info
+|subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe/CN=proxy
+|issuer    : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+|identity  : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+|type      : proxy
+|strength  : 1024 bits
+|path      : /tmp/x509up_u500
+|timeleft  : 11:28:02
+```
 
 The last line tells you how much longer your proxy will be valid.
 
 If your proxy is expired you will get
 
-    [user] $ voms-proxy-info
-    subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe/CN=proxy
-    issuer    : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-    identity  : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-    type      : proxy
-    strength  : 1024 bits
-    path      : /tmp/x509up_u500
-    timeleft  : 0:00:00
+```console-user
+voms-proxy-info
+|subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe/CN=proxy
+|issuer    : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+|identity  : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+|type      : proxy
+|strength  : 1024 bits
+|path      : /tmp/x509up_u500
+|timeleft  : 0:00:00
+```
 
 The command `voms-proxy-info -all` gives you information about the
 proxy and about the VO.
 
-    [user] $ voms-proxy-info -all
-    subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe/CN=proxy
-    issuer    : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-    identity  : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-    type      : proxy
-    strength  : 1024 bits
-    path      : /tmp/x509up_u500
-    timeleft  : 11:24:57
-    === VO desy extension information ===
-    VO        : desy
-    subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-    issuer    : /C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de
-    attribute : /desy/Role=NULL/Capability=NULL
-    attribute : /desy/test/Role=NULL/Capability=NULL
-    timeleft  : 11:24:57
-    uri       : grid-voms.desy.de:15104
+```console-user
+voms-proxy-info -all
+subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe/CN=proxy
+issuer    : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+identity  : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+type      : proxy
+strength  : 1024 bits
+path      : /tmp/x509up_u500
+timeleft  : 11:24:57
+=== VO desy extension information ===
+VO        : desy
+subject   : /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+issuer    : /C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de
+attribute : /desy/Role=NULL/Capability=NULL
+attribute : /desy/test/Role=NULL/Capability=NULL
+timeleft  : 11:24:57
+uri       : grid-voms.desy.de:15104
+```
 
 Use the command `voms-proxy-destroy` to destroy your VOMS proxy.
 
-    [user] $ voms-proxy-destroy
-    [user] $ voms-proxy-info
-
-    Couldn't find a valid proxy.
+```console-user
+voms-proxy-destroy
+voms-proxy-info
+|
+|Couldn't find a valid proxy.
+```
 
 
 ## Using OpenID Connect
@@ -1053,11 +1069,16 @@ To be able to alter entries in the `dcache.kpwd` file conveniantly the
 dcache script offers support for doing this.
 
 Example:
-    [user] $dcache kpwd dcuseradd testuser -u 12345 -g 1000 -h / -r / -f / -w read-write -p password
+
+```console-root
+dcache kpwd dcuseradd testuser -u 12345 -g 1000 -h / -r / -f / -w read-write -p password
+```
 
 adds this to the kpwd file:
 
-    passwd testuser ae39aec3 read-write 12345 1000 / /
+```
+passwd testuser ae39aec3 read-write 12345 1000 / /
+```
 
 There are many more commands for altering the kpwd-file, see the dcache-script help for further commands available.
 

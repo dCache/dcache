@@ -96,9 +96,11 @@ It is especially useful to use a separate PostgreSQL server for the `billing` ce
 
 Create PostgreSQL user with the name you will be using to run PNFS server. Make sure it has `CREATEDB` privilege.
 
-    [user] $ psql -U postgres template1 -c "CREATE USER johndoe with CREATEDB"
-    [user] $ dropuser pnfsserver
-    [user] $ createuser --no-adduser --createdb --pwprompt pnfsserver
+```console-user
+psql -U postgres template1 -c "CREATE USER johndoe with CREATEDB"
+dropuser pnfsserver
+createuser --no-adduser --createdb --pwprompt pnfsserver
+```
 
 Table 24.1. Protocol Overview
 

@@ -195,8 +195,10 @@ meta data is accessed by reading, writing, or creating files of the
 form `.(command)(para)`. For example, the following prints the
 ChimeraID of the file `/data/some/dir/file.dat`:
 
-     [user] $ cat /data/any/sub/directory/'.(id)(file.dat)'
-     0004000000000000002320B8 [user] $
+```console-user
+cat /data/any/sub/directory/'.(id)(file.dat)'
+|0004000000000000002320B8
+```
 
 From the point of view of the `NFS` protocol, the file
 **.(id)(file.dat)** in the directory `/data/some/dir/` is
@@ -205,10 +207,16 @@ parameter file.dat executed in the directory `/data/some/dir/`. The
 quotes are important, because the shell would otherwise try to
 interpret the parentheses.
 
-Some of these command files have a second parameter in a third pair of parentheses. Note, that files of the form .(command)(para) are not really files. They are not shown when listing directories with `ls`. However, the command files are listed when they appear in the argument list of `ls` as in
+Some of these command files have a second parameter in a third pair of
+parentheses. Note, that files of the form `.(command)(para)` are not
+really files. They are not shown when listing directories with
+`ls`. However, the command files are listed when they appear in the
+argument list of `ls` as in
 
-     [user] $ ls -l '.(tag)(sGroup)'
-     -rw-r--r-- 11 root root 7 Aug 6 2010 .(tag)(sGroup)
+```console-user
+ls -l '.(tag)(sGroup)'
+|-rw-r--r-- 11 root root 7 Aug 6 2010 .(tag)(sGroup)
+```
 
 Only a subset of file operations are allowed on these special command files. Any other operation will result in an appropriate error. Beware, that files with names of this form might accidentally be created by typos. They will then be shown when listing the directory.
 
@@ -218,10 +226,14 @@ Each file in Chimera has a unique 18 byte long ID. It is referred to as ChimeraI
 
 Example:
 
-The ID of the file ** example.org/data/examplefile** can be obtained by reading the command-file ** .(id)(examplefile)** in the directory of the file.
+The ID of the file `/example.org/data/examplefile` can be obtained by
+reading the command-file `.(id)(examplefile)` in the directory of the
+file.
 
-     [user] $ cat /example.org/data/'.(id)(examplefile)'
-     0000917F4A82369F4BA98E38DBC5687A031D
+```console-user
+cat /example.org/data/'.(id)(examplefile)'
+|0000917F4A82369F4BA98E38DBC5687A031D
+```
 
 A file in Chimera can be referred to by the ID for most operations.
 
@@ -229,14 +241,18 @@ Example:
 
 The name of a file can be obtained from the ID with the command `nameof` as follows:
 
-    [user] $ cd /example.org/data/
-    [user] $ cat '.(nameof)(0000917F4A82369F4BA98E38DBC5687A031D)'
-    examplefile
+```console-user
+cd /example.org/data/
+cat '.(nameof)(0000917F4A82369F4BA98E38DBC5687A031D)'
+|examplefile
+```
 
 And the ID of the directory it resides in is obtained by:
 
-    [user] $ cat '.(parent)(0000917F4A82369F4BA98E38DBC5687A031D)'
-    0000595ABA40B31A469C87754CD79E0C08F2
+```console-user
+cat '.(parent)(0000917F4A82369F4BA98E38DBC5687A031D)'
+|0000595ABA40B31A469C87754CD79E0C08F2
+```
 
 This way, the complete path of a file may be obtained starting from the ID.
 
@@ -252,94 +268,125 @@ In the Chimera namespace, each directory can have a number of tags. These direct
 
 You can create tags with
 
-    [user] $ /usr/bin/chimera writetag <directory> <tagName> "<content>"
+```console-root
+chimera writetag <directory> <tagName> "<content>"
+```
 
 list tags with
 
-    [user] $ /usr/bin/chimera lstag <directory>
+```console-root
+chimera lstag <directory>
+```
 
 and read tags with
 
-    [user] $ /usr/bin/chimera readtag <directory> <tagName>
+```console-root
+chimera readtag <directory> <tagName>
+```
 
 Example:
 Create tags for the directory `data` with
 
-    [user] $ /usr/bin/chimera writetag /data sGroup "myGroup"
-    [user] $ /usr/bin/chimera writetag /data OSMTemplate "StoreName myStore"
+```console-root
+chimera writetag /data sGroup "myGroup"
+chimera writetag /data OSMTemplate "StoreName myStore"
+```
 
 list the existing tags with
 
-    [user] $ /usr/bin/chimera lstag /data
-    Total: 2
-    OSMTemplate
-    sGroup
+```console-root
+chimera lstag /data
+|Total: 2
+|OSMTemplate
+|sGroup
+```
 
 and their content with
 
-    [user] $ /usr/bin/chimera readtag /data OSMTemplate
-    StoreName myStore
-    [user] $ /usr/bin/chimera readtag /data sGroup
-    myGroup
+```console-root
+chimera readtag /data OSMTemplate
+|StoreName myStore
+chimera readtag /data sGroup
+|myGroup
+```
 
 ### CREATE, LIST AND READ DIRECTORY TAGS IF THE NAMESPACE IS MOUNTED
 
-If the namespace is mounted, change to the directory for which the tag should be set and create a tag with
+If the namespace is mounted, change to the directory for which the tag
+should be set and create a tag with
 
-     [user] $ cd <directory>
-     [user] $ echo '<content1>' > '.(tag)(<tagName1>)'
-     [user] $ echo '<content2>' > '.(tag)(<tagName2>)'
+```console-user
+cd <directory>
+echo '<content1>' > '.(tag)(<tagName1>)'
+echo '<content2>' > '.(tag)(<tagName2>)'
+```
 
 
 Then the existing tags may be listed with
 
-    [user] $ cat '.(tags)()'
-    .(tag)(<tagname1>)
-    .(tag)(<tagname2>)
-
+```console-user
+cat '.(tags)()'
+|.(tag)(<tagname1>)
+|.(tag)(<tagname2>)
+```
 
 and the content of a tag can be read with
 
-    [user] $ cat '.(tag)(<tagname1>)'
-    <content1>
-    [user] $ cat '.(tag)(<tagName2>)'
-    <content2>
+```console-user
+cat '.(tag)(<tagname1>)'
+|<content1>
+cat '.(tag)(<tagName2>)'
+|<content2>
+```
 
-Example:
+In the following example, two tags are created, listed and their
+contents shown.
 
+First, create tags for the directory `data` with
 
-Create tags for the directory **data** with
-
-    [user] $ cd data
-    [user] $ echo 'StoreName myStore' > '.(tag)(OSMTemplate)'
-    [user] $ echo 'myGroup' > '.(tag)(sGroup)'
+```console-user
+cd data
+echo 'StoreName myStore' > '.(tag)(OSMTemplate)'
+echo 'myGroup' > '.(tag)(sGroup)'
+```
 
 list the existing tags with
 
-    [user] $ cat '.(tags)()'
-    .(tag)(OSMTemplate)
-    .(tag)(sGroup)
+```console-user
+cat '.(tags)()'
+|.(tag)(OSMTemplate)
+|.(tag)(sGroup)
+```
 
 and their content with
 
-    [user] $ cat '.(tag)(OSMTemplate)'
-    StoreName myStore
-    [user] $ cat '.(tag)(sGroup)'
-    myGroup
+```console-user
+cat '.(tag)(OSMTemplate)'
+|StoreName myStore
+cat '.(tag)(sGroup)'
+|myGroup
+```
 
 A nice trick to list all tags with their contents is
 
-    [user] $ grep "" $(cat  ".(tags)()")
-    .(tag)(OSMTemplate):StoreName myStore
-    .(tag)(sGroup):myGroup
+```console-user
+grep "" $(cat  ".(tags)()")
+|.(tag)(OSMTemplate):StoreName myStore
+|.(tag)(sGroup):myGroup
+```
 
 ### DIRECTORY TAGS AND COMMAND FILES
 
-When creating or changing directory tags by writing to the command file as in
+When creating or changing directory tags by writing to the command
+file as in
 
-    [user] $ echo '<content>' > '.(tag)(<tagName>)'
+```console-user
+echo '<content>' > '.(tag)(<tagName>)'
+```
 
-one has to take care not to treat the command files in the same way as regular files, because tags are different from files in the following aspects:
+one has to take care not to treat the command files in the same way as
+regular files, because tags are different from files in the following
+aspects:
 
 1. The `tagName` is limited to 62 characters and the `content` to 512 bytes. Writing more to the command file, will be silently ignored.
 
@@ -357,27 +404,44 @@ The following directory tags appear in the dCache context:
 
 *OSMTemplate*:
 
-Must contain a line of the form “`StoreName` <storeName>” and specifies the name of the store that is used by dCache to construct the [storage class](#storage-class-and-directory-tags) if the [HSM Type](rf-glossary.md#hsm-type) is `osm`.
+Must contain a line of the form `StoreName <storeName>` and specifies
+the name of the store that is used by dCache to construct the [storage
+class](#storage-class-and-directory-tags) if the [HSM
+Type](rf-glossary.md#hsm-type) is `osm`.
 
 *HSMType*:
 
-The [`HSMType`](rf-glossary.md#hsm-type) tag is normally determined from the other existing tags. E.g., if the tag `OSMTemplate` exists, `HSMType`=`osm` is assumed. With this tag it can be set explicitly. A class implementing that HSM type has to exist. Currently the only implementations are `osm` and `enstore`.
+The [`HSMType`](rf-glossary.md#hsm-type) tag is normally determined
+from the other existing tags. E.g., if the tag `OSMTemplate` exists,
+`HSMType`=`osm` is assumed. With this tag it can be set explicitly. A
+class implementing that HSM type has to exist. Currently the only
+implementations are `osm` and `enstore`.
 
 *sGroup*:
 
-The storage group is also used to construct the [storage class](#storage-class-and-directory-tags) if the [`HSMType`](rf-glossary.md#hsm-type) is `osm`.
+The storage group is also used to construct the [storage
+class](#storage-class-and-directory-tags) if the
+[`HSMType`](rf-glossary.md#hsm-type) is `osm`.
 
 *cacheClass*:
 
-The cache class is only used to control on which pools the files in a directory may be stored, while the storage class (constructed from the two above tags) might also be used by the HSM. The cache class is only needed if the above two tags are already fixed by HSM usage and more flexibility is needed.
+The cache class is only used to control on which pools the files in a
+directory may be stored, while the storage class (constructed from the
+two above tags) might also be used by the HSM. The cache class is only
+needed if the above two tags are already fixed by HSM usage and more
+flexibility is needed.
 
 *hsmInstance*:
 
-If not set, the `hsmInstance` tag will be the same as the `HSMType` tag. Setting this tag will only change the name as used in the [storage class](#storage-class-and-directory-tags) and in the pool commands.
+If not set, the `hsmInstance` tag will be the same as the `HSMType`
+tag. Setting this tag will only change the name as used in the
+[storage class](#storage-class-and-directory-tags) and in the pool
+commands.
 
 *WriteToken*:
 
-Assign a `WriteToken` tag to a directory in order to be able to write to a space token without using the `SRM`.
+Assign a `WriteToken` tag to a directory in order to be able to write
+to a space token without using the SRM.
 
 ### STORAGE CLASS AND DIRECTORY TAGS
 
@@ -385,12 +449,14 @@ The [storage class](config-PoolManager.md#storage-classes) is a string of the fo
 
 In the examples above two tags have been created.
 
-     Example:
+Example:
 
-     [user] $ /usr/bin/chimera lstag /data
-     Total: 2
-     OSMTemplate
-     sGroup
+```console-root
+chimera lstag /data
+|Total: 2
+|OSMTemplate
+|sGroup
+```
 
 As the tag OSMTemplate was created the tag HSMType is assumed to be
 osm.  The storage class of the files which are copied into the
@@ -408,8 +474,10 @@ experiment-a and others by experiment-b they probably do not like it
 if they are also used by the other group. To avoid this the
 directories of experiment-a and experiment-b can be tagged.
 
-     [user] $ /usr/bin/chimera writetag /data/experiment-a OSMTemplate "StoreName exp-a"
-     [user] $ /usr/bin/chimera writetag /data/experiment-b OSMTemplate "StoreName exp-b"
+```console-root
+chimera writetag /data/experiment-a OSMTemplate "StoreName exp-a"
+chimera writetag /data/experiment-b OSMTemplate "StoreName exp-b"
+```
 
 Data from experiment-a taken in 2010 shall be written into the
 directory `/data/experiment-a/2010` and data from experiment-a taken
@@ -417,24 +485,28 @@ in 2011 shall be written into `/data/experiment-a/2011`. Data from
 experiment-b shall be written into `/data/experiment-b`. Tag the
 directories correspondingly.
 
-     [user] $ /usr/bin/chimera writetag /data/experiment-a/2010 sGroup "run2010"
-     [user] $ /usr/bin/chimera writetag /data/experiment-a/2011 sGroup "run2011"
-     [user] $ /usr/bin/chimera writetag /data/experiment-b sGroup "alldata"
+```console-root
+chimera writetag /data/experiment-a/2010 sGroup "run2010"
+chimera writetag /data/experiment-a/2011 sGroup "run2011"
+chimera writetag /data/experiment-b sGroup "alldata"
+```
 
 List the content of the tags by
 
-     [user] $ /usr/bin/chimera readtag /data/experiment-a/2010 OSMTemplate
-     StoreName exp-a
-     [user] $ /usr/bin/chimera readtag /data/experiment-a/2010 sGroup
-     run2010
-     [user] $ /usr/bin/chimera readtag /data/experiment-a/2011 OSMTemplate
-     StoreName exp-a
-     [user] $ /usr/bin/chimera readtag /data/experiment-a/2011 sGroup
-     run2011
-     [user] $ /usr/bin/chimera readtag /data/experiment-b/2011 OSMTemplate
-     StoreName exp-b
-     [user] $ /usr/bin/chimera readtag /data/experiment-b/2011 sGroup
-     alldata
+```console-root
+chimera readtag /data/experiment-a/2010 OSMTemplate
+|StoreName exp-a
+chimera readtag /data/experiment-a/2010 sGroup
+|run2010
+chimera readtag /data/experiment-a/2011 OSMTemplate
+|StoreName exp-a
+chimera readtag /data/experiment-a/2011 sGroup
+|run2011
+chimera readtag /data/experiment-b/2011 OSMTemplate
+|StoreName exp-b
+chimera readtag /data/experiment-b/2011 sGroup
+|alldata
+```
 
 As the tag OSMTemplate was created the HSMType is assumed to be osm.
 The storage classes of the files which are copied into these directories after the tags have been set will be

@@ -39,7 +39,9 @@ To enable the user to specify the gss expected name in the DN (Distinguished Nam
 Example:
 If the CN of host where srm server is running is `CN=srm/tam01.fnal.gov`, then `gss_expected_name` should be `srm`.
 
-    [user] $ srmcp --gss_expected_name=srm sourceUrl destinationUrl
+```console-user
+srmcp --gss_expected_name=srm sourceUrl destinationUrl
+```
 
 
 **globus_tcp_port_range**
@@ -51,14 +53,18 @@ This takes care of compute nodes that are behind firewall.
 Example:
 `globus_tcp_port_range=40000:50000`
 
-    [user] $ srmcp --globus_tcp_port_range=minVal:maxVal sourceUrl destinationUrl
+```console-user
+srmcp --globus_tcp_port_range=minVal:maxVal sourceUrl destinationUrl
+```
 
 **streams_num**
 
 To enable the user to specify the number of streams to be used for data transfer. If set to 1, then stream mode is used, otherwise extended block mode is used.
 
 Example:
-    [user] $  srmcp --streams_num=1 sourceUrl destinationUrl
+```console-user
+srmcp --streams_num=1 sourceUrl destinationUrl
+```
 
 **server_mode**
 To enable the user to set the (gridftp) server mode for data transfer. Can be `active` or `passive`, `passive` by default.
@@ -66,7 +72,9 @@ To enable the user to set the (gridftp) server mode for data transfer. Can be `a
 This option will have effect only if transfer is performed in a stream mode (see `streams_num`)
 
 Example:
-    [user] $  srmcp --streams_num=1 --server_mode=active sourceUrl destinationUrl
+```console-user
+srmcp --streams_num=1 --server_mode=active sourceUrl destinationUrl
+```
 
 ### Description
 
@@ -170,23 +178,33 @@ The following arguments are optional:
 
 To copy a file to dCache:
 
-[user] $ dccp /etc/group dcap://example.org/pnfs/desy.de/gading/
+```console-user
+dccp /etc/group dcap://example.org/pnfs/desy.de/gading/
+```
 
 To copy a file from dCache:
 
-[user] $ dccp dcap://example.org/pnfs/desy.de/gading/group /tmp/
+```console-user
+dccp dcap://example.org/pnfs/desy.de/gading/group /tmp/
+```
 
 Pre-Stage request:
 
-[user] $ dccp -P -t 3600 -l example.org /acs/user_space/data_file
+```console-user
+dccp -P -t 3600 -l example.org /acs/user_space/data_file
+```
 
 stdin:
 
-[user] $ tar cf - data_dir | dccp - /acs/user_space/data_arch.tar
+```console-user
+tar cf - data_dir | dccp - /acs/user_space/data_arch.tar
+```
 
 stdout:
 
-[user] $ dccp /acs/user_space/data_arch.tar - | tar xf -
+```console-user
+dccp /acs/user_space/data_arch.tar - | tar xf -
+```
 
 ### See also
 

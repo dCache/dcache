@@ -256,11 +256,11 @@ breaks) and should have a standard format, such as:
 
 Now you can login to the admin interface by
 
-      [user] $ ssh -p 22224 -l admin headnode.example.org
-      dCache (<version>)
-      Type "\?" for help.
-
-      [headnode] (local) admin >
+```console-user
+ssh -p 22224 -l admin headnode.example.org
+|dCache (<version>)
+|Type "\?" for help.
+```
 
 Public key based authorization is default with a fallback to `gPlazma` `kpwd` plugin.
 
@@ -285,13 +285,12 @@ session sufficient      kpwd  "kpwd=/etc/dcache/dcache.kpwd"
 Add a user `admin` to the `/etc/dcache/dcache.kpwd` file using the `dcache` script.
 
 >    Example:
->    [user] $ dcache kpwd dcuseradd admin -u 12345 -g 1000 -h / -r / -f / -w read-write -p password
->    writing to /etc/dcache/dcache.kpwd :
-
->
->    done writing to /etc/dcache/dcache.kpwd :
->
->    [user] $
+>    ```console-root
+>    dcache kpwd dcuseradd admin -u 12345 -g 1000 -h / -r / -f / -w read-write -p password
+>    |writing to /etc/dcache/dcache.kpwd :
+>    |
+>    |done writing to /etc/dcache/dcache.kpwd :
+>    ```
 
 After you ran the above command the following like appears in
 `/etc/dcache/dcache.kpwd` file:
@@ -303,12 +302,12 @@ For more information about `gPlazma` see [Chapter 10, Authorization in dCache](c
 
 Now the user `admin` can login to the admin interface with his password `password` by:
 
-    [user] $ ssh -l admin -p 22224 headnode.example.org
-    admin@headnode.example.org's password:
-    dCache (<version>)
-      Type "\?" for help.
-
-    [headnode] (local) admin >
+```console-user
+ssh -l admin -p 22224 headnode.example.org
+|admin@headnode.example.org's password:
+|dCache (<version>)
+|  Type "\?" for help.
+```
 
 To utilize kerberos authentication mechanism the following lines need
 to be added to `/etc/dcache/dcache.kpwd` file:
@@ -320,15 +319,16 @@ to be added to `/etc/dcache/dcache.kpwd` file:
 
 Then, you can access dCache having obtained kerberos ticket:
 
-   [user] $ kinit johndoe@EXAMPLE.ORG
-   [user] $ ssh -l admin -p 22224 headnode.example.org
-   dCache (<version>)
-     Type "\?" for help.
+```console-user
+kinit johndoe@EXAMPLE.ORG
+ssh -l admin -p 22224 headnode.example.org
+dCache (<version>)
+  Type "\?" for help.
+```
 
-   [headnode] (local) admin >
 
-
-To allow other users access to the admin interface add them to the `/etc/dcache/dcache.kpwd` file as described above.
+To allow other users access to the admin interface add them to the
+`/etc/dcache/dcache.kpwd` file as described above.
 
 Just adding a user in the `dcache.kpwd` file is not sufficient. The
 generated user also needs access priileges that can only be set within
@@ -640,27 +640,33 @@ passwd johndoe
 su johndoe
 ```
 
-      [user] $ cd
-      [user] $ mkdir .globus
+```console-user
+cd
+mkdir .globus
+```
 
 Copy your key files from your local machine to the new user on the machine where the dCache is running.
 
-      [user] $ scp .globus/user*.pem johndoe@<dcache.example.org>:.globus
+```console-user
+scp .globus/user*.pem johndoe@<dcache.example.org>:.globus
+```
 
 Install glite-security-voms-clients (contained in the gLite-UI).
 
-```console-root
-yum install glite-security-voms-clients
+```console-user
+sudo yum install glite-security-voms-clients
 ```
 
 Generate a proxy certificate using the command `voms-proxy-init`.
 
-    [user] $ voms-proxy-init
-    Enter GRID pass phrase:
-    Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-
-    Creating proxy .............................................. Done
-    Your proxy is valid until Mon Mar  7 22:06:15 2011
+```console-user
+voms-proxy-init
+|Enter GRID pass phrase:
+|Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+|
+|Creating proxy .............................................. Done
+|Your proxy is valid until Mon Mar  7 22:06:15 2011
+```
 
 
 With `voms-proxy-init -voms <yourVO>` you can add VOMS attributes to
@@ -670,8 +676,8 @@ are signed by the user’s VOMS server when the proxy is created. For
 the `voms-proxy-init -voms` command you need to have the file
 `/etc/vomses` which contains entries about the VOMS servers like
 
+Example:
 
-    Example:
     "desy" "grid-voms.desy.de" "15104" "/C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de" "desy" "24"
     "atlas" "voms.cern.ch" "15001" "/DC=ch/DC=cern/OU=computers/CN=voms.cern.ch" "atlas" "24"
     "dteam" "lcg-voms.cern.ch" "15004" "/DC=ch/DC=cern/OU=computers/CN=lcg-voms.cern.ch" "dteam" "24"
@@ -680,16 +686,17 @@ the `voms-proxy-init -voms` command you need to have the file
 
 Now you can generate your voms proxy containing your VO.
 
-    Example:
+Example:
 
-      [user] $ voms-proxy-init -voms desy
-      Enter GRID pass phrase:
-      Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
-      Creating temporary proxy ................................... Done
-      Contacting  grid-voms.desy.de:15104 [/C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de] "desy" Done
-      Creating proxy .................... Done
-      Your proxy is valid until Thu Mar 31 21:49:06 2011
-
+```console-user
+voms-proxy-init -voms desy
+|Enter GRID pass phrase:
+|Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
+|Creating temporary proxy ................................... Done
+|Contacting  grid-voms.desy.de:15104 [/C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de] "desy" Done
+|Creating proxy .................... Done
+|Your proxy is valid until Thu Mar 31 21:49:06 2019
+```
 
 Authentication and authorization in dCache is done by the GPLAZMA service. Define this service in the layout file.
 
@@ -752,27 +759,31 @@ In addition, you need to have libdcap-tunnel-gsi installed on your worker node, 
 >
 > As ScientificLinux 5 32bit is not supported by GLITE there is no libdcap-tunnel-gsi for SL5 32bit.
 
-```console-root
-yum install libdcap-tunnel-gsi
+```console-user
+sudo yum install libdcap-tunnel-gsi
 ```
 
 It is also available on the [dCap downloads page](https://www.dcache.org/downloads/dcap/).
 
-```console-root
-rpm -i http://www.dcache.org/repository/yum/sl5/x86_64/RPMS.stable//libdcap-tunnel-gsi-2.47.5-0.x86_64.rpm
+```console-user
+sudo rpm -i http://www.dcache.org/repository/yum/sl5/x86_64/RPMS.stable//libdcap-tunnel-gsi-2.47.5-0.x86_64.rpm
 ```
 
 The machine running the GSIdCap door needs to have a host certificate and you need to have a valid user certificate. In addition, you should have created a [voms proxy](config-gplazma.md#creating-a-voms-proxy) as mentioned [above](#authentication-and-authorization-in-dcache).
 
 Now you can copy a file into your dCache using GSIdCap
 
-    [user] $ dccp /bin/sh gsidcap://<dcache.example.org>:22128/data/world-writable/my-test-file3
-    801512 bytes in 0 seconds
+```console-user
+dccp /bin/sh gsidcap://<dcache.example.org>:22128/data/world-writable/my-test-file3
+|801512 bytes in 0 seconds
+```
 
 and copy it back.
 
-    [user] $ dccp gsidcap://<dcache.example.org>:22128/data/world-writable/my-test-file3 /tmp/mytestfile3.tmp
-    801512 bytes in 0 seconds
+```console-user
+dccp gsidcap://<dcache.example.org>:22128/data/world-writable/my-test-file3 /tmp/mytestfile3.tmp
+|801512 bytes in 0 seconds
+```
 
 ### SRM
 
@@ -785,25 +796,33 @@ To use the `SRM` you need to define the `srm` service in your layout file.
 
 In addition, the user needs to install an `SRM` client for example the `dcache-srmclient`, which is contained in the gLite-UI, on the worker node and set the `PATH` environment variable.
 
-```console-root
-yum install dcache-srmclient
+```console-user
+sudo yum install dcache-srmclient
 ```
 
 You can now copy a file into your dCache using the SRM,
 
-    [user] $ srmcp -2 file:////bin/sh srm://dcache.example.org:8443/data/world-writable/my-test-file4
+```console-user
+srmcp -2 file:////bin/sh srm://dcache.example.org:8443/data/world-writable/my-test-file4
+```
 
 copy it back
 
-    [user] $ srmcp -2 srm://dcache.example.org:8443/data/world-writable/my-test-file4 file:////tmp/mytestfile4.tmp
+```console-user
+srmcp -2 srm://dcache.example.org:8443/data/world-writable/my-test-file4 file:////tmp/mytestfile4.tmp
+```
 
 and delete it.
 
-    [user] $ srmcp -2 srm://dcache.example.org:8443/data/world-writable/my-test-file4
+```console-user
+srmcp -2 srm://dcache.example.org:8443/data/world-writable/my-test-file4
+```
 
 If the grid functionality is not required the file can be deleted with the `NFS` mount of the CHIMERA namespace:
 
-    [user] $ rm /data/world-writable/my-test-file4
+```console-user
+rm /data/world-writable/my-test-file4
+```
 
 ### WEBDAV WITH CERTIFICATES
 

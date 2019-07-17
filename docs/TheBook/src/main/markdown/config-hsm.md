@@ -502,7 +502,9 @@ The **PoolManager** Restore Queue.  Remove the file `test.root` with the pnfs-ID
 
 Request the file `test.root`
 
-    [user] $ dccp dcap://example.dcache.org:/data/test.root test.root
+```console-user
+dccp dcap://example.dcache.org:/data/test.root test.root
+```
 
 Check the PoolManager Restore Queue:
 

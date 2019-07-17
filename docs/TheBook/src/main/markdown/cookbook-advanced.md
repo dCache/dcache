@@ -116,7 +116,9 @@ dcap.authz.mover-queue-overwrite=allowed
 
 With the `dccp` command the queue can now be specified as follows:
 
-    [user] $ dccp -X-io-queue=queue_dccp <source> <destination>
+```console-user
+dccp -X-io-queue=queue_dccp <source> <destination>
+```
 
 Since `dccp` requests may be quite different from other requests with the `dCap` protocol, this feature may be used to use separate queues for `dccp`  requests and other dCap library requests. Therefore, the `dccp`  command may be changed in future releases to request a special `dccp` -queue by default.
 
