@@ -85,12 +85,11 @@ Copying file with `globus-url-copy` follows the syntax source, destination:
     globus-url-copy [command line options] [<srcUrl>] [<destinationUrl>]
 
 Example: The following example copies the file `/etc/group` into
-dCache as the file
-`/pnfs/example.org/data/dteam/test_GlobusUrlCopy.clinton.504.22080.20071102160121.2`
+dCache as the file `/data/test.txt`
 
 ```console-user
 globus-url-copy file://///etc/group \
-|    gsiftp://dcache.example.org/pnfs/example.org/data/dteam/test_GlobusUrlCopy.clinton.504.22080.20071102160121.2
+|    gsiftp://dcache.example.org/data/test.txt
 ```
 
 Please note that the five slashes in `file://///` are really needed.
@@ -102,14 +101,13 @@ When using `dccp` client or using the interposition library the errors `Command 
 ### DCCP
 
 The following example shows `dccp` being used to copy the file
-`/etc/group` into dCache as the the file
-`/pnfs/example.org/data/dteam/test6`. The `dccp` program will connect
-to dCache without authenticating.
+`/etc/group` into dCache as the the file `/data/test.txt`. The `dccp`
+program will connect to dCache without authenticating.
 
 ```console-user
-dccp /etc/group dcap://dcache.example.org:22125/pnfs/example.org/data/dteam/test6
+dccp /etc/group dcap://dcache.example.org:22125/data/test.txt
 |Command failed!
-|Server error message for [1]: "path /pnfs/example.org/data/dteam/test6 not found" (errno 10001).
+|Server error message for [1]: "path /data/test.txt not found" (errno 10001).
 |597 bytes in 0 seconds
 ```
 
@@ -118,16 +116,16 @@ The following example shows `dccp` being used to upload the file
 using the GSI protocol.
 
 ```console-user
-dccp /etc/group gsidcap://dcache.example.org:22128/pnfs/example.org/data/dteam/test5
+dccp /etc/group gsidcap://dcache.example.org:22128/data/test.txt
 |Command failed!
-|Server error message for [1]: "path /pnfs/example.org/data/dteam/test5 not found" (errno 10001).
+|Server error message for [1]: "path /pnfs/example.org/data/test.txt not found" (errno 10001).
 |597 bytes in 0 seconds
 ```
 
 The following example shows `dccp` with the debugging enabled. The value `63` controls how much information is displayed.
 
 ```console-user
-dccp -d 63   /etc/group dcap://dcache.example.org:22128/pnfs/example.org/data/dteam/test3
+dccp -d 63   /etc/group dcap://dcache.example.org:22128/data/test.txt
 |Dcap Version version-1-2-42 Jul 10 2007 19:56:02
 |Using system native stat64 for /etc/group.
 |Allocated message queues 0, used 0
@@ -145,16 +143,16 @@ dccp -d 63   /etc/group dcap://dcache.example.org:22128/pnfs/example.org/data/dt
 |Server reply: welcome.
 |dcap_pool:  POLLIN on control line [3] id=1
 |Connected to dcache.example.org:22128
-|Sending control message: 1 0 client stat "dcap://dcache.example.org:22128/pnfs/example.org/data/dteam/test3" -uid=501
+|Sending control message: 1 0 client stat "dcap://dcache.example.org:22128/data/test.txt" -uid=501
 |Command failed!
-|Server error message for [1]: "path //pnfs/example.org/data/dteam/test3 not found" (errno 10001).
+|Server error message for [1]: "path //data/test.txt not found" (errno 10001).
 |[-1] unpluging node
 |Removing unneeded queue [1]
 |[-1] destroing node
 |Real file name: /etc/group.
 |Using system native open for /etc/group.
 |extra option:  -alloc-size=597
-|[Fri Sep  7 17:50:56 2007] Going to open file dcap://dcache.example.org:22128/pnfs/example.org/data/dteam/test3 in cache.
+|[##TODAY_DAY_OF_WEEK## ##TODAY_MONTH_NAME## ##TODAY_DAY_OF_MONTH## ##HH:MM:SS## ##TODAY_YEAR##] Going to open file dcap://dcache.example.org:22128/data/test.txt in cache.
 |Allocated message queues 2, used 1
 |
 |Using environment variable as configuration
@@ -162,7 +160,7 @@ dccp -d 63   /etc/group dcap://dcache.example.org:22128/pnfs/example.org/data/dt
 |Added IO tunneling plugin libgsiTunnel.so for dcache.example.org:22128.
 |Using existing control connection to dcache.example.org:22128.
 |Setting hostname to dcache.example.org.
-|Sending control message: 2 0 client open "dcap://dcache.example.org:22128/pnfs/example.org/data/dteam/test3" w -mode=0644 -truncate dcache.example.org 33122 -timeout=-
+|Sending control message: 2 0 client open "dcap://dcache.example.org:22128/data/test.txt" w -mode=0644 -truncate dcache.example.org 33122 -timeout=-
 |1 -onerror=default  -alloc-size=597  -uid=501
 |Polling data for destination[6] queueID[2].
 |Got callback connection from dcache.example.org:35905 for session 2, myID 2.
@@ -308,16 +306,16 @@ Example:
 
 ```console-user
 srmcp -webservice_protocol=http \
-|file://///etc/group \
-|srm://dcache.example.org/pnfs/example.org/data/dteam/test_Srm.clinton.501.32050.20070907153055.0
+|    file://///etc/group \
+|    srm://dcache.example.org/data/test.txt
 ```
 
 #### Copying files from dCache
 
 ```console-user
 srmcp -webservice_protocol=http \
-|srm://dcache.example.org:8443/pnfs/example.org/data/dteam/test_Srm.clinton.501.32050.20070907153055.0 \
-|file://///tmp/testfile1 -streams_num=1
+|    srm://dcache.example.org:8443/data/test.txt \
+|    file://///tmp/testfile1 -streams_num=1
 ```
 
 ### srmcp for SRM v2.2
@@ -347,7 +345,7 @@ Usage:
 Example 22.1. surveying the space tokens available in a directory.
 
 ```console-user
-srm-get-space-tokens srm://dcache.example.org/pnfs/example.org/data/dteam -srm_protocol_version=2
+srm-get-space-tokens srm://dcache.example.org -srm_protocol_version=2
 ```
 
 A successful result:
@@ -408,7 +406,7 @@ A successful result:
 A typical failure
 
     SRMClientV2 : srmStatusOfReserveSpaceRequest , contacting service httpg://dcache.example.org/srm/managerv2
-    status: code=SRM_NO_FREE_SPACE explanantion= at Thu Nov 08 15:29:44 CET 2007 state Failed :  no space available
+    status: code=SRM_NO_FREE_SPACE explanantion= at ##TODAY_DAY_OF_WEEK## ##TODAY_MONTH_NAME## ##TODAY_2DAY_OF_MONTH## ##HH:MM:SS## ##TODAY_TIMEZONE## ##TODAY_YEAR## state Failed :  no space available
     lifetime = null
     access latency = ONLINE
     retention policy = REPLICA
@@ -444,12 +442,12 @@ Examples:
 ```console-user
 srmcp -protocols=gsiftp -space_token=144573 \
 |file://///home/user/path/to/myFile \
-|srm://dcache.example.org/pnfs/example.org/data/dteam/myFile
+|srm://dcache.example.org/data/myFile
 |
 srmcp -protocols=gsiftp -space_token=144573 \
 |file://///home/user/path/to/myFile1 \
 |file://///home/user/path/to/myFile2 \
-|srm://dcache.example.org/pnfs/example.org/data/dteam
+|srm://dcache.example.org/data
 ```
 
 ##### Space Metadata
@@ -488,13 +486,13 @@ Usage:
 Example 22.3. Using srmls -l:
 
 ```console-user
-srmls srm://dcache.example.org/pnfs/example.org/data/dteam/testdir
-|0 /pnfs/example.org/data/dteam/testdir/
-|    31 /pnfs/example.org/data/dteam/testdir/testFile1
-|    31 /pnfs/example.org/data/dteam/testdir/testFile2
-|    31 /pnfs/example.org/data/dteam/testdir/testFile3
-|    31 /pnfs/example.org/data/dteam/testdir/testFile4
-|    31 /pnfs/example.org/data/dteam/testdir/testFile5
+srmls srm://dcache.example.org/data
+|0 /data/
+|    31 /data/testFile1
+|    31 /data/testFile2
+|    31 /data/testFile3
+|    31 /data/testFile4
+|    31 /data/testFile5
 ```
 
 > **Note**
@@ -502,8 +500,8 @@ srmls srm://dcache.example.org/pnfs/example.org/data/dteam/testdir
 > The `-l` option results in `srmls` providing additional information. Collecting this additional information may result in a dramatic increase in execution time.
 
 ```console-user
-srmls -l srm://dcache.example.org/pnfs/example.org/data/dteam/testdir
-|0 /pnfs/example.org/data/dteam/testdir/
+srmls -l srm://dcache.example.org/data
+|0 /data/
 | storage type:PERMANENT
 | retention policy:CUSTODIAL
 | access latency:NEARLINE
@@ -512,14 +510,14 @@ srmls -l srm://dcache.example.org/pnfs/example.org/data/dteam/testdir
 | UserPermission: uid=18118 PermissionsRWX
 | GroupPermission: gid=2688 PermissionsRWX
 | WorldPermission: RX
-| created at:2007/10/31 16:16:32
-| modified at:2007/11/08 18:03:39
+| created at:##LASTMONTH_YEAR##/##LASTMONTH_2MONTH##/##LASTMONTH_2DAY_OF_MONTH## 16:16:32
+| modified at:##TODAY_YEAR##/##TODAY_2MONTH##/##TODAY_2DAY_OF_MONTH## 09:11:12
 |  - Assigned lifetime (in seconds):  -1
 |  - Lifetime left (in seconds):  -1
-|  - Original SURL:  /pnfs/example.org/data/dteam/testdir
+|  - Original SURL:  /data
 |  - Status:  null
 |  - Type:  DIRECTORY
-|31 /pnfs/example.org/data/dteam/testdir/testFile1
+|31 /data/testFile1
 | storage type:PERMANENT
 | retention policy:CUSTODIAL
 | access latency:NEARLINE
@@ -529,11 +527,11 @@ srmls -l srm://dcache.example.org/pnfs/example.org/data/dteam/testdir
 | UserPermission: uid=18118 PermissionsRW
 | GroupPermission: gid=2688 PermissionsR
 | WorldPermission: R
-| created at:2007/11/08 15:47:13
-| modified at:2007/11/08 15:47:13
+| created at:##LASTMONTH_YEAR##/##LASTMONTH_2MONTH##/##LASTMONTH_2DAY_OF_MONTH## 15:47:13
+| modified at:##TODAY_YEAR##/##TODAY_2MONTH##/##TODAY_2DAY_OF_MONTH## 09:15:21
 |  - Assigned lifetime (in seconds):  -1
 |  - Lifetime left (in seconds):  -1
-|  - Original SURL:  /pnfs/example.org/data/dteam/testdir/testFile1
+|  - Original SURL:  /data/testFile1
 |  - Status:  null
 |  - Type:  FILE
 ```
@@ -552,35 +550,37 @@ Example 22.5. Limited directory listing
 The first command shows the output without specifying `-count` or `-offset`. Since the directory contains less than 1000 entries, all entries are listed.
 
 ```console-user
-srmls srm://dcache.example.org/pnfs/example.org/data/dteam/dir1 \
-|      srm://dcache.example.org/pnfs/example.org/data/dteam/dir2
-|      0 /pnfs/example.org/data/dteam/dir1/
-|          31 /pnfs/example.org/data/dteam/dir1/myFile1
-|          28 /pnfs/example.org/data/dteam/dir1/myFile2
-|          47 /pnfs/example.org/data/dteam/dir1/myFile3
-|      0 /pnfs/example.org/data/dteam/dir2/
-|          25 /pnfs/example.org/data/dteam/dir2/fileA
-|          59 /pnfs/example.org/data/dteam/dir2/fileB
+srmls srm://dcache.example.org/data/run1 \
+|      srm://dcache.example.org/data/run2
+|0 /data/run1/
+|    31 /data/run1/myFile1
+|    28 /data/run1/myFile2
+|    47 /data/run1/myFile3
+|0 /data/run2/
+|    25 /data/run2/fileA
+|    59 /data/run2/fileB
 ```
 
-The following examples shows the result when using the `-count` option to listing the first three entries.
+The following examples shows the result when using the `-count` option
+to listing the first three entries.
 
 ```console-user
-srmls -count=3 srm://dcache.example.org/pnfs/example.org/data/dteam/testdir
-|0 /pnfs/example.org/data/dteam/testdir/
-|      31 /pnfs/example.org/data/dteam/testdir/testFile1
-|      31 /pnfs/example.org/data/dteam/testdir/testFile2
-|      31 /pnfs/example.org/data/dteam/testdir/testFile3
+srmls -count=3 srm://dcache.example.org/other-data
+|0 /other-data/
+|      31 /other-data/testFile1
+|      31 /other-data/testFile2
+|      31 /other-data/testFile3
 ```
 
-In the next command, the `-offset` option is used to view a different set of entries.
+In the next command, the `-offset` option is used to view a different
+set of entries.
 
 ```console-user
-srmls -count=3 -offset=1 srm://dcache.example.org/pnfs/example.org/data/dteam/testdir
-|0 /pnfs/example.org/data/dteam/testdir/
-|      31 /pnfs/example.org/data/dteam/testdir/testFile2
-|      31 /pnfs/example.org/data/dteam/testdir/testFile3
-|      31 /pnfs/example.org/data/dteam/testdir/testFile4
+srmls -count=3 -offset=1 srm://dcache.example.org/other-data
+|0 /other-data/
+|      31 /other-data/testFile2
+|      31 /other-data/testFile3
+|      31 /other-data/testFile4
 ```
 
 ## ldap

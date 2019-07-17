@@ -212,10 +212,10 @@ values will look like
 
 ```console-root
 chimera writetag /data/experiment-a OSMTemplate "StoreName exp-a"
-chimera writetag /data/experiment-a sGroup "run2010"
+chimera writetag /data/experiment-a sGroup "run##TODAY_YEAR##"
 ```
 
-and will result in the storage class `exp-a:run2010@osm` for any data
+and will result in the storage class `exp-a:run##TODAY_YEAR##@osm` for any data
 stored in the `/data/experiment-a` directory.
 
 To summarize: The storage class depends on the directory the data is stored in and is configurable.
@@ -356,7 +356,15 @@ If pools are financed by one experimental group, they probably do not like it if
 
 Example:
 
-Assume, data of experiment A obtained in 2010 is written into subdirectories in the namespace tree which are tagged with the storage class `exp-a:run2010@osm`, and similarly for the other years. (How this is done is described in [the section called “Storage Classes”](#storage-classes).) Experiment B uses the storage class `exp-b:alldata@osm` for all its data. Especially important data is tagged with the cache class `important`. (This is described in [the section called “Cache Class”](#cache-class).) A suitable setup would be:
+Assume, data of experiment A obtained in ##TODAY_YEAR## is written
+into subdirectories in the namespace tree which are tagged with the
+storage class `exp-a:run##TODAY_YEAR##@osm`, and similarly for the other
+years. (How this is done is described in [the section called “Storage
+Classes”](#storage-classes).) Experiment B uses the storage class
+`exp-b:alldata@osm` for all its data. Especially important data is
+tagged with the cache class `important`. (This is described in [the
+section called “Cache Class”](#cache-class).) A suitable setup would
+be:
 
 
 
@@ -377,10 +385,10 @@ Assume, data of experiment A obtained in 2010 is written into subdirectories in 
       psu addto ugroup allnet-cond 111.111.111.0/255.255.255.0
 
       psu create ugroup exp-a-cond
-      psu create unit -store exp-a:run2011@osm
-      psu addto ugroup exp-a-cond exp-a:run2011@osm
-      psu create unit -store exp-a:run2010@osm
-      psu addto ugroup exp-a-cond exp-a:run2010@osm
+      psu create unit -store exp-a:run##LASTYEAR_YEAR##@osm
+      psu addto ugroup exp-a-cond exp-a:run##LASTYEAR_YEAR##@osm
+      psu create unit -store exp-a:run##TODAY_YEAR##@osm
+      psu addto ugroup exp-a-cond exp-a:run##TODAY_YEAR##@osm
 
       psu create link exp-a-link allnet-cond exp-a-cond
       psu set link exp-a-link -readpref=10 -writepref=10 -cachepref=10
@@ -419,7 +427,12 @@ Example:
     psu set link fallback-link -readpref=5 -writepref=5 -cachepref=5
     psu addto link fallback-link it-pools
 
-Note again that these will only be used, if none of the experiments pools can be reached, or if the storage class is not of the form `exp-a:run2009@osm`, `exp-a:run2010@osm`, or `exp-b:alldata@osm`. If the administrator fails to create the unit `exp-a:run2005@osm` and add it to the unit group `exp-a-cond`, the fall-back pools will be used eventually.
+Note again that these will only be used, if none of the experiments
+pools can be reached, or if the storage class is not of the form
+`exp-a:run##LASTYEAR_YEAR##@osm`, `exp-a:##TODAY_YEAR##@osm`, or
+`exp-b:alldata@osm`. If the administrator fails to create the unit
+`exp-a:run##TODAY_YEAR##@osm` and add it to the unit group
+`exp-a-cond`, the fall-back pools will be used eventually.
 
 ## THE PARTITION MANAGER
 

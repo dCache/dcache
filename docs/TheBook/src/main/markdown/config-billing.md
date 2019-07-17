@@ -38,8 +38,8 @@ tagged with the date.
 
 Example:
 
-        log file: /var/lib/dcache/billing/2012/09/billing-2012.09.25
-        error file: /var/lib/dcache/billing/2012/09/billing-error-2012.09.25
+        log file: /var/lib/dcache/billing/##TODAY_YEAR##/09/billing-##TODAY_YEAR##.09.25
+        error file: /var/lib/dcache/billing/##TODAY_YEAR##/09/billing-error-##TODAY_YEAR##.09.25
 
 The log files may contain information about the time, the pool, the pnfsID and size of the transferred file, the storage class, the actual number of bytes transferred, the number of milliseconds the transfer took, the protocol, the subject (identity of the user given as a collection of principals), the data transfer listen port, the return status and a possible error message. The logged information depends on the protocol.
 

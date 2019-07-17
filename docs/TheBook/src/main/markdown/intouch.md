@@ -591,7 +591,7 @@ In dCache digital certificates are used for authentication and authorisation. To
 
 ```console-root
 wget http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.repo
-|--2011-02-10 10:26:10--  http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.repo
+|--##TODAY_YEAR##-##TODAY_2MONTH##-##TODAY_2DAY_OF_MONTH## 10:26:10--  http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.repo
 |Resolving grid-deployment.web.cern.ch... 137.138.142.33, 137.138.139.19
 |Connecting to grid-deployment.web.cern.ch|137.138.142.33|:80... connected.
 |HTTP request sent, awaiting response... 200 OK
@@ -600,7 +600,7 @@ wget http://grid-deployment.web.cern.ch/grid-deployment/glite/repos/3.2/lcg-CA.r
 |
 |100%[=============>] 449         --.-K/s   in 0s
 |
-|2011-02-10 10:26:10 (61.2 MB/s) - `lcg-CA.repo' saved [449/449]
+|##TODAY_YEAR##-##TODAY_2MONTH##-##TODAY_2DAY_OF_MONTH## 10:26:10 (61.2 MB/s) - `lcg-CA.repo' saved [449/449]
 mv lcg-CA.repo /etc/yum.repos.d/
 yum install lcg-CA
 |Loaded plugins: allowdowngrade, changelog, kernel-module
@@ -665,7 +665,7 @@ voms-proxy-init
 |Your identity: /C=DE/O=GermanGrid/OU=DESY/CN=John Doe
 |
 |Creating proxy .............................................. Done
-|Your proxy is valid until Mon Mar  7 22:06:15 2011
+|Your proxy is valid until ##TOMORROW_DAY_OF_WEEK## ##TOMORROW_MONTH_NAME## ##TOMORROW_DAY_OF_MONTH## ##HH:MM:SS## ##TOMORROW_YEAR##
 ```
 
 
@@ -695,7 +695,7 @@ voms-proxy-init -voms desy
 |Creating temporary proxy ................................... Done
 |Contacting  grid-voms.desy.de:15104 [/C=DE/O=GermanGrid/OU=DESY/CN=host/grid-voms.desy.de] "desy" Done
 |Creating proxy .................... Done
-|Your proxy is valid until Thu Mar 31 21:49:06 2019
+|Your proxy is valid until ##TOMORROW_DAY_OF_WEEK## ##TOMORROW_MONTH_NAME## ##TOMORROW_DAY_OF_MONTH## ##HH:MM:SS## ##TOMORROW_YEAR##
 ```
 
 Authentication and authorization in dCache is done by the GPLAZMA service. Define this service in the layout file.

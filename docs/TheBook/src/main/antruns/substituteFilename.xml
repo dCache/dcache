@@ -30,6 +30,30 @@
             </else>
         </if>
 
+        <tstamp>
+          <format property="TIME_HHMMSS" pattern="HH:mm:ss"/>
+          <format property="TODAY_YEAR" pattern="yyyy"/>
+          <format property="TODAY_MONTH" pattern="M"/>
+          <format property="TODAY_2MONTH" pattern="MM"/>
+          <format property="TODAY_MONTH_NAME" pattern="MMM"/>
+          <format property="TODAY_DAY_OF_WEEK" pattern="EEE"/>
+          <format property="TODAY_DAY_OF_MONTH" pattern="d"/>
+          <format property="TODAY_2DAY_OF_MONTH" pattern="dd"/>
+          <format property="TODAY_TIMEZONE" pattern="zzz"/>
+          <format property="TOMORROW_YEAR" pattern="yyyy" offset="1" unit="day"/>
+          <format property="TOMORROW_MONTH" pattern="M" offset="1" unit="day"/>
+          <format property="TOMORROW_MONTH_NAME" pattern="MMM" offset="1" unit="day"/>
+          <format property="TOMORROW_DAY_OF_WEEK" pattern="EEE" offset="1" unit="day"/>
+          <format property="TOMORROW_DAY_OF_MONTH" pattern="d" offset="1" unit="day"/>
+          <format property="LASTMONTH_YEAR" pattern="yyyy" offset="-1" unit="month"/>
+          <format property="LASTMONTH_2MONTH" pattern="MM" offset="-1" unit="month"/>
+          <format property="LASTMONTH_MONTH_NAME" pattern="MMM" offset="-1" unit="month"/>
+          <format property="LASTMONTH_2DAY_OF_MONTH" pattern="dd" offset="-1" unit="month"/>
+          <format property="LASTMONTH_DAY_OF_WEEK" pattern="EEE" offset="-1" unit="month"/>
+          <format property="LASTMONTH_TIMEZONE" pattern="zzz" offset="-1" unit="month"/>
+          <format property="LASTYEAR_YEAR" pattern="yyyy" offset="-1" unit="year"/>
+        </tstamp>
+
         <replace file='${fileName}'
                  token='##NAVIGATION##'
                  value='${navigation}'/>
@@ -46,16 +70,101 @@
                  token='##NEXT_VERSION##'
                  value='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextIncrementalVersion}'/>
 
-	<replace file='${fileName}'
-		 token='&lt;pre>&lt;code class="language-console-user">'
-	         value='&lt;pre class="command-line" data-user="user" data-host="client" data-filter-output="|">&lt;code class="language-shell">'/>
 
-	<replace file='${fileName}'
-		 token='&lt;pre>&lt;code class="language-console-root">'
-	         value='&lt;pre class="command-line" data-user="root" data-host="dcache" data-filter-output="|">&lt;code class="language-shell">'/>
+        <replace file='${fileName}'
+                 token='##HH:MM:SS##'
+                 value='${TIME_HHMMSS}'/>
 
-	<replace file='${fileName}'
-		 token='&lt;pre>&lt;code class="language-console-admin">'
-	         value='&lt;pre class="command-line" data-prompt="(local) admin > " data-filter-output="|">&lt;code class="language-shell">'/>
+        <replace file='${fileName}'
+                 token='##TODAY_YEAR##'
+                 value='${TODAY_YEAR}'/>
+
+        <replace file='${fileName}'
+                 token='##TODAY_MONTH##'
+                 value='${TODAY_MONTH}'/>
+
+        <replace file='${fileName}'
+                 token='##TODAY_2MONTH##'
+                 value='${TODAY_2MONTH}'/>
+
+        <replace file='${fileName}'
+                 token='##TODAY_MONTH_NAME##'
+                 value='${TODAY_MONTH_NAME}'/>
+
+        <replace file='${fileName}'
+                 token='##TODAY_DAY_OF_MONTH##'
+                 value='${TODAY_DAY_OF_MONTH}'/>
+
+        <replace file='${fileName}'
+                 token='##TODAY_2DAY_OF_MONTH##'
+                 value='${TODAY_2DAY_OF_MONTH}'/>
+
+        <replace file='${fileName}'
+                 token='##TODAY_DAY_OF_WEEK##'
+                 value='${TODAY_DAY_OF_WEEK}'/>
+
+        <replace file='${fileName}'
+                 token='##TODAY_TIMEZONE##'
+                 value='${TODAY_TIMEZONE}'/>
+
+        <replace file='${fileName}'
+                 token='##TOMORROW_YEAR##'
+                 value='${TOMORROW_YEAR}'/>
+
+        <replace file='${fileName}'
+                 token='##TOMORROW_MONTH##'
+                 value='${TOMORROW_MONTH}'/>
+
+        <replace file='${fileName}'
+                 token='##TOMORROW_MONTH_NAME##'
+                 value='${TOMORROW_MONTH_NAME}'/>
+
+        <replace file='${fileName}'
+                 token='##TOMORROW_DAY_OF_WEEK##'
+                 value='${TOMORROW_DAY_OF_WEEK}'/>
+
+        <replace file='${fileName}'
+                 token='##TOMORROW_DAY_OF_MONTH##'
+                 value='${TOMORROW_DAY_OF_MONTH}'/>
+
+        <replace file='${fileName}'
+                 token='##LASTYEAR_YEAR##'
+                 value='${LASTYEAR_YEAR}'/>
+
+        <replace file='${fileName}'
+                 token='##LASTMONTH_YEAR##'
+                 value='${LASTMONTH_YEAR}'/>
+
+        <replace file='${fileName}'
+                 token='##LASTMONTH_2MONTH##'
+                 value='${LASTMONTH_2MONTH}'/>
+
+        <replace file='${fileName}'
+                 token='##LASTMONTH_MONTH_NAME##'
+                 value='${LASTMONTH_MONTH_NAME}'/>
+
+        <replace file='${fileName}'
+                 token='##LASTMONTH_2DAY_OF_MONTH##'
+                 value='${LASTMONTH_2DAY_OF_MONTH}'/>
+
+        <replace file='${fileName}'
+                 token='##LASTMONTH_DAY_OF_WEEK##'
+                 value='${LASTMONTH_DAY_OF_WEEK}'/>
+
+        <replace file='${fileName}'
+                 token='##LASTMONTH_TIMEZONE##'
+                 value='${LASTMONTH_TIMEZONE}'/>
+
+        <replace file='${fileName}'
+                 token='&lt;pre>&lt;code class="language-console-user">'
+                 value='&lt;pre class="command-line" data-user="user" data-host="client" data-filter-output="|">&lt;code class="language-shell">'/>
+
+        <replace file='${fileName}'
+                 token='&lt;pre>&lt;code class="language-console-root">'
+                 value='&lt;pre class="command-line" data-user="root" data-host="dcache" data-filter-output="|">&lt;code class="language-shell">'/>
+
+        <replace file='${fileName}'
+                 token='&lt;pre>&lt;code class="language-console-admin">'
+                 value='&lt;pre class="command-line" data-prompt="(local) admin > " data-filter-output="|">&lt;code class="language-shell">'/>
     </target>
 </project>

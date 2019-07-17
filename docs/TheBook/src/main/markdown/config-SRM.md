@@ -385,7 +385,7 @@ Check whether the link group is available. Note that this can take several minut
     (local) admin > \c SrmSpaceManager
     (SrmSpaceManager) admin > ls link groups
     FLAGS CNT RESVD        AVAIL         FREE             UPDATED NAME
-    --rc:no 0     0 + 7278624768 = 7278624768 2011-11-28 12:12:51 spacemanager_WriteLinkGroup
+    --rc:no 0     0 + 7278624768 = 7278624768 ##LASTMONTH_YEAR##-##LASTMONTH_2MONTH##-##LASTMONTH_2DAY_OF_MONTH## 12:12:51 spacemanager_WriteLinkGroup
 
 
 The link group `spacemanager_WriteLinkGroup` was created. Here the flags indicate first the status (- indicates that neither the expired \[e\] nor the released flags \[r\] are set), followed by the type of reservations allowed in the link group (here replica \[r\], custodial \[c\], nearline \[n\] and online \[o\] files; output \[o\] files are not allowed - see `help ls
@@ -463,25 +463,27 @@ Example:
 
 Now you can make a space reservation for the VO `desy`.
 
-   (SrmSpaceManager) admin > reserve space -owner=/desy/Role=production -desc=DESY_TEST -lifetime=10000 -lg=spacemanager_WriteLinkGroup 5MB
-110000 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE linkGroupId:0 size:5000000 created:Fri Dec 09 12:43:48 CET 2011 lifetime:10000000ms expiration:Fri Dec 09 15:30:28 CET 2011 description:DESY_TEST state:RESERVED used:0 allocated:0
+    (SrmSpaceManager) admin > reserve space -owner=/desy/Role=production -desc=DESY_TEST -lifetime=10000 -lg=spacemanager_WriteLinkGroup 5MB
+    110000 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE
+    linkGroupId:0 size:5000000 created:##TODAY_DAY_OF_WEEK## ##TODAY_MONTH_NAME## ##TODAY_2DAY_OF_MONTH## 12:43:48 ##TODAY_TIMEZONE## ##TODAY_YEAR## lifetime:10000000ms expiration:##TODAY_DAY_OF_WEEK## ##TODAY_MONTH_NAME## ##TODAY_2DAY_OF_MONTH## 15:30:28 ##TODAY_TIMEZONE## ##TODAY_YEAR## description:DESY_TEST state:RESERVED used:0 allocated:0
 
 The space token of the reservation is `110000`.
 Check the status of the reservation by
 
     (SrmSpaceManager) admin > ls spaces -e -h
- TOKEN RETENTION LATENCY FILES ALLO   USED   FREE   SIZE             EXPIRES DESCRIPTION
-110000 CUSTODIAL NEARLINE    0   0B +   0B + 5.0M = 5.0M 2011-12-09 12:43:48 DESY_TEST
+     TOKEN RETENTION LATENCY FILES ALLO   USED   FREE   SIZE             EXPIRES DESCRIPTION
+    110000 CUSTODIAL NEARLINE    0   0B +   0B + 5.0M = 5.0M ##TODAY_YEAR##-##TODAY_2MONTH##-##TODAY_2DAY_OF_MONTH## 12:43:48 DESY_TEST
 
-(SrmSpaceManager) admin > ls link groups -h
-FLAGS CNT RESVD   AVAIL   FREE             UPDATED NAME
---rc:no 1  5.0M +  7.3G = 7.3G 2011-11-28 12:12:51 spacemanager_WriteLinkGroup
+    (SrmSpaceManager) admin > ls link groups -h
+    FLAGS CNT RESVD   AVAIL   FREE             UPDATED NAME
+    --rc:no 1  5.0M +  7.3G = 7.3G ##TODAY_YEAR##-##TODAY_2MONTH##-##TODAY_2DAY_OF_MONTH## 12:12:51 spacemanager_WriteLinkGroup
 
 Here the `-h` option indicates that approximate, but human readable, byte sizes are to be used, and `-e` indicates that ephemeral (time limited) reservations should be displayed too (by default time limited reservations are not displayed as they are often implicit reservations). As can be seen, 5 MB are now reserved in the link group, although with approximate byte sizes, 5 MB do not make a visible difference in the 7.3 GB total size.
 You can now copy a file into that space token.
 
 ```console-user
-srmcp file:////bin/sh srm://dcache.example.org/data/world-writable/space-token-test-file -space_token=110000
+srmcp -space_token=110000 file://bin/sh \
+|    srm://dcache.example.org/data/mydata
 ```
 
 Now you can check via the [Webadmin Interface](config-frontend.md) or the [Web Interface](intouch.md#the-web-interface-for-monitoring-dcache) that the file has been copied to the pool `spacemanager-pool`.
@@ -520,14 +522,17 @@ If a space reservation is not needed anymore it can be released with
 
 Example:
 
-       (SrmSpaceManager) admin > reserve space -owner=/desy -desc=DESY_TEST -lifetime=600 5000000
-        110042 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE linkGroupId:0 size:5000000
-	created:Thu Dec 15 12:00:35 CET 2011 lifetime:600000ms expiration:Thu Dec 15 12:10:35 CET 2011 description:DESY_TEST
-	state:RESERVED used:0 allocated:0
-       (SrmSpaceManager) admin > release space 110042
-        110042 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE linkGroupId:0 size:5000000
-	created:Thu Dec 15 12:00:35 CET 2011 lifetime:600000ms expiration:Thu Dec 15 12:10:35 CET 2011 description:DESY_TEST
-	state:RELEASED used:0 allocated:0
+    (SrmSpaceManager) admin > reserve space -owner=/desy -desc=DESY_TEST -lifetime=600 5000000
+    110042 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE
+    linkGroupId:0 size:5000000 created:##TODAY_DAY_OF_WEEK## ##TODAY_MONTH_NAME## ##TODAY_2DAY_OF_MONTH## 12:00:35 ##TODAY_TIMEZONE## ##TODAY_YEAR## lifetime:600000ms
+    expiration:##TODAY_DAY_OF_WEEK## ##TODAY_MONTH_NAME## ##TODAY_2DAY_OF_MONTH## 12:10:35 ##TODAY_TIMEZONE## ##TODAY_YEAR## description:DESY_TEST state:RESERVED used:0
+    allocated:0
+
+    (SrmSpaceManager) admin > release space 110042
+    110042 voGroup:/desy voRole:production retentionPolicy:CUSTODIAL accessLatency:NEARLINE
+    linkGroupId:0 size:5000000 created:##TODAY_DAY_OF_WEEK## ##TODAY_MONTH_NAME## ##TODAY_2DAY_OF_MONTH## 12:00:35 ##TODAY_TIMEZONE## ##TODAY_YEAR## lifetime:600000ms
+    expiration:##TODAY_DAY_OF_WEEK## ##TODAY_MONTH_NAME## ##TODAY_2DAY_OF_MONTH## 12:10:35 ##TODAY_TIMEZONE## ##TODAY_YEAR## description:DESY_TEST state:RELEASED used:0
+    allocated:0
 
 You can see that the value for `state` has changed from `RESERVED` to `RELEASED`.
 
