@@ -223,7 +223,7 @@ dcache-info-provider | head -20
 |GlueSEUniqueID: EXAMPLE-FQDN
 |GlueSEImplementationName: dCache
 |GlueSEArchitecture: multidisk
-|GlueSEImplementationVersion: dCache-PATCH-VERSION (ns=Chimera)
+|GlueSEImplementationVersion: dCache-##VERSION## (ns=Chimera)
 |GlueSESizeTotal: 86
 ```
 
@@ -284,7 +284,7 @@ ldapsearch -LLL -x -H ldap://EXAMPLE-HOST:2170 -b o=grid \
 |GlueSchemaVersionMajor: 1
 |GlueSEImplementationName: dCache
 |GlueSEUniqueID: EXAMPLE-FQDN
-|GlueSEImplementationVersion: dCache-VERSION-3 (ns=Chimera)
+|GlueSEImplementationVersion: dCache-##VERSION## (ns=Chimera)
 |GlueSESizeFree: 84
 |GlueSEUsedOnlineSize: 2
 |GlueSETotalOnlineSize: 86

@@ -67,7 +67,7 @@ The RPM packages may be installed right away, for example using the
 command:
 
 ```console-root
-rpm -ivh dcache-PACKAGE-VERSION.noarch.rpm
+rpm -ivh dcache-##VERSION##-1.noarch.rpm
 ```
 
 The actual packages are available at
@@ -561,12 +561,13 @@ arbitrary commands on any node within the dCache cluster.
 >
 > Always read the release notes carefully before upgrading!
 
-Upgrading to bugfix releases within one supported branch (e.g. from
-2.16.0 to 2.16.1) may be done by upgrading the packages with
+Upgrading to bugfix releases within one supported branch (e.g.
+from ##VERSION## to ##NEXT_VERSION##) may be done by upgrading the
+packages with
 
 
 ```console-root
-rpm -Uvh <packageName>
+rpm -Uvh dcache-##NEXT_VERSION##-1.noarch.rpm
 ```
 
 Now dCache needs to be started again.

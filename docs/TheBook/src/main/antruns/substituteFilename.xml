@@ -38,6 +38,14 @@
                  token='##SOURCE_FILENAME##'
                  value='${baseName}.md'/>
 
+        <replace file='${fileName}'
+                 token='##VERSION##'
+                 value='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}'/>
+
+        <replace file='${fileName}'
+                 token='##NEXT_VERSION##'
+                 value='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextIncrementalVersion}'/>
+
 	<replace file='${fileName}'
 		 token='&lt;pre>&lt;code class="language-console-user">'
 	         value='&lt;pre class="command-line" data-user="paul" data-host="sprocket" data-filter-output="|">&lt;code class="language-shell">'/>
