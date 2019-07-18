@@ -1194,7 +1194,7 @@ targeting the `events/eventTypes/metronome`
 ```
 
 Similar information is available from the
-`events/eventTypes/metronome` resource:
+`events/eventTypes/inotify` resource:
 
 ```json
 {
