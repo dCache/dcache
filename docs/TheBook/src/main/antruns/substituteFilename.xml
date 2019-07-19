@@ -63,13 +63,16 @@
                  value='${baseName}.md'/>
 
         <replace file='${fileName}'
+                 token='##SERIES##'
+                 value='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}'/>
+
+        <replace file='${fileName}'
                  token='##VERSION##'
-                 value='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}'/>
+                 value='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.releasedIncrementalVersion}'/>
 
         <replace file='${fileName}'
                  token='##NEXT_VERSION##'
-                 value='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextIncrementalVersion}'/>
-
+                 value='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextReleasedIncrementalVersion}'/>
 
         <replace file='${fileName}'
                  token='##HH:MM:SS##'

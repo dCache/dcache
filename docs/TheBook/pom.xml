@@ -104,6 +104,55 @@
           </executions>
       </plugin>
 
+      <!--+
+          | Calculate the latest and next released versions within this
+          | series; e.g.
+          |
+          | "5.2.8-SNAPSHOT"
+          |     releasedIncrementalVersion = 7
+          |     nextReleasedIncrementalVersion = 8
+          |
+          | "5.2.8"
+          |     releasedIncrementalVersion = 8
+          |     nextReleasedIncrementalVersion = 9
+          |
+          | "5.2.9-SNAPSHOT"
+          |     releasedIncrementalVersion = 8
+          |     nextReleasedIncrementalVersion = 9
+          |
+          | Assume zero if no release has been made; e.g.,
+          |
+          | "6.0.0-SNAPSHOT"
+          |     releasedIncrementalVersion = 0
+          |     nextReleasedIncrementalVersion = 1
+          +-->
+      <plugin>
+          <groupId>org.codehaus.gmaven</groupId>
+          <artifactId>groovy-maven-plugin</artifactId>
+          <executions>
+              <execution>
+                  <id>calc-latest-release</id>
+                  <phase>validate</phase>
+                  <goals>
+                      <goal>execute</goal>
+                  </goals>
+                  <configuration>
+                      <bindPropertiesToSeparateVariables>false</bindPropertiesToSeparateVariables>
+                      <source>
+                          incrVersion = project.properties.getProperty('parsedVersion.incrementalVersion') as Integer
+                          qualifier = project.properties.getProperty('parsedVersion.qualifier')
+                          if (qualifier &amp;&amp; incrVersion > 0) {
+                              incrVersion--
+                          }
+                          nextIncrVersion = incrVersion + 1
+                          project.properties.setProperty('parsedVersion.releasedIncrementalVersion', incrVersion.toString())
+                          project.properties.setProperty('parsedVersion.nextReleasedIncrementalVersion', nextIncrVersion.toString())
+                      </source>
+                  </configuration>
+              </execution>
+          </executions>
+      </plugin>
+
       <plugin>
           <artifactId>maven-assembly-plugin</artifactId>
           <configuration>
