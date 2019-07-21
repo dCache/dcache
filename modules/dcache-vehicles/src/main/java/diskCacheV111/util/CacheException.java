@@ -24,6 +24,9 @@ public class CacheException extends Exception
     /** File is broken on a tape, can't be staged */
     public static final int BROKEN_ON_TAPE = 243;
 
+    /** All pools with requested file unavailable */
+    public static final int POOL_UNAVAILABLE = 1010;
+
     /** Usually followed by component shutdown. */
     public static final int PANIC = 10000;
 
