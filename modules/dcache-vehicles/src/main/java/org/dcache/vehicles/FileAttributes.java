@@ -960,5 +960,11 @@ public class FileAttributes implements Serializable, Cloneable {
             setStorageClass(storageClass);
             return this;
         }
+
+        public Builder cacheClass(String cacheClass)
+        {
+            setCacheClass(cacheClass);
+            return this;
+        }
     }
 }
