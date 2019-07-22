@@ -68,27 +68,19 @@ import java.io.IOException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PoolCheckFileMessage;
 
 import org.dcache.resilience.TestBase;
-import org.dcache.resilience.TestMessageProcessor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.junit.Assert.*;
 
-public final class FileOperationMapTest extends TestBase
-        implements TestMessageProcessor<PoolCheckFileMessage> {
+public final class FileOperationMapTest extends TestBase {
     PnfsId         pnfsId;
     FileAttributes attributes;
     FileOperation  operation;
     File checkpoint = new File("checkpoint");
-
-    @Override
-    public void processMessage(PoolCheckFileMessage message) {
-        message.setHave(true);
-    }
 
     @Before
     public void setUp() throws CacheException, InterruptedException {
@@ -98,7 +90,6 @@ public final class FileOperationMapTest extends TestBase
         createFileOperationHandler();
         createInaccessibleFileHandler();
         createFileOperationMap();
-        setPoolMessageProcessor(this);
         poolTaskCompletionHandler = new PoolTaskCompletionHandler();
         poolTaskCompletionHandler.setMap(poolOperationMap);
         wireFileOperationMap();
