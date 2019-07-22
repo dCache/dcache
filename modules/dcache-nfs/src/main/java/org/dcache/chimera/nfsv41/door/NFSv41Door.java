@@ -930,7 +930,9 @@ public class NFSv41Door extends AbstractCellComponent implements
             description = "Show active transfers excluding proxy-io.")
     public class ShowTransfersCmd implements Callable<String> {
 
-        @Option(name = "pool", usage = "An optional pool for filtering. Glob pattern matching is supported.")
+        @Option(name = "pool", usage = "An optional pool for filtering."
+                + "  Specifying an empty string selects only transfers where no"
+                + " pool has been selected. Glob pattern matching is supported.")
         Glob pool;
 
         @Option(name = "client", usage = "An optional client for filtering. Glob pattern matching is supported.")
@@ -944,7 +946,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             return _ioMessages.values()
                     .stream()
-                    .filter(d -> pool == null ? true : pool.matches(d.getPool().getName()))
+                    .filter(d -> pool == null ? true : pool.matches(d.getPool() == null ? "" : d.getPool().getName()))
                     .filter(d -> client == null ? true : client.matches(d.getClient().toString()))
                     .filter(d -> pnfsid == null ? true : pnfsid.matches(d.getPnfsId().toString()))
                     .map(Object::toString)
