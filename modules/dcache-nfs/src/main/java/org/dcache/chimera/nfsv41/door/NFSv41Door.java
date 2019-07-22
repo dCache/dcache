@@ -1232,6 +1232,15 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             // layout, or a transfer in dCache language, must have a unique stateid
             _stateid = client.createState(openStateId.getStateOwner(), openStateId);
+
+            /*
+             * FIXME: remove this what nfs4j is fixed.
+             *
+             * as nfs4j wrongly initializes  state ids with sequence one (1)
+             * decrease it. The layout processing will bump the value anyway.
+             */
+            _stateid.stateid().seqid.value = 0;
+
             _openStateid = openStateId;
             _client = client;
         }
