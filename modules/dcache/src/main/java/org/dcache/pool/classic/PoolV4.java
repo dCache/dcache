@@ -51,7 +51,6 @@ import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
@@ -60,14 +59,11 @@ import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolCheckFreeSpaceMessage;
-import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
-import diskCacheV111.vehicles.PoolFileCheckable;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
@@ -990,31 +986,6 @@ public class PoolV4
         }
     }
 
-    private void checkFile(PoolFileCheckable poolMessage)
-        throws CacheException, InterruptedException
-    {
-        PnfsId id = poolMessage.getPnfsId();
-        switch (_repository.getState(id)) {
-        case PRECIOUS:
-        case CACHED:
-            poolMessage.setHave(true);
-            poolMessage.setWaiting(false);
-            break;
-        case FROM_CLIENT:
-        case FROM_STORE:
-        case FROM_POOL:
-            poolMessage.setHave(false);
-            poolMessage.setWaiting(true);
-            break;
-        case BROKEN:
-            throw new FileCorruptedCacheException(id.toString() + " is broken in " + _poolName);
-        default:
-            poolMessage.setHave(false);
-            poolMessage.setWaiting(false);
-            break;
-        }
-    }
-
     private static class CompanionFileAvailableCallback
         extends DelayedReply
         implements CacheFileAvailable
@@ -1201,21 +1172,6 @@ public class PoolV4
         msg.setFreeSpace(_account.getFree());
         msg.setSucceeded();
         return msg;
-    }
-
-    public Message messageArrived(Message msg)
-        throws CacheException, InterruptedException
-    {
-        if (msg instanceof PoolCheckable) {
-            if (msg instanceof PoolFileCheckable) {
-                checkFile((PoolFileCheckable) msg);
-            }
-
-            msg.setSucceeded();
-            return msg;
-        }
-
-        return null;
     }
 
     public Reply messageArrived(CellMessage envelope, PoolRemoveFilesMessage msg)
