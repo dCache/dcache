@@ -155,7 +155,6 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PnfsCancelUpload;
 import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
-import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
@@ -229,6 +228,7 @@ import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.filter;
@@ -1203,10 +1203,9 @@ public final class Storage
     {
         /* Since this is a temporary workaround, we borrow the pnfs stub.
          */
-        PoolCheckFileMessage message = _pnfsStub.sendAndWait(new CellPath(location),
-                                                             new PoolCheckFileMessage(location,
-                                                                                      fileAttributes.getPnfsId()));
-        if (message.getWaiting()) {
+        CacheEntryInfoMessage message = _pnfsStub.sendAndWait(new CellPath(location),
+                                                             new CacheEntryInfoMessage(fileAttributes.getPnfsId()));
+        if (message.getInfo().isReceivingFromClient()) {
             throw new FileIsNewCacheException("Upload has not completed.");
         }
     }

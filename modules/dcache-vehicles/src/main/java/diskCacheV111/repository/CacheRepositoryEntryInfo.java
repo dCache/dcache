@@ -90,4 +90,8 @@ public class CacheRepositoryEntryInfo implements Serializable {
     public long getSize() {
         return size;
     }
+
+    public boolean isAvailable() {
+        return isCached() || isPrecious();
+    }
 }

@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DCapUrl;
@@ -56,7 +57,6 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
@@ -98,6 +98,7 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.DIR;
@@ -1663,14 +1664,13 @@ public class DCapDoorInterpreterV3
 
                         if(_settings.isCheckStrict()){
 
-                            SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(new CellStub(_cell, null, 10000));
+                            SpreadAndWait<CacheEntryInfoMessage> controller = new SpreadAndWait<>(new CellStub(_cell, null, 10000));
+                            CacheEntryInfoMessage request = new CacheEntryInfoMessage(_fileAttributes.getPnfsId());
                             for( String pool: result ){
-
                                 _log.debug("Sending query to pool {}", pool);
-                                PoolCheckFileMessage request =
-                                    new PoolCheckFileMessage(pool, _fileAttributes.getPnfsId());
-                                controller.send(new CellPath(pool), PoolCheckFileMessage.class, request);
+                                controller.send(new CellPath(pool), CacheEntryInfoMessage.class, request);
                             }
+
                             controller.waitForReplies() ;
                             int numberOfReplies = controller.getReplyCount() ;
                             _log.debug("Number of valied replies: {}", numberOfReplies);
@@ -1679,22 +1679,13 @@ public class DCapDoorInterpreterV3
                                         CacheException(4, "File not cached");
                             }
 
-                            int found = 0 ;
-                            for (PoolCheckFileMessage reply: controller.getReplies().values()) {
-                                if( reply.getHave() ){
-                                    _log.debug("pool {}: ok",
-                                               reply.getPoolName());
-                                    found ++ ;
-                                }else{
-                                    _log.debug("pool {}: File not found",
-                                               reply.getPoolName());
-                                }
-                            }
-                            if( found == 0 ) {
-                                throw new
-                                        CacheException(4, "File not cached");
-                            }
-
+                            controller.getReplies().values()
+                                    .stream()
+                                    .filter(r -> r.getReturnCode() == 0)
+                                    .map(CacheEntryInfoMessage::getInfo)
+                                    .filter(CacheRepositoryEntryInfo::isAvailable)
+                                    .findAny()
+                                    .orElseThrow(() -> new CacheException(4, "File not cached"));
                         }
                          sendReply( "storageInfoAvailable" , 0 , "" ) ;
             }catch(CacheException cee ){
