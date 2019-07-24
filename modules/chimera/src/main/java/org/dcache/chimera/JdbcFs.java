@@ -34,18 +34,18 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.IMap;_log
 
 import javax.sql.DataSource;
 
-import java.io.File;
+import java.io.File;_log
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.EnumSet;
+import java.util.EnumSet;_log
 import java.util.HashSet;
-import java.util.List;
+import java.util.List;_log
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -87,7 +87,7 @@ public class JdbcFs implements FileSystemProvider {
     /**
      * logger
      */
-    private static final Logger _log = LoggerFactory.getLogger(JdbcFs.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JdbcFs.class);
     /**
      * the number of pnfs levels. Level zero associated with file real
      * content, which is not our regular case.
@@ -221,18 +221,18 @@ public class JdbcFs implements FileSystemProvider {
      * @throws TransactionException in case of a rollback error
      */
     private void rollbackOnException(TransactionStatus status, Throwable ex) throws TransactionException {
-        _log.debug("Initiating transaction rollback on application exception", ex);
+        LOGGER.debug("Initiating transaction rollback on application exception", ex);
         try {
             _tx.rollback(status);
         } catch (TransactionSystemException e) {
-            _log.error("Application exception overridden by rollback exception", ex);
+            LOGGER.error("Application exception overridden by rollback exception", ex);
             e.initApplicationException(ex);
             throw e;
         } catch (RuntimeException e) {
-            _log.error("Application exception overridden by rollback exception", ex);
+            LOGGER.error("Application exception overridden by rollback exception", ex);
             throw e;
         } catch (Error err) {
-            _log.error("Application exception overridden by rollback error", ex);
+            LOGGER.error("Application exception overridden by rollback error", ex);
             throw err;
         }
     }
@@ -1026,7 +1026,7 @@ public class JdbcFs implements FileSystemProvider {
         return inTransaction(status -> {
             try {
                 if (level == 0 && !inode.isIoEnabled()) {
-                    _log.debug("{}: IO (write) not allowed", inode);
+                    LOGGER.debug("{}: IO (write) not allowed", inode);
                     return -1;
                 }
                 return _sqlDriver.write(inode, level, beginIndex, data, offset, len);
@@ -1043,7 +1043,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public int read(FsInode inode, int level, long beginIndex, byte[] data, int offset, int len) throws ChimeraFsException {
         if (level == 0 && !inode.isIoEnabled()) {
-            _log.debug("{}: IO(read) not allowed", inode);
+            LOGGER.debug("{}: IO(read) not allowed", inode);
             return -1;
         }
         return _sqlDriver.read(inode, level, beginIndex, data, offset, len);
