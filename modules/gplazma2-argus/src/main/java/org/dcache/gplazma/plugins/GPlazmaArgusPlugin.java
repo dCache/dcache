@@ -36,7 +36,7 @@ import static com.google.common.base.Predicates.instanceOf;
  */
 public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
-    private static final Logger _log = LoggerFactory.getLogger(GPlazmaArgusPlugin.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GPlazmaArgusPlugin.class);
 
     private static final String CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params = "Creating Argus Plugin with parameters: {}";
     private static final String COULD_NOT_CREATE_PEP_CLIENT_exception = "Could not create PEP Client";
@@ -76,13 +76,13 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
      */
     public GPlazmaArgusPlugin(Properties properties) {
 
-        _log.debug(CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params, properties);
+        LOGGER.debug(CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params, properties);
 
         try {
             PEPClientConfiguration pepConfiguration = initPepConfiguration(properties);
             _pepClient = new PEPClient(pepConfiguration);
         } catch (PEPClientException e) {
-            _log.error(COULD_NOT_CREATE_PEP_CLIENT_exception, e);
+            LOGGER.error(COULD_NOT_CREATE_PEP_CLIENT_exception, e);
             throw new IllegalArgumentException(INVALID_CONFIGURATION_FOR_ARGUS_PLUGIN, e);
         }
     }
@@ -106,7 +106,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
         PEPClientConfiguration pepConfig = new PEPClientConfiguration();
 
-        _log.debug(INITIALISING_PEP_CLIENT_CONFIGURATION);
+        LOGGER.debug(INITIALISING_PEP_CLIENT_CONFIGURATION);
 
         pepConfig.addPEPDaemonEndpoint(getProperty(properties, PEP_ENDPOINT));
         _resourceId = getProperty(properties, RESOURCE_ID);
@@ -119,7 +119,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
         pepConfig.setTrustMaterial(trustMaterial);
         pepConfig.setKeyMaterial(hostCert, hostKey, keyPass);
 
-        _log.debug(CONFIGURATION_resourceid_actionid, _resourceId, _actionId);
+        LOGGER.debug(CONFIGURATION_resourceid_actionid, _resourceId, _actionId);
 
         return pepConfig;
     }
@@ -148,11 +148,11 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
             for (Principal principal : globusPrincipals) {
                 dn = principal.getName();
 
-                _log.info(AUTHORISING_SUBJECT_dn, dn);
+                LOGGER.info(AUTHORISING_SUBJECT_dn, dn);
                 Request request = ArgusPepRequestFactory.create(dn, _resourceId, _actionId, GridWNAuthorizationProfile.getInstance());
-                _log.debug(CREATED_REQUEST_request, request);
+                LOGGER.debug(CREATED_REQUEST_request, request);
                 Response response = _pepClient.authorize(request);
-                _log.debug(RECEIVED_RESPONSE_response, response);
+                LOGGER.debug(RECEIVED_RESPONSE_response, response);
 
                 for (Result result : response.getResults()) {
                     decision = result.getDecision();
@@ -166,10 +166,10 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
             }
         } catch (PEPClientException e) {
             decision = Result.DECISION_DENY;
-            _log.warn(BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN, dn ,e);
+            LOGGER.warn(BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN, dn ,e);
             throw new AuthenticationException("check failed", e);
         } finally {
-            _log.info(DECISION_CODE_code, decision);
+            LOGGER.info(DECISION_CODE_code, decision);
         }
     }
 }
