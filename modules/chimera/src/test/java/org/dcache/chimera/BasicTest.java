@@ -45,7 +45,7 @@ import static org.junit.Assert.*;
 
 public class BasicTest extends ChimeraTestCaseHelper {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BasicTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BasicTest.class);
 
     @Test
     public void testLevelRemoveOnDelete() throws Exception {
@@ -332,10 +332,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
                 f.get();
                 nlink++;
             } catch (ExecutionException e) {
-                LOG.warn("ExecutionException, triggered by {}", String.valueOf(e.getCause()));
+                LOGGER.warn("ExecutionException, triggered by {}", String.valueOf(e.getCause()));
                 exceptions++;
             } catch (InterruptedException e) {
-                LOG.warn("Interrupted.");
+                LOGGER.warn("Interrupted.");
             }
         }
 

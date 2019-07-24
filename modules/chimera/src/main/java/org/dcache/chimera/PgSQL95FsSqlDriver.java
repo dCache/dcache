@@ -36,7 +36,7 @@ public class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
     /**
      * logger
      */
-    private static final Logger _log = LoggerFactory.getLogger(PgSQL95FsSqlDriver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PgSQL95FsSqlDriver.class);
 
     /**
      *  this is a utility class which is issues SQL queries on database
@@ -45,7 +45,7 @@ public class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
     public PgSQL95FsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
-        _log.info("Running PostgreSQL >= 9.5 specific Driver");
+        LOGGER.info("Running PostgreSQL >= 9.5 specific Driver");
     }
 
 

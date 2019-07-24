@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 public class UnixPermissionHandler implements AclHandler {
 
-    private static final Logger _log = LoggerFactory.getLogger(UnixPermissionHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UnixPermissionHandler.class);
     private static final UnixPermissionHandler HANDLER = new UnixPermissionHandler();
 
     private UnixPermissionHandler() {
@@ -68,7 +68,7 @@ public class UnixPermissionHandler implements AclHandler {
 
 
 
-        if (_log.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             StringBuilder sb = new StringBuilder("ACL request : ");
             sb.append("user=").append(((UnixUser) user).getUID()).append(':').append(((UnixUser) user).getGID());
             sb.append(' ');
@@ -106,7 +106,7 @@ public class UnixPermissionHandler implements AclHandler {
 
             } // switch( requsetedAcl )
 
-            _log.debug(sb.toString());
+            LOGGER.debug(sb.toString());
         }
 
         switch (userUid) {
@@ -184,7 +184,7 @@ public class UnixPermissionHandler implements AclHandler {
 
         } // switch( userUid )
 
-        _log.debug("IsAllowed: {}", isAllowed);
+        LOGGER.debug("IsAllowed: {}", isAllowed);
         return isAllowed;
     }
 }
