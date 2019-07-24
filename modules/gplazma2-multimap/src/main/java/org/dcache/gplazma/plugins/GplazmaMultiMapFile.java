@@ -125,7 +125,7 @@ public class GplazmaMultiMapFile
         boolean matches(Principal principal);
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(GplazmaMultiMapFile.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GplazmaMultiMapFile.class);
     private static final Map<String,MappablePrincipal> LABEL_TO_PRINCIPAL;
 
     static {
@@ -139,7 +139,7 @@ public class GplazmaMultiMapFile
     private final Path file;
     private Instant lastLoaded = Instant.EPOCH;
     private Instant nextStat = Instant.now();
-    private Consumer<String> warningsConsumer = LOG::warn;
+    private Consumer<String> warningsConsumer = LOGGER::warn;
 
     private Map<PrincipalMatcher,Set<Principal>> map = Collections.emptyMap();
 
@@ -178,7 +178,7 @@ public class GplazmaMultiMapFile
 
     private Map<PrincipalMatcher,Set<Principal>> parseMapFile() throws IOException
     {
-        LOG.debug("Reading file {}", file);
+        LOGGER.debug("Reading file {}", file);
 
         Map<PrincipalMatcher,Set<Principal>> map = new LinkedHashMap<>();
 
