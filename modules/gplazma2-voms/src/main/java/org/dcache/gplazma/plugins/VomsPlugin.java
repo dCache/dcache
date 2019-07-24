@@ -40,7 +40,7 @@ import static org.dcache.util.TimeUtils.getMillis;
  */
 public class VomsPlugin implements GPlazmaAuthenticationPlugin
 {
-    private static final Logger LOG = LoggerFactory.getLogger(VomsPlugin.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(VomsPlugin.class);
 
     private static final String CADIR = "gplazma.vomsdir.ca";
     private static final String VOMSDIR = "gplazma.vomsdir.dir";
@@ -116,9 +116,9 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
                         X509Certificate[] chain = CertPaths.getX509Certificates((CertPath) credential);
                         X509Certificate eec = ProxyUtils.getEndUserCertificate(chain);
                         if (eec == null) {
-                            LOG.warn("Validation failure {}: {}", id, message);
+                            LOGGER.warn("Validation failure {}: {}", id, message);
                         } else {
-                            LOG.warn("Validation failure {} for DN \"{}\": {}", id, eec.getSubjectX500Principal().getName(), message);
+                            LOGGER.warn("Validation failure {} for DN \"{}\": {}", id, eec.getSubjectX500Principal().getName(), message);
                         }
                         if (ids == null) {
                             ids = id;
