@@ -17,7 +17,7 @@ import org.dcache.acl.enums.AccessMask;
  */
 public class AclMatcher {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AclMatcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AclMatcher.class);
 
     private AclMatcher() {
     }
@@ -46,7 +46,7 @@ public class AclMatcher {
             allowed = AccessType.ACCESS_DENIED;
         }
 
-        LOG.debug("acccess mask: {} : {}", access, allowed);
+        LOGGER.debug("acccess mask: {} : {}", access, allowed);
         return allowed;
     }
 }
