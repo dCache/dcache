@@ -34,7 +34,7 @@ import static org.dcache.util.Exceptions.messageOrClassName;
  */
 public class JaasPlugin implements GPlazmaAuthenticationPlugin
 {
-    private static final Logger LOG = LoggerFactory.getLogger(JaasPlugin.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JaasPlugin.class);
     private static final String NAME = "gplazma.jaas.name";
 
     private final String _name;
@@ -65,7 +65,7 @@ public class JaasPlugin implements GPlazmaAuthenticationPlugin
             identifiedPrincipals.addAll(loginContext.getSubject().getPrincipals());
             tryToLogout(loginContext);
         } catch (SecurityException e) {
-            LOG.error("Plugin not authorised to use JAAS: {}", messageOrClassName(e));
+            LOGGER.error("Plugin not authorised to use JAAS: {}", messageOrClassName(e));
             throw new AuthenticationException("Not authorised to use JAAS");
         } catch (LoginException e) {
             throw new AuthenticationException(e.getMessage(), e);
