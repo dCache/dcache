@@ -144,7 +144,7 @@ public class DcacheResourceFactory
     extends AbstractCellComponent
     implements ResourceFactory, CellMessageReceiver, CellCommandListener, CellInfoProvider
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(DcacheResourceFactory.class);
 
     public static final String TRANSACTION_ATTRIBUTE = "org.dcache.transaction";
@@ -611,8 +611,8 @@ public class DcacheResourceFactory
     @Override
     public Resource getResource(String host, String requestPath)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Resolving {}", HttpManager.request().getAbsoluteUrl());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Resolving {}", HttpManager.request().getAbsoluteUrl());
         }
 
         FsPath dCachePath = _pathMapper.asDcachePath(ServletRequest.getRequest(),
@@ -1435,7 +1435,7 @@ public class DcacheResourceFactory
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
             Throwables.throwIfUnchecked(t);
-            _log.warn("Failed to fetch space statistics for {}: {}", id, t.toString());
+            LOGGER.warn("Failed to fetch space statistics for {}: {}", id, t.toString());
             return Optional.empty();
         }
     }
@@ -1447,7 +1447,7 @@ public class DcacheResourceFactory
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
             Throwables.throwIfUnchecked(t);
-            _log.warn("Failed to query for WriteToken tag on {}: {}", path, t.toString());
+            LOGGER.warn("Failed to query for WriteToken tag on {}: {}", path, t.toString());
             return Optional.empty();
         }
     }

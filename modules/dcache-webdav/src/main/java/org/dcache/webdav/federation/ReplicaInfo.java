@@ -51,7 +51,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  */
 public class ReplicaInfo
 {
-    private static final Logger LOG = LoggerFactory.getLogger(ReplicaInfo.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicaInfo.class);
 
     private static final ReplicaInfo EMPTY_INFO = new ReplicaInfo();
     private static final Splitter ON_FIRST_COMMA = Splitter.on(',')
@@ -86,10 +86,10 @@ public class ReplicaInfo
         if (isNullOrEmpty(parameters.get("rid"))
                 || isNullOrEmpty(r1)
                 || r1.indexOf(',') == -1) {
-            LOG.trace("returning empty QueryStringInfo for request");
+            LOGGER.trace("returning empty QueryStringInfo for request");
             return EMPTY_INFO;
         } else {
-            LOG.trace("returning non-empty QueryStringInfo for request");
+            LOGGER.trace("returning non-empty QueryStringInfo for request");
             return new ReplicaInfo(request);
         }
     }

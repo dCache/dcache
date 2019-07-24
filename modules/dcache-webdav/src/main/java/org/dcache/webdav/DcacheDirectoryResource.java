@@ -63,7 +63,7 @@ public class DcacheDirectoryResource
                MakeCollectionableResource, LockingCollectionResource,
                MultiNamespaceCustomPropertyResource
 {
-    private static final Logger LOG = LoggerFactory.getLogger(DcacheDirectoryResource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DcacheDirectoryResource.class);
 
     private static final String DAV_NAMESPACE_URI = "DAV:";
 
@@ -262,7 +262,7 @@ public class DcacheDirectoryResource
                 return (CollectionResource)child;
 
             default:
-                LOG.error("createCollection called processing unexpected HTTP method: {}", httpMethod);
+                LOGGER.error("createCollection called processing unexpected HTTP method: {}", httpMethod);
                 throw new WebDavException("Unexpected method", e, this);
             }
         } catch (PermissionDeniedCacheException e) {
