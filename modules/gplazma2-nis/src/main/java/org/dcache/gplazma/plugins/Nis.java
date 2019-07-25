@@ -49,7 +49,7 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  */
 public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazmaMappingPlugin{
 
-    private static final Logger _log = LoggerFactory.getLogger(Nis.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Nis.class);
 
     /*
      * Attibute names used by NIS.
@@ -119,7 +119,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
                         new GidPrincipal((String) result.getAttributes().get(GID_NUMBER_ATTRIBUTE).get(), false));
             }
         } catch (NamingException e) {
-            _log.debug("Failed to get mapping: {}", e.toString());
+            LOGGER.debug("Failed to get mapping: {}", e.toString());
             throw new AuthenticationException("no mapping: " + e.getMessage(), e);
         }
         checkAuthentication(mapped, "no matching principal");
@@ -139,7 +139,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
             }
 
         } catch (NamingException e) {
-            _log.debug("Failed to get mapping: {}", e.toString());
+            LOGGER.debug("Failed to get mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
@@ -174,7 +174,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
             }
             return principals;
         } catch (NamingException e) {
-            _log.debug("Failed to get reverse mapping: {}", e.toString());
+            LOGGER.debug("Failed to get reverse mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
