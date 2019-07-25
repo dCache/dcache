@@ -20,16 +20,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.AccessController;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
@@ -37,8 +29,6 @@ import dmg.cells.nucleus.CellIdentityAware;
 
 import org.dcache.auth.Subjects;
 import org.dcache.util.Transfer;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * A Jetty handler that wraps a Milton HttpManager. Makes it possible
@@ -52,46 +42,10 @@ public class MiltonHandler
 
     private HttpManager _httpManager;
     private CellAddressCore _myAddress;
-    private List<String> _allowedClientOrigins;
 
     public void setHttpManager(HttpManager httpManager)
     {
         _httpManager = httpManager;
-    }
-
-    public void setAllowedClientOrigins(String origins)
-    {
-        if (origins.isEmpty()) {
-            _allowedClientOrigins = Collections.emptyList();
-        } else {
-            List<String> originList = Arrays.stream(origins.split(","))
-                    .map(String::trim)
-                    .collect(Collectors.toList());
-            originList.forEach(MiltonHandler::checkOrigin);
-            _allowedClientOrigins = originList;
-        }
-    }
-
-    private static void checkOrigin(String s)
-    {
-        try {
-            URI uri = new URI(s);
-
-            checkArgument(ALLOWED_ORIGIN_PROTOCOL.contains(uri.toURL().getProtocol()), "Invalid URL: The URL: %s " +
-                    "contain unsupported protocol. Use either http or https.", s);
-            checkArgument(!uri.getHost().isEmpty(), "Invalid URL: the host name is not provided in %s:", s);
-            checkArgument(uri.getUserInfo() == null, "The URL: %s is invalid. User information is not allowed " +
-                    "to be part of the URL.", s);
-            checkArgument(uri.toURL().getPath().isEmpty(), "The URL: %s is invalid. Remove the \"path\" part of the " +
-                    "URL.", s);
-            checkArgument(uri.toURL().getQuery() == null, "The URL: %s is invalid. Remove the query-path part of " +
-                    "the URL.", s);
-            checkArgument(uri.toURL().getRef() == null, "URL: %s is invalid. Reason: no reference or fragment " +
-                    "allowed in the URL.", s);
-            checkArgument(!uri.isOpaque(), "URL: %s is invalid. Check the scheme part of the URL", s);
-        } catch (MalformedURLException | URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
     }
 
     @Override
@@ -109,24 +63,9 @@ public class MiltonHandler
             Transfer.initSession(false, false);
             ServletContext context = ContextHandler.getCurrentContext();
 
-            String clientOrigin = request.getHeader("origin");
-            if (_allowedClientOrigins.contains(clientOrigin)) {
-                response.setHeader("Access-Control-Allow-Origin", clientOrigin);
-                if (_allowedClientOrigins.size() > 1) {
-                    response.setHeader("Vary", "Origin");
-                }
-            }
-
-            switch (request.getMethod()) {
-            case "USERINFO":
+            if ("USERINFO".equals(request.getMethod())) {
                 response.sendError(501, "Not implemented");
-                break;
-            case "OPTIONS":
-                response.setHeader("Access-Control-Allow-Methods", "PUT, POST, DELETE");
-                response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Suppress-WWW-Authenticate");
-                response.setHeader("Access-Control-Allow-Credentials", "true");
-                // fall through, to allow Milton to add more details.
-            default:
+            } else {
                 Subject subject = Subject.getSubject(AccessController.getContext());
                 ServletRequest req = new DcacheServletRequest(request, context);
                 ServletResponse resp = new DcacheServletResponse(response);
