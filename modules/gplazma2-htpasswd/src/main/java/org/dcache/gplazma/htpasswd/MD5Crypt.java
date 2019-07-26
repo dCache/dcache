@@ -46,7 +46,7 @@ import org.dcache.gplazma.AuthenticationException;
  */
 public final class MD5Crypt
 {
-    private static final Logger LOG = LoggerFactory.getLogger(MD5Crypt.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MD5Crypt.class);
 
     private static final String itoa64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
@@ -294,7 +294,7 @@ public final class MD5Crypt
         } else if (md5CryptText.startsWith("$apr1$")) {
             return md5CryptText.equals(MD5Crypt.apacheCrypt(plaintextPass, md5CryptText));
         } else {
-            LOG.error("Bad entry in file: hash does not start '$1$' or '$apr1$': {}", md5CryptText);
+            LOGGER.error("Bad entry in file: hash does not start '$1$' or '$apr1$': {}", md5CryptText);
             throw new AuthenticationException("bad hash in file");
         }
     }
