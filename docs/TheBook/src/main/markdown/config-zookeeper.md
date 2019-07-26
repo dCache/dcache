@@ -18,6 +18,8 @@ ZooKeeper may be deployed in a single server setup or a clustered multiserver se
 
 Reads from ZooKeeper scale with the number of servers. Writes however tend to become slower the more servers are added. This is because each ZooKeeper server replicates the full state and any update has to be written to a quorum of servers.
 
+To share a Zookeeper cluster among various dCache instances, see below.
+
 ### Persistent data
 
 Data stored in ZooKeeper is stored persistently on disk on each ZooKeeper server. Currently dCache does not write a lot of data to ZooKeeper and IO performance is not critical. Any write will however be followed by an _fsync_, so keep latency in mind, that is, avoid distributed file systems, NFS, and use a battery backed write back cache for RAID.
@@ -56,6 +58,24 @@ The `dcache.zookeeper.connection` property needs to be defined on every dCache s
 Each domain in dCache will connect to a single ZooKeeper endpoint.  If dCache is configured with multiple ZooKeeper endpoints, one is chosen at random.  Should that fail, another endpoint is used automatically.  Note that ZooKeeper places a limit on the number of concurrent connections from the same IP address (see `maxClientCnxns` configuration parameter).  Be sure that this number is large enough for the maximum number of domains running on a single dCache node.
 
 The property defaults to `localhost:2181`. Except when deploying a single server installation, the property has to be defined on all dCache nodes to identify the ZooKeeper servers.
+
+### Sharing a Zookeeper cluster between dCache instances
+
+A single Zookeeper cluster may be shared between several dCache instances by providing a dedicated Zookeeper root ZNode ("directory") for each individual instance. 
+
+To configure this setup, log in to a Zookeeper admin shell and create the ZNodes:
+
+    [zk: localhost:2181(CONNECTED) 0] create /instance1 ""
+    Created /instance1
+    [zk: localhost:2181(CONNECTED) 1] create /instance2 ""
+    Created /instance2
+    ... 
+    
+The individual dCache instances can then be pointed to the corresponding root ZNodes by modifying the default connection string (see above) as follows:
+
+    dcache.zookeeper.connection = 
+        cluster-box1:2181,cluster-box2:2182,cluster-box3:2181/instance1
+
 
 ## Inspecting ZooKeeper through dCache
 
