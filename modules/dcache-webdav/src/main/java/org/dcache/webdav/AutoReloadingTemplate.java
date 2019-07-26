@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 public class AutoReloadingTemplate extends ReloadableTemplate
 {
-    private static final Logger LOG = LoggerFactory.getLogger(AutoReloadingTemplate.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AutoReloadingTemplate.class);
     private static final long CHECK_PERIOD = 1_000;
 
     private long _lastModified;
@@ -54,7 +54,7 @@ public class AutoReloadingTemplate extends ReloadableTemplate
                     _lastModified = lastModified;
                 }
             } catch (IOException e) {
-                LOG.warn("Problem with template file {}: {}", getPath(), e.toString());
+                LOGGER.warn("Problem with template file {}: {}", getPath(), e.toString());
             }
         }
 

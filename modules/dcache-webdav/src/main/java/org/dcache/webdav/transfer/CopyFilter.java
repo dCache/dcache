@@ -21,8 +21,6 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
-import eu.emi.security.authn.x509.impl.OpensslNameUtils;
-import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
 import io.milton.http.Request;
@@ -37,7 +35,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 
 import java.net.URI;
@@ -45,7 +42,6 @@ import java.net.URISyntaxException;
 import java.security.AccessController;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -105,7 +101,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 public class CopyFilter implements Filter
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(CopyFilter.class);
 
     private static final String QUERY_KEY_ASKED_TO_DELEGATE = "asked-to-delegate";
@@ -148,7 +144,7 @@ public class CopyFilter implements Filter
 
         public static CredentialSource forHeaderValue(String value)
         {
-            _log.debug("Source for Header {}", SOURCE_FOR_HEADER.get(value));
+            LOGGER.debug("Source for Header {}", SOURCE_FOR_HEADER.get(value));
             return SOURCE_FOR_HEADER.get(value);
         }
 
@@ -258,7 +254,7 @@ public class CopyFilter implements Filter
     public void validateOidcClientParameters()
     {
         if (_clientSecrets.isEmpty() && _clientIds.isEmpty()) {
-            _log.debug("Client Credentials not configured for OpenId Connect Token Exchange");
+            LOGGER.debug("Client Credentials not configured for OpenId Connect Token Exchange");
             return;
         }
 
@@ -415,7 +411,7 @@ public class CopyFilter implements Filter
             if (source == CredentialSource.GRIDSITE) {
                 redirectWithDelegation(response);
             } else {
-                _log.error("Error performing OpenId Connect Token Exchange");
+                LOGGER.error("Error performing OpenId Connect Token Exchange");
                 response.sendError(Status.SC_INTERNAL_SERVER_ERROR,
                                    "Error performing OpenId Connect Token Exchange");
             }
@@ -560,7 +556,7 @@ public class CopyFilter implements Filter
         HttpServletRequest request = ServletRequest.getRequest();
 
         if (hasClientAlreadyBeenRedirected(request)) {
-            _log.debug("client failed to delegate a credential before re-requesting the COPY");
+            LOGGER.debug("client failed to delegate a credential before re-requesting the COPY");
             response.sendError(Response.Status.SC_UNAUTHORIZED,
                     "client failed to delegate a credential");
             return;
@@ -572,7 +568,7 @@ public class CopyFilter implements Filter
                                                   .map(URI::toASCIIString).collect(Collectors.joining(" ")));
             response.sendRedirect(buildRedirectUrl(request));
         } catch (IllegalArgumentException e) {
-            _log.debug(e.getMessage());
+            LOGGER.debug(e.getMessage());
             response.sendError(Response.Status.SC_INTERNAL_SERVER_ERROR,
                     e.getMessage());
         }

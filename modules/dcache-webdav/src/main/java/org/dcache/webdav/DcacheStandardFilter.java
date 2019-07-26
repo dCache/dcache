@@ -18,8 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-
 /**
  * Custom StandardFilter for Milton.
  *
@@ -33,7 +31,7 @@ import java.io.IOException;
  */
 public class DcacheStandardFilter implements Filter
 {
-    private static final Logger log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(DcacheStandardFilter.class);
 
     @Override
@@ -75,7 +73,7 @@ public class DcacheStandardFilter implements Filter
             // Work-around: milton doesn't allow non-standard text, so we update the value here.
             ServletResponse.getResponse().setStatus(HttpServletResponse.SC_BAD_REQUEST, e.getReason());
         } catch (UncheckedBadRequestException e) {
-            log.debug("Client supplied bad request parameters: {}", e.getMessage());
+            LOGGER.debug("Client supplied bad request parameters: {}", e.getMessage());
             responseHandler.respondBadRequest(e.getResource(), response, request);
         } catch (InsufficientStorageException e) {
             responseHandler.respondInsufficientStorage(request, response, StorageChecker.StorageErrorReason.SER_DISK_FULL);
@@ -102,13 +100,13 @@ public class DcacheStandardFilter implements Filter
             // Work-around: milton doesn't allow non-standard text, so we update the value here.
             ServletResponse.getResponse().setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED, e.getMessage());
         } catch (WebDavException e) {
-            log.warn("Internal server error: {}", e.toString());
+            LOGGER.warn("Internal server error: {}", e.toString());
             responseHandler.respondServerError(request, response, e.getMessage());
         } catch (RuntimeException e) {
-            log.error("Internal server error", e);
+            LOGGER.error("Internal server error", e);
             responseHandler.respondServerError(request, response, e.getMessage());
         } catch (Exception e) {
-            log.error("Internal server error: {}", e.toString());
+            LOGGER.error("Internal server error: {}", e.toString());
             responseHandler.respondServerError(request, response, e.getMessage());
         } finally {
             manager.closeResponse(response);

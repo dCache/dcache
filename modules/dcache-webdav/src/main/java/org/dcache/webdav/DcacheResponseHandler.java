@@ -34,7 +34,6 @@ import java.security.AccessController;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.util.FsPath;
@@ -56,7 +55,7 @@ import static io.milton.http.Response.Status.*;
  */
 public class DcacheResponseHandler extends AbstractWrappingResponseHandler
 {
-    private static final Logger log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(DcacheResponseHandler.class);
 
     public static final String HTML_TEMPLATE_NAME = "errorpage";
@@ -211,7 +210,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
             OutputStream out = response.getOutputStream();
             out.write(error.getBytes());
         } catch (IOException ex) {
-            log.warn("exception writing content");
+            LOGGER.warn("exception writing content");
         }
     }
 

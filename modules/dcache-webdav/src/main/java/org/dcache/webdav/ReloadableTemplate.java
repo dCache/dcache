@@ -36,12 +36,12 @@ import static java.util.Objects.requireNonNull;
  */
 public class ReloadableTemplate
 {
-    private static final Logger LOG = LoggerFactory.getLogger(ReloadableTemplate.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReloadableTemplate.class);
 
     private final Resource _resource;
     private final String _path;
 
-    private STErrorListener _listener = new Slf4jSTErrorListener(LOG);
+    private STErrorListener _listener = new Slf4jSTErrorListener(LOGGER);
     private String _templateName;
     private STGroup _templateGroup;
 
@@ -107,10 +107,10 @@ public class ReloadableTemplate
 
             if (template == null) {
                 if (quiet) {
-                    LOG.debug("template '{}' not found in templategroup: {}",
+                    LOGGER.debug("template '{}' not found in templategroup: {}",
                             name, _path);
                 } else {
-                    LOG.error("template '{}' not found in templategroup: {}",
+                    LOGGER.error("template '{}' not found in templategroup: {}",
                             name, _path);
                 }
             }

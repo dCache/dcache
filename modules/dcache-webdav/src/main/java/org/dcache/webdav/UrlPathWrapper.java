@@ -23,7 +23,7 @@ import static org.dcache.util.StringMarkup.percentEncode;
  */
 public class UrlPathWrapper
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(UrlPathWrapper.class);
 
     private static final UrlPathWrapper EMPTY_PATH = new UrlPathWrapper("", "");
@@ -70,7 +70,7 @@ public class UrlPathWrapper
 
     private UrlPathWrapper(String path, String encoded)
     {
-        _log.debug("building string-pair '{}' and '{}'", path, encoded);
+        LOGGER.debug("building string-pair '{}' and '{}'", path, encoded);
         _path = path;
         _encoded = encoded;
     }

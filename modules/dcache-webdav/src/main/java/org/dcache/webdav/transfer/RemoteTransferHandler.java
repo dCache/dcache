@@ -26,7 +26,6 @@ import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import org.apache.curator.shaded.com.google.common.base.Splitter;
 import org.eclipse.jetty.http.HttpFields;
-import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.HttpConnection;
 import org.slf4j.Logger;
@@ -46,7 +45,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -192,7 +190,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
     private static final Set<AccessMask> READ_ACCESS_MASK =
             EnumSet.of(AccessMask.READ_DATA);
 
-    private static final Logger LOG =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(RemoteTransferHandler.class);
     private static final long DUMMY_LONG = 0;
     private static final String REQUEST_HEADER_TRANSFER_HEADER_PREFIX =
@@ -430,11 +428,11 @@ public class RemoteTransferHandler implements CellMessageReceiver
                             "Unexpected direction: " + _direction);
                 }
             } catch (PermissionDeniedCacheException e) {
-                LOG.debug("Permission denied: {}", e.getMessage());
+                LOGGER.debug("Permission denied: {}", e.getMessage());
                 throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
                         "Permission denied");
             } catch (CacheException e) {
-                LOG.error("failed query file {} for copy request: {}", _path,
+                LOGGER.error("failed query file {} for copy request: {}", _path,
                         e.getMessage());
                 throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
                         "Internal problem with server");
@@ -461,11 +459,11 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 addDigestResponseHeader(attributes);
                 return _id;
             } catch (NoRouteToCellException | TimeoutCacheException e) {
-                LOG.error("Failed to send request to transfer manager: {}", e.getMessage());
+                LOGGER.error("Failed to send request to transfer manager: {}", e.getMessage());
                 throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
                         "transfer service unavailable");
             } catch (CacheException e) {
-                LOG.error("Error from transfer manager: {}", e.getMessage());
+                LOGGER.error("Error from transfer manager: {}", e.getMessage());
                 throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
                         "transfer not accepted: " + e.getMessage());
             }
@@ -486,7 +484,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 try {
                     _transferManager.sendAndWait(message);
                 } catch (NoRouteToCellException | CacheException e) {
-                    LOG.error("Failed to cancel transfer id={}: {}", _id, e.toString());
+                    LOGGER.error("Failed to cancel transfer id={}: {}", _id, e.toString());
 
                     // Our attempt to kill the transfer failed.  We leave the
                     // performance markers going as they will trigger further
@@ -563,7 +561,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                             FileAttributes attributes = _pnfs.getFileAttributes(_path, EnumSet.of(CHECKSUM));
                             return Checksums.digestHeader(h, attributes);
                         } catch (CacheException e) {
-                            LOG.warn("Failed to acquire checksum of fetched file: {}", e.getMessage());
+                            LOGGER.warn("Failed to acquire checksum of fetched file: {}", e.getMessage());
                             return empty;
                         }
                     }).orElse(empty);
@@ -647,7 +645,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                     pnfs.deletePnfsEntry(_pnfsId, _path.toString(),
                             EnumSet.of(FileType.REGULAR), EnumSet.noneOf(FileAttribute.class));
                 } catch (CacheException e) {
-                    LOG.warn("Failed to clear up after failed transfer: {}",
+                    LOGGER.warn("Failed to clear up after failed transfer: {}",
                             e.getMessage());
                     _problem += " (failed to remove badly transferred file)";
                 }
@@ -694,7 +692,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 state = reply.getState();
                 info = reply.getMoverInfo();
             } catch (NoRouteToCellException | CacheException e) {
-                LOG.warn("Failed to fetch information for progress marker: {}",
+                LOGGER.warn("Failed to fetch information for progress marker: {}",
                         e.getMessage());
             }
 

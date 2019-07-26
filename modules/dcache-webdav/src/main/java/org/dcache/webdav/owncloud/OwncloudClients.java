@@ -32,7 +32,7 @@ import java.util.Optional;
  */
 public class OwncloudClients
 {
-    private static final Logger LOG = LoggerFactory.getLogger(OwncloudClients.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OwncloudClients.class);
     private static final String OWNCLOUD_USERAGENT = "mirall";
 
 
@@ -64,7 +64,7 @@ public class OwncloudClients
                 return Optional.of(Instant.ofEpochSecond(Long.parseLong(value)));
             }
         } catch (NumberFormatException e) {
-            LOG.info("Invalid mtime header: {}", e.getMessage());
+            LOGGER.info("Invalid mtime header: {}", e.getMessage());
         }
 
         return Optional.empty();

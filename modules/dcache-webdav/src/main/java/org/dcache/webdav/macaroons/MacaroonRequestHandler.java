@@ -84,7 +84,7 @@ import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
  */
 public class MacaroonRequestHandler extends AbstractHandler implements CellIdentityAware
 {
-    private static final Logger LOG = LoggerFactory.getLogger(MacaroonRequestHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MacaroonRequestHandler.class);
 
     private static final String REQUEST_MIMETYPE = "application/macaroon-request";
     private static final String RESPONSE_MIMETYPE = "application/json";
@@ -185,14 +185,14 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
             } catch (ErrorResponseException e) {
                 response.sendError(e.getStatus(), e.getMessage());
             } catch (RuntimeException e) {
-                LOG.error("Bug detected", e);
+                LOGGER.error("Bug detected", e);
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 try (PrintWriter w = response.getWriter()) {
                     w.println("Internal error: " + e.toString());
                 }
             }
         } catch (IOException e) {
-            LOG.error("Failed to send output: {}", e.toString());
+            LOGGER.error("Failed to send output: {}", e.toString());
         }
     }
 
@@ -217,7 +217,7 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
             String base = new URI(req.getScheme(), req.getAuthority(), "/", null, null).toASCIIString();
             uris.put("base", base).put("baseWithMacaroon", base + withMacaroon);
         } catch (URISyntaxException e) {
-            LOG.error("Problem with URI: {}", e.toString());
+            LOGGER.error("Problem with URI: {}", e.toString());
         }
 
         return json;
