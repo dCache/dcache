@@ -15,7 +15,7 @@ Chapter 23. Pool Operations
 
 + [Renaming a Pool](#renaming-a-pool)
 + [Pinning Files to a Pool](#pinning-files-to-a-pool)
-+ [Running pool with CEPH backend](#running-pool-with-ceph-backend)
++ [Running pools with CEPH backends](#running-pools-with-ceph-backends)
 + [Keeping metadata on MongoDB](#keeping-metadata-on-mongodb)
 
 ## Checksums
@@ -417,7 +417,7 @@ This command does:
 
 3.  All new copies of the file will become `sticky`.
 
-## Running pools on CEPH backends
+## Running pools with CEPH backends
 
 dCache pools can be configured to store files on locally mounted file systems or use CEPH as a back-end. The property `pool.backend` is used to control which back-end should be used:
 
@@ -450,6 +450,18 @@ for instance:
     rbd://dcache-pool-A/00000051ADCB3BA14799844556CD3AF0A9DF
 
 The HSM script is responsible to read, write and delete RBD image on GET, PUT and DELETE.
+
+In order to improve the performance of the backend, tests point to the RBD caching configuration (in `/etc/ceph/ceph.conf`) as the most promisting starting point:
+
+    # Start out in write-through mode, and switch to write-back after the
+    # first flush request is received. Enabling this is a conservative but
+    # safe setting in case VMs running on rbd are too old to send flushes,
+    # like the virtio driver in Linux before 2.6.32.
+    # Type: Boolean
+    # Required: No
+    # (Default: true)
+    ;rbd cache writethrough until flush = true
+    rbd cache writethrough until flush = false
 
 
 ## Keeping metadata on MongoDB
