@@ -113,13 +113,16 @@ public final class CellMessage implements Cloneable , Serializable {
 public int     hashCode(){ return _umid.hashCode() ; }
   @Override
 public boolean equals( Object obj ){
-      if( obj instanceof CellMessage ) {
-          return ((CellMessage) obj)._umid.equals(_umid);
-      } else if( obj instanceof UOID ) {
-          return obj.equals(_umid);
-      }
 
-      return false ;
+    if (obj == this) {
+        return true;
+    }
+
+    if (obj == null || obj.getClass() != this.getClass()) {
+        return false;
+    }
+
+    return ((CellMessage) obj)._umid.equals(_umid);
   }
   public boolean     isReply() { return _isPersistent; }
   public UOID        getUOID() { return _umid ; }
