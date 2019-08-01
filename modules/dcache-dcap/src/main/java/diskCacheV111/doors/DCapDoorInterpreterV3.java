@@ -1718,7 +1718,6 @@ public class DCapDoorInterpreterV3
         private Integer          _moverId;
         private boolean          _isHsmRequest;
         private boolean          _overwrite;
-        private boolean          _strictSize;
         private String           _checksumString;
         private boolean          _truncate;
         private boolean          _isNew;
@@ -1768,7 +1767,6 @@ public class DCapDoorInterpreterV3
             }
 
             _overwrite      = args.hasOption("overwrite") ;
-            _strictSize     = args.hasOption("strict-size") ;
             _checksumString = args.getOpt("checksum") ;
             _truncFile      = args.getOpt("truncate");
             _truncate       = ( _truncFile != null ) && _settings.isTruncateAllowed();
@@ -2241,53 +2239,25 @@ public class DCapDoorInterpreterV3
 
         }
 
-        // FIXME: sleep with lock
-        public synchronized void
-        doorTransferArrived( DoorTransferFinishedMessage reply ){
+        public synchronized void doorTransferArrived(DoorTransferFinishedMessage reply) {
 
-            try {
-                if( reply.getReturnCode() == 0 ){
-                    long filesize = reply.getFileAttributes().getSize() ;
-                    _log.info("doorTransferArrived : fs={};strict={};m={}", filesize, _strictSize, _ioMode);
-                    if (_strictSize && _ioMode.contains("w")) {
-                        for( int count = 0 ; count < 10 ; count++  ){
-                            try{
-                                FileAttributes attributes;
-                                if (_path == null) {
-                                    attributes = _pnfs.getFileAttributes(_fileAttributes.getPnfsId(), EnumSet.of(SIZE));
-                                } else {
-                                    attributes = _pnfs.getFileAttributes(_path, EnumSet.of(SIZE));
-                                }
-                                if (attributes.isDefined(SIZE)) {
-                                    _log.info("doorTransferArrived : Size of {}: {}", _fileAttributes.getPnfsId(), attributes.getSize());
-                                    break;
-                                }
-                            }catch(Exception ee ){
-                                _log.error("Problem getting storage info (check) for {}: {}", _fileAttributes.getPnfsId(), ee);
-                            }
-                            try{
-                                Thread.sleep(10000L);
-                            }catch(InterruptedException ie ){
-                                break ;
-                            }
-                        }
-                    }
-                    if (_ioMode.contains("w")) {
-                        _info.setFileSize(filesize);
-                    }
-                    sendReply( "doorTransferArrived" , 0 , "" ) ;
-                }else{
-                    sendReply( "doorTransferArrived" , reply ) ;
+            if (reply.getReturnCode() == 0) {
+                long filesize = reply.getFileAttributes().getSize();
+                if (_ioMode.contains("w")) {
+                    _info.setFileSize(filesize);
                 }
-            }finally {
-                /*
-                 * mover is already gone
-                 */
-                _moverId = null;
-                removeUs() ;
-                setStatus( "<done>" ) ;
+                sendReply("doorTransferArrived", 0, "");
+            } else {
+                sendReply("doorTransferArrived", reply);
             }
+            /*
+             * mover is already gone
+             */
+            _moverId = null;
+            removeUs();
+            setStatus("<done>");
         }
+
         @Override
         public String toString(){ return "io ["+_pool+"] "+super.toString() ; }
 
