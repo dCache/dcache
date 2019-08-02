@@ -146,7 +146,9 @@ public class Transfer implements Comparable<Transfer>
     private static final ThreadFactory RETRY_THREAD_FACTORY =
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("transfer-retry-timer-%d").build();
     private static final ListeningScheduledExecutorService RETRY_EXECUTOR =
-            MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY));
+            MoreExecutors.listeningDecorator(
+                    new CDCScheduledExecutorServiceDecorator<>(Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY))
+            );
 
     /**
      * Which activities poolmanager is allowed to do.
