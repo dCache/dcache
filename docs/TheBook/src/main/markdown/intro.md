@@ -1,13 +1,9 @@
 Chapter 1. Introduction
 =======================
 
-## Table of Contents
-
-* [dCache Architecture](#architecture)
-* [Cells and Domains](#cells-and-domains)
-* [Cells Communication](config-message-passing.md)
-* [Protocols Supported by dCache](#protocols-supported-by-dcache)
-* [Logging](#logging)
+-----
+[TOC bullet hierarchy]
+-----
 
 dCache is a distributed storage system providing location independent access to data.
 The data are stored across multiple data servers as complete files presented to end-user via a single rooted namespace.

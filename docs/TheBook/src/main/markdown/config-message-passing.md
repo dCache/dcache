@@ -1,6 +1,10 @@
 Message passing
 ===============
 
+-----
+[TOC bullet hierarchy]
+-----
+
 The dCache system is divided into cells which communicate with each other via messages. Cells run inside domains and cells communicate by passing messages to each other. Domains are connected through cell tunnels which exchange messages over TCP.
 
 Each domain runs in a separate Java virtual machine and each cell is run as a separate thread therein. Domain names have to be unique. The domains communicate with each other via `TCP` using connections that are established at start-up. The topology is controlled by the location manager service. When configured, all domains connect with a core domain, which routes all messages to the appropriate domains. This forms a star topology.

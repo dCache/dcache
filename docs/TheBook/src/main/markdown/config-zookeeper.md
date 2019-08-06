@@ -3,6 +3,9 @@ ZooKeeper
 
 As mentioned earlier, dCache relies on [Apache ZooKeeper](https://zookeeper.apache.org), a distributed directory and coordination service.
 
+-----
+[TOC bullet hierarchy]
+-----
 
 ## Deployment scenarios
 

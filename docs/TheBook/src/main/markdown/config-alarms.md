@@ -1,20 +1,6 @@
 CHAPTER 16. THE ALARMS SERVICE
 ==============================
 
-## Table of Contents
-
-* [The Basic Setup](#the-basic-setup)
-      [Configure where the alarms service is Running](#configure-where-the-alarms-service-is-running)
-      [Types of Alarms](#types-of-alarms)
-      [Alarm Priority](#alarm-priority)
-      [Working with Alarms: Shell Commands](#working-with-alarms-shell-commands)
-      [Working with Alarms: Admin Commands](#working-with-alarms-admin-commands)
-      [Working with Alarms: The DCache-View Alarms Tab](#working-with-alarms-the-dcache-view-alarms-tab)
-* [Advanced Service Configuration: Enabling Automatic Cleanup](#advanced-service-configuration-enabling-automatic-cleanup)
-* [Advanced Service Configuration: Enabling Email Alerts](#advanced-service-configuration-enabling-email-alerts)
-* [Miscellaneous Properties of the Alarms Service](#miscellaneous-properties-of-the-alarm-service)
-* [Alarms SPI](#alarms-spi--service-provider-interface-)
-
 dCache has an `alarms` backend service which records failures (*alarms*)
 requiring more or less urgent intervention. The service stores alarms by
 either in an XML file or an RDBMS. The service is turned off by default.
@@ -25,6 +11,10 @@ via the RESTful alarms API.   The web dCache-View alarm page provides for
 both the timestamp range and the filtering and sorting of alarms by fields.
 Admins also have access to buttons which allow them to
 mark alarms as closed or to delete them altogether.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## THE BASIC SETUP
 

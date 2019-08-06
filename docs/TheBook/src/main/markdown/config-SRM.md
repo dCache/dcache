@@ -1,43 +1,6 @@
 CHAPTER 13. dCache STORAGE RESOURCE MANAGER
 ===========================================
 
-## Table of Contents
-
-+ [Introduction](#introduction)
-+ [Configuring the srm service](#configuring-the-srm-service)
-
-	 [The Basic Setup](#the-basic-setup)
-	 [Important srm configuration options](#important-srm-configuration-options)
-
-+ [Utilization of Space Reservations for Data Storage](#utilization-of-space-reservations-for-data-storage)
-
-	 [Properties of Space Reservation](#properties-of-space-reservation)
-+ [dCache specific concepts](#dcache-specific-concepts)
-
-	 [Activating SRM SpaceManager](#activating-srm-spacemanager)
-	 [Explicit and Implicit Space Reservations for Data Storage in dCache](#explicit-and-implicit-space-reservations-for-data-storage-in-dcache)
-
-+ [SpaceManager configuration](#spacemanager-configuration)
-
-	 [SRM SpaceManager and Link Groups](#srm-spacemanager-and-link-groups)
-         [Making a Space Reservation](#making-a-space-reservation)
-	 [SRM configuration for experts](#srm-configuration-for-experts)
-
-+ [Configuring the PostgreSQL Database](#configuring-the-postgresql-database)
-
-	 [SRM or srm monitoring on a separate node](#srm-or-srm-monitoring-on-a-separate-node)
-
-+ [General SRM Concepts (for developers)](#general-srm-concepts-(for-developers))
-
-	 [The SRM service](#the-srm-service)
-	 [Space Management Functions](#space-management-functions)
-	 [Data Transfer Functions](#data-transfer-functions)
-	 [Request Status Functions](#request-status-functions)
-	 [Directory Functions](#directory-functions)
-	 [Permission functions](#permission-functions)
-
-## Introduction
-
 Storage Resource Managers (SRMs) are middleware components whose function is to
 provide dynamic space allocation and file management on shared storage components on the Grid.
 SRMs support protocol negotiation and a reliable replication mechanism.
@@ -54,6 +17,10 @@ The dCache SRM implementation added HTTPS as a transport layer option.
 The main benefits of using HTTPS rather than HTTP over GSI is that HTTPS is a standard protocol
 and has support for sessions, improving latency in case a client needs to connect to the
 same server multiple times.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## CONFIGURING THE SRM SERVICE
 

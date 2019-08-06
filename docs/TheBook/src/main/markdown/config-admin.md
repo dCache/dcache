@@ -5,6 +5,10 @@ THE ADMIN SERVICE
 >
 > Only commands described in this documentation should be used for the administration of a dCache system.
 
+-----
+[TOC bullet hierarchy]
+-----
+
 ## FIRST STEPS
 
 dCache has a powerful administration interface.  Administration protocol is implemented as `admin` cell that

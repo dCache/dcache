@@ -1,19 +1,15 @@
 CHAPTER 14. THE STATISTICS SERVICE
 ==================================
 
-## Table of Contents
-
-[The Basic Setup](#the-basic-setup)
-[The Statistics Web Page](#the-statistics-web-page)
-[Explanation of the File Format of the xxx.raw Files](#explanation-of-the-file-format-of-the-xxxraw-files)
-
-
 The `statistics` service collects information on the amount of data stored on all pools and the total data flow including streams from and to tertiary storage systems.
 
 Once per hour an ASCII file is produced, containing a table with information on the amount of used disk space and the data transferred starting midnight up to this point in time. Data is sorted per pool and storage class.
 
 In addition to the hourly statistics, files are produced reporting on the daily, monthly and yearly dCache activities. An HTML tree is produced and updated once per hour allowing to navigate through the collected statistics information.
 
+-----
+[TOC bullet hierarchy]
+-----
 
 ## THE BASIC SETUP
 

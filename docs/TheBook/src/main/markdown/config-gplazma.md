@@ -1,36 +1,11 @@
 Chapter 10. Authorization in dCache
 ===================================
 
-## Table of Contents
-
-+ [Basics](#basics)
-+ [Configuration](#configuration)
-
-    - [Plug-ins](#plug-ins)
-
-+ [Using X.509 Certificates](#using-x509-certificates)
-
-    - [CA Certificates](#ca-certificates)
-    - [User Certificate](#user-certificate)
-    - [Host Certificate](#host-certificate)
-    - [VOMS Proxy Certificate](#voms-proxy-certificate)
-
-+ [Using OpenID Connect](#using-openid-connect)
-
-+ [Configuration files](#configuration-files)
-
-    - [storage-authzdb](#storage-authzdb)
-    - [The gplazmalite-vorole-mapping plug-in](#the-gplazmalite-vorole-mapping-plug-in)
-    - [Authorizing a VO](#authorizing-a-vo)
-    - [The kpwd plug-in](#the-kpwd-plug-in)
-    - [The gridmap plug-in](#the-gridmap-plug-in)
-
-+ [gPlazma specific dCache configuration](#gplazma-specific-dcache-configuration)
-
-    - [Enabling Username/Password Access for WebDAV](#enabling-username-password-access-for-webdav)
-    - [gPlazma config example to work with authenticated webadmin](#gplazma-config-example-to-work-with-authenticated-webadmin)
-
 To limit access to data, dCache comes with an authentication and authorization interface called `gPlazma2`. gPlazma is an acronym for Grid-aware PLuggable AuthorZation Management. Earlier versions of dCache worked with `gPlazma1` which has now been completely removed from dCache. So if you are upgrading, you have to reconfigure `gPlazma` if you used `gPlazma1` until now.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## Basics
 

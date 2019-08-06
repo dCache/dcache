@@ -1,6 +1,10 @@
 THE MISSING FILES SERVICE
 =========================
 
+-----
+[TOC bullet hierarchy]
+-----
+
 ## Introduction
 
 When a user requests to read a file that doesn't exist, 

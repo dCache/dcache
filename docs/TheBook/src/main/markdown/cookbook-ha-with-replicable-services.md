@@ -22,6 +22,10 @@ low level communication infrastructure used by dCache is redundant. This
 involves setting up a [ZooKeeper cluster](config-zookeeper.md) of at least three
 nodes, as well as using a multipath topology for [Cell Message passing](config-message-passing.md).
 
+-----
+[TOC bullet hierarchy]
+-----
+
 ## Pools
 
 Pools contain the data files stored in dCache. If a pool is offline, any file

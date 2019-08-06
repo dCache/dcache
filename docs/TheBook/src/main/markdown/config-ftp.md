@@ -1,15 +1,12 @@
 dCache as an FTP Server
 =======================
 
-Table of Contents
-
-- [Introduction](#introduction)
-- [The Control Channel](#the-control-channel)
-- [Data transfers](#data-transfers)
-- [Configuration examples](#configuration-examples)
-
 This chapter explains how to configure dCache to allow FTP, a common
 network protocol that many clients support.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## Introduction
 

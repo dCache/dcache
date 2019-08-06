@@ -1,17 +1,13 @@
 Chapter 24. PostgreSQL and dCache
 =================================
 
-## Table of Contents
-
-+ [Installing a PostgreSQL Server](#installing-a-postgresql-Server)
-+ [Configuring Access to PostgreSQL](#configuring-access-tp-postgresql)
-+ [Performance of the PostgreSQL Server](#performance-of-the-postgresql-server)
-
-
-
 PostgreSQL is used for various things in a dCache system: The [SRM](rf-glossary.md#storage-resource-manager-srm), the [pin manager](rf-glossary.md#pin-manager), the [space manager](rf-glossary.md#space-manager), the [replica manager](rf-glossary.md#replica-manager), the [billing](rf-glossary.md#billing), and the pnfs server might make use of one or more databases in a single or several separate PostgreSQL servers.
 
 The `SRM`, the pin manager, the space manager and the replica manager will use the PostgreSQL database as configured at cell start-up in the corresponding batch files. The `billing` will only write the accounting information into a database if it is configured with the option `-useSQL`. The `pnfs` server will use a PostgreSQL server if the `pnfs-posgresql` version is used. It will use several databases in the PostgreSQL server.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## Installing a PSQL Server
 

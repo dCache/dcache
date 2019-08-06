@@ -1,16 +1,15 @@
 CHAPTER 20.  STAGE PROTECTION
 =============================
 
-## Table of Contents
-
-+ [Configuration of Stage Protection](#configuration-of-stage-protection)
-+ [Definition of the White List](#definition-of-the-white-list)
-
 Access to tape is expensive. To avoid inefficient use of tape resources, or "stage mayhem" by random, chaotic  user
 activity a mechanism exists in dCahe called "stage protection" that allows to control access to data on tape based
 on user identity (DN), VO group membership and VO role (defined in FQAN),
 storage group and protocol. Attempts to stage data that does not satisfy criteria of
-stage permission configuration will result in permission denied errors
+stage permission configuration will result in permission denied errors.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## CONFIGURATION OF STAGE PROTECTION
 

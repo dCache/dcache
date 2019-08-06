@@ -1,22 +1,9 @@
 Chapter 23. Pool Operations
 ==========================================
 
-## Table of Contents
-
-+ [Checksums](#checksums)
-
-  * [How to configure checksum calculation](#how-to-configure-checksum-calculation)
-
-+ [Migration Module](#migration-module)
-
-  * [Overview and Terminology](#overview-and-terminology)
-  * [Command Summary](#command-summary)
-  * [Examples](#examples)
-
-+ [Renaming a Pool](#renaming-a-pool)
-+ [Pinning Files to a Pool](#pinning-files-to-a-pool)
-+ [Running pools with CEPH backends](#running-pools-with-ceph-backends)
-+ [Keeping metadata on MongoDB](#keeping-metadata-on-mongodb)
+-----
+[TOC bullet hierarchy]
+-----
 
 ## Checksums
 

@@ -1,18 +1,9 @@
 CHIMERA
 ==================
 
-## Table of Contents
-
-- [Mounting Chimera through NFS](#mounting-chimera-through-nfs)
-- [Using dCap with a mounted file system](#using-dcap-with-a-mounted-file-system)
-- [Communicating with Chimera](#communicating-with-chimera)
-- [IDs](#ids)
-- [Directory Tags](#directory-tags)
-    - [Create, List and Read Directory Tags if the Namespace is not Mounted](#create-list-and-read-directory-tags-if-the-namespace-is-not-mounted)
-    - [Create, List and Read Directory Tags if the Namespace is Mounted](#create-list-and-read-directory-tags-if-the-namespace-is-mounted)
-    - [Directory Tags and Command Files](#directory-tags-and-command-files)
-    - [Directory Tags for dCache](#directory-tags-for-dcache)
-    - [Storage Class and Directory Tags](#storage-class-and-directory-tags)
+-----
+[TOC bullet hierarchy]
+-----
 
 The inner dCache components talk to the namespace via a module called `PnfsManager`, which in turn communicates with the Chimera database using a thin Java layer. In addition to `PnfsManager` a direct access to the file system view is provided by an `NFSv3` and `NFSv4.1` server. Clients can `NFS`-mount the namespace locally. This offers the opportunity to use OS-level tools like `ls, mkdir, mv` for Chimera. Direct I/O-operations like `cp` and `cat` are possible with the `NFSv4.1 door`.
 

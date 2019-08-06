@@ -1,14 +1,6 @@
 CHAPTER 15. THE BILLING SERVICE
 ===============================
 
-## Table of Contents
-
-* [The Billing Log Files](#the-billing-log-files)
-* [The Billing Database](#the-billing-database)
-* [Billing Histogram Data](#billing-histogram-data)
-* [Billing Records](#billing-records)
-* [Upgrading a Previous Installation](#upgrading-a-previous-installation)
-
 dCache has built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools. There are two options for how this data can be represented and stored:
 
 -   a set of log files written to a known location
@@ -17,6 +9,10 @@ dCache has built-in monitoring capabilities which provide an overview of the act
     database).
 
 These options can be enabled simultaneously. If the database option is selected, the data in those tables will also be displayed as a set of histogram plots on the installation's web page.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## THE BILLING LOG FILES
 

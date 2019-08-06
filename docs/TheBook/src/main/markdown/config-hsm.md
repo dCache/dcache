@@ -1,42 +1,11 @@
 Chapter 8: The dCache Tertiary Storage System Interface
 ============================================
 
-
-Table of Contents
-
-* [Introduction](#introduction)
-* [Scope of this chapter](#scope-of-this-chapter)
-* [Requirements for a Tertiary Storage System](#requirements-for-a-tertiary-storage-system)
-
-    [Migrating Tertiary Storage Systems with a file system interface.](#migrating-tertiary-storage-systems-with-a-file-system-interface.)
-    [Tertiary Storage Systems with a minimalistic PUT, GET and REMOVE interface](#tertiary-storage-systems-with-a-minimalistic-put-get-and-remove-interface)
-
-* [How dCache interacts with a Tertiary Storage System](#how-dcache-interacts-with-a-tertiary-storage-system)
-* [Details on the TSS-support executable](#details-on-the-tss-support-executable)
-
-     [Summary of command line options](#summary-of-command-line-options)
-     [Summary of return codes](#summary-of-return-codes)
-     [The executable and the STORE FILE operation](#the-executable-and-the-store-file-operation)
-     [The executable and the FETCH FILE operation](#the-executable-and-the-fetch-file-operation)
-     [The executable and the REMOVE FILE operation](#the-executable-and-the-remove-file-operation)
-
-* [Configuring pools to interact with a Tertiary Storage System](#configuring-pools-to-interact-with-a-tertiary-storage-system)
-
-     [The dCache layout files](#the-dcache-layout-files)
-     [What happens next](#what-happens-next)
-
-* [How to Store-/Restore files via the Admin Interface](#how-to-store-/restore-files-via-the-admin-interface)
-* [How to monitor what’s going on](#how-to-monitor-what’s-going-on)
-
-     [Log Files](#log-files)
-     [Obtain information via the dCache Command Line Admin Interface](#obtain-information-via-the-dcache-command-line-admin-interface)
-
-* [Example of an executable to simulate a tape backend](#example-of-an-executable-to-simulate-a-tape-backend)
-
-
-## INTRODUCTION
-
 One of the features dCache provides is the ability to migrate files from its disk repository to one or more connected Tertiary Storage Systems (TSS) and to move them back to disk when necessary. Although the interface between dCache and the TSS is kept simple, dCache assumes to interact with an intelligent TSS. dCache does not drive tape robots or tape drives by itself. More detailed requirements to the storage system are described in one of the subsequent paragraphs.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## SCOPE OF THIS CHAPTER
 

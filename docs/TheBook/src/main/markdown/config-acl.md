@@ -1,17 +1,13 @@
 ACLs in dCache
 ===========================
 
-Table of Contents
------------------
-
-* [Introduction](#introduction)
-* [Configuring ACL support](#configuring-acl-support)
-* [Setting and getting ACLs](#setting-and-getting-acls)
-* [Accessing ACL over NFS mount](#accessing-acl-over-nfs-mount)
-
 dCache includes support for Access Control Lists (ACLs). This support is conforming to the [NFS version 4 Protocol specification](https://tools.ietf.org/rfc/rfc7530.txt).
 
 This chapter provides some background information and details on configuring dCache to use ACLs and how to administer the resulting system.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## Introduction
 

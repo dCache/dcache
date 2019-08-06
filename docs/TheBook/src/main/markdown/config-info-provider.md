@@ -1,15 +1,6 @@
 CHAPTER 19. GLUE INFO PROVIDER
 ==============================
 
-## Table of Contents
-+ [Internal collection of information](#internal-collection-of-information)
-+ [Configuring the info service](#configuring-the-info-service)
-+ [Testing the info provider](#testing-the-info-provider)
-+ [Publishing dCache information](#publishing-dcache-information)
-+ [Troubleshooting BDII problems](#troubleshooting-bdii-problems)
-+ [Updating information](#updating-information)
-
-
 The GLUE information provider supplied with dCache provides the information about the dCache instance in a standard format called GLUE. This is necessary so that WLCG infrastructure (such as FTS) and clients using WLCG tools can discover the dCache instance and use it correctly.
 
 The process of configuring the info-provider is designed to have the minimum overhead so you can configure it manually; however, you may prefer to use an automatic configuration tool, such as YAIM.
@@ -23,6 +14,10 @@ This chapter describes how to enable and test the dCache-internal collection of 
 > **WARNING**
 >
 > Please be aware that changing information provider may result in a brief interruption to published information. This may have an adverse affect on client software that make use of this information.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## INTERNAL COLLECTION OF INFORMATION
 

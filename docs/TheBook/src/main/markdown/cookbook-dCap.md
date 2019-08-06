@@ -1,6 +1,10 @@
 Protocols
 =========
 
+-----
+[TOC bullet hierarchy]
+-----
+
 ## DCAP options mover and client options
 
 DCAP is the native random access I/O protocol for files within dCache. In additition to the usual data transfer mechanisms, it supports all necessary file metadata and name space manipulation operations.

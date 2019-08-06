@@ -16,6 +16,10 @@ recalled at a time.
 dCache has a third party accessible plugin system. One of the pluggable
 components is the nearline storage interface.
 
+-----
+[TOC bullet hierarchy]
+-----
+
 ## Nearline Requests
 
 A nearline storage drive must support three types of requests: flush to the

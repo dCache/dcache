@@ -1,23 +1,11 @@
 CHAPTER 26. ADVANCED TUNING
 ===========================
 
-## Table of Contents
-
-+ [Multiple Queues for Movers in each Pool](#multiple-queues-for-movers-in-each-pool)
-
-     [Description](#description)
-     [Solution](#solution)
-     [Configuration](#configuration)
-     [Tunable Properties for Multiple Queues](#tunable-properties-for-multiple-queues)
-
-+ [Tunable Properties](#tunable-properties)
-
-     [dCap](#dcap)
-     [GridFTP](#gridftp)
-     [SRM](#srm)
-
-
 The use cases described in this chapter are only relevant for large-scale dCache instances which require special tuning according to a longer experience with client behaviour.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## MULTIPLE QUEUES FOR MOVERS IN EACH POOL
 

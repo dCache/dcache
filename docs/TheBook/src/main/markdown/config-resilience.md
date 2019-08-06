@@ -1,6 +1,10 @@
 The Resilience Service
 ======================
 
+-----
+[TOC bullet hierarchy]
+-----
+
 ## Configuring the resilience service
 
 ### Activating resilience

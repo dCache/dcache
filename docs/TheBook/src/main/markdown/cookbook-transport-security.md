@@ -14,7 +14,9 @@ There is the option `webdav.redirect.allow-https` which is `false` by default. I
 
 Please note, that IT security is an ever changing field. Make sure you follow the latest developments. If security in dCache is a priority for you, be sure to follow the dCache user mailinglist.
 
-
+-----
+[TOC bullet hierarchy]
+-----
 
 ## Configuring a secure WebDAV door
 

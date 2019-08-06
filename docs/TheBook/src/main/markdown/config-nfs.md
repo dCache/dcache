@@ -1,19 +1,15 @@
 dCache as NFSv4.1 Server
 ====================================
 
-Table of Contents
-
-- [Setting up](#setting-up)
-- [Exporting filesystem](#exporting-filesystem)
-- [Configuring NFSv4.1 door with GSS-API support](#configuring-nfsv4.1-door-with-gss-api-support)
-- [Configuring principal-id mapping for NFS access](#configuring-principal-id-mapping-for-nfs-access)
-- [Managing group ids](#managing-group-ids)
-
 This chapter explains how to configure dCache in order to access it via the `NFSv4.1` protocol, allowing clients to mount dCache and perform POSIX IO using standard `NFSv4.1` clients.
 
 > **Important**
 >
 > The `pNFS` mentioned in this chapter is the protocol `NFSv4.1/pNFS` and not the namespace pnfs.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## Setting up
 

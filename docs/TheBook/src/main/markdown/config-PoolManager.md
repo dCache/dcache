@@ -1,22 +1,6 @@
 THE POOLMANAGER SERVICE
 ==================================
 
-## Table of Contents
-
-* [The Pool Selection Mechanism](#the-pool-selection-mechanism)
-
-  * [Links](#links)
-  * [Examples](#examples)
-
-* [The Partition Manager](#the-partition-manager)
-
-  * [Overview](#overview)
-  * [Managing Partitions](#managing-partitions)
-  * [Using Partitions](#using-partitions)
-  * [Classic Partitions](#classic-partitions)
-
-* [Link Groups](#link-groups)
-
 The heart of a dCache System is the `poolmanager`. When a user performs an action on a file - reading or writing - a `transfer request` is sent to the dCache system. The `poolmanager` then decides how to handle this request.
 
 If a file the user wishes to read resides on one of the storage-pools within the dCache system, it will be transferred from that pool to the user. If it resides on several pools, the file will be retrieved from one of the pools determined by a configurable load balancing policy. If all pools the file is stored on are busy, a new copy of the file on an idle pool will be created and this pool will answer the request.
@@ -41,6 +25,10 @@ chapter we will describe the commands allowed in this file.
 > Starting from version 2.16 dCache stores the configuration of
 > `poolmanager` in zookeeper and reads `poolmanager.conf` file only if
 > configuration in zookeeper is missing, e.g. on the first start.
+
+-----
+[TOC bullet hierarchy]
+-----
 
 ## THE POOL SELECTION MECHANISM
 

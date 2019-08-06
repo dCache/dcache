@@ -1,5 +1,9 @@
 CHAPTER 17. dCache Frontend Service
-=====================================
+===================================
+
+-----
+[TOC bullet hierarchy]
+-----
 
 The Frontend service is the dCache service (cell) responsible for
 serving data to clients via HTTP/REST.  The default port on which it

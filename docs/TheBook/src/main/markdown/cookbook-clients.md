@@ -1,39 +1,11 @@
 CHAPTER 22. dCache CLIENTS.
 ==========================
 
-## Table of Contents
-
-+ [GSI-FTP](#gsi-ftp)
-
-    [Listing a directory](#listing-a-directory)
-    [Checking a file exists](#checking-a-file-exists)
-    [Deleting files](#deleting-files)
-    [Copying files](#copying-files)
-
-+ [dCap](#dcap)
-
-    [dccp](#dccp)
-    [Using the dCache client interposition library.](#using-the-dcache-client-interposition-library.)
-
-+ [SRM](#srm)
-
-    [Creating a new directory.](#creating-a-new-directory)
-    [Removing files from dCache](#removing-files-from-dcache)
-    [Removing empty directories from dCache](#removing-empty-directories-from-dcache)
-    [srmcp for SRM v1](#srmcp-for-srm-v1)
-    [srmcp for SRM v2.2](#srmcp-for-srm-v2.2)
-
-+ [ldap](#ldap)
-+ [Using the LCG commands with dCache](#using-the-lcg-commands-with-dcache)
-
-    [The lcg-gt Application](#the-lcg-gt-application)
-    [The lcg-sd Application](#the-lcg-sd-application)
-
 There are many client tools for dCache. These can most easily be classified by communication protocol.
 
-
-As can be seen from above even a single node standard install of dCache returns a considerable number of lines and for this reason we have not included the output, in this case 205 lines where written.
-
+-----
+[TOC bullet hierarchy]
+-----
 
 ## GSI-FTP
 
