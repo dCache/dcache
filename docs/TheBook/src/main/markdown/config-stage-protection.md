@@ -11,7 +11,7 @@ stage permission configuration will result in permission denied errors.
 [TOC bullet hierarchy]
 -----
 
-## CONFIGURATION OF STAGE PROTECTION
+## Configuration of stage protection
 
 The stage protection rules are captured in stage configuration file which
 is pointed to by  the variable :
@@ -45,7 +45,7 @@ then the stage protection applies only to transfers performed by doors on hosts 
 The default settings are `dcache.authz.staging = ` (not set) and
 `dcache.authz.staging.pep = doors`.
 
-## DEFINING STAGE PROTECTION
+## Defining stage protection
 
 Stage protection can be setup as a white or a black list.  Blacklisting is achieved by
 using `!` in front of an expression.

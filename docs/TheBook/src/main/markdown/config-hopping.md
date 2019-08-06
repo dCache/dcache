@@ -15,7 +15,7 @@ File hopping is a collective term in dCache, summarizing the possibility of havi
 
 -   If a dataset has been written into dCache it might become necessary to have this file replicated instantly. The reasons can be, to either have a second, safe copy, or to make sure that clients don't access the file for reading on the write pools.
 
-## FILE HOPPING ON ARRIVAL FROM OUTSIDE dCache
+## File hopping on arrival from outside dCache
 
 *File Hopping on arrival* is a term, denoting the possibility of initiating a pool to pool transfer as the result of a file successfully arriving on a pool from some external client. Files restored from HSM or arriving on a pool as the result of a pool to pool transfer will not yet be forwarded.
 
@@ -35,7 +35,7 @@ The pool is requested to send a `replicateFile` message to either the `PoolManag
 
 -   The `replicateFile` message is sent to the `HoppingManager`. The `HoppingManager` can be configured to replicate certain storage classes only and to set the mode of the replicated file according to rules. The file mode of the source file cannot be modified.
 
-### FILE MODE OF REPLICATED FILES
+### File mode of replicated files
 
 The mode of a replicated file can either be determined by settings in the destination pool or by the `HoppingManager`. It can be `cached` or `precious`.
 
@@ -43,7 +43,7 @@ The mode of a replicated file can either be determined by settings in the destin
 
 -   If a `HoppingManager` is used for file replication, the mode of the replicated file is determined by the `HoppingManager` rule responsible for this particular replication. If the destination mode is set to `keep` in the rule, the mode of the destination pool determines the final mode of the replicated file.
 
-### FILE HOPPING MANAGED BY THE POOLMANAGER
+### File hopping managed by the poolmanager
 
 To enable replication on arrival by the `PoolManager` set the property `pool.destination.replicate` to `PoolManager` for the particular pool
 
@@ -182,7 +182,7 @@ read.
 
 While `131.169.10.1` is a legal IP address e.g. of one of your farm nodes, the `192.1.1.1` IP address must not exist anywhere at your site.
 
-### FILE HOPPING MANAGED BY THE HOPPINGMANAGER
+### File hopping managed by the Hoppingmanager
 
 With the `HoppingManager` you have several configuration options for file `hopping on arrival`, e.g.:
 

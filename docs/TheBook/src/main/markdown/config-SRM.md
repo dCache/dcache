@@ -22,9 +22,9 @@ same server multiple times.
 [TOC bullet hierarchy]
 -----
 
-## CONFIGURING THE SRM SERVICE
+## Configuring the srm service
 
-### BASIC SETUP
+### Basic setup
 
 The SRM service is split between a front end `srm`  and a backend `smrmanager` for scalability. To instantiate
 SRM service both cells need to be started. Not necessarily on the same host.
@@ -71,7 +71,7 @@ and delete it
 srmrm srm://dcache.example.org/data/world-writable/srm-test-file
 ```
 
-### IMPORTANT SRM CONFIGURATION OPTIONS
+### Important SRM configuration options
 
 The defaults for the following configuration parameters can be found
 in the `srmmanager.properties` and `srm.properties` ]
@@ -119,7 +119,7 @@ srm.request.copy.threads=2000
 transfermanagers.limits.external-transfers=2000
 ```
 
-## UTILIZATION OF SPACE RESERVATIONS FOR DATA STORAGE
+## Utilization of space reservations for data storage
 
 `SRM` version 2.2 introduced a concept of space reservation. Space reservation guarantees that the
 requested amount of storage space of a specified type is made available by the storage system for a
@@ -134,7 +134,7 @@ When a file is about to be transferred to a storage system, the space available 
 
 dCache only manages write space, i.e. space on disk can be reserved only for write operations. Once files are migrated to tape, and if no copy is required on disk, space used by these files is returned back into space reservation. When files are read back from tape and cached on disk, they are not counted as part of any space.
 
-### PROPERTIES OF SPACE RESERVATION
+### Properties of space reservation
 
 A space reservation has a retention policy and an access latency.
 
@@ -186,9 +186,9 @@ dcache.default-access-latency=ONLINE
 ```
 
 
-## dCache SPECIFIC CONCEPTS
+## dCache specific concepts
 
-### ACTIVATING SRM SPACEMANAGER
+### Activating SRM Spacemanager
 
 In order to enable the `SRM SpaceManager` you need to add the `spacemanager` service to your layout file
 
@@ -200,7 +200,7 @@ In order to enable the `SRM SpaceManager` you need to add the `spacemanager` ser
 Unless you have reason not to, we recommend placing the `spacemanager` service in the same domain as the `poolmanager` service.
 
 
-### EXPLICIT AND IMPLICIT SPACE RESERVATIONS FOR DATA STORAGE IN dCache
+### Explicit and implicit space reservations for data storage in dCache
 
 #### Explicit Space Reservations
 
@@ -280,14 +280,14 @@ chimera writetag /path/to/directory RetentionPolicy "<New RetentionPolicy>"
 > If the implicit space reservation is not enabled, pools in link groups will be excluded from consideration and only the remaining pools will be considered for storing the incoming data, and classical pool selection mechanism will be used.
 
 
-## SPACEMANAGER CONFIGURATION
+## Spacemanager configuration
 
-### SRM SPACEMANAGER AND LINK GROUPS
+### SRM Spacemanager and Link Groups
 
 `SpaceManager` is making reservations against free space available in [link groups](config-PoolManager.md#link-groups). The total free space in the given link group is the sum of available spaces in all links. The available space in each link is the sum of all sizes of available space in all pools assinged to a given link. Therefore for the space reservation to work correctly it is essential that each pool belongs to one and only one link, and each link belongs to only one link group. Link groups are assigned several parameters that determine what kind of space the link group corresponds to and who can make reservations against this space.
 
 
-### MAKING A SPACE RESERVATION
+### Making a Space Reservation
 
 Now that the `SRM SpaceManager` is activated you can make a space reservation. As mentioned above you need link groups to make a space reservation.
 
@@ -586,7 +586,7 @@ Possible values are `true` or `false` and the default value is false.
 
 This is analogous to implicit space reservations performed by the srm, except that these reservations are created by the `spacemanager` itself. Since an `SRM` client uses a non-`SRM` protocol for the actual upload, setting the above option to true while disabling implicit space reservations in the `srm`, will still allow files to be uploaded to a link group even when no space token is provided. Such a configuration should however be avoided: If the srm does not create the reservation itself, it has no way of communicating access latency, retention policy, file size, nor lifetime to `spacemanager`.
 
-### SRM CONFIGURATION FOR EXPERTS
+### SRM configuration for experts
 
 There are a few parameters in
 `/usr/share/dcache/defaults/*.properties` that you might find useful
@@ -904,11 +904,11 @@ Usage example:
 trustAnchorRefreshPeriod=3600
 ```
 
-## CONFIGURING THE POSTGRESQL DATABASE
+## Configuring the PostgreSQL database
 
-We highly recommend to make sure that PSQL database files are stored on a separate disk that is not used for anything else (not even PSQL logging). BNL Atlas Tier 1 observed a great improvement in srm-database communication performance after they deployed PSQL on a separate dedicated machine.
+We highly recommend to make sure that PostgreSQL database files are stored on a separate disk that is not used for anything else (not even PSQL logging). BNL Atlas Tier 1 observed a great improvement in srm-database communication performance after they deployed PSQL on a separate dedicated machine.
 
-### SRM OR SRM MONITORING ON A SEPARATE NODE
+### SRM or SRM monitoring on a separate node
 
 If `SRM` or srm monitoring is going to be installed on a separate
 node, you need to add an entry in the file
@@ -951,9 +951,9 @@ The file `postgresql.conf` should contain the following:
     # - Planner Cost Constants -
     effective_cache_size = 16384            # typically 8KB each
 
-## GENERAL SRM CONCEPTS (FOR DEVELOPERS)
+## General SRM concepts (for developers)
 
-### THE SRM SERVICE
+### The SRM service
 
 dCache `SRM` is implemented as a Web Service running in a Jetty servlet container and an Axis Web Services engine. The Jetty server is executed as a cell, embedded in dCache and started automatically by the `SRM` service. Other cells started automatically by `SRM` are `SpaceManager`, `PinManager` and `RemoteGSIFTPTransferManager`. Of these services only `SRM` and SpaceManager require special configuration.
 
@@ -965,7 +965,7 @@ The `SRM` consists of the five categories of functions:
 -   [Directory Functions](#directory-functions)
 -   [Permission Functions](#permission-functions)
 
-### SPACE MANAGEMENT FUNCTIONS
+### Space management functions
 
 `SRM` version 2.2 introduces a concept of space reservation. Space reservation guarantees that the requested amount of storage space of a specified type is made available by the storage system for a specified amount of time.
 
@@ -985,7 +985,7 @@ Space Reservations might be released with the function `srmReleaseSpace`.
 
 For a complete description of the available space management functions please see the [SRM Version 2.2 Specification](https://sdm.lbl.gov/srm-wg/doc/SRM.v2.2.html#_Toc241633085).
 
-### DATA TRANSFER FUNCTIONS
+### Data transfer functions
 
 #### SURLs and TURLs
 
@@ -1034,7 +1034,7 @@ The Data Transfer Functions are asynchronous, an initial `SRM` call starts a req
 
 Clients are free to cancel the requests at any time by execution of `srmAbortFiles` or `srmAbortRequest`.
 
-### REQUEST STATUS FUNCTIONS
+### Request status functions
 
 The functions for checking the request status are:
 
@@ -1046,7 +1046,7 @@ The functions for checking the request status are:
 -   srmStatusOfPutRequest
 -   srmStatusOfCopyRequest
 
-### DIRECTORY FUNCTIONS
+### Directory functions
 
 `SRM` Version 2.2, interface provides a complete set of directory management functions. These are
 
@@ -1058,7 +1058,7 @@ The functions for checking the request status are:
     srmRmDir
 -   srmMv
 
-### PERMISSION FUNCTIONS
+### Permission functions
 
 SRM Version 2.2 supports the following three file permission functions:
 

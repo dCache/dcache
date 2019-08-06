@@ -16,7 +16,7 @@ mark alarms as closed or to delete them altogether.
 [TOC bullet hierarchy]
 -----
 
-## THE BASIC SETUP
+## The basic setup
 
 It is not necessary to run the `alarms` service in a separate domain, though
 depending on the individual system configuration it may still be advisable not
@@ -78,7 +78,7 @@ then this option should be sufficient. Otherwise, the extra steps of installing
 postgreSQL on the appropriate node and creating the alarms database (as above)
 may be worth the effort.
 
-### CONFIGURE WHERE THE ALARMS SERVICE IS RUNNING
+### Configure where the alarms service is running
 
 The alarms infrastructure is actually a wrapper around the logging
 layer and makes use of a simple tcp socket logger to transmit logging
@@ -135,7 +135,7 @@ If the head node contains the alarms service, set the property
 dcache.log.server.host=<head-node>
 ```
 
-### TYPES OF ALARMS
+### Types of Alarms
 
 The dCache alarm system runs on top of the logging system
 (and more specifically, depends on the `ch.qos.logback` logging library).
@@ -145,7 +145,7 @@ for type and uniqueness identifiers. They also carry information indicating the
 host, domain and service which emits them.   All alarms are internally
 defined by dCache.  For getting the list of types, see the commands below.
 
-### ALARM PRIORITY
+### Alarm Priority
 
 The notion of alarm or alert carries the implication that this particular error
 or condition requires user attention/intervention; there may be, however,
@@ -169,7 +169,7 @@ is `critical`.
 
 Filtering based on priority is possible both in the webadmin page (see below), and for alarms sent via email (<variable>alarms.email.threshold</variable>; fuller discussion of how to enable email alarms is given in a later section).
 
-### WORKING WITH ALARMS: SHELL COMMANDS
+### Working with Alarms: Shell Commands
 
 Some basic alarm commands are available as part of the dCache shell.
 The following is an abbreviated description; for fuller information,
@@ -188,7 +188,7 @@ a listing in this manual would be of limited value. It is easy enough to
 check which ones currently are defined using this command or
 the predefined ls admin command.
 
-### WORKING WITH ALARMS: ADMIN COMMANDS
+### Working with Alarms: Admin Commands
 
 A similar set of commands is available through the admin interface.
 To see fuller information for each of these, do `\h [command]`.
@@ -238,7 +238,7 @@ To change this default permanently, set the <variable>alarms.priority-mapping.de
 property in the layout or `/etc/dcache/dcache.conf`.
 
 
-### WORKING WITH ALARMS: THE DCACHE-VIEW ALARMS TAB
+### Working with Alarms: the dCache-View Alarms tab
 
 The Alarms View is available to all users currently as read-only.  To be
 able to open/close or delete alarms, the user must log in with the 'admin' role
@@ -248,7 +248,7 @@ for further information.
 The alarms table allows for filtering and sorting on all alarms fields, and
 also timestamped ranges for the basic query.
 
-## ADVANCED SERVICE CONFIGURATION: ENABLING AUTOMATIC CLEANUP
+## Advanced Service Configuration: enabling Automatic Cleanup
 
 An additional feature of the alarms infrastructure is automatic cleanup of
 processed alarms. An internal thread runs every so often, and purges all alarms
@@ -263,7 +263,7 @@ The cleaner is off by default. This feature is mainly useful when running
 over an XML store, to mitigate slow-down due to bloat; nevertheless,
 there is nothing prohibiting its use with RDBMS.
 
-## ADVANCED SERVICE CONFIGURATION: ENABLING EMAIL ALERTS
+## Advanced Service Configuration: enabling email alerts
 
 To configure the server to send alarms via email, you need to set a series of
 alarm properties. No changes are necessary to any **logback.xml** file.
@@ -303,13 +303,13 @@ by a comma-separated list of email addresses.
 See the shared defaults `/usr/share/dcache/alarms.properties` file for
 additional settings.
 
-## Miscellaneous Properties of the ALARMS Service
+## Miscellaneous Properties of the Alarms Service
 
 There are a number of other settings avaible for customization; check
 the files `/usr/share/dcache/alarms.properties` for the complete list
 with explanations.
 
-## ALARMS SPI (service provider interface)
+## Alarms SPI (Service Provider Interface)
 
 It is possible to plug functionality into the alarms service by
 implementing the SPI interface.  An example of this can be found

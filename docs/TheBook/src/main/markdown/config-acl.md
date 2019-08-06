@@ -1,5 +1,5 @@
 ACLs in dCache
-===========================
+==============
 
 dCache includes support for Access Control Lists (ACLs). This support is conforming to the [NFS version 4 Protocol specification](https://tools.ietf.org/rfc/rfc7530.txt).
 
@@ -17,7 +17,7 @@ Although Unix permission model is flexible enough for many deployment scenarios 
 
 An Access Control List (ACL) is a set of rules for determining whether an end-user is allowed to undertake some specific operation. Each ACL is tied to a specific namespace entry: a file or directory. When an end-user wishes to undertake some operation then the ACL for that namespace entry is checked to see if that user is authorised. If the operation is to create a new file or directory then the ACL of the parent directory is checked.
 
-> **FILE- AND DIRECTORY- ACLS**
+> **ACLs FOR FILES AND DIRECTORIES**
 >
 > Each ACL is associated with a specific file or directory in dCache. Although the general form is the same whether the ACL is associated with a file or directory, some aspects of an ACL may change. Because of this, we introduce the terms file-ACL and directory-ACL when taking about ACLs associated with a file or a directory respectively. If the term ACL is used then it refers to both file-ACLs and directory-ACLs.
 

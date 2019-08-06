@@ -11,7 +11,7 @@ In addition to the hourly statistics, files are produced reporting on the daily,
 [TOC bullet hierarchy]
 -----
 
-## THE BASIC SETUP
+## The basic setup
 
 Define the statistics service in the domain, where the httpd is running.
 
@@ -45,7 +45,7 @@ By default the path for the statistics data is
 `/var/lib/dcache/statistics`. You can modify this path by setting the
 property **dcache.paths.statistics** to a different value.
 
-## THE STATISTICS WEB PAGE
+## The statistics web page
 
 Point a web browser to your dCache webpage at http://<head-node.example.org>:2288/. On the bottom you find the link to Statistics.
 
@@ -82,7 +82,7 @@ You will see an empty statistics page athttp://<head-node.example.org>:2288/stat
 
 On the `Statistics Help Page`  http://<head-node.example.org>:2288/docs/statisticsHelp.html you find an explanation for the colors.
 
-## EXPLANATION OF THE FILE FORMAT OF THE XXX.RAW FILES
+## Explanation of the file format of the xxx.raw files
 
 The file formats of the
 `/var/lib/dcache/statistics/YYYY/MM/DD/YYYY-MM-DD-HH.raw` and the

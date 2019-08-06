@@ -30,7 +30,7 @@ chapter we will describe the commands allowed in this file.
 [TOC bullet hierarchy]
 -----
 
-## THE POOL SELECTION MECHANISM
+## The pool selection mechanism
 
 The PSU is responsible for finding the set of pools which can be used for a specific transfer-request. By telling the PSU which pools are permitted for which type of transfer-request, the administrator of the dCache system can adjust the system to any kind of scenario: Separate organizations served by separate pools, special pools for writing the data to a tertiary storage system, pools in a DMZ which serves only a certain kind of data (e.g., for the grid). This section explains the mechanism employed by the PSU and shows how to configure it with several examples.
 
@@ -40,7 +40,7 @@ Instead of “yes” and “no” the table really contains a *preference* - a n
 
 Actually maintaining such a table in memory (and as user in a configuration file) would be quite inefficient, because there are many possibilities for the transfer-requests. Instead, the PSU consults a set of rules in order to generate the list of allowed pools. Each such rule is called a link because it links a set of transfer-requests to a group of pools.
 
-### LINKS
+### Links
 
 A link consists of a set of unit groups and a list of pools. If all the unit groups are matched, the pools belonging to the link are added to the list of allowable pools.
 
@@ -257,7 +257,7 @@ Now we have everything we need to define a link.
 
 [return to top](#the-pool-selection-mechanism)
 
-### EXAMPLES
+### Examples
 
 Find some examples for the configuration of the PSU below.
 
@@ -422,7 +422,7 @@ pools can be reached, or if the storage class is not of the form
 `exp-a:run##TODAY_YEAR##@osm` and add it to the unit group
 `exp-a-cond`, the fall-back pools will be used eventually.
 
-## THE PARTITION MANAGER
+## The partition manager
 
 The partition manager defines one or more load balancing policies. Whereas the PSU produces a prioritized set of candidate pools using a collection of rules defined by the administrator, the load balancing policy determines the specific pool to use. It is also the load balancing policy that determines when to fall back to lesser prirority links, or when to trigger creation of additional copies of a file.
 
@@ -430,7 +430,7 @@ Since the load balancing policy and parameters are defined per partition, unders
 
 This section documents the use of the partition manager, how to create partitions, set parameters and how to associate links with partitions. In the following sections the available partition types and their configuration parameters are described.
 
-### OVERVIEW
+### Overview
 
 There are various parameters that affect the load balancing policy. Some of them are generic and apply to any load balancing policy, but many are specific to a particular policy. To avoid limiting the complete dCache instance to a single configuration, the choice of load balancing policy and the various parameters apply to partitions of the instance. The load balancing algorithm and the available parameters is determined by the partition type.
 
@@ -440,7 +440,7 @@ The `default` partition has a hard-coded partition type called `classic`. This t
 
 To ease the management of partition parameters, a common set of shared parameters can be defined outside all partitions. Any parameter not explicitly set on a partition inherits the value from the common set. If not defined in the common set, a default value determined by the partition type is used. Currently, the common set of parameters happens to be the same as the parameters of the `default` partition, however this is only due to compatibility constraints and may change in future versions.
 
-### MANAGING PARTITIONS
+### Managing partitions
 
 For each partition you can choose the load balancing policy. You do this by chosing the type of the partition.
 
@@ -487,7 +487,7 @@ Lists a single or all partitions, including the type of each partition. If a par
 Removes a partition from dCache. Any links configured to use this partition will fall back to the `default` partition.
 
 
-### USING PARTITIONS
+### Using partitions
 
 A partition, so far, is just a set of parameters which may or may not differ from the default set. To let a partition relate to a part of the dCache, links are used. Each link may be assigned to exactly one partition. If not set, or the assigned partition doesn't exist, the link defaults to the `default` partition.
 
@@ -597,7 +597,7 @@ For a set of pools we select pools following the default setting of cpu and spac
     psu set    link incoming-link -section=incoming-section
     #
 
-### CLASSIC PARTITIONS
+### Classic partitions
 
 The `classic` partition type implements the load balancing policy known from dCache releases before version 2.0. This partition type is still the default. This section describes this load balancing policy and the available configuration parameters.
 

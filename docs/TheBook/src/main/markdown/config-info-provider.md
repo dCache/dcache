@@ -19,7 +19,7 @@ This chapter describes how to enable and test the dCache-internal collection of 
 [TOC bullet hierarchy]
 -----
 
-## INTERNAL COLLECTION OF INFORMATION
+## Internal collection of information
 
 The info-provider takes as much information as possible from dCache. To achieve this, it needs the internal information-collecting service, `info`, to be running and a means to collect that information: `httpd`. Make sure that both the `httpd` and `info` services are running within your dCache instance. By default, the `info` service is started on the admin-node; but it is possible to configure dCache so it runs on a different node. You should run only one `info` service per dCache instance.
 
@@ -136,7 +136,7 @@ wget -O/dev/null http://localhost:2288/info
 
 This means that the `info` service is not running. Follow the instructions for starting the `info` service given above.
 
-## CONFIGURING THE INFO PROVIDER
+## Configuring the info provider
 
 In the directory `/etc/dcache` you will find the file
 `info-provider.xml`. This file is where you configure the
@@ -192,7 +192,7 @@ The `info-provider.xml` contains detailed descriptions of all the
 properties that are editable. You should refer to this documentation
 when editing the `info-provider.xml`.
 
-## TESTING THE INFO PROVIDER
+## Testing the info provider
 
 Once you have configured `info-provider.xml` to reflect your site's
 configuration, you may test that the info provider produces meaningful
@@ -243,7 +243,7 @@ dcache-info-provider >/dev/null
 
 then it is likely that either the `httpd` or `info` service has not been started. Use the above `wget` test to check that both services are running. You can also see which services are available by running the `dcache services` and `dcache status` commands.
 
-## PUBLISHING dCache INFORMATION
+## Publishing dCache information
 
 BDII obtains information by querying different sources. One such
 source of information is by running an info-provider command and
@@ -375,7 +375,7 @@ for BDII come from those objects that it was unable to add
 previously. This means that `add.ldif` will contain these badly
 formatted objects and `add.err` will contain the corresponding errors.
 
-## UPDATING INFORMATION
+## Updating information
 
 The information contained within the `info` service may take a short time to achieve a complete overview of dCache's state. For certain gathered information it may take a few minutes before the information stabilises. This delay is intentional and prevents the gathering of information from adversely affecting dCache's performance.
 

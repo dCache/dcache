@@ -1,5 +1,5 @@
 CHIMERA
-==================
+=======
 
 -----
 [TOC bullet hierarchy]
@@ -48,7 +48,7 @@ chimera.db.user=myuser
 chimera.db.password=secret
 ```
 
-## MOUNTING CHIMERA THROUGH NFS
+## Mounting Chimera through NFS
 
 dCache does not need the Chimera filesystem to be mounted, but a mounted file system is convenient for administrative access. This offers the opportunity to use OS-level tools like `ls` and `mkdir` for Chimera. However, direct I/O-operations like `cp` are not possible, since the `NFSv3` interface provides the namespace part only. This section describes how to start the Chimera `NFSv3` server and mount the name space.
 
@@ -116,7 +116,7 @@ chimera writetag /data OSMTemplate "StoreName sql"
 ```
 
 
-### USING DCAP WITH A MOUNTED FILE SYSTEM
+### Using DCAP with a mounted file system
 
 If you plan to use `dCap` with a mounted file system instead of the
 URL-syntax (e.g. `dccp /data/file1 /tmp/file1`), you need to mount
@@ -179,7 +179,7 @@ umount /mnt
 > have to remount the root `localhost:/` to a temporary location like
 > `/mnt`.
 
-## COMMUNICATING WITH CHIMERA
+## Communicating with Chimera
 
 Many configuration parameters of Chimera and the application specific
 meta data is accessed by reading, writing, or creating files of the
@@ -247,7 +247,7 @@ cat '.(parent)(0000917F4A82369F4BA98E38DBC5687A031D)'
 
 This way, the complete path of a file may be obtained starting from the ID.
 
-## DIRECTORY TAGS
+## Directory tags
 
 In the Chimera namespace, each directory can have a number of tags. These directory tags may be used within dCache to control the file placement policy in the pools (see [the section called “The Pool Selection Mechanism”](config-PoolManager.md#the-pool-selection-mechanism)). They might also be used by a [tertiary storage system](config-hsm.md) for similar purposes (e.g. controlling the set of tapes used for the files in the directory).
 
@@ -255,7 +255,7 @@ In the Chimera namespace, each directory can have a number of tags. These direct
 >
 > Directory tags are not needed to control the behaviour of dCache. dCache works well without directory tags.
 
-### CREATE, LIST AND READ DIRECTORY TAGS IF THE NAMESPACE IS NOT MOUNTED
+### Create, list and read directory tags if the namespace is not mounted
 
 You can create tags with
 
@@ -301,7 +301,7 @@ chimera readtag /data sGroup
 |myGroup
 ```
 
-### CREATE, LIST AND READ DIRECTORY TAGS IF THE NAMESPACE IS MOUNTED
+### Create, list and read directory tags if the namespace is mounted
 
 If the namespace is mounted, change to the directory for which the tag
 should be set and create a tag with
@@ -366,7 +366,7 @@ grep "" $(cat  ".(tags)()")
 |.(tag)(sGroup):myGroup
 ```
 
-### DIRECTORY TAGS AND COMMAND FILES
+### Directory tags and command files
 
 When creating or changing directory tags by writing to the command
 file as in
@@ -389,7 +389,7 @@ aspects:
 
 4. Empty tags are ignored.
 
-### DIRECTORY TAGS FOR dCache
+### Directory tags for dCache
 
 The following directory tags appear in the dCache context:
 
@@ -434,7 +434,7 @@ commands.
 Assign a `WriteToken` tag to a directory in order to be able to write
 to a space token without using the SRM.
 
-### STORAGE CLASS AND DIRECTORY TAGS
+### Storage class and directory tags
 
 The [storage class](config-PoolManager.md#storage-classes) is a string of the form `StoreName`:`StorageGroup`@`hsm-type`, where `StoreName`is given by the OSMTemplate tag, `StorageGroup` by the sGroup tag and `hsm-type` by the HSMType tag. As mentioned above the HSMType tag is assumed to be osm if the tag OSMTemplate exists.
 

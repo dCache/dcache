@@ -1,5 +1,5 @@
 THE ADMIN SERVICE
-===================
+=================
 
 > **JUST USE COMMANDS THAT ARE DOCUMENTED HERE**
 >
@@ -9,7 +9,7 @@ THE ADMIN SERVICE
 [TOC bullet hierarchy]
 -----
 
-## FIRST STEPS
+## First Steps
 
 dCache has a powerful administration interface.  Administration protocol is implemented as `admin` cell that
 embeds `ssh` server. Once logged to admin interface an administrator can connect or send commands to other cells
@@ -32,7 +32,7 @@ this domain is called  adminDoorDomain:
 > combination in the `/etc/dcache/dcache.conf`.
 
 
-## ACCESS WITH SSH
+## Access with SSH
 
 The `admin` service embeds `ssh` server listening on port 22224 (configurable) and supports the following authentication mechanisms :
 
@@ -166,7 +166,7 @@ Just adding a user in the `dcache.kpwd` file is not sufficient. The generated us
 See [the section called “Create a new user”](#create-a-new-user) to learn how to create the user in the admin interface and set the rights.
 
 
-## HOW TO USE THE ADMIN INTERFACE
+## Hot to use the Admin Interface
 
 Admin interface allows you to execute shell commands, connect to other cells and execute their supported commands or
 send supported cell commands to other cells. Once logged in you are prompted to use help `Type "\?" for help`.
@@ -354,7 +354,7 @@ pool_2={Tag={{hostname=example.org}};size=0;SC=2.7939677238464355E-4;CC=0.0;}
 
 While the first line for each pool gives the information stored in the cache of the cost module, the second line gives the    costs (SC: [space cost](rf-glossary.md#space-cost), CC: [performance cost](rf-glossary.md#performance-cost)) calculated for a (hypothetical) file of zero size. For details on how these are calculated and their meaning, see [the section called “Classic Partitions”](#config-poolmanager.md#classic-partitions).
 
-## CREATE A NEW USER
+## Creating a new user
 
 To create a new user, <new-user> and set a new password for the user `\c` from the local prompt `((local) admin >)` to the acm, the access control manager, and run following command sequence:
 
@@ -413,7 +413,7 @@ The following command makes a user as powerful as admin (dCache’s equivalent t
 (acm) admin > add access -allowed *.*.* <new-user>
 ```
 
-## DIRECT COMMAND EXECUTION
+## Direct command execution
 
 Admin ssh server allows direct command execution like so:
 
@@ -425,7 +425,7 @@ That is it accepts semicolon (';') separated list of commands. Spaces between co
 separators do not matter.
 
 
-## USE OF THE SSH ADMIN INTERFACE BY SCRIPTS
+## Use of the SSH Admin Interface by scripts
 
 In scripts, one can use a “Here Document” to list the commands, or supply them to `ssh` as standard-input (stdin). The following demonstrates using a Here Document:
 

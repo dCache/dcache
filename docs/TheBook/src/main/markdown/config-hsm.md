@@ -7,7 +7,7 @@ One of the features dCache provides is the ability to migrate files from its dis
 [TOC bullet hierarchy]
 -----
 
-## SCOPE OF THIS CHAPTER
+## Scope of this chapter
 
 This document describes how to enable a standard dCache installation to interact with a Tertiary Storage System. In this description we assume that
 
@@ -17,7 +17,7 @@ This document describes how to enable a standard dCache installation to interact
 
 In general, not all pools need to be configured to interact with the same Tertiary Storage System or with a storage system at all. Furthermore pools can be configured to have more than one Tertiary Storage System attached, but all those cases are not in the scope of the document.
 
-## REQUIREMENTS FOR A TERTIARY STORAGE SYSTEM
+## Requirements for a tertiary storage system
 
 dCache can only drive intelligent Tertiary Storage Systems. This essentially means that tape robot and tape drive operations must be done by the TSS itself and that there is some simple way to abstract the file `PUT, GET and REMOVE` operation.
 
@@ -47,7 +47,7 @@ If dCache needs to restore a file to disk the same `executable` is launched with
 
 Details about [writing an HSM plugin](../cookbook-writing-hsm-plugins/) can be found in the cookbook section of this book.
 
-## Details on the TSS-support EXECUTABLE
+## Details on the TSS-support executable
 
 ### Summary of command line options
 
@@ -229,7 +229,7 @@ entry is a disk-only-option and has to be removed for each pool which
 should be connected to a TSS. This will default the lfs parameter to
 hsm which is exactly what we need.
 
-#### The pool 'setup' file
+#### The pool setup file
 
 The pool 'setup' file is the file `$poolHomeDir/$poolName/setup`. It
 mainly defines 3 details related to TSS connectivity.
