@@ -203,6 +203,9 @@ public class PinRequestProcessor
             } else {
                 selectReadPool(task);
             }
+            if (message.isReplyWhenStarted()) {
+                reply.reply(message);
+            }
         }
 
         return reply;

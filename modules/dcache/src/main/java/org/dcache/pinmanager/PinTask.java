@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.util.Date;
+import java.util.Optional;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
@@ -20,14 +21,14 @@ public class PinTask
     private static final Logger _log = LoggerFactory.getLogger(PinTask.class);
 
     private final PinManagerPinMessage _request;
-    private final MessageReply<PinManagerPinMessage> _reply;
+    private final Optional<MessageReply<PinManagerPinMessage>> _reply;
     private Pin _pin;
     private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 
     public PinTask(PinManagerPinMessage request, MessageReply<PinManagerPinMessage> reply, Pin pin)
     {
         _request = request;
-        _reply = reply;
+        _reply = request.isReplyWhenStarted() ? Optional.empty() : Optional.of(reply);
         _pin = pin;
     }
 
@@ -43,7 +44,7 @@ public class PinTask
 
     public boolean isValidIn(long delay)
     {
-        return _reply.isValidIn(delay);
+        return _reply.map(r -> r.isValidIn(delay)).orElse(Boolean.TRUE);
     }
 
     public PnfsId getPnfsId()
@@ -122,14 +123,16 @@ public class PinTask
 
     public void fail(int rc, String error)
     {
-        _reply.fail(_request, rc, error);
+        _reply.ifPresent(r -> r.fail(_request, rc, error));
         _log.warn("Failed to pin {}: {} [{}]", _pin.getPnfsId(), error, rc);
     }
 
     public void success()
     {
-        _request.setPin(_pin);
-        _reply.reply(_request);
+        _reply.ifPresent(r -> {
+                    _request.setPin(_pin);
+                    r.reply(_request);
+                });
         _log.info("Pinned {} on {} ({})", _pin.getPnfsId(), _pin.getPool(), _pin.getPinId());
     }
 }

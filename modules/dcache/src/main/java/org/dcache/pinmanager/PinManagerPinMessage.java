@@ -26,6 +26,7 @@ public class PinManagerPinMessage extends Message
     private String _pool;
     private final String _requestId;
     private Date _expirationTime;
+    private boolean _replyWhenStarted;
 
     public PinManagerPinMessage(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo,
@@ -36,6 +37,29 @@ public class PinManagerPinMessage extends Message
         _protocolInfo = checkNotNull(protocolInfo);
         _requestId = requestId;
         _lifetime = lifetime;
+    }
+
+    /**
+     * Choose whether to wait for the pin to be established before returning.
+     * If value is true then do not wait for file to be staged, but return
+     * straight away.  Calling getPool, getPinId and getExpirationTime will all
+     * return null, unless this request is a retry and the original request
+     * succeeded (have establishing a pin) in which case the details of that
+     * pin are available through those methods.
+     * <p>
+     * If set to false (the default) then the message returns once the pin
+     * request has been processed and the pin established, or if there was an
+     * some error.
+     * @param value whether to reply after the pinning task has been started.
+     */
+    public void setReplyWhenStarted(boolean value)
+    {
+        _replyWhenStarted = value;
+    }
+
+    public boolean isReplyWhenStarted()
+    {
+        return _replyWhenStarted;
     }
 
     public String getRequestId()
