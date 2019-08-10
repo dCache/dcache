@@ -106,6 +106,7 @@ import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.vehicles.FileAttributes;
 
+
 /**
  * Overrides protected methods so as to be able to provide live locality
  * information if requested; the latter calls the PNFS and Pool managers.
@@ -241,7 +242,20 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
             = new PinManagerPinMessage(FileAttributes.ofPnfsId(inode.getId()),
                     protocolInfo, null, lifetime);
 
-        pinManagerStub.notify(message);
+        message.setReplyWhenStarted(true);
+
+        try {
+            pinManagerStub.sendAndWait(message);
+        } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            /* We "notify" the client that there was a problem pinning the
+             * the file by returning NFSERR_INVAL back to the client.  The Linux
+             * kernel should convert this to an EINVAL response; e.g.,
+             *
+             *     paul@sprocket:/mnt/tape$ touch ".(fset)(test.dat)(pin)(60)"
+             *     touch: setting times of '.(fset)(test.dat)(pin)(60)': Invalid argument
+             */
+            throw new InvalidArgumentChimeraException(e.getMessage());
+        }
     }
 
     /**
@@ -253,7 +267,20 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
         PinManagerUnpinMessage message
             = new PinManagerUnpinMessage(new PnfsId(inode.getId()));
 
-        pinManagerStub.notify(message);
+        try {
+            pinManagerStub.sendAndWait(message);
+        } catch (PermissionDeniedCacheException e) {
+            /* Trigger returning NFSERR_PERM back to client.  The Linux kernel
+             * should convert this to an EPERM response.
+             */
+            throw new PermissionDeniedChimeraFsException(e.getMessage(), e);
+        } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            /* We "notify" the client that there was a problem unpinning the
+             * the file by returning NFSERR_INVAL back to the client.  The Linux
+             * kernel should convert this to an EINVAL response.
+             */
+            throw new InvalidArgumentChimeraException(e.getMessage(), e);
+        }
     }
 
     @Override

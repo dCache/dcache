@@ -28,4 +28,8 @@ public class InvalidArgumentChimeraException extends ChimeraFsException {
     public InvalidArgumentChimeraException(String msg) {
         super(msg);
     }
+
+    public InvalidArgumentChimeraException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }
