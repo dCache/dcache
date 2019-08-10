@@ -48,35 +48,33 @@ public class FsInode_PSET extends FsInode {
     }
 
     @Override
-    public void setStat(Stat newStat) {
-	try {
-	    if (newStat.isDefined(Stat.StatAttributes.MTIME)) {
-		switch (_args[0]) {
-		    case SIZE:
-			Stat s = new Stat();
-			try {
-			    s.setSize(Long.parseLong(_args[1]));
-			} catch (NumberFormatException ignored) {
-			    // Bad values ignored
-			}
-			s.setMTime(newStat.getMTime());
-			_fs.setInodeAttributes(this, 0, s);
-			break;
-		    case IO:
-			_fs.setInodeIo(this, _args[1].equals("on"));
-			break;
-		    case ONLN:
-		    case STG:
-		    case PIN:
-			handlePinRequest();
-			break;
-		    default:
-			break;
-		}
+    public void setStat(Stat newStat) throws ChimeraFsException
+    {
+        if (newStat.isDefined(Stat.StatAttributes.MTIME)) {
+            switch (_args[0]) {
+                case SIZE:
+                    Stat s = new Stat();
+                    try {
+                        s.setSize(Long.parseLong(_args[1]));
+                    } catch (NumberFormatException ignored) {
+                        // Bad values ignored
+                    }
+                    s.setMTime(newStat.getMTime());
+                    _fs.setInodeAttributes(this, 0, s);
+                    break;
+                case IO:
+                    _fs.setInodeIo(this, _args[1].equals("on"));
+                    break;
+                case ONLN:
+                case STG:
+                case PIN:
+                    handlePinRequest();
+                    break;
+                default:
+                    break;
+            }
 
-	    }
-	} catch (ChimeraFsException ignored) {
-	}
+        }
     }
 
     @Override
@@ -127,18 +125,24 @@ public class FsInode_PSET extends FsInode {
         long lifetime;
         TimeUnit unit = TimeUnit.SECONDS;
         if (_args.length > 1) {
-            lifetime = Long.parseLong(_args[1]);
+            try {
+                lifetime = Long.parseLong(_args[1]);
+            } catch (NumberFormatException e) {
+                throw new InvalidArgumentChimeraException("Invalid pin duration: " + e.getMessage());
+            }
             if (lifetime < 0) {
-                throw new ChimeraFsException("Negative values are not allowed;"
-                                + " please use a positive value for pin lifetime,"
-                                + " or 0 to unpin the file");
+                throw new InvalidArgumentChimeraException("Negative pin durations are not allowed");
             }
         } else {
             lifetime = 0;
         }
 
         if (_args.length > 2) {
-            unit = TimeUnit.valueOf(_args[2]);
+            try {
+                unit = TimeUnit.valueOf(_args[2]);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidArgumentChimeraException("Invalid units: " + _args[2]);
+            }
         }
         lifetime = unit.toMillis(lifetime);
 
