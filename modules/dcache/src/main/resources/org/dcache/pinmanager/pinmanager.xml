@@ -91,6 +91,12 @@
         <property name="dao" ref="dao"/>
     </bean>
 
+  <bean id="list-pin-processor" class="org.dcache.pinmanager.ListRequestProcessor">
+      <description>Processes pin list requests</description>
+      <constructor-arg ref="dao"/>
+      <constructor-arg ref="pdp"/>
+  </bean>
+
   <bean id="move-pin-processor" class="org.dcache.pinmanager.MovePinRequestProcessor">
       <description>Processes pin extension requests</description>
       <property name="dao" ref="dao"/>

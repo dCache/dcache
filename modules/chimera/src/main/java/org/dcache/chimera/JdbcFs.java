@@ -890,6 +890,8 @@ public class JdbcFs implements FileSystemProvider {
                     case "checksum":
                     case "checksums":
                         return new FsInode_PCRC(this, inode.ino());
+                    case "pins":
+                        return new FsInode_PINS(this, inode.ino());
                     default:
                         throw new FileNotFoundHimeraFsException(cmd[2]);
                 }
@@ -1413,6 +1415,11 @@ public class JdbcFs implements FileSystemProvider {
     */
     @Override
     public void unpin(FsInode pnfsid) throws ChimeraFsException {
+       throw new ChimeraFsException(NOT_IMPL);
+    }
+
+    @Override
+    public List<PinInfo> listPins(FsInode pnfsid) throws ChimeraFsException {
        throw new ChimeraFsException(NOT_IMPL);
     }
 

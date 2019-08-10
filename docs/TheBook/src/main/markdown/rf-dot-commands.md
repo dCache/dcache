@@ -49,6 +49,54 @@ A comma-delimited list of `type:value` pairs for all checksums stored in the dat
     $ cat ".(get)(test_file-Thu_Oct_23_10:39:37_CDT_2014-109)(checksums)"
     $ ADLER32:66300001
 
+## GET PIN(S)
+
+Get pins on a given file.
+
+### USAGE:
+
+    cat ".(get)(<filename>)(pins)"
+
+##### RETURNS:
+
+A simple table of information about pins.  Each pin is represented by
+a row in the table.  Each row has the following information, separated
+by the tab character:
+
+  * The (dCache internal) numerical ID for this pin.
+  * When the pin was requested in ISO 8601 format.
+  * If the pin will be removed automatically, when this will happen, in
+    ISO 8601 format; or '-' if the pin will not be remove
+    automatically.
+  * The description in quote marks for this pin, if any, otherwise the
+    '-' character.
+  * Whether you can remove this pin: `REMOVABLE` if you can,
+    `NONREMOVABLE` otherwise.
+  * The current status of this pin: either `PINNING`, `PINNED` or
+    `UNPINNING`.
+
+The PINNING status indicates the pin request was accepted but the file
+is not yet guaranteed with ONLINE latency.  The PINNED state indicates
+the file has ONLINE latency.  The UNPINNING state indicates this pin
+no longer guarantees ONLINE latency, but additional clean-up
+processing is ongoing.
+
+##### EXAMPLES:
+
+Response when a file has no pins:
+
+```console-user
+cat ".(get)(my-file.dat)(pins)"
+```
+
+Response showing a file has two pins in state `PINNING`:
+
+```console-user
+cat ".(get)(my-file.dat)(pins)"
+|3       2019-08-11T07:33:30.822Z        2019-08-11T07:35:30.830Z        -       NONREMOVABLE    PINNED
+|4       2019-08-11T07:33:36.946Z        2019-08-11T07:35:36.960Z        -       REMOVABLE       PINNED
+```
+
 ***
 
 #### PIN/STAGE

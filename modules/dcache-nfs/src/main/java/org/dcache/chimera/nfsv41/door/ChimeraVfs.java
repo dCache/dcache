@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -51,6 +52,7 @@ import org.dcache.chimera.FsInode_PARENT;
 import org.dcache.chimera.FsInode_PATHOF;
 import org.dcache.chimera.FsInode_PCRC;
 import org.dcache.chimera.FsInode_PCUR;
+import org.dcache.chimera.FsInode_PINS;
 import org.dcache.chimera.FsInode_PLOC;
 import org.dcache.chimera.FsInode_PSET;
 import org.dcache.chimera.FsInode_SURI;
@@ -676,6 +678,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
             case SURI:
                 inode = new FsInode_SURI(fs, ino);
+                break;
+
+            case PINS:
+                inode = new FsInode_PINS(fs, ino);
                 break;
 
             default:

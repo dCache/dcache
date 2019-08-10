@@ -17,9 +17,11 @@
 package org.dcache.chimera;
 
 import java.io.Closeable;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.dcache.acl.ACE;
@@ -28,6 +30,39 @@ import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 
 public interface FileSystemProvider extends Closeable {
+
+    /** The different possible states of a pin. */
+    public enum PinState {
+        /** Pin request accepted, but not yet fulfilled. */
+        PINNING,
+
+        /** Pin established. */
+        PINNED,
+
+        /** Pin is to be removed. */
+        UNPINNING;
+    }
+
+    /** Information about an individual pin. */
+    public interface PinInfo {
+        /** dCache internal identifier for this pin. */
+        long getId();
+
+        /** When the pin was created. */
+        Instant getCreationTime();
+
+        /** When the pin will be removed, if at all. */
+        Optional<Instant> getExpirationTime();
+
+        /** The current status of this pin. */
+        PinState getState();
+
+        /** A door/user-supplied identifier for this pin. */
+        Optional<String> getRequestId();
+
+        /** Whether the requesting user can unpin this pin. */
+        boolean isUnpinnable();
+    }
 
     FsInode createLink(String src, String dest)
             throws ChimeraFsException;
@@ -365,6 +400,8 @@ public interface FileSystemProvider extends Closeable {
      * @throws ChimeraFsException
      */
     void unpin(FsInode inode) throws ChimeraFsException;
+
+    List<PinInfo> listPins(FsInode inode) throws ChimeraFsException;
 
     enum StatCacheOption
     {

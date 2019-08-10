@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.chimera;
 
 import com.google.common.base.Throwables;
+import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -71,8 +72,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.AccessController;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -92,6 +98,8 @@ import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pinmanager.PinManagerListPinsMessage;
+import org.dcache.pinmanager.PinManagerListPinsMessage.Info;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
@@ -104,7 +112,69 @@ import org.dcache.vehicles.FileAttributes;
  *
  * @author arossi
  */
-public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
+public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
+{
+    public class DcachePinInfo implements PinInfo
+    {
+        private final Instant creation;
+        private final Optional<Instant> expiration;
+        private final PinState state;
+        private final Optional<String> requestId;
+        private final long id;
+        private final boolean isUnpinnable;
+
+        public DcachePinInfo(Info info)
+        {
+            creation = info.getCreationTime();
+            expiration = info.getExpirationTime();
+            state = TO_PIN_STATE.get(info.getState());
+            requestId = info.getRequestId();
+            id = info.getId();
+            isUnpinnable = info.isUnpinnable();
+        }
+
+        @Override
+        public Instant getCreationTime()
+        {
+            return creation;
+        }
+
+        @Override
+        public Optional<Instant> getExpirationTime()
+        {
+            return expiration;
+        }
+
+        @Override
+        public PinState getState()
+        {
+            return state;
+        }
+
+        @Override
+        public Optional<String> getRequestId()
+        {
+            return requestId;
+        }
+
+        @Override
+        public long getId()
+        {
+            return id;
+        }
+
+        @Override
+        public boolean isUnpinnable()
+        {
+            return isUnpinnable;
+        }
+    }
+
+    private static final Map<PinManagerListPinsMessage.State, PinState> TO_PIN_STATE = ImmutableMap.of(
+            PinManagerListPinsMessage.State.PINNING, PinState.PINNING,
+            PinManagerListPinsMessage.State.PINNED, PinState.PINNED,
+            PinManagerListPinsMessage.State.UNPINNING, PinState.UNPINNING);
+
     private CellStub poolManagerStub;
     private CellStub pinManagerStub;
     private CellStub billingStub;
@@ -185,6 +255,22 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
             = new PinManagerUnpinMessage(new PnfsId(inode.getId()));
 
         pinManagerStub.notify(message);
+    }
+
+    @Override
+    public List<PinInfo> listPins(FsInode inode) throws ChimeraFsException
+    {
+        PnfsId pnfsid = new PnfsId(inode.getId());
+        PinManagerListPinsMessage request = new PinManagerListPinsMessage(pnfsid);
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        request.setSubject(subject);
+        try {
+            return pinManagerStub.sendAndWait(request).getInfo().stream()
+                    .map(DcachePinInfo::new)
+                    .collect(Collectors.toList());
+        } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            throw new InvalidArgumentChimeraException(e.getMessage());
+        }
     }
 
     @Override
