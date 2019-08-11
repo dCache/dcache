@@ -241,6 +241,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
         PinManagerPinMessage message
             = new PinManagerPinMessage(FileAttributes.ofPnfsId(inode.getId()),
                     protocolInfo, null, lifetime);
+        message.setSubject(subject);
 
         message.setReplyWhenStarted(true);
 
@@ -266,6 +267,8 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
     public void unpin(FsInode inode) throws ChimeraFsException {
         PinManagerUnpinMessage message
             = new PinManagerUnpinMessage(new PnfsId(inode.getId()));
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        message.setSubject(subject);
 
         try {
             pinManagerStub.sendAndWait(message);
