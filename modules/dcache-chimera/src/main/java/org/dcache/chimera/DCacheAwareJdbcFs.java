@@ -69,6 +69,7 @@ import javax.sql.DataSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.AccessController;
 import java.sql.SQLException;
@@ -230,14 +231,12 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
      * a given file.
      */
     @Override
-    public void pin(FsInode inode, long lifetime) throws ChimeraFsException {
-        /*
-         * TODO improve code to pass in the actual InetAddress of the
-         * client so that link net masks do not interfere; note that SRM uses
-         * "localhost", so it is not a deviation from existing behavior.
-         */
+    public void pin(FsInode inode, long lifetime) throws ChimeraFsException
+    {
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        InetAddress client = Subjects.getOrigin(subject).getAddress();
         ProtocolInfo protocolInfo
-            =  new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress("localhost", 0));
+            =  new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress(client, 0));
         PinManagerPinMessage message
             = new PinManagerPinMessage(FileAttributes.ofPnfsId(inode.getId()),
                     protocolInfo, null, lifetime);
