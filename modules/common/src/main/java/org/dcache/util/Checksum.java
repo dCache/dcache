@@ -62,7 +62,7 @@ public class Checksum  implements Serializable
                 "checksum value \"%s\" contains non-hexadecimal digits", value);
 
         checkArgument(this.value.length() == type.getNibbles(),
-            "%s requires %d hexadecimal digits but \"%s\" has %d",
+            "%s requires %s hexadecimal digits but \"%s\" has %s",
             type.getName(), type.getNibbles(), value, this.value.length());
     }
 
