@@ -170,6 +170,7 @@ public class HttpJsonNode extends PreparationJsonNode
                 case "us-ascii":
                     charset = StandardCharsets.US_ASCII;
                     break;
+                case "utf-8":
                 case "utf8":
                     charset = StandardCharsets.UTF_8;
                     break;
