@@ -10,6 +10,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -44,8 +46,9 @@ public class QosManagement {
     public static final String VOLATILE = "volatile";
     public static final String UNAVAILABLE = "unavailable";
 
-    public static List<String> cdmi_geographic_placement_provided = Arrays.asList("DE");
-
+    @Inject
+    @Named("geographic-placement")
+    private List<String> geographicPlacement;
 
     @GET
     @ApiOperation("List the available quality of services for a specific object "
@@ -129,25 +132,25 @@ public class QosManagement {
             // Set data and metadata for "DISK" QoS
             if (DISK.equals(qosValue)) {
 
-                QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "100");
+                QoSMetadata qoSMetadata = new QoSMetadata("1", geographicPlacement, "100");
                 setBackendCapability(backendCapability, DISK, Arrays.asList(TAPE, DISK_TAPE), qoSMetadata);
             }
             // Set data and metadata for "TAPE" QoS
             else if (TAPE.equals(qosValue)) {
 
-                QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "600000");
+                QoSMetadata qoSMetadata = new QoSMetadata("1", geographicPlacement, "600000");
                 setBackendCapability(backendCapability, TAPE, Arrays.asList(DISK_TAPE), qoSMetadata);
 
             }
             // Set data and metadata for "Disk & TAPE" QoS
             else if (DISK_TAPE.equals(qosValue)) {
 
-                QoSMetadata qoSMetadata = new QoSMetadata("2", cdmi_geographic_placement_provided, "100");
+                QoSMetadata qoSMetadata = new QoSMetadata("2", geographicPlacement, "100");
                 setBackendCapability(backendCapability, DISK_TAPE, Arrays.asList(TAPE), qoSMetadata);
 
             }
             else if (VOLATILE.equals(qosValue)) {
-                QoSMetadata qoSMetadata = new QoSMetadata("0", cdmi_geographic_placement_provided, "100");
+                QoSMetadata qoSMetadata = new QoSMetadata("0", geographicPlacement, "100");
                 setBackendCapability(backendCapability, VOLATILE, Arrays.asList(DISK), qoSMetadata);
             }
             // The QoS is not known or supported.
@@ -201,22 +204,22 @@ public class QosManagement {
             // Set data and metadata for "DISK" QoS
             if (DISK.equals(qosValue)) {
 
-                QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "100");
+                QoSMetadata qoSMetadata = new QoSMetadata("1", geographicPlacement, "100");
                 setBackendCapability(backendCapability, DISK, Arrays.asList(TAPE), qoSMetadata);
             }
             // Set data and metadata for "TAPE" QoS
             else if (TAPE.equals(qosValue)) {
 
-                QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "600000");
+                QoSMetadata qoSMetadata = new QoSMetadata("1", geographicPlacement, "600000");
                 setBackendCapability(backendCapability, TAPE, Arrays.asList(DISK), qoSMetadata);
             }
             // Set data and metadata for "Disk & TAPE" QoS
             else if (DISK_TAPE.equals(qosValue)) {
-                QoSMetadata qoSMetadata = new QoSMetadata("2", cdmi_geographic_placement_provided, "100");
+                QoSMetadata qoSMetadata = new QoSMetadata("2", geographicPlacement, "100");
                 setBackendCapability(backendCapability, DISK_TAPE, Collections.emptyList(), qoSMetadata);
             }
             else if (VOLATILE.equals(qosValue)) {
-                QoSMetadata qoSMetadata = new QoSMetadata("0", cdmi_geographic_placement_provided, "100");
+                QoSMetadata qoSMetadata = new QoSMetadata("0", geographicPlacement, "100");
                 setBackendCapability(backendCapability, VOLATILE, Collections.emptyList(), qoSMetadata);
             }
             // The QoS is not known or supported.
