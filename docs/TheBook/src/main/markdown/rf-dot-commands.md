@@ -117,7 +117,9 @@ Allows users to pin or stage files.
 
 These are equivalent options.
 
-``duration`` must be 0 or a positive integer; 0 will unpin the file.
+``duration`` must be 0 or a positive integer: 0 will unpin all pins
+for which you are authorised to remove, a positive integer will create
+a new pin with that duration.
 
 ``unit`` can be replaced by:
 
@@ -128,21 +130,71 @@ These are equivalent options.
 
 This argument is optional and defaults to ``SECONDS``.
 
+##### USAGE:
+
+A pin is a promise from dCache to store the file on a low-latency
+device, such as a disk.  This is useful if the file would otherwise be
+stored only on a low-latency device (such as tape) or (for a
+distributed dCache deployment) at a remote location.
+
+There are two steps: creating the pin and fulfilling the pin.  This
+touch command is the first step, which triggers the processing
+necessary for the second step.
+
+If dCache did not accept the pin request (due to some internal error)
+then the dCache NFS server will respond with an NFSERR_INVAL error.
+The behaviour of the NFS client is implementation specific, but for a
+Linux mounted filesystem, this is presented as an error; e.g.,
+
+```console-user
+touch '.(fset)(test_file-1.dat)(pin)(60)'
+|touch: setting times of '.(fset)(test_file-1.dat)(pin)(60)': Invalid argument
+echo $?
+|1
+```
+
+If the touch command is successful then no error is returned and the
+return-code is zero:
+
+```console-user
+touch '.(fset)(test_file-1.dat)(pin)(60)'
+echo $?
+|0
+```
+
+The `.(get)(<filename>)(pins)` dot command may be used to track the
+pins progress.  The pin's is initially in state PINNING, but will
+change to state PINNED once the pin has been fulfilled.
+
+You may use a zero duration to remove all pins for which you are
+authorised.  You can remove all pins you created and pins created by
+someone with a primary group of which you are also a member.
+
+Immediately after removing a pin, it has state UNPINNING.  Once all
+processing has completed, the pin will disappear from the pin list.
+
 ##### EXAMPLES:
 
-Pin file for one minute:
+Pin file for 30 seconds:
 
-    $ touch ".(fset)(test_file-Thu_Oct_23_10:39:37_CDT_2014-109)(pin)(60)"
+```console-user
+touch ".(fset)(test_file-1.dat)(pin)(30)"
+```
 
 Pin file for two minutes:
 
-    $ touch ".(fset)(test_file-Thu_Oct_23_10:39:32_CDT_2014-418)(pin)(2)(MINUTES)"
+```console-user
+touch ".(fset)(test_file-1.dat)(pin)(2)(MINUTES)"
+```
 
-Remove pins on the file:
+Remove all pins on the file:
 
-    $ touch ".(fset)(test_file-Thu_Oct_23_10:39:32_CDT_2014-418)(pin)(0)"
+```console-user
+touch ".(fset)(test_file-1.dat)(pin)(0)"
+```
 
-For further explanation of pinning, see [Pinning Files to a Pool](https://www.dcache.org/manuals/Book-2.16/Book-fhs.shtml#cb-pool-pin).
+For further explanation of pinning, see [Pinning Files to a
+Pool](https://www.dcache.org/manuals/Book-2.16/Book-fhs.shtml#cb-pool-pin).
 
 ***
 
