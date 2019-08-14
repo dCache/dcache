@@ -1,11 +1,13 @@
 package org.dcache.restful.qos;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.List;
 
 @ApiModel(description = "Attributes of a specific Quality of Service, based on CDMI specification.")
+@JsonInclude(JsonInclude.Include.NON_EMPTY) // avoid sending empty cdmi_geographic_placement_provided
 public class QoSMetadata {
 
     @ApiModelProperty("Number of copies of each file.")
