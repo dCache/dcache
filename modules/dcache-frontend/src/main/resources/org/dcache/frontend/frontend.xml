@@ -123,6 +123,12 @@
     </property>
   </bean>
 
+  <bean id="geographic-placement" class="com.google.common.collect.ImmutableList"
+	factory-method="copyOf">
+    <description>ISO-3166 identifiers where data may be stored.</description>
+    <constructor-arg value="#{ T(com.google.common.base.Splitter).on(',').trimResults().omitEmptyStrings().splitToList('${frontend.geographic-placement}') }"/>
+  </bean>
+
   <bean id="event-registrar" class="org.dcache.restful.events.Registrar">
     <description>Registrar for clients</description>
     <property name="maximumChannelsPerUser"
