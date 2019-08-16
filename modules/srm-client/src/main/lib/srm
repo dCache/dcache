@@ -77,7 +77,7 @@ if [ "$SRM_CONFIG" = "NONE" ]; then
 fi
 
 if [ -z "$SRM_JAVA_OPTIONS" ]; then
-    SRM_JAVA_OPTIONS="-Xms64m -Xmx178m -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+    SRM_JAVA_OPTIONS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 fi
 
 
