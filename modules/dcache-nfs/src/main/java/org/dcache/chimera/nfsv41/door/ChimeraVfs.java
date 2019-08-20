@@ -44,6 +44,7 @@ import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
+import org.dcache.chimera.FsInode_CKSTYP;
 import org.dcache.chimera.FsInode_CONST;
 import org.dcache.chimera.FsInode_ID;
 import org.dcache.chimera.FsInode_NAMEOF;
@@ -84,18 +85,18 @@ import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.vfs.AclCheckable;
 import org.dcache.nfs.vfs.DirectoryEntry;
-import org.dcache.nfs.vfs.FsStat;
 import org.dcache.nfs.vfs.DirectoryStream;
+import org.dcache.nfs.vfs.FsStat;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_EXTEND;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_MODIFY;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Interface to a virtual file system.
@@ -676,6 +677,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
             case SURI:
                 inode = new FsInode_SURI(fs, ino);
+                break;
+
+            case CKSTYP:
+                inode = new FsInode_CKSTYP(fs, ino);
                 break;
 
             default:
