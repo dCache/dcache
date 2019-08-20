@@ -32,6 +32,25 @@ There are no guarantees concerning future availability of the file; in particula
 
 ***
 
+## GET CHECKSUM TYPES
+
+Get the valid / recognized checksum types for dCache.
+
+### USAGE:
+
+    cat ".(checksums)()"
+
+##### RETURNS:
+
+A new-line delimited list of checksum type names.
+
+##### EXAMPLE:
+
+    $ cat ".(checksums)()"
+    ADLER32
+    MD5
+    MD4
+
 ## GET CHECKSUM(S)
 
 Get checksum types and checksums for a given file.
@@ -42,7 +61,7 @@ Get checksum types and checksums for a given file.
 
 ##### RETURNS:
 
-A comma-delimited list of `type:value` pairs for all checksums stored in the database.  The valid stored checksum types are `ADLER32`, `MD4` and `MD5`.
+A comma-delimited list of `type:value` pairs for all checksums stored in the database.
 
 ##### EXAMPLE:
 

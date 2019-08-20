@@ -848,6 +848,10 @@ public class JdbcFs implements FileSystemProvider {
                 return new FsInode_SURI(this, inode.ino());
             }
 
+            if (name.equals(".(checksums)()")) {
+                return new FsInode_CKSTYP(this, parent.ino());
+            }
+
             if (name.equals(".(tags)()")) {
                 return new FsInode_TAGS(this, parent.ino());
             }

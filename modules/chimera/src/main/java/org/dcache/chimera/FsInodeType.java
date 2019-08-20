@@ -31,7 +31,8 @@ public enum FsInodeType {
     PLOC(10),    // the content of the inode is the value of requested attributes
     PCRC(11),    // the content of the inode is a name-value list of checksum types and checksums
     SURI(12),    // read, write or update/overwrite location info for type TAPE
-    PINS(13);    // the content of the inode is a list of current pins
+    PINS(13),    // the content of the inode is a list of current pins
+    CKSTYP(14);  // the available checksum types
 
     private final int _id;
 
