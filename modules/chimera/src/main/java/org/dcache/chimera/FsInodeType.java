@@ -30,7 +30,8 @@ public enum FsInodeType {
     CONST(9),    // the content of the inode is a free form information
     PLOC(10),    // the content of the inode is the value of requested attributes
     PCRC(11),    // the content of the inode is a name-value list of checksum types and checksums
-    SURI(12);    // read, write or update/overwrite location info for type TAPE
+    SURI(12),    // read, write or update/overwrite location info for type TAPE
+    CKSTYP(13);  // the available checksum types
 
     private final int _id;
 
