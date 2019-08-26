@@ -149,6 +149,7 @@
               value="#{ '${pool.lfs}' == 'volatile' or '${pool.lfs}' == 'transient' }"/>
     <property name="maxDiskSpaceString" value="${pool.size}"/>
     <property name="replicaStore" ref="replica-store"/>
+    <property name="scanThreads" value="${pool.limits.scan-threads}"/>
   </bean>
 
   <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
