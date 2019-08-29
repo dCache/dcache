@@ -880,6 +880,8 @@ cell. It reads additional configuration information from the file
 not necessary to restart the domain when changing the file. We will
 see an example of this below.
 
+[Next](config.md)
+
 <!--
   [???]: #in-install
   [above]: #dcache-unmounted
@@ -899,4 +901,4 @@ see an example of this below.
   [DCAP downloads page]: http://www.dcache.org/downloads/dcap/
   [voms proxy]: #cf-gplazma-certificates-voms-proxy-init
 --!>
-[Next](config.md){: .next}
+
