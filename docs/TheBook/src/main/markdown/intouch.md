@@ -882,6 +882,8 @@ see an example of this below.
 
 [Next](config.md){.next}
 
+ <button class = "next" type="introbutton">[SEE RECIPE](config.md)</button>
+
 <!--
   [???]: #in-install
   [above]: #dcache-unmounted
