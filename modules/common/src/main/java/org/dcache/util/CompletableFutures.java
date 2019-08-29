@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,22 +17,65 @@
  */
 package org.dcache.util;
 
+import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 
 /**
  * Helper class to handle CompletableFuture.
  */
 public class CompletableFutures {
 
-
     private CompletableFutures() {
         // no instance allowed
     }
 
+
+    /**
+     * A ListenableFuture that is wrapped around CompletableFuture.
+     * @param <T> The result type returned by this Future's {@code get} method.
+     */
+    private static class ListenableFutureImpl<T> extends AbstractFuture<T>
+            implements ListenableFuture<T>, BiConsumer<T, Throwable> {
+
+        private final CompletableFuture<T> inner;
+
+        public ListenableFutureImpl(CompletableFuture<T> inner) {
+            this.inner = inner;
+            inner.whenComplete(this);
+        }
+
+        @Override
+        public void accept(T value, Throwable throwable) {
+            if (throwable != null) {
+                if (throwable instanceof CancellationException) {
+                    // interruption flag is not propagated. just be on the safe side...
+                    cancel(false);
+                } else {
+                    setException(throwable);
+                }
+            } else {
+                set(value);
+            }
+        }
+    }
+
+    /**
+     * Create a ListenableFuture from  java 8 CompletableFuture.
+     *
+     * @param completable ListenableFuture to convert.
+     * @return new ListenableFuture.
+     * @param <T> The result type returned by this Future's {@code get} method
+     */
+    public static <T> ListenableFuture<T> fromCompletableFuture(CompletableFuture<T> completable) {
+        return new ListenableFutureImpl<>(completable);
+    }
 
     /**
      * Create a CompletableFuture from guava's ListenableFuture to
