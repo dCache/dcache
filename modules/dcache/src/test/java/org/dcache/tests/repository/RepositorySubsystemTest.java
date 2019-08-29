@@ -206,6 +206,7 @@ public class RepositorySubsystemTest
         repository.setSpaceSweeperPolicy(sweeper);
         repository.setMaxDiskSpace(new DiskSpace(repoSize));
         repository.addFaultListener(event -> System.err.println(event.getMessage() + ": " + event.getCause()));
+        repository.setScanThreads(1);
     }
 
     @Before
