@@ -71,3 +71,6 @@ dCache will connect to one of the configured ZooKeeper servers. If it is unavail
     28 Apr 2016 13:02:27 (System) [] ZooKeeper connection to localhost/127.0.0.1:2181 failed (Connection refused), attempting reconnect.
 
 This may even happen with a single server deployment if that server is unavailable. In particular if embedding ZooKeeper inside a dCache service, such messages will occur in the log whenever the domain hosting ZooKeeper is starting or stopping (see aforementioned issue about chickens and eggs).
+
+[next] (config-chimera.md): .next_button}
+
