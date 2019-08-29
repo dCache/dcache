@@ -880,7 +880,7 @@ cell. It reads additional configuration information from the file
 not necessary to restart the domain when changing the file. We will
 see an example of this below.
 
-[Next](config.md){: .next}
+[Next](config.md){.next}
 
 <!--
   [???]: #in-install
