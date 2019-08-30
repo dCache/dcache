@@ -2,7 +2,6 @@ package dmg.cells.nucleus ;
 
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -184,7 +184,7 @@ public class      SystemCell
     {
         /* We log the completion of cell shutdown from a listener.
          */
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         Function<String, Runnable> listeners =
                 name -> () -> {
                     long time = System.currentTimeMillis() - start;
@@ -197,24 +197,25 @@ public class      SystemCell
 
         /* Kill all the cells.
          */
-        Map<String, ListenableFuture<?>> futures = cells.stream().collect(toMap(name -> name, _nucleus::kill));
+        Map<String, CompletableFuture<?>> futures = cells.stream().collect(toMap(name -> name, _nucleus::kill));
 
         /* And attach the listener.
          */
-        futures.forEach((name, future) -> future.addListener(listeners.apply(name), MoreExecutors.directExecutor()));
+        futures.forEach((name, future) -> future.thenRunAsync(listeners.apply(name), MoreExecutors.directExecutor()));
 
         /* Now wait.
          */
         try {
+            CompletableFuture<Void>[]  futuresAsArray = futures.values().toArray(new CompletableFuture[0]);
             try {
-                Futures.successfulAsList(futures.values()).get(softTimeout, TimeUnit.MILLISECONDS);
+                CompletableFuture.allOf(futuresAsArray).get(softTimeout, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
                 futures.forEach((name, future) -> {
                     if (!future.isDone()) {
                         _log.warn("Still waiting for {} to shut down.", name);
                     }
                 });
-                Futures.successfulAsList(futures.values()).get(hardTimeout - softTimeout, TimeUnit.MILLISECONDS);
+                CompletableFuture.allOf(futuresAsArray).get(hardTimeout - softTimeout, TimeUnit.MILLISECONDS);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

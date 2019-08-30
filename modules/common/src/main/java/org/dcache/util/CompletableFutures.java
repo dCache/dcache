@@ -110,4 +110,16 @@ public class CompletableFutures {
         return completable;
     }
 
+    /**
+     * Create CompletableFuture that is completed exceptionally.
+     * @param <T> The result type returned by this Future's {@code get} method
+     * @param t the throwable.
+     * @return exceptionally completed future.
+     */
+     // Revisit: drop after java9+ migration.
+    public static <T> CompletableFuture<T> failedFuture(Throwable t) {
+        final CompletableFuture<T> completable = new CompletableFuture<>();
+        completable.completeExceptionally(t);
+        return completable;
+    }
 }

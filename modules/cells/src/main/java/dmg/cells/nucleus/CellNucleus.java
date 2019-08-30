@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -618,7 +619,7 @@ public class CellNucleus implements ThreadFactory
      * thread. So on return of this method the cell may
      * or may not be alive.
      */
-    public ListenableFuture<?> kill()
+    public CompletableFuture<?> kill()
     {
         return __cellGlue.kill(this);
     }
@@ -630,7 +631,7 @@ public class CellNucleus implements ThreadFactory
      * thread. So on return of this method the cell may
      * or may not be alive.
      */
-    public ListenableFuture<?> kill(String cellName)
+    public CompletableFuture<?> kill(String cellName)
     {
         return __cellGlue.kill(this, cellName);
     }

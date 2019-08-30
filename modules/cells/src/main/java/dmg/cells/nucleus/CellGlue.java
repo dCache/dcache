@@ -2,8 +2,6 @@ package dmg.cells.nucleus;
 
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -25,6 +23,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -35,6 +34,7 @@ import dmg.util.TimebasedCounter;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
+import static org.dcache.util.CompletableFutures.failedFuture;
 
 class CellGlue
 {
@@ -45,7 +45,7 @@ class CellGlue
     private final String _cellDomainName;
     private final ConcurrentMap<String, CellNucleus> _cellList = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CellNucleus> _publicCellList = new ConcurrentHashMap<>();
-    private final ConcurrentMap<CellNucleus, ListenableFuture<?>> _killedCells = new ConcurrentHashMap<>();
+    private final ConcurrentMap<CellNucleus, CompletableFuture<?>> _killedCells = new ConcurrentHashMap<>();
     private final Map<String, Object> _cellContext =
             new ConcurrentHashMap<>();
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
@@ -294,16 +294,17 @@ class CellGlue
         return _cellDomainName;
     }
 
-    ListenableFuture<?> kill(CellNucleus nucleus)
+    CompletableFuture<?> kill(CellNucleus nucleus)
     {
         return kill(nucleus, nucleus);
     }
 
-    ListenableFuture<?> kill(CellNucleus sender, String cellName)
+    CompletableFuture<?> kill(CellNucleus sender, String cellName)
     {
         CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus == null) {
-            return Futures.immediateFailedFuture(new NoSuchElementException("No such cell: " + cellName));
+            // REVISIT: Java 9+
+            return failedFuture(new NoSuchElementException("No such cell: " + cellName));
         }
         return kill(sender, nucleus);
     }
@@ -430,12 +431,13 @@ class CellGlue
         notifyAll();
     }
 
-    private synchronized ListenableFuture<?> kill(CellNucleus source, CellNucleus destination)
+    private synchronized CompletableFuture<?> kill(CellNucleus source, CellNucleus destination)
     {
         String cellToKill = destination.getCellName();
 
         if (_cellList.get(cellToKill) != destination) {
-            return Futures.immediateFailedFuture(new NoSuchElementException("No such cell: " + cellToKill));
+            // REVISIT: Java 9+
+            return failedFuture(new NoSuchElementException("No such cell: " + cellToKill));
         }
 
         /* Mark the cell as being killed to prevent it from being killed more
@@ -444,7 +446,7 @@ class CellGlue
         return _killedCells.computeIfAbsent(destination, d -> doKill(source, d));
     }
 
-    private synchronized ListenableFuture<?> doKill(CellNucleus source, CellNucleus destination)
+    private synchronized CompletableFuture<?> doKill(CellNucleus source, CellNucleus destination)
     {
         String cellToKill = destination.getCellName();
 
@@ -473,12 +475,12 @@ class CellGlue
          */
         Runnable command = () -> destination.shutdown(killEvent);
         try {
-            return _killerExecutor.submit(command);
+            return CompletableFuture.runAsync(command, _killerExecutor);
         } catch (OutOfMemoryError e) {
             /* This can signal that we cannot create any more threads. The emergency
              * pool has one thread preallocated for this situation.
              */
-            return _emergencyKillerExecutor.submit(command);
+            return CompletableFuture.runAsync(command, _emergencyKillerExecutor);
         }
     }
 
