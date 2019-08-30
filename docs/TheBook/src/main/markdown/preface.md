@@ -107,13 +107,13 @@ cookbooks for standard tasks.
 
 Here is an overview part by part:
 
-Part 1, Getting started: This part introduces you to the cell and domain
+[Part 1, Getting started:](start.md) This part introduces you to the cell and domain
 concepts in dCache. It provides a detailed description of installing, the basic
 configuration, and upgrading dCache.
 
-Part 2, Configuration of dCache: Within this part the configuration of several
+[Part 2, Configuration of dCache:](config.md) Within this part the configuration of several
 additional features of dCache is described. They are not necessary to run dCache
 but will be needed by some users depending on their requirements.
 
-Part 3, Cookbook: This part comprises guides for specific tasks a system
+[Part 3, Cookbook:](cookbook.md) This part comprises guides for specific tasks a system
 administrator might want to perform.
