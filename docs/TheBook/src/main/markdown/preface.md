@@ -1,7 +1,7 @@
 Preface
 =======
 
-## Welcome to dCache.
+## Welcome to dCache
 
 dCache is a distributed storage system proven to scale to hundreds of Petabytes.
 Originally conceived as a disk cache (hence the name) in front of a tertiary storage to
@@ -36,17 +36,12 @@ to manage data as well as data flows.
 
 dCache supports the following I/O (and data management) protocols:
 
--   **dCap**
-
--   **FTP** (including **GridFTP**)
-
--   **HTTP** (and **WEBDAV**)
-
--   **NFS** (parallel NFSv4)
-
--   **SRM**
-
--   **XRootD**
+- **dCap**
+- **FTP** (including **GridFTP**)
+- **HTTP** (and **WEBDAV**)
+- **NFS** (parallel NFSv4)
+- **SRM**
+- **XRootD**
 
 ### Authentication and Authorization
 
@@ -59,39 +54,33 @@ based file/directory authorization.
 
 ### Other features
 
--   Resilience and high availability can be configured by enabling multiple
-    file replicas and flexible variety of replica placement policies.
+- Resilience and high availability can be configured by enabling multiple file   replicas and flexible variety of replica placement policies.
 
--   Easy migration of data via the migration module.
+- Easy migration of data via the migration module.
 
--   The "billing" system provides a  powerful cost calculation system
-    that allows to control the data flow
-    (reading and writing from/to data servers, between data servers and
-    also between data servers and tape).
+- The "billing" system provides a  powerful cost calculation system that allows to control the data flow (reading and writing from/to data servers, between data servers and also between data servers and tape).
 
--   Load balancing and performance tuning by hot pool replication (via cost
-    calculation and replicas created by pool-to-pool-transfers).
+- Load balancing and performance tuning by hot pool replication (via cost calculation and replicas created by pool-to-pool-transfers).
 
--   Space management and support for space tokens.
+- Space management and support for space tokens.
 
--   Detailed logging and debugging as well as accounting and statistics.
+- Detailed logging and debugging as well as accounting and statistics.
 
--   XML information provider with detailed live information about the system.
+- XML information provider with detailed live information about the system.
 
--   Scriptable adminstration interface with a terminal-based front-end.
+- Scriptable adminstration interface with a terminal-based front-end.
 
--   Web-interface with live information of the most important information.
+- Web-interface with live information of the most important information.
 
--   Automatic checksumming for data integrity.
-
+- Automatic checksumming for data integrity.
 
 ## Minimum System Requirements
 
 For a minimal test installation:
 
--   Hardware: contemporary CPU, 1 GiB of RAM , 500 MiB free hard disk space
+- Hardware: contemporary CPU, 1 GiB of RAM , 500 MiB free hard disk space
 
--   Software: OpenJDK 8 or later, Postgres SQL Server (9.6 or later)
+- Software: OpenJDK 8 or later, Postgres SQL Server (9.6 or later)
 
 For high performance production scenarios, the hardware requirements greatly
 differ, which makes it impossible to provide such parameters here. However, if
