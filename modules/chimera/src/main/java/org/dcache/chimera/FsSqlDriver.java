@@ -1475,6 +1475,7 @@ public class FsSqlDriver {
                          ps.setLong(4, inode.ino());
                          ps.setInt(5, type);
                      });
+        setInodeAttributes(inode, 0, new Stat());
     }
 
     /**
@@ -1506,6 +1507,7 @@ public class FsSqlDriver {
         } else {
             _jdbc.update("DELETE FROM t_inodes_checksum WHERE inumber=?", inode);
         }
+        setInodeAttributes(inode, 0, new Stat());
     }
 
     /**

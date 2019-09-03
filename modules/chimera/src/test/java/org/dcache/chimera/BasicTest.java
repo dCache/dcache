@@ -704,6 +704,42 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertHasChecksum(new Checksum(ChecksumType.getChecksumType(1), sum), fileInode);
     }
 
+    @Test
+    public void testCtimeOnUpdateChecksum() throws Exception {
+        String sum = "abc";
+
+        FsInode base = _rootInode.mkdir("junit");
+        FsInode fileInode = base.create("testCreateFile", 0, 0, 0644);
+        Stat stat = fileInode.stat();
+        long before = stat.getCTime();
+        long genBefore = stat.getGeneration();
+        Thread.sleep(100);
+        _fs.setInodeChecksum(fileInode, 1, sum);
+        stat = fileInode.stat();
+        long after = stat.getCTime();
+        long genAfter = stat.getGeneration();
+        assertNotEquals("ctime was not updated", before, after);
+        assertNotEquals("generation was not updated", genBefore, genAfter);
+    }
+
+    @Test
+    public void testCtimeOnRemoveChecksum() throws Exception {
+        String sum = "abc";
+
+        FsInode base = _rootInode.mkdir("junit");
+        FsInode fileInode = base.create("testCreateFile", 0, 0, 0644);
+        Stat stat = fileInode.stat();
+        long before = stat.getCTime();
+        long genBefore = stat.getGeneration();
+        Thread.sleep(100);
+        _fs.removeInodeChecksum(fileInode, 1);
+        stat = fileInode.stat();
+        long after = stat.getCTime();
+        long genAfter = stat.getGeneration();
+        assertNotEquals("ctime was not updated", before, after);
+        assertNotEquals("generation was not updated", genBefore, genAfter);
+    }
+
     @Ignore("Functionality not yet written, but desired")
     @Test
     public void testUpdateChecksumDifferTypes() throws Exception {
