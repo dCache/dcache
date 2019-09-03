@@ -129,6 +129,7 @@ public final class LocationSelector {
     }
 
     public String selectRemoveTarget(FileOperation operation,
+                                     Collection<String> sticky,
                                      Collection<String> locations,
                                      Collection<String> tags)
                     throws LocationSelectionException {
@@ -136,7 +137,7 @@ public final class LocationSelector {
                      operation.getPnfsId(),
                      locations,
                      tags);
-        if (locations.size() == 1) {
+        if (sticky.size() == 1) {
             String message = String.format("Remove replica was selected, but "
                                             + "the principal pool %s is the "
                                             + "only location; this is a bug.",
