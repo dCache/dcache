@@ -7,6 +7,7 @@ import javax.annotation.concurrent.GuardedBy;
 
 import java.io.PrintWriter;
 import java.nio.file.OpenOption;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -15,14 +16,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -135,6 +146,18 @@ public class ReplicaRepository
      */
     private final Set<PnfsId> _removable =
         Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+     /**
+     * Threads pool size to scan the repository to check metadata.
+     */
+    private Integer scanThreads = 1;
+
+     /**
+     * workQueue attributes to scan the repository to check metadata.
+     */
+    private int _workQueueCapacity = 10000;
+    private long _workQueuekeepAliveTime = 60;
+    private TimeUnit _workQueueTimeUnit =  TimeUnit.SECONDS;
 
     /** Executor for periodic tasks. */
     @GuardedBy("_stateLock")
@@ -258,6 +281,17 @@ public class ReplicaRepository
             _stateLock.readLock().unlock();
         }
     }
+
+    public Integer getscanThreads()
+    {
+        return scanThreads;
+    }
+
+    public void setScanThreads(Integer scanThreads)
+    {
+        this.scanThreads = scanThreads;
+    }
+
 
     /**
      * Get pool name to which repository belongs.
@@ -496,11 +530,25 @@ public class ReplicaRepository
         }
     }
 
+    private PnfsId loadRecord(PnfsId id)
+            throws CacheException, IllegalStateException,
+            InterruptedException {
+        ReplicaRecord entry = readReplicaRecord(id);
+        if (entry != null) {
+            ReplicaState state = entry.getState();
+            LOGGER.debug("{} {}", id, state);
+        }
+        // Lazily check if repository was closed
+        if (_state != State.LOADING) {
+            throw new IllegalStateException("Repository was closed during loading.");
+        }
+        return id;
+    }
+
     @Override
     public void load()
-        throws CacheException, IllegalStateException,
-               InterruptedException
-    {
+            throws CacheException, IllegalStateException,
+            InterruptedException {
         if (!compareAndSetState(State.INITIALIZED, State.LOADING)) {
             throw new IllegalStateException("Can only load repository after initialization and only once.");
         }
@@ -509,24 +557,56 @@ public class ReplicaRepository
             _store.init();
 
             Collection<PnfsId> ids = _store.index();
-
             int fileCount = ids.size();
-            LOGGER.info("Checking meta data for {} files.", fileCount);
-            int cnt = 0;
-            for (PnfsId id: ids) {
-                ReplicaRecord entry = readReplicaRecord(id);
-                if (entry != null)  {
-                    ReplicaState state = entry.getState();
-                    LOGGER.debug("{} {}", id, state);
-                }
-                _initializationProgress = ((float) cnt) / fileCount;
-                cnt++;
 
-                // Lazily check if repository was closed
-                if (_state != State.LOADING) {
-                    throw new IllegalStateException("Repository was closed during loading.");
+            LOGGER.info("Checking meta data for {} files with {} threads.", fileCount, scanThreads);
+            int cnt = 0;
+            if (scanThreads == 1) {
+                for (PnfsId id : ids) {
+                    loadRecord(id);
+                    _initializationProgress = ((float) ++cnt) / fileCount;
                 }
+            } else {
+                BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(_workQueueCapacity);
+                ThreadPoolExecutor scanExecutor = new ThreadPoolExecutor(1, scanThreads, _workQueuekeepAliveTime, _workQueueTimeUnit, workQueue);
+                CompletionService<PnfsId> completionService = new ExecutorCompletionService<PnfsId>(scanExecutor);
+                Set<Future<PnfsId>> futures = new HashSet<Future<PnfsId>>();
+
+                for (PnfsId id : ids) {
+
+                    ArrayList<Future<PnfsId>> completedFutures = new ArrayList<Future<PnfsId>>();
+                    while (true) {
+                        try {
+                            futures.add(completionService.submit(() -> {
+                                return loadRecord(id);
+                            }));
+                            break;
+                        } catch (RejectedExecutionException e) {
+                            completedFutures.add(completionService.take());
+                        }
+                    }
+
+                    while (completedFutures.size() > 0 || (futures.size() + cnt == fileCount && futures.size() > 0)) {
+
+                        Future<PnfsId> future = completionService.poll();
+                        if (future != null) {
+                            completedFutures.add(future);
+                        }
+                        if (completedFutures.size() > 0) {
+                            future = completedFutures.remove(0);
+                            futures.remove(future);
+                            try {
+                                future.get();
+                                _initializationProgress = ((float) ++cnt) / fileCount;
+                            } catch (ExecutionException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                }
+                scanExecutor.shutdown();
             }
+            LOGGER.debug("Checked meta data for {} % of the files.", _initializationProgress);
 
             _stateLock.writeLock().lock();
             try {
