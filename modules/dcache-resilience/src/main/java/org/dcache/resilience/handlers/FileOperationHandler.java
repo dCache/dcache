@@ -1129,6 +1129,7 @@ public class FileOperationHandler implements CellMessageSender {
                     Set<String> removable = verifier.areRemovable(sticky,
                                                                   verified);
                     target = locationSelector.selectRemoveTarget(operation,
+                                                                 sticky,
                                                                  removable,
                                                                  tags);
                 }
