@@ -4,37 +4,32 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
+import javax.annotation.concurrent.Immutable;
 
 /**
- * uoid is the 'Unique Message Identifier'.
- *
+ * Unique message object identifier.
  *
  * @author Patrick Fuhrmann
  * @version 0.1, 15 Feb 1998
  *
- * WARNING : This Class is designed to be immutable. All other class rely on that
- * fact and a lot of things may fail at runtime if this design item is changed.
  */
-
+@Immutable
 public final class UOID implements Serializable, Cloneable {
 
     private static final long serialVersionUID = -5940693996555861085L;
 
-    private static final AtomicLong __counter = new AtomicLong(100);
-
+    // keep fields names for backward compatibility.
     private final long _counter;
     private final long _time;
 
     /**
-     * The constructor creates an instance of an uoid which is assumed to be
-     * different from all other uoid's created before that time and after. This
-     * behavior is guaranteed for all uoids created inside of one virtual
-     * machine and very likely for all others.
+     * Create globally unique message object identifier.
      */
     public UOID() {
-        _time = System.currentTimeMillis();
-        _counter = __counter.incrementAndGet();
+        UUID uuid = UUID.randomUUID();
+        _time = uuid.getMostSignificantBits();
+        _counter = uuid.getLeastSignificantBits();
     }
 
     UOID(long counter, long time)
@@ -49,17 +44,11 @@ public final class UOID implements Serializable, Cloneable {
         return this;
     }
 
-    /**
-     * creates a hashcode which is more optimal then the object hashCode.
-     */
     @Override
     public int hashCode() {
-        return (int) _counter;
+        return Long.hashCode(_counter);
     }
 
-    /**
-     * compares two uoids and overwrites Object.equals.
-     */
     @Override
     public boolean equals(Object x) {
         if( x == this ) {
