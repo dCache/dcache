@@ -290,6 +290,17 @@ public interface FileSystemProvider extends Closeable {
     void setTagMode(FsInode_TAG tagInode, String name, int mode) throws ChimeraFsException;
 
     /**
+     * Update all subdirectories of {@code inode} with a given tag. The tag should
+     * exist in the specified directory. It's not required that directory is the
+     * origin of the tag.
+     * @param inode The inode of the directory.
+     * @param tagName The name of the tag.
+     * @return number of updated subdirectories.
+     * @throws ChimeraFsException if there is any problem
+     */
+    public int pushTag(FsInode inode, String tagName) throws ChimeraFsException;
+
+    /**
      * Find a list of origin tags that have the supplied name.  Origin tags are
      * those tags explicitly created in the namespace.  Tags that are inherited
      * automatically are not origin tags and are not include in the response.

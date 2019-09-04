@@ -780,6 +780,25 @@ public class Shell extends ShellApplication
         }
     }
 
+    @Command(name = "pushtag", hint = "push tag into all subdirectories",
+            description = "Pushes given tag that exist in specified direcotry"
+                    + "down in the directory tree into all subdirectories.")
+    public class PushTagCommand implements Callable<Serializable> {
+
+        @Argument(index = 0)
+        File path;
+
+        @Argument(index = 1)
+        String tag;
+
+        @Override
+        public Serializable call() throws ChimeraFsException {
+            FsInode inode = lookup(path);
+            int n = fs.pushTag(inode, tag);
+            return n + " sub-directories updated";
+        }
+    }
+
     @Command(name = "setfacl", hint = "change access control lists",
              description = "Sets a new ACL consisting of one or more ACEs to a resource (a file or directory), " +
                      "which is defined by its pnfsId or globalPath.\n\n" +
