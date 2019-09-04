@@ -1318,7 +1318,7 @@ public class RequestContainerV5
         //         (bestPool=0)
         //
         //         -> _hasHsmBackend : STAGE
-        //              else         : Suspended (1010, pool unavailable)
+        //              else         : Suspended (CacheException.POOL_UNAVAILABLE, pool unavailable)
         //
         //      RequestStatusCode.NOT_PERMITTED :
         //
@@ -1463,7 +1463,7 @@ public class RequestContainerV5
                        }else{
                           _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
                           _poolCandidate = null ;
-                          setError(1010, "Pool unavailable");
+                          setError(CacheException.POOL_UNAVAILABLE, "Pool unavailable");
                           suspendIfEnabled("Suspended (pool unavailable)");
                        }
                        if (_sendHitInfo && _poolCandidate == null) {

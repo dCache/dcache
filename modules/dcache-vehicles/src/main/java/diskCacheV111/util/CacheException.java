@@ -24,6 +24,9 @@ public class CacheException extends Exception
     /** File is broken on a tape, can't be staged */
     public static final int BROKEN_ON_TAPE = 243;
 
+    /** All pools with requested file unavailable */
+    public static final int POOL_UNAVAILABLE = 1010;
+
     /** Usually followed by component shutdown. */
     public static final int PANIC = 10000;
 
@@ -114,8 +117,15 @@ public class CacheException extends Exception
      */
     public static final int SERVICE_UNAVAILABLE = 10023;
 
-
+    /**
+     * No matching link for given request.
+     */
     public static final int NO_POOL_CONFIGURED = 10024;
+
+    /**
+     * All configured pools are off-line (all pools in the matching link
+     * are down).
+     */
     public static final int NO_POOL_ONLINE = 10025;
 
     /** Selected pool failed for third-party copy. */
