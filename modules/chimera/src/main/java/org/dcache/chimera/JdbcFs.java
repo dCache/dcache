@@ -1180,6 +1180,11 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
+    public int pushTag(FsInode inode, String tagName) throws ChimeraFsException {
+        return inTransaction(status -> _sqlDriver.pushTag(inode, tagName));
+    }
+
+    @Override
     public int setTag(FsInode inode, String tagName, byte[] data, int offset, int len) throws ChimeraFsException {
         return inTransaction(status -> _sqlDriver.setTag(inode, tagName, data, offset, len));
     }

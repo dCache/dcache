@@ -1237,6 +1237,47 @@ public class FsSqlDriver {
                 .collect(Collectors.toList());
     }
 
+    int pushTag(FsInode dir, String tagName) throws FileNotFoundHimeraFsException {
+        final String pushStatement
+                = "WITH RECURSIVE v_subtree (iparent, ichild, iname, idepth) AS (\n"
+                + "    SELECT iparent, ichild, iname, 0 FROM t_dirs where iparent = ?\n"
+                + "    UNION ALL\n"
+                + "        SELECT e.iparent, e.ichild , e.iname, s.idepth + 1 FROM t_dirs e\n"
+                + "            INNER JOIN v_subtree s ON s.ichild = e.iparent\n"
+                + ")\n"
+                + "SELECT c.ichild FROM v_subtree c , t_inodes WHERE"
+                + "     c.ichild = t_inodes.inumber AND t_inodes.itype = 16384";
+
+        Long tagid = getTagId(dir, tagName);
+        if (tagid == null) {
+            throw new FileNotFoundHimeraFsException(tagName);
+        }
+
+        List<Long> subtrees = _jdbc.queryForList(pushStatement, Long.class, dir.ino());
+
+        subtrees.forEach(id -> {
+            Long t = _jdbc.query("SELECT itagid FROM t_tags WHERE inumber=? AND itagname=?",
+                    ps -> {
+                        ps.setLong(1, id);
+                        ps.setString(2, tagName);
+                    },
+                    rs -> rs.next() ? rs.getLong("itagid") : null);
+
+            if (t != null) {
+                int n = _jdbc.update("DELETE FROM t_tags WHERE inumber=? AND itagname=?", id, tagName);
+                if (n > 0) {
+                    decTagNlinkOrRemove(t);
+                }
+            }
+
+            _jdbc.update("INSERT INTO t_tags (inumber,itagid,isorign,itagname) VALUES (?, ?, 0, ?)",
+                     id, tagid, tagName);
+        });
+
+        _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + ? WHERE itagid=?", subtrees.size(), tagid);
+        return subtrees.size();
+    }
+
     void incTagNlink(long tagId) {
         _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid=?", tagId);
     }

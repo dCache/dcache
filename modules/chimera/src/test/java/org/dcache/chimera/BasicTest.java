@@ -1277,6 +1277,27 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
+    public void testPushTag() throws Exception {
+
+        FsInode top = _rootInode.mkdir("top");
+        String tagName = "aTag";
+
+        FsInode d = top;
+        for (int i = 0; i < 10; i++) {
+            d = d.mkdir(Integer.toString(i));
+        }
+
+        byte[] tagData = "some random tag".getBytes(StandardCharsets.UTF_8);
+        _fs.createTag(top, tagName);
+        _fs.setTag(top, tagName, tagData, 0, tagData.length);
+
+        assertArrayEquals(new String[0], _fs.tags(d));
+
+        _fs.pushTag(top, tagName);
+        assertArrayEquals(new String[] {tagName}, _fs.tags(d));
+    }
+
+    @Test
     public void testTashTimestampOnRemove() throws Exception {
         final String name = "testTashTimestampOnRemove";
         FsInode inode = _rootInode.create(name, 0, 0, 0644);
