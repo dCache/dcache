@@ -1318,6 +1318,7 @@ public class Transfer implements Comparable<Transfer>
                             _log.error(t.getMessage());
                             return immediateFailedFuture(t);
                         case CacheException.NO_POOL_ONLINE:
+                        case CacheException.POOL_UNAVAILABLE:
                             _log.warn(t.getMessage());
                             break;
                         case CacheException.PERMISSION_DENIED:
