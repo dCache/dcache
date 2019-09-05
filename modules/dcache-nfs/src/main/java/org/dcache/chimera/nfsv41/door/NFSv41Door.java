@@ -1296,7 +1296,19 @@ public class NFSv41Door extends AbstractCellComponent implements
                 throw new LayoutTryLaterException("Waiting for pool to become ready.");
             }
 
-            return selectDataServers(timeout);
+            try {
+                return selectDataServers(timeout);
+            } catch (InterruptedException | ExecutionException
+                    | TimeoutException | CacheException | ChimeraNFSException e) {
+
+                // failed without any pool has been selected.
+                // Depending on the error client may re-try the requests.
+                if (_redirectFuture.isDone() && getPool() == null) {
+                    _redirectFuture = null;
+                }
+
+                throw e;
+            }
         }
 
         /**
