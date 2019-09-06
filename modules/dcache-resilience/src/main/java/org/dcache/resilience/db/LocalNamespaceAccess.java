@@ -71,7 +71,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -111,6 +113,16 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                                     + "WHERE l.inumber = n.inumber "
                                     + "AND l.itype = 1 AND n.iaccess_latency = 1 "
                                     + "AND l.ilocation = ?";
+
+    static final String SQL_GET_CONTAINED_IN
+                    = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
+                                    + "WHERE n.inumber = l.inumber "
+                                    + "AND l.ilocation IN (%s) "
+                                    + "AND NOT EXISTS "
+                                    + "(SELECT n1.ipnfsid FROM t_locationinfo l1, t_inodes n1 "
+                                    + "WHERE n.inumber = l1.inumber "
+                                    + "AND n.inumber = n1.inumber "
+                                    + "AND l1.ilocation NOT IN (%s))";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNamespaceAccess.class);
 
@@ -155,6 +167,26 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             throw new CacheException(CacheException.RESOURCE,
                             String.format("Could not handle pnfsids for %s",
                                             location), e);
+        }
+    }
+
+    @Override
+    public void printContainedInFiles(List<String> locations,
+                                      PrintWriter printWriter)
+                    throws CacheException, InterruptedException {
+        try {
+            Connection connection = getConnection();
+            try {
+                printResults(connection, locations, printWriter);
+            } catch (SQLException e) {
+                throw new IOHimeraFsException(e.getMessage());
+            } finally {
+                tryToClose(connection);
+            }
+        } catch (IOHimeraFsException e) {
+            throw new CacheException(CacheException.RESOURCE,
+                                     String.format("Could not handle pnfsids for %s",
+                                                   locations), e);
         }
     }
 
@@ -340,5 +372,53 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         }
 
         LOGGER.info("Printing of inaccessible files for {} completed.", location);
+    }
+
+    private void printResults(Connection connection,
+                              List<String> locations,
+                              PrintWriter writer)
+                    throws SQLException, InterruptedException {
+        String placeholders = String.join(",", locations.stream()
+                        .map(l -> "?").collect(Collectors.toList()));
+
+        String query = String.format(SQL_GET_CONTAINED_IN,
+                                     placeholders,
+                                     placeholders);
+
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        int len = locations.size();
+
+        try {
+            statement = connection.prepareStatement(query);
+            for (int i = 1; i <= len; ++i) {
+                statement.setString(i, locations.get(i-1));
+                statement.setString(i+len, locations.get(i-1));
+            }
+            statement.setFetchSize(fetchSize);
+
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+
+            LOGGER.info("executing {}.", statement);
+            resultSet = statement.executeQuery();
+
+            LOGGER.info("starting check of pnfsids for {}.", locations);
+
+            while (resultSet.next()) {
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+
+                PnfsId pnfsId = new PnfsId(resultSet.getString(1));
+                writer.println(pnfsId);
+            }
+        } finally {
+            tryToClose(resultSet);
+            tryToClose(statement);
+        }
+
+        LOGGER.info("Printing of contained files for {} completed.", locations);
     }
 }

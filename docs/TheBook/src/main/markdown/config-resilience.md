@@ -319,45 +319,54 @@ overview and a few examples of output.
     handling; enable and disable all of Resilience without having to stop the
     domain.
 
-2.  `inaccessible`: Print to a file the `pnfsids` for a pool which currently
+1.  `async cmd cancel`, `async cmd cleanup`, `async cmd ls`, `async cmd results`:  For management
+    of jobs (inaccessible files, contained-in queries) run asynchronously; allows
+    for listing, cancelation, and removal of entries, and inspection of the
+    contents of the file where results are printed.
+
+1.  `contained in`:  Print to afile the `pnfsids` whose replicas are
+    entirely contained by (i.e., only found on) the locations/pools indicated
+    by the expression.
+
+1.  `inaccessible`: Print to a file the `pnfsids` for a pool which currently
     have no readable locations.
 
-3.  `file check`: Run a job to adjust replicas for a given file (i.e., make
+1.  `file check`: Run a job to adjust replicas for a given file (i.e., make
     required copies or remove unnecessary ones).
 
-4.  `file ctrl`, `pool ctrl`: Reset properties controlling internal behavior
+1.  `file ctrl`, `pool ctrl`: Reset properties controlling internal behavior
     (such as sweep intervals, grace periods, etc.).
 
-5.  `file ls`: List the current file operations, filtered by attributes or
+1.  `file ls`: List the current file operations, filtered by attributes or
     state; or just output the count for the given filter.
 
-6.  `file cancel`: Cancel file operations using a filter similar to the list
+1.  `file cancel`: Cancel file operations using a filter similar to the list
     filter.
 
-7.  `pool info`: List pool information derived from the pool monitor.
+1.  `pool info`: List pool information derived from the pool monitor.
 
-8.  `pool group info`: List the storage units linked to a pool group and confirm
+1.  `pool group info`: List the storage units linked to a pool group and confirm
     resilience constraints can be met by the member pools.
 
-9.  `pool ls`: List pool operations, filtered by attributes or state.
+1.  `pool ls`: List pool operations, filtered by attributes or state.
 
-10. `pool cancel`: Cancel pool operations using a filter similar to the list
+1. `pool cancel`: Cancel pool operations using a filter similar to the list
     filter.
 
-11. `pool scan`: Initiate forced scans of one or more pools.
+1. `pool scan`: Initiate forced scans of one or more pools.
 
-12. `pool include`, `pool exclude`: Set the status of a pool operation to
+1. `pool include`, `pool exclude`: Set the status of a pool operation to
     exclude or include it in replica counting and resilience handling.
 
-13. `diag`: Display diagnostic information, including number of messages
+1. `diag`: Display diagnostic information, including number of messages
     received, number of operations completed or failed, and their rates; display
     detailed transfer information by pool and type (copy/remove), with the pool
     as source and target.
 
-14. `diag history [enable]`: Enable or disable the collection of statistics;
+1. `diag history [enable]`: Enable or disable the collection of statistics;
     display the contents of the diagnostic history file.
 
-15. `history [errors]`: List the most recent file operations which have
+1. `history [errors]`: List the most recent file operations which have
     completed and are now no longer active; do the same for the most recent
     terminally failed operations.
 
@@ -870,6 +879,15 @@ already been processed. Thus this sequence would also work:
 >   all pools containing replicas of a given file have been removed from the
 >   pool group, however, Resilience becomes agnostic concerning the number of
 >   copies of that file (the file becomes "invisible" to Resilience).**
+
+>   **Because of the likelihood of "orphaned" files (files all of whose replicas
+>   are inaccessible) when removing or draining pools concurrently, it is
+>   recommended that resilient pools be decommissioned/removed serially while
+>   resilience is running.  If concurrent draining is necessary, then the
+>   `contained in` command may come in useful.  Running that command over
+>   the set of pools to be drained and removed will provide a list of
+>   pnfsids for which some sort of manual action/migration will be necessary,
+>   since they will be alarmed as 'inaccessible' by resilience.**
 
 ### Add or remove a resilient group
 

@@ -59,12 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.db;
 
+import javax.sql.DataSource;
+
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
-
-import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -127,6 +128,10 @@ public interface NamespaceAccess {
     void printInaccessibleFiles(String location,
                                 PoolInfoMap poolInfoMap,
                                 PrintWriter printWriter)
+                    throws CacheException, InterruptedException;
+
+    void printContainedInFiles(List<String> locations,
+                               PrintWriter printWriter)
                     throws CacheException, InterruptedException;
 
     /**

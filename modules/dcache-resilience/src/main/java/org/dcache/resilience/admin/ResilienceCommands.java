@@ -60,9 +60,6 @@ documents or software obtained from this server.
 package org.dcache.resilience.admin;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -75,17 +72,23 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -121,6 +124,7 @@ import org.dcache.vehicles.FileAttributes;
 
 public final class ResilienceCommands implements CellCommandListener {
     static final String INACCESSIBLE_PREFIX = "inaccessible_files-";
+    static final String CONTAINED_IN        = "contained-in-";
 
     private static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
 
@@ -200,6 +204,239 @@ public final class ResilienceCommands implements CellCommandListener {
             return String.format(
                             "Issued command to %s pool operations.",
                             poolOperationMap.setIncluded(filter, activate));
+        }
+    }
+
+    class FutureWrapper {
+        final Date      timestamp;
+        final UUID      key;
+        final String    type;
+        final String    fileName;
+        final Future<?> future;
+
+        FutureWrapper(String type, String fileName, Future<?> future) {
+            timestamp = new Date(System.currentTimeMillis());
+            key = UUID.randomUUID();
+            this.type = type;
+            this.fileName = fileName;
+            this.future = future;
+        }
+
+        boolean isRunning() {
+            return !future.isCancelled() && !future.isDone();
+        }
+
+        public String toString() {
+            String state = future.isCancelled() ? "CANCELLED" :
+                            future.isDone() ? "DONE": "RUNNING";
+            return String.format("%-36s %32s %20s, file name: %20s (%s)",
+                                 timestamp, key, type, fileName, state);
+        }
+    }
+
+    @Command(name = "async cmd cancel",
+                    hint = "cancel running scans/queries",
+                    description = "Interrupts the execution of scans or "
+                                    + "queries launched asynchronously "
+                                    + "(see async cmd ls).")
+
+    class AsyncCmdCancelCommand extends ResilienceCommand {
+        @Argument(usage = "Comma-delimited list of UUIDs "
+                        + "for the jobs to cancel, or '*' for all jobs.")
+        String ids;
+
+        @Override
+        protected String doCall() throws Exception {
+            StringBuilder builder = new StringBuilder();
+
+            Set<String> toMatch;
+
+            if (ids.equals("*")) {
+                toMatch = futureMap.keySet();
+            } else {
+                toMatch = Arrays.stream(ids.split(","))
+                                .collect(Collectors.toSet());
+            }
+
+            toMatch.forEach(id -> {
+                FutureWrapper wrapper = futureMap.get(id);
+                if (wrapper != null) {
+                    if (wrapper.isRunning()) {
+                        wrapper.future.cancel(true);
+                        builder.append("Cancelled job for ")
+                               .append(id).append("\n");
+                    } else {
+                        builder.append("Job for ")
+                               .append(id).append(" already finished")
+                               .append("\n");
+                    }
+                } else {
+                    builder.append("No job for ")
+                           .append(id).append("\n");
+                }
+            });
+
+            return builder.toString();
+        }
+    }
+
+    @Command(name = "async cmd cleanup",
+                    hint = "remove future entries and/or file",
+                    description = "If the job has completed, removes "
+                                    + "the map entry for the future and/or file.")
+
+    class AsyncCmdCleanupCommand extends ResilienceCommand {
+        @Option(name = "entry",
+                        usage = "remove entry from map.")
+        Boolean entry = true;
+
+        @Option(name = "file",
+                        usage = "delete file.")
+        Boolean file = false;
+
+        @Argument(usage = "Comma-delimited list of UUIDs "
+                        + "for the jobs to clean up, or '*' for all finished jobs.")
+        String ids;
+
+        @Override
+        protected String doCall() throws Exception {
+            StringBuilder builder = new StringBuilder();
+
+            Set<String> toMatch;
+
+            if (ids.equals("*")) {
+                // new set to avoid ConcurrentModificationException
+                toMatch = new HashSet<>(futureMap.keySet());
+            } else {
+                toMatch = Arrays.stream(ids.split(","))
+                                .collect(Collectors.toSet());
+            }
+
+            toMatch.stream().forEach(id -> {
+                FutureWrapper wrapper = futureMap.get(id);
+                if (wrapper.isRunning()) {
+                    builder.append("job for ")
+                           .append(id).append(" is still running\n");
+
+                } else {
+                    if (entry) {
+                        futureMap.remove(id);
+                        builder.append("entry for ")
+                               .append(id).append(" removed\n");
+                    }
+
+                    if (file) {
+                        File file = new File(resilienceDir, wrapper.fileName);
+                        if (!file.exists()) {
+                            builder.append("file for ")
+                                   .append(id).append(": ")
+                                   .append(wrapper.fileName)
+                                   .append(" NOT FOUND\n");
+                        } else {
+                            file.delete();
+                            builder.append("file for ")
+                                   .append(id).append(": ")
+                                   .append(wrapper.fileName)
+                                   .append(" deleted\n");
+                        }
+                    }
+                }
+            });
+
+            return builder.toString();
+        }
+    }
+
+    @Command(name = "async cmd ls",
+                    hint = "print out a list of running scans/queries",
+                    description = "When executing asynchronously either "
+                                    + "the inaccessible file "
+                                    + "scan or the contained-in query, a future "
+                                    + "is stored along with identifying "
+                                    + "information and path of the file "
+                                    + "to which the results will be printed; "
+                                    + "this command lists them all.")
+    class AsyncCmdListCommand extends ResilienceCommand {
+        @Override
+        protected String doCall() throws Exception {
+            return String.join("\n",
+                               futureMap.values()
+                                        .stream()
+                                        .map(FutureWrapper::toString)
+                                        .sorted()
+                                        .collect(Collectors.toList()));
+        }
+    }
+
+    @Command(name = "async cmd results",
+                    hint = "print to screen asynchronous query/scan results",
+                    description = "Reads the file to which the results have "
+                                    + "been written.  Only 10,000 lines max "
+                                    + "can be read at one time; if the count "
+                                    + "exceeds 10,000, use the 'from' option "
+                                    + "to read the following 10,000.")
+    class AsyncCmdResultsCommand extends ResilienceCommand {
+        @Option(name = "count",
+                        usage = "Print only the number of lines in the file.")
+        Boolean count = false;
+
+        @Option(name = "from",
+                        usage = "Starting line index.")
+        Integer from = 0;
+
+        @Argument(usage = "Name of file to read and print.")
+        String fileName;
+
+        @Override
+        protected String doCall() throws Exception {
+            File file = new File(resilienceDir, fileName);
+            if (!file.exists()) {
+                return fileName + " NOT FOUND.";
+            }
+
+            int i = 0;
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                if (count) {
+                    while (reader.readLine() != null) {
+                        ++i;
+                    }
+                    return "" + i + "\n";
+                } else {
+                    for ( ; i < from; ++i) {
+                        // skip the first 'from' lines
+                        if (null == reader.readLine()) {
+                            return "No more lines after " + i;
+                        }
+                    }
+
+                    String line = reader.readLine();
+                    if (line == null) {
+                        if (from == 0) {
+                            return "";
+                        }
+                        return "No more lines after " + i;
+                    }
+
+                    StringBuilder builder = new StringBuilder();
+                    builder.append(line).append("\n");
+                    ++i;
+
+                    int end = from + 10000;
+                    for ( ; i < end; ++i) {
+                        line = reader.readLine();
+                        if (line == null) {
+                            break;
+                        }
+
+                        builder.append(line).append("\n");
+                    }
+
+                    return builder.toString();
+                }
+            } catch (IOException e) {
+                return "Error reading file " + fileName + ": " + e.getMessage();
+            }
         }
     }
 
@@ -294,9 +531,10 @@ public final class ResilienceCommands implements CellCommandListener {
                 }
 
                 synchronized(futureMap) {
-                    for (Iterator<Future<?>> it = futureMap.values().iterator();
-                         it.hasNext(); ) {
-                        it.next().cancel(true);
+                    for (Iterator<Entry<String, FutureWrapper>> it
+                                    = futureMap.entrySet().iterator(); it.hasNext(); ) {
+                        Entry<String, FutureWrapper> entry = it.next();
+                        entry.getValue().future.cancel(true);
                         it.remove();
                     }
                 }
@@ -839,166 +1077,116 @@ public final class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    @Command(name = "inaccessible",
-                    hint = "list pnfsids for a pool which "
-                                    + "currently have no readable locations",
-                    description = "With no options, issues a query to the "
-                                    + "namespace to scan the pool, "
-                                    + "checking locations of each file with online "
-                                    + "access latency; results are written to a  "
-                                    + "file in resilience home named '"
-                                    + INACCESSIBLE_PREFIX
-                                    + "' + pool. Executed asynchronously. Using "
-                                    + "the options, the scan status can be checked, "
-                                    + "scan canceled, and contents of file "
-                                    + "(pnfsid listing) displayed for single pools.")
-    class InaccessibleFilesCommand extends ResilienceCommand {
-        @Option(name = "status", usage = "Check status of scan.")
-        boolean status = false;
-
-        @Option(name = "list", usage = "List the inaccessible pnfsids.")
-        boolean list = false;
-
-        @Option(name = "delete", usage = "Delete scan file.")
-        boolean delete = false;
-
-        @Option(name = "cancel", usage = "Cancel the running scan job.")
-        boolean cancel = false;
-
-        @Argument(usage = "With run and cancel, this can be a regular expression "
-                        + "for pool names; with the other options, it must be "
-                        + "a single pool name.")
+    @Command(name = "contained in",
+                    hint = "count or list pnfsids which have replicas only on "
+                                + "the pools in the list",
+                     description = "Issues a query to the "
+                                + "namespace to determine which files on the "
+                                + "indicated pools have all their replicas only "
+                                + "on those pools; non-resilient pools are not"
+                                + "checked for other copies. Results are written "
+                                + "to a file in resilience home named '"
+                                     + CONTAINED_IN
+                                + "' + timestamp.  Executed asynchronously. Use "
+                                + "'async cmd ls' to see all running jobs, "
+                                + "'async cmd cancel' to cancel,  "
+                                + "'async cmd results' to read the results "
+                                + "back from the file, and 'async cmd cleanup' "
+                                + "to delete the entry and/or file.")
+    class ContainedInCommand extends ResilienceCommand {
+        @Argument(usage = "A regular expression "
+                        + "for pools to be included in the group.")
         String poolExpression;
 
         @Override
         protected String doCall() throws Exception {
-            if (status) {
-                return getStatus();
-            }
-
-            if (delete) {
-                return doDelete();
-            }
-
-            if (list) {
-                return getListing();
-            }
-
-            return doScan();
-        }
-
-        private String getStatus() {
-            if (futureMap.containsKey(poolExpression)) {
-                return "RUNNING";
-            }
-
-            if (getListingFile(poolExpression, resilienceDir).exists()) {
-                return "DONE";
-            }
-
-            return "NOT FOUND";
-        }
-
-        private String doDelete() {
-            File toDelete = getListingFile(poolExpression, resilienceDir);
-            if (toDelete.exists()) {
-                toDelete.delete();
-                return "Deleted " + toDelete;
-            }
-
-            return "Not found: " + toDelete;
-        }
-
-        private String doScan() {
             try {
                 StringBuilder builder = new StringBuilder();
                 Pattern pattern = Pattern.compile(poolExpression);
-
-                poolInfoMap.getResilientPools()
-                           .stream()
-                           .filter((pool) -> pattern.matcher(pool).find())
-                           .forEach((pool) -> handleOption(cancel, pool, builder));
-
-                if (!cancel) {
-                    builder.insert(0, "Writing inaccessible pnfsids "
-                                    + "to the following files:\n\n");
-                }
-
+                List<String> locations =
+                                poolInfoMap.getResilientPools()
+                                           .stream()
+                                           .filter((pool) -> pattern.matcher(pool).find())
+                                           .collect(Collectors.toList());
+                execAsync(locations, builder);
                 return builder.toString();
             } catch (Exception e) {
                 return new ExceptionMessage(e).toString();
             }
         }
 
-        private void handleOption(boolean cancel,
-                                  String pool,
-                                  StringBuilder builder) {
-            if (cancel) {
-                Future<?> future = futureMap.remove(pool);
-                if (future != null) {
-                    future.cancel(true);
-                    builder.append("Cancelled job for ")
-                           .append(pool).append("\n");
-                } else {
-                    builder.append("No running job for ")
-                           .append(pool).append("\n");
-                }
-            } else {
-                File file = printToFile(pool, resilienceDir);
-                builder.append("   ")
-                                .append(file.getAbsolutePath())
-                                .append("\n");
-            }
-        }
+        private void execAsync(List<String>locations, StringBuilder builder) {
+            String fileName = CONTAINED_IN + System.currentTimeMillis();
 
-        private File printToFile(String pool, String dir) {
-            File file = getListingFile(pool, dir);
-            ListeningExecutorService decoratedExecutor
-                            = MoreExecutors.listeningDecorator(executor);
-
-            ListenableFuture<?> future = decoratedExecutor.submit(() -> {
+            Function<PrintWriter, Void> function = printWriter -> {
                 try {
-                    try (PrintWriter pw = new PrintWriter(
-                                    new FileWriter(file, false))) {
-                        try {
-                            namespaceAccess.printInaccessibleFiles(pool,
-                                                                   poolInfoMap,
-                                                                   pw);
-                        } catch (CacheException e) {
-                            // write out the error to the file
-                            e.printStackTrace(pw);
-                        }
-                    } catch (IOException e) {
-                        // let it go ...
-                    }
+                    namespaceAccess.printContainedInFiles(locations,
+                                                          printWriter);
+                } catch (CacheException e) {
+                    printWriter.println("error during printContainedInFiles: "
+                                                        + e.toString());
                 } catch (InterruptedException e) {
-                    // job was cancelled
+                    printWriter.println("printContainedInFiles was interrupted.");
                 }
-            });
+                return null;
+            };
 
-            futureMap.put(pool, future);
-            future.addListener(() -> futureMap.remove(pool),
-                                     MoreExecutors.directExecutor());
-            return file;
+            handleAsync(fileName, "contained-in scan", function, builder);
+        }
+    }
+
+    @Command(name = "inaccessible",
+                    hint = "list pnfsids for a pool which "
+                                    + "currently have no readable locations",
+                    description = "Issues a query to the "
+                                    + "namespace to scan the pool, "
+                                    + "checking locations of each file with online "
+                                    + "access latency; results are written to a  "
+                                    + "file in resilience home named '"
+                                    + INACCESSIBLE_PREFIX
+                                    + "' + pool. Executed asynchronously. Use "
+                                    + "'async cmd ls' to see all running jobs, "
+                                    + "'async cmd cancel' to cancel,  "
+                                    + "'async cmd results' to read the results "
+                                    + "back from the file, and 'async cmd cleanup' "
+                                    + "to delete the entry and/or file.")
+    class InaccessibleFilesCommand extends ResilienceCommand {
+        @Argument(usage = "A regular expression for pool names.")
+        String poolExpression;
+
+        @Override
+        protected String doCall() throws Exception {
+            try {
+                StringBuilder builder = new StringBuilder();
+                Pattern pattern = Pattern.compile(poolExpression);
+                poolInfoMap.getResilientPools()
+                           .stream()
+                           .filter((pool) -> pattern.matcher(pool).find())
+                           .forEach((pool) -> execAsync(pool, builder));
+                builder.insert(0, "Writing inaccessible pnfsids "
+                                + "to the following files:\n\n");
+                return builder.toString();
+            } catch (Exception e) {
+                return new ExceptionMessage(e).toString();
+            }
         }
 
-        private String getListing() {
-            File file = getListingFile(poolExpression, resilienceDir);
-            if (!file.exists()) {
-                return "There is no current listing for " + poolExpression;
-            }
-            StringBuilder builder = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(
-                            new FileReader(getListingFile(poolExpression, resilienceDir)))) {
-                    reader.lines().forEach((l) -> builder.append(l).append("\n"));
-            } catch (IOException e) {
-                return "Trouble reading file for " + poolExpression + ": " + e.getMessage();
-            }
-            return builder.toString();
-        }
-
-        private File getListingFile(String pool, String dir) {
-            return new File(dir, INACCESSIBLE_PREFIX + pool);
+        private void execAsync(String pool, StringBuilder builder) {
+            String fileName = INACCESSIBLE_PREFIX + pool;
+            Function<PrintWriter, Void> function = printWriter -> {
+                try {
+                    namespaceAccess.printInaccessibleFiles(pool,
+                                                           poolInfoMap,
+                                                           printWriter);
+                } catch (CacheException e) {
+                    printWriter.println("error during 'printInaccessibleFiles: "
+                                                        + e.toString());
+                } catch (InterruptedException e) {
+                    printWriter.println("'printInaccessibleFiles was interrupted.");
+                }
+                return null;
+            };
+            handleAsync(fileName, "inaccessible scan", function, builder);
         }
     }
 
@@ -1552,9 +1740,9 @@ public final class ResilienceCommands implements CellCommandListener {
     /**
      * Used for potentially long database queries.  Executing them
      * synchronously can bind the command interpreter.  We store
-     * the future in case of cancellation.
+     * the future in case of cancellation or listing.
      */
-    private final Map<String, Future<?>>  futureMap
+    private final Map<String, FutureWrapper> futureMap
                     = Collections.synchronizedMap(new HashMap<>());
 
     private ExecutorService      executor;
@@ -1612,6 +1800,34 @@ public final class ResilienceCommands implements CellCommandListener {
 
     public void setResilienceDir(String resilienceDir) {
         this.resilienceDir = resilienceDir;
+    }
+
+    private void handleAsync(String fileName,
+                             String type,
+                             Function<PrintWriter, Void> function,
+                             StringBuilder builder) {
+        File file = new File(resilienceDir, fileName);
+
+        Future<?> future = executor.submit(() -> {
+            try (PrintWriter pw = new PrintWriter(
+                            new FileWriter(file, false))) {
+                try {
+                    function.apply(pw);
+                } catch (RuntimeException e) {
+                    // write out the error to the file
+                    e.printStackTrace(pw);
+                }
+            } catch (IOException e) {
+                // let it go ...
+            }
+        });
+
+        FutureWrapper wrapper = new FutureWrapper(type,
+                                                  fileName,
+                                                  future);
+
+        futureMap.put(wrapper.key.toString(), wrapper);
+        builder.append(wrapper).append("\n");
     }
 
     private String runFileChecks(List<String> list) {
