@@ -68,7 +68,46 @@ A comma-delimited list of `type:value` pairs for all checksums stored in the dat
     $ cat ".(get)(test_file-Thu_Oct_23_10:39:37_CDT_2014-109)(checksums)"
     $ ADLER32:66300001
 
-***
+## SET CHECKSUM
+
+Set a checksum value for a file.   An ordinary user can only set one
+checksum (type, value) pair, and cannot overwrite existing values.  A ROOT
+user is allowed to set multiple types (successively) and also to overwrite
+values for any type.
+
+### USAGE:
+
+    touch ".(fset)(<filename>)(checksum)(<type>)(<value>)"
+
+##### EXAMPLES:
+
+    [arossi@otfrid volatile]$ touch testfile
+
+    [arossi@otfrid volatile]$ cat ".(get)(testfile)(checksum)"
+
+    [arossi@otfrid volatile]$ touch ".(fset)(testfile)(checksum)(ADLER32)(ffffffff)"
+
+    [arossi@otfrid volatile]$ cat ".(get)(testfile)(checksum)"
+    ADLER32:ffffffff
+
+    [arossi@otfrid volatile]$ touch ".(fset)(testfile)(checksum)(ADLER32)(fffffff0)"
+    touch: setting times of ‘.(fset)(testfile)(checksum)(ADLER32)(fffffff0)’: Operation not permitted
+
+    [arossi@otfrid volatile]$ ksu
+    Authenticated arossi@FNAL.GOV
+    Account root: authorization for arossi@FNAL.GOV successful
+    Changing uid to root (0)
+
+    [root@otfrid volatile]# touch ".(fset)(testfile)(checksum)(ADLER32)(fffffff0)"
+
+    [root@otfrid volatile]# cat ".(get)(testfile)(checksum)"
+    ADLER32:fffffff0
+
+    [root@otfrid volatile]# touch ".(fset)(testfile)(checksum)(MD5)(12341234123412345678567856785678)"
+
+    [root@otfrid volatile]# cat ".(get)(testfile)(checksum)"
+    ADLER32:fffffff0, MD5:12341234123412345678567856785678
+
 
 #### PIN/STAGE
 
