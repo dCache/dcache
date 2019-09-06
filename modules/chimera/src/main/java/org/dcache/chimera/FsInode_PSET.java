@@ -19,16 +19,20 @@ package org.dcache.chimera;
 import com.google.common.base.Charsets;
 
 import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.chimera.posix.Stat;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 
 public class FsInode_PSET extends FsInode {
-    private static final String SIZE = "size";
-    private static final String IO = "io";
-    private static final String ONLN = "bringonline";
-    private static final String STG = "stage";
-    private static final String PIN = "pin";
+    private static final String SIZE   = "size";
+    private static final String IO     = "io";
+    private static final String ONLN   = "bringonline";
+    private static final String STG    = "stage";
+    private static final String PIN    = "pin";
+    private static final String CKS    = "checksum";
 
     private final String[] _args;
 
@@ -41,6 +45,8 @@ public class FsInode_PSET extends FsInode {
     public boolean isDirectory() {
         return false;
     }
+
+    public boolean isChecksum() { return CKS.equals(_args[0]); }
 
     @Override
     public int read(long pos, byte[] data, int offset, int len) {
@@ -70,10 +76,12 @@ public class FsInode_PSET extends FsInode {
                 case PIN:
                     handlePinRequest();
                     break;
+                case CKS:
+                    handleSetChecksum();
+                    break;
                 default:
                     break;
             }
-
         }
     }
 
@@ -150,6 +158,39 @@ public class FsInode_PSET extends FsInode {
             _fs.unpin(new FsInode(_fs, ino()));
         } else {
             _fs.pin(new FsInode(_fs, ino()), lifetime);
+        }
+    }
+
+    /*
+     *  This method allows overwrite only with ROOT access.
+     *  It also allows a non-ROOT user to set only one checksum
+     *  (type, value) pair.
+     */
+    private void handleSetChecksum() throws ChimeraFsException {
+        if (_args.length != 3) {
+            throw new InvalidArgumentChimeraException("incorrect number of arguments.");
+        }
+
+        Set<Checksum> checksums = _fs.getInodeChecksums(this);
+        ChecksumType type = ChecksumType.getChecksumType(_args[1]);
+
+        try {
+            /*
+             * The filesystem implementation does not allow
+             * overwrite using the 'setInodeChecksum' method, so
+             * an explicit deletion is required.
+             */
+            if (checksums.stream().anyMatch(c -> type.equals(c.getType()))) {
+                _fs.removeInodeChecksum(this, type.getType());
+            }
+
+            Checksum cks = new Checksum(type, _args[2]);
+            _fs.setInodeChecksum(this, type.getType(), cks.getValue());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidArgumentChimeraException("Invalid checksum: "
+                                                                      + _args[2]
+                                                                      + "; "
+                                                                      + e.getMessage());
         }
     }
 }

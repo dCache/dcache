@@ -28,33 +28,29 @@ import org.dcache.util.Checksum;
  * @author arossi
  */
 public class FsInode_PCRC extends FsInode_PGET {
-    private String _checksum;
 
     public FsInode_PCRC(FileSystemProvider fs, long ino) {
         super(fs, ino, FsInodeType.PCRC);
     }
 
     protected String value() throws ChimeraFsException {
-        if (_checksum == null) {
-            Set<Checksum> results = _fs.getInodeChecksums(this);
-            StringBuilder sb = new StringBuilder();
+        Set<Checksum> results = _fs.getInodeChecksums(this);
+        StringBuilder sb = new StringBuilder();
 
-            Iterator<Checksum> it = results.iterator();
-            if (it.hasNext()) {
-                Checksum result = it.next();
-                sb.append(result.getType()).append(':').append(
-                                result.getValue());
-            }
-
-            while (it.hasNext()) {
-                Checksum result = it.next();
-                sb.append(", ").append(result.getType()).append(':').append(
-                                result.getValue());
-            }
-
-            sb.append(NEWLINE);
-            _checksum = sb.toString();
+        Iterator<Checksum> it = results.iterator();
+        if (it.hasNext()) {
+            Checksum result = it.next();
+            sb.append(result.getType()).append(':').append(
+                            result.getValue());
         }
-        return _checksum;
+
+        while (it.hasNext()) {
+            Checksum result = it.next();
+            sb.append(", ").append(result.getType()).append(':').append(
+                            result.getValue());
+        }
+
+        sb.append(NEWLINE);
+        return sb.toString();
     }
 }
