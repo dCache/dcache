@@ -43,7 +43,6 @@ import org.dcache.util.Args;
 import org.dcache.util.Version;
 import org.dcache.util.cli.CommandExecutor;
 
-import static org.dcache.util.CompletableFutures.fromListenableFuture;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
@@ -206,7 +205,7 @@ public class CellAdapter
      */
     public CompletableFuture<Void> start()
     {
-        return fromListenableFuture(_nucleus.start());
+        return _nucleus.start();
     }
 
     public void addCommandListener(Object commandListener)

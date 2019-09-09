@@ -58,6 +58,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+import static org.dcache.util.CompletableFutures.fromListenableFuture;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
@@ -906,7 +907,7 @@ public class CellNucleus implements ThreadFactory
      *
      * Must only be called once.
      */
-    public ListenableFuture<Void> start()
+    public CompletableFuture<Void> start()
     {
         _lifeCycleMonitor.enter();
         try {
@@ -916,7 +917,7 @@ public class CellNucleus implements ThreadFactory
         } finally {
             _lifeCycleMonitor.leave();
         }
-        return Futures.nonCancellationPropagating(_startup);
+        return fromListenableFuture(Futures.nonCancellationPropagating(_startup));
     }
 
     private Void doStart() throws Exception
