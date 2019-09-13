@@ -57,25 +57,42 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.chimera;
+package org.dcache.chimera.nfsv41.door;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import javax.security.auth.Subject;
 import javax.security.auth.SubjectDomainCombiner;
+
 import java.net.URISyntaxException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.dcache.auth.Subjects;
+import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.FileSystemProvider;
+import org.dcache.chimera.FsInode;
+import org.dcache.chimera.FsInode_SURI;
+import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.PermissionDeniedChimeraFsException;
+import org.dcache.chimera.StorageGenericLocation;
+import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.doAnswer;
 
-public class StorageUriTest extends ChimeraTestCaseHelper {
+public class StorageUriTest {
     private static final String[] INVALID = { "boguspath",
                                               ":boguspath",
                                               "/boguspath",
@@ -93,12 +110,62 @@ public class StorageUriTest extends ChimeraTestCaseHelper {
     private static final String HSMLOC2 =
                     "foobar://mrhost?somethingbogus=2" + NEWLINE;
 
-    private FsInode file;
+    private FsInode                root;
+    private FsInode                file;
+    private FileSystemProvider     fs;
+    private List<StorageLocatable> locations;
+    private FsInode_SURI           inode_suri;
+    private Stat                   stat;
+
+    private static class RootInode extends FsInode
+    {
+        public RootInode(FileSystemProvider fs, long ino)
+        {
+            super(fs, ino);
+        }
+
+        @Override
+        public boolean exists() throws ChimeraFsException
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isDirectory()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isLink()
+        {
+            return false;
+        }
+
+        @Override
+        public FsInode getParent()
+        {
+            return null;
+        }
+    }
 
     @Before
     public void setUp() throws Exception {
-        super.setUp();
-        file = _rootInode.create("custodial_data_file", 0, 0, 0644);
+        fs = mock(JdbcFs.class);
+        root = new RootInode(fs, 0L);
+        file = new FsInode(fs, 1L);
+        locations = new ArrayList<>();
+        stat = new Stat();
+        stat.setSize(0);
+        stat.setMode(0);
+        stat.setGeneration(0);
+        newFsInodeSURI();
+        mockFileSystem();
+    }
+
+    @After
+    public void cleanUp() throws Exception {
+        locations.clear();
     }
 
     @Test
@@ -217,7 +284,6 @@ public class StorageUriTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testStorageUriReadEmptyLocations() throws Exception {
-        FsInode_SURI inode_suri = new FsInode_SURI(_fs, file.ino());
         byte[] buffer = new byte[128];
         int len = readFrom0(buffer, 128);
         assertThat(len, is(0));
@@ -225,12 +291,11 @@ public class StorageUriTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testStorageUriReadMultipleLocations() throws Exception {
-        FsInode_SURI inode_suri = new FsInode_SURI(_fs, file.ino());
         /*
          * FsInode_SURI.write always trims
          */
-        _fs.addInodeLocation(inode_suri, 0, HSMLOC1.trim());
-        _fs.addInodeLocation(inode_suri, 0, HSMLOC2.trim());
+        addStorageLocation(HSMLOC1.trim());
+        addStorageLocation(HSMLOC2.trim());
         byte[] buffer = new byte[128];
         int len = readFrom0(buffer, 128);
         assertThat(len, is(HSMLOC1.length() + HSMLOC2.length()));
@@ -239,11 +304,10 @@ public class StorageUriTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testStorageUriReadSingleLocation() throws Exception {
-        FsInode_SURI inode_suri = new FsInode_SURI(_fs, file.ino());
         /*
          * FsInode_SURI.write always trims
          */
-        _fs.addInodeLocation(inode_suri, 0, HSMLOC1.trim());
+        addStorageLocation(HSMLOC1.trim());
         byte[] buffer = new byte[128];
         int len = readFrom0(buffer, 128);
         assertThat(len, is(HSMLOC1.length()));
@@ -252,11 +316,18 @@ public class StorageUriTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testStorageUriWrite() throws Exception {
-        write(HSMLOC1, false);
-        byte[] buffer = new byte[128];
-        int len = readFrom0(buffer, 128);
-        assertThat(len, is(HSMLOC1.length()));
-        assertEquals(HSMLOC1, new String(buffer, 0, len));
+        runTestAsNonRootUser(() -> {
+            try {
+                write(HSMLOC1, false);
+                byte[] buffer = new byte[128];
+                int len = readFrom0(buffer, 128);
+                assertThat(len, is(HSMLOC1.length()));
+                assertEquals(HSMLOC1, new String(buffer, 0, len));
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Test
@@ -273,7 +344,6 @@ public class StorageUriTest extends ChimeraTestCaseHelper {
     }
 
     private int readFrom0(byte[] buffer, int len) throws Exception {
-        FsInode_SURI inode_suri = new FsInode_SURI(_fs, file.ino());
         return inode_suri.read(0, buffer, 0, len);
     }
 
@@ -299,18 +369,54 @@ public class StorageUriTest extends ChimeraTestCaseHelper {
     }
 
     private void write(String location, boolean append) throws Exception {
-        FsInode_SURI inode_suri = new FsInode_SURI(_fs, file.ino());
         int len = location.length();
         byte[] buffer = location.getBytes();
+
         Stat stat = inode_suri.stat();
         /*
          * Emulate OPEN TRUNCATE for write.
          */
         if (!append) {
+            if (ChimeraVfs.shouldRejectAttributeUpdates(inode_suri, fs)) {
+                throw new PermissionDeniedChimeraFsException("setStat not allowed.");
+            }
             stat.setSize(0);
             inode_suri.setStat(stat);
         }
 
+        if (ChimeraVfs.shouldRejectUpdates(inode_suri, fs)) {
+            throw new PermissionDeniedChimeraFsException("write not allowed.");
+        }
+
         inode_suri.write(stat.getSize(), buffer, 0, len);
+        addStorageLocation(location);
+    }
+
+    private void addStorageLocation(String location) {
+        long now = System.currentTimeMillis();
+        locations.add(new StorageGenericLocation(1, 1,
+                                                 location.trim(),
+                                                 now, now,
+                                                 true));
+    }
+
+    private void mockFileSystem() throws ChimeraFsException {
+        given(fs.getInodeLocations(inode_suri)).willReturn(locations);
+        given(fs.getInodeLocations(inode_suri, StorageGenericLocation.TAPE))
+                        .willReturn(locations);
+        given(fs.stat(inode_suri, 0)).willReturn(stat);
+        Answer<Void> clearAnswer = new Answer<Void>() {
+            public Void answer(InvocationOnMock invocation) {
+                locations.clear();
+                return null;
+            }
+        };
+        doAnswer(clearAnswer).when(fs).clearTapeLocations(inode_suri);
+    }
+
+    private FsInode_SURI newFsInodeSURI() throws ChimeraFsException {
+        inode_suri = new FsInode_SURI(fs, file.ino());
+        inode_suri.setStat(stat);
+        return inode_suri;
     }
 }

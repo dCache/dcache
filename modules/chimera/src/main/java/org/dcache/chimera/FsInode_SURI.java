@@ -84,7 +84,7 @@ public class FsInode_SURI extends FsInode {
      * <p>Enforces required URI parts (scheme, host, query).</p>
      */
     @VisibleForTesting
-    static void validate(String line) throws URISyntaxException {
+    public static void validate(String line) throws URISyntaxException {
         try {
             URI uri = URI.create(line);
             if (uri.getScheme() == null) {
@@ -141,11 +141,6 @@ public class FsInode_SURI extends FsInode {
 
     @Override
     public void setStat(Stat predefinedStat) throws ChimeraFsException {
-        if (!isEmpty() && !isRoot()) {
-            throw new PermissionDeniedChimeraFsException(
-                            "overwrite not allowed");
-        }
-
         super.setStat(predefinedStat);
         if (predefinedStat.getSize() == 0) {
             _fs.clearTapeLocations(this);
@@ -169,11 +164,6 @@ public class FsInode_SURI extends FsInode {
     @Override
     public int write(long pos, byte[] data, int offset, int len)
                     throws ChimeraFsException {
-        if (!isEmpty() && !isRoot()) {
-            throw new PermissionDeniedChimeraFsException(
-                            "overwrite not allowed");
-        }
-
         String input = new String(data, offset, len).trim();
 
         if (input.isEmpty()) {
@@ -203,7 +193,8 @@ public class FsInode_SURI extends FsInode {
     }
 
     private String getLocations() throws ChimeraFsException {
-        if (isEmpty()) {
+        locations = _fs.getInodeLocations(this, StorageGenericLocation.TAPE);
+        if (locations.isEmpty()) {
             return "";
         }
 
@@ -213,12 +204,5 @@ public class FsInode_SURI extends FsInode {
                                     .filter((l) -> l.trim().length() != 0)
                                     .toArray())
                         + NEWLINE;
-    }
-
-    private boolean isEmpty() throws ChimeraFsException {
-        locations = _fs.getInodeLocations(this,
-                                          StorageGenericLocation.TAPE);
-
-        return locations == null || locations.isEmpty();
     }
 }

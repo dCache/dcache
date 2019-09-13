@@ -19,6 +19,7 @@
  */
 package org.dcache.chimera.nfsv41.door;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +98,6 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
-import static org.dcache.chimera.FsInodeType.PSET;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_EXTEND;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_MODIFY;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
@@ -320,7 +320,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public void setattr(Inode inode, Stat stat) throws IOException {
 	FsInode fsInode = toFsInode(inode);
         try {
-            if (shouldRejectAttributeUpdates(fsInode)) {
+            if (shouldRejectAttributeUpdates(fsInode, _fs)) {
                 throw new PermException("setStat not allowed.");
             }
             fsInode.setStat(toChimeraStat(stat));
@@ -444,7 +444,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         if ((mode & (ACCESS4_MODIFY | ACCESS4_EXTEND)) != 0) {
 
             FsInode fsInode = toFsInode(inode);
-            if (shouldRejectUpdates(fsInode)) {
+            if (shouldRejectUpdates(fsInode, _fs)) {
                 accessmask ^= (ACCESS4_MODIFY | ACCESS4_EXTEND);
             }
         }
@@ -452,23 +452,48 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         return accessmask;
     }
 
-    private boolean shouldRejectUpdates(FsInode fsInode) throws ChimeraFsException {
-        return fsInode.type() == FsInodeType.INODE
-                && fsInode.getLevel() == 0
-                && !fsInode.isDirectory()
-                && (!_fs.getInodeLocations(fsInode, StorageGenericLocation.TAPE).isEmpty()
-                    || !_fs.getInodeLocations(fsInode, StorageGenericLocation.DISK).isEmpty());
-    }
-
-    private boolean shouldRejectAttributeUpdates(FsInode fsInode)
+    @VisibleForTesting
+    static boolean shouldRejectUpdates(FsInode fsInode, FileSystemProvider fs)
                     throws ChimeraFsException {
-        return fsInode.type() == PSET
-                        && ((FsInode_PSET)fsInode).isChecksum()
-                        && !isRoot()
-                        && !_fs.getInodeChecksums(fsInode).isEmpty();
+        switch (fsInode.type()) {
+            case SURI:
+                return !isRoot()
+                                && !fs.getInodeLocations(fsInode,
+                                                          StorageGenericLocation.TAPE)
+                                       .isEmpty();
+            case INODE:
+                return fsInode.getLevel() == 0
+                                && !fsInode.isDirectory()
+                                && (!fs.getInodeLocations(fsInode,
+                                                           StorageGenericLocation.TAPE)
+                                        .isEmpty()
+                                || !fs.getInodeLocations(fsInode,
+                                                          StorageGenericLocation.DISK)
+                                       .isEmpty());
+            default:
+                return false;
+        }
     }
 
-    private boolean isRoot() {
+    @VisibleForTesting
+    static boolean shouldRejectAttributeUpdates(FsInode fsInode, FileSystemProvider fs)
+                    throws ChimeraFsException {
+        switch (fsInode.type()) {
+            case PSET:
+                return ((FsInode_PSET) fsInode).isChecksum()
+                                && !isRoot()
+                                && !fs.getInodeChecksums(fsInode).isEmpty();
+            case SURI:
+                return !isRoot()
+                                && !fs.getInodeLocations(fsInode,
+                                                          StorageGenericLocation.TAPE)
+                                       .isEmpty();
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isRoot() {
         return Subjects.isRoot(Subject.getSubject(AccessController.getContext()));
     }
 
