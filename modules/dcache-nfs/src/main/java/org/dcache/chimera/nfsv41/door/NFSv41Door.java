@@ -776,7 +776,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Override
     public void layoutReturn(CompoundContext context, LAYOUTRETURN4args args) throws IOException {
 
-        if (args.lora_layout_type == layoutreturn_type4.LAYOUTRETURN4_FILE) {
+        if (args.lora_layoutreturn.lr_returntype == layoutreturn_type4.LAYOUTRETURN4_FILE) {
             layouttype4 layoutType = layouttype4.valueOf(args.lora_layout_type);
             final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, args.lora_layoutreturn.lr_layout.lrf_stateid);
 
@@ -1685,7 +1685,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                  * kill the transfer, as client will create a new one.
                  */
                 _log.debug("forgetful client model");
-                transfer.killMover(0, "Pool disabled");
+                transfer.killMover(0, "layout recall");
             } catch (DelayException e) {
                 // probably we hit in the middle of IO, try again
                 _log.debug("Client can't return layout: re-scheduling layout recall");
