@@ -499,15 +499,37 @@ Apart from performance improvements, storing metadata on MongoDB makes it possib
     	},
     	"replicaState" : "PRECIOUS",
     	"stickyRecords" : {
-    		
+
     	}
     }
-    
+
 This example shows how to query all files with a given checksum:
-    
+
     > db.poolMetadata.find({"map.flag-c" : "1:c6620e81"})
     { "_id" : ObjectId("59104d3cb7958d3262babcaa"), "pnfsid" : "000096DC6664573C409C8D3308384CC5E25C", "pool" : "dcache-lab001-A", "version" : 1, "created" : NumberLong("1494240165952"), "hsm" : "osm", "storageClass" : "<Unknown>:<Unknown>", "size" : NumberLong(1795), "accessLatency" : "NEARLINE", "retentionPolicy" : "CUSTODIAL", "locations" : [ ], "map" : { "uid" : "3750", "gid" : "1000", "flag-c" : "1:c6620e81" }, "replicaState" : "PRECIOUS", "stickyRecords" : {  } }
     { "_id" : ObjectId("5a97c43d156fad9353c907f8"), "pnfsid" : "0000526B3EEB9A41453CB9655531A8F4DA99", "pool" : "dcache-lab003-A", "version" : 1, "created" : NumberLong("1519895538832"), "hsm" : "osm", "storageClass" : "<Unknown>:<Unknown>", "size" : NumberLong(1795), "accessLatency" : "NEARLINE", "retentionPolicy" : "CUSTODIAL", "locations" : [ ], "map" : { "path" : "/", "uid" : "0", "gid" : "0", "flag-c" : "1:c6620e81" }, "replicaState" : "PRECIOUS", "stickyRecords" : {  } }
+
+## Handling orphan movers
+
+Due to client application misbehavior or network errors some movers may stay in active state even if no data is transferred. Such situations can be detected and handled by some protocols, like NFSv4.1. However, in general those mover may stay this state for infinite period of time. Moreover, the resources allocated for transfer are not available to other clients.
+
+To detect and remove those movers `job timeout manager` (`jtm`), can be used.
+The `jtm set timeout` pool command sets the transfer timeout for a specified or all queues in the pool. The timeout is a time limit after which a mover is considered expired and it will be terminated. There are two timeout values can be set:
+
+- The last access timeout - is the time durations after which a mover is deemed expired based on the time since the last block was transferred.
+- The total timeout - is the time duration after which a mover is deemed expired based on the start time of the mover.
+
+One of these two or both timeout duration must be surpassed before a job is terminated.
+
+### Example:
+
+    admin> jtm set timeout -queue=ftp-q -lastAccess=36000 -total=0
+
+The `jtm` periodically scans specified queue to discover expired movers. If required, a scan can be forced by
+
+    admin> jtm go
+
+pool command.
 
 
   [admin interface]: #intouch-admin
