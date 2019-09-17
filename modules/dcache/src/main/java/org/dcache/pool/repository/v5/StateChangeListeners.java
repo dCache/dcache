@@ -21,7 +21,7 @@ import org.dcache.pool.repository.StickyChangeEvent;
 
 class StateChangeListeners
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(StateChangeListeners.class);
 
     private final List<StateChangeListener> _listeners =
@@ -75,14 +75,14 @@ class StateChangeListeners
                              * handlers not to be called. We therefore
                              * catch, log and ignore these problems.
                              */
-                            _log.error("Unexpected failure during state change notification", e);
+                            LOGGER.error("Unexpected failure during state change notification", e);
                         }
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
             // Happens when executor is already shut down
-            _log.debug("Dropping repository state change notification: {}", e.getMessage());
+            LOGGER.debug("Dropping repository state change notification: {}", e.getMessage());
         }
     }
 
@@ -103,14 +103,14 @@ class StateChangeListeners
                              * handlers not to be called. We therefore
                              * catch, log and ignore these problems.
                              */
-                            _log.error("Unexpected failure during state change notification", e);
+                            LOGGER.error("Unexpected failure during state change notification", e);
                         }
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
             // Happens when executor is already shut down
-            _log.debug("Dropping repository access time change notification: {}", e.getMessage());
+            LOGGER.debug("Dropping repository access time change notification: {}", e.getMessage());
         }
     }
 
@@ -131,14 +131,14 @@ class StateChangeListeners
                              * handlers not to be called. We therefore
                              * catch, log and ignore these problems.
                              */
-                            _log.error("Unexpected failure during state change notification", e);
+                            LOGGER.error("Unexpected failure during state change notification", e);
                         }
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
             // Happens when executor is already shut down
-            _log.debug("Dropping repository stick flag change notification: {}", e.getMessage());
+            LOGGER.debug("Dropping repository stick flag change notification: {}", e.getMessage());
         }
     }
 
