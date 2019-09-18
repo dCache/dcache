@@ -1,5 +1,7 @@
 package diskCacheV111.poolManager;
 
+import com.google.common.escape.Escaper;
+import com.google.common.html.HtmlEscapers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,6 +111,8 @@ public class HttpPoolMgrEngineV3 implements
     private Map<String, Object> _context;
 
     private CellEndpoint _endpoint;
+
+    private final Escaper htmlEscaper = HtmlEscapers.htmlEscaper();
 
     public HttpPoolMgrEngineV3(String[] argsString)
     {
@@ -973,7 +977,8 @@ public class HttpPoolMgrEngineV3 implements
         String  pool = info.getPool();
         pool = (pool == null) || (pool.isEmpty() || pool.equals("<unknown>")) ? "N.N." : pool;
         String status = info.getStatus();
-        status = (status == null) || (status.isEmpty()) ? "&nbsp;" : status;
+        status = (status == null) || (status.isEmpty()) ? "&nbsp;" : htmlEscaper.escape(status);
+
         if (error) {
             html.beginRow("error", "error odd");
         } else {
