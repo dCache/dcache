@@ -72,6 +72,7 @@ public class CrossOriginResourceSharingHandler extends AbstractHandler
             }
         }
         if ("OPTIONS".equals(request.getMethod())) {
+            response.setHeader("Allow", "GET, PUT, POST, DELETE");
             response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
             response.setHeader("Access-Control-Allow-Headers",
                     "Authorization, Content-Type, Suppress-WWW-Authenticate");
