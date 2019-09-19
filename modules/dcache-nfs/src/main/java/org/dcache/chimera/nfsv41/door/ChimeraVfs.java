@@ -27,6 +27,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -94,6 +95,7 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static org.dcache.chimera.FsInodeType.PSET;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_EXTEND;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_MODIFY;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
@@ -316,6 +318,9 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public void setattr(Inode inode, Stat stat) throws IOException {
 	FsInode fsInode = toFsInode(inode);
         try {
+            if (shouldRejectAttributeUpdates(fsInode)) {
+                throw new PermException("setStat not allowed.");
+            }
             fsInode.setStat(toChimeraStat(stat));
         } catch (InvalidArgumentChimeraException e) {
             throw new InvalException(e.getMessage());
@@ -451,6 +456,18 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 && !fsInode.isDirectory()
                 && (!_fs.getInodeLocations(fsInode, StorageGenericLocation.TAPE).isEmpty()
                     || !_fs.getInodeLocations(fsInode, StorageGenericLocation.DISK).isEmpty());
+    }
+
+    private boolean shouldRejectAttributeUpdates(FsInode fsInode)
+                    throws ChimeraFsException {
+        return fsInode.type() == PSET
+                        && ((FsInode_PSET)fsInode).isChecksum()
+                        && !isRoot()
+                        && !_fs.getInodeChecksums(fsInode).isEmpty();
+    }
+
+    private boolean isRoot() {
+        return Subjects.isRoot(Subject.getSubject(AccessController.getContext()));
     }
 
     @Override
