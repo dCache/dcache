@@ -107,7 +107,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man8/dcache-billing-indexer.8
 /usr/share/man/man8/dcache.8
 
-%attr(755,root,root) /usr/share/dcache/lib/hsmcp.sh
+%attr(755,root,root) /usr/share/dcache/lib/hsmcp.rb
 %attr(755,root,root) /usr/share/dcache/lib/infoprovidercms.rb
 
 %attr(-,dcache,dcache) /var/log/dcache
