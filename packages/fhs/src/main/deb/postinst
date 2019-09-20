@@ -42,6 +42,8 @@ Please fix this and reinstall this package." >&2
     chmod 700 /var/lib/dcache/statistics
 
     # allow somewhat more relaxed permissions elsewhere
+    chmod 755 /usr/share/dcache/lib/hsmcp.sh
+    chmod 755 /usr/share/dcache/lib/infoprovidercms.rb
     chmod 750 /var/lib/dcache/billing
     chmod 770 /var/lib/dcache/star
     chmod 755 /var/spool/dcache/star
