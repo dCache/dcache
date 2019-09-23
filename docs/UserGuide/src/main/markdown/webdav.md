@@ -532,18 +532,18 @@ is not essential and is used only to make the output easier to read.
 
 ```console-user
 echo '<?xml version="1.0"?><propfind xmlns="DAV:"><prop><d:Checksums xmlns:d="http://www.dcache.org/2013/webdav"/></prop></propfind>' | curl -s -T - -X PROPFIND https://dcache.example.org/public/file-with-MD5 | xmllint -format -
-|<?xml version="1.0" encoding="utf-8"?>
-|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:ns1="http://www.dcache.org/2013/webdav" xmlns:d="DAV:">
-|  <d:response>
-|    <d:href>/public/file-with-MD5</d:href>
-|    <d:propstat>
-|      <d:prop>
-|        <ns1:Checksums>md5=rFb0uPrFc5zNtFd30xO+zw==,adler32=af543afc</ns1:Checksums>
-|      </d:prop>
-|      <d:status>HTTP/1.1 200 OK</d:status>
-|    </d:propstat>
-|  </d:response>
-|</d:multistatus>
+|&lt;?xml version="1.0" encoding="utf-8"?>
+|&lt;d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:ns1="http://www.dcache.org/2013/webdav" xmlns:d="DAV:">
+|  &lt;d:response>
+|    &lt;d:href>/public/file-with-MD5&lt;/d:href>
+|    &lt;d:propstat>
+|      &lt;d:prop>
+|        &lt;ns1:Checksums>md5=rFb0uPrFc5zNtFd30xO+zw==,adler32=af543afc&lt;/ns1:Checksums>
+|      &lt;/d:prop>
+|      &lt;d:status>HTTP/1.1 200 OK&lt;/d:status>
+|    &lt;/d:propstat>
+|  &lt;/d:response>
+|&lt;/d:multistatus>
 ```
 
 #### Failing upload if data is corrupt
