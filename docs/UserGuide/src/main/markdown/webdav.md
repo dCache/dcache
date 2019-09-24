@@ -9,6 +9,10 @@ Chapter 5. WebDAV
     + [Checksums](#checksums)
 + [Directory operations](#directory-operations)
 + [Requesting macaroons](#requesting-macaroons)
+    + [Inspecting a macaroon](#inspecting-a-macaroon)
+    + [Adding extra caveats](#adding-extra-caveats)
+    + [Understanding dCache caveats](#understanding-dcache-caveats)
+    + [Requesting a macaroon with caveats](#requesting-a-macaroon-with-caveats)
 + [Third-party transfers](#third-party-transfers)
 
 From the corresponding [English language Wikipeda
@@ -667,8 +671,8 @@ curl -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request
 |    "uri": {
 |        "targetWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]l8K",
 |        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]l8K",
-|        "target": "https://prometheus.desy.de/",
-|        "base": "https://prometheus.desy.de/"
+|        "target": "https://dcache.example.org/",
+|        "base": "https://dcache.example.org/"
 |    }
 |}
 ```
@@ -722,24 +726,22 @@ If the POST request targets the server's root directory then the
 
 <dd>the <tt>base</tt> URI with the macaroon embedded within the URI.
 This is achieved adding the macaroon as the value to the `authz`
-query-part, as described in the [macaroon authentication
-section](#macaroons).  The corresponding URL may be copied into a
-web-browser to allow browsing of dCache using the macaroon.</dd>
+query-part.  The corresponding URL may be copied into a web-browser to
+allow browsing of dCache using the macaroon.</dd>
 
 <dt><tt>targetWithMacaroon</tt></dt>
 
 <dd>the <tt>target</tt> URI with the macaroon embedded within the URI.
 This is achieved adding the macaroon as the value to the
-<tt>authz</tt> query-part, as described in the [macaroon
-authentication section](#macaroons).  If the target is a specific file
-then this URL may be used to make requests that target that file that
-are authorised using the macaroon (e.g., to download a specific file).
-If the target is a directory then the URL may be copied into a
+<tt>authz</tt> query-part.  If the target is a specific file then this
+URL may be used to make requests that target that file that are
+authorised using the macaroon (e.g., to download a specific file).  If
+the target is a directory then the URL may be copied into a
 web-browser to allow browsing of dCache using the macaroon.</dd>
 
 </dt>
 
-### Inspecting a macaroon's caveats
+### Inspecting a macaroon
 
 A macaroon appears as an opaque string, but actually contains
 information on what a user is allowed to do in the form of various
@@ -783,7 +785,7 @@ In this example, the macaroon has four caveats, each identified by the
 `id:2002;2002,0;paul`, `before:2019-09-25T08:12:11.080Z` and
 `home:/Users/paul`.
 
-### Adding extra caveats to a macaroon
+### Adding extra caveats
 
 One benefit of macaroons is that it is possible to add additional
 caveats to macaroon independent of dCache.  This allows some powerful
@@ -928,8 +930,8 @@ curl -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request
 |    "uri": {
 |        "targetWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]XmCg",
 |        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]XmCg",
-|        "target": "https://prometheus.desy.de/",
-|        "base": "https://prometheus.desy.de/"
+|        "target": "https://dcache.example.org/",
+|        "base": "https://dcache.example.org/"
 |    }
 |}
 ```
@@ -1048,15 +1050,15 @@ instead of `https://dcache.example.org/`.
 
 ```console-user
 curl -s -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request' -d '{"caveats": ["activity:LIST,DOWNLOAD"]}' https://dcache.example.org/users/paul/data-2019/top-secret.dat
-{
-    "macaroon": "MDAzY2[...]JeQo",
-    "uri": {
-        "targetWithMacaroon": "https://dcache.example.org/users/paul/data-2019/top-secret.dat?authz=MDAzY2[...]JeQo",
-        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAzY2[...]JeQo",
-        "target": "https://dcache.example.org/users/paul/data-2019/top-secret.dat",
-        "base": "https://dcache.example.org/"
-    }
-}
+|{
+|    "macaroon": "MDAzY2[...]JeQo",
+|    "uri": {
+|        "targetWithMacaroon": "https://dcache.example.org/users/paul/data-2019/top-secret.dat?authz=MDAzY2[...]JeQo",
+|        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAzY2[...]JeQo",
+|        "target": "https://dcache.example.org/users/paul/data-2019/top-secret.dat",
+|        "base": "https://dcache.example.org/"
+|    }
+|}
 ```
 
 Note that the `target` and `targetWithMacaroon` URLs in the response
