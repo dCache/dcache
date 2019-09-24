@@ -632,11 +632,436 @@ checksums.  The `1:` indicates an ADLER32 checksum value, while the
 
 ## Directory operations
 
+A GET request that targets a directory returns an web page that
+describes that directory.  This provides a very simple read-only web
+interface for accessing files in dCache, through which you can view
+the contents of a directory and view or download files stored in
+dCache.
+
+If the URI contains query values (e.g.,
+`https://dcache.example.org/?foo=bar`) then those values are included
+in the directory web-page's navigation and file download links.  For
+example, if the directory request was authorised using the bearer
+token `TOKEN` embedded within the URL (`?authz=TOKEN`) then the user
+may navigate dCache's directory structure and request file downloads
+that are also authorised from this bearer token.  This is particularly
+useful when used with macaroons, as it provides an interactive view of
+dCache powered by macaroons.
+
 ## Requesting macaroons
 
 A client may request dCache issue a macaroon by making a specific
 request to the WebDAV door.  This section describes this process; the
 earlier section describes how macaroons may be used.
+
+To request a macaroon, the client makes a POST request, with the
+`Content-Type` of this request set to `application/macaroon-request`.
+Note that this is only possible if the request is authenticated.
+
+The following example shows the simplest request to obtain a macaroon.
+
+```console-user
+curl -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request' https://dcache.example.org/
+|{
+|    "macaroon": "MDAxY2[...]l8K",
+|    "uri": {
+|        "targetWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]l8K",
+|        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]l8K",
+|        "target": "https://prometheus.desy.de/",
+|        "base": "https://prometheus.desy.de/"
+|    }
+|}
+```
+
+> **IMPORTANT**
+>
+> In this example, the full macaroon would be a 284-character strings.
+> To improve readability, this macaroon is replaced by the much
+> shorter string `MDAxY2[...]l8K`.  This convention is followed for
+> all macaroons in this chapter.
+
+The macaroon request must be authenticated.  In the above example, the
+request is authenticated using X.509-based authentication (the option
+`-E /tmp/x509up_u1000`).  Macaroon requests may be authenticated with
+any supported webdav authentication scheme, with the exception of
+SciTokens with path restrictions.
+
+The response is a JSON object that includes various related values.
+The first is the actual macaroon, which is the corresponding value of
+the `macaroon` JSON object key.
+
+The macaroon may be used when making requests, as described in the
+[macaroon authentication section](#macaroons).
+
+The `uri` JSON object value is another JSON object, providing useful
+URIs related to this query.  These items may all be derived from the
+macaroon value, so are included as a helpful short-cut.  The `base`
+value is the URI of the root path, containing the scheme, hostname,
+port number (if non-standard).  The `target` resolves the POST
+request's path against the `base` URI; if the POST request targeted
+the root directory then `base` and `target` URIs have the same value.
+
+The `uri` JSON object value is another JSON object, providing useful
+URIs related to this query.  These items may all be derived from the
+macaroon value, so are included as a helpful short-cut.
+
+<dt>
+<dt><tt>base</tt></dt>
+
+<dd>the URI of the WebDAV server's root path.  This URI contains the
+scheme, hostname, port number (if non-standard).  The other URIs may
+be derived from this URI.</dd>
+
+<dt><tt>target</tt></dt>
+
+<dd>the POST request's path resolved against the <tt>base</tt> URI.
+If the POST request targets the server's root directory then the
+<tt>base</tt> and <tt>target</tt> URIs will have the same value.</dd>
+
+<dt><tt>baseWithMacaroon</tt></dt>
+
+<dd>the <tt>base</tt> URI with the macaroon embedded within the URI.
+This is achieved adding the macaroon as the value to the `authz`
+query-part, as described in the [macaroon authentication
+section](#macaroons).  The corresponding URL may be copied into a
+web-browser to allow browsing of dCache using the macaroon.</dd>
+
+<dt><tt>targetWithMacaroon</tt></dt>
+
+<dd>the <tt>target</tt> URI with the macaroon embedded within the URI.
+This is achieved adding the macaroon as the value to the
+<tt>authz</tt> query-part, as described in the [macaroon
+authentication section](#macaroons).  If the target is a specific file
+then this URL may be used to make requests that target that file that
+are authorised using the macaroon (e.g., to download a specific file).
+If the target is a directory then the URL may be copied into a
+web-browser to allow browsing of dCache using the macaroon.</dd>
+
+</dt>
+
+### Inspecting a macaroon's caveats
+
+A macaroon appears as an opaque string, but actually contains
+information on what a user is allowed to do in the form of various
+caveats.
+
+While it is not essential to understand the caveats of a macaroon,
+showing a macaroon's caveats should make it easier to understand how
+to request more restrictive macaroons.
+
+This section will use the Python macaroon library `pymacaroons`.  This
+is available pre-packaged; e.g., `apt-get install python-pymacaroons`
+or `pip install pymacaroons`.
+
+The following example shows how to list the caveats contained within a
+macaroon:
+
+```python
+from pymacaroons import Macaroon
+import sys
+
+for line in sys.stdin:
+    m = Macaroon.deserialize(line)    
+    print(m.inspect())
+```
+
+Here is a typical response:
+
+```console-user
+echo MDAxY2[...]l8K | python inspect-macaroon.py
+|location Optional.empty
+|identifier aktmMDje
+|cid iid:GaVltWFP
+|cid id:2002;2002,0;paul
+|cid before:2019-09-25T08:12:11.080Z
+|cid home:/Users/paul
+|signature 0a9dcf9ede9d747fdbf365a88c4de7a65a60a709e9054f3e6f5533b06716365f
+```
+
+In this example, the macaroon has four caveats, each identified by the
+`cid` prefix.  These four caveats values are `iid:GaVltWFP`,
+`id:2002;2002,0;paul`, `before:2019-09-25T08:12:11.080Z` and
+`home:/Users/paul`.
+
+### Adding extra caveats to a macaroon
+
+One benefit of macaroons is that it is possible to add additional
+caveats to macaroon independent of dCache.  This allows some powerful
+work-flows where an external agent requests a powerful macaroon and
+generates more restricted macaroons "on demand".
+
+The portal use-case provides an example of such a workflow.  A
+web-portal should allow its users to download specific files if that
+user is authorised to view that data, where these users are unknown to
+dCache.  The portal requests a macaroon that is authorised to download
+any file in dCache.  When a user requests downloading a file she is
+authorised to read, the portal autonomously generate a macaroon that
+is authorised to download that single file and redirects the user's
+request to the URL with the embedded macaroon.  The result is an
+architecture that allows users to download data at an almost arbitrary
+throughput.
+
+The python library above may be used to add caveats to an existing
+macaroon.  The macaroon is de-serialised, the additional caveats are
+added and the resulting macaroon is serialised.
+
+### Understanding dCache caveats
+
+Whenever dCache issues a macaroon there are always some caveats.  When
+asking dCache for a macaroon, the request may ask that additional
+caveats be included.  Although extra caveats may be added to a
+macaroon directly, it is somewhat safer to have dCache add the caveats
+as this avoids dCache returning an unnecessarily powerful macaroon.
+
+In general dCache caveats values have the format `KEY:VALUE`; e.g.,
+the caveat `before:2019-09-25T08:12:11.080Z` has a key of `before` and
+value `2019-09-25T08:12:11.080Z`.
+
+The following table lists the available caveat keys along with the
+value format and what it means.
+
+<dt>
+<dt><tt>iid</tt></dt>
+
+<dd>The value is a BASE64 value.  This caveat is added automatically
+by dCache and is the first caveat.  This is the Issue ID: a random
+number that (with high likelihood) uniquely identifies the request
+that issued this macaroon.  A macaroon can have at most one
+<tt>iid</tt> caveat: adding an additional <tt>iid</tt> caveat renders
+the macaroon invalid.</dd>
+
+<dt><tt>id</tt></dt>
+
+<dd>The value is a semi-colon-separated list of items: the uid, a
+comma-separated list containing the primary gid and any other gids,
+and the username.  This caveat identifies the user the requested the
+macaroon.  This caveat is used to make authorisation decisions and to
+identify the ownership of created items (e.g., uploaded files, created
+directories).  This macaroon is added by dCache automatically.  A
+macaroon has exactly one <tt>id</tt> caveat: adding an additional
+<tt>id</tt> caveat renders the macaroon invalid.</dd>
+
+<dt><tt>before</tt></dt>
+
+<dd> The value is an ISO 8601 instant.  This caveat limits when the
+macaroon is valid.  The macaroon is only valid before the specified
+instant.  It is valid to have multiple <tt>before</tt> caveats.  The
+macaroon only valid when all <tt>before</tt> caveats are valid.  </dd>
+
+<dt><tt>path</tt></dt>
+
+<dd>The value is an absolute path within dCache.  This caveat limits
+which part of the namespace is visible to users.  Ancestor directories
+are accessible as are all children of path.  All other path items are
+not accessible.  In addition, non-accessible items are excluded from
+directory listing.  Multiple path caveats are allowed and have
+cumulative effect, where a subsequent path caveats is resolved
+relative to previous path caveats; e.g., a macaroon with two path
+caveats `/foo` and `/bar` behaves the same as a macaroon with a single
+path caveat `/foo/bar`.</dd>
+
+<dt><tt>activity</tt></dt>
+
+<dd>The value is a comma-separated list of enumerated values.  An
+activity caveat limits what operations are allowed.  The following
+activities are defined: <tt>LIST</tt> obtain directory lists,
+<tt>UPLOAD</tt> create new files, <tt>DOWNLOAD</tt> obtain files'
+data, <tt>DELETE</tt> delete a file or overwrite an existing file,
+<tt>MANAGE</tt> rename and move files, <tt>READ_METADATA</tt> obtain
+file metadata, <tt>UPDATE_METADATA</tt> modify file metadata.  The
+<tt>READ_METADATA</tt> is implied if any other activity is specified.
+For example, the caveat <tt>activity:LIST,DOWNLOAD</tt> restricts the
+macaroon to read-only operations.  Multiple activity caveats are
+supported.  A request must satisfy all activity caveats to be
+accepted.</dd>
+
+<dt><tt>home</tt></dt>
+
+<dd> The value is an absolute path in dCache.  This caveat is added
+automatically by dCache.</dd>
+
+<dt><tt>ip</tt></dt>
+
+<dd> The value is a comma-separated list of IPv4 or IPv6 addresses or
+subnets in CIDR format.  If specified, client requests are only
+accepted if they come from one of the caveat's listed addresses or
+from within one of the listed subnets.  Multiple caveats are accepted.
+A request is only accepted if it satisfies all <tt>ip</tt>
+caveats.</dd>
+
+<dt><tt>root</tt></dt>
+
+<dd> The value is an absolute path within dCache.  All paths are first
+resolved against the root path.  This makes the root path a prefix for
+all requests.  Multiple caveats are allowed, with the effective root
+being the combination of the <tt>root</tt> caveats; e.g., a macaroon
+with two root caveats `/foo` and `/bar` is equivalent to a macaroon
+with the single <tt>root</tt> caveat `/foo/bar`.</dd>
+
+</dt>
+
+### Requesting a macaroon with caveats
+
+The POST request may include a JSON object providing information about
+the desired macaroon.  The `caveats` key may be supplied.  The value
+is a JSON list of JSON strings.  Each string is a caveat to be
+included in the macaroon.
+
+For example, the following JSON requests the generated macaroon
+contain the caveat `activity:LIST,DOWNLOAD`, which limits the macaroon
+to read-only operations.
+
+```json
+{
+  "caveats": [
+    "activity:LIST,DOWNLOAD"
+  ]
+}
+```
+
+The corresponding curl command is:
+
+```console-user
+curl -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request' -d '{"caveats": ["activity:LIST,DOWNLOAD"]}' https://dcache.example.org/
+|{
+|    "macaroon": "MDAxY2[...]XmCg",
+|    "uri": {
+|        "targetWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]XmCg",
+|        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]XmCg",
+|        "target": "https://prometheus.desy.de/",
+|        "base": "https://prometheus.desy.de/"
+|    }
+|}
+```
+
+Often, it is useful to generate a macaroon that expires some fixed
+period in the future; for example, to generate a macaroon that expires
+in five minutes.
+
+One way to achieve this is to calculate the instant five minutes in
+the future, convert this into ISO 8601 format and include the caveat
+in the macaroon request as one of the desired caveats.  For example,
+if the current time is 12:00:00 CEST on Tuesday 24th September 2019
+then the caveat would be `before:2019-09-24T10:05:00Z`.
+
+To request a read-only macaroon that is valid for five minutes, The
+request JSON object would look like:
+
+```json
+{
+  "caveats": [
+    "activity:LIST,DOWNLOAD",
+    "before:2019-09-24T10:05:00Z"
+  ]
+}
+```
+
+The corresponding curl command is:
+
+```console-user
+curl -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request' -d '{"caveats": ["activity:LIST,DOWNLOAD", "before:2019-09-24T10:05:00Z"]}' https://dcache.example.org/
+|{
+|    "macaroon": "MDAxY2[...]yRgK",
+|    "uri": {
+|        "targetWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]yRgK",
+|        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]yRgK",
+|        "target": "https://dcache.example.org/",
+|        "base": "https://dcache.example.org/"
+|    }
+|}
+```
+
+As a short-cut, you can request a macaroon with a specific validity,
+such as five minutes.  dCache will calculate the corresponding period
+and add the corresponding `before` caveat.  This is added as the
+`validity` key in the request JSON object.  The value is an ISO 8601
+value describing the validity period; for example, five minutes is
+expressed as `PT5M` in ISO 8601.
+
+The following object requesting a read-only macaroon that is only
+valid for the next five minutes:
+
+```json
+{
+  "caveats": [
+    "activity:LIST,DOWNLOAD"
+  ],
+  "validity": "PT5M"
+}
+```
+
+Here is the corresponding curl command:
+
+```console-user
+curl -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request' -d '{"caveats": ["activity:LIST,DOWNLOAD"], "validity": "PT5M"}' https://dcache.example.org/
+|{
+|    "macaroon": "MDAxY2[...]5bCg",
+|    "uri": {
+|        "targetWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]5bCg",
+|        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]5bCg",
+|        "target": "https://dcache.example.org/",
+|        "base": "https://dcache.example.org/"
+|    }
+|}
+```
+
+The final short-cut is for providing a `path` caveat.  Supposing you
+wish to allow a user to download a specific file, or files within a
+specific directory.  This may be achieved by including the `path`
+caveat in the macaroon request object.
+
+For example, to allow users to download the specific file
+`/users/paul/data-2019/top-secret.dat`, the following JSON object may
+be supplied to the macaroon request:
+
+```json
+{
+  "caveats": [
+    "activity:LIST,DOWNLOAD",
+    "path:/users/paul/data-2019/top-secret.dat"
+  ]
+}
+```
+
+The corresponding curl request would look like:
+
+```console-user
+curl -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request' -d '{"caveats": ["activity:LIST,DOWNLOAD", "path:/users/paul/data-2019/top-secret.dat"]}' https://dcache.example.org/
+|{
+|    "macaroon": "MDAxY2[...]tmIK",
+|    "uri": {
+|        "targetWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]tmIK",
+|        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAxY2[...]tmIK",
+|        "target": "https://dcache.example.org/",
+|        "base": "https://dcache.example.org/"
+|    }
+|}
+```
+
+As a convenient short-cut, the desired path may be included as the
+path of the macaroon request URL.
+
+For example, the same request may be achieved by sending the POST
+request to
+`https://dcache.example.org/users/paul/data-2019/top-secret.dat`
+instead of `https://dcache.example.org/`.
+
+```console-user
+curl -s -E /tmp/x509up_u1000 -X POST -H 'Content-Type: application/macaroon-request' -d '{"caveats": ["activity:LIST,DOWNLOAD"]}' https://dcache.example.org/users/paul/data-2019/top-secret.dat
+{
+    "macaroon": "MDAzY2[...]JeQo",
+    "uri": {
+        "targetWithMacaroon": "https://dcache.example.org/users/paul/data-2019/top-secret.dat?authz=MDAzY2[...]JeQo",
+        "baseWithMacaroon": "https://dcache.example.org/?authz=MDAzY2[...]JeQo",
+        "target": "https://dcache.example.org/users/paul/data-2019/top-secret.dat",
+        "base": "https://dcache.example.org/"
+    }
+}
+```
+
+Note that the `target` and `targetWithMacaroon` URLs in the response
+JSON object have changed.  In particular, the `targetWithMacaroon` URL
+may be used directly to download the desired file.
 
 
 ## Third-party transfers
