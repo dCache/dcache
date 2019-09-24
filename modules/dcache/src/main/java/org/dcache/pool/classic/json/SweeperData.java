@@ -82,6 +82,7 @@ public class SweeperData implements Serializable {
     private String label;
     private Integer    lruQueueSize;
     private Long       lruTimestamp;
+    private Double margin;
 
     public String getLabel() {
         return label;
@@ -99,6 +100,8 @@ public class SweeperData implements Serializable {
         return lastAccess;
     }
 
+    public Double getMargin() { return margin; }
+
     public void setLabel(String label) {
         this.label = label;
     }
@@ -113,6 +116,10 @@ public class SweeperData implements Serializable {
 
     public void setLastAccessHistogram(CountingHistogram lastAccess) {
         this.lastAccess = lastAccess;
+    }
+
+    public void setMargin(Double margin) {
+        this.margin = margin;
     }
 
     public static CountingHistogram createLastAccessHistogram() {

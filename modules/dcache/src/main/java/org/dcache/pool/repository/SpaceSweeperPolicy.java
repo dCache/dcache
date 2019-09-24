@@ -17,4 +17,11 @@ public interface SpaceSweeperPolicy
      * removable file.
      */
     long getLru();
+
+    /**
+     * Returns the percentage of free space to be reclaimed beyond
+     * that required to write the file when the sweeper is called
+     * because of lack of free space.
+     */
+    double getMargin();
 }

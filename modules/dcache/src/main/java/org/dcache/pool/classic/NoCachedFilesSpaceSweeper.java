@@ -60,11 +60,15 @@ public class NoCachedFilesSpaceSweeper
     }
 
     @Override
+    public double getMargin() { return 0.0; }
+
+    @Override
     public SweeperData getDataObject() {
         SweeperData info = new SweeperData();
         info.setLabel("No Cached Files Space Sweeper");
         info.setLruQueueSize(0);
         info.setLruTimestamp(0L);
+        info.setMargin(0.0);
         return info;
     }
 

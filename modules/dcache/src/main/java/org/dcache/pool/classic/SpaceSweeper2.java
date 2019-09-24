@@ -1,8 +1,11 @@
 package org.dcache.pool.classic;
 
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
+import java.io.PrintWriter;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -21,6 +24,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -46,8 +50,8 @@ import org.dcache.vehicles.FileAttributes;
 import static java.util.Comparator.naturalOrder;
 
 public class SpaceSweeper2
-    implements Runnable, CellCommandListener, StateChangeListener,
-               SpaceSweeperPolicy, PoolDataBeanProvider<SweeperData>
+    implements Runnable, CellCommandListener, StateChangeListener, CellSetupProvider,
+                SpaceSweeperPolicy, PoolDataBeanProvider<SweeperData>
 {
     private static final Logger _log = LoggerFactory.getLogger(SpaceSweeper2.class);
 
@@ -60,20 +64,38 @@ public class SpaceSweeper2
 
     private Account _account;
     private Thread _thread;
+    private double _margin = 0.0;
 
     public SpaceSweeper2()
     {
     }
 
+    public void printSetup(PrintWriter pw)
+    {
+        pw.println("sweeper reclaim margin " + _margin);
+    }
+
+    @Required
     public void setRepository(Repository repository)
     {
         _repository = repository;
         _repository.addListener(this);
     }
 
+    @Required
     public void setAccount(Account account)
     {
         _account = account;
+    }
+
+    @Required
+    public synchronized void setMargin(double margin)
+    {
+        Preconditions.checkArgument(margin >= 0 && margin <= 1,
+                                    String.format("margin percentage must be a "
+                                                   + "value between 0.0 and 1.0, "
+                                                   + "was given %s.", margin));
+        _margin = margin;
     }
 
     public void start()
@@ -97,6 +119,12 @@ public class SpaceSweeper2
     public boolean isRemovable(CacheEntry entry)
     {
         return entry.getState() == ReplicaState.CACHED && !entry.isSticky();
+    }
+
+    @Override
+    public double getMargin()
+    {
+        return _margin;
     }
 
     /**
@@ -186,6 +214,26 @@ public class SpaceSweeper2
         CacheEntry entry = event.getNewEntry();
         if (remove(entry)) {
             add(entry);
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "sweeper reclaim margin",
+                    hint = "greedily reclaim removable space",
+                    description = "When the sweeper is triggered to reclaim "
+                                    + "space, require free space after the "
+                                    + "call to be at least this percentage "
+                                    + "of total space.")
+    public class SweeperReclaimMargin implements Callable<String>
+    {
+        @Argument
+        double margin = 0.0;
+
+        @Override
+        public String call()
+        {
+            setMargin(margin);
+            return "Reclaim margin is now set to " + margin*100 + "% of total space.";
         }
     }
 
@@ -294,6 +342,7 @@ public class SpaceSweeper2
     public SweeperData getDataObject() throws InterruptedException {
         SweeperData info = new SweeperData();
         info.setLabel("Space Sweeper v2");
+        info.setMargin(_margin);
 
         List<PnfsId> list;
 
@@ -422,6 +471,14 @@ public class SpaceSweeper2
         return deleted;
     }
 
+    private synchronized long getMarginalBytes()
+    {
+        double reclaim = _repository.getSpaceRecord().getTotalSpace() * _margin;
+        _log.debug("sweeper margin is {}, marginal space to reclaim is {} bytes.",
+                   _margin, reclaim);
+        return (long)(reclaim);
+    }
+
     /**
      * Blocks until the requested space is larger than the free space
      * and removable space exists. Returns the number of requested
@@ -436,7 +493,7 @@ public class SpaceSweeper2
                    account.getRemovable() == 0) {
                 account.wait();
             }
-            return account.getRequested() - account.getFree();
+            return getMarginalBytes() + account.getRequested() - account.getFree();
         }
     }
 

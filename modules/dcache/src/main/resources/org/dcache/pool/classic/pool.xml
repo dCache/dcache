@@ -134,6 +134,7 @@
     <description>Pool garbage collector</description>
     <property name="repository" ref="rep"/>
     <property name="account" ref="account"/>
+    <property name="margin" value="${pool.limits.sweeper-margin}"/>
   </bean>
 
   <bean id="rep"
