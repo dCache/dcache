@@ -210,6 +210,7 @@
       <description>Controller for centralising flushing</description>
       <property name="storageClassContainer" ref="queue"/>
       <property name="poolMode" ref="pool-mode"/>
+    <property name="queueOrder" value="${pool.flush-controller.queue-order}"/>
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">

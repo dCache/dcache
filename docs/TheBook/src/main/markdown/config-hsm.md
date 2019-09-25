@@ -287,6 +287,32 @@ Login to the Admin Interface to change the entry of the pool 'setup' file for a 
     (pool_1) admin > rh set timeout 5
     (pool_1) admin > save
 
+
+As with mover queues, the flush queue can also be set to behave as either LIFO
+(last-in-first-out) or FIFO (first-in-first-out).  This can be done statically using
+the property:
+
+```
+    (one-of?fifo|lifo)pool.flush-controller.queue-order=fifo
+```
+
+in the setup file:
+
+```
+    flush set queue order lifo
+```
+
+or by using the admin command itself:
+
+```
+   \s <pool-name> flush set queue order lifo
+```
+
+While neither queue order guarantees fairness, switching to LIFO under heavy
+queuing where the jobs are long running may provide better throughput to
+late-coming users.  (Default is FIFO.)
+
+
 #### The namespace layout
 
 In order to allow dCache to remove files from attached TSSes, the “cleaner.enable.hsm = true” must be added immediately underneath the \[namespaceDomain/cleaner\] service declaration:

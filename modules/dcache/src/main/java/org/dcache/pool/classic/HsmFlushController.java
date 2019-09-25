@@ -24,6 +24,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
 import diskCacheV111.vehicles.PoolFlushGainControlMessage;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
@@ -36,11 +37,14 @@ import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
 import org.dcache.pool.PoolDataBeanProvider;
-import org.dcache.util.FireAndForgetTask;
+import org.dcache.pool.classic.MoverRequestScheduler.Order;
 import org.dcache.pool.classic.json.FlushControllerData;
+import org.dcache.util.FireAndForgetTask;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.pool.classic.MoverRequestScheduler.Order.FIFO;
 
 /**
  * Controls flush to tape.
@@ -63,6 +67,7 @@ public class HsmFlushController
     private long _flushingInterval = TimeUnit.MINUTES.toMillis(1);
     private long _retryDelayOnError = TimeUnit.MINUTES.toMillis(1);
     private int _maxActive = 1000;
+    private Order _order = FIFO;
     private PoolV2Mode _poolMode;
     private Supplier<CellInfo> _cellInfoSupplier;
     private StorageClassContainer _storageQueue;
@@ -154,6 +159,17 @@ public class HsmFlushController
         _retryDelayOnError = delay;
     }
 
+    public synchronized Order getQueueOrder()
+    {
+        return _order;
+    }
+
+    @Required
+    public synchronized void setQueueOrder(Order order)
+    {
+        _order = order;
+    }
+
     public void start()
     {
         schedule();
@@ -193,6 +209,7 @@ public class HsmFlushController
         pw.println("flush set max active " + _maxActive);
         pw.println("flush set interval " + TimeUnit.MILLISECONDS.toSeconds(_flushingInterval));
         pw.println("flush set retry delay " + TimeUnit.MILLISECONDS.toSeconds(_retryDelayOnError));
+        pw.println("flush set queue order " + _order.name());
     }
 
     @Override
@@ -273,7 +290,7 @@ public class HsmFlushController
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
                 LOGGER.warn("Pool mode prevents flushing to nearline storage.");
             } else {
-                _storageQueue.flushAll(getMaxActive(), _retryDelayOnError);
+                _storageQueue.flushAll(getMaxActive(), _retryDelayOnError, getQueueOrder());
             }
         }
     }
@@ -292,6 +309,24 @@ public class HsmFlushController
             checkArgument(concurrency >= 0, "Concurrency must be non-negative");
             setMaxActive(concurrency);
             return "Max active flush set to " + concurrency;
+        }
+    }
+
+    @AffectsSetup
+    @Command(name = "flush set queue order",
+                    description = "Set ready queue order to LIFO (last-in-first-out) or "
+                                    + "FIFO (first-in-first-out, default).")
+    class SetQueueOrder implements Callable<String>
+    {
+        @Argument
+        String order = "FIFO";
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            Order o = Order.valueOf(order.toUpperCase());
+            setQueueOrder(o);
+            return "Ready queue set to " + o.name();
         }
     }
 

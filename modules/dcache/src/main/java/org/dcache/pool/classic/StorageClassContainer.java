@@ -31,6 +31,7 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 import org.dcache.pool.PoolDataBeanProvider;
+import org.dcache.pool.classic.MoverRequestScheduler.Order;
 import org.dcache.pool.classic.json.HSMFlushQManagerData;
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
@@ -211,7 +212,7 @@ public class StorageClassContainer
         _storageHandler.flush(hsm, Collections.singleton(pnfsId), callback);
     }
 
-    public void flushAll(int maxActive, long retryDelayOnError)
+    public void flushAll(int maxActive, long retryDelayOnError, Order order)
     {
         long now = System.currentTimeMillis();
         Map<Boolean, List<StorageClassInfo>> classes =
@@ -230,10 +231,21 @@ public class StorageClassContainer
                 .limit(drainLimit)
                 .forEach(StorageClassInfo::drain);
 
-        ready.stream()
-                .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted))
-                .limit(flushLimit)
-                .forEach(i -> i.flush(Integer.MAX_VALUE, null, null));
+        switch (order) {
+            case LIFO:
+                ready.stream()
+                     .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted)
+                                       .reversed())
+                     .limit(flushLimit)
+                     .forEach(i -> i.flush(Integer.MAX_VALUE, null, null));
+                break;
+            default:
+                ready.stream()
+                     .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted))
+                     .limit(flushLimit)
+                     .forEach(i -> i.flush(Integer.MAX_VALUE, null, null));
+                break;
+        }
     }
 
     @Override
