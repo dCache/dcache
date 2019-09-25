@@ -14,6 +14,13 @@ Chapter 5. WebDAV
     + [Understanding dCache caveats](#understanding-dcache-caveats)
     + [Requesting a macaroon with caveats](#requesting-a-macaroon-with-caveats)
 + [Third-party transfers](#third-party-transfers)
+    + [Authenticating the third-party request](#authenticating-the-third-party-request)
+    + [Authorising the third-party request](#authorising-the-third-party-request)
+    + [HTTP response](#http-response)
+    + [Data integrity](#data-integrity)
+    + [Custom transfer headers](#custom-transfer-headers)
+    + [Authorising the data transfer](#authorising-the-data-transfer)
+    + [Complete example](#complete-example)
 
 From the corresponding [English language Wikipeda
 entry](https://en.wikipedia.org/wiki/WebDAV),
@@ -1068,7 +1075,453 @@ may be used directly to download the desired file.
 
 ## Third-party transfers
 
-Third-party transfers are requests to dCache that it transfers a file
-with another HTTP server.  This differs from normal client
-interactions as it does not require the client first downloads the
-file and subsequently uploads the file.
+Third-party transfers are requests to dCache, asking that it transfers
+a file with another HTTP server.  This differs from normal HTTP
+interactions as a third-party transfer involves data transferred
+directly between dCache and some other HTTP server (which might or
+might not be running dCache).
+
+Third-party transfers are useful when transferring data as it uses the
+network between the source and destination storage systems.  This is
+often well provisioned, with significant available bandwidth.  As an
+example, a laptop connected via a coffee shop's free wifi can easily
+orchestrate the transfer of petabytes of data using third-party
+transfers.
+
+Third-party transfer requests are distinguished into two groups: *pull
+requests* where dCache is downloading data from the remote server, and
+*push requests* where dCache is uploading data to the remote server.
+
+To initiate a third-party transfer, the client issues a `COPY` request
+with the remote URL as either the `Source` request header (for a pull
+request) or the `Destination` request header (for a push request).  In
+either case, the header value is a URL, which describes how data is
+transferred, the name of the remote server, the port number (if
+non-standard) and the path of the file.
+
+The COPY request may optionally include other headers that affect the
+transfer.  These other headers are described in subsequent sections.
+
+### Authenticating the third-party request
+
+All authentication schemes that dCache supports for direct WebDAV
+operations are also supported for third-party transfers.
+
+### Authorising the third-party request
+
+> **IMPORTANT**
+>
+
+> This section discusses how dCache handles third-party COPY requests:
+> requests to initiate a third-party copy.  There is a separate issue
+> where dCache must somehow authorise the data-bearing transfer.  This
+> is discussed in a [subsequent
+> section](#authorising-the-data-transfer).
+
+Third-party transfers are only allowed for authenticated users:
+anonymous third-party COPY requests are always rejected.
+
+In general, third-party transfer authorisation may be understood by
+considering what were to happen if the client were to relay the data.
+In principal, a client can achieve the same result as a third-party
+transfer by downloading the data from the source and uploading that
+data to the destination.
+
+A third-party transfer request that pulls data from the remote server
+is authorised in a similar manner that user attempting to upload the
+data itself.  To initiate a third-party pull request, the user must be
+authorised to write into the target directory.  If the target file
+already exists then the user must be authorised to overwrite that
+existing data.
+
+A third-party transfer request that pushes data to the remote server
+is authorised in a similar manner to the client downloading the data:
+it requires that the client is able to read the source file.
+
+If the user is not authorised to make a specific third-party transfer
+request then dCache returns immediate with an error status code.
+
+In the following example, the client is attempting to initiate a pull
+request without authenticating:
+
+```console-user
+curl -D- -X COPY -H 'Source: http://www.dcache.org/images/dcache-banner.png' https://dcache.example.org/test.png
+HTTP/1.1 401 Permission denied
+Date: Wed, 25 Sep 2019 08:30:04 GMT
+Server: dCache/6.0.0-SNAPSHOT
+WWW-Authenticate: Basic realm=""
+Content-Length: 0
+
+```
+
+### HTTP response
+
+If the third-party transfer request is authorised and it passes some
+basic checks (e.g., exactly one of the `Source` and `Destination`
+request headers are present) then dCache will respond immediately with
+a 202 status code.  This indicates that work has started to process
+the request, but dCache will continue working on this request in the
+background.
+
+A transfer may take some time to complete.  While working on the
+request, dCache will return periodic reports (called performance
+markers) describing the current status, as part of the HTTP response.
+The HTTP response is sent using chunked encoding.  This allows the
+client to receive these reports in a timely fashion, to get feedback
+as the transfer is processed.
+
+Each performance marker has a strict format.  Each report contains
+multiple lines: the first line is `Perf Marker`, followed by multiple
+metadata lines, ending with the line containing only `End`.  Each
+metadata line represents a key-value pair, printed as the key,
+followed by a colon-space (`: `), followed by the current value.
+
+There are two phases to any transfer: the pre-transfer phase and the
+transfer phase.
+
+#### Pre-transfer phase
+
+During the pre-transfer phase, dCache is readying itself for the
+transfer.
+
+For pull-requests, this involves creating the namespace entry,
+deciding which pool will accept the new data.  There are also
+potential internal failures, which trigger internal retries.
+
+For push-requests, the pool that will deliver the file's contents is
+selected.  Depending on dCache configuration, it is possible that the
+selected pool does not currently contain the file's data.  In this
+case, dCache will initiate an internal copy of the file's data, which
+may take some time.
+
+During the pre-transfer phase, dCache returns progress markers that
+look like this:
+
+```
+Perf Marker
+    Timestamp: 1569399772
+    State: 3
+    State description: querying created file metadata
+    Stripe Index: 0
+    Total Stripe Count: 1
+End
+```
+
+These metadata items have the following meaning:
+
+| Key               | Value     | Meaning
+| ----------------- | --------- | -------
+| Timestamp         | UNIX time | When the transfer was accepted
+| State             | Integer   | A machine-readable description of the current status
+| State description | String    | A human-readable description of the current status
+| Stripe Index      | `0`       | Included for compatibility with other software
+| Total Strip Count | `1`       | Included for compatibility with other software
+
+#### Transfer phase
+
+Once all the preparation steps of the pre-transfer phase has
+completed, the pool will attempt to make an HTTP transfer.  During
+this transfer phase, the transfer is in state `10` (described as
+`transfer has started`).
+
+While the transfer is underway, some additional metadata is included
+in the performance markers:
+
+Here is a typical performance marker:
+
+```
+Perf Marker
+    Timestamp: 1569403183
+    State: 10
+    State description: transfer has started
+    Stripe Index: 0
+    Stripe Start Time: 1569403178
+    Stripe Last Transferred: 1569403183
+    Stripe Transfer Time: 4
+    Stripe Bytes Transferred: 503928392
+    Stripe Status: RUNNING
+    Total Stripe Count: 1
+End
+```
+
+The fields `Timestamp`, `State`, `State description`, `Stripe Index`
+and `Total Stripe Count` are still present and have the same meaning
+as for the pre-transfer phase progress markers.
+
+The additional metadata items have the following meaning:
+
+| Key                      | Value       | Meaning
+| ------------------------ | ----------- | -------
+| Stripe Start Time        | UNIX time   | When the transfer was started
+| Stripe Last Transferred  | UNIX time   | When data was last send or received
+| Stripe Transfer Time     | Seconds     | How long the transfer has been running
+| Stripe Bytes Transferred | Bytes       | How many bytes have been transferred
+| Stripe Status            | enumeration | Current status of the transfer
+
+A large discrepancy between `Timestamp` and `Stripe Last Transferred`
+indicates that the remote server has stopped accepting data (for push
+requests) or stopped sending data (for pull requests).
+
+The client can establish the average transfer bandwidth between two
+performance markers by comparing the two `Stripe Bytes Transferred`
+values.  Advanced clients may use this to detect stalled transfers.
+
+The `Stripe Status` value is one of `NEW`, `QUEUED`, `RUNNING`,
+`DONE`, `CANCELED`.  As the transfer only remains in state `NEW`,
+`DONE` and `CANCELED` for a very short period, you should only see
+transfers in state `QUEUED` or in state `RUNNING`.  `QUEUED` indicates
+the transfer is queued on the pool, while `RUNNING` indicates the
+transfer is now being processed.
+
+#### Final result
+
+The final line of the transfer describes whether or not the transfer
+was successful.  If the transfer was successful then the final line is
+`success: Created`.  If the transfer was unsuccessful then the final
+line starts `failure: ` followed by a description of why the transfer
+failed.
+
+For example, the final line `failure: rejected GET: 404 Not Found`
+indicates a pull request attempted to copy a file that does not exist.
+The final line `failure: rejected GET: 401 Unauthorized` indicates
+dCache was not authorised to read the remote file.
+
+#### Response examples
+
+The following provides a complete example of the response when making a
+successful pull request.  It includes both the HTTP response headers
+and the HTTP response body.  The body contains two progress markers
+(one in the pre-transfer phase, the other transfer phase) and the
+final line indicating the transfer was successful.
+
+```
+HTTP/1.1 202 Accepted
+Date: Wed, 25 Sep 2019 09:43:22 GMT
+Server: dCache/5.2.0-SNAPSHOT
+Content-Type: text/perf-marker-stream
+Transfer-Encoding: chunked
+
+Perf Marker
+    Timestamp: 1569404602
+    State: 3
+    State description: querying created file metadata
+    Stripe Index: 0
+    Total Stripe Count: 1
+End
+Perf Marker
+    Timestamp: 1569404607
+    State: 10
+    State description: transfer has started
+    Stripe Index: 0
+    Stripe Start Time: 1569404602
+    Stripe Last Transferred: 1569404607
+    Stripe Transfer Time: 4
+    Stripe Bytes Transferred: 531501280
+    Stripe Status: RUNNING
+    Total Stripe Count: 1
+End
+success: Created
+```
+
+### Data integrity
+
+dCache takes data integrity very seriously.  This includes
+transferring data with remote servers.  Under normal circumstances,
+dCache will only consider a third-party transfer successful if the
+data-bearing HTTP request (either a GET for pull, or PUT for push)
+indicates a success and the integrity of the new copy is verified.
+
+There are two complementary ways to verify the new copy has not become
+corrupted: checking the file size matches and the file's checksum
+matches.
+
+For pull requests, the file's size is normally included in the
+response headers of the GET request; however, for push requests the
+response headers to the PUT request usually do not contain the file's
+size.  Therefore, a subsequent `HEAD` request is often needed after a
+successful `PUT` request.
+
+The checksum of the remote file is obtained using RFC 3230
+`Want-Digest` headers.  For pull requests, this header is included in
+the `GET request; however, for the `PUT` request the `Want-Digest`
+header is included in the subsequent `HEAD` request.
+
+Although dCache supports RFC 3230, the standard is not widely
+supported by other HTTP servers.  Therefore, when transferring data
+with a non-dCache remote server, it is likely that the server does not
+support RFC 3230.  By default, dCache will fail the transfer if the
+remote server does not support RFC 3230; however, if it is desirable
+to accept transfers without checksum verification then the
+`RequireChecksumVerification` COPY request header may be set to
+`false`.  When setting this flag to `false`, dCache will still attempt
+to verify the remote file's checksum and the transfer will fail if
+that remote checksum indicates data corruption.
+
+
+### Custom transfer headers
+
+HTTP requests may contain different request headers.  When dCache is
+processing a third-party transfer, it makes one or more requests with
+the remote server.  When making these requests, dCache will include a
+standard set of transfer headers.  However, you can modify these
+transfer headers.
+
+The general rule is that any header in the third-party (COPY) request
+that starts with a `TransferHeader` prefix is used when dCache is
+making the request without this prefix.  For example, if the COPY
+request contains the header `TransferHeaderClientContext: foo` then
+dCache will include the header `ClientContext: foo` when making
+requests to the remote server.
+
+Perhaps the main use for this feature is to include authorisation
+information for the data bearing request.  For example, to include the
+basic authentication (`Authorization: Basic
+cGF1bDpUb29NYW55U2VjcmV0YQ==`) in the data-bearing request, the COPY
+request should include the `TransferHeaderAuthorization` header
+(`TransferHeaderAuthorization: Basic cGF1bDpUb29NYW55U2VjcmV0YQ==`).
+
+### Authorising the data transfer
+
+Often a server will require some form of authentication before
+accepting an upload (PUT) request.  Similarly, some data is not public
+and requires authentication before a downloaded (GET) request is
+accepted.
+
+As a direct consequence, when processing a third-party transfer,
+dCache may need to authenticate or provide some kind of authorisation
+in order to obtain the data (for pull requests) or upload data (for
+push requests).
+
+If needed, this authorisation must come from the client.  Delegation
+is the general term for handing over credentials that allow dCache to
+operate on behalf of the user.
+
+There are several ways a client can delegate a credential to dCache.
+The `Credential` third-party COPY request header controls where dCache
+will fetch the credential.  A value of `none` indicates dCache should
+not initiate any delegation, `gridsite` indicates dCache should use a
+delegated X.509 credential, and `oidc` indicates dCache should use
+OIDC delegation.
+
+The default value for `Credential` depends on how the client
+authenticated for the third-party COPY request.  If OIDC was used then
+`oidc` is the default; if X.509 was used then the default is
+`gridsite`, otherwise the default is `none`.
+
+#### Direct header delegation
+
+If `Credential` third-party COPY request header has value `none` then
+either the request does not require any credential (e.g., downloading
+public data) or the credential is supplied through direct header
+delegation.
+
+Direct header delegation is where the client supplies the credential
+directly to dCache, as a transfer header.  As described above, this is
+achieved by specifying the corresponding `TransferHeader` header in
+the COPY request; for example, most requests are authorised by
+specifying the `Authorization` request header value.  To supply a
+suitable `Authorization` value, specify the
+`TransferHeaderAuthorization` header in the COPY request.
+
+##### Basic
+
+Basic (username + password) authentication may be used to authorise
+the transfer.  For example, to include the basic authentication
+(`Authorization: Basic cGF1bDpUb29NYW55U2VjcmV0YQ==`) in the
+data-bearing request, the COPY request should include the
+`TransferHeaderAuthorization` header (`TransferHeaderAuthorization:
+Basic cGF1bDpUb29NYW55U2VjcmV0YQ==`).
+
+Basic authentication is NOT recommended as it requires the user to
+send their username and password to dCache.
+
+##### Bearer token
+
+An alternative to basic authentication is to use some kind of a bearer
+token to authorise the transfer; for example, if the data bearing
+transfer may be authorised with the `Authorization: Bearer TOKEN`
+header, then the third-party COPY request should include the
+`TransferHeaderAuthorization: Bearer TOKEN` request header.
+
+As a specific example, a macaroon may be used to authorise the
+transfer.  The client requests a macaroon from the third-party server
+that targets the specific file.  Once obtained, this macaroon may be
+passed into the COPY request via the `TransferHeaderAuthorization:
+Bearer MACAROON` (with `MACAROON` replaced with the actual macaroon).
+
+#### X.509 delegation
+
+dCache supports the GridSite delegation protocol.  This allows clients
+to delegate their X.509 credential to dCache so dCache can operation
+on their behalf.
+
+If GridSite delegation is selected, dCache will check if the user has
+already delegated a credential that will still be valid in two
+minutes.  If so, it will use that credential and the transfer will
+proceed directly.
+
+If dCache has no credential for this user (or the credential has
+already expired or will expire soon) then dCache will request the user
+delegates.  This is done by responding to the COPY request with a
+redirection status code (with a target URL in the `Location` response
+header) and a `X-Delegate-To` response header.  The header value is a
+space-separated list of GridSite delegation URLs.
+
+The client is expected to delegate its X.509 credential to one of the
+listed delegation URLs and re-issue the POST request against the URL
+in the `Location` response header.
+
+
+#### OpenID-Connect delegation
+
+An OpenID-Connect access token may include a claim that means it
+targets a specific server, or the access token could expire if the
+transfer is queued within dCache.
+
+To counter these two problems, the oidc delegation process works by
+requesting a fresh access (and refresh) token from the OP that issued
+the OpenID-Connect access token.
+
+This delegation process is not uniformly supported.
+
+### Complete example
+
+In the following example, the client instructs dCache to create a new
+file `/Users/paul/test-1`, taking the file's data from
+`http://www.dcache.org/images/dcache-banner.png`.  Note that the COPY
+request is authorised using an X.509 credential (`-E
+/tmp/x509up_u1000`).
+
+The source file (`http://www.dcache.org/images/dcache-banner.png`) is
+public: dCache does not require any special permission to obtain this
+file's data.  Therefore this third-party request requires no
+delegation.
+
+As the third-party COPY request is authenticated with X.509, the
+`Credential: none` request header is needed to avoid triggering
+gridsite delegation.
+
+Finally, as the server supplying the file's data is a standard Apache
+web server, it does not support RFC 3230.  Therefore, the client must
+tell dCache not to fail the transfer if it cannot obtain a checksum to
+verify the file's integrity.  The `RequireChecksumVerification: false`
+request header is used to convey this.
+
+```console-user
+curl -D- -E /tmp/x509up_u1000 -X COPY -H 'Credential: none' -H 'RequireChecksumVerification: false' -H 'Source: http://www.dcache.org/images/dcache-banner.png' https://dcache.example.org/Users/paul/test-1
+|HTTP/1.1 202 Accepted
+|Date: Wed, 25 Sep 2019 08:22:26 GMT
+|Server: dCache/6.0.0-SNAPSHOT
+|Content-Type: text/perf-marker-stream
+|Transfer-Encoding: chunked
+|
+|Perf Marker
+|    Timestamp: 1569399772
+|    State: 3
+|    State description: querying created file metadata
+|    Stripe Index: 0
+|    Total Stripe Count: 1
+|End
+|success: Created
+```
+
