@@ -1146,12 +1146,12 @@ request without authenticating:
 
 ```console-user
 curl -D- -X COPY -H 'Source: http://www.dcache.org/images/dcache-banner.png' https://dcache.example.org/test.png
-HTTP/1.1 401 Permission denied
-Date: Wed, 25 Sep 2019 08:30:04 GMT
-Server: dCache/6.0.0-SNAPSHOT
-WWW-Authenticate: Basic realm=""
-Content-Length: 0
-
+|HTTP/1.1 401 Permission denied
+|Date: Wed, 25 Sep 2019 08:30:04 GMT
+|Server: dCache/6.0.0-SNAPSHOT
+|WWW-Authenticate: Basic realm=""
+|Content-Length: 0
+|
 ```
 
 ### HTTP response
