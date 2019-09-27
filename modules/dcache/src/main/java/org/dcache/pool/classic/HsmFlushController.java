@@ -165,9 +165,9 @@ public class HsmFlushController
     }
 
     @Required
-    public synchronized void setQueueOrder(Order order)
+    public synchronized void setQueueOrder(String order)
     {
-        _order = order;
+        _order = Order.valueOf(order.toUpperCase());
     }
 
     public void start()
@@ -324,9 +324,8 @@ public class HsmFlushController
         @Override
         public String call() throws IllegalArgumentException
         {
-            Order o = Order.valueOf(order.toUpperCase());
-            setQueueOrder(o);
-            return "Ready queue set to " + o.name();
+            setQueueOrder(order);
+            return "Ready queue set to " + order.toUpperCase();
         }
     }
 
