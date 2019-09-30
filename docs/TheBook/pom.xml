@@ -141,7 +141,7 @@
                       <source>
                           incrVersion = project.properties.getProperty('parsedVersion.incrementalVersion') as Integer
                           qualifier = project.properties.getProperty('parsedVersion.qualifier')
-                          if (qualifier &amp;&amp; incrVersion > 0) {
+                          if (qualifier &amp;&amp; incrVersion &gt; 0) {
                               incrVersion--
                           }
                           nextIncrVersion = incrVersion + 1
