@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 - 2018 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2017 - 2019 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@ import java.io.Serializable;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -207,6 +208,34 @@ public class LdapTest {
                 principals);
 
         assertThat("Expected principal not found", principals, hasItem(KERMIT_PRINCIPAL));
+    }
+
+
+    @Test
+    public void shouldNotGrowNumberOfThreadMoreThanOne() throws AuthenticationException, NoSuchPrincipalException {
+        Set<Principal> principals = Sets.newHashSet(KERMIT_PRINCIPAL);
+
+        Map<Thread, StackTraceElement[]> threadsBefore = Thread.getAllStackTraces();
+
+        for (int i = 0; i < 1000; i++) {
+            plugin.map(principals);
+
+            Set<Object> attrs = new HashSet<>();
+            plugin.session(principals, attrs);
+
+            plugin.reverseMap(KERMIT_UID_PRINCIPAL);
+
+            plugin.reverseMap(ACTOR_GID_PRINCIPAL);
+
+            plugin.map(KERMIT_PRINCIPAL);
+
+            plugin.map(ACTOR_GROUP_PRINCIPAL);
+        }
+
+        Map<Thread, StackTraceElement[]> threadsAfter = Thread.getAllStackTraces();
+
+        assertFalse("Thread leak detected", threadsAfter.size() > threadsBefore.size() + 1);
+
     }
 
     @After

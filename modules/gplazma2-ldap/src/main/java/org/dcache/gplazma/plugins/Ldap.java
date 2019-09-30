@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 - 2018 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2017 - 2019 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -200,7 +200,11 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                 String.format("%s=%s", MEMBER_UID_ATTRIBUTE, p.getName()),
                 SC_GID_NUMBER);
 
-        return extractAttributes(groupResult, GID_NUMBER_ATTRIBUTE, s -> new GidPrincipal(s, false));
+        try {
+            return extractAttributes(groupResult, GID_NUMBER_ATTRIBUTE, s -> new GidPrincipal(s, false));
+        } finally {
+            groupResult.close();
+        }
     };
 
     /**
@@ -213,7 +217,11 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                 String.format("%s=uid=%s,%s", UNIQUE_MEMBER_ATTRIBUTE, p.getName(), pou),
                 SC_GID_NUMBER);
 
-        return extractAttributes(groupResult, GID_NUMBER_ATTRIBUTE, s -> new GidPrincipal(s, false));
+        try {
+            return extractAttributes(groupResult, GID_NUMBER_ATTRIBUTE, s -> new GidPrincipal(s, false));
+        } finally {
+            groupResult.close();
+        }
     };
 
     @FunctionalInterface
@@ -432,20 +440,24 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                         String.format(filter, principal.get().getName()),
                         SC_UID_GID_NUMBER);
 
-                if (sResult.hasMore()) {
-                    Attributes userAttr = sResult.next().getAttributes();
+                try {
+                    if (sResult.hasMore()) {
+                        Attributes userAttr = sResult.next().getAttributes();
 
-                    Principal usernamePrincipal;
-                    if (isUsernameMissing) {
-                        usernamePrincipal = new UserNamePrincipal((String) userAttr.get(USER_ID_ATTRIBUTE).get());
-                        principals.add(usernamePrincipal);
-                    } else {
-                        usernamePrincipal = principal.get();
-                        principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
+                        Principal usernamePrincipal;
+                        if (isUsernameMissing) {
+                            usernamePrincipal = new UserNamePrincipal((String) userAttr.get(USER_ID_ATTRIBUTE).get());
+                            principals.add(usernamePrincipal);
+                        } else {
+                            usernamePrincipal = principal.get();
+                            principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
+                        }
+
+                        principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), !hasPrimaryGid));
+                        principals.addAll(getGroupsByUid.searchGroup(ctx, usernamePrincipal, peopleOU, groupOU));
                     }
-
-                    principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), !hasPrimaryGid));
-                    principals.addAll(getGroupsByUid.searchGroup(ctx, usernamePrincipal, peopleOU, groupOU));
+                } finally {
+                    sResult.close();
                 }
             } catch (NamingException e) {
                 LOGGER.warn("Failed to get mapping: {}", e.toString());
@@ -464,15 +476,22 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                         String.format("(%s=%s)", USER_ID_ATTRIBUTE, p.getName()),
                         SC_UID_NUMBER);
 
-                return new UidPrincipal(extractAttribute(sre, UID_NUMBER_ATTRIBUTE));
+                try {
+                    return new UidPrincipal(extractAttribute(sre, UID_NUMBER_ATTRIBUTE));
+                } finally {
+                    sre.close();
+                }
             };
         } else if (principal instanceof GroupNamePrincipal) {
             mapper = (c, p) -> {
                 NamingEnumeration<SearchResult> sre = c.search(groupOU,
                         String.format("(%s=%s)", COMMON_NAME_ATTRIBUTE, p.getName()),
                         SC_GID_NUMBER);
-
-                return new GidPrincipal(extractAttribute(sre, GID_NUMBER_ATTRIBUTE), false);
+                try {
+                    return new GidPrincipal(extractAttribute(sre, GID_NUMBER_ATTRIBUTE), false);
+                } finally {
+                    sre.close();
+                }
             };
         } else {
             throw new NoSuchPrincipalException(principal);
@@ -537,13 +556,17 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                         String.format(userFilter, principal.get().getName()),
                         SC_ALL);
 
-                if (sResult.hasMore()) {
-                    SearchResult rs = sResult.next();
-                    Attributes attrs = rs.getAttributes();
-                    attrib.add(new HomeDirectory(userHomeTransformation.transform(userHome, attrs)));
-                    attrib.add(new RootDirectory(userRootTransformation.transform(userRoot, attrs)));
-                } else {
-                    throw new AuthenticationException("no mapping for " + principal.get());
+                try {
+                    if (sResult.hasMore()) {
+                        SearchResult rs = sResult.next();
+                        Attributes attrs = rs.getAttributes();
+                        attrib.add(new HomeDirectory(userHomeTransformation.transform(userHome, attrs)));
+                        attrib.add(new RootDirectory(userRootTransformation.transform(userRoot, attrs)));
+                    } else {
+                        throw new AuthenticationException("no mapping for " + principal.get());
+                    }
+                } finally {
+                    sResult.close();
                 }
             } catch (NamingException e) {
                 throw new AuthenticationException("no mapping: "
