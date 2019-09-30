@@ -2269,25 +2269,17 @@ public class CellShell extends CommandInterpreter
          }
       }else{
          StringBuilder sb = new StringBuilder();
-         BufferedReader reader = null ;
          String         line;
-         try{
-            reader = new BufferedReader( new FileReader( file ) ) ;
-            while( ( line = reader.readLine() ) != null ) {
-                sb.append(line).append('\n');
-            }
-         }catch( IOException ioe ){
+          try (InputStreamReader isr = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
+               BufferedReader bufferedReader = new BufferedReader(isr)) {
+              while ((line = bufferedReader.readLine()) != null) {
+                  sb.append(line).append('\n');
+              }
+          } catch (IOException ioe) {
 
-            throw new CommandException( 11 ,
-                       "Problem with file : "+file+" : "+ioe ) ;
-         }finally{
-        	 if(reader != null) {
-                     try {
-                         reader.close();
-                     } catch (IOException eeee) {
-                     }
-                 }
-         }
+              throw new CommandException(11,
+                      "Problem with file : " + file + " : " + ioe);
+          }
          _nucleus.getDomainContext().put( name , sb.toString() ) ;
       }
       return "Loaded ... " ;
@@ -2388,7 +2380,7 @@ public class CellShell extends CommandInterpreter
         String ssp = uri.getSchemeSpecificPart();
 
         if (scheme == null) {
-            return new InputStreamReader(uri.toURL().openStream());
+            return new InputStreamReader(uri.toURL().openStream(), StandardCharsets.UTF_8);
         } else if (scheme.equals("context")) {
             String host = uri.getHost();
             String path = uri.getPath();
