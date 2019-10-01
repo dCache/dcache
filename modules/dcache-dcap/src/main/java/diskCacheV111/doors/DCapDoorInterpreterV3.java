@@ -2202,24 +2202,26 @@ public class DCapDoorInterpreterV3
         poolIoFileArrived( PoolIoFileMessage reply ){
 
             _log.debug("poolIoFileArrived : {}", reply);
-            if( reply.getReturnCode() != 0 ){
-                // bad entry in cacheInfo and pool Manager did not check it ( for performance reason )
-                // try again
-                if (reply.getReturnCode() == CacheException.FILE_NOT_IN_REPOSITORY) {
+            switch (reply.getReturnCode()) {
+                case 0:
+                    _moverId = reply.getMoverId();
+                    //
+                    // nothing to do here ( we are still waiting for
+                    //   doorTransferFinished )
+                    //
+                    setStatus("WaitingForDoorTransferOk");
+                    break;
+                case CacheException.FILE_NOT_IN_REPOSITORY:
+                    // fallthrough
+                case CacheException.OUT_OF_DATE:
+                    // transient errors
+                    _log.warn("Retry on transient error: {}", reply.getReturnCode());
                     again(true);
-                    return;
-                }
-
-                sendReply("poolIoFileArrived", reply);
-                removeUs();
-                return;
+                    break;
+                default:
+                    sendReply("poolIoFileArrived", reply);
+                    removeUs();
             }
-            _moverId = reply.getMoverId();
-            //
-            // nothing to do here ( we are still waiting for
-            //   doorTransferFinished )
-            //
-            setStatus( "WaitingForDoorTransferOk" ) ;
         }
 
         public void poolPassiveIoFileMessage( PoolPassiveIoFileMessage<byte[]> reply) {
