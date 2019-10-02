@@ -1254,7 +1254,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             killMover(0, "killed by door: returning layout");
 
             try {
-                if (!waitForMover(NFS_REQUEST_BLOCKING)) {
+                // wait for clean mover shutdown only for writes only
+                if (isWrite() && !waitForMover(NFS_REQUEST_BLOCKING)) {
                     throw new DelayException("Mover not stopped");
                 }
             } catch (FileNotFoundCacheException e) {
