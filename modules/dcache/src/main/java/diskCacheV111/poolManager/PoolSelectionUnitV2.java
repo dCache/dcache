@@ -1906,6 +1906,12 @@ public class PoolSelectionUnitV2
                 throw new IllegalArgumentException("PGroup not found : " + name);
             }
 
+            if (group instanceof DynamicPGroup) {
+                // we can always remove dynamic pool groups
+                group._poolList.values().forEach(p -> p._pGroupList.remove(name));
+                group._poolList.clear();
+            }
+
             //
             // check if empty
             //
