@@ -1,5 +1,6 @@
 package diskCacheV111.poolManager;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import java.net.InetAddress;
@@ -26,6 +27,7 @@ public class Pool extends PoolCore implements SelectionPool {
     private long _serialId;
     private boolean _rdOnly;
     private ImmutableSet<String> _hsmInstances = ImmutableSet.of();
+    private ImmutableMap<String, String> _tags = ImmutableMap.of();
     private PoolV2Mode _mode = new PoolV2Mode(PoolV2Mode.DISABLED);
     private CellAddressCore _address;
     private InetAddress[] _inetAddresses;
@@ -182,6 +184,20 @@ public class Pool extends PoolCore implements SelectionPool {
         } else {
             _hsmInstances = ImmutableSet.copyOf(hsmInstances);
         }
+    }
+
+    @Override
+    public void setTags(Map<String, String> tags) {
+        if (tags == null) {
+            _tags = ImmutableMap.of();
+        } else {
+            _tags = ImmutableMap.copyOf(tags);
+        }
+    }
+
+    @Override
+    public Map<String, String> getTags() {
+        return _tags;
     }
 
     @Override

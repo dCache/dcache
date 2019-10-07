@@ -514,6 +514,7 @@ public class PoolSelectionUnitV2
             pool.setHsmInstances(hsmInstances);
             pool.setActive(!disabled);
             pool.setCanonicalHostName(canonicalHostName);
+            pool.setTags(tags);
 
             // create a dynamic pool group based on pool tags.
             if (isRestarted && !disabled) {

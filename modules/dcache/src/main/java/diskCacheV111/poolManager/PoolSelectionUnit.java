@@ -160,6 +160,18 @@ public interface PoolSelectionUnit  {
         /** Sets the set of names of attached HSM instances. */
         void setHsmInstances(Set<String> hsmInstances);
 
+        /**
+         * Get key-value map with tags associated with the pool.
+         * @return tags associated with the pool.
+         */
+        Map<String, String> getTags();
+
+        /**
+         * Set key-value map of tags associated with the pool.
+         * @param tags map of tags associated with the pool.
+         */
+        void setTags(Map<String, String> tags);
+
         Collection<SelectionPoolGroup> getPoolGroupsMemberOf();
         Collection<SelectionLink> getLinksTargetingPool();
 
