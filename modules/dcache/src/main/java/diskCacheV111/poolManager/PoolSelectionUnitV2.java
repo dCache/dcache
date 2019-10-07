@@ -522,7 +522,7 @@ public class PoolSelectionUnitV2
                 _pGroups.values().stream()
                         .filter(DynamicPGroup.class::isInstance)
                         .map(DynamicPGroup.class::cast)
-                        .forEach(pg -> pg.addIfMatches(p, tags));
+                        .forEach(pg -> pg.addIfMatches(p));
             }
 
             return changed;

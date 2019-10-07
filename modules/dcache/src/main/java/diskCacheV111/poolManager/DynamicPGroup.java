@@ -12,10 +12,11 @@ class DynamicPGroup extends PGroup {
         this.tags = tags;
     }
 
-    public void addIfMatches(Pool pool, Map<String, String> poolTags) {
+    public void addIfMatches(Pool pool) {
 
         final Pool p = pool;
         final PGroup pg = this;
+        Map<String, String> poolTags = pool.getTags();
         tags.entrySet().forEach(e -> {
             String v = e.getValue();
             if (v.equals(poolTags.get(e.getKey()))) {
