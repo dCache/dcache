@@ -1,4 +1,8 @@
 package dmg.cells.services.login;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+
 public class Crypt {
 
    private static final long [] [] SPtrans = {
@@ -437,10 +441,10 @@ public static String byteToHexString( byte b ) {
    
    } ;
    public String crypt( String salt , String keyString ){
-      return new String( 
-                    crypt( salt.substring(0,2).getBytes() ,
-                                keyString.getBytes()  ),
-                    0 , 13  ) ;
+       return new String(
+                     crypt( (salt.substring(0,2).getBytes(StandardCharsets.UTF_8)) ,
+                             keyString.getBytes(StandardCharsets.UTF_8)),
+                     0 , 13  ) ;
    }
    public byte [] crypt( byte [] salt , byte [] keyString ){
    

@@ -2,8 +2,11 @@ package dmg.cells.services.login ;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 
@@ -38,8 +41,8 @@ public class UnixPassword {
 
       _hash = new Hashtable<>() ;
 
-       try (BufferedReader br = new BufferedReader(
-               new FileReader(_file))) {
+       try (InputStreamReader isr = new InputStreamReader(new FileInputStream(_file), StandardCharsets.UTF_8);
+             BufferedReader br = new BufferedReader(isr)) {
            while ((line = br.readLine()) != null) {
                try {
                    st = new StringTokenizer(line, ":");
