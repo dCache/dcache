@@ -2421,7 +2421,7 @@ public class CellShell extends CommandInterpreter
 
             return new StringReader(o.toString());
         } else {
-            return new InputStreamReader(uri.toURL().openStream());
+            return new InputStreamReader(uri.toURL().openStream(), StandardCharsets.UTF_8);
         }
     }
 
