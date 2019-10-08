@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -36,7 +37,6 @@ public class CellRoutingTable implements Serializable
     private final Map<String, CopyOnWriteArraySet<CellRoute>> _topic = new HashMap<>();
     private final AtomicReference<CellRoute> _dumpster = new AtomicReference<>();
     private final List<CellRoute> _default = new ArrayList<>();
-    private final Random _random = new Random();
 
     public void add(CellRoute route)
             throws IllegalArgumentException
@@ -217,12 +217,13 @@ public class CellRoutingTable implements Serializable
             //
             synchronized (_queue) {
                 List<CellRoute> routes = _queue.get(cellName);
+                Random random = ThreadLocalRandom.current();
                 if (!allowRemote) {
                     CellRoute[] localRoutes =
                             routes.stream().filter(r -> !r.getTarget().isDomainAddress()).toArray(CellRoute[]::new);
-                    return (localRoutes.length > 0) ? localRoutes[_random.nextInt(localRoutes.length)] : null;
+                    return (localRoutes.length > 0) ? localRoutes[random.nextInt(localRoutes.length)] : null;
                 } else if (!routes.isEmpty()) {
-                    return routes.get(_random.nextInt(routes.size()));
+                    return routes.get(random.nextInt(routes.size()));
                 }
             }
         } else {
