@@ -154,15 +154,14 @@ public class CellRoutingTable implements Serializable
     {
         Collection<CellRoute> deleted = new ArrayList<>();
 
-        String addr = target.toString();
         synchronized (_exact) {
-            delete(_exact.values(), addr, deleted);
+            delete(_exact.values(), target, deleted);
         }
         synchronized (_queue) {
-            delete(_queue.values(), addr, deleted);
+            delete(_queue.values(), target, deleted);
         }
         synchronized (_domain) {
-            delete(_domain.values(), addr, deleted);
+            delete(_domain.values(), target, deleted);
         }
         synchronized (_topic) {
             /* We cannot use the regular delete method because a CopyOnWriteArraySet iterator
@@ -173,7 +172,7 @@ public class CellRoutingTable implements Serializable
             while (iterator.hasNext()) {
                 Set<CellRoute> routes = iterator.next();
                 List<CellRoute> toRemove =
-                        routes.stream().filter(route -> route.getTargetName().equals(addr)).collect(toList());
+                        routes.stream().filter(route -> route.getTarget().equals(target)).collect(toList());
                 routes.removeAll(toRemove);
                 if (routes.isEmpty()) {
                     iterator.remove();
@@ -182,17 +181,17 @@ public class CellRoutingTable implements Serializable
             }
         }
         synchronized (_default) {
-            delete(_default, addr, deleted);
+            delete(_default, target, deleted);
         }
         return deleted;
     }
 
-    private void delete(Collection<CellRoute> values, String addr, Collection<CellRoute> deleted)
+    private void delete(Collection<CellRoute> values, CellAddressCore addr, Collection<CellRoute> deleted)
     {
         Iterator<CellRoute> iterator = values.iterator();
         while (iterator.hasNext()) {
             CellRoute route = iterator.next();
-            if (route.getTargetName().equals(addr)) {
+            if (route.getTarget().equals(addr)) {
                 iterator.remove();
                 deleted.add(route);
             }
@@ -265,7 +264,7 @@ public class CellRoutingTable implements Serializable
                 route -> writer.row()
                         .value("cell", route.getCellName())
                         .value("domain", route.getDomainName())
-                        .value("gateway", route.getTargetName())
+                        .value("gateway", route.getTarget())
                         .value("type", route.getRouteTypeName());
 
         synchronized (_topic) {

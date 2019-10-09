@@ -21,7 +21,7 @@ public class CellRoute implements Serializable
 
     private final String _destCell;
     private final String _destDomain;
-    private final String _gateway;
+    private final CellAddressCore _gateway;
     private final int _type;
 
     public static final int AUTO = 0;
@@ -40,12 +40,6 @@ public class CellRoute implements Serializable
                     "Default", "Dumpster", "Alias", "Topic"};
 
     public CellRoute(String dest, CellAddressCore gateway, int type)
-            throws IllegalArgumentException
-    {
-        this(dest, gateway.toString(), type);
-    }
-
-    public CellRoute(String dest, String gateway, int type)
             throws IllegalArgumentException
     {
         _gateway = gateway;
@@ -154,11 +148,6 @@ public class CellRoute implements Serializable
         return _destDomain;
     }
 
-    public String getTargetName()
-    {
-        return _gateway;
-    }
-
     public int getRouteType()
     {
         return _type;
@@ -167,7 +156,7 @@ public class CellRoute implements Serializable
     public CellAddressCore getTarget()
     {
 
-        return new CellAddressCore(_gateway);
+        return _gateway;
     }
 
     public String getRouteTypeName()
@@ -203,7 +192,7 @@ public class CellRoute implements Serializable
         return MoreObjects.toStringHelper(this)
                 .add("cell", getCellName())
                 .add("domain", getDomainName())
-                .add("gateway", getTargetName())
+                .add("gateway", getTarget())
                 .add("type", getRouteTypeName())
                 .toString();
     }

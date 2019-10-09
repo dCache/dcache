@@ -746,7 +746,7 @@ public class CellShell extends CommandInterpreter
         {
             return (type == null || type.equalsIgnoreCase(r.getRouteTypeName()))
                     && destination.matches(r.getCellName() + "@" + r.getDomainName())
-                    && target.matches(r.getTargetName());
+                    && target.matches(r.getTarget().toString());
         }
     }
 
@@ -847,7 +847,7 @@ public class CellShell extends CommandInterpreter
         {
             int type = getType();
             checkArguments(type);
-            return new CellRoute(destination, target, type);
+            return new CellRoute(destination, new CellAddressCore(target), type);
         }
     }
 
@@ -927,7 +927,7 @@ public class CellShell extends CommandInterpreter
             sb.append("Routing details for a message with ").append(address).append(" as next-hop address:\n");
             sb.append("         type: ").append(route.getRouteTypeName().toUpperCase()).append('\n');
             sb.append("  destination: ").append(route.getCellName()).append('@').append(route.getDomainName()).append('\n');
-            sb.append("       target: ").append(route.getTargetName()).append('\n');
+            sb.append("       target: ").append(route.getTarget()).append('\n');
 
             return sb.toString();
         }

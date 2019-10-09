@@ -274,7 +274,7 @@ public class CoreRoutingManager
             String destination = iterator.next();
             if (!newDestinations.remove(destination)) {
                 try {
-                    nucleus.routeDelete(new CellRoute(destination, "*@" + domain, type));
+                    nucleus.routeDelete(new CellRoute(destination, new CellAddressCore("*", domain), type));
                     iterator.remove();
                 } catch (IllegalArgumentException ignored) {
                     // Route didn't exist
@@ -283,7 +283,7 @@ public class CoreRoutingManager
         }
         for (String destination : newDestinations) {
             try {
-                nucleus.routeAdd(new CellRoute(destination, "*@" + domain, type));
+                nucleus.routeAdd(new CellRoute(destination, new CellAddressCore("*", domain), type));
                 routes.put(domain, destination);
             } catch (IllegalArgumentException ignored) {
                 // Already exists
