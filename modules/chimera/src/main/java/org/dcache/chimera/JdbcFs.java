@@ -579,6 +579,8 @@ public class JdbcFs implements FileSystemProvider {
                     perm = mode;
                 }
 
+                // ensure that t_inodes and t_tags_inodes update in the same order as
+                // in removeDir
                 FsInode inode = _sqlDriver.mkdir(parent, name, owner, gid, perm);
                 _sqlDriver.copyTags(parent, inode);
                 _sqlDriver.copyAcl(parent, inode, RsType.DIR, EnumSet.of(INHERIT_ONLY_ACE),
