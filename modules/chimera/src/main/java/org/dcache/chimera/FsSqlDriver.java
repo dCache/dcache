@@ -313,18 +313,14 @@ public class FsSqlDriver {
         // A directory contains two pseudo entries for '.' and '..'
         decNlink(inode, 2);
 
+        // ensure that t_inodes and t_tags_inodes updated in the same order as
+        // in mkdir
+        decNlink(parent);
         removeTag(inode);
 
         if (!removeInodeIfUnlinked(inode)) {
             throw new DirNotEmptyHimeraFsException("directory is not empty");
         }
-
-        /* During bulk deletion of files in the same directory,
-         * updating the parent inode is often a contention point. The
-         * link count on the parent is updated last to reduce the time
-         * in which the directory inode is locked by the database.
-         */
-        decNlink(parent);
 
         return true;
     }
