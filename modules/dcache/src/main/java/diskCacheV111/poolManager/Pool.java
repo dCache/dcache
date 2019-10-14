@@ -2,9 +2,11 @@ package diskCacheV111.poolManager;
 
 import com.google.common.collect.ImmutableSet;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,6 +28,8 @@ public class Pool extends PoolCore implements SelectionPool {
     private ImmutableSet<String> _hsmInstances = ImmutableSet.of();
     private PoolV2Mode _mode = new PoolV2Mode(PoolV2Mode.DISABLED);
     private CellAddressCore _address;
+    private InetAddress[] _inetAddresses;
+    private String _hostName;
 
     public Pool(String name) {
         super(name);
@@ -190,5 +194,17 @@ public class Pool extends PoolCore implements SelectionPool {
     public void setAddress(CellAddressCore address)
     {
         _address = address;
+    }
+
+    @Override
+    public void setCanonicalHostName(String hostName)
+    {
+        _hostName = hostName;
+    }
+
+    @Override
+    public Optional<String> getCanonicalHostName()
+    {
+        return Optional.ofNullable(_hostName);
     }
 }

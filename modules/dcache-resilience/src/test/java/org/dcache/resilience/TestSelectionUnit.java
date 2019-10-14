@@ -72,7 +72,9 @@ import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.StorageUnit;
 import diskCacheV111.pools.PoolV2Mode;
+
 import dmg.cells.nucleus.CellAddressCore;
+
 import org.dcache.vehicles.FileAttributes;
 
 final class TestSelectionUnit implements PoolSelectionUnit {
@@ -137,10 +139,10 @@ final class TestSelectionUnit implements PoolSelectionUnit {
     }
 
     @Override
-    public boolean updatePool(String poolName, CellAddressCore address,
+    public boolean updatePool(String poolName, CellAddressCore address, String hostName,
                               long serialId, PoolV2Mode mode,
                               Set<String> hsmInstances, Map<String,String> tags) {
-        return psu.updatePool(poolName, address, serialId, mode, hsmInstances, tags);
+        return psu.updatePool(poolName, address, hostName, serialId, mode, hsmInstances, tags);
     }
 
     @Override

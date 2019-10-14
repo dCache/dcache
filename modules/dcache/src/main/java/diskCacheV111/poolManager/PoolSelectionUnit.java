@@ -4,6 +4,7 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -165,6 +166,10 @@ public interface PoolSelectionUnit  {
         CellAddressCore getAddress();
 
         void setAddress(CellAddressCore address);
+
+        void setCanonicalHostName(String hostName);
+
+        Optional<String> getCanonicalHostName();
     }
 
     interface SelectionPoolGroup extends SelectionEntity {
@@ -213,8 +218,8 @@ public interface PoolSelectionUnit  {
     * @param tags tags attached to pool.
     * @return true iff pool status is changed.
     */
-   boolean updatePool(String poolName, CellAddressCore address, long serialId,
-           PoolV2Mode mode, Set<String> hsmInstances, Map<String, String> tags);
+   boolean updatePool(String poolName, CellAddressCore address, String canonicalHostName, long serialId,
+                      PoolV2Mode mode, Set<String> hsmInstances, Map<String, String> tags);
 
    SelectionLink getLinkByName(String linkName) throws NoSuchElementException ;
    PoolPreferenceLevel []

@@ -61,7 +61,6 @@ import dmg.cells.nucleus.DelayedReply;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
-import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.PoolSelector;
@@ -72,8 +71,6 @@ import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.stream.Collectors.toList;
 
 public class PoolManagerV5
     implements CellCommandListener, CellMessageReceiver, CellLifeCycleAware, CellInfoProvider, CellArgsAware
@@ -426,10 +423,11 @@ public class PoolManagerV5
         CellAddressCore poolAddress = envelope.getSourcePath().getSourceAddress();
         long poolSerialId = poolMessage.getSerialId();
         Map<String,String> tags = poolMessage.getTagMap();
+        String hostName = poolMessage.getHostName();
 
         _counterPoolUp.increment();
 
-        boolean changed = _selectionUnit.updatePool(poolName, poolAddress,
+        boolean changed = _selectionUnit.updatePool(poolName, poolAddress, hostName,
                 poolSerialId, poolMode, poolHsmInstances, tags);
 
         /* Notify others in case the pool status has changed. Due to

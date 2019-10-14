@@ -9,18 +9,17 @@ import diskCacheV111.pools.PoolV2Mode;
 
 public class PoolManagerPoolUpMessage extends PoolManagerMessage {
 
-    private final String    _poolName ;
-    private final long      _serialId ;
+    private static final long serialVersionUID = -5819171074245040177L;
+    private final String _poolName ;
+    private final long         _serialId ;
     private final PoolCostInfo _poolCostInfo ;
-    private final PoolV2Mode _mode;
+    private final PoolV2Mode   _mode;
 
+    private String  _hostName;
     private Map<String, String>       _tagMap;
     private Set<String> _hsmInstances;
     private String    _message                 = "";
     private int       _code;
-
-
-    private static final long serialVersionUID = -8421133630068493665L;
 
     public PoolManagerPoolUpMessage(String poolName, long serialId,
                                     PoolV2Mode mode)
@@ -47,6 +46,11 @@ public class PoolManagerPoolUpMessage extends PoolManagerMessage {
     public long getSerialId(){ return _serialId ; }
     public void setTagMap( Map<String, String> map ){ _tagMap = map ; }
     public Map<String, String>  getTagMap(){ return _tagMap ; }
+    public void setHostName(String hostName)
+    {
+        _hostName = hostName;
+    }
+    public String getHostName() { return _hostName; }
 
     /**
      * Sets the human readable status message of the pool.

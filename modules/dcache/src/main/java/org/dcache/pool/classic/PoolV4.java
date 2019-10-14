@@ -75,10 +75,8 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -133,9 +131,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
-import static org.dcache.namespace.FileAttribute.CHECKSUM;
 
 public class PoolV4
     extends AbstractCellComponent
@@ -1458,6 +1454,7 @@ public class PoolV4
                 new PoolManagerPoolUpMessage(_poolName, _serialId,
                                              _poolMode, info);
 
+            poolManagerMessage.setHostName(NetworkUtils.getCanonicalHostName());
             poolManagerMessage.setTagMap(_tags);
             if (_hsmSet != null) {
                 poolManagerMessage.setHsmInstances(new TreeSet<>(_hsmSet

@@ -53,7 +53,6 @@ import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.*;
-import static dmg.util.CommandException.checkCommand;
 import static java.util.Comparator.comparing;
 
 public class PoolSelectionUnitV2
@@ -423,8 +422,9 @@ public class PoolSelectionUnitV2
 
     @Override
     public boolean updatePool(String poolName, CellAddressCore address,
-            long serialId, PoolV2Mode mode, Set<String> hsmInstances,
-            Map<String, String> tags)
+                                String canonicalHostName, long serialId,
+                                PoolV2Mode mode, Set<String> hsmInstances,
+                                Map<String, String> tags)
     {
         /* For compatibility with previous versions of dCache, a pool
          * marked DISABLED, but without any other DISABLED_ flags set
@@ -460,7 +460,8 @@ public class PoolSelectionUnitV2
                         || pool.isActive() == disabled
                         || (mode.getMode() != pool.getPoolMode().getMode())
                         || !Objects.equals(pool.getHsmInstances(), hsmInstances)
-                        || !Objects.equals(pool.getAddress(), address);
+                        || !Objects.equals(pool.getAddress(), address)
+                        || !Objects.equals(pool.getCanonicalHostName(), canonicalHostName);
                 if (!changed) {
                     pool.setActive(!disabled);
                     return false;
@@ -501,7 +502,8 @@ public class PoolSelectionUnitV2
                     || pool.isActive() == disabled
                     || (mode.getMode() != oldMode.getMode())
                     || !Objects.equals(pool.getHsmInstances(), hsmInstances)
-                    || !Objects.equals(pool.getAddress(), address);
+                    || !Objects.equals(pool.getAddress(), address)
+                    || !Objects.equals(pool.getCanonicalHostName(), canonicalHostName);
 
             if (mode.getMode() != oldMode.getMode()) {
                 _log.warn("Pool {} changed from mode {}  to {}.", poolName, oldMode, mode);
@@ -511,6 +513,7 @@ public class PoolSelectionUnitV2
             pool.setPoolMode(mode);
             pool.setHsmInstances(hsmInstances);
             pool.setActive(!disabled);
+            pool.setCanonicalHostName(canonicalHostName);
 
             // create a dynamic pool group based on pool tags.
             if (isRestarted && !disabled) {
