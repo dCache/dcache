@@ -31,7 +31,7 @@ public class CellRouteTest
     public void shouldOnlyConsiderCellAndDomainInEquals() throws Exception
     {
         CellRoute route1 = new CellRoute("a@b", new CellAddressCore("gateway1"), CellRoute.EXACT);
-        CellRoute route2 = new CellRoute("a@b", new CellAddressCore("gateway1"), CellRoute.EXACT);
+        CellRoute route2 = new CellRoute("a@b", new CellAddressCore("gateway2"), CellRoute.EXACT);
 
         assertThat(route1, not(is(route2)));
 
