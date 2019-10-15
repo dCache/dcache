@@ -96,7 +96,7 @@ A *network unit* consists of an IP address and a net mask written as <IP-address
     psu addto ugroup <name-of-unitgroup> <IP-address>/<net mask>
 
 **Protocol Unit**
-A *protocol unit* consists of the name of the protocol and the version number written as protocol-name/version-number, e.g., `xrootd/3`.
+A *protocol unit* consists of the name of the protocol and the version number written as protocol-name/version-number, e.g., `Xrootd/2`.
 
     psu create ugroup <name-of-unitgroup>
     psu create unit -protocol <protocol-name>/<version-number>
@@ -515,7 +515,7 @@ For the subsequent examples we assume a basic poolmanager setup :
     # define the units
     #
     psu create unit -protocol   */*
-    psu create unit -protocol   xrootd/*
+    psu create unit -protocol   Xrootd/*
     psu create unit -net        0.0.0.0/0.0.0.0
     psu create unit -net        131.169.0.0/255.255.0.0
     psu create unit -store      *@*
