@@ -348,8 +348,8 @@ public class XrootdDoor
     public void getInfo(PrintWriter pw)
     {
         pw.println(String.format("Protocol Version %d.%d",
-                                 XROOTD_PROTOCOL_MAJOR_VERSION,
-                                 XROOTD_PROTOCOL_MINOR_VERSION));
+                                 XrootdProtocol.PROTOCOL_VERSION_MAJOR,
+                                 XrootdProtocol.PROTOCOL_VERSION_MINOR));
     }
 
     private void uploadDone(Subject subject, Restriction restriction,
