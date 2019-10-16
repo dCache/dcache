@@ -15,6 +15,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.protocol.XrootdProtocol;
 
 public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
 {
@@ -67,8 +68,8 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     {
         InetSocketAddress client = getClientAddress();
         return new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
-                                      XrootdDoor.XROOTD_PROTOCOL_MAJOR_VERSION,
-                                      XrootdDoor.XROOTD_PROTOCOL_MINOR_VERSION,
+                                      XrootdProtocol.PROTOCOL_VERSION_MAJOR,
+                                      XrootdProtocol.PROTOCOL_VERSION_MINOR,
                                       client,
                                       new CellPath(getCellName(), getDomainName()),
                                       getPnfsId(),
