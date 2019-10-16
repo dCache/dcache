@@ -155,37 +155,70 @@ public class PoolMonitorV5
                                         _linkGroup);
         }
 
+        private Collection<String> filteredFileLocations()
+        {
+            // REVISIT TODO a subsequent patch will add the filter check here
+            // TODO if excluded hosts is not empty
+            return _fileAttributes.getLocations();
+        }
+
+        private String noLinksConfiguredErrorMessage(String type)
+        {
+            return String.format("No %s links configured for [net=%s,"
+                                                 + "protocol=%s,"
+                                                 + "store=%s@%s,"
+                                                 + "cache=%s,"
+                                                 + "linkgroup=%s]",
+                                 type,
+                                 getHostName(),
+                                 getProtocol(),
+                                 _fileAttributes.getStorageClass(),
+                                 _fileAttributes.getHsm(),
+                                 nullToEmpty(_fileAttributes.getCacheClass()),
+                                 nullToEmpty(_linkGroup));
+        }
+
+        private String noOnlinePoolsErrorMessage(String type)
+        {
+            return String.format("No %s pools online for [net=%s,"
+                                                 + "protocol=%s,"
+                                                 + "store=%s@%s,"
+                                                 + "cache=%s,"
+                                                 + "linkgroup=%s]",
+                                 type,
+                                 getHostName(),
+                                 getProtocol(),
+                                 _fileAttributes.getStorageClass(),
+                                 _fileAttributes.getHsm(),
+                                 nullToEmpty(_fileAttributes.getCacheClass()),
+                                 nullToEmpty(_linkGroup));
+        }
+
         @Override
         public List<List<PoolInfo>> getReadPools()
         {
-            Map<String,PoolInfo> onlineLocations = _costModule.getPoolInfoAsMap(_fileAttributes.getLocations());
+            Map<String,PoolInfo> onlineLocations =
+                            _costModule.getPoolInfoAsMap(filteredFileLocations());
             return Stream
-                    .of(match(DirectionType.READ))
-                    .map(level -> level.getPoolList().stream().map(onlineLocations::get).filter(Objects::nonNull).collect(toList()))
-                    .filter(levels -> !levels.isEmpty())
-                    .collect(toList());
+                            .of(match(DirectionType.READ))
+                            .map(level -> level.getPoolList().stream()
+                                               .map(onlineLocations::get)
+                                               .filter(Objects::nonNull)
+                                               .collect(toList()))
+                            .filter(levels -> !levels.isEmpty())
+                            .collect(toList());
         }
 
         @Override
         public SelectedPool selectWritePool(long preallocated)
             throws CacheException
         {
-            String hostName = getHostName();
-            String protocol = getProtocol();
-            PoolPreferenceLevel[] levels = _selectionUnit.match(DirectionType.WRITE,
-                    hostName,
-                    protocol,
-                    _fileAttributes,
-                    _linkGroup);
+            PoolPreferenceLevel[] levels = match(DirectionType.WRITE);
 
             if (levels.length == 0) {
                 throw new CacheException(CacheException.NO_POOL_CONFIGURED,
-                                         "No write links configured for [" +
-                                                 "net=" + hostName +
-                                                 ",protocol=" + protocol +
-                                                 ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
-                                                 ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
-                                                 ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
+                                         noLinksConfiguredErrorMessage(DirectionType.WRITE.name()
+                                                                                          .toLowerCase()));
             }
 
             CostException fallback = null;
@@ -216,19 +249,15 @@ public class PoolMonitorV5
             }
 
             throw new CacheException(CacheException.NO_POOL_ONLINE,
-                                     "No write pools online for [" +
-                                             "net=" + hostName +
-                                             ",protocol=" + protocol +
-                                             ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
-                                             ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
-                                             ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
+                                     noOnlinePoolsErrorMessage(DirectionType.WRITE.name()
+                                                                                  .toLowerCase()));
         }
 
         @Override
         public SelectedPool selectReadPool()
             throws CacheException
         {
-            Collection<String> locations = _fileAttributes.getLocations();
+            Collection<String> locations = filteredFileLocations();
             _log.debug("[read] Expected from pnfs: {}", locations);
 
             Map<String,PoolInfo> onlinePoolsWithFile =
@@ -244,25 +273,16 @@ public class PoolMonitorV5
             /* Get the prioritized list of allowed pools for this
              * request.
              */
-            String hostName = getHostName();
-            String protocol = getProtocol();
-            PoolPreferenceLevel[] level = _selectionUnit.match(DirectionType.READ,
-                    hostName,
-                    protocol,
-                    _fileAttributes,
-                    _linkGroup);
+            PoolPreferenceLevel[] level = match(DirectionType.READ);
 
             /* An empty array indicates that no links were found that
              * could serve the request. No reason to try any further;
              * not even a stage or P2P would help.
              */
             if (level.length == 0) {
-                throw new CacheException(CacheException.NO_POOL_CONFIGURED, "No read links configured [" +
-                        "net=" + hostName +
-                        ",protocol=" + protocol +
-                        ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
-                        ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
-                        ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
+                throw new CacheException(CacheException.NO_POOL_CONFIGURED,
+                                         noLinksConfiguredErrorMessage(DirectionType.READ.name()
+                                                                                         .toLowerCase()));
             }
 
             CostException fallback = null;
@@ -362,7 +382,7 @@ public class PoolMonitorV5
                                                  boolean force)
             throws CacheException
         {
-            Collection<String> locations = _fileAttributes.getLocations();
+            Collection<String> locations = filteredFileLocations();
             _log.debug("[p2p] Expected source from pnfs: {}", locations);
 
             Map<String,PoolInfo> sources =
@@ -407,14 +427,15 @@ public class PoolMonitorV5
                 }
             }
 
-            throw new PermissionDeniedCacheException("P2P denied: No pool candidates available/configured/left for p2p or file already everywhere");
+            throw new PermissionDeniedCacheException("P2P denied: No pool candidates available/configured/left "
+                                                                     + "for p2p or file already everywhere");
         }
 
         @Override
         public SelectedPool selectStagePool(Optional<PoolInfo> previous)
             throws CacheException
         {
-            Collection<String> locations = _fileAttributes.getLocations();
+            Collection<String> locations = filteredFileLocations();
             _log.debug("[stage] Existing locations of the file: {}", locations);
 
             CostException fallback = null;
@@ -482,13 +503,8 @@ public class PoolMonitorV5
             _log.debug("[pin] Online pools: {}", onlinePools.values());
 
             boolean isRequestSatisfiable = false;
-            String hostName = getHostName();
-            String protocol = getProtocol();
-            PoolPreferenceLevel[] levels = _selectionUnit.match(DirectionType.READ,
-                                                                hostName,
-                                                                protocol,
-                                                                _fileAttributes,
-                                                                _linkGroup);
+            PoolPreferenceLevel[] levels = match(DirectionType.READ);
+
             for (PoolPreferenceLevel level: levels) {
                 List<String> pools = level.getPoolList();
                 if (!pools.isEmpty()) {
@@ -506,20 +522,13 @@ public class PoolMonitorV5
             }
 
             if (levels.length == 0) {
-                throw new CacheException(CacheException.NO_POOL_CONFIGURED, "No read links configured [" +
-                                                                            "net=" + hostName +
-                                                                            ",protocol=" + protocol +
-                                                                            ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
-                                                                            ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
-                                                                            ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
+                throw new CacheException(CacheException.NO_POOL_CONFIGURED,
+                                         noLinksConfiguredErrorMessage(DirectionType.READ.name()
+                                                                                         .toLowerCase()));
             } else if (!isRequestSatisfiable) {
                 throw new CacheException(CacheException.NO_POOL_ONLINE,
-                                         "No read pools online for [" +
-                                         "net=" + hostName +
-                                         ",protocol=" + protocol +
-                                         ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
-                                         ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
-                                         ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
+                                         noOnlinePoolsErrorMessage(DirectionType.READ.name()
+                                                                                     .toLowerCase()));
             } else if (onlinePools.isEmpty() && !_fileAttributes.getStorageInfo().isStored()) {
                 throw new FileNotInCacheException("File is unavailable.");
             } else {
