@@ -73,6 +73,7 @@ import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
+import dmg.util.command.Command;
 
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.json.PoolInfoWrapper;
@@ -104,6 +105,25 @@ public final class PoolTimeseriesServiceImpl extends
     private PoolMonitor monitor;
 
     protected Executor executor;
+
+    @Command(name = "pools set timeout",
+                    hint = "Set the timeout interval between refreshes",
+                    description = "Changes the interval between "
+                                    + "collections of pool information")
+    class PoolsSetTimeoutCommand extends SetTimeoutCommand {
+    }
+
+    @Command(name = "pools refresh",
+                    hint = "Query for current pool info",
+                    description = "Interrupts current wait to run query "
+                                    + "immediately.")
+    class PoolsRefreshCommand extends RefreshCommand {
+        @Override
+        public String call() {
+            processor.cancel();
+            return super.call();
+        }
+    }
 
     @Override
     public void configure() {
