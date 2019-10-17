@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import java.nio.charset.StandardCharsets;
 import org.dcache.chimera.posix.Stat;
 
 public class FsInode_ID extends FsInode {
@@ -43,7 +44,7 @@ public class FsInode_ID extends FsInode {
     @Override
     public int read(long pos, byte[] data, int offset, int len) throws ChimeraFsException
     {
-        byte[] b = (statCache().getId() + '\n').getBytes();
+        byte[] b = (statCache().getId() + '\n').getBytes(StandardCharsets.US_ASCII);
 
         /*
          * are we still inside ?

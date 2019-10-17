@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import java.nio.charset.StandardCharsets;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.util.ChecksumType;
 
@@ -52,7 +53,7 @@ public class FsInode_CKSTYP extends FsInode {
             return 0;
         }
 
-        byte[] tmp = checksums.getBytes();
+        byte[] tmp = checksums.getBytes(StandardCharsets.US_ASCII);
 
         int copyLen = Math.min(len, tmp.length - (int) pos);
         System.arraycopy(tmp, 0, data, 0, copyLen);

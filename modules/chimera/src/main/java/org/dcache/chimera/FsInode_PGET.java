@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import java.nio.charset.StandardCharsets;
 import org.dcache.chimera.posix.Stat;
 
 /**
@@ -41,7 +42,7 @@ public abstract class FsInode_PGET extends FsInode {
             value = "";
         }
 
-        byte[] b = value.getBytes();
+        byte[] b = value.getBytes(StandardCharsets.UTF_8);
 
         if (pos > b.length) {
             return 0;

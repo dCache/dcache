@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import java.nio.charset.StandardCharsets;
 import org.dcache.chimera.posix.Stat;
 
 public class FsInode_TAGS extends FsInode {
@@ -49,7 +50,7 @@ public class FsInode_TAGS extends FsInode {
                 return 0;
             }
 
-            byte[] tmp = sb.toString().getBytes();
+            byte[] tmp = sb.toString().getBytes(StandardCharsets.UTF_8);
 
             int copyLen = Math.min(len, tmp.length - (int) pos);
             System.arraycopy(tmp, 0, data, 0, copyLen);

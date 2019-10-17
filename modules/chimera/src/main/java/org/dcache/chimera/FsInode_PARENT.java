@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import java.nio.charset.StandardCharsets;
 import org.dcache.chimera.posix.Stat;
 
 public class FsInode_PARENT extends FsInode {
@@ -42,7 +43,7 @@ public class FsInode_PARENT extends FsInode {
         if (_parent.ino() != ino()) {
             byte[] b;
             try {
-                b = (_parent.statCache().getId() + '\n').getBytes();
+                b = (_parent.statCache().getId() + '\n').getBytes(StandardCharsets.US_ASCII);
             } catch (ChimeraFsException e) {
                 return -1;
             }

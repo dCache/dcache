@@ -60,6 +60,7 @@ import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import java.nio.charset.StandardCharsets;
 import static org.dcache.acl.enums.AceFlags.*;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
@@ -251,7 +252,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public FsInode createLink(FsInode parent, String name, String dest) throws ChimeraFsException {
-        return inTransaction(status -> createLink(parent, name, 0, 0, 0644, dest.getBytes()));
+        return inTransaction(status -> createLink(parent, name, 0, 0, 0644, dest.getBytes(StandardCharsets.UTF_8)));
     }
 
     @Override
