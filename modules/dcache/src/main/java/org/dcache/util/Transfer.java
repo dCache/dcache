@@ -109,7 +109,7 @@ public class Transfer implements Comparable<Transfer>
     protected final FsPath _path;
     protected final Subject _subject;
     protected final long _id;
-    protected final Object _session;
+    protected final String _session;
 
     protected PoolManagerStub _poolManager;
     protected CellStub _poolStub;
@@ -545,6 +545,14 @@ public class Transfer implements Comparable<Transfer>
         } else {
             return String.valueOf(_id);
         }
+    }
+
+    /**
+     * Restore cells diagnostic context for the transfer's session.
+     */
+    public void restoreSession() {
+        CDC.setSession(_session);
+        NDC.push(_session);
     }
 
     /**

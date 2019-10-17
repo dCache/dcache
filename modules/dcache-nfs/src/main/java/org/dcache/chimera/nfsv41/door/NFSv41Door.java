@@ -632,9 +632,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             FsInode inode = _chimeraVfs.inodeFromBytes(nfsInode.getFileId());
             PnfsId pnfsId = new PnfsId(inode.getId());
-            Transfer.initSession(false, false);
-            NDC.push(pnfsId.toString());
-            NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
 
             deviceid4[] devices;
 
@@ -666,6 +663,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 NfsTransfer transfer = _ioMessages.get(openStateId.stateid());
                 if (transfer == null) {
+                    Transfer.initSession(false, false);
+                    NDC.push(pnfsId.toString());
+                    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
+
                     transfer = args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW ?
 
                             new WriteTransfer(_pnfsHandler, client, openStateId, nfsInode,
@@ -703,6 +704,11 @@ public class NFSv41Door extends AbstractCellComponent implements
                     });
 
                      _ioMessages.put(openStateId.stateid(), transfer);
+                } else {
+                    // keep debug context in sync
+                    transfer.restoreSession();
+                    NDC.push(pnfsId.toString());
+                    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
                 }
 
                 layoutStateId = transfer.getStateid();
