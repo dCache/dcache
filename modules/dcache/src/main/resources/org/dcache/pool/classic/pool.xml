@@ -284,6 +284,16 @@
     <property name="executor" ref="workerThreadPool"/>
   </bean>
 
+
+    <bean id="ssl-context-builder" class="org.dcache.http.SslContextFactoryBean">
+        <description>SSL Context factory</description>
+        <property name="serverCertificatePath" value="${pool.mover.https.hostcert.cert}"/>
+        <property name="serverKeyPath" value="${pool.mover.https.hostcert.key}"/>
+        <property name="serverCaPath" value="${pool.mover.https.capath}"/>
+        <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
+        <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
+    </bean>
+
   <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
         destroy-method="cancelAll">
     <description>Replica migration module client</description>
@@ -666,11 +676,7 @@
         </bean>
 
         <bean id="https-transfer-service" parent="http-transfer-service-parent" class="org.dcache.http.HttpsTransferService">
-            <property name="serverCertificatePath" value="${pool.mover.https.hostcert.cert}"/>
-            <property name="serverKeyPath" value="${pool.mover.https.hostcert.key}"/>
-            <property name="serverCaPath" value="${pool.mover.https.capath}"/>
-            <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
-            <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
+            <property name="sslContext" ref="ssl-context-builder" />
         </bean>
     </beans>
 

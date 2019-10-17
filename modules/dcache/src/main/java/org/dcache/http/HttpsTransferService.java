@@ -23,8 +23,6 @@ import com.google.common.net.InetAddresses;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
-import dmg.cells.nucleus.CDC;
-
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import io.netty.channel.ChannelPipeline;
@@ -58,6 +56,12 @@ public class HttpsTransferService extends HttpTransferService
     private CrlCheckingMode _crlCheckingMode;
     private OCSPCheckingMode _ocspCheckingMode;
     private volatile SSLEngine _sslEngine;
+    private SSLContext _sslContext;
+
+    public void setSslContext(SSLContext sslContext)
+    {
+        _sslContext = sslContext;
+    }
 
 
     @Required
@@ -134,7 +138,7 @@ public class HttpsTransferService extends HttpTransferService
     protected synchronized void startServer() throws IOException {
         super.startServer();
         try {
-            _sslEngine = createContext().createSSLEngine();
+            _sslEngine = _sslContext.createSSLEngine();
             _sslEngine.setUseClientMode(false);
             _sslEngine.setWantClientAuth(false);
         } catch (Exception e) {
@@ -150,17 +154,4 @@ public class HttpsTransferService extends HttpTransferService
         super.addChannelHandlers(pipeline);
     }
 
-    private synchronized SSLContext createContext() throws Exception {
-
-        return org.dcache.ssl.CanlContextFactory.custom()
-                .withCertificateAuthorityPath(_serverCaPath)
-                .withCrlCheckingMode(_crlCheckingMode)
-                .withOcspCheckingMode(_ocspCheckingMode)
-                .withCertificatePath(_serverCertificatePath)
-                .withKeyPath(_serverKeyPath)
-                .withLazy(false)
-                .withLoggingContext(new CDC()::restore)
-                .buildWithCaching()
-                .call();
-    }
 }
