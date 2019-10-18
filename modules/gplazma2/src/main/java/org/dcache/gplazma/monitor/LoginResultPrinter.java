@@ -16,7 +16,6 @@ import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.asn1.VOMSACUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.security.rsa.RSAPublicKeyImpl;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -28,6 +27,7 @@ import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -315,8 +315,8 @@ public class LoginResultPrinter
 
         sb.append(key.getAlgorithm());
 
-        if (key instanceof RSAPublicKeyImpl) {
-            int bits = (((RSAPublicKeyImpl)key).getModulus().bitLength() + 7) & ~7;
+        if (key instanceof RSAPublicKey) {
+            int bits = (((RSAPublicKey)key).getModulus().bitLength() + 7) & ~7;
             sb.append(' ').append(bits).append(" bits");
         } else {
             sb.append(" (unknown ").append(key.getClass().getCanonicalName()).
