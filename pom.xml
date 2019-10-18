@@ -111,8 +111,8 @@
         <bouncycastle.bcprov>bcprov-jdk15on</bouncycastle.bcprov>
         <bouncycastle.bcpkix>bcpkix-jdk15on</bouncycastle.bcpkix>
         <bouncycastle.version>1.54</bouncycastle.version>
-        <datanucleus-core.version>4.1.8</datanucleus-core.version>
-        <datanucleus.plugin.version>4.0.2</datanucleus.plugin.version>
+        <datanucleus-core.version>5.2.2</datanucleus-core.version>
+        <datanucleus.plugin.version>5.2.1</datanucleus.plugin.version>
         <hazelcast.version>3.11.1</hazelcast.version>
     </properties>
 
@@ -455,7 +455,7 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-api-jdo</artifactId>
-                <version>4.1.1</version>
+                <version>5.2.2</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
@@ -465,7 +465,7 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-xml</artifactId>
-                <version>4.1.0-release</version>
+                <version>5.1.0-release</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
@@ -1032,9 +1032,11 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
+                    <!-- https://github.com/mojohaus/aspectj-maven-plugin/pull/45 -->
+                    <!-- <groupId>org.codehaus.mojo</groupId> -->
+                    <groupId>com.nickwongdev</groupId>
                     <artifactId>aspectj-maven-plugin</artifactId>
-                    <version>1.11</version>
+                    <version>1.12.1</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.aspectj</groupId>
