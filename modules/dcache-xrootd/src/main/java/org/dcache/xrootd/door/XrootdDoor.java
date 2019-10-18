@@ -100,6 +100,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.tpc.XrootdTpcInfoCleanerTask;
 import org.dcache.xrootd.util.FileStatus;
@@ -123,12 +124,10 @@ public class XrootdDoor
                CellCommandListener, CellInfoProvider
 {
     public static final String XROOTD_PROTOCOL_STRING = "Xrootd";
-    public static final int XROOTD_PROTOCOL_MAJOR_VERSION = 2;
-    public static final int XROOTD_PROTOCOL_MINOR_VERSION = 7;
     public static final String XROOTD_PROTOCOL_VERSION =
         String.format("%d.%d",
-                      XROOTD_PROTOCOL_MAJOR_VERSION,
-                      XROOTD_PROTOCOL_MINOR_VERSION);
+                      XrootdProtocol.PROTOCOL_VERSION_MAJOR,
+                      XrootdProtocol.PROTOCOL_VERSION_MINOR);
 
     private static final String TPC_PLACEMENT = "tpc-placement";
 
@@ -349,8 +348,8 @@ public class XrootdDoor
     public void getInfo(PrintWriter pw)
     {
         pw.println(String.format("Protocol Version %d.%d",
-                                 XROOTD_PROTOCOL_MAJOR_VERSION,
-                                 XROOTD_PROTOCOL_MINOR_VERSION));
+                                 XrootdProtocol.PROTOCOL_VERSION_MAJOR,
+                                 XrootdProtocol.PROTOCOL_VERSION_MINOR));
     }
 
     private void uploadDone(Subject subject, Restriction restriction,
