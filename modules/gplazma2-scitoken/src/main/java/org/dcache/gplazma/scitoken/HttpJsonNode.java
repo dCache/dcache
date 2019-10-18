@@ -17,6 +17,7 @@
  */
 package org.dcache.gplazma.scitoken;
 
+import com.google.common.net.MediaType;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -27,9 +28,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.MissingNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -154,38 +152,16 @@ public class HttpJsonNode extends PreparationJsonNode
             return charset;
         }
 
-        try {
-            MimeType type = new MimeType(contentType.getValue());
-            String baseType = type.getBaseType().toLowerCase();
-            switch (baseType) {
+        MediaType type = MediaType.parse(contentType.getValue());
+        String baseType = type.type().toLowerCase();
+        switch (baseType) {
             case "application/json":
             case "application/octet-stream": // basically "unknown"
                 break;
             default:
                 throw new IOException("Unexpected Content-Type: " + baseType);
-            }
-            String charsetParam = type.getParameter("charset");
-            if (charsetParam != null) {
-                switch (charsetParam.toLowerCase()) {
-                case "us-ascii":
-                    charset = StandardCharsets.US_ASCII;
-                    break;
-                case "utf-8":
-                case "utf8":
-                    charset = StandardCharsets.UTF_8;
-                    break;
-                case "iso-8859-1":
-                    charset = StandardCharsets.ISO_8859_1;
-                    break;
-                default:
-                    throw new IOException("Unknown charset " + charsetParam);
-                }
-            }
-        } catch (MimeTypeParseException e) {
-            throw new IOException("Failed to parse Content-Type value"
-                    + " \"" + contentType.getValue() + "\": " + e.getMessage());
         }
-        return charset;
+        return type.charset().or(StandardCharsets.US_ASCII);
     }
 
     @Override
