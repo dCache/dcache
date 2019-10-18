@@ -117,16 +117,16 @@
         <artifactId>je</artifactId>
     </dependency>
     <dependency>
-        <groupId>javax.jdo</groupId>
-        <artifactId>jdo-api</artifactId>
-    </dependency>
-    <dependency>
         <groupId>com.github.parboiled1</groupId>
         <artifactId>grappa</artifactId>
     </dependency>
     <dependency>
         <groupId>org.datanucleus</groupId>
         <artifactId>datanucleus-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.datanucleus</groupId>
+      <artifactId>javax.jdo</artifactId>
     </dependency>
     <dependency>
         <groupId>org.datanucleus</groupId>

@@ -111,8 +111,8 @@
         <bouncycastle.bcprov>bcprov-jdk15on</bouncycastle.bcprov>
         <bouncycastle.bcpkix>bcpkix-jdk15on</bouncycastle.bcpkix>
         <bouncycastle.version>1.54</bouncycastle.version>
-        <datanucleus-core.version>4.1.8</datanucleus-core.version>
-        <datanucleus.plugin.version>4.0.2</datanucleus.plugin.version>
+        <datanucleus-core.version>5.2.2</datanucleus-core.version>
+        <datanucleus.plugin.version>5.2.1</datanucleus.plugin.version>
         <hazelcast.version>3.11.1</hazelcast.version>
     </properties>
 
@@ -433,11 +433,6 @@
                 <version>7.3.7</version>
             </dependency>
             <dependency>
-                <groupId>javax.jdo</groupId>
-                <artifactId>jdo-api</artifactId>
-                <version>3.1</version>
-            </dependency>
-            <dependency>
                 <groupId>com.github.parboiled1</groupId>
                 <artifactId>grappa</artifactId>
                 <version>1.0.4</version>
@@ -449,23 +444,38 @@
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
-                <artifactId>datanucleus-cache</artifactId>
-                <version>4.0.4</version>
+                <artifactId>datanucleus-api-jdo</artifactId>
+                <version>5.2.2</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
-                <artifactId>datanucleus-api-jdo</artifactId>
-                <version>4.1.1</version>
+                <artifactId>datanucleus-jdo-query</artifactId>
+                <version>5.0.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.datanucleus</groupId>
+                <artifactId>javax.jdo</artifactId>
+                <version>3.2.0-m12</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-rdbms</artifactId>
-                <version>4.1.10</version>
+                <version>5.2.1</version>
+            </dependency>
+            <dependency>
+               <groupId>org.datanucleus</groupId>
+               <artifactId>datanucleus-accessplatform-jdo-rdbms</artifactId>
+               <version>5.2.2</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-xml</artifactId>
-                <version>4.1.0-release</version>
+                <version>5.1.0-release</version>
+            </dependency>
+            <dependency>
+                <groupId>org.datanucleus</groupId>
+                <artifactId>datanucleus-cache</artifactId>
+                <version>5.1.1</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
