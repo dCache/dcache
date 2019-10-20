@@ -1107,11 +1107,13 @@ public class PoolSelectionUnitV2
     public void createDynamicPoolGroup(String name, boolean isResilient, Map<String, String> tags) {
         wlock();
         try {
-            PGroup group = new DynamicPGroup(name, isResilient, tags);
+            DynamicPGroup group = new DynamicPGroup(name, isResilient, tags);
 
             if (_pGroups.putIfAbsent(group.getName(), group) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
             }
+             // add any existing pools
+            _pools.values().forEach(p -> group.addIfMatches(p));
         } finally {
             wunlock();
         }
