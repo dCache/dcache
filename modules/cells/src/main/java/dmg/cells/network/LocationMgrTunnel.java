@@ -49,6 +49,7 @@ import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
+import dmg.cells.nucleus.SerializationHandler;
 import dmg.util.Releases;
 import dmg.util.Releases.BadVersionException;
 import dmg.util.StreamEngine;
@@ -84,6 +85,8 @@ public class LocationMgrTunnel
 
     private ObjectSource _input;
     private ObjectSink _output;
+
+    private SerializationHandler.Serializer _serializer;
 
     //
     // some statistics
@@ -181,10 +184,16 @@ public class LocationMgrTunnel
             } else {
                 _log.debug("Using raw serialization for message envelope.");
 
-                /* Since dCache 3.0 we use raw encoding of CellMessage.
-                 */
+                // Due to lack of message versioning support in FST, we always use JOS with different dCache versions
+                boolean samedVersionEndpoint = release == _localDomainInfo.getRelease();
+
+                SerializationHandler.Serializer serializer = samedVersionEndpoint ?
+                        _nucleus.getMsgSerialization() : SerializationHandler.Serializer.JOS;
+                this._serializer = serializer;
+                /* Since dCache 3.0 we use raw encoding of CellMessage. */
                 _input = new RawObjectSource(_rawIn);
-                _output = new RawObjectSink(_rawOut);
+
+                _output = new RawObjectSink(_rawOut, serializer);
             }
 
             _allowForwardingOfRemoteMessages = (_remoteDomainInfo.getRole() != CellDomainRole.CORE);
@@ -281,7 +290,8 @@ public class LocationMgrTunnel
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("Tunnel        : " + getCellName());
+        pw.println("Tunnel                    : " + getCellName());
+        pw.println("Message payload serializer: " + _serializer);
         pw.println("Messages delivered to");
         pw.println("   Peer       : " + _messagesToTunnel);
         pw.println("   Local      : " + _messagesToSystem);
@@ -367,16 +377,22 @@ public class LocationMgrTunnel
 
     private static class RawObjectSink implements ObjectSink
     {
+        private final SerializationHandler.Serializer serializer;
         private final DataOutputStream out;
 
-        private RawObjectSink(OutputStream out)
+        private RawObjectSink(OutputStream out, SerializationHandler.Serializer serializer)
         {
             this.out = new DataOutputStream(out);
+            this.serializer = serializer;
         }
 
         @Override
         public void writeObject(CellMessage message) throws IOException
         {
+            // Older versions do not support the new serialization format
+            // Due to lack of message versioning support, always use JOS with different dCache versions
+            message.ensureEncodedWith(serializer);
+
             message.writeTo(out);
             out.flush();
         }

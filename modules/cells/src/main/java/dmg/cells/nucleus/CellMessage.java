@@ -15,7 +15,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Objects;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+
+import static dmg.cells.nucleus.SerializationHandler.Serializer;
 
 /**
   * Do not subclass - otherwise raw encoding in LocationMgrTunnel will break.
@@ -184,14 +187,26 @@ public boolean equals( Object obj ){
         }
     }
 
-    public CellMessage encode() throws SerializationException
+    public CellMessage encodeWith(Serializer serializer)
     {
         checkState(_mode == ORIGINAL_MODE);
         CellMessage encoded = clone();
         encoded._mode = STREAM_MODE;
-        encoded._message = null;
-        encoded._messageStream = encode(_message);
+        encoded._messageStream = SerializationHandler.encode(this._message, serializer);
         return encoded;
+    }
+
+    // For LocationManagerTunnel to reencode using JOS
+    public CellMessage ensureEncodedWith(Serializer handler)
+    {
+        checkState(_mode == STREAM_MODE, "not encoded");
+        checkArgument(handler != null, "Cannot ensure CellMessage is encoded. The given msg payload serializer is null.");
+
+        if (!SerializationHandler.isEncodedWith(_messageStream, handler)) {
+            Object payload = SerializationHandler.decode(_messageStream);
+            _messageStream = SerializationHandler.encode(payload, handler);
+        }
+        return this;
     }
 
     public CellMessage decode() throws SerializationException
@@ -200,36 +215,8 @@ public boolean equals( Object obj ){
         CellMessage decoded = clone();
         decoded._mode = ORIGINAL_MODE;
         decoded._messageStream = null;
-        decoded._message = decode(_messageStream);
+        decoded._message = SerializationHandler.decode(_messageStream);
         return decoded;
-    }
-
-    protected static byte[] encode(Object message)
-    {
-        int initialBufferSize = 256;
-        ByteArrayOutputStream array = new ByteArrayOutputStream(initialBufferSize);
-        try (ObjectOutputStream out = new ObjectOutputStream(array)) {
-            out.writeObject(message);
-        } catch (InvalidClassException e) {
-            throw new SerializationException("Failed to serialize object: "
-                    + e + "(this is usually a bug)", e);
-        } catch (NotSerializableException e) {
-            throw new SerializationException("Failed to serialize object because the object is not serializable (this is usually a bug)", e);
-        } catch (IOException e) {
-            throw new SerializationException("Failed to serialize object: " + e, e);
-        }
-        return array.toByteArray();
-    }
-
-    protected static Object decode(byte[] messageStream)
-    {
-        try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(messageStream))) {
-            return stream.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new SerializationException("Failed to deserialize object: The class could not be found. Is there a software version mismatch in your installation?", e);
-        } catch (IOException e) {
-            throw new SerializationException("Failed to deserialize object: " + e, e);
-        }
     }
 
     public void addSourceAddress( CellAddressCore source ){

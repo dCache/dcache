@@ -43,6 +43,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
+import dmg.cells.nucleus.SerializationHandler;
 
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -786,7 +787,7 @@ public class RemoteNameSpaceProviderTests
     private static CellMessage buildReply(CellMessage request,
             Modifier... modifiers)
     {
-        CellMessage reply = request.encode().decode();
+        CellMessage reply = request.encodeWith(SerializationHandler.Serializer.JOS).decode();
 
         PnfsMessage payload = (PnfsMessage) reply.getMessageObject();
         for(Modifier modifier : modifiers) {

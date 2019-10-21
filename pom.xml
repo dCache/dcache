@@ -85,6 +85,9 @@
         <version.jackson.annotations>2.9.10</version.jackson.annotations>
         <version.jackson.core>2.9.10</version.jackson.core>
         <version.jna>5.4.0</version.jna>
+        <version.fst>2.56</version.fst>
+
+
 
 
         <spring-integration-kafka.version>3.0.1.RELEASE</spring-integration-kafka.version>
@@ -966,6 +969,11 @@
                 <groupId>org.springframework.plugin</groupId>
                 <artifactId>spring-plugin-core</artifactId>
                 <version>1.2.0.RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>de.ruedigermoeller</groupId>
+                <artifactId>fst</artifactId>
+                <version>${version.fst}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
