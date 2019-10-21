@@ -50,45 +50,12 @@ public class HttpsTransferService extends HttpTransferService
 
     private static final String PROTOCOL_HTTPS = "https";
 
-    private Path _serverCertificatePath;
-    private Path _serverKeyPath;
-    private Path _serverCaPath;
-    private CrlCheckingMode _crlCheckingMode;
-    private OCSPCheckingMode _ocspCheckingMode;
     private volatile SSLEngine _sslEngine;
     private SSLContext _sslContext;
 
     public void setSslContext(SSLContext sslContext)
     {
         _sslContext = sslContext;
-    }
-
-
-    @Required
-    public void setServerCertificatePath(Path serverCertificatePath) {
-        _serverCertificatePath = serverCertificatePath;
-    }
-
-    @Required
-    public void setServerKeyPath(Path serverKeyPath) {
-        _serverKeyPath = serverKeyPath;
-    }
-
-    @Required
-    public void setServerCaPath(Path serverCaPath) {
-        _serverCaPath = serverCaPath;
-    }
-
-    @Required
-    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-    {
-        _crlCheckingMode = crlCheckingMode;
-    }
-
-    @Required
-    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-    {
-        _ocspCheckingMode = ocspCheckingMode;
     }
 
     /**
