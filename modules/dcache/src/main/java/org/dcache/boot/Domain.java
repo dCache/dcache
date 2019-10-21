@@ -6,6 +6,7 @@ import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Ints;
+import dmg.cells.nucleus.SerializationHandler;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -130,8 +131,10 @@ public class Domain
         CDC.reset(SYSTEM_CELL_NAME, domainName);
         String zoneConfiguration = _properties.getValue(PROPERTY_ZONE);
         Optional<String> zone = Optional.ofNullable(emptyToNull(zoneConfiguration));
+
+        SerializationHandler.Serializer cellSerializer =  SerializationHandler.enumFromConfigString(_properties.getValue(PROPERTY_MSG_PAYLOAD_SERIALIZER));
         SystemCell systemCell = SystemCell.create(domainName,
-                createCuratorFramework(), zone);
+                createCuratorFramework(), zone, cellSerializer);
         systemCell.start().get();
         _log.info("Starting {}", domainName);
 

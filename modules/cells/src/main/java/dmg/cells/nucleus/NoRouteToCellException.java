@@ -11,11 +11,12 @@ public class NoRouteToCellException extends Exception
     private final UOID _uoid;
     private final CellPath _path;
     private final CellMessage _envelope;
+    private static final SerializationHandler.Serializer _serializer = SerializationHandler.Serializer.JOS;
 
     public NoRouteToCellException(CellMessage envelope, String str)
     {
         super(str);
-        _envelope = envelope.isStreamMode() ? envelope : envelope.encode();
+        _envelope = envelope.isStreamMode() ? envelope.ensureEncodedWith(_serializer) : envelope.encodeWith(_serializer);
         _uoid = envelope.getUOID();
         _path = envelope.getDestinationPath();
     }

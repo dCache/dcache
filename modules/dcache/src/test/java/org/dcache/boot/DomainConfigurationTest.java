@@ -1,5 +1,7 @@
 package org.dcache.boot;
 
+import dmg.cells.nucleus.MsgSerializerJos;
+import dmg.cells.nucleus.SerializationHandler;
 import org.apache.curator.framework.CuratorFramework;
 import com.google.common.base.Throwables;
 import org.apache.curator.framework.listen.Listenable;
@@ -58,7 +60,7 @@ public class DomainConfigurationTest
                 .thenReturn(Mockito.mock(Listenable.class));
         Mockito.when(mockCurator.getUnhandledErrorListenable())
                 .thenReturn(Mockito.mock(Listenable.class));
-        system = SystemCell.create(DOMAIN_NAME, mockCurator, NO_ZONE);
+        system = SystemCell.create(DOMAIN_NAME, mockCurator, NO_ZONE, SerializationHandler.Serializer.JOS);
 
         try {
             system.start().get();
