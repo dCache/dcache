@@ -59,7 +59,7 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     private final String parentCellName;
     private final Args args;
     private final NettyLineBasedInterpreterFactory factory;
-    private final IdentityResolverFactory idResolverFactory;
+    private IdentityResolverFactory idResolverFactory;
     private ExecutorService executor;
     private PoolManagerHandlerSubscriber poolManagerHandler;
     private NioEventLoopGroup socketGroup;
@@ -106,9 +106,6 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
         this.args = args;
 
         new OptionParser(args).inject(this);
-
-        LoginStrategy loginStrategy = new RemoteLoginStrategy(new CellStub(parentEndpoint, gPlazma, 30000));
-        idResolverFactory = new IdentityResolverFactory(loginStrategy);
     }
 
     @Override
@@ -150,6 +147,9 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
         CellStub spaceManager = new CellStub(parentEndpoint, spaceManagerPath, 30_000);
         spaceDescriptionCache = ReservationCaches.buildOwnerDescriptionLookupCache(spaceManager, executor);
         spaceLookupCache = ReservationCaches.buildSpaceLookupCache(spaceManager, executor);
+
+        LoginStrategy loginStrategy = new RemoteLoginStrategy(new CellStub(parentEndpoint, gPlazma, 30_000));
+        idResolverFactory = new IdentityResolverFactory(loginStrategy);
 
         poolManagerHandler = new PoolManagerHandlerSubscriber();
         poolManagerHandler.setPoolManager(new CellStub(parentEndpoint, poolManager, poolManagerTimeout, poolManagerTimeoutUnit));
