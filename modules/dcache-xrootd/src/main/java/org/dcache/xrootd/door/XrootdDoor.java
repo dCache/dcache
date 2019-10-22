@@ -394,7 +394,7 @@ public class XrootdDoor
     }
 
     private XrootdTransfer
-            createUploadTransfer(InetSocketAddress client, FsPath path,
+            createUploadTransfer(InetSocketAddress client, FsPath path, Set<String> tried,
                     String ioQueue, UUID uuid, InetSocketAddress local,
                     Subject subject, Restriction restriction, boolean createDir,
                     boolean overwrite, Long size, FsPath uploadPath)
@@ -442,11 +442,12 @@ public class XrootdDoor
         transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
         transfer.setKafkaSender(_kafkaSender);
+        transfer.setTriedHosts(tried);
         return transfer;
     }
 
     private XrootdTransfer
-        createTransfer(InetSocketAddress client, FsPath path,
+        createTransfer(InetSocketAddress client, FsPath path, Set<String> tried,
                        String ioQueue, UUID uuid, InetSocketAddress local, Subject subject,
                        Restriction restriction)
     {
@@ -481,12 +482,14 @@ public class XrootdDoor
         transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
         transfer.setKafkaSender(_kafkaSender);
+        transfer.setTriedHosts(tried);
         return transfer;
     }
 
     public XrootdTransfer
-        read(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
-             InetSocketAddress local, Subject subject, Restriction restriction)
+        read(InetSocketAddress client, FsPath path, Set<String> tried,
+             String ioQueue, UUID uuid, InetSocketAddress local,
+             Subject subject, Restriction restriction)
         throws CacheException, InterruptedException
     {
         if (!isReadAllowed(path)) {
@@ -494,7 +497,7 @@ public class XrootdDoor
         }
 
         XrootdTransfer transfer =
-            createTransfer(client, path, ioQueue, uuid, local, subject, restriction);
+            createTransfer(client, path, tried, ioQueue, uuid, local, subject, restriction);
         int handle = transfer.getFileHandle();
 
         InetSocketAddress address = null;
@@ -556,8 +559,9 @@ public class XrootdDoor
     }
 
     public XrootdTransfer
-            write(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
-                    boolean createDir, boolean overwrite, Long size, OptionalLong maxUploadSize,
+            write(InetSocketAddress client, FsPath path, Set<String> tried,
+                    String ioQueue, UUID uuid, boolean createDir,
+                  boolean overwrite, Long size, OptionalLong maxUploadSize,
                     InetSocketAddress local, Subject subject, Restriction restriction,
                     boolean persistOnSuccessfulClose, FsPath rootPath,
                     Serializable delegatedProxy)
@@ -571,12 +575,12 @@ public class XrootdDoor
         if (persistOnSuccessfulClose) {
             FsPath uploadPath = getUploadPath(subject, restriction, createDir,
                                               overwrite, size, path, rootPath);
-            transfer = createUploadTransfer(client, path, ioQueue, uuid, local,
+            transfer = createUploadTransfer(client, path, tried, ioQueue, uuid, local,
                                             subject, restriction, createDir,
                                             overwrite, size,
                                             uploadPath);
         } else {
-            transfer = createTransfer(client, path, ioQueue, uuid, local,
+            transfer = createTransfer(client, path, tried, ioQueue, uuid, local,
                                       subject, restriction);
         }
         transfer.setOverwriteAllowed(overwrite);

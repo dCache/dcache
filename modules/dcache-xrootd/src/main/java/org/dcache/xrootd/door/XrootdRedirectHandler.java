@@ -17,6 +17,7 @@
  */
 package org.dcache.xrootd.door;
 
+import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +38,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -253,6 +256,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                           exception.getMessage());
             }
 
+            _log.info("OPAQUE : {}", opaque);
+            Set<String> triedHosts
+                            = Arrays.stream(Strings.nullToEmpty(opaque.get("tried"))
+                                                   .split(","))
+                                    .collect(Collectors.toSet());
+            _log.info("TRIED : {}", triedHosts);
             UUID uuid = UUID.randomUUID();
             opaque.put(UUID_PREFIX, uuid.toString());
             /*
@@ -273,7 +282,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                         & XrootdProtocol.kXR_posc) == XrootdProtocol.kXR_posc;
                 // TODO: replace with req.isPersistOnSuccessfulClose() with the latest xrootd4j
 
-                transfer = _door.write(remoteAddress, path,
+                transfer = _door.write(remoteAddress, path, triedHosts,
                         ioQueue, uuid, createDir, overwrite, size, _maximumUploadSize,
                         localAddress, req.getSubject(), _authz, persistOnSuccessfulClose,
                         ((_isLoggedIn) ? _userRootPath : _rootPath),
@@ -297,7 +306,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                     subject = Subjects.ROOT;
                 }
 
-                transfer = _door.read(remoteAddress, path, ioQueue,
+                transfer = _door.read(remoteAddress, path, triedHosts, ioQueue,
                                 uuid, localAddress, subject, _authz);
 
                 /*

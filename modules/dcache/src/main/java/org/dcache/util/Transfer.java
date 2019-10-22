@@ -130,6 +130,8 @@ public class Transfer implements Comparable<Transfer>
     private List<InetSocketAddress> _clientAddresses;
     private String _ioQueue;
 
+    private Set<String> _tried;
+
     private long _allocated;
     private OptionalLong _maximumSize = OptionalLong.empty();
 
@@ -491,6 +493,11 @@ public class Transfer implements Comparable<Transfer>
         } else {
             _allowedRequestStates.remove(RequestState.ST_POOL_2_POOL);
         }
+    }
+
+    public synchronized void setTriedHosts(Set<String> tried)
+    {
+        _tried = tried;
     }
 
     /**
@@ -1021,6 +1028,7 @@ public class Transfer implements Comparable<Transfer>
             request.setBillingPath(getBillingPath());
             request.setTransferPath(getTransferPath());
             request.setIoQueueName(getIoQueue());
+            request.setExcludedHosts(_tried);
 
             reply = _poolManager.sendAsync(request, timeout);
         } else {
@@ -1046,6 +1054,7 @@ public class Transfer implements Comparable<Transfer>
             request.setBillingPath(getBillingPath());
             request.setTransferPath(getTransferPath());
             request.setIoQueueName(getIoQueue());
+            request.setExcludedHosts(_tried);
 
             reply = Futures.transform(_poolManager.sendAsync(request, timeout),
                                       (PoolMgrSelectReadPoolMsg msg) -> {
