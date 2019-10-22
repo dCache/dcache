@@ -115,16 +115,27 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
      * <p>Responsible for adding the timeseries histograms to the
      * info object.</p>
      *
+     * <p>Also adds sweeper data.</p>
+     *
      * @param info to be updated with most recent historical data.
      * @throws CacheException
      */
     public void addHistoricalData(PoolInfoWrapper info)
                     throws InterruptedException,
                     CacheException, NoRouteToCellException {
+        PoolTimeseriesRequestMessage message =
+                        getHistogramAndSweeperData(info.getKey(),
+                                                   PoolTimeseriesRequestMessage.ALL);
+        /*
+         *  If sweeper data is already present, leave it alone.
+         */
+        PoolData poolData = info.getInfo();
+        if (poolData.getSweeperData() == null) {
+            poolData.setSweeperData(message.getSweeperData());
+        }
 
         Map<TimeseriesType, TimeseriesHistogram> timeseries
-                        = getTimeseries(info.getKey(),
-                                        PoolTimeseriesRequestMessage.ALL);
+                        = message.getHistogramMap();
 
         info.setActiveFlush(timeseries.get(TimeseriesType.ACTIVE_FLUSH));
         info.setActiveMovers(timeseries.get(TimeseriesType.ACTIVE_MOVERS));
@@ -190,18 +201,24 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
         return histogram;
     }
 
-    @Override
-    public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String pool,
-                                                                  Set<TimeseriesType> types)
+    public PoolTimeseriesRequestMessage getHistogramAndSweeperData(String pool,
+                                                                   Set<TimeseriesType> types)
                     throws CacheException, InterruptedException,
                     NoRouteToCellException {
         PoolTimeseriesRequestMessage message = new PoolTimeseriesRequestMessage();
         message.setPool(pool);
         message.setKeys(types);
-        message = historyService.sendAndWait(message,
-                                             historyService.getTimeoutInMillis(),
-                                             RETRY_ON_NO_ROUTE_TO_CELL);
-        return message.getHistogramMap();
+        return historyService.sendAndWait(message,
+                                          historyService.getTimeoutInMillis(),
+                                          RETRY_ON_NO_ROUTE_TO_CELL);
+    }
+
+    @Override
+    public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String pool,
+                                                                  Set<TimeseriesType> types)
+                    throws CacheException, InterruptedException,
+                    NoRouteToCellException {
+        return getHistogramAndSweeperData(pool, types).getHistogramMap();
     }
 
     @Required

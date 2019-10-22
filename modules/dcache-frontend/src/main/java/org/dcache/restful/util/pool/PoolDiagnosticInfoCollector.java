@@ -63,8 +63,7 @@ import org.dcache.util.collector.pools.PoolInfoCollector;
 import org.dcache.vehicles.pool.PoolDataRequestMessage;
 
 /**
- * <p>Used to gather diagnostic data from the pools.  This includes the
- *    LRU histogram data from the Sweeper.</p>
+ * <p>Used to gather diagnostic data from the pools.</p>
  */
 public class PoolDiagnosticInfoCollector extends
                 PoolInfoCollector<PoolDataRequestMessage> {

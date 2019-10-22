@@ -61,6 +61,7 @@ package org.dcache.services.history.pools;
 
 import org.springframework.beans.factory.annotation.Required;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -76,12 +77,15 @@ import dmg.cells.nucleus.Reply;
 import dmg.util.command.Command;
 
 import org.dcache.cells.MessageReply;
+import org.dcache.pool.classic.json.SweeperData;
+import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.util.collector.ListenableFutureWrapper;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.collector.pools.PoolLiveDataCollector;
+import org.dcache.util.histograms.CountingHistogram;
 import org.dcache.util.histograms.TimeseriesHistogram;
 import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
@@ -130,6 +134,24 @@ public final class PoolTimeseriesServiceImpl extends
         synchronized (cache) {
             cache.putAll(processor.readFromDisk());
         }
+    }
+
+    public SweeperData getSweeperData(String key) {
+        PoolInfoWrapper wrapper = getWrapper(key);
+        if (wrapper != null) {
+            PoolData info = wrapper.getInfo();
+            if (info != null) {
+                return info.getSweeperData();
+            }
+        }
+
+        SweeperData sweeperData = new SweeperData();
+        CountingHistogram histogram = SweeperData.createLastAccessHistogram();
+        histogram.setData(Collections.EMPTY_LIST);
+        histogram.configure();
+        sweeperData.setLastAccessHistogram(histogram);
+
+        return sweeperData;
     }
 
     public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String key,
@@ -206,6 +228,7 @@ public final class PoolTimeseriesServiceImpl extends
             try {
                 message.setHistogramMap(getTimeseries(message.getPool(),
                                                       message.getKeys()));
+                message.setSweeperData(getSweeperData(message.getPool()));
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);

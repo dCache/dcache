@@ -65,6 +65,8 @@ import java.util.Map;
 import java.util.Set;
 
 import diskCacheV111.vehicles.Message;
+
+import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.util.histograms.TimeseriesHistogram;
 
 /**
@@ -75,8 +77,10 @@ import org.dcache.util.histograms.TimeseriesHistogram;
  * predetermined window.</p>
  */
 public class PoolTimeseriesRequestMessage extends Message {
-    public static final Set<TimeseriesType> ALL = ImmutableSet.copyOf(
-                    TimeseriesType.values());
+    public static final  Set<TimeseriesType> ALL
+                    = ImmutableSet.copyOf(TimeseriesType.values());
+
+    private static final long                serialVersionUID = 1980528238192896599L;
 
     /**
      * <p>Possible timeseries data types.</p>
@@ -98,9 +102,10 @@ public class PoolTimeseriesRequestMessage extends Message {
         QUEUED_STAGE
     }
 
-    private String              pool;
-    private Set<TimeseriesType> keys;
+    private String                                   pool;
+    private Set<TimeseriesType>                      keys;
     private Map<TimeseriesType, TimeseriesHistogram> histogramMap;
+    private SweeperData sweeperData;
 
     public Map<TimeseriesType, TimeseriesHistogram> getHistogramMap() {
         return histogramMap;
@@ -112,6 +117,10 @@ public class PoolTimeseriesRequestMessage extends Message {
 
     public String getPool() {
         return pool;
+    }
+
+    public SweeperData getSweeperData() {
+        return sweeperData;
     }
 
     public void setHistogramMap(
@@ -126,4 +135,9 @@ public class PoolTimeseriesRequestMessage extends Message {
     public void setPool(String pool) {
         this.pool = pool;
     }
+
+    public void setSweeperData(SweeperData sweeperData) {
+        this.sweeperData = sweeperData;
+    }
+
 }

@@ -232,8 +232,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
 
     /**
      * <p>Gathers diagnostic and detail information about various
-     * cell components for the pool, including sweeper lifetime
-     * values and migration jobs.</p>
+     * cell components for the pool, including migration jobs.</p>
      */
     public Reply messageArrived(PoolDataRequestMessage message) {
         MessageReply<Message> reply = new MessageReply<>();
@@ -254,7 +253,6 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 request.setPpData(p2pClient.getDataObject());
                 request.setRepositoryData(repositoryProvider.getDataObject());
                 request.setStorageHandlerData(storageHandler.getDataObject());
-                request.setSweeperData(sweeper.getDataObject());
                 request.setTransferServicesData(transferServices.getDataObject());
 
                 message.setData(request);
@@ -271,6 +269,10 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         executor.execute(() -> {
             try {
                 message.setPoolCostData(new PoolCostData(pool.getPoolCostInfo()));
+                /*
+                 *  NB:  sweeper data is obtained by the history service
+                 *  on behalf of the pool service on the frontend.
+                 */
                 message.setSweeperData(sweeper.getDataObject());
                 reply.reply(message);
             } catch (Exception e) {

@@ -135,8 +135,8 @@ public final class PoolDataRequestProcessor
         info.setKey(key);
 
         /*
-         *  NB:  the counts histogram is already part of the sweeper
-         *  data object (data.getSweeperData().getLastAccessHistogram()).
+         *  NB:  the counts histogram for file lifetime will be added
+         *  by the historical data method below.
          */
         info.setInfo(poolData);
 
