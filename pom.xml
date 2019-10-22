@@ -56,7 +56,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
+        <source.version>1.8</source.version>
+        <target.version>1.8</target.version>
 
         <version.slf4j>1.7.26</version.slf4j>
         <version.milton>2.7.3.0-dcache-1</version.milton>
@@ -1035,10 +1036,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.0</version>
+                    <version>3.5.1</version>
                     <configuration>
                         <showDeprecation>true</showDeprecation>
-                        <release>${java.verson}</release>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1056,9 +1056,9 @@
                     </dependencies>
                     <configuration>
                         <XterminateAfterCompilation>true</XterminateAfterCompilation>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
-                        <complianceLevel>${java.version}</complianceLevel>
+                        <source>${source.version}</source>
+                        <target>${target.version}</target>
+                        <complianceLevel>${source.version}</complianceLevel>
                         <XhasMember>true</XhasMember>
                         <sources>
                             <source>
@@ -1207,8 +1207,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>${source.version}</source>
+                    <target>${target.version}</target>
                 </configuration>
             </plugin>
 
@@ -1324,7 +1324,7 @@
                 <configuration>
                     <sourceEncoding>utf-8</sourceEncoding>
                     <minimumTokens>100</minimumTokens>
-                    <targetJdk>${java.version}</targetJdk>
+                    <targetJdk>${source.version}</targetJdk>
                 </configuration>
             </plugin>
         </plugins>
