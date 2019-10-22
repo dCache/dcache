@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -462,7 +463,7 @@ public class PoolSelectionUnitV2
                         || (mode.getMode() != pool.getPoolMode().getMode())
                         || !Objects.equals(pool.getHsmInstances(), hsmInstances)
                         || !Objects.equals(pool.getAddress(), address)
-                        || !Objects.equals(pool.getCanonicalHostName(), canonicalHostName);
+                        || !Objects.equals(pool.getCanonicalHostName(), Optional.ofNullable(canonicalHostName));
                 if (!changed) {
                     pool.setActive(!disabled);
                     return false;
