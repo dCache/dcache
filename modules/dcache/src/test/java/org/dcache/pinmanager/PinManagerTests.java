@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
@@ -140,9 +141,10 @@ public class PinManagerTests
             @Override
             public PoolSelector getPoolSelector(FileAttributes fileAttributes,
                                                 ProtocolInfo protocolInfo,
-                                                String linkGroup)
+                                                String linkGroup,
+                                                Set<String> excludes)
             {
-                return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup) {
+                return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup, excludes) {
                     @Override
                     public SelectedPool selectPinPool()
                     {

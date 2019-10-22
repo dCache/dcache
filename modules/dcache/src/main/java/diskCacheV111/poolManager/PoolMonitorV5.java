@@ -112,9 +112,10 @@ public class PoolMonitorV5
     @Override
     public PoolSelector getPoolSelector(FileAttributes fileAttributes,
                                         ProtocolInfo protocolInfo,
-                                        String linkGroup)
+                                        String linkGroup,
+                                        Set<String> excludedHosts)
     {
-        return new PnfsFileLocation(fileAttributes, protocolInfo, linkGroup);
+        return new PnfsFileLocation(fileAttributes, protocolInfo, linkGroup, excludedHosts);
     }
 
     public class PnfsFileLocation implements PoolSelector
@@ -124,16 +125,32 @@ public class PoolMonitorV5
         private final FileAttributes _fileAttributes;
         private final ProtocolInfo _protocolInfo;
         private final String _linkGroup;
+        private final Set<String> _excludedHosts;
+        private final Predicate<String> _locationFilter;
+        private final Predicate<String> _excludeFilter;
 
         public PnfsFileLocation(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo,
-                                String linkGroup)
+                                String linkGroup,
+                                Set<String> excludedHosts)
         {
             _fileAttributes = fileAttributes;
             _protocolInfo = protocolInfo;
             _linkGroup    = linkGroup;
-        }
+            _excludedHosts = excludedHosts == null ?
+                            Collections.EMPTY_SET : excludedHosts;
 
+            if (_excludedHosts.isEmpty()) {
+                _locationFilter = s -> true;
+            } else {
+                _locationFilter = loc -> _selectionUnit.getPool(loc)
+                                                       .getCanonicalHostName()
+                                                       .filter(host -> !excludedHosts.contains(host))
+                                                       .isPresent();
+            }
+
+            _excludeFilter = _locationFilter.negate();
+        }
 
         @Override
         public Partition getCurrentPartition()
@@ -143,6 +160,10 @@ public class PoolMonitorV5
 
         /**
          * Returns the result of a PSU match for this PnfsFileLocation.
+         *
+         * NOTE: in the case where excludes is empty (most of the time),
+         * the _excludeFilter is always false; thus only one boolean check
+         * is added to the PSU match routine.
          */
         private PoolPreferenceLevel[] match(DirectionType direction)
         {
@@ -152,14 +173,23 @@ public class PoolMonitorV5
                                         hostName,
                                         protocol,
                                         _fileAttributes,
-                                        _linkGroup);
+                                        _linkGroup,
+                                        _excludeFilter);
         }
 
         private Collection<String> filteredFileLocations()
         {
-            // REVISIT TODO a subsequent patch will add the filter check here
-            // TODO if excluded hosts is not empty
-            return _fileAttributes.getLocations();
+            if (_excludedHosts.isEmpty()) {
+                return _fileAttributes.getLocations();
+            }
+
+            _log.debug("filtering file locations for {}, "
+                                       + "excluded hosts {}.",
+                       _fileAttributes.getPnfsId(),
+                       _excludedHosts);
+            return _fileAttributes.getLocations().stream()
+                                  .filter(_locationFilter)
+                                  .collect(Collectors.toList());
         }
 
         private String noLinksConfiguredErrorMessage(String type)
@@ -568,7 +598,8 @@ public class PoolMonitorV5
                                  hostName,
                                  "*/*",
                                  attributes,
-                                 null);
+                                 null,
+                                 s -> false);
 
         Collection<String> locations = attributes.getLocations();
         for (PoolPreferenceLevel level: levels) {

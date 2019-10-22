@@ -28,6 +28,7 @@ import org.springframework.remoting.RemoteProxyFailureException;
 
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.CostModule;
@@ -136,9 +137,15 @@ public class RemotePoolMonitor
     }
 
     @Override
-    public PoolSelector getPoolSelector(FileAttributes fileAttributes, ProtocolInfo protocolInfo, String linkGroup)
+    public PoolSelector getPoolSelector(FileAttributes fileAttributes,
+                                        ProtocolInfo protocolInfo,
+                                        String linkGroup,
+                                        Set<String> excludedHosts)
     {
-        return getPoolMonitor().getPoolSelector(fileAttributes, protocolInfo, linkGroup);
+        return getPoolMonitor().getPoolSelector(fileAttributes,
+                                                protocolInfo,
+                                                linkGroup,
+                                                excludedHosts);
     }
 
     @Override

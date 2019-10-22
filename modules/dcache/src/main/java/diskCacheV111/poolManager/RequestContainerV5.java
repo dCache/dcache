@@ -41,7 +41,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SourceCostException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
@@ -79,8 +78,8 @@ import org.dcache.util.Args;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
-import static java.util.stream.Collectors.toList;
 import static dmg.util.CommandException.checkCommand;
+import static java.util.stream.Collectors.toList;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -923,7 +922,8 @@ public class RequestContainerV5
            _poolSelector =
                _poolMonitor.getPoolSelector(_fileAttributes,
                        _protocolInfo,
-                       _linkGroup);
+                       _linkGroup,
+                       request.getExcludedHosts());
            //
            //
            //

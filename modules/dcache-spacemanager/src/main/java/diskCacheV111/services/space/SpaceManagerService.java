@@ -1081,7 +1081,8 @@ public final class SpaceManagerService
                                                              hostName,
                                                              protocol,
                                                              fileAttributes,
-                                                             linkGroup);
+                                                             linkGroup,
+                                                             p -> false);
             if (levels.length > 0) {
                 return linkGroup;
             }
@@ -1118,7 +1119,7 @@ public final class SpaceManagerService
 
         PoolPreferenceLevel[] levels = poolMonitor.getPoolSelectionUnit().
                 match(PoolSelectionUnit.DirectionType.WRITE, hostname, protocol,
-                        attributes, linkGroup);
+                        attributes, linkGroup, p -> false);
 
         return levels.length != 0;
     }

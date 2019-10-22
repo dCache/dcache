@@ -30,6 +30,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -559,7 +560,9 @@ public class PoolSelectionUnitV2
 
     @Override
     public PoolPreferenceLevel[] match(DirectionType type,  String netUnitName, String protocolUnitName,
-                    FileAttributes fileAttributes, String linkGroupName) {
+                                       FileAttributes fileAttributes, String linkGroupName, Predicate<String> exclude) {
+        Preconditions.checkNotNull(exclude,
+                                   "Predicate argument cannot be null.");
 
         StorageInfo storageInfo = fileAttributes.getStorageInfo();
         String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
@@ -814,7 +817,13 @@ public class PoolSelectionUnitV2
                                             || (type == DirectionType.WRITE && pool.canWrite())
                                             || (type == DirectionType.P2P && pool.canWriteForP2P()))
                                             && (_allPoolsActive || pool.isActive())) {
-                                resultList.add(pool.getName());
+                                if (exclude.test(pool.getName())) {
+                                    _log.debug("Qualifying pool {} is on excluded host {}; skipping.",
+                                               pool.getName(),
+                                               pool.getCanonicalHostName());
+                                } else {
+                                    resultList.add(pool.getName());
+                                }
                             }
                         } else {
                             for (Pool pool : ((PGroup)poolCore)._poolList.values()) {
@@ -825,7 +834,13 @@ public class PoolSelectionUnitV2
                                                 || (type == DirectionType.WRITE && pool.canWrite())
                                                 || (type == DirectionType.P2P && pool.canWriteForP2P()))
                                                 && (_allPoolsActive || pool.isActive())) {
-                                    resultList.add(pool.getName());
+                                    if (exclude.test(pool.getName())) {
+                                        _log.debug("Qualifying pool {} is on excluded host {}; skipping.",
+                                                   pool.getName(),
+                                                   pool.getCanonicalHostName());
+                                    } else {
+                                        resultList.add(pool.getName());
+                                    }
                                 }
                             }
                         }
@@ -1594,7 +1609,7 @@ public class PoolSelectionUnitV2
         return match(DirectionType.valueOf(direction.toUpperCase()),
                      netUnit.equals("*") ? null : netUnit,
                      protocolUnit.equals("*") ? null : protocolUnit,
-                     FileAttributes.ofStorageInfo(info), linkGroup);
+                     FileAttributes.ofStorageInfo(info), linkGroup, p->false);
     }
 
     // ..................................................................

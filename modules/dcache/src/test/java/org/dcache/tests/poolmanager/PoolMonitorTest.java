@@ -105,7 +105,10 @@ public class PoolMonitorTest
         FileAttributes attributes = FileAttributes.of().pnfsId(pnfsId).locations(pools).build();
         StorageInfos.injectInto(_storageInfo, attributes);
         PoolSelector availableLocations =
-            _poolMonitor.getPoolSelector(attributes, _protocolInfo, null);
+            _poolMonitor.getPoolSelector(attributes,
+                                         _protocolInfo,
+                                         null,
+                                         Collections.EMPTY_SET);
 
         /* The following isn't testing much as both pools are valid
          * replies.
@@ -162,7 +165,10 @@ public class PoolMonitorTest
         FileAttributes attributes = FileAttributes.of().pnfsId(pnfsId).locations(location).build();
         StorageInfos.injectInto(_storageInfo, attributes);
         PoolSelector availableLocations
-                = _poolMonitor.getPoolSelector(attributes, _protocolInfo, null);
+                = _poolMonitor.getPoolSelector(attributes,
+                                               _protocolInfo,
+                                               null,
+                                               Collections.EMPTY_SET);
 
         assertEquals("pool1", availableLocations.selectReadPool().name());
     }
@@ -215,7 +221,10 @@ public class PoolMonitorTest
         FileAttributes attributes = FileAttributes.of().pnfsId(pnfsId).locations(location).build();
         StorageInfos.injectInto(_storageInfo, attributes);
         PoolSelector availableLocations
-                = _poolMonitor.getPoolSelector(attributes, _protocolInfo, null);
+                = _poolMonitor.getPoolSelector(attributes,
+                                               _protocolInfo,
+                                               null,
+                                               Collections.EMPTY_SET);
 
         availableLocations.selectReadPool();
     }

@@ -594,7 +594,8 @@ public class PoolManagerV5
                                 msg.getNetUnitName(),
                                 msg.getProtocolUnitName(),
                                 msg.getFileAttributes(),
-                                null)));
+                                null,
+                                p -> false)));
         msg.setSucceeded();
         return msg;
     }
@@ -665,7 +666,10 @@ public class PoolManagerV5
         FileAttributes fileAttributes =
                 _pnfsHandler.getFileAttributes(pnfsId, PoolMgrSelectReadPoolMsg.getRequiredAttributes());
         fileAttributes.setStorageInfo(storageInfo);
-        PoolSelector poolSelector = _poolMonitor.getPoolSelector(fileAttributes, protocolInfo, null);
+        PoolSelector poolSelector = _poolMonitor.getPoolSelector(fileAttributes,
+                                                                 protocolInfo,
+                                                                 null,
+                                                                 Collections.EMPTY_SET);
         List<List<PoolInfo>> available = poolSelector.getReadPools();
         StringBuilder sb = new StringBuilder();
         sb.append("Available and allowed\n");
@@ -747,7 +751,10 @@ public class PoolManagerV5
            SelectedPool pool;
            try {
                pool = _poolMonitor
-                       .getPoolSelector(fileAttributes, protocolInfo, _request.getLinkGroup())
+                       .getPoolSelector(fileAttributes,
+                                        protocolInfo,
+                                        _request.getLinkGroup(),
+                                        _request.getExcludedHosts())
                        .selectWritePool(_request.getPreallocated());
                _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.name(),
                          System.currentTimeMillis() - started);

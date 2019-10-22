@@ -3,8 +3,10 @@ package diskCacheV111.vehicles;
 import javax.annotation.Nonnull;
 
 import java.util.EnumSet;
+import java.util.Set;
 
 import diskCacheV111.poolManager.RequestContainerV5;
+
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -13,10 +15,11 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
     private static final long serialVersionUID = -5874326080375390208L;
 
-    private ProtocolInfo _protocolInfo;
-    private String       _ioQueueName;
-    private String       _pnfsPath;
-    private String       _linkGroup;
+    private       ProtocolInfo                             _protocolInfo;
+    private       String                                   _ioQueueName;
+    private       String                                   _pnfsPath;
+    private       String                                   _linkGroup;
+    private       Set<String>                              _excludedHosts;
     private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
     private String _transferPath;
@@ -72,4 +75,11 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
         return _allowedStates;
     }
 
+    public void setExcludedHosts(Set<String> excludedHosts) {
+        _excludedHosts = excludedHosts;
+    }
+
+    public Set<String> getExcludedHosts() {
+        return _excludedHosts;
+    }
 }

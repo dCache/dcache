@@ -66,6 +66,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -193,9 +194,10 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
     @Override
     public PoolPreferenceLevel[] match(DirectionType type, String net,
-                    String protocol, FileAttributes fileAttributes,
-                    String linkGroup) {
-        return psu.match(type, net, protocol, fileAttributes, linkGroup);
+                                       String protocol, FileAttributes fileAttributes,
+                                       String linkGroup,
+                                       Predicate<String> exclude) {
+        return psu.match(type, net, protocol, fileAttributes, linkGroup, exclude);
     }
 
     String getInfo() {

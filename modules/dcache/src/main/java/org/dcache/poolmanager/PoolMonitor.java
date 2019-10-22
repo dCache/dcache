@@ -1,6 +1,7 @@
 package org.dcache.poolmanager;
 
 import java.util.Collection;
+import java.util.Set;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -28,7 +29,8 @@ public interface PoolMonitor
     PoolSelector getPoolSelector(
             FileAttributes fileAttributes,
             ProtocolInfo protocolInfo,
-            String linkGroup);
+            String linkGroup,
+            Set<String> excludedHosts);
 
     Collection<PoolCostInfo> queryPoolsByLinkName(String linkName);
 

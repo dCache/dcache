@@ -60,12 +60,14 @@ documents or software obtained from this server.
 package org.dcache.resilience;
 
 import java.util.Collection;
+import java.util.Set;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.ProtocolInfo;
+
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
@@ -98,7 +100,7 @@ final class TestPoolMonitor implements PoolMonitor {
 
     @Override
     public PoolSelector getPoolSelector(FileAttributes fileAttributes,
-                    ProtocolInfo protocolInfo, String linkGroup) {
+                    ProtocolInfo protocolInfo, String linkGroup, Set<String> excludedHosts) {
         throw new UnsupportedOperationException("getPoolSelector");
     }
 

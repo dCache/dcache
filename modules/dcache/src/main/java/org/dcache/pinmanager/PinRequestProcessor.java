@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Set;
@@ -28,10 +29,10 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.AbstractMessageCallback;
-import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.namespace.FileAttribute;
@@ -326,8 +327,9 @@ public class PinRequestProcessor
         try {
             PoolSelector poolSelector =
                 _poolMonitor.getPoolSelector(task.getFileAttributes(),
-                        task.getProtocolInfo(),
-                        null);
+                                             task.getProtocolInfo(),
+                                    null,
+                                             Collections.EMPTY_SET);
 
             SelectedPool pool = poolSelector.selectPinPool();
             setPool(task, pool.name());

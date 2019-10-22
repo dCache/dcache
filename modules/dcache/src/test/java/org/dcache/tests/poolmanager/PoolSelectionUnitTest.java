@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -24,13 +25,17 @@ import dmg.util.CommandInterpreter;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
 public class PoolSelectionUnitTest {
 
     private final PoolSelectionUnitV2 _psu = new PoolSelectionUnitV2();
     private final CommandInterpreter _ci = new CommandInterpreter(_psu);
+
+    private final Predicate<String> defaultExclude = p -> false;
 
     @Before
     public void setUp() throws Exception {
@@ -284,7 +289,8 @@ public class PoolSelectionUnitTest {
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
 
         int found = 0;
@@ -312,7 +318,8 @@ public class PoolSelectionUnitTest {
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("Only default read link have to be triggered", 1, preference.length);
         assertEquals("Only default read pool is allowed", 1, preference[0].getPoolList().size());
@@ -336,7 +343,8 @@ public class PoolSelectionUnitTest {
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("Only default write link have to be triggered", 1, preference.length);
         assertEquals("Only default write pool is allowed", 1, preference[0].getPoolList().size());
@@ -359,7 +367,8 @@ public class PoolSelectionUnitTest {
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("H1 write link and default write link have to be triggered", 2, preference.length);
         assertEquals("Only h1 write pool with attracion 0", 1, preference[0].getPoolList().size());
@@ -382,7 +391,8 @@ public class PoolSelectionUnitTest {
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
         assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
@@ -407,7 +417,8 @@ public class PoolSelectionUnitTest {
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
         assertEquals("No h1 pool when it's disabled with attracion 0", 0, preference[0].getPoolList().size());
@@ -461,7 +472,8 @@ public class PoolSelectionUnitTest {
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      "h1-link-group"); // linkGroup
+                                                      "h1-link-group", // linkGroup
+                                                      defaultExclude);
 
         assertEquals("Only h1 read link have to be triggered", 1, preference.length);
         assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
@@ -494,7 +506,8 @@ public class PoolSelectionUnitTest {
                                                       "131.169.214.149", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      "h1-link-group"); // linkGroup
+                                                      "h1-link-group", // linkGroup
+                                                      defaultExclude);
 
         assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
         assertEquals("Only h1 cache pool with attracion 0", 1, preference[0].getPoolList().size());
@@ -519,7 +532,8 @@ public class PoolSelectionUnitTest {
                        "131.169.214.149", // net unit
                        null,  // protocol
                        fileAttributes,
-                       null); // linkGroup
+                       null,
+                       defaultExclude); // linkGroup
 
         List<String> pools = new ArrayList<>();
         for(PoolPreferenceLevel level: preference) {
@@ -546,7 +560,8 @@ public class PoolSelectionUnitTest {
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
 
         int found = 0;
@@ -574,7 +589,8 @@ public class PoolSelectionUnitTest {
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("Only default read link have to be triggered", 1, preference.length);
         assertEquals("Only default read pool is allowed", 1, preference[0].getPoolList().size());
@@ -598,7 +614,8 @@ public class PoolSelectionUnitTest {
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("Only default write link have to be triggered", 1, preference.length);
         assertEquals("Only default write pool is allowed", 1, preference[0].getPoolList().size());
@@ -621,7 +638,8 @@ public class PoolSelectionUnitTest {
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("H1 write link and default write link have to be triggered", 2, preference.length);
         assertEquals("Only h1 write pool with attracion 0", 1, preference[0].getPoolList().size());
@@ -644,7 +662,8 @@ public class PoolSelectionUnitTest {
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
         assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
@@ -669,7 +688,8 @@ public class PoolSelectionUnitTest {
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      null); // linkGroup
+                                                      null, // linkGroup
+                                                      defaultExclude);
 
         assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
         assertEquals("No h1 pool when it's disabled with attracion 0", 0, preference[0].getPoolList().size());
@@ -697,7 +717,8 @@ public class PoolSelectionUnitTest {
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      "h1-link-group"); // linkGroup
+                                                      "h1-link-group", // linkGroup
+                                                      defaultExclude);
 
         assertEquals("Only h1 read link have to be triggered", 1, preference.length);
         assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
@@ -730,7 +751,8 @@ public class PoolSelectionUnitTest {
                                                       "2001:638:700::f00:ba", // net unit
                                                       null,  // protocol
                                                       fileAttributes,
-                                                      "h1-link-group"); // linkGroup
+                                                      "h1-link-group", // linkGroup
+                                                      defaultExclude);
 
         assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
         assertEquals("Only h1 cache pool with attracion 0", 1, preference[0].getPoolList().size());
@@ -755,7 +777,8 @@ public class PoolSelectionUnitTest {
                        "2001:638:700::f00:ba", // net unit
                        null,  // protocol
                        fileAttributes,
-                       null); // linkGroup
+                       null, // linkGroup
+                       defaultExclude);
 
         List<String> pools = new ArrayList<>();
         for(PoolPreferenceLevel level: preference) {
@@ -822,7 +845,8 @@ public class PoolSelectionUnitTest {
                       "111.111.111.201", // net unit
                       null,  // protocol
                       fileAttributes,
-                      null); // linkGroup
+                      null, // linkGroup
+                      defaultExclude);
         assertEquals(0, preference.length);
    }
 }

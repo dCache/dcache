@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import diskCacheV111.pools.PoolV2Mode;
 
@@ -236,7 +237,7 @@ public interface PoolSelectionUnit  {
    SelectionLink getLinkByName(String linkName) throws NoSuchElementException ;
    PoolPreferenceLevel []
             match(DirectionType type, String net, String protocol,
-                   FileAttributes fileAttributes, String linkGroup);
+                   FileAttributes fileAttributes, String linkGroup, Predicate<String> exclude);
    String[] getActivePools() ;
    String[] getDefinedPools(boolean enabledOnly) ;
    String getVersion() ;
