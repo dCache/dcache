@@ -1220,7 +1220,7 @@ public class XrootdDoor
         String pool = args.argv(0);
 
         for (Transfer transfer : _transfers.values()) {
-            if (transfer.getMoverId() == mover && transfer.getPool() != null && transfer.getPool().equals(pool)) {
+            if (transfer.getMoverId() == mover && transfer.getPool() != null && transfer.getPool().getName().equals(pool)) {
 
                 transfer.killMover(0, "killed by door 'kill mover' command");
                 return "Kill request to the mover " + mover + " has been submitted";
