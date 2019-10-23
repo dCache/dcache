@@ -215,6 +215,10 @@ public class PinRequestProcessor
     protected EnumSet<RequestContainerV5.RequestState>
         checkStaging(PinTask task)
     {
+        if (task.isStagingDenied()) {
+            return RequestContainerV5.allStatesExceptStage;
+        }
+
         try {
             Subject subject = task.getSubject();
             return _checkStagePermission.canPerformStaging(subject,

@@ -110,6 +110,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
             LoggerFactory.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected final String[] protocols;
+    private final boolean isStagingAllowed;
 
     public GetRequest(SRMUser user,
                       URI[] surls,
@@ -117,7 +118,8 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                       long lifetime,
                       long max_update_period,
                       String description,
-                      String client_host)
+                      String client_host,
+                      boolean isStagingAllowed)
     {
         super(user, max_update_period, lifetime, description, client_host,
               id -> {
@@ -128,6 +130,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                   return requests.build();
               });
         this.protocols = Arrays.copyOf(protocols, protocols.length);
+        this.isStagingAllowed = isStagingAllowed;
     }
 
     /**
@@ -171,7 +174,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         client_host,
         statusCodeString);
         this.protocols = protocols.toArray(new String[protocols.size()]);
-
+        this.isStagingAllowed = true; // FIXME record this value in the database.
     }
 
     @Nonnull
@@ -423,5 +426,9 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     @Override
     public String getNameForRequestType() {
         return "Get";
+    }
+
+    public boolean isStagingAllowed() {
+        return isStagingAllowed;
     }
 }

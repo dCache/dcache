@@ -195,12 +195,14 @@ public interface AbstractStorageElement {
      * @param pinLifetime requested pin operation lifetime in milliseconds
      * @param requestToken pin will save request token
      *        so that unpinning by file name and request token can take place
+     * @param allowStaging whether the request should be allowed to stage from tape.
      */
     CheckedFuture<Pin, ? extends SRMException> pinFile(SRMUser user,
                                                        URI surl,
                                                        String clientHost,
                                                        long pinLifetime,
-                                                       String requestToken);
+                                                       String requestToken,
+                                                       boolean allowStaging);
 
     /**
      * Contains the result of a pin operation.

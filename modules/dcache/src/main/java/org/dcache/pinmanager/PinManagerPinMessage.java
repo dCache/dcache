@@ -27,6 +27,7 @@ public class PinManagerPinMessage extends Message
     private final String _requestId;
     private Date _expirationTime;
     private boolean _replyWhenStarted;
+    private boolean _denyStaging;
 
     public PinManagerPinMessage(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo,
@@ -60,6 +61,16 @@ public class PinManagerPinMessage extends Message
     public boolean isReplyWhenStarted()
     {
         return _replyWhenStarted;
+    }
+
+    public void setDenyStaging(boolean value)
+    {
+        _denyStaging = value;
+    }
+
+    public boolean isStagingDenied()
+    {
+        return _denyStaging;
     }
 
     public String getRequestId()

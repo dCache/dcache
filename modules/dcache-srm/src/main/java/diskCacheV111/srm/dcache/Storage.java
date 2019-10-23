@@ -134,6 +134,7 @@ import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.Release;
 import diskCacheV111.services.space.message.Reserve;
+import diskCacheV111.srm.dcache.PinCompanion.PinningActivityPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -559,8 +560,12 @@ public final class Storage
                                                               URI surl,
                                                               String clientHost,
                                                               long pinLifetime,
-                                                              String requestToken)
+                                                              String requestToken,
+                                                              boolean allowStaging)
     {
+        PinningActivityPolicy pinningActivityPolicy = allowStaging
+                ? PinningActivityPolicy.ALLOW_STAGING
+                : PinningActivityPolicy.DENY_STAGING;
         try {
             return Futures.makeChecked(PinCompanion.pinFile(asDcacheUser(user).getSubject(),
                                                             config.getPath(surl),
@@ -568,6 +573,7 @@ public final class Storage
                                                             pinLifetime,
                                                             requestToken,
                                                             _isOnlinePinningEnabled,
+                                                            pinningActivityPolicy,
                                                             _poolMonitor,
                                                             _pnfsStub,
                                                             _poolManagerStub,

@@ -5,7 +5,10 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -19,8 +22,10 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.util.Tools;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
 import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
+import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TGetFileRequest;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
@@ -81,6 +86,48 @@ public class SrmPrepareToGet
         return response;
     }
 
+    private boolean isStagingAllowed() throws SRMInvalidRequestException
+    {
+        boolean allowed = true;
+
+        ArrayOfTExtraInfo info = request.getStorageSystemInfo();
+        if (info != null) {
+            TExtraInfo[] array = info.getExtraInfoArray();
+            if (array != null) {
+                List<String> stageValues = Arrays.stream(array)
+                        .filter(i -> Objects.equals(i.getKey(), "stage"))
+                        .map(i -> i.getValue())
+                        .collect(Collectors.toList());
+
+                if (!stageValues.isEmpty()) {
+                    if (stageValues.size() > 1) {
+                        throw new SRMInvalidRequestException("Multiple storageSystemInfo 'stage' entries.");
+                    }
+
+                    String stageValue = stageValues.get(0);
+
+                    if (stageValue == null) {
+                        throw new SRMInvalidRequestException("Missing value for storageSystemInfo 'stage' entry.");
+                    }
+
+                    switch (stageValue) {
+                    case "allow":
+                        allowed = true;
+                        break;
+                    case "deny":
+                        allowed = false;
+                        break;
+                    default:
+                        throw new SRMInvalidRequestException("Invalid value \"" + stageValue + "\" for storageSystemInfo 'stage' entry, must be \"allow\" or \"deny\"");
+                    }
+                }
+
+            }
+        }
+
+        return allowed;
+    }
+
     private SrmPrepareToGetResponse srmPrepareToGet()
             throws IllegalStateTransition, InterruptedException, SRMInvalidRequestException, SRMNotSupportedException,
                    SRMInternalErrorException
@@ -107,7 +154,8 @@ public class SrmPrepareToGet
                         lifetime,
                         configuration.getGetMaxPollPeriod(),
                         request.getUserRequestDescription(),
-                        clientHost);
+                        clientHost,
+                        isStagingAllowed());
         try (JDC ignored = r.applyJdc()) {
             srm.schedule(r);
             return r.getSrmPrepareToGetResponse(configuration.getGetSwitchToAsynchronousModeDelay());

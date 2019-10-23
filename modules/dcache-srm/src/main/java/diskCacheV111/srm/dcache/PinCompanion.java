@@ -79,6 +79,8 @@ import java.util.EnumSet;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.poolManager.RequestContainerV5.RequestState;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FsPath;
@@ -114,6 +116,18 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
     public static final String DISK_PIN_ID =
         "disk";
 
+    public enum PinningActivityPolicy {
+        ALLOW_STAGING(RequestContainerV5.allStates),
+        DENY_STAGING(RequestContainerV5.allStatesExceptStage);
+
+        private final EnumSet<RequestState> allowedStates;
+
+        PinningActivityPolicy(EnumSet<RequestState> allowedStates)
+        {
+            this.allowedStates = allowedStates;
+        }
+    }
+
     private final Subject _subject;
     private final FsPath _path;
     private final String _clientHost;
@@ -125,6 +139,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
     private final Executor _executor;
     private final PoolMonitor _poolMonitor;
     private final boolean _isOnlinePinningEnabled;
+    private final PinningActivityPolicy _pinningActivityPolicy;
 
     private Object _state;
     private FileAttributes _attributes;
@@ -226,7 +241,8 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
             PoolMgrSelectReadPoolMsg msg =
                 new PoolMgrSelectReadPoolMsg(_attributes,
                                              getProtocolInfo(),
-                                             _selectPoolContext);
+                                             _selectPoolContext,
+                                             _pinningActivityPolicy.allowedStates);
             msg.setSubject(_subject);
 
             CellStub.addCallback(_poolManagerStub.send(msg), this, _executor);
@@ -257,6 +273,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PinManagerPinMessage(_attributes, getProtocolInfo(),
                                          _requestToken, _pinLifetime);
             msg.setSubject(_subject);
+            msg.setDenyStaging(_pinningActivityPolicy == PinningActivityPolicy.DENY_STAGING);
             CellStub.addCallback(_pinManagerStub.send(msg), this, _executor);
         }
 
@@ -281,6 +298,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                          long pinLifetime,
                          String requestToken,
                          boolean isOnlinePinningEnabled,
+                         PinningActivityPolicy pinningActivityPolicy,
                          PoolMonitor poolMonitor,
                          CellStub pnfsStub,
                          CellStub poolManagerStub,
@@ -298,6 +316,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
         _pinManagerStub = pinManagerStub;
         _executor = executor;
         _state = new LookupState();
+        _pinningActivityPolicy = pinningActivityPolicy;
     }
 
     private void succeed(String pinId)
@@ -352,6 +371,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
             long pinLifetime,
             String requestToken,
             boolean isOnlinePinningEnabled,
+            PinningActivityPolicy pinningActivityPolicy,
             PoolMonitor poolMonitor,
             CellStub pnfsStub,
             CellStub poolManagerStub,
@@ -360,7 +380,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
     {
         return new PinCompanion(subject, path, clientHost,
                                 pinLifetime, requestToken, isOnlinePinningEnabled,
-                                poolMonitor,
+                                pinningActivityPolicy, poolMonitor,
                                 pnfsStub, poolManagerStub, pinManagerStub, executor);
     }
 }

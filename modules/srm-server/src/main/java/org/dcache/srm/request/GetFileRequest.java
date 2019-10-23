@@ -346,7 +346,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    public void pinFile(ContainerRequest request)
+    public void pinFile(GetRequest request)
     {
         URI surl = getSurl();
         LOGGER.info("Pinning {}", surl);
@@ -356,7 +356,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         surl,
                         request.getClient_host(),
                         lifetime,
-                        String.valueOf(getRequestId()));
+                        String.valueOf(getRequestId()),
+                        request.isStagingAllowed());
         LOGGER.trace("GetFileRequest: waiting async notification about pinId...");
         future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.directExecutor());
     }

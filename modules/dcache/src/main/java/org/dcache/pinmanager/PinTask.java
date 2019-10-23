@@ -97,6 +97,11 @@ public class PinTask
         return _pin.getSticky();
     }
 
+    public boolean isStagingDenied()
+    {
+        return _request.isStagingDenied();
+    }
+
     public PoolMgrSelectReadPoolMsg.Context getReadPoolSelectionContext()
     {
         return _readPoolSelectionContext;

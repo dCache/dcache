@@ -333,7 +333,8 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                         surl,
                         request.getClient_host(),
                         desiredPinLifetime,
-                        String.valueOf(getRequestId()));
+                        String.valueOf(getRequestId()),
+                        true);
         LOGGER.debug("BringOnlineFileRequest: waiting async notification about pinId...");
         future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.directExecutor());
     }
