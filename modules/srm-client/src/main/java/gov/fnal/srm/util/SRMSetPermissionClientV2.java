@@ -84,8 +84,6 @@ package gov.fnal.srm.util;
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
-import java.util.Date;
-
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
 import org.dcache.srm.v2_2.ISRM;
@@ -169,6 +167,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
             other = TPermissionMode.fromString(configuration.getSetOtherPermissionMode());
         }
         req.setOtherPermission(other);
+        configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmSetPermissionResponse resp = isrm.srmSetPermission(req);
         try {
             TReturnStatus rs   = resp.getReturnStatus();
