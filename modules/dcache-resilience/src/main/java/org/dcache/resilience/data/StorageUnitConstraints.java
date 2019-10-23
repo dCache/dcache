@@ -62,6 +62,7 @@ package org.dcache.resilience.data;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -92,7 +93,7 @@ public final class StorageUnitConstraints extends ResilienceMarker {
     }
 
     public boolean equals(StorageUnitConstraints constraints) {
-        return constraints != null && this.required == constraints.required
+        return constraints != null && Objects.equals(this.required, constraints.required)
                         && this.oneCopyPer.equals(constraints.oneCopyPer);
     }
 
