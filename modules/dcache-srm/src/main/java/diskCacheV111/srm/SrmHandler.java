@@ -1100,7 +1100,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         private void log(NetLoggerBuilder log, SrmAbortFilesRequest request,
                 SrmAbortFilesResponse response)
         {
-            log.addSingleValue("request.surl", request.getArrayOfSURLs(),
+            logArray(log, "request.surl", request.getArrayOfSURLs(),
                     ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
@@ -1110,7 +1110,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
 
         private void log(NetLoggerBuilder log, SrmRmRequest request, SrmRmResponse response)
         {
-            log.addSingleValue("request.surl", request.getArrayOfSURLs(),
+            logArray(log, "request.surl", request.getArrayOfSURLs(),
                     ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
@@ -1121,7 +1121,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         private void log(NetLoggerBuilder log, SrmLsRequest request, SrmLsResponse response)
         {
             logCountAndOffset(log, request.getCount(), request.getOffset());
-            log.addSingleValue("request.surl", request.getArrayOfSURLs(), ArrayOfAnyURI::getUrlArray);
+            logArray(log, "request.surl", request.getArrayOfSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getDetails(),
                     ArrayOfTMetaDataPathDetail::getPathDetailArray, TMetaDataPathDetail::getStatus);
@@ -1141,8 +1142,9 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         {
             log.add("request.pin", request.getDesiredPinLifeTime());
             log.add("request.lifetime", request.getDesiredTotalRequestTime());
-            log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
-                    ArrayOfTGetFileRequest::getRequestArray, TGetFileRequest::getSourceSURL);
+            logArray(log, "request.surl", request.getArrayOfFileRequests(),
+                    ArrayOfTGetFileRequest::getRequestArray,
+                    TGetFileRequest::getSourceSURL);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
                     ArrayOfTGetRequestFileStatus::getStatusArray, TGetRequestFileStatus::getStatus);
@@ -1151,7 +1153,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         private void log(NetLoggerBuilder log, SrmStatusOfGetRequestRequest request,
                 SrmStatusOfGetRequestResponse response)
         {
-            log.addSingleValue("request.surl", request.getArrayOfSourceSURLs(),
+            logArray(log, "request.surl", request.getArrayOfSourceSURLs(),
                     ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
@@ -1163,8 +1165,9 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         {
             log.add("request.pin", request.getDesiredPinLifeTime());
             log.add("request.lifetime", request.getDesiredTotalRequestTime());
-            log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
-                    ArrayOfTPutFileRequest::getRequestArray, TPutFileRequest::getTargetSURL);
+            logArray(log, "request.surl", request.getArrayOfFileRequests(),
+                    ArrayOfTPutFileRequest::getRequestArray,
+                    TPutFileRequest::getTargetSURL);
 
             ArrayOfTPutRequestFileStatus statuses = response.getArrayOfFileStatuses();
             log.addSingleValue("turl", statuses, ArrayOfTPutRequestFileStatus::getStatusArray,
@@ -1175,7 +1178,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
 
         private void log(NetLoggerBuilder log, SrmStatusOfPutRequestRequest request, SrmStatusOfPutRequestResponse response)
         {
-            log.addSingleValue("request.surl", request.getArrayOfTargetSURLs(),
+            logArray(log, "request.surl", request.getArrayOfTargetSURLs(),
                     ArrayOfAnyURI::getUrlArray);
 
             ArrayOfTPutRequestFileStatus statuses = response.getArrayOfFileStatuses();
@@ -1188,7 +1191,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         private void log(NetLoggerBuilder log, SrmPutDoneRequest request,
                 SrmPutDoneResponse response)
         {
-            log.addSingleValue("request.surl", request.getArrayOfSURLs(), ArrayOfAnyURI::getUrlArray);
+            logArray(log, "request.surl", request.getArrayOfSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
                     ArrayOfTSURLReturnStatus::getStatusArray, TSURLReturnStatus::getStatus);
@@ -1197,16 +1201,20 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         private void log(NetLoggerBuilder log, SrmCopyRequest request,
                 SrmCopyResponse response)
         {
-            log.addSingleValue("request.src-surl", request.getArrayOfFileRequests(), ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getSourceSURL);
-            log.addSingleValue("request.dst-surl", request.getArrayOfFileRequests(), ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getTargetSURL);
+            logArray(log, "request.src-surl", request.getArrayOfFileRequests(),
+                    ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getSourceSURL);
+            logArray(log, "request.dst-surl", request.getArrayOfFileRequests(),
+                    ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getTargetSURL);
 
             logFileStatus(log, response.getArrayOfFileStatuses(), ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmStatusOfCopyRequestRequest request, SrmStatusOfCopyRequestResponse response)
         {
-            log.addSingleValue("request.src-surl", request.getArrayOfSourceSURLs(), ArrayOfAnyURI::getUrlArray);
-            log.addSingleValue("request.dst-surl", request.getArrayOfTargetSURLs(), ArrayOfAnyURI::getUrlArray);
+            logArray(log, "request.src-surl", request.getArrayOfSourceSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
+            logArray(log,"request.dst-surl", request.getArrayOfTargetSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(), ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
         }
@@ -1214,7 +1222,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         private void log(NetLoggerBuilder log, SrmReleaseFilesRequest request,
                 SrmReleaseFilesResponse response)
         {
-            log.addSingleValue("request.surl", request.getArrayOfSURLs(), ArrayOfAnyURI::getUrlArray);
+            logArray(log, "request.surl", request.getArrayOfSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
                     ArrayOfTSURLReturnStatus::getStatusArray, TSURLReturnStatus::getStatus);
@@ -1223,8 +1232,9 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         private void log(NetLoggerBuilder log, SrmBringOnlineRequest request,
                 SrmBringOnlineResponse response)
         {
-            log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
-                    ArrayOfTGetFileRequest::getRequestArray, TGetFileRequest::getSourceSURL);
+            logArray(log, "request.surl", request.getArrayOfFileRequests(),
+                    ArrayOfTGetFileRequest::getRequestArray,
+                    TGetFileRequest::getSourceSURL);
             log.add("request.desiredLifeTime", request.getDesiredLifeTime());
             log.add("request.desiredTotalRequestTime", request.getDesiredTotalRequestTime());
 
@@ -1237,13 +1247,62 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 SrmStatusOfBringOnlineRequestRequest request,
                 SrmStatusOfBringOnlineRequestResponse response)
         {
-            log.addSingleValue("request.surl", request.getArrayOfSourceSURLs(), ArrayOfAnyURI::getUrlArray);
+            logArray(log, "request.surl", request.getArrayOfSourceSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
                     ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
                     TBringOnlineRequestFileStatus::getStatus);
         }
 
+        /**
+         * Log an SRM array type.  If the array is present and contains a
+         * single item then log that item.  If the array is present and
+         * is empty or contains more than one item then log the number of items
+         * with a suffix "-count" to the log label.
+         * @param <U> The type of SRM request
+         * @param <A> The type of the array
+         * @param log The NetLoggerBuilder object
+         * @param label The label for a single item array's log entry.
+         * @param request The SRM request object.
+         * @param toArray The method that converts the request to an array.
+         */
+        private <U,A> void logArray(NetLoggerBuilder log, String label, U request,
+                Function<U,A[]> toArray)
+        {
+            logArray(log, label, request, toArray, A->A);
+        }
+
+        /**
+         * Log an SRM array type.  If the array is present and contains a
+         * single item then a display a derived version of the item.  If the
+         * array is present and is empty or contains more than one item then
+         * the log the number of items with a suffix "-count" to the log label.
+         * @param <U> The type of SRM request.
+         * @param <A> The type of the array.
+         * @param <L> The type of the logged item.
+         * @param log The log entry to update.
+         * @param label The label for a single item array's log entry.
+         * @param request The SRM request object.
+         * @param toArray The method that converts the request to an array.
+         * @param toLoggedValue The method that converts the array item to the logged value.
+         */
+        private <U,A,L> void logArray(NetLoggerBuilder log, String label, U request,
+                Function<U,A[]> toArray, Function<A,L> toLoggedValue)
+        {
+            A[] array = request == null ? null : toArray.apply(request);
+
+            if (array != null) {
+                if (array.length == 1) {
+                    A item = array[0];
+                    String logValue = item == null ? "(null)"
+                            : String.valueOf(toLoggedValue.apply(item));
+                    log.add(label, logValue);
+                } else {
+                    log.add(label+"-count", array.length);
+                }
+            }
+        }
 
         private void logCountAndOffset(NetLoggerBuilder log, Integer count, Integer offset)
         {

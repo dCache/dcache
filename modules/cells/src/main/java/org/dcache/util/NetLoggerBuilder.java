@@ -159,21 +159,12 @@ public class NetLoggerBuilder
     }
 
     /**
-     * Add the value of an array if it contains a single item.  An empty array
-     * and an array with more than one item are treated as if the array is null.
-     */
-    public NetLoggerBuilder addSingleValue(String name, Object[] array)
-    {
-        return add(name, array != null && array.length == 1 ? array [0] : null);
-    }
-
-    /**
      * Add the mapped value of an array if it contains a single item.  An empty
      * array, an array with a single null item, array with a single non-null
      * item that maps to a null value, or an array with more than one item is
      * treated as if the array is null.
      */
-    public <A> NetLoggerBuilder addSingleValue(String name, A[] array, Function<A,?> toDisplayedValue)
+    private <A> NetLoggerBuilder addSingleValue(String name, A[] array, Function<A,?> toDisplayedValue)
     {
         return add(name, array != null && array.length == 1 && array [0] != null ?
                 toDisplayedValue.apply(array [0]) : null);
@@ -187,16 +178,6 @@ public class NetLoggerBuilder
     public <U,A> NetLoggerBuilder addSingleValue(String name, U source, Function<U,A[]> toArray, Function<A,?> toDisplayedValue)
     {
         return addSingleValue(name, source == null ? null : toArray.apply(source), toDisplayedValue);
-    }
-
-    /**
-     * Add the value of an array if it contains a single item.  The array is
-     * obtained from {@literal source} by applying the {@literal toArray}
-     * function.  A null source it treated as if the array is null.
-     */
-    public <U,A> NetLoggerBuilder addSingleValue(String name, U source, Function<U,A[]> toArray)
-    {
-        return addSingleValue(name, source == null ? null : toArray.apply(source));
     }
 
     /**
