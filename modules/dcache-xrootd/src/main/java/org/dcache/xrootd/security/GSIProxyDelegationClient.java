@@ -47,6 +47,8 @@ import org.dcache.xrootd.util.ProxyRequest;
 
 import static com.google.common.collect.Iterables.getFirst;
 import static java.util.Arrays.asList;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 
 /**
@@ -99,7 +101,7 @@ public class GSIProxyDelegationClient extends X509ProxyDelegationClient
 
         if (delegation == null) {
             throw new XrootdException(kXR_ServerError,
-                                      "internal error from during finalize proxy;"
+                                      "internal error during finalize proxy;"
                                                       + "cannot find delegation for: "
                                                       + id);
         }
@@ -111,8 +113,8 @@ public class GSIProxyDelegationClient extends X509ProxyDelegationClient
             return new SerializableX509Credential(credential.getCertificateChain(),
                                                   credential.getKey());
         } catch (GeneralSecurityException e) {
-            throw new XrootdException(kXR_ServerError,
-                                      "internal error from during finalize proxy;"
+            throw new XrootdException(kXR_NotAuthorized,
+                                      "error during finalize proxy;"
                                                       + "accept certificate failed for: "
                                                       + id);
         }
@@ -143,8 +145,13 @@ public class GSIProxyDelegationClient extends X509ProxyDelegationClient
             return new ProxyRequest(certChain,
                                     delegation.getId(),
                                     delegation.getPemRequest());
-        } catch (IOException | GeneralSecurityException e) {
-            throw new XrootdException(kXR_ServerError,
+        } catch (IOException e) {
+            throw new XrootdException(kXR_IOError,
+                                      "could not create new Proxy Request (CSR) for "
+                                                      + subject + ": "
+                                                      + e.getMessage());
+        } catch (GeneralSecurityException e) {
+            throw new XrootdException(kXR_NotAuthorized,
                                       "could not create new Proxy Request (CSR) for "
                                                       + subject + ": "
                                                       + e.getMessage());

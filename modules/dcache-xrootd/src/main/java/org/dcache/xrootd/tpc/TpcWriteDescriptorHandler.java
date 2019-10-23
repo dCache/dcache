@@ -69,7 +69,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.xrootd.tpc.protocol.messages.InboundChecksumResponse;
 
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_error;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ChkSumErr;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
 
 /**
@@ -124,7 +124,7 @@ public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler
                                      streamId,
                                      sourceValue,
                                      dCacheValue);
-        handleTransferTerminated(kXR_error, error, ctx);
+        handleTransferTerminated(kXR_ChkSumErr, error, ctx);
     }
 
     @Override
