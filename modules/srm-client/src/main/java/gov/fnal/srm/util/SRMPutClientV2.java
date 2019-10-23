@@ -78,7 +78,6 @@ import org.apache.axis.types.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
@@ -87,7 +86,6 @@ import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
-import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.ArrayOfTPutFileRequest;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
@@ -99,7 +97,6 @@ import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TAccessPattern;
 import org.dcache.srm.v2_2.TConnectionType;
-import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TPutFileRequest;
 import org.dcache.srm.v2_2.TPutRequestFileStatus;
@@ -243,17 +240,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             if(configuration.getSpaceToken() != null) {
                 srmPrepareToPutRequest.setTargetSpaceToken(configuration.getSpaceToken());
             }
-            if (configuration.getExtraParameters().size()>0) {
-                TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
-                int counter=0;
-                Map<String,String> extraParameters = configuration.getExtraParameters();
-                for (String key : extraParameters.keySet()) {
-                    String value = extraParameters.get(key);
-                    extraInfoArray[counter++] = new TExtraInfo(key, value);
-                }
-                ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
-                srmPrepareToPutRequest.setStorageSystemInfo(arrayOfExtraInfo);
-            }
+            configuration.getStorageSystemInfo().ifPresent(srmPrepareToPutRequest::setStorageSystemInfo);
             response = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
             if(response == null) {
                 throw new IOException(" null response");

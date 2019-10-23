@@ -104,11 +104,8 @@ import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.stream.Stream;
 
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
@@ -118,7 +115,6 @@ import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTCopyFileRequest;
-import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
@@ -130,7 +126,6 @@ import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TCopyFileRequest;
 import org.dcache.srm.v2_2.TCopyRequestFileStatus;
 import org.dcache.srm.v2_2.TDirOption;
-import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -240,17 +235,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             if(configuration.getSpaceToken() != null) {
                 req.setTargetSpaceToken(configuration.getSpaceToken());
             }
-            if (configuration.getExtraParameters().size()>0) {
-                TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
-                int counter=0;
-                Map<String,String> extraParameters = configuration.getExtraParameters();
-                for (String key : extraParameters.keySet()) {
-                    String value = extraParameters.get(key);
-                    extraInfoArray[counter++] = new TExtraInfo(key, value);
-                }
-                ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
-                req.setSourceStorageSystemInfo(arrayOfExtraInfo);
-            }
+            configuration.getStorageSystemInfo().ifPresent(req::setSourceStorageSystemInfo);
             SrmCopyResponse resp = srmv2.srmCopy(req);
             if ( resp == null ) {
                 throw new IOException(" null SrmCopyResponse");

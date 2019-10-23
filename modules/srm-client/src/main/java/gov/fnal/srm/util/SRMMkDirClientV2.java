@@ -84,8 +84,6 @@ package gov.fnal.srm.util;
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
-import java.util.Date;
-
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmMkdirRequest;
@@ -134,6 +132,7 @@ public class SRMMkDirClientV2 extends SRMClient {
         checkValid(cred);
         SrmMkdirRequest req = new SrmMkdirRequest();
         req.setSURL(new URI(surl_string));
+        configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmMkdirResponse resp = isrm.srmMkdir(req);
         TReturnStatus rs   = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {

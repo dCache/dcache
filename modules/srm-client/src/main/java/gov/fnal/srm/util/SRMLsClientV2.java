@@ -164,6 +164,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
             req.setArrayOfSURLs(new ArrayOfAnyURI(turlia));
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
+            configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
             SrmLsResponse response = isrm.srmLs(req);
             if(response == null){
                 throw new Exception ("srm ls response is null!");
