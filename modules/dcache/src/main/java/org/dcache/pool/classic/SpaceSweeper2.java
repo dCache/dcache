@@ -339,7 +339,8 @@ public class SpaceSweeper2
     }
 
     @Override
-    public SweeperData getDataObject() throws InterruptedException {
+    public SweeperData getDataObject()
+    {
         SweeperData info = new SweeperData();
         info.setLabel("Space Sweeper v2");
         info.setMargin(_margin);
@@ -353,30 +354,26 @@ public class SpaceSweeper2
         }
 
         List<Double> fileLifetime = new ArrayList<>();
-        Long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
         for (PnfsId id : list) {
-            try {
-                CacheEntry entry = _repository.getEntry(id);
-                Long lastAccess = entry.getLastAccessTime();
-                Long lvalue = now - lastAccess;
-                if (lvalue < 0L) {
-                    now = System.currentTimeMillis();
-                    lvalue = now -lastAccess;
-                    if (lvalue < 0L) {
-                        _log.warn("repository last access time for {}"
-                                                  + " is later than current "
-                                                  + "system time - now {}, "
-                                                  + "last access {}",
-                                  id, now, lastAccess);
-                    }
-                }
-                fileLifetime.add(lvalue.doubleValue());
-            } catch (FileNotInCacheException e) {
-                // Ignored
-            } catch (CacheException e) {
-                // Continue trying
+            Long lastAccess = _queue.timeStamps.get(id);
+            if (lastAccess == null) {
+                continue;
             }
+            long lvalue = now - lastAccess;
+            if (lvalue < 0L) {
+                now = System.currentTimeMillis();
+                lvalue = now - lastAccess;
+                if (lvalue < 0L) {
+                    _log.warn("repository last access time for {}"
+                                              + " is later than current "
+                                              + "system time - now {}, "
+                                              + "last access {}",
+                              id, now, lastAccess);
+                }
+            }
+            fileLifetime.add((double)lvalue);
         }
 
         CountingHistogram histogram = SweeperData.createLastAccessHistogram();
