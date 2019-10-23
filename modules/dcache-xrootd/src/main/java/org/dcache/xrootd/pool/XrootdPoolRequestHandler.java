@@ -52,6 +52,7 @@ import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
+import org.dcache.xrootd.CacheExceptionMapper;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSessionIdentifier;
 import org.dcache.xrootd.core.XrootdSigverDecoder;
@@ -301,7 +302,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 FileDescriptor descriptor;
                 boolean isWrite = file.getIoMode().contains(StandardOpenOption.WRITE);
                 if (msg.isNew() && !isWrite) {
-                    throw new XrootdException(kXR_ArgInvalid, "File exists.");
+                    throw new XrootdException(kXR_FileNotOpen, "File exists.");
                 } else if (msg.isDelete() && !isWrite) {
                     throw new XrootdException(kXR_Unsupported, "File exists.");
                 } else if ((msg.isNew() || msg.isReadWrite()) && isWrite) {
@@ -357,7 +358,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             uuid = UUID.fromString(uuidString);
         } catch (IllegalArgumentException e) {
             _log.warn("Failed to parse UUID {}: {}", opaque, e.getMessage());
-            throw new XrootdException(kXR_NotAuthorized,
+            throw new XrootdException(kXR_ArgInvalid,
                                       "Cannot parse " + uuidString + ": " + e.getMessage());
         }
         return uuid;
@@ -371,7 +372,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         } catch (ParseException e) {
             _log.warn("Could not parse the opaque information {}: {}",
                       opaque, e.getMessage());
-            throw new XrootdException(kXR_NotAuthorized,
+            throw new XrootdException(kXR_ArgInvalid,
                                       "Cannot parse opaque data: " + e.getMessage());
         }
 
@@ -421,7 +422,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             }
 
         default:
-            throw new XrootdException(kXR_ServerError, "Unexpected stat target");
+            throw new XrootdException(kXR_NotFile, "Unexpected stat target");
         }
     }
 
@@ -556,7 +557,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 _log.warn("Vector read of {} bytes requested, exceeds " +
                           "maximum frame size of {} bytes!", totalBytesToRead,
                           _maxFrameSize);
-                throw new XrootdException(kXR_ArgInvalid, "Single readv transfer is too large.");
+                throw new XrootdException(kXR_ArgTooLong, "Single readv transfer is too large.");
             }
         }
 
@@ -587,7 +588,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         if (!(descriptor instanceof WriteDescriptor)) {
             _log.warn("File descriptor for handle {} is read-only, user " +
                               "tried to write.", fd);
-            throw new XrootdException(kXR_IOError,
+            throw new XrootdException(kXR_FileNotOpen,
                                       "Tried to write on read only file.");
         }
 
@@ -665,10 +666,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 respond(ctx, withOk(msg));
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
-                if (cause instanceof FileCorruptedCacheException) {
-                    respond(ctx, withError(msg, kXR_ChkSumErr, cause.getMessage()));
-                } else if (cause instanceof CacheException) {
-                    respond(ctx, withError(msg, kXR_ServerError, cause.getMessage()));
+                if (cause instanceof CacheException) {
+                    int rc = ((CacheException)cause).getRc();
+                    respond(ctx, withError(msg,
+                                           CacheExceptionMapper.xrootdErrorCode(rc),
+                                           cause.getMessage()));
                 } else if (cause instanceof IOException) {
                     respond(ctx, withError(msg, kXR_IOError, cause.getMessage()));
                 } else {
