@@ -22,13 +22,13 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.util.CertificateFactories;
+import org.dcache.xrootd.CacheExceptionMapper;
 import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
 import org.dcache.xrootd.plugins.ProxyDelegationClient;
 
 import static java.util.Arrays.asList;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 
 /**
@@ -60,18 +60,23 @@ public class LoginAuthenticationHandler
         throws XrootdException
     {
         try {
-            subject = addOrigin(subject, ((InetSocketAddress) context.channel().remoteAddress()).getAddress());
+            subject = addOrigin(subject,
+                                ((InetSocketAddress) context.channel().remoteAddress()).getAddress());
             LoginReply reply = _loginStrategy.login(translateSubject(subject));
             context.fireUserEventTriggered(new LoginEvent(reply));
             return reply.getSubject();
         } catch (PermissionDeniedCacheException e) {
             _log.warn("Authorization denied for {}: {}",
-                    Subjects.toString(subject), e.getMessage());
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
-        } catch (CacheException | CertificateException e) {
+                      Subjects.toString(subject), e.getMessage());
+            throw CacheExceptionMapper.xrootdException(e);
+        } catch (CertificateException e) {
             _log.error("Authorization failed for {}: {}",
                        Subjects.toString(subject), e.getMessage());
             throw new XrootdException(kXR_ServerError, e.getMessage());
+        } catch (CacheException e) {
+            _log.error("Authorization failed for {}: {}",
+                       Subjects.toString(subject), e.getMessage());
+            throw CacheExceptionMapper.xrootdException(e);
         }
     }
 

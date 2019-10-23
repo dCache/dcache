@@ -397,8 +397,7 @@ public class XrootdDoor
             createUploadTransfer(InetSocketAddress client, FsPath path, Set<String> tried,
                     String ioQueue, UUID uuid, InetSocketAddress local,
                     Subject subject, Restriction restriction, boolean createDir,
-                    boolean overwrite, Long size, FsPath uploadPath)
-            throws CacheException, InterruptedException {
+                    boolean overwrite, Long size, FsPath uploadPath) {
 
         XrootdTransfer transfer
                 = new XrootdTransfer(_pnfs, subject, restriction, uploadPath) {
