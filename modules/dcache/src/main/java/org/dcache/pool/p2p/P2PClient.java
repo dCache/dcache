@@ -5,6 +5,7 @@ package org.dcache.pool.p2p;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import javax.net.ssl.SSLContext;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +52,10 @@ public class P2PClient
     private CellStub _pool;
     private InetAddress _interface;
 
+    private boolean _redirectToHttpsP2P;
+
+    private SSLContext _sslContext;
+
     public synchronized void setExecutor(ScheduledExecutorService executor)
     {
         _executor = executor;
@@ -80,6 +85,18 @@ public class P2PClient
     {
         return _companions.size();
     }
+
+    public synchronized void setRedirectToHttpsP2P(boolean redirectToHttpsP2P) {
+        _redirectToHttpsP2P = redirectToHttpsP2P;
+    }
+
+    public synchronized void setSslContext(SSLContext sslContext)
+    {
+        _sslContext = sslContext;
+    }
+
+
+
 
     public synchronized void messageArrived(DoorTransferFinishedMessage message)
     {
@@ -230,19 +247,23 @@ public class P2PClient
             throw new IllegalStateException("Replica exists with state: " + state);
         }
 
+
+
         Callback cb = new Callback(callback);
 
         Companion companion =
-            new Companion(_executor, _interface, _repository,
-                          _checksumModule,
-                          _pnfs, _pool,
-                          fileAttributes,
-                          sourcePoolName,
-                          getCellName(),
-                          getCellDomainName(),
-                          targetState, stickyRecords,
-                          cb, forceSourceMode,
-                          atime);
+                new Companion(_executor, _interface, _repository,
+                        _checksumModule,
+                        _pnfs, _pool,
+                        fileAttributes,
+                        sourcePoolName,
+                        getCellName(),
+                        getCellDomainName(),
+                        targetState, stickyRecords,
+                        cb, forceSourceMode,
+                        atime,
+                        _redirectToHttpsP2P,
+                        _sslContext);
 
         int id = addCompanion(companion);
         cb.setId(id);

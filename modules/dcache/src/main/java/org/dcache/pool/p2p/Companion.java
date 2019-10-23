@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.SyncFailedException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import javax.net.ssl.SSLContext;
 import java.net.UnknownHostException;
 import java.nio.channels.Channels;
 import java.nio.file.StandardOpenOption;
@@ -65,7 +66,6 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import org.dcache.util.Exceptions;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
@@ -91,6 +91,7 @@ class Companion
     private static final long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
     private static final int BUFFER_SIZE = KiB.toBytes(64);
     private static final String PROTOCOL_INFO_NAME = "Http";
+    private static final String PROTOCOL_INFO_SSL_NAME = "Https";
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
     private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
 
@@ -140,6 +141,8 @@ class Companion
     private int _moverId;
     private HttpGet _request;
 
+    private SSLContext _sslContext;
+
     /**
      * Creates a new instance.
      *
@@ -174,7 +177,10 @@ class Companion
               List<StickyRecord> stickyRecords,
               CacheFileAvailable callback,
               boolean forceSourceMode,
-              Long atime)
+              Long atime,
+              boolean isSSl,
+              SSLContext sslContext
+              )
     {
         _fsm = new CompanionContext(this);
 
@@ -189,6 +195,7 @@ class Companion
         _destinationPoolCellname = checkNotNull(destinationPoolCellname, "Destination pool name is unknown.");
         _destinationPoolCellDomainName = checkNotNull(destinationPoolCellDomainName, "Destination domain name is unknown.");
         _fileAttributes = checkNotNull(fileAttributes, "File attributes is missing.");
+        _sslContext = sslContext;
 
         if (!_fileAttributes.isDefined(FileAttribute.PNFSID)) {
             throw new IllegalArgumentException("PNFSID is required, got " + _fileAttributes.getDefinedAttributes());
@@ -337,7 +344,9 @@ class Companion
                                   .build());
             setRequest(get);
 
-            try (CloseableHttpClient client = HttpClients.custom().setUserAgent(USER_AGENT).build();
+            try (CloseableHttpClient client = HttpClients.custom()
+                    .setSSLContext(_sslContext)
+                    .setUserAgent(USER_AGENT).build();
                  CloseableHttpResponse response = client.execute(get)) {
                 StatusLine statusLine = response.getStatusLine();
                 if (statusLine.getStatusCode() >= 300) {
@@ -463,7 +472,7 @@ class Companion
         try {
             InetAddress address = (_address == null) ? InetAddress.getLocalHost() : _address;
             HttpProtocolInfo protocolInfo =
-                new HttpProtocolInfo(PROTOCOL_INFO_NAME,
+                new HttpProtocolInfo(_sslContext != null ? PROTOCOL_INFO_SSL_NAME: PROTOCOL_INFO_NAME,
                                      PROTOCOL_INFO_MAJOR_VERSION,
                                      PROTOCOL_INFO_MINOR_VERSION,
                                      new InetSocketAddress(address, 0),

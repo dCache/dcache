@@ -82,7 +82,7 @@
     <property name="storageHandler" ref="storagehandler"/>
     <property name="HSMSet" ref="hsmset"/>
     <property name="flushController" ref="flush"/>
-    <property name="PPClient" ref="pp"/>
+    <property name="PPClient" ref="p2p"/>
     <property name="account" ref="account"/>
     <property name="replicaStatePolicy" ref="replica-state-policy"/>
     <property name="volatile"
@@ -274,7 +274,7 @@
   </bean>
 
 
-  <bean id="pp" class="org.dcache.pool.p2p.P2PClient"
+  <bean id="p2p-parent" abstract="true" class="org.dcache.pool.p2p.P2PClient"
         destroy-method="shutdown">
     <description>Pool to pool transfer manager</description>
     <property name="repository" ref="rep"/>
@@ -314,7 +314,7 @@
     <description>Replica migration module backend</description>
     <property name="repository" ref="rep"/>
     <property name="migrationModule" ref="migration"/>
-    <property name="PPClient" ref="pp"/>
+    <property name="PPClient" ref="p2p"/>
     <property name="executor" ref="workerThreadPool"/>
     <property name="checksumModule" ref="csm"/>
     <property name="poolMode" ref="pool-mode"/>
@@ -532,7 +532,7 @@
     <property name="jobTimeoutManager" ref="jtm"/>
     <property name="migrationClient" ref="migration"/>
     <property name="migrationServer" ref="migration-server"/>
-    <property name="p2pClient" ref="pp"/>
+    <property name="p2pClient" ref="p2p"/>
     <property name="queueManager" ref="io-queue-manager"/>
     <property name="repositoryDataProvider" ref="rep"/>
     <property name="repository" ref="rep"/>
@@ -657,6 +657,27 @@
             <property name="producerListener" ref="listener"/>
         </bean>
 
+    </beans>
+
+
+    <beans profile="p2phttps-false">
+
+        <bean id="p2p" parent="p2p-parent">
+            <description>Pool to pool transfer manager</description>
+            <property name="redirectToHttpsP2P" value="false"/>
+
+        </bean>
+    </beans>
+
+
+    <beans profile="p2phttps-true">
+
+        <bean id="p2p" parent="p2p-parent">
+            <description>Pool to pool transfer manager with encryption</description>
+            <property name="sslContext" ref="ssl-context-builder"/>
+            <property name="redirectToHttpsP2P" value="true"/>
+
+        </bean>
     </beans>
 
     <beans profile="httpsredirect-false">
