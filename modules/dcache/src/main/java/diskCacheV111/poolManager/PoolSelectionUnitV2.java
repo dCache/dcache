@@ -505,7 +505,7 @@ public class PoolSelectionUnitV2
                     || (mode.getMode() != oldMode.getMode())
                     || !Objects.equals(pool.getHsmInstances(), hsmInstances)
                     || !Objects.equals(pool.getAddress(), address)
-                    || !Objects.equals(pool.getCanonicalHostName(), canonicalHostName);
+                    || !Objects.equals(pool.getCanonicalHostName(), Optional.ofNullable(canonicalHostName));
 
             if (mode.getMode() != oldMode.getMode()) {
                 _log.warn("Pool {} changed from mode {}  to {}.", poolName, oldMode, mode);
