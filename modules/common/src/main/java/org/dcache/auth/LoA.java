@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015-2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -115,18 +115,52 @@ public enum LoA
     IGTF_LOA_BIRCH("IGTF:BIRCH"),
 
     /**
-     * The IGTF CEDER LoA profile.  This is derived from {@link #IGTF_AP_CLASSIC}.
+     * The IGTF CEDAR LoA profile.  This is derived from {@link #IGTF_AP_CLASSIC}.
      * @see <a href="http://wiki.eugridpma.org/Main/IGTFLoAGeneralisation">Overview
      * of generalisation</a>.
      */
-    IGTF_LOA_CEDER("IGTF:CEDER"),
+    IGTF_LOA_CEDAR("IGTF:CEDAR"),
 
     /**
      * The IGTF DOGWOOD LoA profile.  This is derived from {@link #IGTF_AP_IOTA}.
      * @see <a href="http://wiki.eugridpma.org/Main/IGTFLoAGeneralisation">Overview
      * of generalisation</a>.
      */
-    IGTF_LOA_DOGWOOD("IGTF:DOGWOOD");
+    IGTF_LOA_DOGWOOD("IGTF:DOGWOOD"),
+
+    /*
+     * LoA statements from the REFEDS Assurance Framework v1.0
+     *
+     * https://wiki.refeds.org/display/ASS/REFEDS+Assurance+Framework+ver+1.0
+     */
+
+    /*
+     * Statements about Identifier uniqueness.
+     */
+    REFEDS_ID_EPPN_UNIQUE_NO_REASSIGN("REFEDS:ID:eppn-unique-no-reassign"),
+    REFEDS_ID_EPPN_UNIQUE_REASSIGN_1Y("REFEDS:ID:eppn-unique-reassign-1y"),
+
+    /*
+     * Statements about identity proofing and credential issuance, renewal
+     * and replacement.
+     */
+    REFEDS_IAP_LOW("REFEDS:IAP:low"),
+    REFEDS_IAP_MEDIUM("REFEDS:IAP:medium"),
+    REFEDS_IAP_HIGH("REFEDS:IAP:high"),
+    REFEDS_IAP_LOCAL_ENTERPRISE("REFEDS:IAP:local-enterprise"),
+
+    /*
+     * Refeds statements about quality and freshness.
+     */
+    REFEDS_ATP_1M("REFEDS:ATP:ePA-1m"),
+    REFEDS_ATP_1D("REFEDS:ATP:ePA-1d"),
+
+    /*
+     * Refeds profiles
+     */
+    REFEDS_PROFILE_CAPPUCCINO("REFEDS:profile:cappuccino"),
+    REFEDS_PROFILE_ESPRESSO("REFEDS:profile:espresso");
+
 
     private static final ImmutableMap<String,LoA> NAME_MAP;
 

@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
 import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 import eu.emi.security.authn.x509.proxy.ProxyChainInfo;
@@ -26,17 +27,22 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.EntityDefinition;
 import org.dcache.auth.EntityDefinitionPrincipal;
+import org.dcache.auth.LoA;
 import org.dcache.auth.LoAPrincipal;
+import org.dcache.auth.LoAs;
 import org.dcache.auth.Origin;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertPaths;
@@ -62,6 +68,34 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     private static final String OID_CERTIFICATE_POLICIES = "2.5.29.32";
     private static final String OID_ANY_POLICY = "2.5.29.32";
     private static final DERSequence ANY_POLICY = new DERSequence(new ASN1ObjectIdentifier(OID_ANY_POLICY));
+    private static final Map<String,LoA> LOA_POLICIES = ImmutableMap.<String,LoA>builder()
+            /*
+             * IGTF LoA.  This encapsulates the LoA corresponding to existing
+             * Authentication Policies (APs) described below.
+             */
+            .put("1.2.840.113612.5.2.5.1", IGTF_LOA_ASPEN)
+            .put("1.2.840.113612.5.2.5.2", IGTF_LOA_BIRCH)
+            .put("1.2.840.113612.5.2.5.3", IGTF_LOA_CEDAR)
+            .put("1.2.840.113612.5.2.5.4", IGTF_LOA_DOGWOOD)
+            /*
+             * IGTF Authentication-Policy.  Amongst other things, this defines
+             * how the user was identified to the Certificate Authority, which
+             * includes an element of LoA.
+             */
+            .put("1.2.840.113612.5.2.2.1", IGTF_AP_CLASSIC)
+            .put("1.2.840.113612.5.2.2.2", IGTF_AP_SGCS)
+            .put("1.2.840.113612.5.2.2.3", IGTF_AP_SLCS)
+            .put("1.2.840.113612.5.2.2.4", IGTF_AP_EXPERIMENTAL)
+            .put("1.2.840.113612.5.2.2.5", IGTF_AP_MICS)
+            .put("1.2.840.113612.5.2.2.6", IGTF_AP_IOTA)
+            .build();
+
+    private static final Map<String,EntityDefinition> ENTITY_DEFINITION_POLICIES
+            = ImmutableMap.<String,EntityDefinition>builder()
+            .put("1.2.840.113612.5.2.3.3.1", ROBOT)
+            .put("1.2.840.113612.5.2.3.3.2", HOST)
+            .put("1.2.840.113612.5.2.3.3.3", PERSON)
+            .build();
 
     private final IGTFInfoDirectory infoDirectory;
 
@@ -132,8 +166,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                 .map(PolicyInformation::getInstance)
                 .map(PolicyInformation::getPolicyIdentifier)
                 .map(ASN1ObjectIdentifier::getId)
-                .map(X509Plugin::asPrincipal)
-                .filter(Objects::nonNull)
+                .flatMap(X509Plugin::asPrincipal)
                 .forEach(principals::add);
 
         listSubjectAlternativeNames(eec).stream()
@@ -216,56 +249,18 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     }
 
 
-    private static Principal asPrincipal(String oid)
+    private static Stream<? extends Principal> asPrincipal(String oid)
     {
-        switch (oid) {
+        LoA loa = LOA_POLICIES.get(oid);
 
-        /*
-         * IGTF LoA.  This encapsulates the LoA corresponding to existing
-         * Authentication Policies (APs) described below.
-         */
-
-        case "1.2.840.113612.5.2.5.1":
-            return new LoAPrincipal(IGTF_LOA_ASPEN);
-        case "1.2.840.113612.5.2.5.2":
-            return new LoAPrincipal(IGTF_LOA_BIRCH);
-        case "1.2.840.113612.5.2.5.3":
-            return new LoAPrincipal(IGTF_LOA_CEDER);
-        case "1.2.840.113612.5.2.5.4":
-            return new LoAPrincipal(IGTF_LOA_DOGWOOD);
-
-        /*
-         * IGTF Authentication-Policy.  Amongst other things, this defines
-         * how the user was identified to the Certificate Authority, which
-         * includes an element of LoA.
-         */
-
-        case "1.2.840.113612.5.2.2.1":
-            return new LoAPrincipal(IGTF_AP_CLASSIC);
-        case "1.2.840.113612.5.2.2.2":
-            return new LoAPrincipal(IGTF_AP_SGCS);
-        case "1.2.840.113612.5.2.2.3":
-            return new LoAPrincipal(IGTF_AP_SLCS);
-        case "1.2.840.113612.5.2.2.4":
-            return new LoAPrincipal(IGTF_AP_EXPERIMENTAL);
-        case "1.2.840.113612.5.2.2.5":
-            return new LoAPrincipal(IGTF_AP_MICS);
-        case "1.2.840.113612.5.2.2.6":
-            return new LoAPrincipal(IGTF_AP_IOTA);
-
-        /*
-         * IGTF Entity-Definition.  Currently (2015-10-11), this mostly
-         * identifies robot certificates.
-         */
-
-        case "1.2.840.113612.5.2.3.3.1":
-            return new EntityDefinitionPrincipal(ROBOT);
-        case "1.2.840.113612.5.2.3.3.2":
-            return new EntityDefinitionPrincipal(HOST);
-        case "1.2.840.113612.5.2.3.3.3":
-            return new EntityDefinitionPrincipal(PERSON);
+        if (loa != null) {
+            return LoAs.withImpliedLoA(EnumSet.of(loa)).stream()
+                    .map(LoAPrincipal::new);
         }
 
-        return null;
+        return Optional.ofNullable(ENTITY_DEFINITION_POLICIES.get(oid))
+            .map(EntityDefinitionPrincipal::new)
+            .map(Stream::of)
+            .orElse(Stream.empty());
     }
 }
