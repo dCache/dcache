@@ -77,8 +77,7 @@
         <version.jackson.databind>2.9.10</version.jackson.databind>
         <version.jackson.annotations>2.9.10</version.jackson.annotations>
         <version.jackson.core>2.9.10</version.jackson.core>
-
-
+        <version.jna>5.4.0</version.jna>
 
 
         <spring-integration-kafka.version>3.0.1.RELEASE</spring-integration-kafka.version>
@@ -318,7 +317,12 @@
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>4.2.2</version>
+                <version>${version.jna}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna-platform</artifactId>
+                <version>${version.jna}</version>
             </dependency>
             <!-- xacml client incompatible with the newer opensaml library -->
             <dependency>
