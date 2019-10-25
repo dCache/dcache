@@ -178,7 +178,6 @@ class Companion
               CacheFileAvailable callback,
               boolean forceSourceMode,
               Long atime,
-              boolean isSSl,
               SSLContext sslContext
               )
     {

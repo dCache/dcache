@@ -52,7 +52,6 @@ public class P2PClient
     private CellStub _pool;
     private InetAddress _interface;
 
-    private boolean _redirectToHttpsP2P;
 
     private SSLContext _sslContext;
 
@@ -86,15 +85,10 @@ public class P2PClient
         return _companions.size();
     }
 
-    public synchronized void setRedirectToHttpsP2P(boolean redirectToHttpsP2P) {
-        _redirectToHttpsP2P = redirectToHttpsP2P;
-    }
-
     public synchronized void setSslContext(SSLContext sslContext)
     {
         _sslContext = sslContext;
     }
-
 
 
 
@@ -262,7 +256,6 @@ public class P2PClient
                         targetState, stickyRecords,
                         cb, forceSourceMode,
                         atime,
-                        _redirectToHttpsP2P,
                         _sslContext);
 
         int id = addCompanion(companion);

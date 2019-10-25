@@ -664,8 +664,6 @@
 
         <bean id="p2p" parent="p2p-parent">
             <description>Pool to pool transfer manager</description>
-            <property name="redirectToHttpsP2P" value="false"/>
-
         </bean>
     </beans>
 
@@ -675,8 +673,6 @@
         <bean id="p2p" parent="p2p-parent">
             <description>Pool to pool transfer manager with encryption</description>
             <property name="sslContext" ref="ssl-context-builder"/>
-            <property name="redirectToHttpsP2P" value="true"/>
-
         </bean>
     </beans>
 
