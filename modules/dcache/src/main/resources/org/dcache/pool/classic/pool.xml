@@ -475,7 +475,7 @@
       <property name="factories">
         <map>
             <entry key="NFS4-4" value-ref="nfs-transfer-service" />
-            <entry key="Xrootd-2" value-ref="xrootd-transfer-service"/>
+            <entry key="Xrootd-4" value-ref="xrootd-transfer-service"/>
             <entry key="Http-1" value-ref="http-transfer-service"/>
             <entry key="RemoteHttpDataTransfer-1" value-ref="remote-http-transfer-service"/>
             <entry key="RemoteHttpsDataTransfer-1" value-ref="remote-http-transfer-service"/>
