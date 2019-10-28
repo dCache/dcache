@@ -850,6 +850,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
             _log.info("Listing directory {}", listPath);
             FsPath fullListPath = createFullPath(listPath);
+
+            if (!_door.isReadAllowed(fullListPath)) {
+                throw new PermissionDeniedCacheException("Permission denied.");
+            }
+
             if (request.isDirectoryStat()) {
                 _door.listPath(fullListPath, request.getSubject(), _authz,
                                new StatListCallback(request, fullListPath, ctx),
