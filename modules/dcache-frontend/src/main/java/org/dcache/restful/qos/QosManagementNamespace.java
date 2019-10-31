@@ -48,6 +48,8 @@ import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.restful.qos.QosManagement.QOS_PIN_REQUEST_ID;
+
 /**
  * Query current QoS for a file or  change the current QoS
  */
@@ -69,10 +71,6 @@ public class QosManagementNamespace {
     @Inject
     @Named("pnfs-stub")
     private CellStub pnfsmanager;
-
-    /** ID provided by the requestor eg. the SRM door or QoS.**/
-
-    private final String requestId= "qos";
 
     /**
      * Gets the current status of the object, (including transition status), for the object specified by path.
@@ -96,7 +94,7 @@ public class QosManagementNamespace {
             FileAttributes fileAttributes = getFileAttributes(requestPath);
             FileLocality fileLocality =  getLocality(fileAttributes);
 
-            boolean isPinned = isPinned(fileAttributes, pinmanager);
+            boolean isPinned = isPinnedForQoS(fileAttributes, pinmanager);
 
 
             switch (fileLocality) {
@@ -228,19 +226,8 @@ public class QosManagementNamespace {
     * While pinning files this requestId value "qos" will be stored for the pin.
     * Storing requestId insures the possibility to filter files being pinned by Qos or SRM.
     */
-    public void pin(FileAttributes fileAttributes,  CellStub cellStub) throws URISyntaxException {
-
-        HttpProtocolInfo protocolInfo =
-                new HttpProtocolInfo("Http", 1, 1,
-                        new InetSocketAddress(request.getRemoteHost(), 0),
-                        null, null, null,
-                        new URI("http", request.getRemoteHost(), null, null));
-
-        PinManagerPinMessage message =
-                new PinManagerPinMessage(fileAttributes, protocolInfo, requestId, -1);
-
-        cellStub.notify(message);
-
+    public void pinForQoS(FileAttributes fileAttributes, CellStub cellStub) throws URISyntaxException {
+        pinForQoS(request, fileAttributes, cellStub);
     }
 
 
@@ -250,26 +237,43 @@ public class QosManagementNamespace {
     }
 
 
-    public boolean isPinned(FileAttributes fileAttributes, CellStub cellStub) throws CacheException, InterruptedException,
-            URISyntaxException, NoRouteToCellException
+    public static boolean isPinnedForQoS(FileAttributes fileAttributes,
+                                         CellStub cellStub)
+                    throws CacheException, InterruptedException, NoRouteToCellException
     {
-        boolean isPinned = false;
-
         PinManagerCountPinsMessage message =
-                new PinManagerCountPinsMessage(fileAttributes.getPnfsId());
+                new PinManagerCountPinsMessage(fileAttributes.getPnfsId(),
+                                               QOS_PIN_REQUEST_ID);
+        return cellStub.sendAndWait(message).getCount() != 0;
+    }
 
-        message = cellStub.sendAndWait(message);
-        if (message.getCount() != 0 ){
-            isPinned = true;
-        }
-        return isPinned;
+    public static void pinForQoS(HttpServletRequest request,
+                                 FileAttributes fileAttributes,
+                                 CellStub cellStub) throws URISyntaxException {
+        HttpProtocolInfo protocolInfo =
+                        new HttpProtocolInfo("Http", 1, 1,
+                                             new InetSocketAddress(
+                                                             request.getRemoteHost(),
+                                                             0),
+                                             null,
+                                             null, null,
+                                             new URI("http",
+                                                     request.getRemoteHost(),
+                                                     null, null));
+
+        PinManagerPinMessage message =
+                        new PinManagerPinMessage(fileAttributes, protocolInfo,
+                                                 QOS_PIN_REQUEST_ID, -1);
+
+        cellStub.notify(message);
     }
 
 
-    public void unpin(FileAttributes fileAttributes, CellStub cellStub ) {
+    public static void unpinForQoS(FileAttributes fileAttributes,
+                                   CellStub cellStub ) {
 
         PinManagerUnpinMessage message = new PinManagerUnpinMessage(fileAttributes.getPnfsId());
-        message.setRequestId(requestId);
+        message.setRequestId(QOS_PIN_REQUEST_ID);
         cellStub.notify(message);
     }
 
@@ -280,11 +284,11 @@ public class QosManagementNamespace {
         switch (fileLocality) {
 
             case NEARLINE:
-                pin(fileAttributes, cellStub);
+                pinForQoS(fileAttributes, cellStub);
                 break;
 
             case ONLINE_AND_NEARLINE:
-                pin(fileAttributes, cellStub);
+                pinForQoS(fileAttributes, cellStub);
                 break;
             default:
                 // error cases
@@ -299,11 +303,11 @@ public class QosManagementNamespace {
         switch (fileLocality) {
 
             case NEARLINE:
-                unpin(fileAttributes, cellStub);
+                unpinForQoS(fileAttributes, cellStub);
                 break;
 
             case ONLINE_AND_NEARLINE:
-                unpin(fileAttributes, cellStub);
+                unpinForQoS(fileAttributes, cellStub);
                 break;
             default:
                 // error cases
