@@ -36,8 +36,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import java.net.InetSocketAddress;
-import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -49,8 +48,6 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.vehicles.HttpProtocolInfo;
-import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -58,13 +55,11 @@ import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
-import org.dcache.pinmanager.PinManagerCountPinsMessage;
-import org.dcache.pinmanager.PinManagerPinMessage;
-import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.policyengine.MigrationPolicyEngine;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
+import org.dcache.restful.qos.QosManagementNamespace;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
@@ -85,8 +80,6 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Component
 @Path("/namespace")
 public class FileResources {
-
-    private final String QOS_PIN_REQUEST_ID = "qos";
     private static final Logger LOG = LoggerFactory.getLogger(FileResources.class);
 
     /*
@@ -308,11 +301,6 @@ public class FileResources {
                         throw new BadRequestException("Transition for directories not supported");
                     }
 
-                    ProtocolInfo info = new HttpProtocolInfo("Http", 1, 1,
-                            new InetSocketAddress(request.getRemoteHost(), 0),
-                            null, null, null,
-                            URI.create("http://"+request.getRemoteHost()+"/"));
-
                     MigrationPolicyEngine migrationPolicyEngine =
                             new MigrationPolicyEngine(attributes, poolmanager, poolMonitor);
 
@@ -321,9 +309,8 @@ public class FileResources {
                         if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
                             migrationPolicyEngine.adjust();
                         }
-                        boolean isPinned = pinmanager.sendAndWait(new PinManagerCountPinsMessage(attributes.getPnfsId())).getCount() != 0;
-                        if (!isPinned) {
-                            pinmanager.notify(new PinManagerPinMessage(attributes, info, QOS_PIN_REQUEST_ID, -1));
+                        if (!QosManagementNamespace.isPinnedForQoS(attributes, pinmanager)) {
+                            QosManagementNamespace.pinForQoS(request, attributes, pinmanager);
                         }
                         break;
                     case QosManagement.DISK:
@@ -340,9 +327,7 @@ public class FileResources {
                         if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
                             migrationPolicyEngine.adjust();
                         }
-                        PinManagerUnpinMessage messageUnpin = new PinManagerUnpinMessage(attributes.getPnfsId());
-                        messageUnpin.setRequestId(QOS_PIN_REQUEST_ID);
-                        pinmanager.notify(messageUnpin);
+                        QosManagementNamespace.unpinForQoS(attributes, pinmanager);
                         break;
 
                     default:
@@ -361,7 +346,8 @@ public class FileResources {
             } else {
                 throw new ForbiddenException(e);
             }
-        } catch (JSONException | CacheException | InterruptedException | NoRouteToCellException e) {
+        } catch (URISyntaxException | JSONException | CacheException
+                        | InterruptedException | NoRouteToCellException e) {
             throw new BadRequestException(e.getMessage(), e);
         }
         return successfulResponse(Response.Status.CREATED);
