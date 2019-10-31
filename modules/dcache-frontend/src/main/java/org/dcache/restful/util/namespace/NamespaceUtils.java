@@ -5,8 +5,8 @@ import javax.ws.rs.InternalServerErrorException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -14,7 +14,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
-import org.dcache.pinmanager.PinManagerCountPinsMessage;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
 import org.dcache.pool.classic.ReplicaStatePolicy;
 import org.dcache.pool.repository.ReplicaState;
@@ -22,8 +21,12 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
+import org.dcache.restful.qos.QosManagementNamespace;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.restful.qos.QosManagement.QOS_PIN_REQUEST_ID;
+
 /**
  * <p>Utilities for obtaining and returning file attributes and qos
  *    information.</p>
@@ -62,16 +65,15 @@ public final class NamespaceUtils {
             throw new PermissionDeniedCacheException("Permission denied");
         }
 
-        PinManagerCountPinsMessage msg
-                        = new PinManagerCountPinsMessage(attributes.getPnfsId());
-        boolean isPinned = pinmanager.sendAndWait(msg).getCount() != 0;
+        boolean isPinnedForQoS = QosManagementNamespace.isPinnedForQoS(attributes,
+                                                                       pinmanager);
 
         FileLocality locality = poolMonitor.getFileLocality(attributes,
                                                         request.getRemoteHost());
         switch (locality) {
             case NEARLINE:
                 json.setCurrentQos(QosManagement.TAPE);
-                if (isPinned) {
+                if (isPinnedForQoS) {
                     json.setTargetQos(QosManagement.DISK_TAPE);
                 }
                 break;
@@ -85,7 +87,7 @@ public final class NamespaceUtils {
                 break;
 
             case ONLINE_AND_NEARLINE:
-                json.setCurrentQos(isPinned ? QosManagement.DISK_TAPE :
+                json.setCurrentQos(isPinnedForQoS ? QosManagement.DISK_TAPE :
                                               QosManagement.TAPE);
                 break;
 
