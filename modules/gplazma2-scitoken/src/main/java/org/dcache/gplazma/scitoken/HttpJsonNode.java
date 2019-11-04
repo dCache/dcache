@@ -152,7 +152,7 @@ public class HttpJsonNode extends PreparationJsonNode
         }
 
         MediaType type = MediaType.parse(contentType.getValue());
-        String baseType = type.type().toLowerCase();
+        String baseType = type.withoutParameters().toString().toLowerCase();
         switch (baseType) {
             case "application/json":
             case "application/octet-stream": // basically "unknown"
