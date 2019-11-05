@@ -45,6 +45,7 @@ public class QosManagement {
     public static final String DISK_TAPE = "disk+tape";
     public static final String VOLATILE = "volatile";
     public static final String UNAVAILABLE = "unavailable";
+    public static final String QOS_PIN_REQUEST_ID = "qos";
 
     @Inject
     @Named("geographic-placement")
