@@ -1225,6 +1225,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         {
             log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
                     ArrayOfTGetFileRequest::getRequestArray, TGetFileRequest::getSourceSURL);
+            log.add("request.desiredLifeTime", request.getDesiredLifeTime());
+            log.add("request.desiredTotalRequestTime", request.getDesiredTotalRequestTime());
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
                     ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
