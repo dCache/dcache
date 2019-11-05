@@ -75,8 +75,6 @@ package gov.fnal.srm.util;
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
-import java.util.Date;
-
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn;
@@ -138,6 +136,7 @@ public class SRMCheckPermissionClientV2 extends SRMClient {
         surlarray.setUrlArray(uriarray);
         SrmCheckPermissionRequest req = new SrmCheckPermissionRequest();
         req.setArrayOfSURLs(surlarray);
+        configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmCheckPermissionResponse resp = isrm.srmCheckPermission(req);
         try {
             TReturnStatus rs   = resp.getReturnStatus();

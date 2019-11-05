@@ -85,7 +85,6 @@ package gov.fnal.srm.util;
 import eu.emi.security.authn.x509.X509Credential;
 
 import java.io.IOException;
-import java.util.Date;
 
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
@@ -136,6 +135,7 @@ public class SRMReleaseSpaceClientV2 extends SRMClient  {
         try {
             request.setSpaceToken(configuration.getSpaceToken());
             request.setForceFileRelease(configuration.getForceFileRelease());
+            configuration.getStorageSystemInfo().ifPresent(request::setStorageSystemInfo);
             SrmReleaseSpaceResponse response = srmv2.srmReleaseSpace(request);
             if ( response == null ) {
                 throw new IOException(" null SrmReleaseSpace");

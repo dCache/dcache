@@ -94,10 +94,13 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.dcache.srm.Logger;
 import org.dcache.srm.client.Transport;
+import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
+import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -1560,7 +1563,7 @@ public class Configuration extends ConnectionConfiguration {
         this.priority = p;
     }
 
-    private Map<String,String> extraParameters;
+    private final Map<String,String> storageSystemInfo =  new HashMap<>();
 
     @Option(
             name = "overwrite_mode",
@@ -1780,28 +1783,27 @@ public class Configuration extends ConnectionConfiguration {
     private URI srmUrl;
     private String surls[];
 
-    /** Creates a new instance of Configuration */
-    public Configuration() {
-        extraParameters = new HashMap<>();
-    }
-
     private String mkdir_options =
-        " srmmkdir options : None\n"+
-        "Examples: \n"+
-        "\t\t srm -mkmdir srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir/path/ \n";
+        " srmmkdir options : \n"
+        + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+        + "Examples: \n"
+        + "\t\t srm -mkmdir srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir/path/ \n";
 
     private String rm_options =
-        " srmrm options : None \n"+
-        "\t\t Applies to files only.\n";
+        " srmrm options : \n"
+        + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+        + "\t\t Applies to files only.\n";
 
     private String stage_options =
         " stage options: None \n";
 
     private String getPermission_options =
-        " srm-get-permissions options: None \n";
+        " srm-get-permissions options: \n"
+        + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
 
     private String checkPermission_options =
-        " srm-check-permissions options : None \n";
+        " srm-check-permissions options : \n"
+        + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
 
     public final String usage() {
         String general_options=
@@ -1899,7 +1901,7 @@ public class Configuration extends ConnectionConfiguration {
                     "cksm_value",
                     "first_byte_timeout",
                     "next_byte_timeout")+
-            "    [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"+
+            "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"+
             "the following return codes are supported:\n"+
             "\t\t 0 - success\n"+
             "\t\t 1 - general error\n"+
@@ -1938,7 +1940,8 @@ public class Configuration extends ConnectionConfiguration {
                     "request_lifetime",
                     "lifetime",
                     "priority",
-            "report");
+                    "report")
+                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
 
             return
             "\nUsage: srm-bring-online [command line options] srmUrl(s)\n\n"+
@@ -1948,20 +1951,14 @@ public class Configuration extends ConnectionConfiguration {
         }
 
         if (reserveSpace) {
-            String reserveSpace_options=" srm-reserve-space options : \n"+
-            OptionParser.printOptions(this,
-                    "space_desc",
-                    "retention_policy",
-                    "access_latency",
-                    "access_pattern",
-                    "array_of_client_networks",
-                    "protocols",
-                    "connection_type",
-                    "desired_size",
-                    "guaranteed_size",
-                    "lifetime",
-                    "linkgroup")+
-            printMandatoryOptions("retention_policy","guaranteed_size");
+            String reserveSpace_options=" srm-reserve-space options : \n"
+                    + OptionParser.printOptions(this, "space_desc",
+                            "retention_policy", "access_latency", "access_pattern",
+                            "array_of_client_networks", "protocols",
+                            "connection_type", "desired_size", "guaranteed_size",
+                            "lifetime", "linkgroup")
+                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+                    + printMandatoryOptions("retention_policy","guaranteed_size");
             return
             "\nUsage: srm-reserve-space [command line options]  srmUrl\n\n"+
             "       default options are read from configuration file\n"+
@@ -1981,9 +1978,10 @@ public class Configuration extends ConnectionConfiguration {
 
         }
         if (releaseSpace) {
-            String releaseSpace_options = " srm-release-space options :\n"+
-            OptionParser.printOptions(this,"space_token","force")+
-            printMandatoryOptions("space_token");
+            String releaseSpace_options = " srm-release-space options :\n"
+                    + OptionParser.printOptions(this, "space_token", "force")
+                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+                    + printMandatoryOptions("space_token");
 
             return
             "\nUsage: srm-release-space [command line options]  srmUrl\n\n"+
@@ -1992,7 +1990,9 @@ public class Configuration extends ConnectionConfiguration {
             (isHelp()==true?general_options+releaseSpace_options:releaseSpace_options);
         }
         if (ls) {
-            String ls_options="srmls options :\n"+OptionParser.printOptions(this,"l","recursion_depth","count","offset");
+            String ls_options="srmls options :\n"
+                    + OptionParser.printOptions(this,"l","recursion_depth","count","offset")
+                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
             return
             "\nUsage: srmls [command line options] srmUrl [[srmUrl]...]\n\n" +
             (isHelp()==true?general_options+ls_options:ls_options);
@@ -2005,7 +2005,8 @@ public class Configuration extends ConnectionConfiguration {
             (isHelp()==true?general_options+rm_options:rm_options);
         }
         if (is_mv) {
-            String move_options= "srmmv options :\n"+
+            String move_options= "srmmv options :\n"
+                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n" +
             "Only moves within single storage system are allowed \n"+
             "(you can't mv from one SRM to another SRM \n"+
             "(or from/to remote/local filesystem, use copy and delete)).\n";
@@ -2063,10 +2064,9 @@ public class Configuration extends ConnectionConfiguration {
             (isHelp()==true?general_options+getRequestTokens_options:getRequestTokens_options);
         }
         if (is_rmdir) {
-            String rmdir_options =
-                " srmrmdir options :\n"+
-                OptionParser.printOptions(this,
-                "recursive")+
+            String rmdir_options = " srmrmdir options :\n"
+                    + OptionParser.printOptions(this, "recursive")
+                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n" +
                 "\t\t -rmdir is defined in SRM specification as :\n"+
                 "\t\t \"applies to dir doRecursiveRemove is false by edefault. To distinguish from \n"+
                 "\t\t srmRm(), this function is for directories only. \"\n"+
@@ -2112,14 +2112,11 @@ public class Configuration extends ConnectionConfiguration {
             (isHelp()==true?general_options+checkPermission_options:checkPermission_options);
         }
         if(setPermission) {
-            String setPermission_options =
-                " srm-set-permissions options : \n"+
-                OptionParser.printOptions(this,
-                        "type",
-                        "owner",
-                        "other",
-                "group")+
-                printMandatoryOptions("type");
+            String setPermission_options = " srm-set-permissions options : \n"
+                    + OptionParser.printOptions(this, "type", "owner", "other",
+                            "group")
+                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+                    + printMandatoryOptions("type");
 
             return
             "\nUsage: srm-set-permissions [command line options] srmUrl [[srmUrl]...] \n\n" +
@@ -2371,7 +2368,7 @@ public class Configuration extends ConnectionConfiguration {
                     elements.get(1).isEmpty()) {
                 throw new IllegalArgumentException("Illegal -extraInfo option.  Value must have the form <key>:<value>");
             }
-            extraParameters.put(elements.get(0), elements.get(1));
+            storageSystemInfo.put(elements.get(0), elements.get(1));
         }
 
         args = args.removeOptions("extraInfo");
@@ -2383,7 +2380,7 @@ public class Configuration extends ConnectionConfiguration {
         // line options.
         //
         OptionParser.parseSpecifiedOptions(this,args);
-        extraParameters.put("priority",priority.toString());
+        storageSystemInfo.put("priority",priority.toString());
         //
         // take care of normal people who tend to specify range as MIN:MAX
         //
@@ -2531,6 +2528,9 @@ public class Configuration extends ConnectionConfiguration {
             protocols = readListOfOptions(protocols_list,",");
             arrayOfClientNetworks = readListOfOptions(array_of_client_networks,",");
             OptionParser.checkNullOptions(this,"retention_policy","guaranteed_size");
+            if (linkgroup != null) {
+                storageSystemInfo.put("linkgroup", linkgroup);
+            }
         }
         else if (getSpaceMetaData) {
             spaceTokensList=readListOfOptions(space_tokens_list,",");
@@ -3139,16 +3139,22 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setJobPriority(int p) {
-        this.extraParameters.put("priority",Integer.toString(p));
+        this.storageSystemInfo.put("priority",Integer.toString(p));
     }
     public int getJobPriority() {
-        return Integer.parseInt(extraParameters.get("priority"));
+        return Integer.parseInt(storageSystemInfo.get("priority"));
     }
 
-    public Map<String,String> getExtraParameters() {
-        return this.extraParameters;
+    public Optional<ArrayOfTExtraInfo> getStorageSystemInfo() {
+        if (storageSystemInfo.isEmpty()) {
+            return Optional.empty();
+        } else {
+            TExtraInfo[] info = storageSystemInfo.entrySet().stream()
+                        .map(e -> new TExtraInfo(e.getKey(), e.getValue()))
+                        .toArray(n -> new TExtraInfo [n]);
+            return Optional.of(new ArrayOfTExtraInfo(info));
+        }
     }
-
 
     public String[] getSpaceTokensList() {
         return spaceTokensList;

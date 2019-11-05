@@ -84,8 +84,6 @@ package gov.fnal.srm.util;
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
-import java.util.Date;
-
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmMvRequest;
@@ -135,6 +133,7 @@ public class SRMMvClientV2 extends SRMClient {
         SrmMvRequest req = new SrmMvRequest();
         req.setFromSURL(new URI(surl_strings[0]));
         req.setToSURL(new URI(surl_strings[1]));
+        configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmMvResponse resp = isrm.srmMv(req);
         TReturnStatus rs   = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
