@@ -90,6 +90,8 @@ import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
 
+import static org.dcache.xrootd.CacheExceptionMapper.xrootdErrorCode;
+import static org.dcache.xrootd.CacheExceptionMapper.xrootdException;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 /**
@@ -330,19 +332,19 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                     req, InetAddresses.toUriString(address.getAddress()),
                     address.getPort(), opaqueString, "");
         } catch (FileNotFoundCacheException e) {
-            return withError(req, kXR_NotFound, "No such file");
+            return withError(req, xrootdErrorCode(e.getRc()), "No such file");
         } catch (FileExistsCacheException e) {
             return withError(req, kXR_NotAuthorized, "File already exists");
         } catch (TimeoutCacheException e) {
-            return withError(req, kXR_ServerError, "Internal timeout");
+            return withError(req, xrootdErrorCode(e.getRc()), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
-            return withError(req, kXR_NotAuthorized, e.getMessage());
+            return withError(req, xrootdErrorCode(e.getRc()), e.getMessage());
         } catch (FileIsNewCacheException e) {
-            return withError(req, kXR_FileLocked, "File is locked by upload");
+            return withError(req, xrootdErrorCode(e.getRc()), "File is locked by upload");
         } catch (NotFileCacheException e) {
-            return withError(req, kXR_NotFile, "Not a file");
+            return withError(req, xrootdErrorCode(e.getRc()), "Not a file");
         } catch (CacheException e) {
-            return withError(req, kXR_ServerError,
+            return withError(req, xrootdErrorCode(e.getRc()),
                              String.format("Failed to open file (%s [%d])",
                                            e.getMessage(), e.getRc()));
         } catch (InterruptedException e) {
@@ -576,7 +578,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         if (_door.removeTpcPlaceholder(fd)) {
             return withOk(msg);
         } else {
-            return withError(msg, kXR_InvalidRequest,
+            return withError(msg, kXR_FileNotOpen,
                              "Invalid file handle " + fd
                                              + " for tpc source close.");
         }
@@ -592,13 +594,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             return new StatResponse(req, _door.getFileStatus(createFullPath(path), req.getSubject(), _authz,
                                                              client.getAddress().getHostAddress()));
         } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_NotFound, "No such file");
+            throw xrootdException(e.getRc(), "No such file");
         } catch (TimeoutCacheException e) {
-            throw new XrootdException(kXR_ServerError, "Internal timeout");
+            throw xrootdException(e.getRc(), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+            throw xrootdException(e);
         } catch (CacheException e) {
-            throw new XrootdException(kXR_ServerError,
+            throw xrootdException(e.getRc(),
                                       String.format("Failed to open file (%s [%d])",
                                                     e.getMessage(), e.getRc()));
         }
@@ -618,11 +620,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             }
             return new StatxResponse(req, _door.getMultipleFileStatuses(paths, req.getSubject(), _authz));
         } catch (TimeoutCacheException e) {
-            throw new XrootdException(kXR_ServerError, "Internal timeout");
+            throw xrootdException(e.getRc(), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+            throw xrootdException(e);
         } catch (CacheException e) {
-            throw new XrootdException(kXR_ServerError,
+            throw xrootdException(e.getRc(),
                                       String.format("Failed to open file (%s [%d])",
                                                     e.getMessage(), e.getRc()));
         }
@@ -643,13 +645,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             _door.deleteFile(createFullPath(req.getPath()), req.getSubject(), _authz);
             return withOk(req);
         } catch (TimeoutCacheException e) {
-            throw new XrootdException(kXR_ServerError, "Internal timeout");
+            throw xrootdException(e.getRc(), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+            throw xrootdException(e);
         } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_NotFound, "No such file");
+            throw xrootdException(e.getRc(), "No such file");
         } catch (CacheException e) {
-            throw new XrootdException(kXR_ServerError,
+            throw xrootdException(e.getRc(),
                                       String.format("Failed to delete file (%s [%d])",
                                                     e.getMessage(), e.getRc()));
         }
@@ -669,13 +671,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             _door.deleteDirectory(createFullPath(req.getPath()), req.getSubject(), _authz);
             return withOk(req);
         } catch (TimeoutCacheException e) {
-            throw new XrootdException(kXR_ServerError, "Internal timeout");
-        } catch (PermissionDeniedCacheException e) {
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
-        } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_NotFound, e.getMessage());
+            throw xrootdException(e.getRc(), "Internal timeout");
+        } catch (PermissionDeniedCacheException | FileNotFoundCacheException e) {
+            throw xrootdException(e);
         } catch (CacheException e) {
-            throw new XrootdException(kXR_ServerError,
+            throw xrootdException(e.getRc(),
                                       String.format("Failed to delete directory " +
                                                     "(%s [%d]).",
                                                     e.getMessage(), e.getRc()));
@@ -699,13 +699,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                                   _authz);
             return withOk(req);
         } catch (TimeoutCacheException e) {
-            throw new XrootdException(kXR_ServerError, "Internal timeout");
-        } catch (PermissionDeniedCacheException e) {
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
-        } catch (FileNotFoundCacheException | FileExistsCacheException e) {
-            throw new XrootdException(kXR_FSError, e.getMessage());
+            throw xrootdException(e.getRc(), "Internal timeout");
+        } catch (PermissionDeniedCacheException |FileNotFoundCacheException
+                        | FileExistsCacheException e) {
+            throw xrootdException(e);
         } catch (CacheException e) {
-            throw new XrootdException(kXR_ServerError,
+            throw xrootdException(e.getRc(),
                                       String.format("Failed to create directory " +
                                                             "(%s [%d]).",
                                                     e.getMessage(), e.getRc()));
@@ -735,19 +734,19 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                            _authz);
             return withOk(req);
         } catch (TimeoutCacheException e) {
-            throw new XrootdException(kXR_ServerError, "Internal timeout");
+            throw xrootdException(e.getRc(), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+            throw xrootdException(e);
         } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_NotFound,
+            throw xrootdException(e.getRc(),
                                       String.format("Source file does not exist (%s) ",
                                                     e.getMessage()));
         } catch (FileExistsCacheException e) {
-            throw new XrootdException(kXR_FSError,
+            throw xrootdException(e.getRc(),
                                       String.format("Will not overwrite existing file " +
                                                     "(%s).", e.getMessage()));
         } catch (CacheException e) {
-            throw new XrootdException(kXR_ServerError,
+            throw xrootdException(e.getRc(),
                                       String.format("Failed to move file " +
                                                     "(%s [%d]).",
                                                     e.getMessage(), e.getRc()));
@@ -824,12 +823,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                                                              + checksum.getValue());
                     }
                 }
-            } catch (FileNotFoundCacheException e) {
-                throw new XrootdException(kXR_NotFound, e.getMessage());
-            } catch (PermissionDeniedCacheException e) {
-                throw new XrootdException(kXR_NotAuthorized, e.getMessage());
             } catch (CacheException e) {
-                throw new XrootdException(kXR_ServerError, e.getMessage());
+                throw xrootdException(e);
             }
             throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
 
@@ -866,7 +861,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             }
             return null;
         } catch (PermissionDeniedCacheException e) {
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+            throw xrootdException(e);
         }
     }
 
@@ -1011,33 +1006,28 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         @Override
         public void failure(int rc, Object error)
         {
+            String errorMessage;
+
             switch (rc) {
-            case CacheException.TIMEOUT:
-                respond(_context,
-                        withError(_request,
-                                  kXR_ServerError,
-                                  "Timeout when trying to list directory: " +
-                                  error.toString()));
-                break;
-            case CacheException.PERMISSION_DENIED:
-                respond(_context,
-                        withError(_request,
-                                  kXR_NotAuthorized,
-                                  "Permission to list that directory denied: " +
-                                  error.toString()));
-                break;
-            case CacheException.FILE_NOT_FOUND:
-                respond(_context,
-                        withError(_request, kXR_NotFound, "Path not found"));
-                break;
-            default:
-                respond(_context,
-                        withError(_request,
-                                  kXR_ServerError,
-                                  "Error when processing list response: " +
-                                  error.toString()));
-                break;
+                case CacheException.TIMEOUT:
+                    errorMessage = "Timeout when trying to list directory: "
+                                    + error.toString();
+                    break;
+                case CacheException.PERMISSION_DENIED:
+                    errorMessage = "Permission to list that directory denied: "
+                                    + error.toString();
+                    break;
+                case CacheException.FILE_NOT_FOUND:
+                    errorMessage = "Path not found: ";
+                    break;
+                default:
+                    errorMessage = "Error when processing list response: "
+                                    + error.toString();
+                    break;
             }
+
+            respond(_context,
+                    withError(_request, xrootdErrorCode(rc), errorMessage));
         }
 
         /**
@@ -1101,7 +1091,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         public void success(PnfsListDirectoryMessage message)
         {
             message.getEntries().stream().forEach(
-                    e -> _response.add(e.getName(), _door.getFileStatus(_request.getSubject(), _authz, _dirPath.child(e.getName()), _client, e.getFileAttributes())));
+                    e -> _response.add(e.getName(), _door.getFileStatus(_request.getSubject(),
+                                                                        _authz,
+                                                                        _dirPath.child(e.getName()),
+                                                                        _client, e.getFileAttributes())));
             if (message.isFinal()) {
                 respond(_context, _response.buildFinal());
             } else {

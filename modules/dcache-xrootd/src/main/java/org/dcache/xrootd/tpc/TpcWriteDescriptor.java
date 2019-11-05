@@ -91,6 +91,7 @@ import org.dcache.xrootd.util.ByteBuffersProvider;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.ParseException;
 
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgInvalid;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
@@ -271,7 +272,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                 }
             }, response.getWsec(), TimeUnit.SECONDS);
         } catch (ParseException e) {
-            throw new XrootdException(kXR_ServerError, e.getMessage());
+            throw new XrootdException(kXR_ArgInvalid, e.getMessage());
         }
     }
 
