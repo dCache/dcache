@@ -35,7 +35,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
                                            List<StickyRecord> stickyRecords,
                                            boolean computeChecksumOnUpdate,
                                            boolean forceSourceMode,
-                                           Long atime, boolean isMetaOnly)
+                                           @Nullable Long atime, boolean isMetaOnly)
     {
         super(uuid, pool, fileAttributes.getPnfsId());
         _fileAttributes = checkNotNull(fileAttributes);
