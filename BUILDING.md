@@ -87,13 +87,25 @@ module:
 
     mvn clean package -am -pl modules/tar
 
-The dCache docker image is build by packaging the _packages/docker_
-module:
 
-    mvn clean package -am -pl packages/docker
+Building a docker image
+-----------------------
 
-It is a separate module from the RPM and DEB packages because the file
-layout is significantly different in the tarball.
+Building a docker image is disabled by default.  This is because it
+requires a running docker deployment, which not all developers have
+installed.
+
+You may enable building of docker images by activating the `docker`
+profile; e.g.,
+
+    mvn clean package -Pdocker
+
+To build only the docker image, you may select the docker module,
+`packages/docker` explicitly, as above.  However, it is still required
+to enable the `docker` profile; e.g.,
+
+    mvn clean package -am -pl packages/docker -Pdocker
+
 
 The system-test module
 ----------------------
