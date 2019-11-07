@@ -291,7 +291,7 @@ public class BillingInfoServiceImpl
                                                            clientPool,
                                                            serverPool,
                                                            client,
-                                                           limit,
+                                                           limit == null ? Integer.MAX_VALUE : limit,
                                                            offset,
                                                            sort);
         message = collector.sendRecordRequest(message);
@@ -412,7 +412,7 @@ public class BillingInfoServiceImpl
                                                            null,
                                                            pool,
                                                            client,
-                                                           limit,
+                                                           limit == null ? Integer.MAX_VALUE : limit,
                                                            offset,
                                                            sort);
         message = collector.sendRecordRequest(message);
@@ -450,7 +450,7 @@ public class BillingInfoServiceImpl
                                                           getDate(after),
                                                           type,
                                                           pool,
-                                                          limit,
+                                                          limit == null ? Integer.MAX_VALUE : limit,
                                                           offset,
                                                           sort);
 
