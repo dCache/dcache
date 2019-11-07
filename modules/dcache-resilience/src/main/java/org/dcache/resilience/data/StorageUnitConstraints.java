@@ -92,10 +92,23 @@ public final class StorageUnitConstraints extends ResilienceMarker {
         }
     }
 
-    public boolean equals(StorageUnitConstraints constraints) {
-        return constraints != null && Objects.equals(this.required, constraints.required)
-                        && this.oneCopyPer.equals(constraints.oneCopyPer);
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof StorageUnitConstraints)) {
+            return false;
+        }
+
+        StorageUnitConstraints otherConstraints = (StorageUnitConstraints) other;
+
+        return Objects.equals(required, otherConstraints.required)
+                        && this.oneCopyPer.equals(otherConstraints.oneCopyPer);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(required, oneCopyPer);
+    }
+
 
     public Set<String> getOneCopyPer() {
         return oneCopyPer;
@@ -112,6 +125,7 @@ public final class StorageUnitConstraints extends ResilienceMarker {
         return required;
     }
 
+    @Override
     public String toString() {
         return String.format("(required %s)(oneCopyPer %s)", required, oneCopyPer);
     }
