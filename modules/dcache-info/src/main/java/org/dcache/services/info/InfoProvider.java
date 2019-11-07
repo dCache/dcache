@@ -496,7 +496,7 @@ public class InfoProvider  implements CellCommandListener, CellInfoProvider,
         /* Treat a quoted argument as a single entry--don't split */
         if (path.startsWith("\"") && path.endsWith("\"")) {
             pathElements = new String[1];
-            pathElements[1] = path.substring(1, path.length()-2);
+            pathElements[0] = path.substring(1, path.length()-2);
             quoted = true;
         } else {
             if (path.startsWith("/")) {
