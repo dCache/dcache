@@ -586,10 +586,16 @@ public class FileOperationHandler implements CellMessageSender {
                                  pnfsId);
 
                     /*
-                     *  Figure out what pool group this should be on.
-                     *  At this point, if locations is empty, it's a bug.
-                     *  If it isn't, the pools should belong to a resilient
-                     *  group, or else we wouldn't be processing this.
+                     *  Figure out on which pool group this should be.
+                     *
+                     *  It's possible that the file was "resilient" when the
+                     *  stage request was sent and a subsequently configuration
+                     *  change has resulted in the file no longer being
+                     *  "resilient".  If this happens, the file may have no
+                     *  corresponding resilient pool group.
+                     *
+                     *  Another possibility is the lack of resilient pool group
+                     *  is due to a bug somewhere.
                      */
                     Integer gIndex = null;
 
@@ -599,6 +605,12 @@ public class FileOperationHandler implements CellMessageSender {
                         if (gIndex != null) {
                             break;
                         }
+                    }
+
+                    if (gIndex == null) {
+                        LOGGER.warn("{}, handleStagingReply, file no longer"
+                                + " hosted on resilient pool group", pnfsId);
+                        return;
                     }
 
                     final String poolGroup = poolInfoMap.getGroup(gIndex);
