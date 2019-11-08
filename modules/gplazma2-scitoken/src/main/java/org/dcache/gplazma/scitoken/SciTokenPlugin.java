@@ -157,9 +157,9 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
                 "is not yet valid");
 
         // REVISIT obtain door IP address and DNS lookup URL to see if it matches
-        Optional<String> aud = token.getPayloadString("aud");
-        checkAuthentication(!aud.isPresent() || audienceTargets.contains(aud.get()),
-                "intended for %s", aud.orElse("unknown"));
+        List<String> aud = token.getPayloadStringOrArray("aud");
+        checkAuthentication(aud.isEmpty() || audienceTargets.stream().anyMatch(aud::contains),
+                "intended for %s", aud);
 
         return token;
     }
