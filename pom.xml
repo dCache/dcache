@@ -73,6 +73,13 @@
         <version.netty>4.1.10.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
         <version.swagger-ui>3.1.7</version.swagger-ui>
+
+        <!-- Newer versions of logback suffer from bug
+	     http://jira.qos.ch/browse/LOGBACK-941. -->
+
+        <!-- Remember to update modules/logback-test-config/pom.xml
+             when upgrading logback. -->
+        <version.logback>1.2.3</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
         <version.jackson.databind>2.9.10</version.jackson.databind>
         <version.jackson.annotations>2.9.10</version.jackson.annotations>
@@ -169,18 +176,15 @@
                 <version>${version.slf4j}</version>
             </dependency>
             <dependency>
-                <!-- Newer versions suffer from bug http://jira.qos.ch/browse/LOGBACK-941. -->
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <!-- Remember to update modules/logback-test-config/pom.xml
-                     when upgrading logback. -->
-                <version>1.2.3</version>
+                <version>${version.logback}</version>
             </dependency>
 
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.2.3</version>
+                <version>${version.logback}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.janino</groupId>
@@ -1161,6 +1165,16 @@
                             <groupId>org.datanucleus</groupId>
                             <artifactId>datanucleus-core</artifactId>
                             <version>${datanucleus-core.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>log4j-over-slf4j</artifactId>
+			    <version>${version.slf4j}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.dcache</groupId>
+                            <artifactId>logback-test-config</artifactId>
+                            <version>${project.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
