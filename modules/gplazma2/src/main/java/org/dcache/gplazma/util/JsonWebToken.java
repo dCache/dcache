@@ -33,8 +33,11 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -153,5 +156,38 @@ public class JsonWebToken
         return Optional.ofNullable(payload.get(key))
                 .filter(JsonNode::isTextual)
                 .map(JsonNode::getTextValue);
+    }
+
+    /**
+     * A node is either absent, a JSON String, or a JSON Array with JSON String
+     * elements. If absent then an empty List is returned.  If present and a
+     * JSON String then a List containing only that value is returned.  If
+     * present and a JSON Array then a List containing all textual elements is
+     * returned; all non-textual elements are ignored.  If the value is not a
+     * JSON String or a JSON array then an empty List is returned.
+     * @param key the ID of the element to return
+     * @return a List of Strings, which may be empty.
+     */
+    public List<String> getPayloadStringOrArray(String key)
+    {
+        return Optional.ofNullable(payload.get(key))
+                .filter(n -> n.isArray() || n.isTextual())
+                .map(JsonWebToken::toStringList)
+                .orElse(Collections.emptyList());
+    }
+
+    private static List<String> toStringList(JsonNode node)
+    {
+        if (node.isArray()) {
+            return StreamSupport.stream(node.spliterator(), false)
+                    .filter(JsonNode::isTextual) // Non text array elements are simply ignored
+                    .map(JsonNode::getTextValue)
+                    .collect(Collectors.toList());
+        } else  if (node.isTextual()) {
+            return Collections.singletonList(node.getTextValue());
+        } else {
+            throw new RuntimeException("Unable to convert node " + node
+                    + " to List<String>");
+        }
     }
 }
