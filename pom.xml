@@ -1196,6 +1196,18 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
                     <version>3.6</version>
+                    <configuration>
+                        <sourceEncoding>utf-8</sourceEncoding>
+			<minimumTokens>100</minimumTokens>
+                        <targetJdk>${source.version}</targetJdk>
+                        <!-- Rely on Jenkins plugin to do source-code cross-referencing -->
+                        <linkXRef>false</linkXRef>
+
+			<excludeRoots>
+			    <!-- Don't check any generated source code. -->
+			    <excludeRoot>target/generated-sources</excludeRoot>
+			</excludeRoots>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1368,12 +1380,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.5</version>
-                <configuration>
-                    <sourceEncoding>utf-8</sourceEncoding>
-                    <minimumTokens>100</minimumTokens>
-                    <targetJdk>${source.version}</targetJdk>
-                </configuration>
             </plugin>
         </plugins>
     </reporting>
