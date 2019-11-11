@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="28" author="litvinse" dbms="postgresql">
+        <comment>Do not modify access_latency by encp</comment>
+
+        <createProcedure>
+          DROP TRIGGER IF EXISTS tgr_enstore_location ON t_level_4;
+
+          CREATE OR REPLACE FUNCTION f_enstorelevel2locationinfo() RETURNS TRIGGER
+          AS $$
+          DECLARE
+            l_entries text[];
+                location text;
+            file_data varchar;
+          BEGIN
+            IF (TG_OP = 'INSERT') THEN
+                  location := f_enstore2uri(encode(NEW.ifiledata,'escape'));
+              IF location IS NULL THEN
+                -- encp only creates empty layer 4 file
+                -- so NEW.ifiledata is null
+                INSERT INTO t_locationinfo (inumber, itype, ilocation, ipriority, iatime, ictime, istate)
+                    VALUES (NEW.inumber,0,'enstore:',10,NOW(),NOW(),1);
+                INSERT INTO t_storageinfo
+               VALUES (NEW.inumber,'enstore','enstore','enstore');
+              ELSE
+                    l_entries = string_to_array(encode(NEW.ifiledata,'escape'), E'\n');
+                INSERT INTO t_locationinfo (inumber, itype, ilocation, ipriority, iatime, ictime, istate)
+                    VALUES (NEW.inumber,0,location,10,NOW(),NOW(),1);
+                INSERT INTO t_storageinfo
+               VALUES (NEW.inumber,'enstore','enstore',l_entries[4]);
+                  END IF;
+                   --
+                   -- we assume all files coming through level4 to be CUSTODIAL
+                   --
+                   -- the block below is needed for files written directly by encp
+                   --
+              BEGIN
+                    UPDATE t_inodes SET iretention_policy = 0 WHERE inumber = NEW.inumber;
+              END;
+            ELSEIF (TG_OP = 'UPDATE')  THEN
+              file_data := encode(NEW.ifiledata, 'escape');
+                  IF ( file_data = E'\n') THEN
+                UPDATE t_locationinfo SET ilocation = file_data
+                      WHERE inumber = NEW.inumber and itype=0;
+                  ELSE
+                location := f_enstore2uri(file_data);
+                    IF location IS NOT NULL THEN
+                  UPDATE t_locationinfo
+                SET ilocation = f_enstore2uri(file_data)
+                        WHERE inumber = NEW.inumber and itype=0;
+                      l_entries = string_to_array(file_data, E'\n');
+                  UPDATE t_storageinfo SET istoragesubgroup=l_entries[4]
+                    WHERE  inumber = NEW.inumber;
+                    END IF;
+                  END IF;
+                END IF;
+                RETURN NEW;
+              END;
+          $$
+          LANGUAGE plpgsql;
+          CREATE TRIGGER tgr_enstore_location BEFORE INSERT OR UPDATE ON t_level_4
+            FOR EACH ROW EXECUTE PROCEDURE f_enstorelevel2locationinfo();
+        </createProcedure>
+        <rollback />
+    </changeSet>
+</databaseChangeLog>
