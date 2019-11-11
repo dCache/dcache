@@ -1237,6 +1237,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
+                    <!-- Remember to update version in
+                         modules/logback-test-config/pom.xml when
+                         upgrading -->
                     <version>3.0.0-M2</version>
                 </plugin>
             </plugins>
