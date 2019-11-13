@@ -81,7 +81,7 @@
              when upgrading logback. -->
         <version.logback>1.2.3</version.logback>
         <version.logback.contrib>0.1.5</version.logback.contrib>
-        <version.jackson.databind>2.9.10</version.jackson.databind>
+        <version.jackson.databind>2.9.10.1</version.jackson.databind>
         <version.jackson.annotations>2.9.10</version.jackson.annotations>
         <version.jackson.core>2.9.10</version.jackson.core>
         <version.jna>5.4.0</version.jna>
