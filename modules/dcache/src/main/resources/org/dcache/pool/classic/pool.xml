@@ -553,7 +553,8 @@
       <task:scheduled ref="healthcheck" method="run" fixed-delay="60000"/>
     </task:scheduled-tasks>
 
-    <task:scheduler id="healthcheck-scheduler"/>
+    <!-- Instead of <task:scheduler id="healthcheck-scheduler"/> -->
+    <bean id="healthcheck-scheduler" class="org.dcache.util.CDCThreadPoolTaskScheduler"/>
   </beans>
 
   <beans profile="backend-ceph">
