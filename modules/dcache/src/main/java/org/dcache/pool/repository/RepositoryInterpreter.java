@@ -8,7 +8,9 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.LongFunction;
 import java.util.regex.Pattern;
 
 import diskCacheV111.util.AccessLatency;
@@ -19,7 +21,6 @@ import diskCacheV111.util.RetentionPolicy;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.CommandException;
-import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
@@ -27,6 +28,7 @@ import dmg.util.command.Option;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.ByteUnit;
+import org.dcache.util.ColumnWriter;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
@@ -34,6 +36,8 @@ import static java.util.stream.Collectors.joining;
 import static org.dcache.util.ByteUnit.*;
 import static org.dcache.util.ByteUnits.jedecPrefix;
 import static dmg.util.CommandException.checkCommand;
+import static org.dcache.util.ByteUnit.Type.BINARY;
+import static org.dcache.util.Strings.toThreeSigFig;
 
 public class RepositoryInterpreter
     implements CellCommandListener
@@ -211,12 +215,12 @@ public class RepositoryInterpreter
         @Option(name = "storage", metaVar = "GLOB", usage = "Limit to replicas with matching storage class.")
         Glob si;
 
-        @Option(name = "s", valueSpec = "[k|m|g|t]", values = { "k", "m", "g", "t", "" },
-                usage = "Output per storage class statistics instead. Optionally use KiB, MiB, " +
+        @Option(name = "s", valueSpec = "[b|k|m|g|t]", values = { "b", "k", "m", "g", "t", "" },
+                usage = "Output per storage class statistics instead. Optionally expressing values in units: B, KiB, MiB, " +
                         "GiB, or TiB.")
         String stat;
 
-        @Option(name = "sum", usage = "Include totals for all storage classes when used with -s or -binary.")
+        @Option(name = "sum", usage = "Include storage summary when used with -s or -binary.")
         boolean sum;
 
         @Option(name = "binary", usage = "Return statistics in binary format instead.")
@@ -230,7 +234,15 @@ public class RepositoryInterpreter
             } else if (binary) {
                 return listBinary();
             } else if (stat != null) {
-                return listStatistics(jedecPrefix().parse(stat.toUpperCase()).orElse(BYTES));
+                Optional<ByteUnit> units;
+                if (stat.equals("")) {
+                    units = Optional.empty();
+                } else {
+                    units = stat.equals("b")
+                            ? Optional.of(BYTES)
+                            : jedecPrefix().parse(stat.toUpperCase());
+                }
+                return listStatistics(units);
             } else {
                 return listAll();
             }
@@ -286,31 +298,51 @@ public class RepositoryInterpreter
                     .toArray(Object[]::new);
         }
 
-        private Serializable listStatistics(ByteUnit unit)
+        private Serializable listStatistics(Optional<ByteUnit> unitsArg)
         {
             Map<String, long[]> stats = getStatistics(sum);
-            StringBuilder sb = new StringBuilder();
-            stats.forEach((sc, counter) -> {
-                sb.append(Formats.field(sc, 24, Formats.LEFT)).
-                        append("  ").
-                        append(Formats.field(String.valueOf(unit.convert(counter[0], BYTES)), 10, Formats.RIGHT)).
-                        append("  ").
-                        append(Formats.field(String.valueOf(counter[1]), 8, Formats.RIGHT)).
-                        append("  ").
-                        append(Formats.field(String.valueOf(unit.convert(counter[2], BYTES)), 10, Formats.RIGHT)).
-                        append("  ").
-                        append(Formats.field(String.valueOf(counter[3]), 8, Formats.RIGHT)).
-                        append("  ").
-                        append(Formats.field(String.valueOf(unit.convert(counter[4], BYTES)), 10, Formats.RIGHT)).
-                        append("  ").
-                        append(Formats.field(String.valueOf(counter[5]), 8, Formats.RIGHT)).
-                        append("  ").
-                        append(Formats.field(String.valueOf(unit.convert(counter[6], BYTES)), 10, Formats.RIGHT)).
-                        append("  ").
-                        append(Formats.field(String.valueOf(counter[7]), 8, Formats.RIGHT)).
-                        append("\n");
-            });
-            return sb.toString();
+
+            Optional<String> sumLine = stats.entrySet().stream()
+                    .filter(e -> e.getKey().equals("total"))
+                    .map(Map.Entry::getValue)
+                    .findAny()
+                    .map(c -> {
+                                LongFunction<String> toString = unitsArg.map(u -> {
+                                            LongFunction<String> s;
+                                            if (u == BYTES) {
+                                                s = Long::toString;
+                                            } else {
+                                                s = v -> toThreeSigFig(u.convert((double)v, BYTES), 1024d);
+                                            }
+                                            return s;
+                                        }).orElse(org.dcache.util.Strings::describeSize);
+
+                                return "POOL SIZES: total: " + toString.apply(c[0])
+                                        + ", free: " + toString.apply(c[1])
+                                        + ", other: " + toString.apply(c[2]);
+                            });
+
+            ColumnWriter table = new ColumnWriter()
+                    .headersInColumns()
+                    .header("Storage class").left("class")
+                    .space().header("Total: size").bytes("totalSize", unitsArg, BINARY).header(",").fixed(" ").space().header("files").right("totalFiles").header(";").fixed(" ")
+                    .space().space().header("Precious: size").bytes("preciousSize", unitsArg, BINARY).header(",").fixed(" ").space().header("files").right("preciousFile").header(";").fixed(" ")
+                    .space().space().header("Sticky: size").bytes("stickySize", unitsArg, BINARY).header(",").fixed(" ").space().header("files").right("stickyFile").header(";").fixed(" ")
+                    .space().space().header("others: size").bytes("otherSize", unitsArg, BINARY).header(",").fixed(" ").space().header("files").right("otherFiles");
+
+            stats.entrySet().stream()
+                    .filter(e -> !e.getKey().equals("total"))
+                    .forEach(e -> {
+                        long[] counter = e.getValue();
+                        table.row()
+                                .value("class", e.getKey())
+                                .value("totalSize", counter[0]).value("totalFiles", counter[1])
+                                .value("preciousSize", counter[2]).value("preciousFiles", counter[3])
+                                .value("stickySize", counter[4]).value("stickyFiles", counter[5])
+                                .value("otherSize", counter[6]).value("otherFiles", counter[7]);
+                    });
+
+            return sumLine.map(s -> table + "\n\n" + s).orElse(table.toString());
         }
 
         private Serializable listById(PnfsId[] pnfsIds) throws CacheException, InterruptedException
