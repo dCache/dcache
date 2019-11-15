@@ -175,7 +175,7 @@ public class ColumnWriter
                 int headerStart;
                 headerStart = columnEnd + spaces.get(i)
                         + columns.get(i).headerIndentation(header.length(), widths.get(i));
-                if (line.length() >= headerStart) {
+                if (!headersAffectRowWidth && line.length() >= headerStart) {
                     int newHeaderStart = (line.length() > 0) ? line.length() + 1 : 0;
                     spaces.set(i, spaces.get(i) + newHeaderStart - headerStart);
                     headerStart = newHeaderStart;
