@@ -223,6 +223,7 @@ import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 import org.dcache.util.Args;
 import org.dcache.util.AsynchronousRedirectedTransfer;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCExecutorDecorator;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -4699,7 +4700,7 @@ public abstract class AbstractFtpDoorV1
                     .space().right("ncount")
                     .space().left("owner")
                     .space().left("group")
-                    .space().bytes("size")
+                    .space().bytes("size", ByteUnit.Type.DECIMAL)
                     .space().date("time", DateStyle.LS)
                     .space().left("name");
 

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +34,7 @@ import dmg.util.command.Option;
 
 import org.dcache.auth.FQAN;
 import org.dcache.util.ByteSizeParser;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.SqlGlob;
@@ -286,15 +288,18 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 linkgroups.whereNameMatches(name);
             }
 
+            Optional<ByteUnit> displayUnit = humanReadable
+                    ? Optional.empty()
+                    : Optional.of(ByteUnit.BYTES);
+
             ColumnWriter writer = new ColumnWriter()
-                    .abbreviateBytes(humanReadable)
                     .header("FLAGS").fixed("-").left("output").left("replica").left("custodial").fixed(":").left("nearline").left("online")
                     .space().header("CNT").right("spaces")
-                    .space().header("RESVD").bytes("reserved")
+                    .space().header("RESVD").bytes("reserved", displayUnit, ByteUnit.Type.DECIMAL)
                     .fixed(" + ")
-                    .header("AVAIL").bytes("available")
+                    .header("AVAIL").bytes("available", displayUnit, ByteUnit.Type.DECIMAL)
                     .fixed(" = ")
-                    .header("FREE").bytes("free")
+                    .header("FREE").bytes("free", displayUnit, ByteUnit.Type.DECIMAL)
                     .space().header("UPDATED").date("updated")
                     .space().header("NAME").left("name");
 
@@ -394,8 +399,10 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Override
         public String executeInTransaction() throws DataAccessException
         {
+            Optional<ByteUnit> displayUnit = humanReadable
+                    ? Optional.empty()
+                    : Optional.of(ByteUnit.BYTES);
             ColumnWriter writer = new ColumnWriter()
-                    .abbreviateBytes(humanReadable)
                     .header("TOKEN").right("token");
             if (all || verbose || states != null && states.length > 0 || pattern != null) {
                 writer.space().header("S").left("status");
@@ -409,10 +416,10 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             if (verbose || owner != null) {
                 writer.space().header("OWNER").left("owner");
             }
-            writer.space().header("ALLO").bytes("allocated")
-                    .fixed(" + ").header("USED").bytes("used")
-                    .fixed(" + ").header("FREE").bytes("free")
-                    .fixed(" = ").header("SIZE").bytes("size");
+            writer.space().header("ALLO").bytes("allocated", displayUnit, ByteUnit.Type.DECIMAL)
+                    .fixed(" + ").header("USED").bytes("used", displayUnit, ByteUnit.Type.DECIMAL)
+                    .fixed(" + ").header("FREE").bytes("free", displayUnit, ByteUnit.Type.DECIMAL)
+                    .fixed(" = ").header("SIZE").bytes("size", displayUnit, ByteUnit.Type.DECIMAL);
             if (verbose) {
                 writer.space().header("CREATED").date("created");
             }
@@ -574,12 +581,14 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Override
         public String executeInTransaction() throws DataAccessException, CacheException
         {
+            Optional<ByteUnit> displayUnit = humanReadable
+                    ? Optional.empty()
+                    : Optional.of(ByteUnit.BYTES);
             ColumnWriter writer = new ColumnWriter()
-                    .abbreviateBytes(humanReadable)
                     .header("STATE").left("state")
                     .space().header("TOKEN").right("token")
                     .space().header("OWNER").left("owner")
-                    .space().header("SIZE").bytes("size")
+                    .space().header("SIZE").bytes("size", displayUnit, ByteUnit.Type.DECIMAL)
                     .space().header("CREATED").date("created");
             writer.space().header("PNFSID").left("pnfsid");
             if (lookup) {

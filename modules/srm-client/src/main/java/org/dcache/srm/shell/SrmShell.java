@@ -76,6 +76,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -124,6 +125,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TSupportedTransferProtocol;
 import org.dcache.srm.v2_2.TUserPermission;
 import org.dcache.util.Args;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.ColumnWriter.DateStyle;
 import org.dcache.util.Glob;
@@ -1135,13 +1137,15 @@ public class SrmShell extends ShellApplication
         @Override
         protected ColumnWriter buildColumnWriter()
         {
+            Optional<ByteUnit> displayUnit = abbrev
+                    ? Optional.empty()
+                    : Optional.of(ByteUnit.BYTES);
             return new ColumnWriter()
-                    .abbreviateBytes(abbrev)
                     .left("mode")
                     .space().right("ncount")
                     .space().left("owner")
                     .space().left("group")
-                    .space().bytes("size")
+                    .space().bytes("size", displayUnit, ByteUnit.Type.DECIMAL)
                     .space().date("time", DateStyle.LS)
                     .space().left("name");
         }
@@ -1676,12 +1680,14 @@ public class SrmShell extends ShellApplication
         @Override
         protected ColumnWriter buildColumnWriter()
         {
+            Optional<ByteUnit> displayUnit = abbrev
+                    ? Optional.empty()
+                    : Optional.of(ByteUnit.BYTES);
             return new ColumnWriter()
-                    .abbreviateBytes(abbrev)
                     .left("mode")
                     .space().left("owner")
                     .space().left("group")
-                    .space().bytes("size")
+                    .space().bytes("size", displayUnit, ByteUnit.Type.DECIMAL)
                     .space().date("time", DateStyle.LS)
                     .space().left("name");
         }
