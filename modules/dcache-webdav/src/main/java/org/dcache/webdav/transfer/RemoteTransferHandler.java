@@ -644,6 +644,11 @@ public class RemoteTransferHandler implements CellMessageReceiver
                     PnfsHandler pnfs = new PnfsHandler(_pnfs, null);
                     pnfs.deletePnfsEntry(_pnfsId, _path.toString(),
                             EnumSet.of(FileType.REGULAR), EnumSet.noneOf(FileAttribute.class));
+                } catch (FileNotFoundCacheException e) {
+                    // This is OK: either a new upload has started or the user
+                    // has deleted the file some other way.
+                    LOGGER.debug("Failed to clear up after failed transfer: {}",
+                            e.getMessage());
                 } catch (CacheException e) {
                     LOGGER.warn("Failed to clear up after failed transfer: {}",
                             e.getMessage());
