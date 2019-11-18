@@ -29,7 +29,6 @@ import java.nio.channels.ClosedChannelException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
@@ -53,7 +52,6 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
-import org.dcache.util.Checksums;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.core.XrootdException;
@@ -79,7 +77,6 @@ import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
-import org.dcache.xrootd.tpc.XrootdTpcInfo.Status;
 import org.dcache.xrootd.util.ChecksumInfo;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
@@ -705,37 +702,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
         case kXR_Qcksum:
             try {
-                ChecksumInfo info = new ChecksumInfo(msg.getArgs());
-                Set<Checksum> checksums = _door.getChecksums(createFullPath(info.getPath()),
+                ChecksumInfo info = new ChecksumInfo(msg.getPath(),
+                                                     msg.getOpaque());
+                Set<Checksum> checksums = _door.getChecksums(createFullPath(msg.getPath()),
                                                              msg.getSubject(),
                                                              _authz);
-                if (!checksums.isEmpty()) {
-                    Optional<String> type = info.getType();
-                    Optional<Checksum> result;
-
-                    if (type.isPresent()) {
-                        result = checksums.stream()
-                                          .filter((c) -> type.get()
-                                                             .equalsIgnoreCase(c.getType()
-                                                                                .getName()))
-                                          .findFirst();
-                    } else {
-                        result = Optional.of(Checksums.preferrredOrder().min(checksums));
-                    }
-
-                    /**
-                     * xrdcp expects lower case names for checksum algorithms
-                     * https://github.com/xrootd/xrootd/issues/459
-                     * TODO: remove toLowerCase() call when above issue is addressed
-                     */
-                    if (result.isPresent()) {
-                        Checksum checksum = result.get();
-                        return new QueryResponse(msg,checksum.getType().getName()
-                                                             .toLowerCase()
-                                                             + " "
-                                                             + checksum.getValue());
-                    }
-                }
+                return selectChecksum(info, checksums, msg);
             } catch (FileNotFoundCacheException e) {
                 throw new XrootdException(kXR_NotFound, e.getMessage());
             } catch (PermissionDeniedCacheException e) {
@@ -743,8 +715,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             } catch (CacheException e) {
                 throw new XrootdException(kXR_ServerError, e.getMessage());
             }
-            throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
-
         default:
             return unsupported(ctx, msg);
         }
