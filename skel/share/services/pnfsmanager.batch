@@ -12,6 +12,7 @@ check -strong pnfsmanager.default-access-latency
 check pnfsmanager.destination.flush-notification
 check pnfsmanager.destination.cache-notification
 check pnfsmanager.destination.cancel-upload-notification
+check pnfsmanager.destination.file-attributes-notification
 check -strong pnfsmanager.limits.threads
 check -strong pnfsmanager.limits.list-threads
 check -strong pnfsmanager.limits.list-chunk-size
