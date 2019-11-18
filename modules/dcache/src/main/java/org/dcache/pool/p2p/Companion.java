@@ -31,11 +31,12 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
+
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
@@ -178,9 +179,7 @@ class Companion
               CacheFileAvailable callback,
               boolean forceSourceMode,
               Long atime,
-              SSLContext sslContext
-              )
-    {
+              Supplier<SSLContext> getContextIfNeeded) {
         _fsm = new CompanionContext(this);
 
         _executor = executor;
@@ -194,7 +193,9 @@ class Companion
         _destinationPoolCellname = checkNotNull(destinationPoolCellname, "Destination pool name is unknown.");
         _destinationPoolCellDomainName = checkNotNull(destinationPoolCellDomainName, "Destination domain name is unknown.");
         _fileAttributes = checkNotNull(fileAttributes, "File attributes is missing.");
-        _sslContext = sslContext;
+
+        _sslContext = getContextIfNeeded.get();
+
 
         if (!_fileAttributes.isDefined(FileAttribute.PNFSID)) {
             throw new IllegalArgumentException("PNFSID is required, got " + _fileAttributes.getDefinedAttributes());

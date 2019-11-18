@@ -665,20 +665,34 @@
     </beans>
 
 
-    <beans profile="p2phttps-false">
+    <beans profile="p2phttps-NEVER">
 
         <bean id="p2p" parent="p2p-parent">
             <description>Pool to pool transfer manager</description>
+            <property name="tlsMode" value="${pool.enable.encrypted.p2p-transfers}"/>
+
         </bean>
     </beans>
 
 
-    <beans profile="p2phttps-true">
+    <beans profile="p2phttps-ALWAYS">
 
         <bean id="p2p" parent="p2p-parent">
             <description>Pool to pool transfer manager with encryption</description>
             <property name="sslContext" ref="ssl-context-builder"/>
+            <property name="tlsMode" value="${pool.enable.encrypted.p2p-transfers}"/>
         </bean>
+
+    </beans>
+
+    <beans profile="p2phttps-CROSSZONES">
+
+        <bean id="p2p" parent="p2p-parent">
+            <description>Pool to pool transfer manager with encryption</description>
+            <property name="sslContext" ref="ssl-context-builder"/>
+            <property name="tlsMode" value="${pool.enable.encrypted.p2p-transfers}"/>
+        </bean>
+
     </beans>
 
     <beans profile="httpsredirect-false">

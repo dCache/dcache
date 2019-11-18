@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
@@ -38,6 +39,13 @@ import org.dcache.pool.p2p.json.P2PData;
 
 import static java.util.stream.Collectors.joining;
 
+ enum TlsMode {
+    NEVER,
+    ALWAYS,
+    CROSSZONES
+
+}
+
 public class P2PClient
     extends AbstractCellComponent
     implements CellMessageReceiver, CellCommandListener, CellSetupProvider, CellInfoProvider,
@@ -51,9 +59,16 @@ public class P2PClient
     private CellStub _pnfs;
     private CellStub _pool;
     private InetAddress _interface;
-
+    private TlsMode _p2pTlsMode;
 
     private SSLContext _sslContext;
+
+    // TODO: cross zone behaves as ALYWAYS as long as we can't distinct zones
+    private Supplier<SSLContext> getContextIfNeeded = () -> {
+
+        return _p2pTlsMode == TlsMode.NEVER ? null :  _sslContext;
+    };
+
 
     public synchronized void setExecutor(ScheduledExecutorService executor)
     {
@@ -90,7 +105,11 @@ public class P2PClient
         _sslContext = sslContext;
     }
 
+    public synchronized void setTlsMode(TlsMode p2pTlslMode)
+    {
+        _p2pTlsMode = p2pTlslMode;
 
+    }
 
     public synchronized void messageArrived(DoorTransferFinishedMessage message)
     {
@@ -256,7 +275,8 @@ public class P2PClient
                         targetState, stickyRecords,
                         cb, forceSourceMode,
                         atime,
-                        _sslContext);
+                        getContextIfNeeded
+                        );
 
         int id = addCompanion(companion);
         cb.setId(id);
