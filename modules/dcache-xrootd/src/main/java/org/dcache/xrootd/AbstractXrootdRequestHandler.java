@@ -21,6 +21,11 @@ import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+import java.util.Set;
+
+import org.dcache.util.Checksum;
+import org.dcache.util.Checksums;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdRequestHandler;
 import org.dcache.xrootd.protocol.XrootdProtocol;
@@ -28,10 +33,15 @@ import org.dcache.xrootd.protocol.messages.LocateRequest;
 import org.dcache.xrootd.protocol.messages.LocateResponse;
 import org.dcache.xrootd.protocol.messages.ProtocolRequest;
 import org.dcache.xrootd.protocol.messages.ProtocolResponse;
+import org.dcache.xrootd.protocol.messages.QueryRequest;
+import org.dcache.xrootd.protocol.messages.QueryResponse;
 import org.dcache.xrootd.protocol.messages.SetRequest;
 import org.dcache.xrootd.protocol.messages.SetResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.security.SigningPolicy;
+import org.dcache.xrootd.util.ChecksumInfo;
+
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Unsupported;
 
 public class AbstractXrootdRequestHandler extends XrootdRequestHandler
 {
@@ -76,4 +86,43 @@ public class AbstractXrootdRequestHandler extends XrootdRequestHandler
         }
         return new SetResponse(request, "");
     }
+
+    protected QueryResponse selectChecksum(ChecksumInfo info,
+                                           Set<Checksum> checksums,
+                                           QueryRequest msg) throws XrootdException
+    {
+        if (!checksums.isEmpty()) {
+            /**
+             * xrdcp expects lower case names for checksum algorithms
+             * https://github.com/xrootd/xrootd/issues/459
+             * TODO: remove toLowerCase() call when above issue is addressed
+             */
+            Optional<String> type = info.getType();
+            if (type.isPresent()) {
+                Optional<Checksum> result = checksums.stream()
+                                                     .filter((c) -> type.get()
+                                                                        .equalsIgnoreCase(c.getType()
+                                                                                           .getName()))
+                                                     .findFirst();
+                if (result.isPresent()) {
+                    Checksum checksum = result.get();
+                    return new QueryResponse(msg,checksum.getType()
+                                                              .getName()
+                                                              .toLowerCase()
+                                                + " " + checksum.getValue());
+                }
+                throw new XrootdException(kXR_Unsupported, "Checksum exists, "
+                                + "but not of the requested type.");
+            }
+
+            Checksum checksum = Checksums.preferrredOrder().min(checksums);
+            return new QueryResponse(msg,checksum.getType()
+                                                      .getName()
+                                                      .toLowerCase()
+                                            + " " + checksum.getValue());
+        }
+        throw new XrootdException(kXR_Unsupported, "No checksum available "
+                        + "for this file.");
+    }
+
 }
