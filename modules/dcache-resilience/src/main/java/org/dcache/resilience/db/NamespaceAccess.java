@@ -95,6 +95,7 @@ public interface NamespaceAccess {
                     = Collections.unmodifiableSet(
                     EnumSet.of(FileAttribute.ACCESS_TIME,
                                FileAttribute.RETENTION_POLICY,
+                               FileAttribute.ACCESS_LATENCY,
                                FileAttribute.LOCATIONS));
 
     /**
@@ -140,7 +141,7 @@ public interface NamespaceAccess {
      * <p>Requests attributes defined by #REFRESHABLE_ATTRIBUTES and
      *      resets them on the passed in attributes.</p>
      */
-    void refreshLocations(FileAttributes attributes) throws CacheException;
+    void refreshAttributes(FileAttributes attributes) throws CacheException;
 
     void setConnectionPool(DataSource connectionPool);
 

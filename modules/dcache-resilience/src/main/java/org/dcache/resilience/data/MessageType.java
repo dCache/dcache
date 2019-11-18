@@ -68,6 +68,7 @@ public enum MessageType {
     CORRUPT_FILE,
     CLEAR_CACHE_LOCATION,
     ADD_CACHE_LOCATION,
+    QOS_MODIFIED,
     POOL_STATUS_DOWN,
     POOL_STATUS_UP
 }

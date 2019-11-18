@@ -229,7 +229,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     }
 
     @Override
-    public void refreshLocations(FileAttributes attributes)
+    public void refreshAttributes(FileAttributes attributes)
                     throws CacheException {
         FileAttributes refreshed =
                         namespace.getFileAttributes(Subjects.ROOT,
@@ -237,6 +237,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                                                     REFRESHABLE_ATTRIBUTES);
         attributes.setLocations(refreshed.getLocations());
         attributes.setRetentionPolicy(refreshed.getRetentionPolicy());
+        attributes.setAccessLatency(refreshed.getAccessLatency());
         attributes.setAccessTime(refreshed.getAccessTime());
     }
 

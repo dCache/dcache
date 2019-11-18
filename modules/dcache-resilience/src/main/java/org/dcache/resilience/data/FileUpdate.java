@@ -122,12 +122,6 @@ public final class FileUpdate {
 
             LOGGER.trace("Got required attributes for {}.", pnfsId);
 
-            if (!attributes.getAccessLatency().equals(AccessLatency.ONLINE)) {
-                LOGGER.trace("AccessLatency of {} is not ONLINE; ignoring ...",
-                             pnfsId);
-                return null;
-            }
-
             if (attributes.getLocations().isEmpty()) {
                 if (messageType == CLEAR_CACHE_LOCATION) {
                     LOGGER.trace("ClearCacheLocationMessage for {}; "
@@ -158,6 +152,23 @@ public final class FileUpdate {
                  */
                 LOGGER.trace("{} has no locations yet.", pnfsId);
                 Collection<String> singleLoc = new ArrayList<>();
+
+                /*
+                 *  Pool can now be <code>null</code>
+                 *  but only if message type is QOS_MODIFIED.
+                 */
+                if (pool == null ) {
+                   if (messageType != QOS_MODIFIED) {
+                       throw new CacheException(
+                                       CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                       String.format("resilience File update for %s, "
+                                                                     + "messageType %s, "
+                                                                     + "has no pool location!",
+                                                     pnfsId, messageType));
+                   }
+                   return null;
+                }
+
                 singleLoc.add(pool);
                 attributes.setLocations(singleLoc);
             }
@@ -175,9 +186,11 @@ public final class FileUpdate {
     }
 
     public final PnfsId  pnfsId;
-    public final String  pool;
     public final MessageType     type;
+
     private final boolean isFullScan;
+
+    public String          pool;
 
     private Integer        group;
     private FileAttributes attributes;
@@ -208,7 +221,7 @@ public final class FileUpdate {
      * @param pnfsId of the file.
      * @param pool   either the source of the message, or the pool being scanned.
      * @param type   CORRUPT_FILE, CLEAR_CACHE_LOCATION, ADD_CACHE_LOCATION,
-     *               POOL_STATUS_DOWN, or POOL_STATUS_UP.
+     *               QOS_MODIFIED, POOL_STATUS_DOWN, or POOL_STATUS_UP.
      * @param group  of the pool, if action is not NONE or MODIFY
      *               (can be <code>null</code>).
      * @param full   if true, set the op count to the computed difference
@@ -304,7 +317,7 @@ public final class FileUpdate {
          *  If so, the operation count should be non-null.
          */
         if (fromReload) {
-            LOGGER.debug("validateForAction, data was reloaded, restoredCount {}",
+            LOGGER.trace("validateForAction, data was reloaded, restoredCount {}",
                          count);
             return count > 0;
         }
@@ -318,6 +331,9 @@ public final class FileUpdate {
          *  having no requirement set.
          */
         if (!constraints.isResilient()) {
+            LOGGER.trace("validateForAction, storage unit was not resilient: "
+                                         + "required = {}",
+                         constraints.getRequired());
             return false;
         }
 
@@ -331,6 +347,7 @@ public final class FileUpdate {
          * the operation is a NOP.
          */
         if (locations.isEmpty()) {
+            LOGGER.trace("validateForAction, no file locations for {}.", pnfsId);
             return false;
         }
 
@@ -374,6 +391,9 @@ public final class FileUpdate {
          */
         try {
             verified = verifier.verifyLocations(pnfsId, locations, pools);
+            LOGGER.trace("validateForAction, verified locations for {}: {}.",
+                         pnfsId,
+                         locations);
         } catch (InterruptedException e) {
             LOGGER.warn("validateForAction: replica verification for "
                                         + "{} was interrupted; "
@@ -395,6 +415,19 @@ public final class FileUpdate {
          */
         Set<String> valid = poolInfoMap.getReadableLocations(locations);
         valid = verifier.areSticky(valid, verified);
+
+        /*
+         * If the access latency is NEARLINE, set required to 0.
+         * We may need to cache all sticky replicas because
+         * of a QoS transition.  AccessLatency had better be a defined
+         * attribute, or something is wrong.
+         */
+        if (AccessLatency.NEARLINE.equals(attributes.getAccessLatency())) {
+            LOGGER.trace("validateForAction, access latency is NEARLINE, "
+                                         + "setting count for {} to 0.",
+                         pnfsId);
+            required = 0;
+        }
 
         count = required - valid.size();
 

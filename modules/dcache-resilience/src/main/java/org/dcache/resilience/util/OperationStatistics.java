@@ -132,6 +132,7 @@ public final class OperationStatistics {
                     MessageType.CLEAR_CACHE_LOCATION.name(),
                     MessageType.CORRUPT_FILE.name(),
                     MessageType.ADD_CACHE_LOCATION.name(),
+                    MessageType.QOS_MODIFIED.name(),
                     MessageType.POOL_STATUS_DOWN.name(),
                     MessageType.POOL_STATUS_UP.name() };
 

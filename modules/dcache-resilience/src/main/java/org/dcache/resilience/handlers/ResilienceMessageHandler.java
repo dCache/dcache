@@ -82,6 +82,7 @@ import org.dcache.resilience.util.MessageGuard;
 import org.dcache.resilience.util.MessageGuard.Status;
 import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.vehicles.CorruptFileMessage;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 
 /**
  * <p>Processes external messages in order to trigger file operations.
@@ -173,6 +174,16 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
         handleStagingRetry(reply);
     }
 
+    public void messageArrived(PnfsSetFileAttributes message) {
+        ACTIVITY_LOGGER.info("Received notice that qos for file {} has changed.",
+                             message.getPnfsId());
+        if (messageGuard.getStatus("FileQoSMessage", message)
+                        == Status.DISABLED) {
+            return;
+        }
+        handleQoSModification(message);
+    }
+
     public void processBackloggedMessage(Message message) {
         if (message instanceof CorruptFileMessage) {
             handleBrokenFile((CorruptFileMessage) message);
@@ -182,6 +193,8 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
             handleAddCacheLocation((PnfsAddCacheLocationMessage) message);
         } else if (message instanceof PoolMgrSelectReadPoolMsg) {
             handleStagingRetry((PoolMgrSelectReadPoolMsg)message);
+        } else if (message instanceof PnfsSetFileAttributes) {
+            handleQoSModification((PnfsSetFileAttributes)message);
         }
     }
 
@@ -228,6 +241,16 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
                                           message.getPoolName(),
                                           MessageType.CLEAR_CACHE_LOCATION,
                                           false));
+    }
+
+    private void handleQoSModification(PnfsSetFileAttributes message) {
+        counters.incrementMessage(MessageType.QOS_MODIFIED.name());
+        /*
+         * It is actually unnecessary to inspect the AL/RP at this point,
+         * as we will refresh during processing.
+         */
+        updatePnfsLocation(new FileUpdate(message.getPnfsId(), null,
+                                          MessageType.QOS_MODIFIED, true));
     }
 
     private void handleStagingRetry(PoolMgrSelectReadPoolMsg reply) {

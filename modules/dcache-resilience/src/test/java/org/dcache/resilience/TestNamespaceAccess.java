@@ -134,7 +134,7 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
     }
 
     @Override
-    public void refreshLocations(FileAttributes attributes)
+    public void refreshAttributes(FileAttributes attributes)
                     throws CacheException {
         FileAttributes stored = fileAttributes.get(attributes.getPnfsId());
         if (stored != null) {

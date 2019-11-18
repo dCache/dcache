@@ -81,6 +81,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -124,6 +125,8 @@ import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
+
+import static org.dcache.resilience.data.MessageType.QOS_MODIFIED;
 
 /**
  * <p>Principal resilience logic component.</p>
@@ -309,19 +312,25 @@ public class FileOperationHandler implements CellMessageSender {
                     throws CacheException {
         LOGGER.trace("handleLocationUpdate {}", data);
 
-        if (data.pool == null) {
-            LOGGER.debug("Update of {} with no location; file has likely "
-                                         + "been deleted from namespace.",
-                         data.pnfsId);
-            return false;
-        }
+        /*
+         * Allow unverified pool through for QOS_MODIFIED in order to
+         * fetch file attributes.
+         */
+        if (QOS_MODIFIED != data.type) {
+            if (data.pool == null) {
+                LOGGER.debug("Update of {} with no location; file has likely "
+                                             + "been deleted from namespace.",
+                             data.pnfsId);
+                return false;
+            }
 
-        if (!data.verifyPoolGroup(poolInfoMap)) {
-            LOGGER.debug("Handle location update ({}, {}, {}; "
-                                         + "pool is not a member "
-                                         + "of a resilient group.",
-                         data.pnfsId, data.pool, data.getGroup());
-            return false;
+            if (!data.verifyPoolGroup(poolInfoMap)) {
+                LOGGER.debug("Handle location update ({}, {}, {}; "
+                                             + "pool is not a member "
+                                             + "of a resilient group.",
+                             data.pnfsId, data.pool, data.getGroup());
+                return false;
+            }
         }
 
         /*
@@ -333,6 +342,24 @@ public class FileOperationHandler implements CellMessageSender {
              * clear cache location message.
              */
             return false;
+        }
+
+        /*
+         * Now set the pool for QOS_MODIFIED.
+         */
+        if (QOS_MODIFIED == data.type) {
+            /*
+             *  Choose the first location.
+             *  we know by this point that locations cannot be empty.
+             */
+            data.pool = data.getAttributes().getLocations().iterator().next();
+            if (!data.verifyPoolGroup(poolInfoMap)) {
+                LOGGER.debug("QOS_MODIFIED update ({}, {}, {}; "
+                                             + "pool is not a member "
+                                             + "of a resilient group.",
+                             data.pnfsId, data.pool, data.getGroup());
+                return false;
+            }
         }
 
         /*
@@ -837,7 +864,7 @@ public class FileOperationHandler implements CellMessageSender {
          *  because they require a call to the database.
          */
         try {
-            namespace.refreshLocations(attributes);
+            namespace.refreshAttributes(attributes);
         } catch (CacheException e) {
             CacheException exception = CacheExceptionUtils.getCacheException(e.getRc(),
                             FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
@@ -847,8 +874,13 @@ public class FileOperationHandler implements CellMessageSender {
         }
 
         Collection<String> locations = attributes.getLocations();
-        LOGGER.trace("handleVerification {}, locations from namespace: {}",
-                     pnfsId, locations);
+        LOGGER.trace("handleVerification {}, refreshed access latency {}, "
+                                     + "retention policy {}; "
+                                     + "locations from namespace {}",
+                     pnfsId,
+                     attributes.getAccessLatency(),
+                     attributes.getRetentionPolicy(),
+                     locations);
 
         /*
          * Somehow, all the cache locations for this file have been removed
@@ -942,19 +974,6 @@ public class FileOperationHandler implements CellMessageSender {
         }
 
         /*
-         *  Find the locations in the namespace that are actually occupied.
-         *  This is an optimization so that we can choose a new pool from the
-         *  group without failing and retrying the migration with a new target.
-         *
-         *  In effect, this means eliminating the phantom locations from
-         *  the namespace.  We do this be adding back into the verified
-         *  locations the offline replica locations.
-         */
-        Set<String> occupied = Sets.union(exist,
-                                          Sets.difference(members,
-                                                          namespaceReadable));
-
-        /*
          *  While cached copies are excluded from the resilient count, we
          *  allow them to be included as readable sources.
          */
@@ -975,6 +994,29 @@ public class FileOperationHandler implements CellMessageSender {
         Set<String> sticky = verifier.areSticky(exist, responsesFromPools);
 
         /*
+         *  Check for NEARLINE.  If there are sticky replicas, make the first
+         *  one target and return REMOVE.
+         */
+        if (AccessLatency.NEARLINE.equals(attributes.getAccessLatency())) {
+
+            if (sticky.size() > 0) {
+                String target = sticky.iterator().next();
+                LOGGER.trace("handleVerification, {}, access latency is NEARLINE, "
+                                             + "updating operation with first "
+                                             + "sticky target to cache: {}",
+                             pnfsId, target);
+                fileOpMap.updateOperation(pnfsId, null, target);
+                return Type.REMOVE;
+            }
+
+            LOGGER.trace("handleVerification, {}, access latency is NEARLINE, "
+                                         + "but no sticky replicas:  responses {}",
+                         pnfsId, responsesFromPools);
+            completionHandler.taskCompleted(pnfsId);
+            return Type.VOID;
+        }
+
+        /*
          *  Tagging of the pools may have changed and/or the requirements on
          *  the storage class may have changed.  If this is the case,
          *  the files may need to be redistributed.  This begins by choosing
@@ -992,6 +1034,18 @@ public class FileOperationHandler implements CellMessageSender {
                                      + "valid replicas {}",
                         pnfsId, sticky);
 
+        /*
+         *  Find the locations in the namespace that are actually occupied.
+         *  This is an optimization so that we can choose a new pool from the
+         *  group without failing and retrying the migration with a new target.
+         *
+         *  In effect, this means eliminating the phantom locations from
+         *  the namespace.  We do this be adding back into the verified
+         *  locations the offline replica locations.
+         */
+        Set<String> occupied = Sets.union(exist,
+                                          Sets.difference(members,
+                                                          namespaceReadable));
         /*
          *  Find the non-sticky locations.
          *  Partition the sticky locations between usable and excluded.
