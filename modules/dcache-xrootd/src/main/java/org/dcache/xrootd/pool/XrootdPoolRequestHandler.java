@@ -46,8 +46,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.util.Checksum;
-import org.dcache.util.Checksums;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -85,6 +83,7 @@ import org.dcache.xrootd.protocol.messages.XrootdRequest;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.tpc.TpcWriteDescriptor;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
+import org.dcache.xrootd.util.ChecksumInfo;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
@@ -721,14 +720,12 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 s.append('\n');
             }
             return new QueryResponse(msg, s.toString());
-
         case kXR_Qcksum:
-            String args = msg.getArgs();
-            int pos = args.indexOf(OPAQUE_DELIMITER);
-            if (pos == -1) {
+            String opaque = msg.getOpaque();
+            if (opaque == null) {
                 return redirectToDoor(ctx, msg);
             }
-            UUID uuid = getUuid(getOpaqueMap(args.substring(pos + 1)));
+            UUID uuid = getUuid(getOpaqueMap(opaque));
             if (uuid == null) {
                 /* The spec isn't clear about whether the path includes the opaque information or not.
                  * Thus we cannot rely on there being a uuid and without the uuid we cannot lookup the
@@ -740,17 +737,12 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             if (attributes == null) {
                 return redirectToDoor(ctx, msg);
             }
-            if (attributes.isUndefined(FileAttribute.CHECKSUM) || attributes.getChecksums().isEmpty()) {
+            if (attributes.isUndefined(FileAttribute.CHECKSUM)) {
                 throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
             }
-            Checksum checksum = Checksums.preferrredOrder().min(attributes.getChecksums());
-            /**
-             * xrdcp expects lower case names for checksum algorithms
-             * https://github.com/xrootd/xrootd/issues/459
-             * TODO: remove toLowerCase() call when above issue is addressed
-             */
-            return new QueryResponse(msg, checksum.getType().getName().toLowerCase() + " " + checksum.getValue());
-
+            return selectChecksum(new ChecksumInfo(msg.getPath(), opaque),
+                                  attributes.getChecksums(),
+                                  msg);
         default:
             return unsupported(ctx, msg);
         }
