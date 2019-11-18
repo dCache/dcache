@@ -152,7 +152,7 @@ public class QosManagement {
             }
             else if (VOLATILE.equals(qosValue)) {
                 QoSMetadata qoSMetadata = new QoSMetadata("0", geographicPlacement, "100");
-                setBackendCapability(backendCapability, VOLATILE, Arrays.asList(DISK), qoSMetadata);
+                setBackendCapability(backendCapability, VOLATILE, Arrays.asList(DISK, TAPE, DISK_TAPE), qoSMetadata);
             }
             // The QoS is not known or supported.
             else {

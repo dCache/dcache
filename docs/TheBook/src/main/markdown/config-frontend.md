@@ -159,3 +159,16 @@ In order to get all the restores (stages) on a given pool, the REST path
 ```
 
 must be used.
+
+##### A Note on the RESTful resource for QoS transitions
+
+As of dCache 6.1, we have begun to integrate management of QoS with
+services such as PnfsManager and Resilience.  The Frontend resource
+has now been modified to send messages requesting ACCESS LATENCY
+and RETENTION POLICY changes to PnfsManager, which then broadcasts
+the resulting change, to which Resilience will respond.
+
+This is only a partial, first-step toward a full-blown QoS infrastructure,
+but at least allows Resilience to manage such transitions for resilient
+files.  For other files, the current mechanism remains (QoS state maintained
+by the Frontend resource).

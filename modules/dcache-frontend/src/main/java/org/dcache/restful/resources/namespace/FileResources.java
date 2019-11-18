@@ -38,16 +38,19 @@ import javax.ws.rs.core.Response;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.RetentionPolicy;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -69,8 +72,6 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
-import static diskCacheV111.util.FileLocality.NEARLINE;
-import static diskCacheV111.util.FileLocality.ONLINE_AND_NEARLINE;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
 /**
@@ -81,6 +82,12 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Path("/namespace")
 public class FileResources {
     private static final Logger LOG = LoggerFactory.getLogger(FileResources.class);
+
+    private static final Set<FileAttribute> QOS_ATTRIBUTES
+                    = Collections.unmodifiableSet
+                    (EnumSet.of(FileAttribute.PNFSID,
+                                FileAttribute.ACCESS_LATENCY,
+                                FileAttribute.RETENTION_POLICY));
 
     /*
     This "request" parameter is used to get fully qualified name of the client
@@ -274,7 +281,10 @@ public class FileResources {
             FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 
             // FIXME: which attributes do we actually need?
-            FileAttributes attributes = handler.getFileAttributes(path, EnumSet.allOf(FileAttribute.class));
+            FileAttributes attributes
+                            = handler.getFileAttributes(path, EnumSet.allOf(FileAttribute.class));
+            AccessLatency currentAccessLatency = attributes.getAccessLatency();
+            RetentionPolicy currentRetentionPolicy = attributes.getRetentionPolicy();
 
             switch (action) {
                 case "mkdir":
@@ -300,39 +310,109 @@ public class FileResources {
                     if (locality == FileLocality.NONE) {
                         throw new BadRequestException("Transition for directories not supported");
                     }
+                    LOG.debug("AccessLatency {}, Retention Policy {}.",
+                              currentAccessLatency, currentRetentionPolicy);
 
                     MigrationPolicyEngine migrationPolicyEngine =
                             new MigrationPolicyEngine(attributes, poolmanager, poolMonitor);
 
+                    FileAttributes modifiedAttr = new FileAttributes();
+
                     switch (targetQos) {
-                    case QosManagement.DISK_TAPE:
-                        if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
-                            migrationPolicyEngine.adjust();
-                        }
-                        if (!QosManagementNamespace.isPinnedForQoS(attributes, pinmanager)) {
-                            QosManagementNamespace.pinForQoS(request, attributes, pinmanager);
-                        }
-                        break;
-                    case QosManagement.DISK:
-                        switch (locality) {
-                        case ONLINE:
-                            // do nothing
+                        case QosManagement.DISK_TAPE:
+                            if (!currentRetentionPolicy.equals(
+                                            RetentionPolicy.CUSTODIAL)) {
+                                modifiedAttr.setRetentionPolicy(
+                                                RetentionPolicy.CUSTODIAL);
+                                migrationPolicyEngine.adjust();
+                            }
+
+                            if (!currentAccessLatency.equals(
+                                            AccessLatency.ONLINE)) {
+                                modifiedAttr.setAccessLatency(
+                                                AccessLatency.ONLINE);
+                            }
+
+                            // REVISIT when Resilience manages QoS for all files, remove
+                            if (!QosManagementNamespace.isPinnedForQoS(
+                                            attributes, pinmanager)) {
+                                QosManagementNamespace.pinForQoS(request,
+                                                                 attributes,
+                                                                 pinmanager);
+                            }
+
+                            break;
+                        case QosManagement.DISK:
+                            switch (locality) {
+                                case ONLINE:
+                                    /*
+                                     *  ONLINE locality may not denote ONLINE access latency.
+                                     *  ONLINE locality and NEARLINE access latency should
+                                     *  not translate to 'Disk' qos.
+                                     */
+                                    if (!currentAccessLatency.equals(
+                                                    AccessLatency.ONLINE)) {
+                                        modifiedAttr.setAccessLatency(
+                                                        AccessLatency.ONLINE);
+                                    }
+
+                                    // REVISIT when Resilience manages QoS for all files, remove
+                                    if (!QosManagementNamespace.isPinnedForQoS(
+                                                    attributes, pinmanager)) {
+                                        QosManagementNamespace.pinForQoS(request,
+                                                                         attributes,
+                                                                         pinmanager);
+                                    }
+
+                                    break;
+                                default:
+                                    if (currentRetentionPolicy.equals(
+                                                    RetentionPolicy.CUSTODIAL)) {
+                                        /*
+                                         *  Technically, to make the QoS semantics in
+                                         *  Chimera consistent, one would need to change this
+                                         *  to REPLICA, even though this would not trigger
+                                         *  deletion from tape.  It is probably best to
+                                         *  continue not supporting this transition.
+                                         */
+                                        throw new BadRequestException(
+                                                        "Unsupported QoS transition");
+                                    }
+                                    break;
+                            }
+                            break;
+                        case QosManagement.TAPE:
+                            if (!currentRetentionPolicy.equals(
+                                            RetentionPolicy.CUSTODIAL)) {
+                                modifiedAttr.setRetentionPolicy(
+                                                RetentionPolicy.CUSTODIAL);
+                                migrationPolicyEngine.adjust();
+                            }
+
+                            if (!currentAccessLatency.equals(
+                                            AccessLatency.NEARLINE)) {
+                                modifiedAttr.setAccessLatency(
+                                                AccessLatency.NEARLINE);
+                            }
+
+                            // REVISIT when Resilience manages QoS for all files, remove
+                            QosManagementNamespace.unpinForQoS(attributes,
+                                                               pinmanager);
+
                             break;
 
                         default:
-                            throw new BadRequestException("Unsupported QoS transition");
-                        }
-                        break;
-                    case QosManagement.TAPE:
-                        if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
-                            migrationPolicyEngine.adjust();
-                        }
-                        QosManagementNamespace.unpinForQoS(attributes, pinmanager);
-                        break;
-
-                    default:
-                        throw new BadRequestException("Unknown target QoS: " + targetQos);
+                            throw new BadRequestException(
+                                            "Unknown target QoS: " + targetQos);
                     }
+
+                    LOG.debug("modified attributes: {}", modifiedAttr);
+
+                    if (modifiedAttr.isDefined(FileAttribute.ACCESS_LATENCY) ||
+                                    modifiedAttr.isDefined(FileAttribute.RETENTION_POLICY)) {
+                        handler.setFileAttributes(path, modifiedAttr, QOS_ATTRIBUTES);
+                    }
+
                     break;
 
                 default:

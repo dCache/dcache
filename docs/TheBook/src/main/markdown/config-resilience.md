@@ -547,6 +547,17 @@ staging pools from which the staged-in replica is then to be p2p'd to a resilien
 pool group, and works normally in this case (i.e., provided the proper link
 selection preferences are set).
 
+## Handling of QoS Transitions for Resilient Files
+
+As of dCache 6.1, resilience also handles changes in ACCESS LATENCY for
+files that are in resilient pool groups and belong to a storage unit
+which has a non-null '-required' attribute.  This means, for instance, that
+a change from ONLINE CUSTODIAL to NEARLINE CUSTODIAL will remove the
+permanent pin on all disk copies.  Changes from NEARLINE CUSTODIAL to
+ONLINE CUSTODIAL will also be handled in the usual manner by resilience,
+because the service now subscribes to attribute change messages broadcast
+by the PnfsManager.
+
 ## Some typical scenarios part 1: what happens when ...?
 
 ### Resilience is initialized (service start)
