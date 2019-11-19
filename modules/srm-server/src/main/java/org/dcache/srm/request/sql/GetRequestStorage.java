@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nonnull;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -125,11 +127,12 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
 
 
     /** Creates a new instance of GetRequestStorage */
-    public GetRequestStorage(Configuration.DatabaseParameters configuration,
+    public GetRequestStorage(@Nonnull String srmId,
+            Configuration.DatabaseParameters configuration,
             ScheduledExecutorService executor, SRMUserPersistenceManager manager)
             throws DataAccessException
     {
-        super(configuration, executor, manager);
+        super(srmId, configuration, executor, manager);
     }
 
     private String getProtocolsTableName() {
@@ -172,6 +175,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
         Job.JobHistory[] jobHistoryArray =
                 getJobHistory(ID,_con);
         return new  GetRequest(
+                srmId,
                 ID,
                 NEXTJOBID,
                 CREATIONTIME,

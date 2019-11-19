@@ -148,6 +148,7 @@ public class SrmPrepareToGet
 
         GetRequest r =
                 new GetRequest(
+                        srm.getSrmId(),
                         user,
                         surls,
                         protocols,

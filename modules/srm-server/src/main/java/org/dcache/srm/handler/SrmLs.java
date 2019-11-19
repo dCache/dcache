@@ -74,7 +74,8 @@ public class SrmLs
         boolean longFormat = getFullDetailedList(request);
         URI[] surls = getSurls(request);
 
-        LsRequest r = new LsRequest(user,
+        LsRequest r = new LsRequest(srm.getSrmId(),
+                user,
                 surls,
                 TimeUnit.HOURS.toMillis(1),
                 configuration.getLsMaxPollPeriod(),

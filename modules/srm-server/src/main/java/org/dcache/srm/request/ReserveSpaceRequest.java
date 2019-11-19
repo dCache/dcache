@@ -76,6 +76,8 @@ import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -120,18 +122,13 @@ public final class ReserveSpaceRequest extends Request {
 
 
     /** Creates new ReserveSpaceRequest */
-    public ReserveSpaceRequest(
-            SRMUser user,
-            long lifetime,
-            long max_update_period,
-            long sizeInBytes ,
-            long spaceReservationLifetime,
-            TRetentionPolicy retentionPolicy,
-            TAccessLatency accessLatency,
-            String description,
-            String clienthost,
-            Map<String,String> extraInfo) {
-        super(user, max_update_period, lifetime, description, clienthost);
+    public ReserveSpaceRequest(@Nonnull String srmId, SRMUser user,
+            long lifetime, long max_update_period, long sizeInBytes,
+            long spaceReservationLifetime, TRetentionPolicy retentionPolicy,
+            TAccessLatency accessLatency, String description, String clienthost,
+            Map<String,String> extraInfo)
+    {
+        super(srmId, user, max_update_period, lifetime, description, clienthost);
 
         this.sizeInBytes = sizeInBytes ;
         this.retentionPolicy = retentionPolicy;
@@ -145,44 +142,19 @@ public final class ReserveSpaceRequest extends Request {
      */
 
 
-    public ReserveSpaceRequest(
-            long id,
-            Long nextJobId,
-            long creationTime,
-            long lifetime,
-            int stateId,
-            SRMUser user,
-            String scheduelerId,
-            long schedulerTimeStamp,
-            int numberOfRetries,
-            long lastStateTransitionTime,
-            JobHistory[] jobHistoryArray,
-            int retryDeltaTime,
-            long sizeInBytes,
-            long spaceReservationLifetime,
-            String spaceToken,
-            String retentionPolicy,
-            String accessLatency,
-            String description,
-            String clienthost,
-            Map<String,String> extraInfo,
-            String statusCodeString) {
-                super(id,
-                      nextJobId,
-                      creationTime,
-                      lifetime,
-                      stateId,
-                      user,
-                      scheduelerId,
-                      schedulerTimeStamp,
-                      numberOfRetries,
-                      lastStateTransitionTime,
-                      jobHistoryArray,//VVV
-                      retryDeltaTime,
-                      false,
-                      description,
-                      clienthost,
-                      statusCodeString);
+    public ReserveSpaceRequest(@Nonnull String srmId, long id, Long nextJobId,
+            long creationTime, long lifetime, int stateId, SRMUser user,
+            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+            int retryDeltaTime, long sizeInBytes, long spaceReservationLifetime,
+            String spaceToken, String retentionPolicy, String accessLatency,
+            String description, String clienthost, Map<String,String> extraInfo,
+            String statusCodeString)
+    {
+        super(srmId, id, nextJobId, creationTime, lifetime, stateId, user,
+                scheduelerId, schedulerTimeStamp, numberOfRetries,
+                lastStateTransitionTime, jobHistoryArray, retryDeltaTime, false,
+                description, clienthost, statusCodeString);
         this.sizeInBytes = sizeInBytes;
         this.spaceToken = spaceToken;
 
@@ -197,7 +169,7 @@ public final class ReserveSpaceRequest extends Request {
 
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
-        sb.append("Reserve space id:").append(getId());
+        sb.append("Reserve space id:").append(getClientRequestId());
         sb.append(" state:").append(getState());
         TStatusCode code = getStatusCode();
         if (code != null) {

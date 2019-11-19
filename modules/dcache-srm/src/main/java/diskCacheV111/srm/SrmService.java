@@ -63,7 +63,6 @@ exporting documents or software obtained from this server.
  */
 package diskCacheV111.srm;
 
-import com.google.common.hash.Hashing;
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
@@ -107,6 +106,7 @@ import org.dcache.srm.handler.CredentialAwareHandler;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -138,7 +138,12 @@ public class SrmService implements CellMessageReceiver, CuratorFrameworkAware, C
     public void setCellAddress(CellAddressCore address)
     {
         this.address = address;
-        this.id = Hashing.murmur3_32().hashString(address.toString(), US_ASCII).toString();
+    }
+
+    @Required
+    public void setSrmId(String id)
+    {
+        this.id = checkNotNull(id);
     }
 
     @Required

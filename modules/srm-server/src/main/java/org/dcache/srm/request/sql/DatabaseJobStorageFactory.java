@@ -4,6 +4,8 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
@@ -80,9 +82,10 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         configurations.put(entityClass, config);
     }
 
-    public DatabaseJobStorageFactory(Configuration config, SRMUserPersistenceManager manager)
+    public DatabaseJobStorageFactory(@Nonnull String srmId, Configuration config, SRMUserPersistenceManager manager)
             throws DataAccessException, IOException
     {
+        checkNotNull(srmId);
         checkNotNull(manager);
         executor = new ThreadPoolExecutor(
                 config.getJdbcExecutionThreadNum(), config.getJdbcExecutionThreadNum(),
@@ -97,39 +100,39 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
                 () -> new BringOnlineFileRequestStorage(config.getDatabaseParametersForBringOnline(), scheduledExecutor));
             add(config.getDatabaseParametersForBringOnline(),
                 BringOnlineRequest.class,
-                () -> new BringOnlineRequestStorage(config.getDatabaseParametersForBringOnline(), scheduledExecutor, manager));
+                () -> new BringOnlineRequestStorage(srmId, config.getDatabaseParametersForBringOnline(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForCopy(),
                 CopyFileRequest.class,
                 () -> new CopyFileRequestStorage(config.getDatabaseParametersForCopy(), scheduledExecutor));
             add(config.getDatabaseParametersForCopy(),
                 CopyRequest.class,
-                () -> new CopyRequestStorage(config.getDatabaseParametersForCopy(), scheduledExecutor, manager));
+                () -> new CopyRequestStorage(srmId, config.getDatabaseParametersForCopy(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForPut(),
                 PutFileRequest.class,
                 () -> new PutFileRequestStorage(config.getDatabaseParametersForPut(), scheduledExecutor));
             add(config.getDatabaseParametersForPut(),
                 PutRequest.class,
-                () -> new PutRequestStorage(config.getDatabaseParametersForPut(), scheduledExecutor, manager));
+                () -> new PutRequestStorage(srmId, config.getDatabaseParametersForPut(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForGet(),
                 GetFileRequest.class,
                 () -> new GetFileRequestStorage(config.getDatabaseParametersForGet(), scheduledExecutor));
             add(config.getDatabaseParametersForGet(),
                 GetRequest.class,
-                () -> new GetRequestStorage(config.getDatabaseParametersForGet(), scheduledExecutor, manager));
+                () -> new GetRequestStorage(srmId, config.getDatabaseParametersForGet(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForList(),
                 LsFileRequest.class,
                 () -> new LsFileRequestStorage(config.getDatabaseParametersForList(), scheduledExecutor));
             add(config.getDatabaseParametersForList(),
                 LsRequest.class,
-                () -> new LsRequestStorage(config.getDatabaseParametersForList(), scheduledExecutor, manager));
+                () -> new LsRequestStorage(srmId, config.getDatabaseParametersForList(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForReserve(),
                 ReserveSpaceRequest.class,
-                () -> new ReserveSpaceRequestStorage(config.getDatabaseParametersForReserve(), scheduledExecutor, manager));
+                () -> new ReserveSpaceRequestStorage(srmId, config.getDatabaseParametersForReserve(), scheduledExecutor, manager));
         } catch (InstantiationException e) {
             Throwables.propagateIfPossible(e.getCause(), IOException.class);
             throw new RuntimeException("Request persistence initialization failed: " + e.toString(), e);

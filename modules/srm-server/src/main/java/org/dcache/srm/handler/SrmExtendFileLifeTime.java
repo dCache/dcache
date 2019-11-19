@@ -206,13 +206,13 @@ public class SrmExtendFileLifeTime
             returnStatus = new TReturnStatus(
                     TStatusCode.SRM_ABORTED, "TURL has been aborted and cannot be extended");
         } catch (SRMInternalErrorException e) {
-            throw new SRMInternalErrorException("File lifetime extension failed for request " + request.getId()
+            throw new SRMInternalErrorException("File lifetime extension failed for request " + request.getClientRequestId()
                     + " with SURL " + surl + ": " + e.getMessage(), e);
         } catch (SRMException e) {
             LOGGER.warn("File lifetime extension failed for request {} with SURL {}: {}",
-                    request.getId(), surl, e.getMessage());
+                    request.getClientRequestId(), surl, e.getMessage());
             returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE,
-                    "TURL for request " + request.getId() + " with SURL " + surl + " cannot be extended: " + e.getMessage());
+                    "TURL for request " + request.getClientRequestId() + " with SURL " + surl + " cannot be extended: " + e.getMessage());
         }
         status.setStatus(returnStatus);
         return status;

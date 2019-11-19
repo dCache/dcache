@@ -109,6 +109,7 @@ public class SrmCopy implements CredentialAwareHandler
         ImmutableMap<String,String> extraInfo = getExtraInfo(request);
         credential.acceptAlternative(extraInfo.get("credential"));
         CopyRequest r = new CopyRequest(
+                srm.getSrmId(),
                 user,
                 credential.getId(),
                 from_urls,

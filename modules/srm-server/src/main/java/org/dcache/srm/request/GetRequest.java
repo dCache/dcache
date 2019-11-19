@@ -112,16 +112,11 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     protected final String[] protocols;
     private final boolean isStagingAllowed;
 
-    public GetRequest(SRMUser user,
-                      URI[] surls,
-                      String[] protocols,
-                      long lifetime,
-                      long max_update_period,
-                      String description,
-                      String client_host,
-                      boolean isStagingAllowed)
+    public GetRequest(@Nonnull String srmId, SRMUser user, URI[] surls,
+            String[] protocols, long lifetime, long max_update_period,
+            String description, String client_host, boolean isStagingAllowed)
     {
-        super(user, max_update_period, lifetime, description, client_host,
+        super(srmId, user, max_update_period, lifetime, description, client_host,
               id -> {
                   ImmutableList.Builder<GetFileRequest> requests = ImmutableList.builder();
                   Stream.of(surls).distinct()
@@ -136,43 +131,19 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     /**
      * restore constructor
      */
-    public  GetRequest(
-    long id,
-    Long nextJobId,
-    long creationTime,
-    long lifetime,
-    int stateId,
-    SRMUser user,
-    String scheduelerId,
-    long schedulerTimeStamp,
-    int numberOfRetries,
-    long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray,
-    ImmutableList<GetFileRequest> fileRequests,
-    int retryDeltaTime,
-    boolean should_updateretryDeltaTime,
-    String description,
-    String client_host,
-    String statusCodeString,
-    List<String> protocols
-    ) {
-        super( id,
-        nextJobId,
-        creationTime,
-        lifetime,
-        stateId,
-        user,
-        scheduelerId,
-        schedulerTimeStamp,
-        numberOfRetries,
-        lastStateTransitionTime,
-        jobHistoryArray,
-        fileRequests,
-        retryDeltaTime,
-        should_updateretryDeltaTime,
-        description,
-        client_host,
-        statusCodeString);
+    public GetRequest(@Nonnull String srmId, long id, Long nextJobId,
+            long creationTime, long lifetime, int stateId, SRMUser user,
+            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+            ImmutableList<GetFileRequest> fileRequests, int retryDeltaTime,
+            boolean should_updateretryDeltaTime, String description,
+            String client_host, String statusCodeString, List<String> protocols)
+    {
+        super(srmId, id, nextJobId, creationTime, lifetime, stateId, user,
+                scheduelerId, schedulerTimeStamp, numberOfRetries,
+                lastStateTransitionTime, jobHistoryArray, fileRequests,
+                retryDeltaTime, should_updateretryDeltaTime, description,
+                client_host, statusCodeString);
         this.protocols = protocols.toArray(new String[protocols.size()]);
         this.isStagingAllowed = true; // FIXME record this value in the database.
     }

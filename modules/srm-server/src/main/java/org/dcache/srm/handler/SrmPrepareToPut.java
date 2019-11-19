@@ -144,6 +144,7 @@ public class SrmPrepareToPut
 
         PutRequest r =
                 new PutRequest(
+                        srm.getSrmId(),
                         user,
                         surls,
                         sizes,

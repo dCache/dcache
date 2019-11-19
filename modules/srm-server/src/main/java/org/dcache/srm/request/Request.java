@@ -111,17 +111,18 @@ public abstract class Request extends Job {
     private final String client_host;
     private final SRMUser user;
 
-    public Request(@Nonnull SRMUser user,
-    long max_update_period,
-    long lifetime,
-    @Nullable String description,
-    String client_host
-        ) {
+    /** The ID of this SRM instance, as returned to the client. */
+    protected final String srmId;
+
+    public Request(@Nonnull String srmId, @Nonnull SRMUser user,
+            long max_update_period, long lifetime, @Nullable String description,
+            String client_host) {
         super(lifetime);
         this.max_update_period = max_update_period;
         this.description = description;
         this.client_host = client_host;
         this.user = checkNotNull(user);
+        this.srmId = checkNotNull(srmId);
     }
 
    /**
@@ -129,23 +130,12 @@ public abstract class Request extends Job {
      * saved Request from persitance storage
      */
 
-    protected Request(
-    long id,
-    Long nextJobId,
-    long creationTime,
-    long lifetime,
-    int stateId,
-    SRMUser user,
-    String scheduelerId,
-    long schedulerTimeStamp,
-    int numberOfRetries,
-    long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray,
-    int retryDeltaTime,
-    boolean should_updateretryDeltaTime,
-    String description,
-    String client_host,
-    String statusCodeString) {
+    protected Request(@Nonnull String srmId, long id, Long nextJobId,
+            long creationTime, long lifetime, int stateId, SRMUser user,
+            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+            int retryDeltaTime, boolean should_updateretryDeltaTime,
+            String description, String client_host, String statusCodeString) {
         super(id,
               nextJobId,
               creationTime,
@@ -162,6 +152,7 @@ public abstract class Request extends Job {
         this.description = description;
         this.client_host = client_host;
         this.user = user;
+        this.srmId = checkNotNull(srmId);
         LOGGER.debug("restored");
     }
 
@@ -198,6 +189,16 @@ public abstract class Request extends Job {
      */
     public int getRequestNum() {
         return (int) getId();
+    }
+
+    /**
+     * Returns this request ID, as it is received by the client.
+     * @return
+     */
+    public String getClientRequestId() {
+        // REVISIT: the format here actually comes from the
+        // SrmHandler#prefix method, which is dCache-specific.
+        return srmId + ":" + getId();
     }
 
 
@@ -326,7 +327,7 @@ public abstract class Request extends Job {
         wlock();
         try {
             if (creationTime + lifetime < System.currentTimeMillis() && !getState().isFinal()) {
-                LOGGER.info("expiring request #{}", getId());
+                LOGGER.info("expiring request {}", getClientRequestId());
                 StringBuilder sb = new StringBuilder().append("Request lifetime (");
                 TimeUtils.appendDuration(sb, lifetime, MILLISECONDS, TimeUnitFormat.SHORT).append(") expired.");
                 setStateAndStatusCode(State.FAILED, sb.toString(), TStatusCode.SRM_REQUEST_TIMED_OUT);

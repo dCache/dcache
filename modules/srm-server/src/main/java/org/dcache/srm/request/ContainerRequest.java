@@ -143,18 +143,11 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      * @param configuration
      *   srm configuration
      */
-    public ContainerRequest(SRMUser user,
-                            long max_update_period,
-                            long lifetime,
-                            @Nullable String description,
-                            String client_host,
-                            LongFunction<ImmutableList<R>> factory)
+    public ContainerRequest(@Nonnull String srmId, SRMUser user,
+            long max_update_period, long lifetime, @Nullable String description,
+            String client_host, LongFunction<ImmutableList<R>> factory)
     {
-         super(user ,
-         max_update_period,
-         lifetime,
-         description,
-         client_host);
+         super(srmId, user, max_update_period, lifetime, description, client_host);
          fileRequests = factory.apply(getId());
     }
 
@@ -163,42 +156,17 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      * this constructor is used for restoring the previously
      * saved ContainerRequest from persitance storage
      */
-
-
-    protected ContainerRequest(
-    long id,
-    Long nextJobId,
-    long creationTime,
-    long lifetime,
-    int stateId,
-    SRMUser user,
-    String scheduelerId,
-    long schedulerTimeStamp,
-    int numberOfRetries,
-    long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray,
-    ImmutableList<R> fileRequests,
-    int retryDeltaTime,
-    boolean should_updateretryDeltaTime,
-    String description,
-    String client_host,
-    String statusCodeString) {
-     super(     id,
-     nextJobId,
-     creationTime,
-     lifetime,
-     stateId,
-     user,
-     scheduelerId,
-     schedulerTimeStamp,
-     numberOfRetries,
-     lastStateTransitionTime,
-     jobHistoryArray,
-     retryDeltaTime,
-     should_updateretryDeltaTime,
-     description,
-     client_host,
-     statusCodeString);
+    protected ContainerRequest(@Nonnull String srmId, long id, Long nextJobId,
+            long creationTime, long lifetime, int stateId, SRMUser user,
+            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+            ImmutableList<R> fileRequests, int retryDeltaTime,
+            boolean should_updateretryDeltaTime, String description,
+            String client_host, String statusCodeString) {
+        super(srmId, id, nextJobId, creationTime, lifetime, stateId, user, scheduelerId,
+                schedulerTimeStamp, numberOfRetries, lastStateTransitionTime,
+                jobHistoryArray, retryDeltaTime, should_updateretryDeltaTime,
+                description, client_host, statusCodeString);
         this.fileRequests = fileRequests;
     }
 
@@ -529,7 +497,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
 
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
-        sb.append(getNameForRequestType()).append(" id:").append(getId());
+        sb.append(getNameForRequestType()).append(" id:").append(getClientRequestId());
         sb.append(" files:").append(fileRequests.size());
         sb.append(" state:").append(getState());
         TStatusCode code = getStatusCode();

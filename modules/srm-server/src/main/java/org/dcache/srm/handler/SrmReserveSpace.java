@@ -96,6 +96,7 @@ public class SrmReserveSpace
         try {
             ReserveSpaceRequest reserveRequest =
                     new ReserveSpaceRequest(
+                            srm.getSrmId(),
                             user,
                             requestLifetime,
                             configuration.getReserveSpaceMaxPollPeriod(),

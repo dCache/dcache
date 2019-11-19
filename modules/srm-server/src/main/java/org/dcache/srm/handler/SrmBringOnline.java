@@ -94,7 +94,9 @@ public class SrmBringOnline
         }
 
         BringOnlineRequest r =
-                new BringOnlineRequest(user,
+                new BringOnlineRequest(
+                        srm.getSrmId(),
+                        user,
                         surls,
                         protocols,
                         requestTime,

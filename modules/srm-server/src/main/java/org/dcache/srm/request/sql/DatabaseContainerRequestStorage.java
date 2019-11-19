@@ -32,11 +32,12 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
     final Class<F> fileRequestType = (Class<F>) new TypeToken<F>(getClass()) {}.getRawType();
 
     /** Creates a new instance of DatabaseContainerRequestStorage */
-    public DatabaseContainerRequestStorage(Configuration.DatabaseParameters configuration,
+    public DatabaseContainerRequestStorage(String srmId,
+            Configuration.DatabaseParameters configuration,
             ScheduledExecutorService executor, SRMUserPersistenceManager manager)
             throws DataAccessException
     {
-        super(configuration, executor, manager);
+        super(srmId, configuration, executor, manager);
     }
 
    public abstract String getFileRequestsTableName();

@@ -119,21 +119,15 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     private final String[] protocols;
     private TOverwriteMode overwriteMode;
 
-    public PutRequest(SRMUser user,
-        URI[] surls,
-        Long[] sizes,
-        boolean[] wantPermanent,
-        String[] protocols,
-        long lifetime,
-        long max_update_period,
-        String client_host,
-        @Nullable String spaceToken,
-        @Nullable TRetentionPolicy retentionPolicy,
-        @Nullable TAccessLatency accessLatency,
-        @Nullable String description)
+    public PutRequest(@Nonnull String srmId, SRMUser user, URI[] surls,
+            Long[] sizes, boolean[] wantPermanent, String[] protocols,
+            long lifetime, long max_update_period, String client_host,
+            @Nullable String spaceToken,
+            @Nullable TRetentionPolicy retentionPolicy,
+            @Nullable TAccessLatency accessLatency,
+            @Nullable String description)
     {
-
-        super(user, max_update_period, lifetime, description, client_host,
+        super(srmId, user, max_update_period, lifetime, description, client_host,
               id -> {
                   checkArgument(surls.length == sizes.length);
                   ImmutableList.Builder<PutFileRequest> requests = ImmutableList.builder();
@@ -146,45 +140,20 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         this.protocols = Arrays.copyOf(protocols, protocols.length);
     }
 
-    public  PutRequest(
-    long id,
-    Long nextJobId,
-    long creationTime,
-    long lifetime,
-    int stateId,
-    SRMUser user,
-    String scheduelerId,
-    long schedulerTimeStamp,
-    int numberOfRetries,
-    long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray,
-    ImmutableList<PutFileRequest> fileRequests,
-    int retryDeltaTime,
-    boolean should_updateretryDeltaTime,
-    String description,
-    String client_host,
-    String statusCodeString,
-    List<String> protocols
-    ) {
-        super( id,
-        nextJobId,
-        creationTime,
-        lifetime,
-        stateId,
-        user,
-        scheduelerId,
-        schedulerTimeStamp,
-        numberOfRetries,
-        lastStateTransitionTime,
-        jobHistoryArray,
-        fileRequests,
-        retryDeltaTime,
-        should_updateretryDeltaTime,
-        description,
-        client_host,
-        statusCodeString);
+    public PutRequest(@Nonnull String srmId, long id, Long nextJobId,
+            long creationTime, long lifetime, int stateId, SRMUser user,
+            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+            ImmutableList<PutFileRequest> fileRequests, int retryDeltaTime,
+            boolean should_updateretryDeltaTime, String description,
+            String client_host, String statusCodeString, List<String> protocols)
+    {
+        super(srmId, id, nextJobId, creationTime, lifetime, stateId, user, scheduelerId,
+                schedulerTimeStamp, numberOfRetries, lastStateTransitionTime,
+                jobHistoryArray, fileRequests, retryDeltaTime,
+                should_updateretryDeltaTime, description, client_host,
+                statusCodeString);
         this.protocols = protocols.toArray(new String[protocols.size()]);
-
     }
 
     @Nonnull

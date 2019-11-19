@@ -3,6 +3,8 @@ package org.dcache.srm.request.sql;
 import com.google.common.collect.ImmutableList;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nonnull;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -130,11 +132,12 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                     lr.getId());
     }
 
-        public LsRequestStorage(Configuration.DatabaseParameters configuration,
+        public LsRequestStorage(@Nonnull String srmId,
+                Configuration.DatabaseParameters configuration,
                 ScheduledExecutorService executor, SRMUserPersistenceManager manager)
                 throws DataAccessException
         {
-                super(configuration, executor, manager);
+                super(srmId, configuration, executor, manager);
         }
 
         @Override
@@ -164,7 +167,8 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                 int numOfLevels=set.getInt(next_index++);
                 int count=set.getInt(next_index++);
                 int offset=set.getInt(next_index++);
-                return new  LsRequest(ID,
+                return new  LsRequest(srmId,
+                                      ID,
                                       NEXTJOBID,
                                       CREATIONTIME,
                                       LIFETIME,

@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nonnull;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.Connection;
@@ -210,11 +212,12 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     }
 
     /** Creates a new instance of FileRequestStorage */
-    public ReserveSpaceRequestStorage(Configuration.DatabaseParameters configuration,
+    public ReserveSpaceRequestStorage(@Nonnull String srmId,
+            Configuration.DatabaseParameters configuration,
             ScheduledExecutorService executor, SRMUserPersistenceManager manager)
             throws DataAccessException
     {
-        super(configuration, executor, manager);
+        super(srmId, configuration, executor, manager);
     }
 
 
@@ -250,18 +253,19 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         String ACCESSLATENCY = set.getString(next_index++);
         Map<String,String> extraInfo = decodeExtraInfo(set.getString(next_index++));
         return new ReserveSpaceRequest(
-            ID,
-            NEXTJOBID ,
-            CREATIONTIME,
-            LIFETIME,
-            STATE,
-            user,
-            SCHEDULERID,
-            SCHEDULER_TIMESTAMP,
-            NUMOFRETR,
-            LASTSTATETRANSITIONTIME,
-            jobHistoryArray,
-            RETRYDELTATIME,
+                srmId,
+                ID,
+                NEXTJOBID,
+                CREATIONTIME,
+                LIFETIME,
+                STATE,
+                user,
+                SCHEDULERID,
+                SCHEDULER_TIMESTAMP,
+                NUMOFRETR,
+                LASTSTATETRANSITIONTIME,
+                jobHistoryArray,
+                RETRYDELTATIME,
                 SIZEINBYTES,
                 RESERVATIONLIFETIME,
                 SPACETOKEN,

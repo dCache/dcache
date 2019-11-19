@@ -111,20 +111,13 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     private final long desiredOnlineLifetimeInSeconds;
 
 
-    public BringOnlineRequest(SRMUser user,
-                              URI[] surls,
-                              String[] protocols,
-                              long lifetime,
+    public BringOnlineRequest(@Nonnull String srmId, SRMUser user, URI[] surls,
+                              String[] protocols, long lifetime,
                               long desiredOnlineLifetimeInSeconds,
-                              long max_update_period,
-                              String description,
+                              long max_update_period, String description,
                               String client_host)
     {
-        super(user,
-              max_update_period,
-              lifetime,
-              description,
-              client_host,
+        super(srmId, user, max_update_period, lifetime, description, client_host,
               id -> {
                   ImmutableList.Builder<BringOnlineFileRequest> requests = ImmutableList.builder();
                   Stream.of(surls).distinct()
@@ -147,46 +140,21 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     /**
      * restore constructor
      */
-    public  BringOnlineRequest(
-    long id,
-    Long nextJobId,
-    long creationTime,
-    long lifetime,
-    int stateId,
-    SRMUser user,
-    String scheduelerId,
-    long schedulerTimeStamp,
-    int numberOfRetries,
-    long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray,
-    ImmutableList<BringOnlineFileRequest> fileRequests,
-    int retryDeltaTime,
-    boolean should_updateretryDeltaTime,
-    String description,
-    String client_host,
-    String statusCodeString,
-    String[] protocols
-   ) {
-        super( id,
-        nextJobId,
-        creationTime,
-        lifetime,
-        stateId,
-        user,
-        scheduelerId,
-        schedulerTimeStamp,
-        numberOfRetries,
-        lastStateTransitionTime,
-        jobHistoryArray,
-        fileRequests,
-        retryDeltaTime,
-        should_updateretryDeltaTime,
-        description,
-        client_host,
-        statusCodeString);
+    public BringOnlineRequest(@Nonnull String srmId, long id, Long nextJobId,
+            long creationTime, long lifetime, int stateId, SRMUser user,
+            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+            ImmutableList<BringOnlineFileRequest> fileRequests, int retryDeltaTime,
+            boolean should_updateretryDeltaTime, String description,
+            String client_host, String statusCodeString, String[] protocols)
+    {
+        super(srmId, id, nextJobId, creationTime, lifetime, stateId, user,
+                scheduelerId, schedulerTimeStamp, numberOfRetries,
+                lastStateTransitionTime, jobHistoryArray, fileRequests,
+                retryDeltaTime, should_updateretryDeltaTime, description,
+                client_host, statusCodeString);
         this.protocols = protocols;
         this.desiredOnlineLifetimeInSeconds = 0;
-
     }
 
     @Nonnull

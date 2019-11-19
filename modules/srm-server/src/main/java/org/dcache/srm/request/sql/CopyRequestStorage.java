@@ -9,6 +9,8 @@ package org.dcache.srm.request.sql;
 import com.google.common.collect.ImmutableList;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nonnull;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -162,11 +164,11 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
     }
 
     /** Creates a new instance of GetRequestStorage */
-     public CopyRequestStorage(Configuration.DatabaseParameters configuration,
+     public CopyRequestStorage(@Nonnull String srmId, Configuration.DatabaseParameters configuration,
              ScheduledExecutorService executor, SRMUserPersistenceManager manager)
              throws DataAccessException
      {
-         super(configuration, executor, manager);
+         super(srmId, configuration, executor, manager);
      }
 
     @Override
@@ -208,6 +210,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                     null:TAccessLatency.fromString(ACCESSLATENCY);
 
             return new  CopyRequest(
+                        srmId,
                         ID,
                         NEXTJOBID,
                         CREATIONTIME,

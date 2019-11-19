@@ -157,7 +157,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
     private volatile boolean processingDone;
 
-    public CopyRequest(SRMUser user,
+    public CopyRequest(@Nonnull String srmId,
+            SRMUser user,
             Long requestCredentialId,
             URI[] sourceUrl,
             URI[] destinationUrl,
@@ -172,7 +173,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             TOverwriteMode overwriteMode,
             ImmutableMap<String,String> extraInfo)
     {
-        super(user, maxUpdatePeriod, lifetime, description, clientHost,
+        super(srmId, user, maxUpdatePeriod, lifetime, description, clientHost,
               id -> {
                   checkArgument(sourceUrl.length == destinationUrl.length,
                                 "unequal number of elements in url arrays");
@@ -213,7 +214,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * restore constructor
      */
-    public CopyRequest(long id,
+    public CopyRequest(@Nonnull String srmId,
+            long id,
             Long nextJobId,
             long creationTime,
             long lifetime,
@@ -235,7 +237,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             TRetentionPolicy targetRetentionPolicy,
             TAccessLatency targetAccessLatency)
     {
-        super(id, nextJobId, creationTime, lifetime, stateId,
+        super(srmId, id, nextJobId, creationTime, lifetime, stateId,
                 user, scheduelerId, schedulerTimeStamp, numberOfRetries,
                 lastStateTransitionTime, jobHistoryArray,
                 fileRequest, retryDeltaTime, should_updateretryDeltaTime,

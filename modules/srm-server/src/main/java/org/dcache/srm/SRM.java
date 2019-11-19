@@ -75,10 +75,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nonnull;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -155,6 +156,7 @@ public class SRM implements CellLifeCycleAware
     private ScheduledExecutorService executor;
     private final List<Future<?>> tasks = new ArrayList<>();
     private long expiryPeriod;
+    private String srmId;
 
     private static SRM srm;
 
@@ -223,6 +225,18 @@ public class SRM implements CellLifeCycleAware
         LOGGER.debug("srm started :\n\t{}", configuration.toString());
     }
 
+    @Required
+    public void setSrmId(@Nonnull String id)
+    {
+        srmId = checkNotNull(id);
+    }
+
+    @Nonnull
+    public String getSrmId()
+    {
+        return srmId;
+    }
+
     public void setSchedulers(SchedulerContainer schedulers)
     {
         this.schedulers = checkNotNull(schedulers);
@@ -268,7 +282,7 @@ public class SRM implements CellLifeCycleAware
     {
         checkState(schedulers != null, "Cannot start SRM with no schedulers");
         setSRM(this);
-        databaseFactory = new DatabaseJobStorageFactory(configuration, manager);
+        databaseFactory = new DatabaseJobStorageFactory(srmId, configuration, manager);
         try {
             JobStorageFactory.initJobStorageFactory(databaseFactory);
             databaseFactory.init();
