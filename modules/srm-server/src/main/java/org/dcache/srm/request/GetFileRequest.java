@@ -363,10 +363,11 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     }
 
     @Override
-    protected void stateChanged(State oldState) {
-        State state = getState();
-        LOGGER.debug("State changed from {} to {}", oldState, getState());
-        switch (state) {
+    protected void processStateChange(State newState, String description)
+    {
+        State oldState = getState();
+        LOGGER.debug("State changed from {} to {}", oldState, newState);
+        switch (newState) {
         case READY:
             try {
                 getContainerRequest().resetRetryDeltaTime();
@@ -401,7 +402,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             }
         }
 
-        super.stateChanged(oldState);
+        super.processStateChange(newState, description);
     }
 
     private void computeTurl() throws SRMException

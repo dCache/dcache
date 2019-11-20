@@ -340,10 +340,11 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     }
 
     @Override
-    protected void stateChanged(State oldState) {
-        State state = getState();
+    protected void processStateChange(State newState, String description)
+    {
+        State oldState = getState();
         LOGGER.debug("State changed from {} to {}", oldState, getState());
-        switch (state) {
+        switch (newState) {
         case READY:
             try {
                 getContainerRequest().resetRetryDeltaTime();
@@ -377,7 +378,8 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             }
             break;
         }
-        super.stateChanged(oldState);
+
+        super.processStateChange(newState, description);
     }
 
     @Override

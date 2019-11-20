@@ -233,8 +233,11 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     }
 
     @Override
-    protected void stateChanged(State oldState)
+    protected void processStateChange(State newState, String description)
     {
+        super.processStateChange(newState, schedulerId);
+
+        // Notify container *after* this job's state is fully updated.
         try {
             getContainerRequest().fileRequestStateChanged(this);
         } catch (SRMInvalidRequestException ire) {

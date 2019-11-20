@@ -207,12 +207,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
     }
 
     @Override
-        protected void stateChanged(State oldState) {
-                LOGGER.debug("State changed from {} to {}", oldState, getState());
-                super.stateChanged(oldState);
-        }
-
-    @Override
     public boolean isTouchingSurl(URI surl)
     {
         return surl.equals(getSurl());

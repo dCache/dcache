@@ -347,10 +347,11 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
 
     @Override
-    protected void stateChanged(State oldState) {
-        State state = getState();
-        LOGGER.debug("State changed from {} to {}", oldState, getState());
-        if(state == State.READY) {
+    protected void processStateChange(State newState, String description)
+    {
+        State oldState = getState();
+        LOGGER.debug("State changed from {} to {}", oldState, newState);
+        if (newState == State.READY) {
             try {
                 getContainerRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
@@ -358,14 +359,14 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             }
         }
         try {
-            if (state == State.FAILED && getFileId() != null) {
-                String reason = getLastJobChange().getDescription();
-                getStorage().abortPut(getUser(), getFileId(), getSurl(), reason);
+            if (newState == State.FAILED && getFileId() != null) {
+                getStorage().abortPut(getUser(), getFileId(), getSurl(), description);
             }
         } catch (SRMException e) {
             LOGGER.error("Failed to abort put after failure: {}", e.getMessage());
         }
-        super.stateChanged(oldState);
+
+        super.processStateChange(newState, description);
     }
 
     private void computeTurl() throws SRMException

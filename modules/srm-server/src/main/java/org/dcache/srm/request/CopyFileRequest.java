@@ -596,11 +596,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     @Override
-    protected void stateChanged(State oldState)
+    protected void processStateChange(State newState, String description)
     {
-        State state = getState();
-        if (state.isFinal()) {
-            if (getTransferId() != null && state != State.DONE) {
+        if (newState.isFinal()) {
+            if (getTransferId() != null && newState != State.DONE) {
                 getStorage().killRemoteTransfer(getTransferId());
                 String toFileId = getDestinationFileId();
                 if (toFileId != null) {
@@ -622,6 +621,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 }
             }
         }
+
+        super.processStateChange(newState, description);
     }
 
     @Override

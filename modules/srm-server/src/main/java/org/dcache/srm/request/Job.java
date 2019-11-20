@@ -72,6 +72,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.TransactionException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -98,6 +99,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.TimeUtils;
 import org.dcache.util.TimeUtils.TimeUnitFormat;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
@@ -285,22 +287,31 @@ public abstract class Job  {
                         "Illegal state transition from " + this.state + " to " + newState,
                         this.state, newState);
             }
-            State oldState = this.state;
-            this.state = newState;
-            lastStateTransitionTime = System.currentTimeMillis();
-
-            jobHistory.add( new JobHistory(nextLong(),newState,description,lastStateTransitionTime));
-
-            notifySchedulerOfStateChange(oldState, newState);
-
-            if (!newState.isFinal() && schedulerId == null) {
-                throw new IllegalStateTransition("Scheduler ID is null");
-            }
-            stateChanged(oldState);
+            processStateChange(newState, description);
             saveJob(state == State.RQUEUED);
         } finally {
             wunlock();
         }
+    }
+
+    /**
+     * Job-internal processing of a state change. Subclasses should override
+     * this method to do any internal processing.  When this method returns,
+     * the Job object is fully updated based on this state change.
+     */
+    @GuardedBy("lock")
+    protected void processStateChange(State newState, String description)
+    {
+        State oldState = this.state;
+        this.state = newState;
+        lastStateTransitionTime = System.currentTimeMillis();
+
+        jobHistory.add( new JobHistory(nextLong(),newState,description,lastStateTransitionTime));
+
+        notifySchedulerOfStateChange(oldState, newState);
+
+        checkState(newState.isFinal() || schedulerId != null,
+                "Scheduler ID is null");
     }
 
     private boolean isValidTransition(State currentState, State newState)
@@ -462,11 +473,6 @@ public abstract class Job  {
     }
 
     public abstract void run() throws SRMException, IllegalStateTransition;
-
-    //implementation should not block in this method
-    // this method should make sure that the job is saved in the
-    // job's storage (instance of Jon.JobStorage (possibly in a database )
-    protected abstract void stateChanged(State oldState);
 
     public TStatusCode getStatusCode() {
         rlock();

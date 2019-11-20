@@ -227,18 +227,17 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     @Override
-    protected void stateChanged(State oldState) {
-        State state = getState();
-        if(state.isFinal()) {
-            LOGGER.debug("Get request state changed to {}.", state);
+    protected void processStateChange(State newState, String description)
+    {
+        if (newState.isFinal()) {
+            LOGGER.debug("Get request state changed to {}.", newState);
             for (GetFileRequest request : getFileRequests()) {
                 request.wlock();
                 try {
                     State fr_state = request.getState();
-                    if(!fr_state.isFinal())
-                    {
-                        LOGGER.debug("Changing fr#{} to {}.", request.getId(), state);
-                        request.setState(state, "Changing file state because request state has changed.");
+                    if (!fr_state.isFinal()) {
+                        LOGGER.debug("Changing fr#{} to {}.", request.getId(), newState);
+                        request.setState(newState, "Request changed: " + description);
                     }
                 } catch (IllegalStateTransition ist) {
                     LOGGER.error(ist.getMessage());
@@ -246,9 +245,9 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                     request.wunlock();
                 }
             }
-
         }
 
+        super.processStateChange(newState, description);
     }
 
     public String[] getProtocols() {

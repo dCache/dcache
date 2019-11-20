@@ -683,28 +683,29 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     @Override
-    protected void stateChanged(State oldState)
+    protected void processStateChange(State newState, String description)
     {
-        State state = getState();
-        if (state.isFinal()) {
+        if (newState.isFinal()) {
             TurlGetterPutter client = getRemoteTurlClient();
             if (client != null) {
                 LOGGER.debug("copyRequest TURL-fetching client is non null, stopping");
                 client.stop();
             }
-            LOGGER.debug("copy request state changed to {}", state);
+            LOGGER.debug("copy request state changed to {}", newState);
             for (CopyFileRequest request : getFileRequests()) {
                 try {
                     State frState = request.getState();
-                    if (!(frState.isFinal())) {
-                        LOGGER.debug("changing fr#{} to {}", request.getId(), state);
-                        request.setState(state, "Request now " + state);
+                    if (!frState.isFinal()) {
+                        LOGGER.debug("changing fr#{} to {}", request.getId(), newState);
+                        request.setState(newState, "Request changed: " + description);
                     }
                 } catch (IllegalStateTransition ist) {
                     LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                 }
             }
         }
+
+        super.processStateChange(newState, description);
     }
 
     @Override
