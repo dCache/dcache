@@ -63,11 +63,11 @@ public class Rebalancer
         _poolStub = poolStub;
     }
 
-    private ListenableFuture<List<PoolMigrationJobCancelMessage>> cancelAll(Collection<SelectionPool> pools)
+    private ListenableFuture<List<PoolMigrationJobCancelMessage>> cancelAll(Collection<SelectionPool> pools, String why)
     {
         return allAsList(pools.stream()
                                  .map(pool -> new CellPath(pool.getName()))
-                                 .map(path -> CellStub.transform(_poolStub.send(path, new PoolMigrationJobCancelMessage(JOB_NAME, true)), m -> m))
+                                 .map(path -> CellStub.transform(_poolStub.send(path, new PoolMigrationJobCancelMessage(JOB_NAME, true, why)), m -> m))
                                  .collect(toList()));
     }
 
@@ -166,7 +166,8 @@ public class Rebalancer
             }
 
             addCallback(
-                    transformAsync(cancelAll(pools), ignored -> startAllPoolsOrFail(pools, command)),
+                    transformAsync(cancelAll(pools, "\"rebalance pgroup\" admin command, cancelling old jobs"),
+                            ignored -> startAllPoolsOrFail(pools, command)),
                     new FutureCallback<Object>()
                     {
                         @Override
@@ -193,7 +194,8 @@ public class Rebalancer
 
         protected <V> ListenableFuture<V> cancelAllPoolsAndFail(Collection<SelectionPool> pools, Exception t)
         {
-            return Futures.transformAsync(cancelAll(pools), ignored -> immediateFailedFuture(t));
+            return Futures.transformAsync(cancelAll(pools, "\"rebalance pgroup\" admin command, aborting failed command"),
+                    ignored -> immediateFailedFuture(t));
         }
     }
 
@@ -208,7 +210,8 @@ public class Rebalancer
         @Override
         public Reply call()
         {
-            addCallback(cancelAll(_psu.getPoolsByPoolGroup(poolGroup)),
+            Collection<SelectionPool> pools = _psu.getPoolsByPoolGroup(poolGroup);
+            addCallback(cancelAll(pools, "\"rebalance cancel pgroup\" admin command"),
                         new FutureCallback<List<PoolMigrationJobCancelMessage>>()
                                 {
                                     @Override
