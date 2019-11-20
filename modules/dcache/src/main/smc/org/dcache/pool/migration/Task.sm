@@ -636,7 +636,9 @@ Entry
         cancel
                 Failed
                 {
-                        fail(DEFAULT_ERROR_CODE, "Failed to cancel task");
+                        fail(DEFAULT_ERROR_CODE,
+                             String.format("Cancelling task (%s) failed (data migrated but pin movement still underway)",
+                                           ctxt.getCancelReason()));
                 }
 }
 
@@ -658,8 +660,8 @@ Exit
                 Failed
                 {
                         fail(TIMEOUT,
-                             String.format("Failed to cancel task (no response from %s)",
-                                           ctxt.getTarget()));
+                             String.format("Cancelling task (%s) failed (no response from %s)",
+                                           ctxt.getCancelReason(), ctxt.getTarget()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() != 0 ]
@@ -670,7 +672,9 @@ Exit
                 [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
                 Failed
                 {
-                        fail(DEFAULT_ERROR_CODE, "Failed to cancel task");
+                        fail(DEFAULT_ERROR_CODE,
+                             String.format("Cancelling task (%s) failed (data migrated but still pins to move)",
+                                           ctxt.getCancelReason()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 ]
@@ -688,7 +692,9 @@ Exit
         cancel_noroute
                 Failed
                 {
-                        fail(SERVICE_UNAVAILABLE, "Failed to cancel task (no route)");
+                        fail(SERVICE_UNAVAILABLE,
+                             String.format("Cancelling task (%s) failed (no route)",
+                                           ctxt.getCancelReason()));
                 }
         cancel_timeout
                 nil
