@@ -390,7 +390,7 @@ public class PoolOperationMap extends RunnableModule {
                  *  NB:  we cannot do anything about child pnfsid tasks here.
                  *  This must be handled by the caller.
                  */
-                running.remove(pool).task.cancel(null);
+                running.remove(pool).task.cancel("pool no longer resilient");
             } else if (waiting.remove(pool) == null) {
                 idle.remove(pool);
             }
@@ -618,7 +618,7 @@ public class PoolOperationMap extends RunnableModule {
                  *  which need to be zeroed out in order to guarantee
                  *  the second operation will complete successfully.
                  */
-                operation.task.cancel(null);
+                operation.task.cancel("pool " + update.pool + " changed");
                 FileFilter fileFilter = new FileCancelFilter();
                 fileFilter.setForceRemoval(true);
                 fileFilter.setParent(update.pool);
@@ -749,7 +749,7 @@ public class PoolOperationMap extends RunnableModule {
     private void cancel(String pool, PoolOperation operation,
                     Map<String, PoolOperation> queue) {
         if (operation.task != null) {
-            operation.task.cancel(null);
+            operation.task.cancel("resilient admin command");
             operation.task = null;
         }
 
@@ -1039,7 +1039,7 @@ public class PoolOperationMap extends RunnableModule {
                 if (filter.matches(k, operation)) {
                     if (!include) {
                         if (operation.task != null) {
-                            operation.task.cancel(null);
+                            operation.task.cancel("pool include/exclude admin command");
                         }
                         operation.state = State.EXCLUDED;
                         queue.remove(k);

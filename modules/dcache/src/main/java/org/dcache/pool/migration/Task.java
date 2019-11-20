@@ -11,6 +11,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -74,6 +75,7 @@ public class Task
     private Deque<String> _locations = new ArrayDeque<>(0);
     private final Set<String> _replicas = new HashSet<>();
     private CellPath _target;
+    private Optional<String> _cancelReason = Optional.empty();
 
     public Task(TaskParameters parameters,
                 TaskCompletionHandler callbackHandler,
@@ -405,9 +407,16 @@ public class Task
      * Cancels the task, if not already completed. This will trigger a
      * notification (postponed).
      */
-    public synchronized void cancel()
+    public synchronized void cancel(String why)
     {
+        assert !_cancelReason.isPresent();
+        _cancelReason = Optional.of(why);
         _fsm.cancel();
+    }
+
+    public synchronized String getCancelReason()
+    {
+        return _cancelReason.orElse("an unknown reason");
     }
 
     /**
