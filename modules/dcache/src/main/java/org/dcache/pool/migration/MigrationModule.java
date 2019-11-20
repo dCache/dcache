@@ -7,6 +7,7 @@ import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 
 import javax.annotation.concurrent.GuardedBy;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -39,6 +41,7 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.IoQueueManager;
@@ -55,7 +58,11 @@ import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.pool.migration.json.MigrationData;
 
 import static java.util.Arrays.asList;
+
 import java.util.function.Predicate;
+
+import dmg.cells.nucleus.CellMessage;
+
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
 
 /**
@@ -218,7 +225,7 @@ public class MigrationModule
     {
         for (Job job: _jobs.values()) {
             try {
-                job.cancel(true);
+                job.cancel(true, "pool shutdown");
             } catch (IllegalStateException e) {
                 // Jobs cannot always be cancelled. This should be
                 // fixed in the Job. For now we silently ignore this
@@ -716,7 +723,7 @@ public class MigrationModule
             }
             return patterns;
         }
-        
+
          private Predicate<CacheEntry> createFilter()
                 throws IllegalArgumentException
         {
@@ -724,7 +731,7 @@ public class MigrationModule
             // Always return true (no filter = entry accepted)
             // Additional filters are chained using logical AND
             Predicate<CacheEntry> root = a -> true;
-            
+
             if (storage != null) {
                 root = root.and(new StorageClassFilter(storage));
             }
@@ -975,7 +982,7 @@ public class MigrationModule
         public String call() throws NoSuchElementException, IllegalStateException
         {
             Job job = getJob(id);
-            job.cancel(force);
+            job.cancel(force, "\"migration cancel\" admin command");
             return getJobSummary(id);
         }
     }
@@ -1079,10 +1086,10 @@ public class MigrationModule
         }
     }
 
-    public Object messageArrived(PoolMigrationJobCancelMessage message)
+    public Object messageArrived(CellMessage envelope, PoolMigrationJobCancelMessage message)
     {
         try {
-            return getJob(message.getJobId()).messageArrived(message);
+            return getJob(message.getJobId()).messageArrived(envelope, message);
         } catch (NoSuchElementException e) {
             message.setSucceeded();
             return message;
@@ -1131,7 +1138,7 @@ public class MigrationModule
     @Override
     public void beforeSetup()
     {
-        _jobs.values().stream().filter(j -> j.getDefinition().isPermanent).forEach(j -> j.cancel(true));
+        _jobs.values().stream().filter(j -> j.getDefinition().isPermanent).forEach(j -> j.cancel(true, "reloading config"));
     }
 
     @Override

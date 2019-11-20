@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -43,7 +44,8 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.expression.Expression;
 
 import static com.google.common.base.Preconditions.checkState;
-import java.util.function.Predicate;
+
+import dmg.cells.nucleus.CellMessage;
 
 /**
  * Encapsulates a job as defined by a user command.
@@ -336,7 +338,7 @@ public class Job
     /**
      * Cancels a job. All running tasks are cancelled.
      */
-    public void cancel(boolean force)
+    public void cancel(boolean force, String why)
     {
         _lock.lock();
         try {
@@ -352,7 +354,7 @@ public class Job
                 setState(State.CANCELLING);
                 if (force) {
                     for (Task task : _running.values()) {
-                        task.cancel();
+                        task.cancel(why);
                     }
                 }
             }
@@ -654,11 +656,11 @@ public class Job
 
     /** Removes a task from the job. */
     @GuardedBy("_lock")
-    private void remove(PnfsId pnfsId)
+    private void remove(PnfsId pnfsId, String why)
     {
         Task task = _running.get(pnfsId);
         if (task != null) {
-            task.cancel();
+            task.cancel(why);
         } else if (_queued.remove(pnfsId)) {
             _sizes.remove(pnfsId);
         }
@@ -672,7 +674,7 @@ public class Job
         if (event.getNewState() == ReplicaState.REMOVED) {
             _lock.lock();
             try {
-                remove(pnfsId);
+                remove(pnfsId, "replica deleted");
             } finally {
                 _lock.unlock();
             }
@@ -685,7 +687,7 @@ public class Job
                 _lock.lock();
                 try {
                     if (!_running.containsKey(pnfsId)) {
-                        remove(pnfsId);
+                        remove(pnfsId, "file now " + event.getNewState() + ", so no longer matches criteria");
                     }
                 } finally {
                     _lock.unlock();
@@ -721,7 +723,8 @@ public class Job
             _lock.lock();
             try {
                 if (!_running.containsKey(pnfsId)) {
-                    remove(pnfsId);
+                    String type = event instanceof StickyChangeEvent ? "sticky" : "atime";
+                    remove(pnfsId, type + " changed, so file no longer matches criteria");
                 }
             } finally {
                 _lock.unlock();
@@ -811,13 +814,21 @@ public class Job
         }
     }
 
-    public Object messageArrived(PoolMigrationJobCancelMessage message)
+    public Object messageArrived(CellMessage envelope, PoolMigrationJobCancelMessage message)
     {
         DelayedReply reply = new DelayedReply();
         _lock.lock();
         try {
             _cancelRequests.put(message, reply);
-            cancel(message.isForced());
+            StringBuilder why = new StringBuilder();
+            why.append("as requested by ").append(envelope.getSourceAddress());
+            String reason = message.getReason();
+            // The null tests is for backwards compatibility when back-porting.
+            // It may be dropped in master branch.
+            if (reason != null) {
+                why.append(": ").append(reason);
+            }
+            cancel(message.isForced(), why.toString());
         } finally {
             _lock.unlock();
         }
