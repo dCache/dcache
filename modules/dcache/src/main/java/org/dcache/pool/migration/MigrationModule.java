@@ -7,6 +7,7 @@ import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 
 import javax.annotation.concurrent.GuardedBy;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,15 +32,18 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.IoQueueManager;
@@ -217,7 +222,7 @@ public class MigrationModule
     {
         for (Job job: _jobs.values()) {
             try {
-                job.cancel(true);
+                job.cancel(true, "pool shutdown");
             } catch (IllegalStateException e) {
                 // Jobs cannot always be cancelled. This should be
                 // fixed in the Job. For now we silently ignore this
@@ -971,7 +976,7 @@ public class MigrationModule
         public String call() throws NoSuchElementException, IllegalStateException
         {
             Job job = getJob(id);
-            job.cancel(force);
+            job.cancel(force, "\"migration cancel\" admin command");
             return getJobSummary(id);
         }
     }
@@ -1075,10 +1080,10 @@ public class MigrationModule
         }
     }
 
-    public Object messageArrived(PoolMigrationJobCancelMessage message)
+    public Object messageArrived(CellMessage envelope, PoolMigrationJobCancelMessage message)
     {
         try {
-            return getJob(message.getJobId()).messageArrived(message);
+            return getJob(message.getJobId()).messageArrived(envelope, message);
         } catch (NoSuchElementException e) {
             message.setSucceeded();
             return message;
@@ -1127,7 +1132,7 @@ public class MigrationModule
     @Override
     public void beforeSetup()
     {
-        _jobs.values().stream().filter(j -> j.getDefinition().isPermanent).forEach(j -> j.cancel(true));
+        _jobs.values().stream().filter(j -> j.getDefinition().isPermanent).forEach(j -> j.cancel(true, "reloading config"));
     }
 
     @Override
