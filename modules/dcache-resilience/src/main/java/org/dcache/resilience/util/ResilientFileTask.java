@@ -230,7 +230,7 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
         cancelled = true;
 
         if (migrationTask != null) {
-            migrationTask.cancel();
+            migrationTask.cancel(explanation);
         }
 
         if (future != null) {
