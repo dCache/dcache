@@ -307,22 +307,13 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
 
 
     @Override
-    protected void onSrmRestartForActiveJob(Scheduler scheduler)
-            throws IllegalStateTransition
+    protected void onSrmRestartForActiveJob() throws IllegalStateTransition
     {
         State state = getState();
 
-        switch (state) {
-        case INPROGRESS:
-            addHistoryEvent("Rescheduled after SRM service restart.");
-            scheduler.queue(this);
-            break;
-
-        // All other states are invalid.
-        default:
+        if (state != State.INPROGRESS) {
             setState(State.FAILED, "Invalid state (" + state + ") detected " +
                     "after SRM service restart");
-            break;
         }
     }
 
