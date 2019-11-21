@@ -34,15 +34,11 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
     /**
      * Creates a CellAddressCore by scanning the argument string. The syntax can
      * be only one of the following :<br>
-     * <cellName> or <cellName>@<domainName>. If the <domainName> is omitted,
-     * the keyword 'local' is used instead.
+     * {@literal cellName} or {@literal cellName@domainName}. If the {@literal domainName} 
+     * is omitted, the keyword 'local' is used instead. The specified <code>addr</code>
+     * is not checked for existence.
      *
-     * @param addr
-     *            the cell address specification which is interpreted as
-     *            described above. The specified <code>addr</code> is not
-     *            checked for existence.
-     * @return the immutable CellAddressCore.
-     *
+     * @param addr the string representation of cell address.
      */
     public CellAddressCore(String addr) {
         int ind = addr.indexOf('@');
