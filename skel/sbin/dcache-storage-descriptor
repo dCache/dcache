@@ -32,10 +32,10 @@ output="$(getProperty storage-descriptor.output.path)"
 if [ $# -ge 1 ]; then
     infoUrl="$1"
 else
+    host="$(getProperty storage-descriptor.http.host)"
+    port="$(getProperty storage-descriptor.http.port)"
     infoUrl="http://${host}:${port}/info"
 fi
-host="$(getProperty storage-descriptor.http.host)"
-port="$(getProperty storage-descriptor.http.port)"
 
 entities=$(mktemp)
 catalog=$(mktemp)
