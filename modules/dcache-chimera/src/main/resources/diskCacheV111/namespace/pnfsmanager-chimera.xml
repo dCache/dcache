@@ -21,7 +21,7 @@
 
     <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
         <description>Undeliverable message logger</description>
-        <property name="excludedDestinations" value="${pnfsmanager.destination.cache-notification}"/>
+        <property name="excludedDestinations" value="${pnfsmanager.destination.cache-notification},${pnfsmanager.destination.file-attributes-notification}"/>
     </bean>
 
   <bean abstract="true" id="pnfs-manager" class="diskCacheV111.namespace.PnfsManagerV3"
