@@ -11,7 +11,7 @@ import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Reflection based LoginCellFactory for LoginCells with binary constructors.
@@ -26,8 +26,8 @@ public class LegacyLoginCellFactory extends StreamEngineLoginCellFactory
                                   String cellName)
     {
         super(args, parentEndpoint);
-        this._cellName = checkNotNull(cellName);
-        this._loginConstructor = checkNotNull(loginConstructor);
+        this._cellName = requireNonNull(cellName);
+        this._loginConstructor = requireNonNull(loginConstructor);
     }
 
     @Override

@@ -19,8 +19,8 @@ import java.util.Set;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellNucleus;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 public class CellThresholdFilter extends TurboFilter
 {
@@ -52,7 +52,7 @@ public class CellThresholdFilter extends TurboFilter
 
     public void setOnHigherOrEqual(FilterReply onHigherOrEqual)
     {
-        checkNotNull(onHigherOrEqual);
+        requireNonNull(onHigherOrEqual);
         _onHigherOrEqual = onHigherOrEqual;
     }
 
@@ -69,7 +69,7 @@ public class CellThresholdFilter extends TurboFilter
 
     public void setOnLower(FilterReply onLower)
     {
-        checkNotNull(onLower);
+        requireNonNull(onLower);
         _onLower = onLower;
     }
 

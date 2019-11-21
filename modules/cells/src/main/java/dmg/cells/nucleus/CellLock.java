@@ -2,7 +2,7 @@ package dmg.cells.nucleus;
 
 import java.util.concurrent.Executor;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.MathUtils.addWithInfinity;
 
 public class CellLock
@@ -16,8 +16,8 @@ public class CellLock
     public CellLock(CellMessage msg, CellMessageAnswerable callback,
                     Executor executor, long timeout)
     {
-        _callback = checkNotNull(callback);
-        _executor = checkNotNull(executor);
+        _callback = requireNonNull(callback);
+        _executor = requireNonNull(executor);
         _timeout = addWithInfinity(System.currentTimeMillis(), timeout);
         _message = msg;
     }

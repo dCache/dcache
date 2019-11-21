@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * This class maintains a set of filter thresholds. Two types of inheritance
@@ -91,7 +91,7 @@ public class FilterThresholdSet
      */
     public synchronized void addAppender(String name)
     {
-        checkNotNull(name);
+        requireNonNull(name);
         _appenders.add(name);
     }
 
@@ -135,8 +135,8 @@ public class FilterThresholdSet
      */
     public synchronized void setThreshold(LoggerName logger, String appender, Level level)
     {
-        checkNotNull(logger);
-        checkNotNull(level);
+        requireNonNull(logger);
+        requireNonNull(level);
         checkArgument(hasAppender(appender));
         _rules.put(logger, appender, level);
         clearCache();

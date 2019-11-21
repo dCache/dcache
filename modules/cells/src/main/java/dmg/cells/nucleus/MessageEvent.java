@@ -2,13 +2,13 @@ package dmg.cells.nucleus;
 
 import javax.annotation.Nonnull;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class MessageEvent extends CellEvent
 {
     public MessageEvent(CellMessage msg)
     {
-        super(checkNotNull(msg), CellEvent.OTHER_EVENT);
+        super(requireNonNull(msg), CellEvent.OTHER_EVENT);
     }
 
     @Nonnull

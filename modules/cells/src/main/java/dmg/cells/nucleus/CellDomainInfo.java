@@ -23,7 +23,7 @@ import java.util.Optional;
 import dmg.util.Releases;
 import dmg.util.Releases.BadVersionException;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class CellDomainInfo implements Serializable
 {
@@ -36,9 +36,9 @@ public class CellDomainInfo implements Serializable
     public CellDomainInfo(String name, String version, CellDomainRole role,
             Optional<String> zone)
     {
-        _domainName = checkNotNull(name);
-        _version = checkNotNull(version);
-        _role = checkNotNull(role);
+        _domainName = requireNonNull(name);
+        _version = requireNonNull(version);
+        _role = requireNonNull(role);
         _zone = zone.orElse(null);
     }
 

@@ -22,8 +22,8 @@ import diskCacheV111.util.FsPath;
 import org.dcache.util.NetworkUtils.InetAddressScope;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Immutable object to capture information about a door.
@@ -77,16 +77,16 @@ public class LoginBrokerInfo implements Serializable
                            long updateTime)
     {
         checkArgument(!addresses.isEmpty());
-        _cellName = checkNotNull(cellName);
-        _domainName = checkNotNull(domainName);
-        _protocolFamily = checkNotNull(protocolFamily);
-        _protocolVersion = checkNotNull(protocolVersion);
-        _protocolEngine = checkNotNull(protocolEngine);
+        _cellName = requireNonNull(cellName);
+        _domainName = requireNonNull(domainName);
+        _protocolFamily = requireNonNull(protocolFamily);
+        _protocolVersion = requireNonNull(protocolVersion);
+        _protocolEngine = requireNonNull(protocolEngine);
         _root = root;
-        _tags = checkNotNull(tags);
-        _readPaths = checkNotNull(readPaths);
-        _writePaths = checkNotNull(writePaths);
-        _addresses = checkNotNull(addresses);
+        _tags = requireNonNull(tags);
+        _readPaths = requireNonNull(readPaths);
+        _writePaths = requireNonNull(writePaths);
+        _addresses = requireNonNull(addresses);
         _port = port;
         _load = load;
         _update = updateTime;

@@ -11,7 +11,7 @@ import java.util.Formatter;
 import org.dcache.util.Args;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Provides basic cell shell commands to inspect and manipulate log
@@ -25,7 +25,7 @@ public class FilterShell
 
     public FilterShell(FilterThresholdSet thresholds)
     {
-        checkNotNull(thresholds);
+        requireNonNull(thresholds);
         _thresholds = thresholds;
     }
 

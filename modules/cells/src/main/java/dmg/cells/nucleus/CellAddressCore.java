@@ -5,7 +5,7 @@ import com.google.common.collect.ComparisonChain;
 import java.io.Serializable;
 import java.util.Objects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -56,7 +56,7 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
     }
 
     public CellAddressCore(String addr, String domain) {
-        checkNotNull(addr);
+        requireNonNull(addr);
         _cell = addr;
         _domain = (domain == null) ? "local" : domain;
     }

@@ -2,7 +2,7 @@ package dmg.cells.nucleus;
 
 import java.io.Serializable;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class DelayedReply implements Reply
 {
@@ -15,8 +15,8 @@ public class DelayedReply implements Reply
     @Override
     public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope)
     {
-        _endpoint = checkNotNull(endpoint);
-        _envelope = checkNotNull(envelope);
+        _endpoint = requireNonNull(endpoint);
+        _envelope = requireNonNull(envelope);
         if (_msg != null) {
             send();
         }
