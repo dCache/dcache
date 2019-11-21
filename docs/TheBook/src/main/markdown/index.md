@@ -103,6 +103,8 @@ dCache Book
 
         -   [Zookeeper and dCache](config-zookeeper.md)
 
+        -   [Storage Descriptor / SRR](srr.md)
+
 -   [Chapter III. Cookbook](cookbook.md)
 
     -   [High Availability with Replicable
