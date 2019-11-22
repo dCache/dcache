@@ -140,7 +140,7 @@ public class LoginBrokerPublisher
     class SetTagCommand implements Callable<String>
     {
         @Argument(required = false)
-        String[] tags;
+        String[] tags = {};
 
         @Override
         public String call()
