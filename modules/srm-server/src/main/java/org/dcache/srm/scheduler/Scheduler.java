@@ -82,6 +82,8 @@ import java.util.Timer;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
@@ -109,6 +111,9 @@ public class Scheduler <T extends Job>
 
     // thread pool related variables
     private final ExecutorService pooledExecutor;
+
+    private final ScheduledExecutorService scheduler
+            = Executors.newSingleThreadScheduledExecutor();
 
     // ready state related variables
     private int maxReadyJobs;
@@ -197,6 +202,7 @@ public class Scheduler <T extends Job>
 
         workSupplyService.stopAsync().awaitTerminated();
         retryTimer.cancel();
+        scheduler.shutdownNow();
         pooledExecutor.shutdownNow();
     }
 
@@ -238,6 +244,22 @@ public class Scheduler <T extends Job>
         checkState(running, "Scheduler is not running");
         checkOwnership(job);
         LOGGER.trace("execute is called for job with id={} in state={}", job.getId(), job.getState());
+        executeJob(job);
+    }
+
+    /**
+     * Schedule running this job after some delay.
+     */
+    public void schedule(Job job, long delay, TimeUnit units)
+    {
+        checkState(running, "Scheduler is not running");
+        checkOwnership(job);
+        LOGGER.trace("schedule called for job with id={} in state={}", job.getId(), job.getState());
+        scheduler.schedule(() -> executeJob(job), delay, units);
+    }
+
+    private void executeJob(Job job)
+    {
         pooledExecutor.execute(new JobWrapper(job));
     }
 
