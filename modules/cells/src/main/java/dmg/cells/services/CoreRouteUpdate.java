@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2019 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,6 +23,7 @@ import javax.annotation.concurrent.Immutable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableCollection;
@@ -33,16 +34,19 @@ public class CoreRouteUpdate implements Serializable
     private static final long serialVersionUID = 5105253793542041494L;
     private final String[] exports;
     private final String[] topics;
+    // as Optional class is not serializable use raw String
+    private final String zone;
 
-    public CoreRouteUpdate(Collection<String> exports)
+    public CoreRouteUpdate(Collection<String> exports, Optional<String> zone)
     {
-        this(exports, Collections.emptyList());
+        this(exports, Collections.emptyList(), zone);
     }
 
-    public CoreRouteUpdate(Collection<String> exports, Collection<String> topics)
+    public CoreRouteUpdate(Collection<String> exports, Collection<String> topics, Optional<String> zone)
     {
         this.exports = exports.stream().distinct().toArray(String[]::new);
         this.topics = topics.stream().distinct().toArray(String[]::new);
+        this.zone = zone.orElse(null);
     }
 
     public Collection<String> getExports()
@@ -53,5 +57,10 @@ public class CoreRouteUpdate implements Serializable
     public Collection<String> getTopics()
     {
         return unmodifiableCollection(asList(topics));
+    }
+
+    public Optional<String> getZone()
+    {
+        return Optional.ofNullable(zone);
     }
 }

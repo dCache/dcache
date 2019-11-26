@@ -1128,7 +1128,7 @@ public class CellNucleus implements ThreadFactory
         __cellGlue.routeDelete(route);
     }
     CellRoute routeFind(CellAddressCore addr) {
-        return __cellGlue.getRoutingTable().find(addr, true);
+        return __cellGlue.getRoutingTable().find(addr, getZone(), true);
     }
     public CellRoutingTable getRoutingTable() { return __cellGlue.getRoutingTable(); }
     public CellRoute [] getRoutingList() { return __cellGlue.getRoutingList(); }

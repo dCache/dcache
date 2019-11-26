@@ -4,6 +4,7 @@ import com.google.common.base.MoreObjects;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -23,6 +24,8 @@ public class CellRoute implements Serializable
     private final String _destDomain;
     private final CellAddressCore _gateway;
     private final int _type;
+    // as Optional class is not serializable use raw String
+    private final String _zone;
 
     public static final int AUTO = 0;
     public static final int EXACT = 1;
@@ -39,10 +42,11 @@ public class CellRoute implements Serializable
             {"Auto", "Exact", "Queue", "Domain",
                     "Default", "Dumpster", "Alias", "Topic"};
 
-    public CellRoute(String dest, CellAddressCore gateway, int type)
+    public CellRoute(String dest, CellAddressCore gateway, Optional<String> zone, int type)
             throws IllegalArgumentException
     {
         _gateway = gateway;
+        _zone = zone.orElse(null);
 
         String cell, domain;
         if (dest == null || dest.isEmpty()) {
@@ -159,6 +163,10 @@ public class CellRoute implements Serializable
         return _gateway;
     }
 
+    public Optional<String> getZone() {
+        return Optional.ofNullable(_zone);
+    }
+
     public String getRouteTypeName()
     {
         return TYPE_NAMES[_type];
@@ -183,7 +191,8 @@ public class CellRoute implements Serializable
         return route._destCell.equals(_destCell) &&
                route._destDomain.equals(_destDomain) &&
                route._gateway.equals(_gateway) &&
-               route._type == _type;
+               route._type == _type &&
+               Objects.equals(route._zone, _zone);
     }
 
     @Override
@@ -194,6 +203,7 @@ public class CellRoute implements Serializable
                 .add("domain", getDomainName())
                 .add("gateway", getTarget())
                 .add("type", getRouteTypeName())
+                .add("zone", _zone == null? "Undefined" : _zone)
                 .toString();
     }
 }

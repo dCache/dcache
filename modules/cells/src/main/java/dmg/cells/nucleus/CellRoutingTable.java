@@ -198,7 +198,7 @@ public class CellRoutingTable implements Serializable
         }
     }
 
-    public CellRoute find(CellAddressCore addr, boolean allowRemote)
+    public CellRoute find(CellAddressCore addr, Optional<String> zone, boolean allowRemote)
     {
         String cellName = addr.getCellName();
         String domainName = addr.getCellDomainName();

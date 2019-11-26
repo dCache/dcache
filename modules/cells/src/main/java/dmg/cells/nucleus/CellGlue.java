@@ -197,12 +197,12 @@ class CellGlue
 
     void consume(CellNucleus cell, String queue)
     {
-        routeAdd(new CellRoute(queue, cell.getThisAddress(), CellRoute.QUEUE));
+        routeAdd(new CellRoute(queue, cell.getThisAddress(), cell.getZone(), CellRoute.QUEUE));
     }
 
     void subscribe(CellNucleus cell, String topic)
     {
-        routeAdd(new CellRoute(topic, cell.getThisAddress(), CellRoute.TOPIC));
+        routeAdd(new CellRoute(topic, cell.getThisAddress(), cell.getZone(), CellRoute.TOPIC));
     }
 
     Map<String, Object> getCellContext()
@@ -583,7 +583,7 @@ class CellGlue
 
             /* Lookup a route.
              */
-            CellRoute route = _routingTable.find(address, resolveRemotely);
+            CellRoute route = _routingTable.find(address, getZone(), resolveRemotely);
             if (route == null) {
                 LOGGER.trace("sendMessage : no route destination for : {}", address);
                 if (!hasTopicRoutes) {

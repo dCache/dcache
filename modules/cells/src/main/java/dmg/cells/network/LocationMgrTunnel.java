@@ -155,7 +155,7 @@ public class LocationMgrTunnel
 
         /* Add domain route.
          */
-        CellRoute route = new CellRoute(domain, nucleus.getThisAddress(), CellRoute.DOMAIN);
+        CellRoute route = new CellRoute(domain, nucleus.getThisAddress(), nucleus.getZone(), CellRoute.DOMAIN);
         try {
             nucleus.routeAdd(route);
         } catch (IllegalArgumentException e) {

@@ -1,6 +1,7 @@
 package dmg.cells.nucleus;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -27,7 +28,7 @@ public class CellRoutingTableTest {
     public void testAddRoute() {
 
         CellAddressCore gateway = new CellAddressCore("gw", "core");
-        CellRoute route = new CellRoute("cell-A", gateway, CellRoute.QUEUE);
+        CellRoute route = new CellRoute("cell-A", gateway, Optional.empty(), CellRoute.QUEUE);
 
         routingTable.add(route);
 
@@ -38,7 +39,7 @@ public class CellRoutingTableTest {
     public void testDeleteRoute() {
 
         CellAddressCore gateway = new CellAddressCore("gw", "core");
-        CellRoute route = new CellRoute("cell-A", gateway, CellRoute.QUEUE);
+        CellRoute route = new CellRoute("cell-A", gateway, Optional.empty(), CellRoute.QUEUE);
 
         routingTable.add(route);
         routingTable.delete(route);
@@ -49,7 +50,7 @@ public class CellRoutingTableTest {
     public void testDeleteGateway() {
 
         CellAddressCore gateway = new CellAddressCore("gw", "core");
-        CellRoute route = new CellRoute("cell-A", gateway, CellRoute.QUEUE);
+        CellRoute route = new CellRoute("cell-A", gateway, Optional.empty(), CellRoute.QUEUE);
 
         routingTable.add(route);
         routingTable.delete(gateway);
@@ -60,10 +61,10 @@ public class CellRoutingTableTest {
     public void testFindRoute() {
 
         CellAddressCore gateway = new CellAddressCore("gw", "core");
-        CellRoute route = new CellRoute("cell-A", gateway, CellRoute.QUEUE);
+        CellRoute route = new CellRoute("cell-A", gateway, Optional.empty(), CellRoute.QUEUE);
 
         routingTable.add(route);
-        route = routingTable.find(new CellAddressCore("cell-A"), true);
+        route = routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true);
         assertNotNull(route);
     }
 
@@ -71,10 +72,10 @@ public class CellRoutingTableTest {
     public void testNonExistingRoute() {
 
         CellAddressCore gateway = new CellAddressCore("gw", "core");
-        CellRoute route = new CellRoute("cell-A", gateway, CellRoute.QUEUE);
+        CellRoute route = new CellRoute("cell-A", gateway, Optional.empty(), CellRoute.QUEUE);
 
         routingTable.add(route);
-        route = routingTable.find(new CellAddressCore("cell-B"), true);
+        route = routingTable.find(new CellAddressCore("cell-B"), Optional.empty(), true);
         assertNull(route);
     }
 
@@ -83,8 +84,8 @@ public class CellRoutingTableTest {
 
         CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
         CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
-        CellRoute route1 = new CellRoute("cell-A", gateway1, CellRoute.QUEUE);
-        CellRoute route2 = new CellRoute("cell-A", gateway2, CellRoute.QUEUE);
+        CellRoute route1 = new CellRoute("cell-A", gateway1, Optional.empty(), CellRoute.QUEUE);
+        CellRoute route2 = new CellRoute("cell-A", gateway2, Optional.empty(), CellRoute.QUEUE);
 
         routingTable.add(route1);
         routingTable.add(route2);
@@ -92,7 +93,7 @@ public class CellRoutingTableTest {
         Map<String, Long> alternativeRoutes = IntStream
                 .generate(() -> 1)
                 .limit(10)
-                .mapToObj( i -> routingTable.find(new CellAddressCore("cell-A"), true))
+                .mapToObj( i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
                 .map(r -> r.getTarget())
                 .map(t -> t.toString())
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
@@ -105,8 +106,8 @@ public class CellRoutingTableTest {
 
         CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
         CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
-        CellRoute route1 = new CellRoute(null, gateway1, CellRoute.DEFAULT);
-        CellRoute route2 = new CellRoute(null, gateway2, CellRoute.DEFAULT);
+        CellRoute route1 = new CellRoute(null, gateway1, Optional.empty(), CellRoute.DEFAULT);
+        CellRoute route2 = new CellRoute(null, gateway2, Optional.empty(), CellRoute.DEFAULT);
 
         routingTable.add(route1);
         routingTable.add(route2);
@@ -114,7 +115,7 @@ public class CellRoutingTableTest {
         Map<String, Long> alternativeRoutes = IntStream
                 .generate(() -> 1)
                 .limit(10)
-                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), true))
+                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
                 .map(r -> r.getTarget())
                 .map(t -> t.toString())
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
@@ -126,7 +127,7 @@ public class CellRoutingTableTest {
     public void testNoDefaultRoute() {
 
         CellAddressCore gateway = new CellAddressCore("gw", "core");
-        CellRoute route = new CellRoute("cell-A", gateway, CellRoute.QUEUE);
+        CellRoute route = new CellRoute("cell-A", gateway, Optional.empty(), CellRoute.QUEUE);
 
         routingTable.add(route);
         assertFalse(routingTable.hasDefaultRoute());
@@ -136,7 +137,7 @@ public class CellRoutingTableTest {
     public void testAddDefaultRoute() {
 
         CellAddressCore gateway = new CellAddressCore("gw", "core");
-        CellRoute route = new CellRoute(null, gateway, CellRoute.DEFAULT);
+        CellRoute route = new CellRoute(null, gateway, Optional.empty(), CellRoute.DEFAULT);
 
         routingTable.add(route);
         assertTrue(routingTable.hasDefaultRoute());

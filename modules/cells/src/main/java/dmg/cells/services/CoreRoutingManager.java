@@ -235,12 +235,12 @@ public class CoreRoutingManager
 
     private synchronized void sendToCoreDomains()
     {
-        sendToPeers(new CoreRouteUpdate(localConsumers.values(), localSubscriptions.values()), coreTunnels.values());
+        sendToPeers(new CoreRouteUpdate(localConsumers.values(), localSubscriptions.values(), nucleus.getZone()), coreTunnels.values());
     }
 
     private synchronized void sendToSatelliteDomains()
     {
-        sendToPeers(new CoreRouteUpdate(localConsumers.values()), satelliteTunnels.values());
+        sendToPeers(new CoreRouteUpdate(localConsumers.values(), nucleus.getZone()), satelliteTunnels.values());
     }
 
     private void sendToPeers(Serializable msg, Collection<CellTunnelInfo> tunnels)
@@ -266,7 +266,7 @@ public class CoreRoutingManager
         return Futures.allAsList(futures);
     }
 
-    private void updateRoutes(String domain, Collection<String> destinations, Multimap<String, String> routes, int type)
+    private void updateRoutes(String domain, Collection<String> destinations, Multimap<String, String> routes, Optional<String> zone, int type)
     {
         Set<String> newDestinations = new HashSet<>(destinations);
         Iterator<String> iterator = routes.get(domain).iterator();
@@ -274,7 +274,7 @@ public class CoreRoutingManager
             String destination = iterator.next();
             if (!newDestinations.remove(destination)) {
                 try {
-                    nucleus.routeDelete(new CellRoute(destination, new CellAddressCore("*", domain), type));
+                    nucleus.routeDelete(new CellRoute(destination, new CellAddressCore("*", domain), zone, type));
                     iterator.remove();
                 } catch (IllegalArgumentException ignored) {
                     // Route didn't exist
@@ -283,7 +283,7 @@ public class CoreRoutingManager
         }
         for (String destination : newDestinations) {
             try {
-                nucleus.routeAdd(new CellRoute(destination, new CellAddressCore("*", domain), type));
+                nucleus.routeAdd(new CellRoute(destination, new CellAddressCore("*", domain), zone, type));
                 routes.put(domain, destination);
             } catch (IllegalArgumentException ignored) {
                 // Already exists
@@ -291,14 +291,14 @@ public class CoreRoutingManager
         }
     }
 
-    private synchronized void updateTopicRoutes(String domain, Collection<String> topics)
+    private synchronized void updateTopicRoutes(String domain, Collection<String> topics, Optional<String> zone)
     {
-        updateRoutes(domain, topics, topicRoutes, CellRoute.TOPIC);
+        updateRoutes(domain, topics, topicRoutes, zone, CellRoute.TOPIC);
     }
 
-    private synchronized void updateQueueRoutes(String domain, Collection<String> cells)
+    private synchronized void updateQueueRoutes(String domain, Collection<String> cells, Optional<String> zone)
     {
-        updateRoutes(domain, cells, queueRoutes, CellRoute.QUEUE);
+        updateRoutes(domain, cells, queueRoutes, zone, CellRoute.QUEUE);
     }
 
     @Override
@@ -310,8 +310,8 @@ public class CoreRoutingManager
             if (updates.put(domain, (CoreRouteUpdate) obj) == null) {
                 executor.execute(() -> {
                     CoreRouteUpdate update = updates.remove(domain);
-                    updateTopicRoutes(domain, update.getTopics());
-                    updateQueueRoutes(domain, update.getExports());
+                    updateTopicRoutes(domain, update.getTopics(), update.getZone());
+                    updateQueueRoutes(domain, update.getExports(), update.getZone());
                 });
             }
         } else if (obj instanceof GetAllDomainsRequest) {
@@ -348,7 +348,7 @@ public class CoreRoutingManager
                 coreTunnels.values().stream()
                         .filter(i -> i.getRemoteCellDomainInfo().getCellDomainName().equals(remoteDomain))
                         .forEach(i -> {
-                            CellRoute route = new CellRoute(null, i.getTunnel(), CellRoute.DEFAULT);
+                            CellRoute route = new CellRoute(null, i.getTunnel(), i.getRemoteCellDomainInfo().getZone(), CellRoute.DEFAULT);
                             delayedDefaultRoutes.remove(route);
                             if (!hasAlternativeDefaultRoute(route)) {
                                 installDefaultRoute();
@@ -400,7 +400,7 @@ public class CoreRoutingManager
                     .filter(i -> i.getLocalCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
                                  i.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE)
                     .ifPresent(i -> {
-                        delayedDefaultRoutes.add(new CellRoute(null, i.getTunnel(), CellRoute.DEFAULT));
+                        delayedDefaultRoutes.add(new CellRoute(null, i.getTunnel(), i.getRemoteCellDomainInfo().getZone(), CellRoute.DEFAULT));
                         if (nucleus.getRoutingTable().hasDefaultRoute()) {
                             invokeLater(this::installDefaultRoute);
                         } else {
@@ -436,11 +436,11 @@ public class CoreRoutingManager
         LOG.info("Got 'route deleted' event: {}", cr);
         switch (cr.getRouteType()) {
         case CellRoute.DOMAIN:
-            updateTopicRoutes(cr.getDomainName(), Collections.emptyList());
-            updateQueueRoutes(cr.getDomainName(), Collections.emptyList());
+            updateTopicRoutes(cr.getDomainName(), Collections.emptyList(), cr.getZone());
+            updateQueueRoutes(cr.getDomainName(), Collections.emptyList(), cr.getZone());
             coreTunnels.remove(target);
             satelliteTunnels.remove(target);
-            delayedDefaultRoutes.remove(new CellRoute(null, target, CellRoute.DEFAULT));
+            delayedDefaultRoutes.remove(new CellRoute(null, target, cr.getZone(), CellRoute.DEFAULT));
             break;
         case CellRoute.TOPIC:
             String topic = cr.getCellName();

@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.SortedSet;
 import java.util.Stack;
@@ -783,6 +784,9 @@ public class CellShell extends CommandInterpreter
                 + "This option exists for backwards compatibility.")
         boolean wellknownType;
 
+        @Option(name = "zone", usage="Specifies preferred zone.")
+        String zone;
+
         @Argument(index=-2, required=false,
                 usage="The DESTINATION address for this route.  These limits "
                         + "the effect of a route to only those messages with a "
@@ -847,7 +851,7 @@ public class CellShell extends CommandInterpreter
         {
             int type = getType();
             checkArguments(type);
-            return new CellRoute(destination, new CellAddressCore(target), type);
+            return new CellRoute(destination, new CellAddressCore(target), Optional.ofNullable(zone), type);
         }
     }
 
@@ -928,6 +932,7 @@ public class CellShell extends CommandInterpreter
             sb.append("         type: ").append(route.getRouteTypeName().toUpperCase()).append('\n');
             sb.append("  destination: ").append(route.getCellName()).append('@').append(route.getDomainName()).append('\n');
             sb.append("       target: ").append(route.getTarget()).append('\n');
+            sb.append("         zone: ").append(route.getZone().orElse("Undefined")).append('\n');
 
             return sb.toString();
         }
