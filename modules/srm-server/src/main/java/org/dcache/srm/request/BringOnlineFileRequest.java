@@ -79,6 +79,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -120,6 +121,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     private String pinId;
     private String fileId;
     private transient FileMetaData fileMetaData;
+    private Optional<String> lastPinFailure = Optional.empty();
 
     /** Creates new FileRequest */
     public BringOnlineFileRequest(long requestId, URI surl, long lifetime)
@@ -293,7 +295,12 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 throw new SRMFileBusyException("The requested SURL is locked by an upload.");
             }
 
-            addHistoryEvent("Pinning file.");
+            if (lastPinFailure.isPresent()) {
+                addHistoryEvent("Retrying to pin file, previous attempt failed with " + lastPinFailure.get());
+                lastPinFailure = Optional.empty();
+            } else {
+                addHistoryEvent("Pinning file.");
+            }
             pinFile(getContainerRequest());
         }
     }
@@ -546,6 +553,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     }
                 } catch (SRMInternalErrorException e) {
                     if (!fr.getState().isFinal()) {
+                        fr.lastPinFailure = Optional.of(e.getMessage());
                         Scheduler.getScheduler(fr.getSchedulerId()).schedule(fr,
                                 1, TimeUnit.SECONDS);
                     }
