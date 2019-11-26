@@ -543,7 +543,8 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     }
                 } catch (SRMInternalErrorException e) {
                     if (!fr.getState().isFinal()) {
-                        Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
+                        Scheduler.getScheduler(fr.getSchedulerId()).schedule(fr,
+                                1, TimeUnit.SECONDS);
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(
