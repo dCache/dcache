@@ -69,26 +69,18 @@ package org.dcache.srm.util;
 import com.google.common.base.Strings;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.FsPath;
-
-import org.dcache.srm.SRM;
-import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.client.Transport;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.util.ByteUnit.KiB;
 
 public class Configuration {
-
-    private final static String SFN_STRING = "SFN=";
 
     private static final String INFINITY = "infinity";
 
@@ -113,7 +105,6 @@ public class Configuration {
     private int parallel_streams=10;
 
     protected long authzCacheLifetime = 180;
-    protected String srm_root="/";
     protected String proxies_directory = "../proxies";
     protected int timeout=60*60; //one hour
     protected String timeout_script="../scripts/timeout.sh";
@@ -289,20 +280,6 @@ public class Configuration {
         this.authzCacheLifetime = authzCacheLifetime;
     }
 
-    /** Setter for property srm_root.
-     * @param srm_root New value of property srm_root.
-     */
-    public void setSrm_root(String srm_root) {
-        this.srm_root = srm_root;
-    }
-
-    /** Getter for property srm_root.
-     * @return Value of property srm_root.
-     */
-    public String getSrm_root() {
-        return srm_root;
-    }
-
     /** Getter for property proxies_directory.
      * @return Value of property proxies_directory.
      */
@@ -365,7 +342,6 @@ public class Configuration {
         sb.append("\n\tgridftp parallel_streams=").append(this.parallel_streams);
         sb.append("\n\tgsiftpclinet=").append(this.gsiftpclinet);
         sb.append("\n\turlcopy=").append(this.urlcopy);
-        sb.append("\n\tsrm_root=").append(this.srm_root);
         sb.append("\n\ttimeout_script=").append(this.timeout_script);
         sb.append("\n\turlcopy timeout in seconds=").append(this.timeout);
         sb.append("\n\tproxies directory=").append(this.proxies_directory);
@@ -1019,27 +995,5 @@ public class Configuration {
         {
             return Configuration.this.getTransactionManager();
         }
-    }
-
-    /**
-     * Given a surl, this method returns a full PNFS path.
-     */
-    @Nonnull
-    public FsPath getPath(URI surl) throws SRMInvalidPathException
-    {
-        if (!SRM.getSRM().getStorage().isLocalSurl(surl)) {
-            throw new SRMInvalidPathException("SURL is not local: " + surl);
-        }
-
-        String path = surl.getPath();
-        String query = surl.getQuery();
-        if (query != null) {
-            int i = query.indexOf(SFN_STRING);
-            if (i != -1) {
-                path = query.substring(i + SFN_STRING.length());
-            }
-        }
-
-        return FsPath.create(getSrm_root()).chroot(path);
     }
 }

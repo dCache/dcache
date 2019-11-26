@@ -220,6 +220,7 @@
         <property name="useCustomGetHostByAddress"
                   value="${srmmanager.enable.custom-get-host-by-address}"/>
         <property name="configuration" ref="config"/>
+        <property name="root" value="${srmmanager.root}"/>
         <property name="pinOnlineFiles" value="${srmmanager.enable.pin-online-files}"/>
         <property name="srmPutNotSupportedProtocols" value="${srmmanager.protocols.disallowed.put}"/>
         <property name="srmGetNotSupportedProtocols" value="${srmmanager.protocols.disallowed.get}"/>
@@ -258,7 +259,6 @@
                      SECONDS.convert(
                      ${srmmanager.service.gplazma.cache.timeout},
                      '${srmmanager.service.gplazma.cache.timeout.unit}')}" />
-        <property name="srm_root" value="${srmmanager.root}"/>
         <property name="buffer_size" value="${srmmanager.limits.transfer-buffer.size}"/>
         <property name="tcp_buffer_size" value="${srmmanager.limits.transfer-tcp-buffer.size}"/>
         <property name="parallel_streams" value="${srmmanager.limits.parallel-streams}"/>

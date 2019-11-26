@@ -197,6 +197,7 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.RemoveFileCallback;
+import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
@@ -231,7 +232,6 @@ import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Maps.filterKeys;
@@ -256,6 +256,7 @@ public final class Storage
 
     private static final String SPACEMANAGER_DISABLED_MESSAGE =
             "space reservation is disabled";
+    private static final String SFN_STRING = "SFN=";
 
 
     private static final LoadingCache<InetAddress,String> GET_HOST_BY_ADDR_CACHE =
@@ -305,6 +306,8 @@ public final class Storage
     // Protocol as advertised by srm services via LoginBroker.
     private String srmProtocol;
 
+    private FsPath root;
+
     /**
      * Used during  uploads to verify the availability of a space reservation. In case
      * of stale data, a TURL may be handed out to the client even though the reservation
@@ -323,6 +326,12 @@ public final class Storage
     {
         attributesRequiredForRmdir = EnumSet.of(TYPE);
         attributesRequiredForRmdir.addAll(permissionHandler.getRequiredAttributes());
+    }
+
+    @Required
+    public void setRoot(String path)
+    {
+        root = FsPath.create(path);
     }
 
     @Required
@@ -568,7 +577,7 @@ public final class Storage
                 : PinningActivityPolicy.DENY_STAGING;
         try {
             return Futures.makeChecked(PinCompanion.pinFile(asDcacheUser(user).getSubject(),
-                                                            config.getPath(surl),
+                                                            getPath(surl),
                                                             clientHost,
                                                             pinLifetime,
                                                             requestToken,
@@ -654,7 +663,7 @@ public final class Storage
         throws SRMException
     {
         DcacheUser user = asDcacheUser(srmUser);
-        FsPath path = config.getPath(surl);
+        FsPath path = getPath(surl);
         return getTurl(loginBrokerSource.readDoorsByProtocol(), user, path, protocols,
                        srmGetNotSupportedProtocols, previousTurl, d -> d.canRead(user.getRoot(), path));
     }
@@ -1029,7 +1038,7 @@ public final class Storage
             DcacheUser user = asDcacheUser(srmUser);
             Subject subject = user.getSubject();
             Restriction restriction = user.getRestriction();
-            FsPath fullPath = config.getPath(surl);
+            FsPath fullPath = getPath(surl);
 
             if (spaceToken != null) {
                 if (!_isSpaceManagerEnabled) {
@@ -1138,7 +1147,7 @@ public final class Storage
         try {
             Subject subject = asDcacheUser(user).getSubject();
             Restriction restriction = asDcacheUser(user).getRestriction();
-            FsPath fullPath = config.getPath(surl);
+            FsPath fullPath = getPath(surl);
 
             checkNonBrokenUpload(localTransferPath);
 
@@ -1234,7 +1243,7 @@ public final class Storage
             if (localTransferPath.startsWith("/")) { // safe-guard against incompatible file id from earlier versions
                 Subject subject = (user == null) ? Subjects.ROOT : asDcacheUser(user).getSubject();
                 Restriction restriction = (user == null) ? Restrictions.none() : asDcacheUser(user).getRestriction();
-                FsPath actualPnfsPath = config.getPath(surl);
+                FsPath actualPnfsPath = getPath(surl);
                 PnfsCancelUpload msg = new PnfsCancelUpload(subject, restriction,
                         FsPath.create(localTransferPath), actualPnfsPath,
                         EnumSet.noneOf(FileAttribute.class),
@@ -1270,7 +1279,7 @@ public final class Storage
         throws SRMException
     {
         DcacheUser user = asDcacheUser(abstractUser);
-        FsPath path = config.getPath(surl);
+        FsPath path = getPath(surl);
         PnfsHandler handler =
             new PnfsHandler(_pnfs, user.getSubject(), user.getRestriction());
 
@@ -1300,7 +1309,7 @@ public final class Storage
     public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean checkReadPermissions)
             throws SRMException
     {
-        return getFileMetaData(asDcacheUser(user), checkReadPermissions, config.getPath(surl));
+        return getFileMetaData(asDcacheUser(user), checkReadPermissions, getPath(surl));
     }
 
     @Nonnull
@@ -1392,7 +1401,7 @@ public final class Storage
         throws SRMException
     {
         DcacheUser user = asDcacheUser(srmUser);
-        FsPath actualFromFilePath = config.getPath(fromSurl);
+        FsPath actualFromFilePath = getPath(fromSurl);
         FsPath actualToFilePath = FsPath.create(localTransferPath);
         long id = getNextMessageID();
         _log.debug("localCopy for user {} from actualFromFilePath to actualToFilePath", user );
@@ -1429,7 +1438,7 @@ public final class Storage
         try {
             RemoveFileCompanion.removeFile(asDcacheUser(user).getSubject(),
                                            asDcacheUser(user).getRestriction(),
-                                           config.getPath(surl).toString(),
+                                           getPath(surl).toString(),
                                            callbacks,
                                            _pnfsStub,
                                            _billingStub,
@@ -1552,7 +1561,7 @@ public final class Storage
     {
         Subject subject = asDcacheUser(user).getSubject();
         Restriction restriction = asDcacheUser(user).getRestriction();
-        FsPath path = config.getPath(surl);
+        FsPath path = getPath(surl);
 
         if (path.isRoot()) {
             throw new SRMAuthorizationException("Permission denied");
@@ -1597,7 +1606,7 @@ public final class Storage
         PnfsHandler handler = new PnfsHandler(_pnfs, user.getSubject(), user.getRestriction());
 
         try {
-            handler.createPnfsDirectory(config.getPath(surl).toString());
+            handler.createPnfsDirectory(getPath(surl).toString());
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotDirCacheException e) {
@@ -1621,8 +1630,8 @@ public final class Storage
     {
         DcacheUser user = asDcacheUser(abstractUser);
         PnfsHandler handler = new PnfsHandler(_pnfs, user.getSubject(), user.getRestriction());
-        FsPath fromPath = config.getPath(from);
-        FsPath toPath = config.getPath(to);
+        FsPath fromPath = getPath(from);
+        FsPath toPath = getPath(to);
 
         try {
             try {
@@ -1710,7 +1719,7 @@ public final class Storage
                                   CopyCallbacks callbacks)
         throws SRMException
     {
-        FsPath path = config.getPath(surl);
+        FsPath path = getPath(surl);
         _log.debug(" putToRemoteTURL from {} to {}", path, surl);
         return performRemoteTransfer(user,remoteTURL,path,false,
                 extraInfo,
@@ -1893,7 +1902,7 @@ public final class Storage
                                    FileMetaData fileMetaData)
         throws SRMException
     {
-        final FsPath path = config.getPath(surl);
+        final FsPath path = getPath(surl);
         final List<URI> result = new ArrayList<>();
         final String base = addTrailingSlash(surl.toString());
         Subject subject = asDcacheUser(user).getSubject();
@@ -1941,7 +1950,7 @@ public final class Storage
         throws SRMException
     {
         try {
-            FsPath path = config.getPath(surl);
+            FsPath path = getPath(surl);
             Subject subject = asDcacheUser(user).getSubject();
             Restriction restriction = asDcacheUser(user).getRestriction();
             FmdListPrinter printer =
@@ -1974,8 +1983,6 @@ public final class Storage
     {
         protected final List<FileMetaData> _result =
             new ArrayList<>();
-        protected final FsPath _root =
-            FsPath.create(config.getSrm_root());
 
         @Override
         public Set<FileAttribute> getRequiredAttributes()
@@ -1990,7 +1997,7 @@ public final class Storage
             DcacheFileMetaData fmd = new DcacheFileMetaData(attributes);
             String name = entry.getName();
             FsPath path = (dir == null) ? FsPath.ROOT : dir.child(name);
-            fmd.SURL = path.stripPrefix(_root);
+            fmd.SURL = path.stripPrefix(root);
             return fmd;
         }
 
@@ -2317,7 +2324,7 @@ public final class Storage
     {
         try {
             DcacheUser dCacheUser = asDcacheUser(user);
-            FsPath path = config.getPath(surl);
+            FsPath path = getPath(surl);
             PnfsHandler handler = new PnfsHandler(_pnfs, dCacheUser.getSubject(),
                                                   dCacheUser.getRestriction());
             handler.getFileAttributes(path.toString(),
@@ -2514,4 +2521,25 @@ public final class Storage
         }
     }
 
+    /**
+     * Given a surl, this method returns a full path in dCache namespace.
+     */
+    @Nonnull
+    private FsPath getPath(URI surl) throws SRMInvalidPathException
+    {
+        if (!isLocalSurl(surl)) {
+            throw new SRMInvalidPathException("SURL is not local: " + surl);
+        }
+
+        String path = surl.getPath();
+        String query = surl.getQuery();
+        if (query != null) {
+            int i = query.indexOf(SFN_STRING);
+            if (i != -1) {
+                path = query.substring(i + SFN_STRING.length());
+            }
+        }
+
+        return root.chroot(path);
+    }
 }
