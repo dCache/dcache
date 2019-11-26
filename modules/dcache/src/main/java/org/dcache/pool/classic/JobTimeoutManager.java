@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -7,8 +8,10 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.vehicles.JobInfo;
 
@@ -18,26 +21,29 @@ import dmg.util.command.Command;
 
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.JobTimeoutManagerData;
+import org.dcache.util.CDCScheduledExecutorServiceDecorator;
+import org.dcache.util.FireAndForgetTask;
 
 public class JobTimeoutManager
-        implements Runnable, CellCommandListener, CellInfoProvider,
+        implements CellCommandListener, CellInfoProvider,
                 PoolDataBeanProvider<JobTimeoutManagerData>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(JobTimeoutManager.class);
 
-    private final Thread _worker;
-
     private IoQueueManager _ioQueues;
+
+    private final ScheduledExecutorService _scheduler
+            = new CDCScheduledExecutorServiceDecorator<>(
+                    Executors.newSingleThreadScheduledExecutor(
+                            new ThreadFactoryBuilder()
+                                    .setNameFormat("JobTimeoutManager")
+                                    .build()
+                    ));
 
     private static String schedulerEntryInfo(MoverRequestScheduler entry) {
         return "(lastAccess=" + (entry.getLastAccessed() / 1000L) +
                         ";total=" + (entry.getTotal() / 1000L) + ")";
-    }
-
-    public JobTimeoutManager()
-    {
-        _worker = new Thread(this, "JobTimeoutManager");
     }
 
     @Required
@@ -46,17 +52,13 @@ public class JobTimeoutManager
         _ioQueues = queues;
     }
 
-    public synchronized void start()
-    {
-        if (_worker.isAlive()) {
-            throw new IllegalStateException("Already running");
-        }
-        _worker.start();
+    public void start() {
+        _scheduler.scheduleWithFixedDelay(new FireAndForgetTask(this::runExpire), 2, 2, TimeUnit.MINUTES);
     }
 
-    public synchronized void stop()
+    public void stop()
     {
-        _worker.interrupt();
+        _scheduler.shutdown();
     }
 
     @Override
@@ -88,37 +90,24 @@ public class JobTimeoutManager
         public String call()
                 throws IllegalMonitorStateException
         {
-            synchronized (JobTimeoutManager.this) {
-                JobTimeoutManager.this.notifyAll();
-            }
+            runExpire();
             return "";
         }
     }
 
-    @Override
-    public void run()
-    {
-        try {
-            while (!Thread.currentThread().isInterrupted()) {
-                synchronized (this) {
-                    wait(120000L);
-                }
+    public synchronized void runExpire() {
 
-                long now = System.currentTimeMillis();
-                for (MoverRequestScheduler jobs : _ioQueues.queues()) {
-                    for (JobInfo info : jobs.getJobInfos()) {
-                        int jobId = (int) info.getJobId();
-                        if (jobs.isExpired(info, now)) {
-                            LOGGER.error("Trying to kill <{}> id={}", jobs.getName(), jobId);
-                            if (!jobs.cancel(jobId, "killed by JTM")) {
-                                throw new NoSuchElementException("Job " + jobId + " not found");
-                            }
-                        }
+        long now = System.currentTimeMillis();
+        for (MoverRequestScheduler jobs : _ioQueues.queues()) {
+            for (JobInfo info : jobs.getJobInfos()) {
+                int jobId = (int) info.getJobId();
+                if (jobs.isExpired(info, now)) {
+                    LOGGER.error("Trying to kill <{}> id={}", jobs.getName(), jobId);
+                    if (!jobs.cancel(jobId, "killed by JTM")) {
+                        LOGGER.debug("Job <{}> id={} already gone.", jobs.getName(), jobId);
                     }
                 }
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
     }
 }
