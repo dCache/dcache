@@ -142,4 +142,67 @@ public class CellRoutingTableTest {
         routingTable.add(route);
         assertTrue(routingTable.hasDefaultRoute());
     }
+
+
+    @Test
+    public void testMultipleRoutesDefaultWithZone() {
+
+        CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
+        CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
+        CellRoute route1 = new CellRoute(null, gateway1, Optional.of("zone-A"), CellRoute.DEFAULT);
+        CellRoute route2 = new CellRoute(null, gateway2, Optional.of("zone-B"), CellRoute.DEFAULT);
+
+        routingTable.add(route1);
+        routingTable.add(route2);
+
+        route1 = routingTable.find(new CellAddressCore("cell-B"), Optional.of("zone-A"), true);
+        assertEquals("zone-A", route1.getZone().get());
+
+        route2 = routingTable.find(new CellAddressCore("cell-B"), Optional.of("zone-B"), true);
+        assertEquals("zone-B", route2.getZone().get());
+    }
+
+    @Test
+    public void testMultipleRoutesDefaultNoZone() {
+
+        CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
+        CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
+        CellRoute route1 = new CellRoute(null, gateway1, Optional.empty(), CellRoute.DEFAULT);
+        CellRoute route2 = new CellRoute(null, gateway2, Optional.empty(), CellRoute.DEFAULT);
+
+        routingTable.add(route1);
+        routingTable.add(route2);
+
+        Map<String, Long> alternativeRoutes = IntStream
+                .generate(() -> 1)
+                .limit(10)
+                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-A"), true))
+                .map(r -> r.getTarget())
+                .map(t -> t.toString())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        assertEquals(1, alternativeRoutes.size());
+    }
+
+    @Test
+    public void testMultipleRoutesDefaultWithZone2() {
+
+        CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
+        CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
+        CellRoute route1 = new CellRoute(null, gateway1, Optional.of("zone-A"), CellRoute.DEFAULT);
+        CellRoute route2 = new CellRoute(null, gateway2, Optional.of("zone-B"), CellRoute.DEFAULT);
+
+        routingTable.add(route1);
+        routingTable.add(route2);
+
+        Map<String, Long> alternativeRoutes = IntStream
+                .generate(() -> 1)
+                .limit(10)
+                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
+                .map(r -> r.getTarget())
+                .map(t -> t.toString())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        assertEquals(1, alternativeRoutes.size());
+    }
 }

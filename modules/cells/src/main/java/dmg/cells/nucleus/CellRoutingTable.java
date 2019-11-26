@@ -234,7 +234,24 @@ public class CellRoutingTable implements Serializable
             }
         }
         synchronized (_default) {
-            return _default.isEmpty() ? null : _default.get(IntMath.mod(addr.hashCode(), _default.size()));
+
+            if (_default.isEmpty()) {
+                return null;
+            }
+
+            if (zone.isPresent()) {
+                String z = zone.get();
+                Optional<CellRoute> defaultZonedRoute = _default
+                        .stream()
+                        .filter(r -> r.getZone().isPresent() && r.getZone().get().equals(z))
+                        .findAny();
+
+                if (defaultZonedRoute.isPresent()) {
+                    return defaultZonedRoute.get();
+                }
+            }
+
+            return _default.get(IntMath.mod(addr.hashCode(), _default.size()));
         }
     }
 
