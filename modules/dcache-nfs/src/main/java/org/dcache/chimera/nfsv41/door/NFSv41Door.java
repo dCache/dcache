@@ -1303,7 +1303,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 // failed without any pool has been selected.
                 // Depending on the error client may re-try the requests.
-                if (_redirectFuture.isDone() && getPool() == null) {
+                if (_redirectFuture != null && _redirectFuture.isDone() && getPool() == null) {
                     _redirectFuture = null;
                 }
 
