@@ -137,6 +137,7 @@ public enum LoA
     /*
      * Statements about Identifier uniqueness.
      */
+    REFEDS_ID_UNIQUE("REFEDS:ID:unique"),
     REFEDS_ID_EPPN_UNIQUE_NO_REASSIGN("REFEDS:ID:eppn-unique-no-reassign"),
     REFEDS_ID_EPPN_UNIQUE_REASSIGN_1Y("REFEDS:ID:eppn-unique-reassign-1y"),
 
@@ -159,8 +160,22 @@ public enum LoA
      * Refeds profiles
      */
     REFEDS_PROFILE_CAPPUCCINO("REFEDS:profile:cappuccino"),
-    REFEDS_PROFILE_ESPRESSO("REFEDS:profile:espresso");
+    REFEDS_PROFILE_ESPRESSO("REFEDS:profile:espresso"),
 
+    /*
+     * Policies from AARC.
+     */
+
+    /**
+     * Identity substantially derived from social media or self-signup identity
+     * providers (outside the R&E community) on which no further policy controls
+     * or qualities are placed. Identity proofing and authenticator are
+     * substantially derived from upstream CSPs that are not under the control
+     * of the Infrastructure. The Infrastructure ensures uniqueness on the
+     * identifiers based on proprietary heuristics.
+     * @see <a href="https://aarc-project.eu/guidelines/aarc-g021/">AARC-G021</a>
+     */
+    AARC_PROFILE_ASSAM("AARC:profile:assam");
 
     private static final ImmutableMap<String,LoA> NAME_MAP;
 

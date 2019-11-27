@@ -7,6 +7,7 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
@@ -38,10 +40,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.FullNamePrincipal;
+import org.dcache.auth.LoA;
+import org.dcache.auth.LoAPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -76,6 +81,39 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     private final static String ACCESS_TOKEN_CACHE_REFRESH_UNIT = "gplazma.oidc.access-token-cache.refresh.unit";
     private final static String ACCESS_TOKEN_CACHE_EXPIRE = "gplazma.oidc.access-token-cache.expire";
     private final static String ACCESS_TOKEN_CACHE_EXPIRE_UNIT = "gplazma.oidc.access-token-cache.expire.unit";
+
+    /**
+     * A mapping from "eduperson_assurance" claim to the corresponding LoA.
+     * The details are available in
+     * <a href="https://docs.google.com/document/d/1b-Mlet3Lq7qKLEf1BnHJ4nL1fq-vMe7fzpXyrq2wp08/edit">REFEDs
+     * OIDCre</a> and in various AARC policies,
+     * <a href="https://aarc-project.eu/guidelines/aarc-g021/">AARC-G021</a> and
+     * <a href="https://aarc-project.eu/guidelines/aarc-g041/">AARC-G041</a> in
+     * particular.
+     */
+    private static final Map<String,LoA> EDUPERSON_ASSURANCE = ImmutableMap.<String,LoA>builder()
+            // REFEDS RAF policies
+            .put("https://refeds.org/assurance/ID/unique", LoA.REFEDS_ID_UNIQUE)
+            .put("https://refeds.org/assurance/ID/eppn-unique-no-reassign", LoA.REFEDS_ID_EPPN_UNIQUE_NO_REASSIGN)
+            .put("https://refeds.org/assurance/ID/eppn-unique-reassign-1y", LoA.REFEDS_ID_EPPN_UNIQUE_REASSIGN_1Y)
+            .put("https://refeds.org/assurance/IAP/low", LoA.REFEDS_IAP_LOW)
+            .put("https://refeds.org/assurance/IAP/medium", LoA.REFEDS_IAP_MEDIUM)
+            .put("https://refeds.org/assurance/IAP/high", LoA.REFEDS_IAP_HIGH)
+            .put("https://refeds.org/assurance/IAP/local-enterprise", LoA.REFEDS_IAP_LOCAL_ENTERPRISE)
+            .put("https://refeds.org/assurance/ATP/ePA-1m", LoA.REFEDS_ATP_1M)
+            .put("https://refeds.org/assurance/ATP/ePA-1d", LoA.REFEDS_ATP_1D)
+            .put("https://refeds.org/assurance/profile/cappuccino", LoA.REFEDS_PROFILE_CAPPUCCINO)
+            .put("https://refeds.org/assurance/profile/espresso", LoA.REFEDS_PROFILE_ESPRESSO)
+
+            // IGTF policies  see https://www.igtf.net/ap/authn-assurance/
+            .put("https://igtf.net/ap/authn-assurance/aspen", LoA.IGTF_LOA_ASPEN)
+            .put("https://igtf.net/ap/authn-assurance/birch", LoA.IGTF_LOA_BIRCH)
+            .put("https://igtf.net/ap/authn-assurance/cedar", LoA.IGTF_LOA_CEDAR)
+            .put("https://igtf.net/ap/authn-assurance/dogwood", LoA.IGTF_LOA_DOGWOOD)
+
+            // AARC policies see https://aarc-project.eu/guidelines/#policy
+            .put("https://aarc-project.eu/policy/authn-assurance/assam", LoA.AARC_PROFILE_ASSAM)
+            .build();
 
     private final ExecutorService executor;
 
@@ -420,6 +458,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 addNames(userInfo, principals);
                 addEmail(userInfo, principals);
                 addGroups(userInfo, principals);
+                addLoAs(userInfo, principals);
                 return principals;
             } else {
                 throw new OidcException("No OpendId \"sub\"");
@@ -486,6 +525,20 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
             for (JsonNode group : userInfo.get("groups")) {
                 principals.add(new OpenIdGroupPrincipal(group.asText()));
             }
+        }
+    }
+
+    private void addLoAs(JsonNode userInfo, Set<Principal> principals)
+    {
+        if (userInfo.has("eduperson_assurance") && userInfo.get("eduperson_assurance").isArray()) {
+            StreamSupport.stream(userInfo.get("eduperson_assurance").spliterator(), false)
+                    .map(JsonNode::asText)
+                    .map(EDUPERSON_ASSURANCE::get)
+                    .filter(Objects::nonNull)
+                    // FIXME we need to know when to accept REFEDS_IAP_LOCAL_ENTERPRISE.
+                    .filter(l -> l != LoA.REFEDS_IAP_LOCAL_ENTERPRISE)
+                    .map(LoAPrincipal::new)
+                    .forEach(principals::add);
         }
     }
 

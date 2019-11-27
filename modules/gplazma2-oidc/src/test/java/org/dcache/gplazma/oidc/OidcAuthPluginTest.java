@@ -5,7 +5,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -20,6 +19,8 @@ import java.util.concurrent.ExecutionException;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.FullNamePrincipal;
+import org.dcache.auth.LoA;
+import org.dcache.auth.LoAPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -27,17 +28,14 @@ import org.dcache.gplazma.oidc.exceptions.OidcException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
 public class OidcAuthPluginTest {
     private static final String OIDC_PROPERTY_NAME = "gplazma.oidc.hostnames";
+    private static final String OIDC_PROPERTY_OP_PREFIX = "gplazma.oidc.provider!";
     private Properties givenConfiguration;
     private JsonHttpClient httpClient;
-
-    @BeforeClass
-    public static void init() throws Exception
-    {
-    }
 
     @Before
     public void setUp() throws Exception
@@ -59,6 +57,8 @@ public class OidcAuthPluginTest {
         givenConfiguration.put("gplazma.oidc.access-token-cache.refresh.unit", "SECONDS");
         givenConfiguration.put("gplazma.oidc.access-token-cache.expire", "120");
         givenConfiguration.put("gplazma.oidc.access-token-cache.expire.unit", "SECONDS");
+
+        givenConfiguration.setProperty(OIDC_PROPERTY_NAME, "");
     }
 
     @After
@@ -70,28 +70,28 @@ public class OidcAuthPluginTest {
     @Test(expected = IllegalArgumentException.class)
     public void shouldFailWithEmptyOidcHostList() throws Exception
     {
-        givenConfig("   ");
+        givenHostnameConfig("   ");
         whenOidcPluginCreated();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldFailWithInvalidHostnames() throws Exception
     {
-        givenConfig(" \" ");
+        givenHostnameConfig(" \" ");
         whenOidcPluginCreated();
     }
 
     @Test(expected = AuthenticationException.class)
     public void shouldFailWithNoCredential() throws Exception
     {
-        givenConfig("accounts.google.com  idc-iam.example.org");
+        givenHostnameConfig("accounts.google.com  idc-iam.example.org");
         whenOidcPluginCalledWithNoCredentials();
     }
 
     @Test(expected = AuthenticationException.class)
     public void shouldFailWhenNoDiscoveryDoc() throws Exception
     {
-        givenConfig("accounts.google.com  idc-iam.example.org");
+        givenHostnameConfig("accounts.google.com  idc-iam.example.org");
 
         whenOidcPluginCalledWith(
                 withIOException(),
@@ -102,7 +102,7 @@ public class OidcAuthPluginTest {
     @Test(expected = AuthenticationException.class)
     public void shouldFailWhenHttpGetUserInfoFails() throws Exception
     {
-        givenConfig("accounts.google.com  idc-iam.example.org");
+        givenHostnameConfig("accounts.google.com  idc-iam.example.org");
 
         whenOidcPluginCalledWith(
                 withDiscoveryDoc("{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo\" }"),
@@ -113,7 +113,7 @@ public class OidcAuthPluginTest {
     @Test(expected = AuthenticationException.class)
     public void shouldFailWhenInvalidTokenOneProvider() throws Exception
     {
-        givenConfig("accounts.google.com");
+        givenHostnameConfig("accounts.google.com");
 
         whenOidcPluginCalledWith(
                 withDiscoveryDoc("{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo\" }"),
@@ -124,7 +124,7 @@ public class OidcAuthPluginTest {
     @Test(expected = AuthenticationException.class)
     public void shouldFailWhenInvalidToken() throws Exception
     {
-        givenConfig("accounts.google.com  idc-iam.example.org");
+        givenHostnameConfig("accounts.google.com  idc-iam.example.org");
 
         whenOidcPluginCalledWith(
                 withDiscoveryDoc("{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo\" }"),
@@ -135,7 +135,7 @@ public class OidcAuthPluginTest {
     @Test(expected = AuthenticationException.class)
     public void shouldFailWhenNoOidcSubject() throws Exception
     {
-        givenConfig("accounts.google.com  idc-iam.example.org");
+        givenHostnameConfig("accounts.google.com  idc-iam.example.org");
 
         whenOidcPluginCalledWith(
                 withDiscoveryDoc("{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo\" }"),
@@ -146,7 +146,7 @@ public class OidcAuthPluginTest {
     @Test
     public void successWhenValidToken() throws Exception
     {
-        givenConfig("accounts.google.com  idc-iam.example.org");
+        givenHostnameConfig("accounts.google.com  idc-iam.example.org");
 
         Set<Principal> principals =
                 whenOidcPluginCalledWith(
@@ -157,6 +157,7 @@ public class OidcAuthPluginTest {
                                 .append("\"given_name\": \"Kermit The\",  ")
                                 .append("\"family_name\": \"Frog\",  ")
                                 .append("\"groups\": [ \"Users\", \"Developers\" ], ")
+                                .append("\"eduperson_assurance\": [ \"https://refeds.org/assurance/IAP/medium\", \"https://refeds.org/assurance/ID/unique\", \"https://refeds.org/assurance/IAP/local-enterprise\" ], ")
                                 .append("\"picture\": \"https://lh3.googleusercontent.com/gjworasdfjasgjdlsjvlsjlv/photo.jpg\",  ")
                                 .append("\"email\": \"kermit.the.frog@email.com\",  ")
                                 .append("\"email_verified\": true } ")
@@ -168,14 +169,56 @@ public class OidcAuthPluginTest {
         assertThat(principals, hasEmail("kermit.the.frog@email.com"));
         assertThat(principals, hasGroup("Users"));
         assertThat(principals, hasGroup("Developers"));
+        assertThat(principals, hasLoA(LoA.REFEDS_IAP_MEDIUM));
+        assertThat(principals, hasLoA(LoA.REFEDS_ID_UNIQUE));
+
+        // No '-local' so, no local-enterprise LoA
+        assertThat(principals, not(hasLoA(LoA.REFEDS_IAP_LOCAL_ENTERPRISE)));
+    }
+
+    @Test
+    public void successWhenValidTokenNonLocal() throws Exception
+    {
+        givenPrefixConfig("IAM", "idc-iam.example.org");
+
+        Set<Principal> principals =
+                whenOidcPluginCalledWith(
+                        withDiscoveryDoc("{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo \"}"),
+                        withUserInfo(new StringBuilder()
+                                .append("{\"sub\":\"214234823942934792371\",")
+                                .append("\"name\":\"Kermit The Frog\",  ")
+                                .append("\"given_name\": \"Kermit The\",  ")
+                                .append("\"family_name\": \"Frog\",  ")
+                                .append("\"groups\": [ \"Users\", \"Developers\" ], ")
+                                .append("\"eduperson_assurance\": [ \"https://refeds.org/assurance/IAP/medium\", \"https://refeds.org/assurance/ID/unique\", \"https://refeds.org/assurance/IAP/local-enterprise\" ], ")
+                                .append("\"picture\": \"https://lh3.googleusercontent.com/gjworasdfjasgjdlsjvlsjlv/photo.jpg\",  ")
+                                .append("\"email\": \"kermit.the.frog@email.com\",  ")
+                                .append("\"email_verified\": true } ")
+                                .toString()),
+                        withBearerToken("validtoken"));
+
+        assertThat(principals, hasSubject("214234823942934792371"));
+        assertThat(principals, hasFullName("Kermit The", "Frog", "Kermit The Frog"));
+        assertThat(principals, hasEmail("kermit.the.frog@email.com"));
+        assertThat(principals, hasGroup("Users"));
+        assertThat(principals, hasGroup("Developers"));
+        assertThat(principals, hasLoA(LoA.REFEDS_IAP_MEDIUM));
+        assertThat(principals, hasLoA(LoA.REFEDS_ID_UNIQUE));
+
+        // We currently don't trust OPs to assert REFEDS_IAP_LOCAL_ENTERPRISE
+        assertThat(principals, not(hasLoA(LoA.REFEDS_IAP_LOCAL_ENTERPRISE)));
     }
 
     /*-------------------------------- Helpers --------------------------------------*/
 
-    private void givenConfig(String config)
+    private void givenHostnameConfig(String config)
     {
         givenConfiguration.put(OIDC_PROPERTY_NAME, config);
+    }
 
+    private void givenPrefixConfig(String name, String config)
+    {
+        givenConfiguration.put(OIDC_PROPERTY_OP_PREFIX+name, config);
     }
 
     private Set<Principal> whenOidcPluginCalledWith(JsonNode discoveryDoc,
@@ -292,6 +335,11 @@ public class OidcAuthPluginTest {
     public static Matcher<Iterable<? super OpenIdGroupPrincipal>> hasGroup(String group)
     {
         return hasItem(new OpenIdGroupPrincipal(group));
+    }
+
+    public static Matcher<Iterable<? super LoAPrincipal>> hasLoA(LoA loa)
+    {
+        return hasItem(new LoAPrincipal(loa));
     }
 
     public static Matcher<Iterable<? super FullNamePrincipal>> hasFullName(String givenName,
