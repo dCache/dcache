@@ -80,8 +80,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 
-import diskCacheV111.srm.RequestFileStatus;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
@@ -95,7 +93,6 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
@@ -178,7 +175,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    public void setPinId(String pinId) {
+    private void setPinId(String pinId) {
         wlock();
         try {
             this.pinId = pinId;
@@ -196,21 +193,12 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    public boolean isPinned() {
+    private boolean isPinned() {
         return getPinId() != null;
     }
 
     public URI getSurl() {
         return surl;
-    }
-
-    public URI getTurl() {
-        rlock();
-        try {
-            return turl;
-        } finally {
-            runlock();
-        }
     }
 
     public final String getSurlString() {
@@ -239,7 +227,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    public TGetRequestFileStatus getTGetRequestFileStatus()
+    protected TGetRequestFileStatus getTGetRequestFileStatus()
             throws SRMInvalidRequestException {
         TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
         if(getFileMetaData() != null) {
@@ -272,16 +260,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         fileStatus.setStatus(returnStatus);
 
         return fileStatus;
-    }
-
-    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException
-    {
-        try {
-            return new TSURLReturnStatus(new org.apache.axis.types.URI(getSurlString()), getReturnStatus());
-        } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            LOGGER.error(e.toString());
-            throw new SRMInvalidRequestException("wrong surl format");
-        }
     }
 
     @Override
@@ -346,7 +324,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    public void pinFile(GetRequest request)
+    protected void pinFile(GetRequest request)
     {
         URI surl = getSurl();
         LOGGER.info("Pinning {}", surl);
@@ -355,7 +333,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         request.getUser(),
                         surl,
                         request.getClient_host(),
-                        lifetime,
+                        getLifetime(),
                         String.valueOf(getRequestId()),
                         request.isStagingAllowed());
         LOGGER.trace("GetFileRequest: waiting async notification about pinId...");
@@ -420,9 +398,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     }
 
     @Override
-    public TReturnStatus getReturnStatus()
+    protected TReturnStatus getReturnStatus()
     {
-        String description = getLastJobChange().getDescription();
+        String description = latestHistoryEvent();
 
         TStatusCode statusCode = getStatusCode();
         if (statusCode != null) {

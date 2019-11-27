@@ -267,7 +267,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         return response;
     }
 
-    public final SrmBringOnlineResponse getSrmBringOnlineResponse()
+    private final SrmBringOnlineResponse getSrmBringOnlineResponse()
             throws SRMInvalidRequestException
     {
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
@@ -401,7 +401,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         return TRequestType.BRING_ONLINE;
     }
 
-    public long getDesiredOnlineLifetimeInSeconds() {
+    protected long getDesiredOnlineLifetimeInSeconds() {
         return desiredOnlineLifetimeInSeconds;
     }
 

@@ -118,7 +118,7 @@ public final class ReserveSpaceRequest extends Request {
     private final TAccessLatency accessLatency;
     private final Map<String,String> extraInfo;
     private String spaceToken;
-    private long spaceReservationLifetime;
+    private final long spaceReservationLifetime;
 
 
     /** Creates new ReserveSpaceRequest */
@@ -423,7 +423,7 @@ public final class ReserveSpaceRequest extends Request {
         }
     }
 
-    public void setSizeInBytes(long sizeInBytes) {
+    protected void setSizeInBytes(long sizeInBytes) {
         wlock();
         try {
             this.sizeInBytes = sizeInBytes;
@@ -453,7 +453,7 @@ public final class ReserveSpaceRequest extends Request {
         }
     }
 
-    public void setSpaceToken(String spaceToken) {
+    protected void setSpaceToken(String spaceToken) {
         wlock();
         try {
             this.spaceToken = spaceToken;
@@ -463,20 +463,6 @@ public final class ReserveSpaceRequest extends Request {
     }
 
     public long getSpaceReservationLifetime() {
-        rlock();
-        try {
-            return spaceReservationLifetime;
-        } finally {
-            runlock();
-        }
-    }
-
-    public void setSpaceReservationLifetime(long spaceReservationLifetime) {
-        wlock();
-        try {
-            this.spaceReservationLifetime = spaceReservationLifetime;
-        } finally {
-            wunlock();
-        }
+        return spaceReservationLifetime;
     }
 }

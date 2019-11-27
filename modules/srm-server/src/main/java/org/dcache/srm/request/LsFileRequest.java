@@ -1,7 +1,5 @@
 package org.dcache.srm.request;
 
-
-import com.google.common.collect.Iterables;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +13,6 @@ import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
 
-import diskCacheV111.srm.RequestFileStatus;
-
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
@@ -24,10 +20,8 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMTooManyResultsException;
-import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
-import org.dcache.srm.util.Permissions;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
 import org.dcache.srm.v2_2.TAccessLatency;
@@ -95,7 +89,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 this.surl = URI.create(SURL);
         }
 
-        public String getPath(URI uri) {
+        protected String getPath(URI uri) {
             String path = uri.getPath();
             String query = uri.getQuery();
             if (query != null) {
@@ -107,7 +101,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
             return path;
         }
 
-        public URI getSurl() {
+        protected URI getSurl() {
                 return surl;
         }
 
@@ -213,8 +207,8 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
     }
 
     @Override
-        public TReturnStatus getReturnStatus() {
-                String description = getLastJobChange().getDescription();
+    protected TReturnStatus getReturnStatus() {
+                String description = latestHistoryEvent();
                 TStatusCode statusCode = getStatusCode();
                 if(statusCode != null) {
                     return new TReturnStatus(statusCode, description);
@@ -244,7 +238,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
             return getContainerRequest().extendLifetimeMillis(newLifetime);
         }
 
-        public TMetaDataPathDetail getMetaDataPathDetail()
+        protected TMetaDataPathDetail getMetaDataPathDetail()
                 throws SRMInvalidRequestException
         {
             rlock();
@@ -271,7 +265,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
             }
         }
 
-        public final TMetaDataPathDetail getMetaDataPathDetail(URI surl,
+        protected final TMetaDataPathDetail getMetaDataPathDetail(URI surl,
                                                                int depth,
                                                                long offset,
                                                                long count,
@@ -497,29 +491,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                 .size()])));
         }
 
-        public boolean canRead(SRMUser user, FileMetaData fmd) {
-                int uid = Integer.parseInt(fmd.owner);
-                int gid = Integer.parseInt(fmd.group);
-                int permissions = fmd.permMode;
-                if(permissions == 0 ) {
-                        return false;
-                }
-                if(Permissions.worldCanRead(permissions)) {
-                        return true;
-                }
-                if(uid == -1 || gid == -1) {
-                        return false;
-                }
-                if(user == null ) {
-                        return false;
-                }
-                if(fmd.isGroupMember(user) && Permissions.groupCanRead(permissions)) {
-                        return true;
-                }
-            return fmd.isOwner(user) && Permissions.userCanRead(permissions);
-        }
-
-        public TPermissionMode maskToTPermissionMode(int permMask) {
+        private TPermissionMode maskToTPermissionMode(int permMask) {
                 switch(permMask) {
                 case 0: return TPermissionMode.NONE;
                 case 1: return TPermissionMode.X;

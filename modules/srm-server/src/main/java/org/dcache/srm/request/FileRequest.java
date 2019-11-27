@@ -79,12 +79,9 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 
-import diskCacheV111.srm.RequestFileStatus;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.qos.QOSTicket;
@@ -95,9 +92,6 @@ import org.dcache.srm.util.JDC;
 import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.v2_2.TReturnStatus;
 
-import static com.google.common.base.Predicates.in;
-import static com.google.common.collect.Iterables.any;
-import static java.util.Arrays.asList;
 
 /**
  * A FileRequest is used by ContainerRequest (and its subclasses) to represent
@@ -118,13 +112,10 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     private final Class<R> containerRequestType = (Class<R>) new TypeToken<R>(getClass()) {}.getRawType();
 
     //request which contains this fileRequest (which is different from request number)
-    protected final long requestId;
+    private final long requestId;
 
     //pointer to underlying storage
     private transient AbstractStorageElement storage;
-    //srm configuration
-    private transient Configuration configuration;
-    //error message if error, or just information message
 
     private transient QOSTicket qosTicket;
 
@@ -168,17 +159,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     }
 
-    /**
-     * @return the configuration
-     */
-    public final Configuration getConfiguration() {
-        if(configuration == null) {
-            configuration = SRM.getSRM().getConfiguration();
-        }
-        return configuration;
-    }
-
-    public abstract TReturnStatus getReturnStatus();
+    protected abstract TReturnStatus getReturnStatus();
 
     @Override
     public boolean equals(Object o) {
@@ -188,48 +169,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     @Override
     public int hashCode() {
         return (int) (getId() ^ getId() >> 32);
-    }
-
-    public void setStatus(SRMUser user, String status) throws SRMException {
-        LOGGER.debug("({})", status);
-        try {
-            wlock();
-            try {
-                if(status.equalsIgnoreCase("Done")) {
-                    State state = getState();
-                    if( !state.isFinal()) {
-                        if(state == State.READY ||
-                           state == State.TRANSFERRING ||
-                           state == State.INPROGRESS) {
-                            setState(State.DONE, "SRM client set state to Done.");
-                        }
-                        else {
-                            setState(State.CANCELED, "SRM client cancelled operation by setting state to Done.");
-                        }
-                    }
-                }
-                else if(status.equalsIgnoreCase("Running")) {
-                    setState(State.TRANSFERRING, "SRM client set state to Running.");
-                }
-                else if(status.equalsIgnoreCase("Failed")) {
-                    setState(State.FAILED, "SRM client set state to Failed.");
-                }
-                else {
-                    String error =  "Can't set Status to "+status;
-                    LOGGER.error(error);
-                    throw new SRMException(error);
-
-                }
-            } finally {
-                wunlock();
-            }
-        }
-        catch(IllegalStateTransition ist) {
-            String error =  "Can't set Status to " + status + " due to: " + ist.getMessage();
-            LOGGER.error(error);
-            throw new SRMException(error);
-        }
-
     }
 
     @Override
@@ -289,11 +228,11 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         return requestId;
     }
 
-    public void setQOSTicket(QOSTicket qosTicket) {
+    protected void setQOSTicket(QOSTicket qosTicket) {
         this.qosTicket = qosTicket;
     }
 
-    public QOSTicket getQOSTicket() {
+    protected QOSTicket getQOSTicket() {
         return qosTicket;
     }
 
@@ -328,24 +267,18 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     public JDC applyJdc()
     {
         JDC current = jdc.apply();
-        JDC.appendToSession(String.valueOf(requestId) + ':' + String.valueOf(id));
+        JDC.appendToSession(String.valueOf(requestId) + ':' + String.valueOf(getId()));
         return current;
     }
 
      /**
      * @return the storage
      */
-    public final AbstractStorageElement getStorage() {
+    protected final AbstractStorageElement getStorage() {
         if(storage == null) {
             storage = SRM.getSRM().getStorage();
         }
         return storage;
-    }
-
-    protected boolean isProtocolSupported(String[] protocols)
-            throws SRMInternalErrorException
-    {
-        return any(asList(protocols), in(asList(getStorage().supportedGetProtocols())));
     }
 
     @Override

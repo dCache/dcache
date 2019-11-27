@@ -65,7 +65,6 @@ COPYRIGHT STATUS:
  */
 package org.dcache.srm.request;
 
-import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -113,12 +112,10 @@ public abstract class Job  {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Job.class);
 
-    protected static final String TIMESTAMP_FORMAT = "yyyy-MM-dd' 'HH:mm:ss.SSS";
-
     //this is used to build the queue of jobs.
     protected Long nextJobId;
 
-    protected final long id;
+    private final long id;
 
     /**
      * Status code from version 2.2
@@ -131,12 +128,12 @@ public abstract class Job  {
     private volatile State state = State.UNSCHEDULED;
 
     protected String schedulerId;
-    protected long schedulerTimeStamp;
+    private long schedulerTimeStamp;
 
 
     protected final long creationTime;
 
-    protected long lifetime;
+    private long lifetime;
 
     private long lastStateTransitionTime = System.currentTimeMillis();
 
@@ -219,7 +216,7 @@ public abstract class Job  {
         return stateChangeListeners.remove(listener);
     }
 
-    protected JobStorage<Job> getJobStorage() {
+    private JobStorage<Job> getJobStorage() {
         return JobStorageFactory.getJobStorageFactory().getJobStorage(this);
     }
 
@@ -435,6 +432,7 @@ public abstract class Job  {
      * <p/>
      * See {@link #addHistoryEvent(java.lang.String) }
      */
+    @Nonnull
     public String latestHistoryEvent() {
         rlock();
         try {
@@ -449,7 +447,7 @@ public abstract class Job  {
        }
     }
 
-    public void addHistoryEvent(String description){
+    protected void addHistoryEvent(String description){
         wlock();
         try {
             jobHistory.add(new JobHistory(nextLong(), state, description, System.currentTimeMillis()));
@@ -459,11 +457,7 @@ public abstract class Job  {
 
     }
 
-     public CharSequence getHistory() {
-         return getHistory("");
-     }
-
-     public CharSequence getHistory(String padding) {
+     protected CharSequence getHistory(String padding) {
         StringBuilder historyStringBuillder = new StringBuilder();
         long previousTransitionTime = 0;
         State previousTransitionState = State.UNSCHEDULED;
@@ -514,17 +508,6 @@ public abstract class Job  {
         }
     }
 
-    @Nonnull
-    public JobHistory getLastJobChange()
-    {
-        rlock();
-        try {
-            return Iterables.getLast(jobHistory);
-        } finally {
-            runlock();
-        }
-    }
-
     public abstract void run() throws SRMException, IllegalStateTransition;
 
     public TStatusCode getStatusCode() {
@@ -536,7 +519,7 @@ public abstract class Job  {
         }
     }
 
-    public void setStatusCode(TStatusCode statusCode) {
+    protected void setStatusCode(TStatusCode statusCode) {
         wlock();
         try {
             this.statusCode = statusCode;
@@ -587,20 +570,6 @@ public abstract class Job  {
         }
     }
 
-    /** Setter for property nextJobId.
-     * @param nextJobId New value of property nextJobId.
-     *
-     */
-    public void setNextJobId(Long nextJobId) {
-        wlock();
-        try {
-            this.nextJobId = nextJobId;
-            saveJob();
-        } finally {
-            wunlock();
-        }
-    }
-
     /** Getter for property schedulerId.
      * @return Value of property schedulerId.
      *
@@ -618,7 +587,7 @@ public abstract class Job  {
      * @param schedulerId New value of property schedulerId.
      *
      */
-    public void setScheduler(String schedulerId,long schedulerTimeStamp) {
+    private void setScheduler(String schedulerId,long schedulerTimeStamp) {
         wlock() ;
         try {
             //  check if the values have indeed changed
@@ -757,7 +726,7 @@ public abstract class Job  {
         }
     }
 
-    public long getRemainingLifetime() {
+    protected long getRemainingLifetime() {
         rlock();
         try {
             if (state.isFinal()) {
@@ -770,7 +739,7 @@ public abstract class Job  {
         }
     }
 
-    public int getRemainingLifetimeIn(TimeUnit unit) {
+    protected int getRemainingLifetimeIn(TimeUnit unit) {
         return (int) Math.min(unit.convert(getRemainingLifetime(), TimeUnit.MILLISECONDS), Integer.MAX_VALUE);
     }
 

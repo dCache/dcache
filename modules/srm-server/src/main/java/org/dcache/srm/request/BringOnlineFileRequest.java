@@ -83,8 +83,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import diskCacheV111.srm.RequestFileStatus;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
@@ -100,7 +98,6 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
@@ -177,7 +174,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
     }
 
-    public void setPinId(String pinId) {
+    private void setPinId(String pinId) {
         wlock();
         try {
             this.pinId = pinId;
@@ -195,7 +192,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
     }
 
-    public boolean isPinned() {
+    private boolean isPinned() {
         rlock();
         try {
             return getPinId() != null;
@@ -224,7 +221,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     }
 
 
-    public TBringOnlineRequestFileStatus getTGetRequestFileStatus()
+    protected TBringOnlineRequestFileStatus getTGetRequestFileStatus()
             throws SRMInvalidRequestException
     {
         TBringOnlineRequestFileStatus fileStatus = new TBringOnlineRequestFileStatus();
@@ -247,16 +244,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         fileStatus.setStatus(getReturnStatus());
 
         return fileStatus;
-    }
-
-    public TSURLReturnStatus  getTSURLReturnStatus() throws SRMInvalidRequestException
-    {
-        try {
-            return new TSURLReturnStatus(new org.apache.axis.types.URI(getSurlString()), getReturnStatus());
-        } catch (org.apache.axis.types.URI.MalformedURIException e) {
-            LOGGER.error(e.toString());
-            throw new SRMInvalidRequestException("wrong surl format");
-        }
     }
 
     @Override
@@ -317,7 +304,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
     }
 
-    public void pinFile(BringOnlineRequest request)
+    private void pinFile(BringOnlineRequest request)
     {
         long desiredPinLifetime = request.getDesiredOnlineLifetimeInSeconds();
         if (desiredPinLifetime != -1) {
@@ -433,9 +420,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     }
 
     @Override
-    public TReturnStatus getReturnStatus()
+    protected TReturnStatus getReturnStatus()
     {
-        String description = getLastJobChange().getDescription();
+        String description = latestHistoryEvent();
         TStatusCode statusCode = getStatusCode();
         if (statusCode != null) {
             if (statusCode == TStatusCode.SRM_FILE_PINNED ||

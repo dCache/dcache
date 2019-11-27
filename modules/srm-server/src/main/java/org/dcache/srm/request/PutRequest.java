@@ -405,11 +405,11 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    public TRequestType getRequestType() {
+    protected TRequestType getRequestType() {
         return TRequestType.PREPARE_TO_PUT;
     }
 
-    public TOverwriteMode getOverwriteMode() {
+    private TOverwriteMode getOverwriteMode() {
         rlock();
         try {
             return overwriteMode;
@@ -427,7 +427,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         }
     }
 
-    public final boolean isOverwrite() {
+    protected final boolean isOverwrite() {
         if(getConfiguration().isOverwrite()) {
             TOverwriteMode mode = getOverwriteMode();
             if(mode == null) {
@@ -456,7 +456,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    public String getNameForRequestType() {
+    protected String getNameForRequestType() {
         return "Put";
     }
 }

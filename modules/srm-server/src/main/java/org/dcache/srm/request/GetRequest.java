@@ -265,7 +265,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         return response;
     }
 
-    public final SrmPrepareToGetResponse getSrmPrepareToGetResponse()
+    private final SrmPrepareToGetResponse getSrmPrepareToGetResponse()
             throws SRMInvalidRequestException
     {
         SrmPrepareToGetResponse response = new SrmPrepareToGetResponse();
@@ -398,7 +398,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         return "Get";
     }
 
-    public boolean isStagingAllowed() {
+    protected boolean isStagingAllowed() {
         return isStagingAllowed;
     }
 }
