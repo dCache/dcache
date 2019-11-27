@@ -18,6 +18,7 @@
 package org.dcache.srm.shell;
 
 import com.google.common.base.Throwables;
+import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 
@@ -27,15 +28,11 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import java.io.File;
 import java.rmi.RemoteException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import eu.emi.security.authn.x509.X509Credential;
-
-import java.util.Collections;
-
 import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
@@ -89,6 +86,7 @@ import org.dcache.srm.v2_2.TUserPermission;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ObjectArrays.concat;
+import static org.dcache.srm.SRMInvalidPathException.checkValidPath;
 import static org.dcache.srm.shell.TStatusCodes.checkBulkSuccess;
 import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
 
@@ -348,9 +346,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
         TMetaDataPathDetail[] list = {};
         do {
             TMetaDataPathDetail detail = list(surl, verbose, offset, count);
-            if (detail.getType() != TFileType.DIRECTORY) {
-                throw new SRMInvalidPathException("Not a directory");
-            }
+            checkValidPath(detail.getType() == TFileType.DIRECTORY, "Not a directory");
             offset += count;
             TMetaDataPathDetail[] pathDetailArray = detail.getArrayOfSubPaths() == null
                     ? null : detail.getArrayOfSubPaths().getPathDetailArray();

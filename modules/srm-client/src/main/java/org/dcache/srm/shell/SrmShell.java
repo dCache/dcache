@@ -35,10 +35,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-
-import gov.fnal.srm.util.ConnectionConfiguration;
-import gov.fnal.srm.util.OptionParser;
-
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 
@@ -90,6 +86,9 @@ import dmg.util.command.ExpandWith;
 import dmg.util.command.GlobExpander;
 import dmg.util.command.Option;
 
+import gov.fnal.srm.util.ConnectionConfiguration;
+import gov.fnal.srm.util.OptionParser;
+
 import org.dcache.commons.stats.RequestCounter;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauge;
@@ -138,6 +137,7 @@ import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.commons.stats.MonitoringProxy.decorateWithMonitoringProxy;
+import static org.dcache.srm.SRMInvalidPathException.checkValidPath;
 import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
@@ -481,9 +481,8 @@ public class SrmShell extends ShellApplication
             path = path + "/";
         }
         URI uri = new URI(pwd, path);
-        if (fs.stat(uri).getType() != TFileType.DIRECTORY) {
-            throw new SRMInvalidPathException("Not a directory");
-        }
+        checkValidPath(fs.stat(uri).getType() == TFileType.DIRECTORY,
+                "Not a directory");
 
         switch (checkCdPermission) {
         case SRM_CHECK_PERMISSION:

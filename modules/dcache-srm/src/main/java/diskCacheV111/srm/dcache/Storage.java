@@ -124,9 +124,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
-
-import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
-
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceState;
 import diskCacheV111.services.space.message.ExtendLifetime;
@@ -193,11 +190,11 @@ import org.dcache.pinmanager.PinManagerExtendPinMessage;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.RemoveFileCallback;
-import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
@@ -237,9 +234,10 @@ import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.util.Exceptions.genericCheck;
+import static org.dcache.srm.SRMInvalidPathException.checkValidPath;
 import static org.dcache.util.NetworkUtils.isInetAddress;
 
 /**
@@ -834,11 +832,6 @@ public final class Storage
         } catch (UnknownHostException ignored) {
         }
         return false;
-    }
-
-    private void checkValidPath(boolean isOK, String format, Object... arguments) throws SRMInvalidPathException
-    {
-        genericCheck(isOK, m -> new SRMInvalidPathException(m), format, arguments);
     }
 
     @Override
@@ -1525,9 +1518,7 @@ public final class Storage
         } catch (CacheException e) {
             throw new SRMException("Name space failure (" + e.getMessage() + ")");
         }
-        if (attributes.getFileType() != FileType.DIR) {
-            throw new SRMInvalidPathException("Not a directory");
-        }
+        checkValidPath(attributes.getFileType() == FileType.DIR, "Not a directory");
         if (permissionHandler.canDeleteDir(subject, parentAttributes, attributes) != AccessType.ACCESS_ALLOWED) {
             throw new SRMAuthorizationException("Permission denied");
         }
@@ -2527,9 +2518,7 @@ public final class Storage
     @Nonnull
     private FsPath getPath(URI surl) throws SRMInvalidPathException
     {
-        if (!isLocalSurl(surl)) {
-            throw new SRMInvalidPathException("SURL is not local: " + surl);
-        }
+        checkValidPath(isLocalSurl(surl), "SURL is not local: %s", surl);
 
         String path = surl.getPath();
         String query = surl.getQuery();

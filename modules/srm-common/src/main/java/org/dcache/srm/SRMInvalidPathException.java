@@ -13,9 +13,17 @@ package org.dcache.srm;
 
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.util.Exceptions.genericCheck;
+
 public class SRMInvalidPathException extends SRMException {
 
     private static final long serialVersionUID = -6785964948956438990L;
+
+    public static void checkValidPath(boolean isOK, String format, Object... arguments)
+            throws SRMInvalidPathException
+    {
+        genericCheck(isOK, m -> new SRMInvalidPathException(m), format, arguments);
+    }
 
     public SRMInvalidPathException() {
     }
@@ -23,11 +31,11 @@ public class SRMInvalidPathException extends SRMException {
     public SRMInvalidPathException(String msg) {
         super(msg);
     }
-    
+
     public SRMInvalidPathException(String message,Throwable cause) {
         super(message,cause);
     }
-    
+
     public SRMInvalidPathException(Throwable cause) {
         super(cause);
     }
