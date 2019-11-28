@@ -79,6 +79,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -583,21 +584,18 @@ public abstract class Job  {
         }
     }
 
-    /** Setter for property schedulerId.
-     * @param schedulerId New value of property schedulerId.
-     *
+    /**
+     * Associate this job with the supplied scheduler.
      */
-    private void setScheduler(String schedulerId,long schedulerTimeStamp) {
+    private void setScheduler(Scheduler scheduler) {
         wlock() ;
         try {
             //  check if the values have indeed changed
             // If they are the same, we do not need to do anythign.
-            if(this.schedulerTimeStamp != schedulerTimeStamp ||
-               this.schedulerId != null && schedulerId == null ||
-               schedulerId != null && !schedulerId.equals(this.schedulerId)) {
-
-                this.schedulerTimeStamp = schedulerTimeStamp;
-                this.schedulerId = schedulerId;
+            if (schedulerTimeStamp != scheduler.getTimestamp()
+                    || !Objects.equals(schedulerId, scheduler.getId())) {
+                schedulerTimeStamp = scheduler.getTimestamp();
+                schedulerId = scheduler.getId();
 
                 // we need to save job every time the scheduler is set
                 // even if the jbbc monitoring log is disabled,
@@ -867,13 +865,13 @@ public abstract class Job  {
     public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition
     {
         wlock();
-        try{
-            if(state != State.UNSCHEDULED) {
+        try {
+            if (state != State.UNSCHEDULED) {
                 throw new IllegalStateException("Job " +
-                        getClass().getSimpleName() + " [" + this.getId() +
-                        "] has state " + state + "(not UNSCHEDULED)");
+                        getClass().getSimpleName() + " [" + id +
+                        "] has state " + state + " (not UNSCHEDULED)");
             }
-            setScheduler(scheduler.getId(), scheduler.getTimestamp());
+            setScheduler(scheduler);
             scheduler.queue(this);
         } finally {
             wunlock();
@@ -924,7 +922,7 @@ public abstract class Job  {
                 return;
             }
 
-            setScheduler(scheduler.getId(), scheduler.getTimestamp());
+            setScheduler(scheduler);
             notifyListeners(State.RESTORED, "Restored from database.");
 
             if (shouldFailJobs) {
