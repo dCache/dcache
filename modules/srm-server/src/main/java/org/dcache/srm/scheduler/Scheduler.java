@@ -270,14 +270,16 @@ public class Scheduler <T extends Job> implements JobStateChangeAware
 
         job.wlock();
         try {
-            if (job.getState().isFinal()) {
-                throw new IllegalStateException("Cannot accept job in state " + job.getState());
-            } else if (threadQueue(job)) {
-                job.setState(State.QUEUED, why);
-            } else {
+            checkState(!job.getState().isFinal(), "Cannot accept job in state %s ",
+                    job.getState());
+
+            if (!threadQueue(job)) {
                 LOGGER.warn("Maximum request limit reached.");
                 job.setState(State.FAILED, "Site busy: Too many queued requests.");
+                return;
             }
+
+            job.setState(State.QUEUED, why);
         } finally {
             job.wunlock();
         }
