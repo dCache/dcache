@@ -45,7 +45,7 @@ Whenever dCache decides to copy a file from disk to tertiary storage a user-prov
 
 If dCache needs to restore a file to disk the same `executable` is launched with a different set of arguments, including the URI, provided when the file was written to tape. It is in the responsibility of the `executable` to fetch the file back from tape based on the provided URI and to return `0` if the `FETCH FILE` operation was successful or non-zero otherwise. In case of a failure the pool retries the operation or dCache decides to fetch the file from tape using a different pool.
 
-Details about [writing an HSM plugin](../cookbook-writing-hsm-plugins/) can be found in the cookbook section of this book.
+Details about [writing an HSM plugin](cookbook-writing-hsm-plugins.md) can be found in the cookbook section of this book.
 
 ## Details on the TSS-support executable
 
