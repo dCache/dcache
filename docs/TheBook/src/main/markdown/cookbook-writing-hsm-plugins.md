@@ -134,7 +134,7 @@ as a starting point for writing nearline storage plugins for dCache. To
 instantiate the archetype, run
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ mvn archetype:generate 
+$ mvn archetype:generate
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maven will prompt you to select an archetype from a list. Select
@@ -155,17 +155,17 @@ different versions of dCache (we provide no guarantees though!).
 Example:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ mvn archetype:generate 
+$ mvn archetype:generate
 [INFO] Scanning for projects...
-[INFO]                                                                         
+[INFO]
 [INFO] ------------------------------------------------------------------------
 [INFO] Building Maven Stub Project (No POM) 1
 [INFO] ------------------------------------------------------------------------
-[INFO] 
+[INFO]
 [INFO] >>> maven-archetype-plugin:2.2:generate (default-cli) > generate-sources @ standalone-pom >>>
-[INFO] 
+[INFO]
 [INFO] <<< maven-archetype-plugin:2.2:generate (default-cli) < generate-sources @ standalone-pom <<<
-[INFO] 
+[INFO]
 [INFO] --- maven-archetype-plugin:2.2:generate (default-cli) @ standalone-pom ---
 [INFO] Generating project in Interactive mode
 [INFO] No archetype defined. Using maven-archetype-quickstart (org.apache.maven.archetypes:maven-archetype-quickstart:1.0)
@@ -176,11 +176,11 @@ Choose archetype:
 Choose a number or apply filter (format: [groupId:]artifactId, case sensitive contains): : 3
 Define value for property 'groupId': : org.example
 Define value for property 'artifactId': : test-nearlinestorage
-Define value for property 'version':  1.0-SNAPSHOT: : 
+Define value for property 'version':  1.0-SNAPSHOT: :
 Define value for property 'package':  org.example: : org.example.dcache
 [INFO] Using property: dcache = 2.16.5
 Define value for property 'description': : Test NearlineStorage to demonstrate the archetype
-Define value for property 'name':  org.example.dcache.test-nearlinestorage: : org.example.test       
+Define value for property 'name':  org.example.dcache.test-nearlinestorage: : org.example.test
 Confirm properties configuration:
 groupId: org.example
 artifactId: test-nearlinestorage
@@ -246,33 +246,33 @@ $ tree
 10 directories, 8 files
 $ mvn package
 [INFO] Scanning for projects...
-[INFO]                                                                         
+[INFO]
 [INFO] ------------------------------------------------------------------------
 [INFO] Building Test NearlineStorage to demonstrate the archetype 1.0-SNAPSHOT
 [INFO] ------------------------------------------------------------------------
-[INFO] 
+[INFO]
 [INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ test-nearlinestorage ---
 [WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
 [INFO] Copying 0 resource
-[INFO] 
+[INFO]
 [INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ test-nearlinestorage ---
 [INFO] Changes detected - recompiling the module!
 [WARNING] File encoding has not been set, using platform encoding UTF-8, i.e. build is platform dependent!
 [INFO] Compiling 2 source files to /private/tmp/test-nearlinestorage/target/classes
-[INFO] 
+[INFO]
 [INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ test-nearlinestorage ---
 [WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
 [INFO] skip non existing resourceDirectory /private/tmp/test-nearlinestorage/src/test/resources
-[INFO] 
+[INFO]
 [INFO] --- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ test-nearlinestorage ---
 [INFO] No sources to compile
-[INFO] 
+[INFO]
 [INFO] --- maven-surefire-plugin:2.12.4:test (default-test) @ test-nearlinestorage ---
 [INFO] No tests to run.
-[INFO] 
+[INFO]
 [INFO] --- maven-jar-plugin:2.4:jar (default-jar) @ test-nearlinestorage ---
 [INFO] Building jar: /private/tmp/test-nearlinestorage/target/test-nearlinestorage-1.0-SNAPSHOT.jar
-[INFO] 
+[INFO]
 [INFO] --- maven-assembly-plugin:2.6:single (make-assembly) @ test-nearlinestorage ---
 [INFO] Reading assembly descriptor: src/main/assembly/plugin.xml
 [INFO] Copying files to /private/tmp/test-nearlinestorage/target/test-nearlinestorage-1.0-SNAPSHOT
