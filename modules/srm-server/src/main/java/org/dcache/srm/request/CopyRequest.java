@@ -588,7 +588,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 } catch (IllegalStateTransition ist) {
                     LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                 }
-                cfr.saveJob();
             }
         }
         remoteFileRequestDone(surl, remoteRequestId, remoteFileId);
@@ -602,7 +601,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             remoteSurlToFileReqIds.clear();
         }
         for (Map.Entry<String, Long> entry : entries) {
-            String surl = entry.getKey();
             long id = entry.getValue();
             CopyFileRequest cfr = getFileRequest(id);
             try {
@@ -613,7 +611,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             } catch (IllegalStateTransition ist) {
                 LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
-            cfr.saveJob();
         }
     }
 
