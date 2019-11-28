@@ -31,27 +31,11 @@ public class NoopJobStorage<J extends Job> implements JobStorage<J> {
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public Set<J> getJobs(String scheduler, State state) {
-        return Collections.emptySet();
-    }
-
-    @Override
     public void saveJob(J job, boolean force) {
     }
 
     @Override
     public Set<Long> getLatestCompletedJobIds(int maxNum)
-    {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum)
     {
         return Collections.emptySet();
     }

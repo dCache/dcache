@@ -82,18 +82,6 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) throws DataAccessException
-    {
-        return storage.getJobs(scheduler).stream().map(this::canonicalize).collect(Collectors.toSet());
-    }
-
-    @Override
-    public Set<J> getJobs(String scheduler, State state) throws DataAccessException
-    {
-        return storage.getJobs(scheduler, state).stream().map(this::canonicalize).collect(Collectors.toSet());
-    }
-
-    @Override
     public void saveJob(J job, boolean force) throws TransactionException
     {
         storage.saveJob(job, force);
@@ -104,12 +92,6 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCompletedJobIds(maxNum);
-    }
-
-    @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
-    {
-        return storage.getLatestDoneJobIds(maxNum);
     }
 
     @Override

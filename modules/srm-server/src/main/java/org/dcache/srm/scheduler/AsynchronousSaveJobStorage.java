@@ -54,18 +54,6 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) throws DataAccessException
-    {
-        return storage.getJobs(scheduler);
-    }
-
-    @Override
-    public Set<J> getJobs(String scheduler, State state) throws DataAccessException
-    {
-        return storage.getJobs(scheduler, state);
-    }
-
-    @Override
     public void saveJob(final J job, final boolean force)
     {
         UpdateState existingState;
@@ -126,12 +114,6 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
     public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCompletedJobIds(maxNum);
-    }
-
-    @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
-    {
-        return storage.getLatestDoneJobIds(maxNum);
     }
 
     @Override

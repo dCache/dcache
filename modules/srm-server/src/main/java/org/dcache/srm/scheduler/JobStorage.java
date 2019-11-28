@@ -90,8 +90,6 @@ public interface JobStorage<J extends Job> {
     void init() throws DataAccessException;
     J getJob(long jobId) throws DataAccessException;
     J getJob(long jobId, Connection connection) throws SQLException;
-    Set<J> getJobs(String scheduler) throws DataAccessException;
-    Set<J> getJobs(String scheduler,State state) throws DataAccessException;
     /**
      *
      * @param job Job to save
@@ -103,7 +101,6 @@ public interface JobStorage<J extends Job> {
             throws TransactionException;
 
     Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException;
-    Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException;
     Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException;
     Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException;
 

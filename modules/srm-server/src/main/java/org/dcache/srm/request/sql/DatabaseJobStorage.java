@@ -90,11 +90,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.dcache.util.SqlHelper;
-import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
@@ -283,17 +280,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     public abstract PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException;
     public abstract PreparedStatement getUpdateStatement(Connection connection, Job job) throws SQLException;
 
-    @Override
-    public Set<J> getJobs(final String schedulerId) throws DataAccessException
-    {
-        return getJobs(connection -> {
-            String sql = "SELECT * FROM " + getTableName() + " WHERE SCHEDULERID=?";
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setString(1, schedulerId);
-            return stmt;
-        });
-    }
-
     protected Job.JobHistory[] getJobHistory(long jobId,Connection _con) throws SQLException{
         List<Job.JobHistory> l = new ArrayList<>();
         String select = "SELECT * FROM " +getHistoryTableName()+
@@ -326,22 +312,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         return l.toArray(new Job.JobHistory[l.size()]);
     }
 
-    public void schedulePendingJobs(Scheduler scheduler)
-            throws SQLException,
-                   InterruptedException,
-                   IllegalStateTransition
-    {
-        String sql = "SELECT ID FROM " + getTableName() +
-                " WHERE SCHEDULERID is NULL and State=" + State.UNSCHEDULED.getStateId();
-        for (Long ID : jdbcTemplate.queryForList(sql, Long.class)) {
-            try {
-                scheduler.queue(Job.getJob(ID, jobType));
-            } catch (SRMInvalidRequestException ire) {
-                LOGGER.error(ire.toString());
-            }
-        }
-    }
-
     // this method returns ids as a set of "Long" id
     protected Set<Long> getJobIdsByCondition(String sqlCondition) throws DataAccessException
     {
@@ -358,14 +328,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                         " OR STATE = " + State.FAILED.getStateId() +
                         " ORDER BY ID DESC" +
                         " LIMIT " + maxNum + " ");
-    }
-
-    @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
-    {
-        return getJobIdsByCondition("STATE =" + State.DONE.getStateId() +
-                " ORDER BY ID DESC" +
-                " LIMIT " + maxNum + " ");
     }
 
     @Override
@@ -404,25 +366,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                             " AND STATE !=" + State.CANCELED.getStateId() +
                             " AND STATE !=" + State.FAILED.getStateId();
             return connection.prepareStatement(sql);
-        });
-    }
-
-    @Override
-    public Set<J> getJobs(final String schedulerId, final State state) throws DataAccessException
-    {
-        return getJobs(connection -> {
-            PreparedStatement stmt;
-            if (schedulerId == null) {
-                stmt = connection
-                        .prepareStatement("SELECT * FROM " + getTableName() + " WHERE SCHEDULERID IS NULL AND STATE=?");
-                stmt.setInt(1, state.getStateId());
-            } else {
-                stmt = connection
-                        .prepareStatement("SELECT * FROM " + getTableName() + " WHERE SCHEDULERID=? AND STATE=?");
-                stmt.setString(1, schedulerId);
-                stmt.setInt(2, state.getStateId());
-            }
-            return stmt;
         });
     }
 

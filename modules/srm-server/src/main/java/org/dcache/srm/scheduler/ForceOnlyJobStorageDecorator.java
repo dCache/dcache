@@ -37,16 +37,6 @@ public class ForceOnlyJobStorageDecorator<J extends Job> implements JobStorage<J
     }
 
     @Override
-    public Set<J> getJobs(String scheduler) throws DataAccessException {
-        return jobStorage.getJobs(scheduler);
-    }
-
-    @Override
-    public Set<J> getJobs(String scheduler, State state) throws DataAccessException {
-        return jobStorage.getJobs(scheduler, state);
-    }
-
-    @Override
     public void saveJob(J job, boolean force) throws TransactionException {
         if (force) {
             jobStorage.saveJob(job, force);
@@ -57,12 +47,6 @@ public class ForceOnlyJobStorageDecorator<J extends Job> implements JobStorage<J
     public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
     {
         return jobStorage.getLatestCompletedJobIds(maxNum);
-    }
-
-    @Override
-    public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
-    {
-        return jobStorage.getLatestDoneJobIds(maxNum);
     }
 
     @Override
