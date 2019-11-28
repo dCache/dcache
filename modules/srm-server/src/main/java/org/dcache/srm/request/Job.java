@@ -864,8 +864,7 @@ public abstract class Job  {
     /**
      * This is the initial call to schedule the job for execution
      */
-    public void scheduleWith(Scheduler scheduler) throws InterruptedException,
-            IllegalStateTransition
+    public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition
     {
         wlock();
         try{

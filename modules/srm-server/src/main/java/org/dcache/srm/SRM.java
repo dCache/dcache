@@ -370,7 +370,13 @@ public class SRM implements CellLifeCycleAware
         return protocols.toArray(new String[protocols.size()]);
     }
 
-    public void schedule(Job job) throws InterruptedException, IllegalStateException, IllegalStateTransition
+    /**
+     * Accept a newly created job.  This job will be added to the appropriate
+     * scheduler's queue to be processed.
+     * @param job The new job
+     * @throws IllegalStateTransition Job state cannot be modified.
+     */
+    public void acceptNewJob(Job job) throws IllegalStateTransition
     {
         schedulers.schedule(job);
     }

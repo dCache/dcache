@@ -556,7 +556,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                         cfr.scheduleWith(Scheduler.getScheduler(theSchedulerId));
                     }
                 } catch (IllegalStateException | IllegalArgumentException |
-                        IllegalStateTransition | InterruptedException e) {
+                        IllegalStateTransition e) {
                     LOGGER.error("failed to schedule CopyFileRequest {}: {}", cfr, e.toString());
                     try {
                         cfr.setState(State.FAILED, "Failed to schedule request: " + e.getMessage());

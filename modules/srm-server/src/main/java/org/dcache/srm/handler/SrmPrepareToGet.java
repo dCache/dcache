@@ -158,7 +158,7 @@ public class SrmPrepareToGet
                         clientHost,
                         isStagingAllowed());
         try (JDC ignored = r.applyJdc()) {
-            srm.schedule(r);
+            srm.acceptNewJob(r);
             return r.getSrmPrepareToGetResponse(configuration.getGetSwitchToAsynchronousModeDelay());
         }
     }

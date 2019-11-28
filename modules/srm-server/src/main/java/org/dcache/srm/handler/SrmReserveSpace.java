@@ -108,10 +108,8 @@ public class SrmReserveSpace
                             client_host,
                             extraInfo);
             reserveRequest.applyJdc();
-            srm.schedule(reserveRequest);
+            srm.acceptNewJob(reserveRequest);
             return reserveRequest.getSrmReserveSpaceResponse();
-        } catch (InterruptedException e) {
-            throw new SRMInternalErrorException("Operation interrupted");
         } catch (IllegalStateTransition e) {
             LOGGER.error("Failed to schedule srmReserveSpace: {}", e);
             throw new SRMException("Failed to schedule operation");

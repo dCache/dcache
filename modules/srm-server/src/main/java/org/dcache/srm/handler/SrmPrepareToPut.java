@@ -162,7 +162,7 @@ public class SrmPrepareToPut
                 r.setOverwriteMode(overwriteMode);
             }
 
-            srm.schedule(r);
+            srm.acceptNewJob(r);
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status

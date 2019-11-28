@@ -86,7 +86,7 @@ public class SrmLs
                 longFormat,
                 max_results_num);
         try (JDC ignored = r.applyJdc()) {
-            srm.schedule(r);
+            srm.acceptNewJob(r);
             return r.getSrmLsResponse(configuration.getLsSwitchToAsynchronousModeDelay());
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);

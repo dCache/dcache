@@ -52,7 +52,7 @@ public class SchedulerContainer
         scheduler.setMaxReadyJobs(value);
     }
 
-    public void schedule(Job job) throws InterruptedException, IllegalStateException, IllegalStateTransition
+    public void schedule(Job job) throws IllegalStateTransition
     {
         Scheduler<?> scheduler = getScheduler(job.getSchedulerType());
         job.scheduleWith(scheduler);

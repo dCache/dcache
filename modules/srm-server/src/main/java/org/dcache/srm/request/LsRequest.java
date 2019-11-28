@@ -110,8 +110,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         @Override
-        public void scheduleWith(Scheduler scheduler) throws InterruptedException,
-                IllegalStateTransition
+        public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition
         {
             // save this request in request storage unconditionally
             // file requests will get stored as soon as they are
