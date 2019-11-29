@@ -41,7 +41,6 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.NoopJobStorage;
 import org.dcache.srm.scheduler.SchedulerContainer;
-import org.dcache.srm.scheduler.SharedMemoryCacheJobStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Configuration.DatabaseParameters;
 
@@ -78,7 +77,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         } else {
             js = new NoopJobStorage<>();
         }
-        jobStorageMap.put(entityClass, new CanonicalizingJobStorage<>(new SharedMemoryCacheJobStorage<>(js, entityClass), entityClass));
+        jobStorageMap.put(entityClass, new CanonicalizingJobStorage<>(js, entityClass));
         configurations.put(entityClass, config);
     }
 
