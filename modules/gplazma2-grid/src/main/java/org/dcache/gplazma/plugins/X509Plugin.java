@@ -23,6 +23,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -160,71 +161,112 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     {
         Set<Principal> caPrincipals = identifyPrincipalsFromIssuer(eec);
 
-        List<Principal> policyPrincipals = listPolicies(eec).stream()
-                .map(PolicyInformation::getInstance)
-                .map(PolicyInformation::getPolicyIdentifier)
-                .map(ASN1ObjectIdentifier::getId)
-                .flatMap(X509Plugin::oidPrincipals)
+        List<String> policies = listPolicies(eec);
+
+        List<Principal> loaPrincipals = policies.stream()
+                .flatMap(X509Plugin::loaPrincipals)
                 .collect(Collectors.toList());
 
         Collection<List<?>> san = listSubjectAlternativeNames(eec);
 
-        List<Principal> emailPrincipals = subjectAlternativeNameWithTag(san, GeneralName.rfc822Name)
+        List<Principal> emailPrincipals = subjectAlternativeNamesWithTag(san, GeneralName.rfc822Name)
                 .filter(EmailAddressPrincipal::isValid)
                 .map(EmailAddressPrincipal::new)
                 .collect(Collectors.toList());
 
-        boolean haveEntityDefn = policyPrincipals.stream()
-                .anyMatch(EntityDefinitionPrincipal.class::isInstance);
-
         Principal subject = new GlobusPrincipal(eec.getSubjectX500Principal());
 
-        Optional<Principal> heuristicPrincipal = haveEntityDefn
-                ? Optional.empty()
-                : guessEntityDefinition(eec, subject.getName(), san);
+        Optional<EntityDefinition> entity = identifyEntityDefinition(eec, policies,
+                subject, san);
 
         List<Principal> principals = new ArrayList<>();
         principals.addAll(caPrincipals);
         principals.add(subject);
-        principals.addAll(policyPrincipals);
+        principals.addAll(loaPrincipals);
         principals.addAll(emailPrincipals);
-        heuristicPrincipal.ifPresent(principals::add);
+        entity.map(EntityDefinitionPrincipal::new).ifPresent(principals::add);
         return principals;
     }
 
+    private Optional<EntityDefinition> identifyEntityDefinition(X509Certificate eec,
+            List<String> policies, Principal subject, Collection<List<?>> san)
+            throws CertificateParsingException
+    {
+        Set<EntityDefinition> assertedEntityDefn = policies.stream()
+                .map(ENTITY_DEFINITION_POLICIES::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(EntityDefinition.class)));
+
+        if (assertedEntityDefn.size() == 1) {
+            EntityDefinition entity = assertedEntityDefn.iterator().next();
+            return Optional.of(entity);
+        }
+
+        if (assertedEntityDefn.size() > 1) {
+            LOG.warn("Multiple EntityTypes asserted: {}", assertedEntityDefn);
+            return Optional.empty();
+        }
+
+        // No entity asserted as a policy, let's try to guess...
+
+        return guessEntityDefinition(eec, subject.getName(), san);
+
+    }
+
     /** Use heuristics to guess what kind of entity this certificate represents. */
-    private Optional<Principal> guessEntityDefinition(X509Certificate eec,
+    private Optional<EntityDefinition> guessEntityDefinition(X509Certificate eec,
             String subject, Collection<List<?>> san) throws CertificateParsingException
     {
         if (ROBOT_CN_PATTERN.matcher(subject).find()) {
-            return Optional.of(new EntityDefinitionPrincipal(ROBOT));
+            return Optional.of(ROBOT);
         }
 
         if (eec.getExtendedKeyUsage().stream().anyMatch(OID_EKU_TLS_SERVER::equals)
-                && (subjectAlternativeNameWithTag(san, GeneralName.dNSName).findAny().isPresent()
+                && (hasSubjectAlternativeNameOfType(san, GeneralName.dNSName)
                 || hasCnWithFqdn(subject))) {
-            return Optional.of(new EntityDefinitionPrincipal(HOST));
+            return Optional.of(HOST);
         }
 
         /*
-         *  Unfortunately there is no heuristic we can use to determine if the
-         *  certificate is a "natural person" (PERSON).  Examples of CNs issued
-         *  by CAs:
+         *  Unfortunately there is no good heuristic we can use to determine if
+         *  the certificate is a "natural person" (PERSON).  Examples of CNs
+         *  issued by CAs:
          *
          *      /CN=Alexander Paul Millar
          *      /CN=victor.mendez
          *      /CN=Jesus-Cruz-Guzman
          *      /CN=Jose.Luis.Garza.Rivera
          *
-         *  In addition, some CAs add numbers to the CN in an effort to ensure
-         *  the CN is unique.
+         *  In addition, some CAs append numbers or email addresses to the
+         *  person's name in an effort to ensure the CN is unique.
+         *
+         *  Further, although some (but not all) CAs include an email address
+         *  as a SubjectAlternativeName, some CAs include an email address as
+         *  a SubjectAlternativeName in HOST certificates.
+         *
+         *  Perhaps the best we can do is require that a PERSON certificate has
+         *  no DNS, IP-address or URI SujectAlternativeName entry, and that we
+         *  haven't already identified the entity as a ROBOT or a HOST.
          */
+
+        if (!hasSubjectAlternativeNameOfType(san, GeneralName.dNSName,
+                GeneralName.iPAddress, GeneralName.uniformResourceIdentifier)) {
+            return Optional.of(PERSON);
+        }
 
         return Optional.empty();
     }
 
-    private static Stream<String> subjectAlternativeNameWithTag(Collection<List<?>> san, int tag)
-            throws CertificateParsingException
+    private static boolean hasSubjectAlternativeNameOfType(Collection<List<?>> san,
+            int... tags)
+    {
+        return san.stream()
+                .mapToInt(n -> ((Integer) n.get(0)))
+                .anyMatch(t -> Arrays.stream(tags).anyMatch(t2 -> t2 == t));
+    }
+
+    private static Stream<String> subjectAlternativeNamesWithTag(Collection<List<?>> san,
+            int tag)
     {
         return san.stream()
                 .filter(n -> ((Integer) n.get(0)) == tag)
@@ -260,7 +302,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         return infoDirectory.getPrincipals(issuer);
     }
 
-    private List<ASN1Encodable> listPolicies(X509Certificate eec)
+    private List<String> listPolicies(X509Certificate eec)
             throws AuthenticationException
     {
         byte[] encoded;
@@ -276,15 +318,18 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             return Collections.emptyList();
         }
 
-        Enumeration<ASN1Encodable> policySource = ASN1Sequence.getInstance(encoded).getObjects();
-        List<ASN1Encodable> policies = new ArrayList<>();
-        while (policySource.hasMoreElements()) {
-            ASN1Encodable policy = policySource.nextElement();
-            if (!policy.equals(ANY_POLICY)) {
-                policies.add(policy);
+        Enumeration<ASN1Encodable> asn1EncodedPolicies = ASN1Sequence.getInstance(encoded).getObjects();
+        List<String> policies = new ArrayList<>();
+        while (asn1EncodedPolicies.hasMoreElements()) {
+            ASN1Encodable asn1EncodedPolicy = asn1EncodedPolicies.nextElement();
+            if (asn1EncodedPolicy.equals(ANY_POLICY)) {
+                continue;
             }
+            PolicyInformation policy = PolicyInformation.getInstance(asn1EncodedPolicy);
+            policies.add(policy.getPolicyIdentifier().getId());
         }
         return policies;
+
     }
 
     private static Collection<List<?>> listSubjectAlternativeNames(X509Certificate certificate)
@@ -294,26 +339,13 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         return names == null ? Collections.emptyList() : names;
     }
 
-    /** All principals obtained by a policy OID. */
-    private static Stream<? extends Principal> oidPrincipals(String oid)
-    {
-        return loaOidPrincipals(oid)
-                .orElseGet(() -> entityDefnPrincipal(oid)
-                        .orElse(Stream.empty()));
-    }
-
-    private static Optional<Stream<? extends Principal>> entityDefnPrincipal(String oid)
-    {
-        return Optional.ofNullable(ENTITY_DEFINITION_POLICIES.get(oid))
-            .map(EntityDefinitionPrincipal::new)
-            .map(Stream::of);
-    }
-
-    private static Optional<Stream<? extends Principal>> loaOidPrincipals(String oid)
+    /** All LoA principals obtained from a policy OID. */
+    private static Stream<LoAPrincipal> loaPrincipals(String oid)
     {
         return Optional.ofNullable(LOA_POLICIES.get(oid))
                 .map(EnumSet::of)
                 .map(LoAs::withImpliedLoA)
-                .map(c -> c.stream().map(LoAPrincipal::new));
+                .map(c -> c.stream().map(LoAPrincipal::new))
+                .orElse(Stream.empty());
     }
 }
