@@ -162,6 +162,7 @@ public enum LoA
     REFEDS_PROFILE_CAPPUCCINO("REFEDS:profile:cappuccino"),
     REFEDS_PROFILE_ESPRESSO("REFEDS:profile:espresso"),
 
+
     /*
      * Policies from AARC.
      */
@@ -175,7 +176,33 @@ public enum LoA
      * identifiers based on proprietary heuristics.
      * @see <a href="https://aarc-project.eu/guidelines/aarc-g021/">AARC-G021</a>
      */
-    AARC_PROFILE_ASSAM("AARC:profile:assam");
+    AARC_PROFILE_ASSAM("AARC:profile:assam"),
+
+
+    /*
+     * Policies from EGI.
+     *
+     * EGI AAI currently distinguishes between three LoA levels, similarly to
+     * the eID Assurance Framework (eIDAF).
+     *
+     * https://wiki.egi.eu/wiki/AAI_guide_for_SPs#Level_of_Assurance
+     */
+
+    /**
+     * Authentication through a social identity provider or other low identity
+     * assurance provider.
+     */
+    EGI_LOW("EGI:low"),
+
+    /**
+     * Password/X.509 authentication at the user's home IdP.
+     */
+    EGI_SUBSTANTIAL("EGI:substantial"),
+
+    /**
+     * Substantial + multi-factor authn (not yet supported, TBD).
+     */
+    EGI_HIGH("EGI:high");
 
     private static final ImmutableMap<String,LoA> NAME_MAP;
 

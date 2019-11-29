@@ -113,6 +113,11 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
             // AARC policies see https://aarc-project.eu/guidelines/#policy
             .put("https://aarc-project.eu/policy/authn-assurance/assam", LoA.AARC_PROFILE_ASSAM)
+
+            // EGI policies see https://wiki.egi.eu/wiki/AAI_guide_for_SPs#Level_of_Assurance
+            .put("https://aai.egi.eu/LoA#Low", LoA.EGI_LOW)
+            .put("https://aai.egi.eu/LoA#Substantial", LoA.EGI_SUBSTANTIAL)
+            .put("https://aai.egi.eu/LoA#High", LoA.EGI_HIGH)
             .build();
 
     private final ExecutorService executor;
