@@ -323,18 +323,20 @@ public abstract class TransferManager extends AbstractCellComponent
             @Override
             public void run()
             {
-                log.error("timer for handler {} has expired, killing", id );
-                Object o = _moverTimeoutTimerTasks.remove(id);
-                if (o == null) {
-                    log.error("TimerTask.run(): timer task for handler Id={} not found in moverTimoutTimerTasks hashtable", id);
-                    return;
+                TimerTask task = _moverTimeoutTimerTasks.remove(id);
+                if (task != null) {
+                    TransferManagerHandler handler = getHandler(id);
+                    if (handler == null) {
+                        log.warn("Transfer {} is (apparently) still ongoing"
+                                + " after {} {} but unable to find the transfer"
+                                + " to kill it.", id, _moverTimeout,
+                                _moverTimeoutUnit);
+                        return;
+                    }
+                    log.warn("Killing transfer {}, which is still ongoing after"
+                            + " {} {}.", id, _moverTimeout, _moverTimeoutUnit);
+                    handler.timeout();
                 }
-                TransferManagerHandler handler = getHandler(id);
-                if (handler == null) {
-                    log.error("TimerTask.run(): timer task for handler Id={} could not find handler !!!", id);
-                    return;
-                }
-                handler.timeout();
             }
         };
 
@@ -348,12 +350,10 @@ public abstract class TransferManager extends AbstractCellComponent
     public void stopTimer(long id)
     {
         TimerTask tt = _moverTimeoutTimerTasks.remove(id);
-        if (tt == null) {
-            log.error("stopTimer(): timer not found for Id={}", id);
-            return;
+        if (tt != null) {
+            log.debug("Cancelling the mover timer for handler id {}", id);
+            tt.cancel();
         }
-        log.debug("canceling the mover timer for handler id {}", id);
-        tt.cancel();
     }
 
     public void addActiveTransfer(long id, TransferManagerHandler handler) {

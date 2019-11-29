@@ -12,7 +12,6 @@ import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.net.URI;
 import java.util.EnumSet;
 import java.util.Map;
@@ -139,7 +138,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     private transient int numberOfMoverStartRetries;
     private transient int _replyCode;
     private transient Serializable _errorObject;
-    private transient boolean _cancelTimer;
     private final transient DoorRequestInfoMessage info;
     private final transient PermissionHandler permissionHandler;
     private transient PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
@@ -575,20 +573,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         sendSuccessReply();
     }
 
-    public void sendErrorReply(int replyCode,
-            Serializable errorObject)
+    private void sendErrorReply(int replyCode, Serializable errorObject)
     {
-        sendErrorReply(replyCode, errorObject, true);
-    }
-
-    public void sendErrorReply(int replyCode,
-            Serializable errorObject,
-            boolean cancelTimer)
-    {
-
         _replyCode = replyCode;
         _errorObject = errorObject;
-        _cancelTimer = cancelTimer;
 
         if (log.isDebugEnabled()) {
             log.debug("sending error reply {}:{} for {}", replyCode,
@@ -616,12 +604,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
         setState(SENT_ERROR_REPLY_STATE, errorObject);
         manager.persist(this);
-
-        if (cancelTimer) {
-            manager.stopTimer(id);
-        }
-
-
+        manager.stopTimer(id);
 
         if (store) {
             synchronized (manager.justRequestedIDs) {
@@ -641,11 +624,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         manager.removeActiveTransfer(id);
     }
 
-    public void sendErrorReply()
+    private void sendErrorReply()
     {
         int replyCode = _replyCode;
         Serializable errorObject = _errorObject;
-        boolean cancelTimer = _cancelTimer;
 
         if (log.isDebugEnabled()) {
             log.debug("sending error reply {}:{} for {}", replyCode,
@@ -665,10 +647,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
         setState(SENT_ERROR_REPLY_STATE, errorObject);
         manager.persist(this);
-
-        if (cancelTimer) {
-            manager.stopTimer(id);
-        }
+        manager.stopTimer(id);
 
         if (store) {
             synchronized (manager.justRequestedIDs) {
@@ -734,11 +713,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void timeout()
     {
-        log.error(" transfer timed out");
         if (moverId != null) {
             killMover(moverId, "timed out");
         }
-        sendErrorReply(24, new IOException("timed out while waiting for mover reply"), false);
+        sendErrorReply(24, new IOException("timed out while waiting for mover reply"));
     }
 
     public void cancel(String explanation)
