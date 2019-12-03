@@ -1,6 +1,8 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
 import eu.emi.security.authn.x509.proxy.ProxyChainInfo;
@@ -100,6 +102,13 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             .put("1.2.840.113612.5.2.3.3.3", PERSON)
             .build();
 
+    private static final Set<LoA> IGTF_AP = EnumSet.of(IGTF_AP_CLASSIC,
+            IGTF_AP_SGCS, IGTF_AP_SLCS, IGTF_AP_EXPERIMENTAL, IGTF_AP_MICS,
+            IGTF_AP_IOTA);
+
+    private static final Set<LoA> IGTF_LOA = EnumSet.of(IGTF_LOA_ASPEN,
+            IGTF_LOA_BIRCH, IGTF_LOA_CEDAR, IGTF_LOA_DOGWOOD);
+
     private static final Pattern ROBOT_CN_PATTERN = Pattern.compile("/CN=[rR]obot[^/\\p{Alnum}]");
     private static final Pattern CN_PATTERN = Pattern.compile("/CN=([^/]*)");
 
@@ -181,11 +190,51 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
 
         List<Principal> principals = new ArrayList<>();
         principals.addAll(caPrincipals);
-        principals.add(subject);
         principals.addAll(loaPrincipals);
+
+        principals = filterOutErroneousLoAs(principals);
+        addImpliedLoA(principals);
+
+        principals.add(subject);
         principals.addAll(emailPrincipals);
         entity.map(EntityDefinitionPrincipal::new).ifPresent(principals::add);
+
         return principals;
+    }
+
+    private List<Principal> filterOutErroneousLoAs(List<Principal> principals)
+    {
+        EnumSet<LoA> assertedLoAs = assertedLoAs(principals);
+
+        EnumSet<LoA> assertedIgtfAp = EnumSet.copyOf(assertedLoAs);
+        assertedIgtfAp.retainAll(IGTF_AP);
+
+        Optional<Stream<Principal>> filteredPrincipals = Optional.empty();
+        if (assertedIgtfAp.size() > 1) {
+            LOG.warn("Suppressing IGTF AP principals as an incompatible set is"
+                    + " asserted: {}", assertedIgtfAp);
+            filteredPrincipals = Optional.of(principals.stream().filter(p -> !(p instanceof LoAPrincipal && IGTF_AP.contains(((LoAPrincipal)p).getLoA()))));
+        }
+
+        EnumSet<LoA> assertedIgtfLoAs = EnumSet.copyOf(assertedLoAs);
+        assertedIgtfLoAs.retainAll(IGTF_LOA);
+
+        if (assertedIgtfLoAs.size() > 1) {
+            LOG.warn("Suppressing IGTF LoA principals as an incompatible set is"
+                    + " asserted: {}", assertedIgtfLoAs);
+            filteredPrincipals = Optional.of(filteredPrincipals.orElse(principals.stream())
+                    .filter(p -> !(p instanceof LoAPrincipal && IGTF_LOA.contains(((LoAPrincipal)p).getLoA()))));
+        }
+
+        return filteredPrincipals.map(s -> s.collect(Collectors.toList())).orElse(principals);
+    }
+
+    private static EnumSet<LoA> assertedLoAs(Collection<Principal> principals)
+    {
+        return principals.stream().filter(LoAPrincipal.class::isInstance)
+                .map(LoAPrincipal.class::cast)
+                .map(LoAPrincipal::getLoA)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(LoA.class)));
     }
 
     private Optional<EntityDefinition> identifyEntityDefinition(X509Certificate eec,
@@ -339,13 +388,22 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         return names == null ? Collections.emptyList() : names;
     }
 
-    /** All LoA principals obtained from a policy OID. */
+    /** A stream of LoA principals obtained directly from a policy OID. */
     private static Stream<LoAPrincipal> loaPrincipals(String oid)
     {
-        return Optional.ofNullable(LOA_POLICIES.get(oid))
-                .map(EnumSet::of)
-                .map(LoAs::withImpliedLoA)
-                .map(c -> c.stream().map(LoAPrincipal::new))
-                .orElse(Stream.empty());
+        Optional<LoAPrincipal> principal = Optional.ofNullable(LOA_POLICIES.get(oid))
+                .map(LoAPrincipal::new);
+        return Streams.stream(principal);
+    }
+
+    /** Add all implied LoAs, given the LoA assertions so far. */
+    private static void addImpliedLoA(Collection<Principal> principals)
+    {
+        EnumSet<LoA> assertedLoAs = assertedLoAs(principals);
+
+        LoAs.withImpliedLoA(assertedLoAs).stream()
+                .filter(l -> !assertedLoAs.contains(l))
+                .map(LoAPrincipal::new)
+                .forEach(principals::add);
     }
 }

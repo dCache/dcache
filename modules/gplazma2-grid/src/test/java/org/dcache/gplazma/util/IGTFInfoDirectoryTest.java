@@ -29,10 +29,12 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Principal;
+import java.util.Optional;
 import java.util.Set;
 
 import org.dcache.auth.IGTFPolicyPrincipal;
 import org.dcache.auth.IGTFStatusPrincipal;
+import org.dcache.auth.LoA;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.hasItem;
@@ -61,7 +63,7 @@ public class IGTFInfoDirectoryTest
 
         whenLoginWithCa("/C=GB/ST=Greater Manchester/L=Salford/O=Comodo CA Limited/CN=AAA Certificate Services");
 
-        assertThat(caPrincipals, hasItem(new IGTFStatusPrincipal("mics", true)));
+        assertThat(caPrincipals, hasItem(new IGTFStatusPrincipal("mics", true, Optional.of(LoA.IGTF_AP_MICS))));
         assertThat(caPrincipals, hasItem(new IGTFPolicyPrincipal("igtf-mics")));
         assertThat(caPrincipals, hasItem(new IGTFPolicyPrincipal("ca-policy-lcg")));
     }

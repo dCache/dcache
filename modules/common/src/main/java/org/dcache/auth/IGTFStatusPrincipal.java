@@ -19,6 +19,8 @@
 package org.dcache.auth;
 
 import java.security.Principal;
+import java.util.Objects;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -31,12 +33,14 @@ public class IGTFStatusPrincipal implements Principal
 {
     private final String _name;
     private final boolean _isAccredited;
+    private final LoA _loa;
 
-    public IGTFStatusPrincipal(String name, boolean accredited)
+    public IGTFStatusPrincipal(String name, boolean accredited, Optional<LoA> loa)
     {
         checkArgument(!name.isEmpty());
         _name = name;
         _isAccredited = accredited;
+        _loa = loa.orElse(null);
     }
 
     @Override
@@ -50,10 +54,19 @@ public class IGTFStatusPrincipal implements Principal
         return _isAccredited;
     }
 
+    /**
+     * The LoA corresponding to this status.
+     * @return
+     */
+    public Optional<LoA> getLoA()
+    {
+        return Optional.ofNullable(_loa);
+    }
+
     @Override
     public int hashCode()
     {
-        return _name.hashCode();
+        return Objects.hash(_name, _loa) ^ (_isAccredited ? 1 : 0);
     }
 
     @Override
@@ -69,7 +82,7 @@ public class IGTFStatusPrincipal implements Principal
 
         IGTFStatusPrincipal that = ((IGTFStatusPrincipal)other);
 
-        return _name.equals(that._name) && _isAccredited == that._isAccredited;
+        return _name.equals(that._name) && _isAccredited == that._isAccredited && Objects.equals(_loa, that._loa);
     }
 
     @Override

@@ -37,11 +37,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.dcache.auth.IGTFPolicyPrincipal;
 import org.dcache.auth.IGTFStatusPrincipal;
+import org.dcache.auth.LoA;
+import org.dcache.auth.LoAPrincipal;
 import org.dcache.gplazma.util.IGTFInfo.Status;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -55,19 +58,23 @@ public class IGTFInfoDirectory
 {
     private static final Logger LOG = LoggerFactory.getLogger(IGTFInfoDirectory.class);
     private static final int MIN_STAT_DURATION = 2_000;
-    private static final Map<Status,String> TO_NAME;
+    private static final Map<Status,String> TO_NAME = ImmutableMap.<Status,String>builder()
+            .put(Status.ACCREDITED_CLASSIC, "classic")
+            .put(Status.ACCREDITED_IOTA, "iota")
+            .put(Status.ACCREDITED_MICS, "mics")
+            .put(Status.ACCREDITED_SLCS, "slcs")
+            .put(Status.DISCONTINUED, "discontinued")
+            .put(Status.EXPERIMENTAL, "experimental")
+            .put(Status.UNACCREDITED, "unaccredited")
+            .build();
 
-    static {
-        ImmutableMap.Builder<Status,String> names = ImmutableMap.builder();
-        names.put(Status.ACCREDITED_CLASSIC, "classic");
-        names.put(Status.ACCREDITED_IOTA, "iota");
-        names.put(Status.ACCREDITED_MICS, "mics");
-        names.put(Status.ACCREDITED_SLCS, "slcs");
-        names.put(Status.DISCONTINUED, "discontinued");
-        names.put(Status.EXPERIMENTAL, "experimental");
-        names.put(Status.UNACCREDITED, "unaccredited");
-        TO_NAME = names.build();
-    }
+    private static final Map<Status,LoA> TO_LOA = ImmutableMap.<Status,LoA>builder()
+            .put(Status.ACCREDITED_CLASSIC, LoA.IGTF_AP_CLASSIC)
+            .put(Status.ACCREDITED_IOTA, LoA.IGTF_AP_IOTA)
+            .put(Status.ACCREDITED_MICS, LoA.IGTF_AP_MICS)
+            .put(Status.ACCREDITED_SLCS, LoA.IGTF_AP_SLCS)
+            .put(Status.EXPERIMENTAL, LoA.IGTF_AP_EXPERIMENTAL)
+            .build();
 
     private final Path directory;
     private final Map<Path,IGTFInfoFile> files = new HashMap<>();
@@ -101,6 +108,9 @@ public class IGTFInfoDirectory
         IGTFStatusPrincipal status = taStatus.get(certificateAuthority);
         if (status != null) {
             principals.add(status);
+            status.getLoA()
+                    .map(LoAPrincipal::new)
+                    .ifPresent(principals::add);
         }
 
         principals.addAll(taPolicies.get(certificateAuthority));
@@ -146,7 +156,7 @@ public class IGTFInfoDirectory
         case TRUST_ANCHOR:
             Status s = info.getStatus();
             IGTFStatusPrincipal st = new IGTFStatusPrincipal(TO_NAME.get(s),
-                    s.isAccredited());
+                    s.isAccredited(), Optional.ofNullable(TO_LOA.get(s)));
             taStatus.put(info.getSubjectDN(), st);
             break;
         case POLICY:
