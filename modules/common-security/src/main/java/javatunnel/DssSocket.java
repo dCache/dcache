@@ -19,12 +19,10 @@ package javatunnel;
 
 import javatunnel.token.Base64TokenReader;
 import javatunnel.token.Base64TokenWriter;
-import org.dcache.dss.DssContext;
-import org.dcache.dss.DssContextFactory;
-import javatunnel.token.UnwrappingInputStream;
-import javatunnel.token.WrappingOutputStream;
 import javatunnel.token.TokenReader;
 import javatunnel.token.TokenWriter;
+import javatunnel.token.UnwrappingInputStream;
+import javatunnel.token.WrappingOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +39,10 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketImpl;
 import java.net.UnknownHostException;
+
+import org.dcache.dss.DssContext;
+import org.dcache.dss.DssContextFactory;
+import org.dcache.util.Exceptions;
 
 public class DssSocket extends Socket implements TunnelSocket
 {
@@ -203,15 +205,9 @@ public class DssSocket extends Socket implements TunnelSocket
     }
 
     @Override
-    public boolean verify()
+    public void verify() throws IOException
     {
-        try {
-            acceptSecurityContext();
-            return true;
-        } catch (IOException e) {
-            LOGGER.error("Failed to verify: {}", e.toString());
-            return false;
-        }
+        acceptSecurityContext();
     }
 
     @Override

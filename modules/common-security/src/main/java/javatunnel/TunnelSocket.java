@@ -19,8 +19,10 @@ package javatunnel;
 
 import javax.security.auth.Subject;
 
+import java.io.IOException;
+
 public interface TunnelSocket
 {
     Subject getSubject();
-    boolean verify();
+    void verify() throws IOException;
 }

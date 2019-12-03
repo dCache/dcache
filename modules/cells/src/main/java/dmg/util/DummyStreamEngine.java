@@ -40,10 +40,11 @@ public class DummyStreamEngine implements StreamEngine
         _socket = socket;
 
         if (socket instanceof TunnelSocket) {
-            if (!((TunnelSocket) socket).verify()) {
-                String hostAddress = (socket.getInetAddress()).getHostAddress();
+            try {
+                ((TunnelSocket) socket).verify();
+            } catch (IOException e) {
                 socket.close();
-                throw new IOException("Host " + hostAddress + ": Tunnel verification failed!");
+                throw new IOException("Tunnel verification failed: " + Exceptions.meaningfulMessage(e));
             }
             setSubject(((TunnelSocket) socket).getSubject());
         }
