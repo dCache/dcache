@@ -48,21 +48,4 @@ public interface StreamEngine {
    OutputStream getOutputStream() ;
    Reader       getReader() ;
    Writer       getWriter() ;
-
-    /** Returns the terminal type (vt100, vt220, etc). */
-    String getTerminalType();
-
-    /**
-     * Returns the terminal width.
-     *
-     * 0 indicates that the width is unknown.
-     */
-    int getTerminalWidth();
-
-    /**
-     * Returns the terminal height.
-     *
-     * 0 indicates that the height is unknown.
-     */
-    int getTerminalHeight();
 }
