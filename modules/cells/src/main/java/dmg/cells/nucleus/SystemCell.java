@@ -1,6 +1,7 @@
 package dmg.cells.nucleus ;
 
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
@@ -67,9 +68,9 @@ public class      SystemCell
    }
 
     public static SystemCell create(String cellDomainName,
-            CuratorFramework curatorFramework, Optional<String> zone, SerializationHandler.Serializer serializer)
+            CuratorFramework curatorFramework, Optional<String> zone)
     {
-        CellNucleus.initCellGlue(cellDomainName, curatorFramework, zone, serializer);
+        CellNucleus.initCellGlue(cellDomainName, curatorFramework, zone);
         return new SystemCell();
     }
 
@@ -235,7 +236,6 @@ public class      SystemCell
     {
         pw.append(" CellDomainName   = ").println(getCellDomainName());
         pw.append(" Zone = ").println(_nucleus.getZone().orElse("(none)"));
-        pw.append(" Message payload serializer = ").println(_nucleus.getMsgSerialization());
         pw.format(" I/O rcv=%d;asw=%d;frw=%d;rpy=%d;exc=%d\n",
                   _packetsReceived, _packetsAnswered, _packetsForwarded,
                   _packetsReplied, _exceptionCounter);

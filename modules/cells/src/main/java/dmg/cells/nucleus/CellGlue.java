@@ -60,12 +60,10 @@ class CellGlue
     private final CellAddressCore _domainAddress;
     private final CuratorFramework _curatorFramework;
     private final Optional<String> _zone;
-    private final SerializationHandler.Serializer _serializer;
 
     CellGlue(String cellDomainName, @Nonnull CuratorFramework curatorFramework,
-            Optional<String> zone, SerializationHandler.Serializer serializer)
+            Optional<String> zone)
     {
-        _serializer = serializer;
         _zone = requireNonNull(zone);
         String cellDomainNameLocal = cellDomainName;
 
@@ -216,11 +214,6 @@ class CellGlue
     Optional<String> getZone()
     {
         return _zone;
-    }
-
-    SerializationHandler.Serializer getMessageSerializer()
-    {
-        return _serializer;
     }
 
     Object getCellContext(String str)
@@ -506,7 +499,7 @@ class CellGlue
             throws SerializationException
     {
         if (!msg.isStreamMode()) {
-            msg = msg.encodeWith(_serializer);
+            msg = msg.encode();
         }
         CellPath destination = msg.getDestinationPath();
         LOGGER.trace("sendMessage : {} send to {}", msg.getUOID(), destination);
