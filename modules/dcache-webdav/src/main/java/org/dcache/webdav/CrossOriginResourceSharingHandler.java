@@ -65,12 +65,17 @@ public class CrossOriginResourceSharingHandler extends AbstractHandler
                        HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
         String clientOrigin = request.getHeader("origin");
-        if (_allowedClientOrigins.contains(clientOrigin)) {
+
+        if (_allowedClientOrigins.isEmpty()) {
+            response.setHeader("Access-Control-Allow-Origin", "*");
+        } else if (_allowedClientOrigins.contains(clientOrigin)) {
             response.setHeader("Access-Control-Allow-Origin", clientOrigin);
+
             if (_allowedClientOrigins.size() > 1) {
                 response.setHeader("Vary", "Origin");
             }
         }
+
         if ("OPTIONS".equals(request.getMethod())) {
             response.setHeader("Allow", "GET, PUT, POST, DELETE");
             response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
