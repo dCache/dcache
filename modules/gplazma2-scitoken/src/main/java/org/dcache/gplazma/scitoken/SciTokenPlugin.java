@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,13 +21,14 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +42,6 @@ import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.MultiTargetedRestriction;
 import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
 import org.dcache.auth.attributes.Restriction;
@@ -59,8 +59,7 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  */
 public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
 {
-    private static final EnumSet<Activity> READ_ACTIVITY = EnumSet.of(Activity.LIST, Activity.READ_METADATA, Activity.DOWNLOAD);
-    private static final EnumSet<Activity> WRITE_ACTIVITY = EnumSet.of(Activity.LIST, Activity.READ_METADATA, Activity.UPLOAD, Activity.MANAGE, Activity.DELETE, Activity.UPDATE_METADATA);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SciTokenPlugin.class);
 
     private final HttpClient client;
     private final Map<String,Issuer> issuersByEndpoint;
@@ -133,6 +132,8 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
 
             Collection<Principal> principals = new ArrayList<>();
 
+            // REVISIT consider introducing an SPI to allow plugable support for handling claims.
+
             Optional<String> sub = token.getPayloadString("sub");
             sub.map(s -> new JwtSubPrincipal(issuer.getId(), s))
                 .ifPresent(principals::add);
@@ -147,16 +148,39 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
 
             String scope = token.getPayloadString("scope")
                     .orElseThrow(() -> new AuthenticationException("missing scope claim"));
-            List<SciTokenScope> scopes = SciTokenScope.parseScope(scope);
+            List<AuthorisationSupplier> scopes = parseScope(scope);
             checkAuthentication(!scopes.isEmpty(), "not a SciToken: found no SciToken scope terms.");
-
             identifiedPrincipals.addAll(principals);
             Restriction r = buildRestriction(issuer.getPrefix(), scopes);
+            LOGGER.debug("Authenticated user with restriction: {}", r);
             restrictions.add(r);
         } catch (IOException e) {
             throw new AuthenticationException(e.getMessage());
         }
     }
+
+    /**
+     * Parse the "scope" claim and extract all SciToken or WLCG Profile scopes.
+     */
+    private static List<AuthorisationSupplier> parseScope(String claim) throws InvalidScopeException
+    {
+        return Splitter.on(' ').trimResults().splitToList(claim).stream()
+                .map(SciTokenPlugin::resolveScope)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
+    private static Optional<AuthorisationSupplier> resolveScope(String scope)
+    {
+        // REVISIT consider introducing an SPI to allow plugable support for handling scope values.
+
+        if (SciTokenScope.isSciTokenScope(scope)) {
+            return Optional.of(new SciTokenScope(scope));
+        }
+        return Optional.empty();
+    }
+
 
     private JsonWebToken checkValid(JsonWebToken token) throws AuthenticationException
     {
@@ -191,22 +215,13 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
         return issuer;
     }
 
-    private Restriction buildRestriction(FsPath prefix, List<SciTokenScope> scopes)
+    private Restriction buildRestriction(FsPath prefix, List<AuthorisationSupplier> scopes)
     {
-        List<Authorisation> authorisations = new ArrayList<>();
-
-        for (SciTokenScope scope : scopes) {
-            FsPath path = prefix.resolve(scope.getPath().substring(1));
-            switch (scope.getOperation()) {
-            case READ:
-                authorisations.add(new Authorisation(READ_ACTIVITY, path));
-                break;
-
-            case WRITE:
-                authorisations.add(new Authorisation(WRITE_ACTIVITY, path));
-                break;
-            }
-        }
+        List<Authorisation> authorisations = scopes.stream()
+                .map(s -> s.authorisation(prefix))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
 
         return new MultiTargetedRestriction(authorisations);
     }

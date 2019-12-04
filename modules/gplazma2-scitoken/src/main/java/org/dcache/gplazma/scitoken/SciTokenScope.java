@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,39 +17,52 @@
  */
 package org.dcache.gplazma.scitoken;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
+import diskCacheV111.util.FsPath;
+
+import org.dcache.auth.attributes.Activity;
+import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
+
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
-import static org.dcache.util.Exceptions.genericCheck;
+import static org.dcache.auth.attributes.Activity.*;
+import static org.dcache.gplazma.scitoken.InvalidScopeException.checkScopeValid;
 
 /**
  * A Scope represents one of the space-separated list of allowed operations
  * contained within the SciToken "scope" claim.
  */
-public class SciTokenScope
+public class SciTokenScope implements AuthorisationSupplier
 {
-    public static class InvalidScopeException extends RuntimeException
-    {
-        public InvalidScopeException(String message)
-        {
-            super(message);
-        }
-    }
-
     public enum Operation
     {
-        READ, WRITE, QUEUE, EXECUTE
+        READ(LIST, READ_METADATA, DOWNLOAD),
+        WRITE(LIST, READ_METADATA, UPLOAD, MANAGE, DELETE, UPDATE_METADATA),
+        QUEUE,
+        EXECUTE;
+
+        private final EnumSet<Activity> allowedActivities;
+
+        private Operation(Activity... allowedActivities)
+        {
+            this.allowedActivities = allowedActivities.length == 0
+                    ? EnumSet.noneOf(Activity.class)
+                    : EnumSet.copyOf(asList(allowedActivities));
+        }
     }
 
     private static final String SCITOKEN_SCOPE_PREFIX = "https://scitokens.org/v1/authz/";
     private static final Map<String,Operation> OPERATIONS_BY_LABEL;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SciTokenScope.class);
 
     static {
         ImmutableMap.Builder<String,Operation> builder = ImmutableMap.builder();
@@ -64,9 +77,10 @@ public class SciTokenScope
     {
         this.operation = requireNonNull(operation);
         this.path = requireNonNull(path);
+        LOGGER.debug("SciTokenScope created: op={} path={}", operation, path);
     }
 
-    private SciTokenScope(String scope) throws InvalidScopeException
+    public SciTokenScope(String scope) throws InvalidScopeException
     {
         String withoutPrefix = withoutPrefix(scope);
 
@@ -82,25 +96,12 @@ public class SciTokenScope
             path = withoutPrefix.substring(colon+1);
             checkScopeValid(path.startsWith("/"), "Path does not start with /");
         }
+
+        LOGGER.debug("SciTokenScope created from scope \"{}\": op={} path={}",
+                scope, operation, path);
     }
 
-    private static void checkScopeValid(boolean isOK, String format, Object... arguments)
-    {
-        genericCheck(isOK, InvalidScopeException::new, format, arguments);
-    }
-
-    /**
-     * Parse the "scope" claim and extract all SciToken scopes.
-     */
-    public static List<SciTokenScope> parseScope(String claim) throws InvalidScopeException
-    {
-        return Splitter.on(' ').trimResults().splitToList(claim).stream()
-                .filter(SciTokenScope::isSciTokenScope)
-                .map(SciTokenScope::new)
-                .collect(Collectors.toList());
-    }
-
-    private static boolean isSciTokenScope(String scope)
+    public static boolean isSciTokenScope(String scope)
     {
         String withoutPrefix = withoutPrefix(scope);
         int colon = withoutPrefix.indexOf(':');
@@ -116,14 +117,15 @@ public class SciTokenScope
                 ? scope.substring(SCITOKEN_SCOPE_PREFIX.length()) : scope;
     }
 
-    public Operation getOperation()
+    @Override
+    public Optional<Authorisation> authorisation(FsPath prefix)
     {
-        return operation;
-    }
-
-    public String getPath()
-    {
-        return path;
+        FsPath absPath = prefix.resolve(path.substring(1));
+        LOGGER.debug("SciTokenScope authorising {} with prefix \"{}\" to path {}",
+                operation.allowedActivities, prefix, absPath);
+        return operation.allowedActivities.isEmpty()
+                ? Optional.empty()
+                : Optional.of(new Authorisation(operation.allowedActivities, absPath));
     }
 
     @Override

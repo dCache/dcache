@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,20 +20,201 @@ package org.dcache.gplazma.scitoken;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Optional;
 
+import diskCacheV111.util.FsPath;
+
+import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
+
+import static org.dcache.auth.attributes.Activity.*;
 import static org.dcache.gplazma.scitoken.SciTokenScope.Operation.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 public class SciTokenScopeTest
 {
-    @Test
-    public void shouldReturnOperationPath()
+    @Test(expected=InvalidScopeException.class)
+    public void shouldRejectUnknownOperation()
     {
-        SciTokenScope scope = new SciTokenScope(READ, "/foo");
+        SciTokenScope ignored = new SciTokenScope("unknown");
+    }
 
-        assertThat(scope.getOperation(), is(equalTo(READ)));
-        assertThat(scope.getPath(), is(equalTo("/foo")));
+    @Test
+    public void shouldIdentifySimpleReadScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("read");
+
+        assertTrue("simple read with no path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyUrlReadScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("https://scitokens.org/v1/authz/read");
+
+        assertTrue("url read with no path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifySimpleWriteScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("write");
+
+        assertTrue("simple write with no path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyUrlWriteScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("https://scitokens.org/v1/authz/write");
+
+        assertTrue("url read with no path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifySimpleQueueScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("queue");
+
+        assertTrue("simple queue with no path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifySimpleExecuteScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("execute");
+
+        assertTrue("simple execute with no path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyReadWithAbsoluteRootPathScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("read:/");
+
+        assertTrue("simple read with root path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyReadWithAbsoluteNonRootPathScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("read:/path/to/dir");
+
+        assertTrue("simple read with non-root path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyUrlReadWithAbsoluateRootPath()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("https://scitokens.org/v1/authz/read:/");
+
+        assertTrue("url read with root path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyUrlReadWithAbsoluteNonRootPath()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("https://scitokens.org/v1/authz/read:/path/to/dir");
+
+        assertTrue("url read with non-root path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyWriteWithAbsoluteRootPathScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("write:/");
+
+        assertTrue("simple read with root path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyWriteWithAbsoluteNonRootPathScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("write:/path/to/dir");
+
+        assertTrue("simple read with root path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyUrlWriteWithAbsoluateRootPath()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("https://scitokens.org/v1/authz/write:/");
+
+        assertTrue("url write with root path", isScope);
+    }
+
+    @Test
+    public void shouldIdentifyUrlWriteWithAbsoluteNonRootPath()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("https://scitokens.org/v1/authz/write:/path/to/dir");
+
+        assertTrue("url write with non-root path", isScope);
+    }
+
+    @Test
+    public void shouldNotIdentifyUnknownScope()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("unknown");
+
+        assertFalse("unknown scope", isScope);
+    }
+
+    @Test
+    public void shouldNotIdentifyReadWithRelativePath()
+    {
+        boolean isScope = SciTokenScope.isSciTokenScope("read:some-path");
+
+        assertFalse("simple read with relative path", isScope);
+    }
+
+    @Test
+    public void shouldNotAuthoriseQueue()
+    {
+        SciTokenScope scope = new SciTokenScope("queue");
+
+        Optional<Authorisation> maybeAuthorisation = scope.authorisation(FsPath.create("/prefix/path"));
+
+        assertFalse(maybeAuthorisation.isPresent());
+    }
+
+    @Test
+    public void shouldNotAuthoriseExecute()
+    {
+        SciTokenScope scope = new SciTokenScope("execute");
+
+        Optional<Authorisation> maybeAuthorisation = scope.authorisation(FsPath.create("/prefix/path"));
+
+        assertFalse(maybeAuthorisation.isPresent());
+    }
+
+    @Test
+    public void shouldAuthoriseReadPaths()
+    {
+        SciTokenScope scope = new SciTokenScope("read:/foo");
+
+        Optional<Authorisation> maybeAuthorisation = scope.authorisation(FsPath.create("/prefix/path"));
+
+        assertTrue(maybeAuthorisation.isPresent());
+
+        Authorisation authz = maybeAuthorisation.get();
+
+        assertThat(authz.getPath(), equalTo(FsPath.create("/prefix/path/foo")));
+        assertThat(authz.getActivity(), containsInAnyOrder(LIST, READ_METADATA, DOWNLOAD));
+    }
+
+    @Test
+    public void shouldAuthoriseWritePaths()
+    {
+        SciTokenScope scope = new SciTokenScope("write:/foo");
+
+        Optional<Authorisation> maybeAuthorisation = scope.authorisation(FsPath.create("/prefix/path"));
+
+        assertTrue(maybeAuthorisation.isPresent());
+
+        Authorisation authz = maybeAuthorisation.get();
+
+        assertThat(authz.getPath(), equalTo(FsPath.create("/prefix/path/foo")));
+        assertThat(authz.getActivity(), containsInAnyOrder(LIST, READ_METADATA, UPLOAD, MANAGE, DELETE, UPDATE_METADATA));
     }
 
     @Test
@@ -51,6 +232,15 @@ public class SciTokenScopeTest
         SciTokenScope scope2 = new SciTokenScope(READ, "/foo");
 
         assertThat(scope1, is(equalTo(scope2)));
+    }
+
+    @Test
+    public void shouldHaveSameHashCodeWithSameOperationAndPath()
+    {
+        SciTokenScope scope1 = new SciTokenScope(READ, "/foo");
+        SciTokenScope scope2 = new SciTokenScope(READ, "/foo");
+
+        assertThat(scope1.hashCode(), equalTo(scope2.hashCode()));
     }
 
     @Test
@@ -72,123 +262,34 @@ public class SciTokenScopeTest
     }
 
     @Test
-    public void shouldNotAcceptEmailAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("email");
-
-        assertThat(scopes, is(empty()));
-    }
-
-    @Test
     public void shouldAcceptReadAsSciTokenScope()
     {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("read");
+        SciTokenScope scope = new SciTokenScope("read");
 
-        assertThat(scopes, contains(new SciTokenScope(READ, "/")));
-    }
-
-    @Test
-    public void shouldAcceptWriteAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("write");
-
-        assertThat(scopes, contains(new SciTokenScope(WRITE, "/")));
-    }
-
-    @Test
-    public void shouldAcceptReadAndWriteAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("read write");
-
-        assertThat(scopes, contains(new SciTokenScope(READ, "/"), new SciTokenScope(WRITE, "/")));
-    }
-
-    @Test
-    public void shouldAcceptReadAndWriteAsSciTokenScopeWithUnrelatedScopes()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("email read write oidc");
-
-        assertThat(scopes, contains(new SciTokenScope(READ, "/"), new SciTokenScope(WRITE, "/")));
+        assertThat(scope, equalTo(new SciTokenScope(READ, "/")));
     }
 
     @Test
     public void shouldAcceptQueueAsSciTokenScope()
     {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("queue");
+        SciTokenScope scope = new SciTokenScope("queue");
 
-        assertThat(scopes, contains(new SciTokenScope(QUEUE, "/")));
-    }
-
-    @Test
-    public void shouldAcceptExecuteAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("execute");
-
-        assertThat(scopes, contains(new SciTokenScope(EXECUTE, "/")));
-    }
-
-    @Test
-    public void shouldNotAcceptReadWithOnlyColonAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("read:");
-
-        assertThat(scopes, is(empty()));
-    }
-
-    @Test
-    public void shouldNotAcceptReadWithRelativePathAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("read:foo/bar");
-
-        assertThat(scopes, is(empty()));
+        assertThat(scope, equalTo(new SciTokenScope(QUEUE, "/")));
     }
 
     @Test
     public void shouldAcceptReadWithPathAsSciTokenScope()
     {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("read:/foo/bar");
+        SciTokenScope scope = new SciTokenScope("read:/foo/bar");
 
-        assertThat(scopes, contains(new SciTokenScope(READ, "/foo/bar")));
-    }
-
-    @Test
-    public void shouldNotAcceptWrongPrefixAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("https://dcache.org/v1/authz/read");
-
-        assertThat(scopes, is(empty()));
+        assertThat(scope, equalTo(new SciTokenScope(READ, "/foo/bar")));
     }
 
     @Test
     public void shouldAcceptPrefixReadAsSciTokenScope()
     {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("https://scitokens.org/v1/authz/read");
+        SciTokenScope scope = new SciTokenScope("https://scitokens.org/v1/authz/read");
 
-        assertThat(scopes, contains(new SciTokenScope(READ, "/")));
-    }
-
-    @Test
-    public void shouldNotAcceptPrefixReadWithOnlyColonAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("https://scitokens.org/v1/authz/read:");
-
-        assertThat(scopes, is(empty()));
-    }
-
-    @Test
-    public void shouldNotAcceptPrefixReadWithRelativePathAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("https://scitokens.org/v1/authz/read:foo/bar");
-
-        assertThat(scopes, is(empty()));
-    }
-
-
-    @Test
-    public void shouldIdentifyPrefixReadWithPathAsSciTokenScope()
-    {
-        List<SciTokenScope> scopes = SciTokenScope.parseScope("https://scitokens.org/v1/authz/read:/");
-
-        assertThat(scopes, contains(new SciTokenScope(READ, "/")));
+        assertThat(scope, equalTo(new SciTokenScope(READ, "/")));
     }
 }
