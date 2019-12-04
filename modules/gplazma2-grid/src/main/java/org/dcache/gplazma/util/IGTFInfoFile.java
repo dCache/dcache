@@ -40,7 +40,7 @@ import org.dcache.util.Glob;
  * A class that represents an IGTF info file.  The file
  * format is described here:
  *
- *     https://wiki.eugridpma.org/Main/IGTFInfoFile
+ *     http://wiki.eugridpma.org/Main/IGTFInfoFile
  */
 public class IGTFInfoFile
 {

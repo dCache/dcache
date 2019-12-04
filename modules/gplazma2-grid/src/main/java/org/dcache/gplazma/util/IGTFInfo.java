@@ -41,7 +41,7 @@ import static org.dcache.gplazma.util.IGTFInfo.Type.TRUST_ANCHOR;
  * a profile or a trust-anchor file.  The semantics of this class' fields
  * are defined here:
  *
- *     https://wiki.eugridpma.org/Main/IGTFInfoFile
+ *     http://wiki.eugridpma.org/Main/IGTFInfoFile
  */
 public class IGTFInfo
 {
