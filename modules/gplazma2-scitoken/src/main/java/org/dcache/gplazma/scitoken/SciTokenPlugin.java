@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -116,28 +117,34 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
                 .filter(JsonWebToken::isCompatibleFormat)
                 .collect(Collectors.toList());
 
-        checkAuthentication(!tokens.isEmpty(), "No SciToken");
-        checkAuthentication(tokens.size() == 1, "Multiple SciTokens");
+        checkAuthentication(!tokens.isEmpty(), "no JWT bearer token");
+        checkAuthentication(tokens.size() == 1, "multiple JWT bearer tokens");
 
         try {
             JsonWebToken token = checkValid(new JsonWebToken(tokens.get(0)));
             Issuer issuer = issuerOf(token);
 
+            Collection<Principal> principals = new ArrayList<>();
+
             Optional<String> sub = token.getPayloadString("sub");
             sub.map(s -> new JwtSubPrincipal(issuer.getId(), s))
-                .ifPresent(identifiedPrincipals::add);
+                .ifPresent(principals::add);
 
             Optional<String> jti = token.getPayloadString("jti");
             jti.map(s -> new JwtJtiPrincipal(issuer.getId(), s))
-                .ifPresent(identifiedPrincipals::add);
+                .ifPresent(principals::add);
 
             checkAuthentication(sub.isPresent() || jti.isPresent(), "missing sub and jti claims");
 
-            identifiedPrincipals.addAll(issuer.getPrincipals());
+            principals.addAll(issuer.getPrincipals());
 
             String scope = token.getPayloadString("scope")
                     .orElseThrow(() -> new AuthenticationException("missing scope claim"));
-            Restriction r = buildRestriction(issuer.getPrefix(), SciTokenScope.parseScope(scope));
+            List<SciTokenScope> scopes = SciTokenScope.parseScope(scope);
+            checkAuthentication(!scopes.isEmpty(), "not a SciToken: found no SciToken scope terms.");
+
+            identifiedPrincipals.addAll(principals);
+            Restriction r = buildRestriction(issuer.getPrefix(), scopes);
             restrictions.add(r);
         } catch (IOException e) {
             throw new AuthenticationException(e.getMessage());
