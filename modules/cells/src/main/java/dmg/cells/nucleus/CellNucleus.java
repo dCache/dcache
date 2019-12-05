@@ -252,10 +252,10 @@ public class CellNucleus implements ThreadFactory
     }
 
     public static void initCellGlue(String cellDomainName,
-            CuratorFramework curatorFramework, Optional<String> zone, SerializationHandler.Serializer serializer)
+            CuratorFramework curatorFramework, Optional<String> zone)
     {
         checkState(__cellGlue == null);
-        __cellGlue = new CellGlue(cellDomainName, curatorFramework, zone, serializer);
+        __cellGlue = new CellGlue(cellDomainName, curatorFramework, zone);
     }
 
     public static void startCurator()
@@ -1144,11 +1144,6 @@ public class CellNucleus implements ThreadFactory
     public Optional<String> getZone()
     {
         return __cellGlue.getZone();
-    }
-
-    public SerializationHandler.Serializer getMsgSerialization()
-    {
-        return __cellGlue.getMessageSerializer();
     }
 
     //
