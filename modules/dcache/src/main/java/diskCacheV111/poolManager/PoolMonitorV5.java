@@ -143,10 +143,13 @@ public class PoolMonitorV5
             if (_excludedHosts.isEmpty()) {
                 _locationFilter = s -> true;
             } else {
-                _locationFilter = loc -> _selectionUnit.getPool(loc)
-                                                       .getCanonicalHostName()
-                                                       .filter(host -> !excludedHosts.contains(host))
-                                                       .isPresent();
+                _locationFilter = loc -> {
+                    SelectionPool pool = _selectionUnit.getPool(loc);
+                    return pool == null ? false
+                                    : !pool.getCanonicalHostName()
+                                           .map(excludedHosts::contains)
+                                           .orElse(false);
+                };
             }
 
             _excludeFilter = _locationFilter.negate();

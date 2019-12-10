@@ -9,7 +9,7 @@ import diskCacheV111.pools.PoolV2Mode;
 
 public class PoolManagerPoolUpMessage extends PoolManagerMessage {
 
-    private static final long serialVersionUID = -5819171074245040177L;
+    private static final long serialVersionUID = -8421133630068493665L;
     private final String _poolName ;
     private final long         _serialId ;
     private final PoolCostInfo _poolCostInfo ;
