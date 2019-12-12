@@ -16,21 +16,36 @@
  */
 package org.dcache.chimera;
 
-import java.util.StringTokenizer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PnfsCommandProcessor {
 
     public static String[] process(String command) {
 
-        StringTokenizer st = new StringTokenizer(command.substring(1), "[()]");
+        List<String> list = new ArrayList<>();
+        int begin = 0;
+        int deep = 0;
 
-        int len = st.countTokens();
+        for(int i = 0; i < command.length(); i++) {
 
-        String[] list = new String[len];
-        for (int i = 0; st.hasMoreTokens(); i++) {
-            list[i] = st.nextToken();
+            char c = command.charAt(i);
+            switch(c) {
+                case '(':
+                    deep++;
+                    if (deep == 1) {
+                        begin = i+1;
+                    }
+                    break;
+                case ')':
+                    deep--;
+                    if (deep == 0) {
+                        list.add(command.substring(begin, i));
+                    }
+                    break;
+            }
         }
 
-        return list;
+        return list.isEmpty() ? new String[] {command} : list.toArray(new String[0]);
     }
 }
