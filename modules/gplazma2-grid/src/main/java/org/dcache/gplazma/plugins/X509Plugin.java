@@ -192,7 +192,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         principals.addAll(caPrincipals);
         principals.addAll(loaPrincipals);
 
-        principals = filterOutErroneousLoAs(principals);
+        principals = filterOutErroneousLoAs(subject, principals);
         addImpliedLoA(principals);
 
         principals.add(subject);
@@ -202,7 +202,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         return principals;
     }
 
-    private List<Principal> filterOutErroneousLoAs(List<Principal> principals)
+    private List<Principal> filterOutErroneousLoAs(Principal subject, List<Principal> principals)
     {
         EnumSet<LoA> assertedLoAs = assertedLoAs(principals);
 
@@ -211,8 +211,8 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
 
         Optional<Stream<Principal>> filteredPrincipals = Optional.empty();
         if (assertedIgtfAp.size() > 1) {
-            LOG.warn("Suppressing IGTF AP principals as an incompatible set is"
-                    + " asserted: {}", assertedIgtfAp);
+            LOG.warn("Suppressing IGTF AP principals for \"{}\" as an incompatible"
+                    + " set is asserted: {}", subject.getName(), assertedIgtfAp);
             filteredPrincipals = Optional.of(principals.stream().filter(p -> !(p instanceof LoAPrincipal && IGTF_AP.contains(((LoAPrincipal)p).getLoA()))));
         }
 
@@ -220,8 +220,8 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         assertedIgtfLoAs.retainAll(IGTF_LOA);
 
         if (assertedIgtfLoAs.size() > 1) {
-            LOG.warn("Suppressing IGTF LoA principals as an incompatible set is"
-                    + " asserted: {}", assertedIgtfLoAs);
+            LOG.warn("Suppressing IGTF LoA principals for \"{}\" as an incompatible"
+                    + " set is asserted: {}", subject.getName(), assertedIgtfLoAs);
             filteredPrincipals = Optional.of(filteredPrincipals.orElse(principals.stream())
                     .filter(p -> !(p instanceof LoAPrincipal && IGTF_LOA.contains(((LoAPrincipal)p).getLoA()))));
         }
