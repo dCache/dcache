@@ -112,7 +112,7 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -pinManager=${dcap.service.pinmanager} \
              -gplazma=\"${dcap.service.gplazma}\" \
              -billing=\"${dcap.service.billing}\" \
-             -kafka=\"${dcacp.enable.kafka}\" \
+             -kafka=\"${dcap.enable.kafka}\" \
              -bootstrap-server-kafka=\"${dcap.kafka.bootstrap-servers}\" \
 	     -kafka-topic=\"${dcap.kafka.topic}\" \
              -kafka-max-block=${dcap.kafka.maximum-block}\
