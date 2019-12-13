@@ -108,7 +108,8 @@ public class LoggingInterceptor implements ReaderInterceptor, WriterInterceptor
             return null; /* suppress recording anything */
         } else if (Utf8.isWellFormed(entityData)) {
             String data = new String(entityData, StandardCharsets.UTF_8);
-            if (context.getMediaType().isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+            MediaType type = context.getMediaType();
+            if (type != null && type.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
                 data = minimiseJson(data);
             }
             return truncate(data);
