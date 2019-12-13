@@ -118,12 +118,11 @@ respectively. The size is rounded down to the nearest integer of
 gibibytes.
 
 The \fBmeta\fR option configures the meta data backend to use for the
-new pool. The default is to use the \fBfile\fR based backend. This
-backend creates two meta data files in a control directory for each
-data file stored on the pool. The control directory is created in the
-pool directory. The \fBdb\fR uses Berkeley DB to store the meta
-data. The database is stored in the meta directory underneath the pool
-directory.
+new pool. The default is to use \fBdb\fR which uses Berkeley DB
+to store the meta data. The database is stored in the meta directory
+underneath the pool  directory. The \fBfile\fR backend creates two meta
+data files in a control directory for each data file stored on the pool.
+The control directory is created in the pool directory.
 
 The \fBlfs\fR option determines the large file store mode of the
 pool. The default is \fBnone\fR. Possible values are \fBnone\fR,
