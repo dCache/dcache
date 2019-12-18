@@ -126,13 +126,8 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
         PoolTimeseriesRequestMessage message =
                         getHistogramAndSweeperData(info.getKey(),
                                                    PoolTimeseriesRequestMessage.ALL);
-        /*
-         *  If sweeper data is already present, leave it alone.
-         */
         PoolData poolData = info.getInfo();
-        if (poolData.getSweeperData() == null) {
-            poolData.setSweeperData(message.getSweeperData());
-        }
+        poolData.setSweeperData(message.getSweeperData());
 
         Map<TimeseriesType, TimeseriesHistogram> timeseries
                         = message.getHistogramMap();

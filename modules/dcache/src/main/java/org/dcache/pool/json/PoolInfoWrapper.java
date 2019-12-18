@@ -81,7 +81,7 @@ public class PoolInfoWrapper implements Serializable {
      * <p>Full pool diagnostic data ... see {@link PoolData} </p>
      * <p>The composed SweeperData contains the counts histogram.</p>
      */
-    private PoolData info;
+    private PoolData info = new PoolData();
 
     /**
      * <p>Derived from sweeper's file lifetime data.</p>

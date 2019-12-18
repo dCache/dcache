@@ -60,6 +60,8 @@ documents or software obtained from this server.
 package org.dcache.pool.json;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -83,20 +85,20 @@ import org.dcache.pool.repository.json.RepositoryData;
 public class PoolData implements Serializable {
     private static final long serialVersionUID = 7883809367201783768L;
 
-    private List<String>          poolGroups;
-    private Set<String>           links;
-    private CellData              cellData;
-    private ChecksumModuleData    csmData;
-    private PoolDataDetails       detailsData;
-    private FlushControllerData   flushData;
-    private HSMFlushQManagerData  hsmFlushQMData;
-    private JobTimeoutManagerData jtmData;
-    private MigrationData         migrationData;
-    private P2PData               ppData;
-    private RepositoryData        repositoryData;
-    private StorageHandlerData    storageHandlerData;
-    private TransferServicesData  transferServicesData;
-    private SweeperData           sweeperData;
+    private List<String>          poolGroups = new ArrayList<>();
+    private Set<String>           links = new HashSet<>();
+    private CellData              cellData = new CellData();
+    private ChecksumModuleData    csmData = new ChecksumModuleData();
+    private PoolDataDetails       detailsData = new PoolDataDetails();
+    private FlushControllerData   flushData = new FlushControllerData();
+    private HSMFlushQManagerData  hsmFlushQMData = new HSMFlushQManagerData();
+    private JobTimeoutManagerData jtmData = new JobTimeoutManagerData();
+    private MigrationData         migrationData = new MigrationData();
+    private P2PData               ppData = new P2PData();
+    private RepositoryData        repositoryData = new RepositoryData();
+    private StorageHandlerData    storageHandlerData = new StorageHandlerData();
+    private TransferServicesData  transferServicesData = new TransferServicesData();
+    private SweeperData           sweeperData = new SweeperData();
 
     public CellData getCellData() {
         return cellData;

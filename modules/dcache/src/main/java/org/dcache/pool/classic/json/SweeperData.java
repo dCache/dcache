@@ -78,11 +78,11 @@ public class SweeperData implements Serializable {
     private static final String IDENTIFIER = "Time Since Last Access";
     private static final int BIN_COUNT = 61;
 
-    private CountingHistogram lastAccess;
-    private String label;
-    private Integer    lruQueueSize;
-    private Long       lruTimestamp;
-    private Double margin;
+    private CountingHistogram lastAccess = createLastAccessHistogram();
+    private String            label;
+    private Integer           lruQueueSize;
+    private Long              lruTimestamp;
+    private Double            margin;
 
     public String getLabel() {
         return label;
