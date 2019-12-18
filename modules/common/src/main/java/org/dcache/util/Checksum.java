@@ -117,7 +117,7 @@ public class Checksum  implements Serializable
             return true;
         }
 
-        if (!(other.getClass().equals(Checksum.class))) {
+        if (other.getClass() != this.getClass()) {
             return false;
         }
 
