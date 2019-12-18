@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -75,6 +76,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolQueueData;
+
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
@@ -294,8 +296,11 @@ public final class PoolInfoCollectorUtils {
         List<CountingHistogram> allHistograms =
                         pools.stream()
                              .map(PoolInfoWrapper::getInfo)
+                             .filter(Objects::nonNull)
                              .map(PoolData::getSweeperData)
+                             .filter(Objects::nonNull)
                              .map(SweeperData::getLastAccessHistogram)
+                             .filter(Objects::nonNull)
                              .collect(Collectors.toList());
 
         CountingHistogram groupHistogram
