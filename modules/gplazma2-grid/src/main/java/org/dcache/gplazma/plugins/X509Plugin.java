@@ -1,7 +1,6 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
@@ -94,6 +93,10 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             .put("1.2.840.113612.5.2.2.5", IGTF_AP_MICS)
             .put("1.2.840.113612.5.2.2.6", IGTF_AP_IOTA)
             .build();
+
+    private static final int SHORTEST_LOA_POLICY_OID = LOA_POLICIES.keySet().stream()
+            .mapToInt(String::length)
+            .min().orElse(0);
 
     private static final Map<String,EntityDefinition> ENTITY_DEFINITION_POLICIES
             = ImmutableMap.<String,EntityDefinition>builder()
@@ -391,9 +394,27 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     /** A stream of LoA principals obtained directly from a policy OID. */
     private static Stream<LoAPrincipal> loaPrincipals(String oid)
     {
-        Optional<LoAPrincipal> principal = Optional.ofNullable(LOA_POLICIES.get(oid))
-                .map(LoAPrincipal::new);
+        Optional<LoAPrincipal> principal = loaFromOid(oid).map(LoAPrincipal::new);
         return Streams.stream(principal);
+    }
+
+    private static Optional<LoA> loaFromOid(String oid)
+    {
+        LoA loa = LOA_POLICIES.get(oid);
+        if (loa == null) {
+            /*
+             * Some CAs assert the version-specific OID; e.g.,
+             * when asserting IGTF_AP_IOTA, the CA adds
+             * 1.2.840.113612.5.2.2.6.1 for version 1 of the document, rather
+             * than the more generic 1.2.840.113612.5.2.2.6.
+             */
+            int lastDot = oid.lastIndexOf('.');
+            if (lastDot >= SHORTEST_LOA_POLICY_OID) {
+                String oidWithoutLastDot = oid.substring(0, lastDot);
+                loa = LOA_POLICIES.get(oidWithoutLastDot);
+            }
+        }
+        return Optional.ofNullable(loa);
     }
 
     /** Add all implied LoAs, given the LoA assertions so far. */
