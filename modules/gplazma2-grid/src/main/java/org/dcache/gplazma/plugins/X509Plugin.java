@@ -196,7 +196,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         principals.addAll(loaPrincipals);
 
         principals = filterOutErroneousLoAs(subject, principals);
-        addImpliedLoA(principals);
+        addImpliedLoA(entity, principals);
 
         principals.add(subject);
         principals.addAll(emailPrincipals);
@@ -418,11 +418,12 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     }
 
     /** Add all implied LoAs, given the LoA assertions so far. */
-    private static void addImpliedLoA(Collection<Principal> principals)
+    private static void addImpliedLoA(Optional<EntityDefinition> entity,
+            Collection<Principal> principals)
     {
         EnumSet<LoA> assertedLoAs = assertedLoAs(principals);
 
-        LoAs.withImpliedLoA(assertedLoAs).stream()
+        LoAs.withImpliedLoA(entity, assertedLoAs).stream()
                 .filter(l -> !assertedLoAs.contains(l))
                 .map(LoAPrincipal::new)
                 .forEach(principals::add);
