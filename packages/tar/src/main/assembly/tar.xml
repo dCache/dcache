@@ -144,16 +144,6 @@
 	</fileSet>
 
         <fileSet>
-            <directory>${project.build.directory}/chimera-sql/org/dcache/chimera</directory>
-            <outputDirectory>share/chimera</outputDirectory>
-            <includes>
-                <include>sql/**</include>
-            </includes>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
-
-        <fileSet>
             <!-- Create empty var/tmp dirctory -->
             <directory>src/main/assembly</directory>
             <outputDirectory>/var/tmp</outputDirectory>

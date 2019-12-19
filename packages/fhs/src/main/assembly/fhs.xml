@@ -140,14 +140,5 @@
             <directoryMode>755</directoryMode>
         </fileSet>
 
-        <fileSet>
-            <directory>${project.build.directory}/chimera-sql/org/dcache/chimera</directory>
-            <outputDirectory>usr/share/dcache/chimera</outputDirectory>
-            <includes>
-                <include>sql/**</include>
-            </includes>
-            <fileMode>644</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
     </fileSets>
 </assembly>

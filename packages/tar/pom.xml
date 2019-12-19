@@ -63,37 +63,6 @@
           </plugin>
 
           <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-dependency-plugin</artifactId>
-              <executions>
-                  <execution>
-                      <id>unpack</id>
-                      <phase>package</phase>
-                      <goals>
-                          <goal>unpack</goal>
-                      </goals>
-                      <configuration>
-                          <artifactItems>
-                              <!-- Chimera SQL files are in another
-                                   artifact. We need to unpack them to
-                                   make them available to the
-                                   assembly. -->
-                              <artifactItem>
-                                  <groupId>org.dcache</groupId>
-                                  <artifactId>chimera</artifactId>
-                                  <version>${project.version}</version>
-                                  <type>jar</type>
-                                  <overWrite>true</overWrite>
-                                  <outputDirectory>${project.build.directory}/chimera-sql</outputDirectory>
-                                  <includes>org/dcache/chimera/sql/*</includes>
-                              </artifactItem>
-                          </artifactItems>
-                      </configuration>
-                  </execution>
-              </executions>
-          </plugin>
-
-          <plugin>
               <artifactId>maven-assembly-plugin</artifactId>
               <configuration>
                   <descriptors>
