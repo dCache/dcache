@@ -26,13 +26,15 @@ import org.dcache.util.ChecksumType;
 import static com.google.common.collect.Lists.newArrayList;
 import static org.dcache.util.ByteUnit.KiB;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.hamcrest.MockitoHamcrest.*;
+
 
 public class ChecksumChannelTest {
 
@@ -139,7 +141,7 @@ public class ChecksumChannelTest {
         buffers[0].rewind();
         chksumChannel.write(buffers[0], 0);
 
-        assertThat(chksumChannel.getChecksums(), is(empty()));
+        assertThat(chksumChannel.getChecksums(), empty());
     }
 
     @Test
@@ -151,7 +153,7 @@ public class ChecksumChannelTest {
             fail("Pick a blocksize > 1 for testing correct handling of partly overlapping writes!");
         }
 
-        assertThat(chksumChannel.getChecksums(), is(empty()));
+        assertThat(chksumChannel.getChecksums(), empty());
     }
 
     @Test
@@ -184,7 +186,7 @@ public class ChecksumChannelTest {
         csc.write(buffers[3], 3);
         csc.write(buffers[2], 2);
 
-        assertThat(csc.getChecksums(), is(not(empty())));
+        assertThat(csc.getChecksums(), not(empty()));
     }
 
     @Test
@@ -263,14 +265,14 @@ public class ChecksumChannelTest {
         chksumChannel._readBackBuffer = ByteBuffer.allocate(readBackCapacity);
         chksumChannel._channel = mock(FileRepositoryChannel.class);
         when(chksumChannel._channel.write(any(), anyLong())).thenReturn(writeBufferCapacity);
-        when(chksumChannel._channel.read(any(), longThat(lessThan(0L)))).thenThrow(new IllegalArgumentException("Negative Position"));
-        when(chksumChannel._channel.read(any(), longThat(greaterThanOrEqualTo(0L)))).thenReturn(readBackCapacity);
+        when(chksumChannel._channel.read(any(), longThat(l -> l < 0L))).thenThrow(new IllegalArgumentException("Negative Position"));
+        when(chksumChannel._channel.read(any(), longThat(l -> l >=0L))).thenReturn(readBackCapacity);
         for (long i = writeBuffer.capacity(); i < 2L*Integer.MAX_VALUE; i += writeBufferCapacity) {
             chksumChannel.write(writeBuffer, i);
             writeBuffer.rewind();
         }
         chksumChannel.write(writeBuffer, 0);
-        assertThat(chksumChannel.getChecksums(), is(not(empty())));
+        assertThat(chksumChannel.getChecksums(), not(empty()));
         assertThat(chksumChannel.getChecksums(), contains(notNullValue()));
     }
 
