@@ -947,38 +947,19 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-library</artifactId>
-            <version>1.3</version>
+            <version>2.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito</artifactId>
-            <version>1.6.2</version>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <version>2.0.4</version>
             <scope>test</scope>
-            <exclusions>
-                <!-- powermock-api-mockito depends on mockito-all,
-                     which includes all dependencies, including
-                     hamcrest, in the jar file.  Unfortunate this
-                     version of hamcrest (v1.1?) is incompatible with
-                     the version we compile against.  Somehow maven 3
-                     works (different CP order?), but using maven 2
-                     has unit-tests in error due to NoSuchMethod
-                     exceptions.
-
-                     Here, we replace mockito-all with mockito-core,
-                     which exposes the hamcrest dependency in the pom
-                     file.  This allowing maven to do the right
-                     thing. -->
-                <exclusion>
-                    <groupId>org.mockito</groupId>
-                    <artifactId>mockito-all</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>1.10.19</version>
+            <version>3.2.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -989,7 +970,7 @@
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>1.6.2</version>
+            <version>2.0.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>

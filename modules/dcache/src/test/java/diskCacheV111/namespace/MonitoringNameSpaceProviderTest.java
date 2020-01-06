@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -44,12 +44,13 @@ import org.dcache.namespace.events.EventType;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.hamcrest.text.IsEmptyString.emptyOrNullString;
+import static org.mockito.hamcrest.MockitoHamcrest.*;
 
 public class MonitoringNameSpaceProviderTest
 {
@@ -223,7 +224,7 @@ public class MonitoringNameSpaceProviderTest
         PnfsId target = new PnfsId("000000000000000000000000000000000002");
         given(inner.pathToPnfsid(any(), eq("/foo"), anyBoolean())).willReturn(target);
         willAnswer(i -> {
-                    ListHandler h = i.getArgumentAt(5, ListHandler.class);
+                    ListHandler h = i.getArgument(5, ListHandler.class);
                     h.addEntry("bar", new FileAttributes());
                     return null;
                 }).given(inner).list(any(), eq("/foo"), any(), any(), any(), any());
@@ -250,7 +251,7 @@ public class MonitoringNameSpaceProviderTest
         PnfsId target = new PnfsId("000000000000000000000000000000000002");
         given(inner.pathToPnfsid(any(), eq("/foo"), anyBoolean())).willReturn(target);
         willAnswer(i -> {
-                    ListHandler h = i.getArgumentAt(5, ListHandler.class);
+                    ListHandler h = i.getArgument(5, ListHandler.class);
                     h.addEntry("bar-1", new FileAttributes());
                     h.addEntry("bar-2", new FileAttributes());
                     return null;
@@ -576,7 +577,7 @@ public class MonitoringNameSpaceProviderTest
                 (Set<FileAttribute>)argThat(hasItem(FileAttribute.ACCESS_TIME)));
         assertThat(result.getAccessTime(), is(equalTo(42L)));
         verify(receiver).notifyMovedEvent(eq(EventType.IN_MOVED_TO), eq(parent),
-                eq("file-1"), argThat(not(isEmptyOrNullString())), eq(FileType.REGULAR));
+                eq("file-1"), argThat(not(emptyOrNullString())), eq(FileType.REGULAR));
     }
 
     @Test
