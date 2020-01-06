@@ -27,7 +27,6 @@ import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.python.google.common.collect.Lists;
@@ -70,10 +69,12 @@ import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static io.netty.handler.codec.http.HttpMethod.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.hamcrest.MockitoHamcrest.*;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -557,25 +558,25 @@ public class HttpPoolRequestHandlerTests
         ChecksumChannel checksums = new ChecksumChannel(repoChannel, EnumSet.noneOf(ChecksumType.class));
 
         Answer<Void> acceptChecksum = (i) -> {
-                    checksums.addType(i.getArgumentAt(0, ChecksumType.class));
+                    checksums.addType(i.getArgument(0, ChecksumType.class));
                     return null;
                 };
-        Mockito.doAnswer(acceptChecksum).when(channel).addChecksumType(anyObject());
-        given(channel.write((ByteBuffer)anyObject()))
+        Mockito.doAnswer(acceptChecksum).when(channel).addChecksumType(any());
+        given(channel.write((ByteBuffer)any()))
                 .willAnswer((i) -> {
-                    ByteBuffer src = i.getArgumentAt(0, ByteBuffer.class);
+                    ByteBuffer src = i.getArgument(0, ByteBuffer.class);
                     return checksums.write(src);
                 });
-        given(channel.write((ByteBuffer[])anyObject()))
+        given(channel.write((ByteBuffer[])any()))
                 .willAnswer((i) -> {
-                    ByteBuffer[] src = i.getArgumentAt(0, ByteBuffer[].class);
+                    ByteBuffer[] src = i.getArgument(0, ByteBuffer[].class);
                     return checksums.write(src);
                 });
-        given(channel.write(anyObject(), anyInt(), anyInt()))
+        given(channel.write(any(), anyInt(), anyInt()))
                 .willAnswer((i) -> {
-                    ByteBuffer[] arg = i.getArgumentAt(0, ByteBuffer[].class);
-                    int offset = i.getArgumentAt(1, Integer.class);
-                    int length = i.getArgumentAt(2, Integer.class);
+                    ByteBuffer[] arg = i.getArgument(0, ByteBuffer[].class);
+                    int offset = i.getArgument(1, Integer.class);
+                    int length = i.getArgument(2, Integer.class);
                     return checksums.write(arg, offset, length);
                 });
 
