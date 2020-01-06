@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -58,12 +58,10 @@ import static org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.
 import static org.apache.curator.utils.ZKPaths.makePath;
 import static org.dcache.namespace.events.EventType.IN_MOVE_SELF;
 import static org.dcache.namespace.FileType.REGULAR;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
+import static org.hamcrest.CoreMatchers.*;
 
 public class EventNotifierTest
 {

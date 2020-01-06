@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2018 - 2020 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -55,14 +55,12 @@ import static org.dcache.nfs.vfs.Stat.S_TYPE;
 import static org.dcache.nfs.vfs.Stat.Type.REGULAR;
 import static org.dcache.nfs.vfs.VirtualFileSystem.StabilityLevel.UNSTABLE;
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.hamcrest.CoreMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class MonitoringVfsTest
@@ -482,7 +480,7 @@ public class MonitoringVfsTest
         PnfsId targetId = new PnfsId("000000000000000000000000000000000002");
         Inode parent = anInode().withId(1L).withPnfsId(parentId).build();
         Inode target = anInode().withId(2L).withPnfsId(targetId).withLink(parent, "target").build();
-        given(inner.read(eq(target), any(), anyInt(), anyInt())).willReturn(100);
+        given(inner.read(eq(target), any(), anyLong(), anyInt())).willReturn(100);
         byte[] data = new byte[1024];
 
         int result = monitor.read(target, data, 0, 1024);
@@ -507,7 +505,7 @@ public class MonitoringVfsTest
         PnfsId targetId = new PnfsId("000000000000000000000000000000000002");
         Inode parent = anInode().withId(1L).withPnfsId(parentId).build();
         Inode target = anInode().withId(2L).withPnfsId(targetId).withLink(parent, "target").build();
-        willThrow(IOException.class).given(inner).read(any(), any(), anyInt(), anyInt());
+        willThrow(IOException.class).given(inner).read(any(), any(), anyLong(), anyInt());
         byte[] data = new byte[1024];
 
         try {
