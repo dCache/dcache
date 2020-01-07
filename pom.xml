@@ -124,7 +124,7 @@
         <bouncycastle.version>1.54</bouncycastle.version>
         <datanucleus-core.version>5.2.2</datanucleus-core.version>
         <datanucleus.plugin.version>5.2.1</datanucleus.plugin.version>
-        <hazelcast.version>3.11.1</hazelcast.version>
+        <hazelcast.version>3.12.5</hazelcast.version>
     </properties>
 
     <scm>
