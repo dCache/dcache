@@ -23,8 +23,10 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Exceptions.genericCheck;
 
 /**
@@ -58,20 +60,26 @@ public class SciTokenScope
     private final Operation operation;
     private final String path;
 
+    SciTokenScope(Operation operation, String path)
+    {
+        this.operation = requireNonNull(operation);
+        this.path = requireNonNull(path);
+    }
+
     private SciTokenScope(String scope) throws InvalidScopeException
     {
-        int colon = scope.indexOf(':');
+        String withoutPrefix = withoutPrefix(scope);
 
-        String operationLabel = colon == -1 ? scope : scope.substring(0, colon);
-        String normalisedOperation = operationLabel.startsWith(SCITOKEN_SCOPE_PREFIX)
-                ? operationLabel.substring(SCITOKEN_SCOPE_PREFIX.length()) : operationLabel;
-        operation = OPERATIONS_BY_LABEL.get(normalisedOperation);
+        int colon = withoutPrefix.indexOf(':');
+
+        String operationLabel = colon == -1 ? withoutPrefix : withoutPrefix.substring(0, colon);
+        operation = OPERATIONS_BY_LABEL.get(operationLabel);
         checkScopeValid(operation != null, "Unknown operation %s", operationLabel);
 
         if (colon == -1) {
             path = "/";
         } else {
-            path = scope.substring(colon+1);
+            path = withoutPrefix.substring(colon+1);
             checkScopeValid(path.startsWith("/"), "Path does not start with /");
         }
     }
@@ -94,10 +102,18 @@ public class SciTokenScope
 
     private static boolean isSciTokenScope(String scope)
     {
-        int colon = scope.indexOf(':');
-        String operation = colon == -1 ? scope : scope.substring(0, colon);
-        return operation.startsWith(SCITOKEN_SCOPE_PREFIX) ||
-                OPERATIONS_BY_LABEL.keySet().contains(operation);
+        String withoutPrefix = withoutPrefix(scope);
+        int colon = withoutPrefix.indexOf(':');
+        String operation = colon == -1 ? withoutPrefix : withoutPrefix.substring(0, colon);
+
+        return (colon == -1 || withoutPrefix.substring(colon+1).startsWith("/"))
+                && OPERATIONS_BY_LABEL.keySet().contains(operation);
+    }
+
+    private static String withoutPrefix(String scope)
+    {
+        return scope.startsWith(SCITOKEN_SCOPE_PREFIX)
+                ? scope.substring(SCITOKEN_SCOPE_PREFIX.length()) : scope;
     }
 
     public Operation getOperation()
@@ -108,5 +124,24 @@ public class SciTokenScope
     public String getPath()
     {
         return path;
+    }
+
+    @Override
+    public boolean equals(Object other)
+    {
+        if (!(other instanceof SciTokenScope)) {
+            return false;
+        }
+
+        SciTokenScope otherScope = (SciTokenScope) other;
+        return otherScope.operation == operation && otherScope.path.equals(path);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + Objects.hashCode(operation);
+        hash = 97 * hash + Objects.hashCode(path);
+        return hash;
     }
 }
