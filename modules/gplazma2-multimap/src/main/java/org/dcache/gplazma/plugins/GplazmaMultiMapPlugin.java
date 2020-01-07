@@ -8,11 +8,12 @@ import java.nio.file.FileSystems;
 import org.dcache.gplazma.AuthenticationException;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.dcache.auth.GidPrincipal;
 import org.dcache.gplazma.plugins.GplazmaMultiMapFile.PrincipalMatcher;
@@ -42,23 +43,40 @@ public class GplazmaMultiMapPlugin implements GPlazmaMappingPlugin
     {
         Map<PrincipalMatcher,Set<Principal>> mapping = mapFile.mapping();
 
-        Set<Principal> mappedPrincipals = principals.stream()
-                                                    .flatMap(p -> mapping.entrySet().stream()
-                                                                .filter(e -> e.getKey().matches(p))
-                                                                .map(e -> e.getValue().stream())
-                                                                .findFirst()
-                                                                .orElse(Stream.empty()))
-                                                    .collect(Collectors.toSet());
+        // List of mapped principals in file order.
+        List<Principal> mappedPrincipals = mapping.entrySet().stream()
+                                                    .filter(e -> principals.stream().anyMatch(e.getKey()::matches))
+                                                    .map(Map.Entry::getValue)
+                                                    .flatMap(Set::stream)
+                                                    .collect(Collectors.toList());
 
         checkAuthentication(!mappedPrincipals.isEmpty(), "no mappable principals");
 
-        if (principals.stream().anyMatch(GidPrincipal::isPrimaryGid)
-                && mappedPrincipals.stream().anyMatch(GidPrincipal::isPrimaryGid)) {
-            mappedPrincipals = mappedPrincipals.stream()
-                    .map(p -> p instanceof GidPrincipal
-                            ? ((GidPrincipal)p).withPrimaryGroup(false)
-                            : p)
-                    .collect(Collectors.toSet());
+        if (principals.stream().anyMatch(GidPrincipal::isPrimaryGid)) {
+            if (mappedPrincipals.stream().anyMatch(GidPrincipal::isPrimaryGid)) {
+                mappedPrincipals = mappedPrincipals.stream()
+                        .map(p -> p instanceof GidPrincipal
+                                ? ((GidPrincipal)p).withPrimaryGroup(false)
+                                : p)
+                        .collect(Collectors.toList());
+            }
+        } else {
+            long primaryGidCount = mappedPrincipals.stream().filter(GidPrincipal::isPrimaryGid).limit(2).count();
+            if (primaryGidCount > 1) {
+                List<Principal> singlePrimaryGid = new ArrayList<>(mappedPrincipals.size());
+                boolean isFirstPrimaryGid = true;
+                for (Principal p : mappedPrincipals) {
+                    if (GidPrincipal.isPrimaryGid(p)) {
+                        if (isFirstPrimaryGid) {
+                            isFirstPrimaryGid = false;
+                        } else {
+                            p = ((GidPrincipal)p).withPrimaryGroup(false);
+                        }
+                    }
+                    singlePrimaryGid.add(p);
+                }
+                mappedPrincipals = singlePrimaryGid;
+            }
         }
 
         principals.addAll(mappedPrincipals);
