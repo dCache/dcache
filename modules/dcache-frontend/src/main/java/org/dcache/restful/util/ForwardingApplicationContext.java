@@ -115,6 +115,11 @@ public class ForwardingApplicationContext implements ApplicationContext
     }
 
     @Override
+    public String[] getBeanNamesForType(ResolvableType resolvableType, boolean b, boolean b1) {
+        return inner.getBeanNamesForType(resolvableType, b, b1);
+    }
+
+    @Override
     public String[] getBeanNamesForType(Class<?> type)
     {
         return inner.getBeanNamesForType(type);
@@ -220,6 +225,11 @@ public class ForwardingApplicationContext implements ApplicationContext
     public Class<?> getType(String string) throws NoSuchBeanDefinitionException
     {
         return inner.getType(string);
+    }
+
+    @Override
+    public Class<?> getType(String s, boolean b) throws NoSuchBeanDefinitionException {
+        return inner.getType(s, b);
     }
 
     @Override
