@@ -166,6 +166,56 @@ public class GplazmaMultiMapPluginTest
                 .withPrimaryGid(2000));
 
         assertThat(results, hasItem(new GidPrincipal(1000, false)));
+        assertThat(results, not(hasItem(new GidPrincipal(1000, true))));
+    }
+
+    @Test
+    public void shouldReturnSinglePrimaryGidWithMultipleMappedPrimaryGids() throws Exception
+    {
+        givenConfig("username:paul  gid:1000,true\n"
+                  + "group:foo  gid:2000,true");
+
+        whenMapCalledWith(aSetOfPrincipals()
+                .withUsername("paul")
+                .withGroupname("foo"));
+
+        assertThat(results, hasItem(new GidPrincipal(1000, true)));
+        assertThat(results, hasItem(new GidPrincipal(2000, false)));
+        assertThat(results, not(hasItem(new GidPrincipal(1000, false))));
+        assertThat(results, not(hasItem(new GidPrincipal(2000, true))));
+    }
+
+    @Test
+    public void shouldReturnSinglePrimaryGidWithMultipleMappedPrimaryGidsReverseOrder() throws Exception
+    {
+        givenConfig("group:foo  gid:2000,true\n"
+                  + "username:paul  gid:1000,true");
+
+        whenMapCalledWith(aSetOfPrincipals()
+                .withUsername("paul")
+                .withGroupname("foo"));
+
+        assertThat(results, hasItem(new GidPrincipal(2000, true)));
+        assertThat(results, hasItem(new GidPrincipal(1000, false)));
+        assertThat(results, not(hasItem(new GidPrincipal(2000, false))));
+        assertThat(results, not(hasItem(new GidPrincipal(1000, true))));
+    }
+
+    @Test
+    public void shouldReturnOnlyNonPrimaryGidsWhenPrimaryGidAlreadyPresent() throws Exception
+    {
+        givenConfig("username:paul  gid:1000,true\n"
+                  + "group:foo  gid:2000,true");
+
+        whenMapCalledWith(aSetOfPrincipals()
+                .withUsername("paul")
+                .withGroupname("foo")
+                .withPrimaryGid(20));
+
+        assertThat(results, hasItem(new GidPrincipal(1000, false)));
+        assertThat(results, hasItem(new GidPrincipal(2000, false)));
+        assertThat(results, not(hasItem(new GidPrincipal(1000, true))));
+        assertThat(results, not(hasItem(new GidPrincipal(2000, true))));
     }
 
     /*------------------------- Helpers ---------------------------*/
