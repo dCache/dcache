@@ -51,6 +51,7 @@ import org.dcache.gplazma.util.JsonWebToken;
 import org.dcache.util.Args;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
@@ -61,7 +62,7 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
     private static final EnumSet<Activity> READ_ACTIVITY = EnumSet.of(Activity.LIST, Activity.READ_METADATA, Activity.DOWNLOAD);
     private static final EnumSet<Activity> WRITE_ACTIVITY = EnumSet.of(Activity.LIST, Activity.READ_METADATA, Activity.UPLOAD, Activity.MANAGE, Activity.DELETE, Activity.UPDATE_METADATA);
 
-    private final HttpClient client = HttpClients.createDefault();
+    private final HttpClient client;
     private final Map<String,Issuer> issuersByEndpoint;
     private final Set<String> audienceTargets;
 
@@ -69,6 +70,12 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
 
     public SciTokenPlugin(Properties properties)
     {
+        this(properties, HttpClients.createDefault());
+    }
+
+    public SciTokenPlugin(Properties properties, HttpClient client)
+    {
+        this.client = requireNonNull(client);
         issuersByEndpoint = properties.stringPropertyNames().stream()
                 .filter(this::isIssuer)
                 .map(k -> buildIssuer(k, properties.getProperty(k)))

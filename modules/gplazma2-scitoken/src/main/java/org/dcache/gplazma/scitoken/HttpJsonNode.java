@@ -38,6 +38,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
@@ -85,7 +86,7 @@ public class HttpJsonNode extends PreparationJsonNode
 
     public HttpJsonNode(HttpClient client, Supplier<Optional<String>> url, Duration cacheHit, Duration cacheMiss)
     {
-        this.client = client;
+        this.client = requireNonNull(client);
         this.urlSupplier = url;
         this.cacheHit = cacheHit;
         this.cacheMiss = cacheMiss;
