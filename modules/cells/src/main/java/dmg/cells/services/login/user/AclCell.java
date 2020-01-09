@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -14,6 +15,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.services.login.Crypt;
 
 import org.dcache.util.Args;
+
 import dmg.util.Authorizable;
 import dmg.util.UserPasswords;
 
@@ -113,7 +115,10 @@ public class       AclCell
                throw new Exception( "Problem : "+xe ) ;
             }
          }else{
-             String r = "Illegal message object received from : "+
+             String description = obj instanceof Object[]
+                        ? Arrays.toString((Object []) obj)
+                        : String.valueOf(obj);
+             String r = "Illegal message object " + description + " received from : "+
                          msg.getSourcePath() ;
              _log.warn( r ) ;
              throw new Exception( r ) ;
