@@ -273,7 +273,8 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             return Optional.of(ROBOT);
         }
 
-        if (eec.getExtendedKeyUsage().stream().anyMatch(OID_EKU_TLS_SERVER::equals)
+        List<String> eku = eec.getExtendedKeyUsage();
+        if (eku != null && eku.stream().anyMatch(OID_EKU_TLS_SERVER::equals)
                 && (hasSubjectAlternativeNameOfType(san, GeneralName.dNSName)
                 || hasCnWithFqdn(subject))) {
             return Optional.of(HOST);
