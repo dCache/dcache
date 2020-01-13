@@ -94,29 +94,16 @@ class CellGlue
 
     private static CuratorFramework withMonitoring(CuratorFramework curator)
     {
-        curator.getConnectionStateListenable().addListener((c,s) -> {
+        curator.getConnectionStateListenable().addListener((c,s) ->
                     EVENT_LOGGER.info("[CURATOR: {}] connection state now {}",
-                            c.getState(), s);
+                            c.getState(), s));
 
-                    if (s == ConnectionState.CONNECTED) {
-                        try {
-                            ZooKeeper zk = c.getZookeeperClient().getZooKeeper();
-                            zk.register((WatchedEvent event) -> {
-                                        EVENT_LOGGER.info("[ZOOKEEPER] event "
-                                                + "type={}, state={}, path={}",
-                                                event.getType(), event.getState(),
-                                                event.getPath());
-                                    });
-                        } catch (Exception e) {
-                            EVENT_LOGGER.error("Failed to register ZK logging", e);
-                        }
-                    }
-                });
         curator.getCuratorListenable().addListener((c,e) ->
                     EVENT_LOGGER.info("[CURATOR: {}] event: type={}, name={}, "
                             + "path={}, rc={}, children={}",
                             c.getState(), e.getType(), e.getName(), e.getPath(),
                             e.getResultCode(), e.getChildren()));
+
         curator.getUnhandledErrorListenable().addListener((m,e) ->
                     EVENT_LOGGER.warn("[CURATOR: {}] unhandled error \"{}\": {}",
                             curator.getState(), m, e.getMessage()));
