@@ -54,6 +54,8 @@ public class Domain
     private static final Logger _log =
         LoggerFactory.getLogger(SystemCell.class);
 
+    private static final Logger EVENT_LOGGER = LoggerFactory.getLogger("org.dcache.zookeeper");
+
     private final ConfigurationProperties _properties;
     private final List<ConfigurationProperties> _services;
     private final ResourceLoader _resourceLoader = new FileSystemResourceLoader();
@@ -159,9 +161,24 @@ public class Domain
         int sessionTimeoutMs =
                 getTime(PROPERTY_ZOOKEPER_SESSION_TIMEOUT, PROPERTY_ZOOKEPER_SESSION_TIMEOUT_UNIT);
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(baseSleepTimeMs, maxRetries);
-        return CuratorFrameworkFactory.newClient(zookeeperConnectionString,
+        CuratorFramework curator = CuratorFrameworkFactory.newClient(zookeeperConnectionString,
                                                  sessionTimeoutMs, connectionTimeoutMs,
                                                  retryPolicy);
+
+        curator.getConnectionStateListenable().addListener((c,s) ->
+                EVENT_LOGGER.info("[CURATOR: {}] connection state now {}",
+                        c.getState(), s));
+
+        curator.getCuratorListenable().addListener((c,e) ->
+                EVENT_LOGGER.info("[CURATOR: {}] event: type={}, name={}, "
+                                + "path={}, rc={}, children={}",
+                        c.getState(), e.getType(), e.getName(), e.getPath(),
+                        e.getResultCode(), e.getChildren()));
+
+        curator.getUnhandledErrorListenable().addListener((m,e) ->
+                EVENT_LOGGER.warn("[CURATOR: {}] unhandled error \"{}\": {}",
+                        curator.getState(), m, e.getMessage()));
+        return curator;
     }
 
     private int getTime(String baseProperty, String unitProperty)
