@@ -223,7 +223,6 @@ public class CellNucleus implements ThreadFactory
 
         CuratorFramework curatorFramework = __cellGlue.getCuratorFramework();
         _curatorFramework = new CellCuratorFramework(curatorFramework, _messageExecutor);
-        _curatorFramework.start();
 
         LOGGER.info("Created {}", cellName);
     }
@@ -1002,13 +1001,6 @@ public class CellNucleus implements ThreadFactory
             /* Cancel callbacks.
              */
             _waitHash.forEach((uoid, lock) -> timeOutMessage(uoid, lock, (u, l) -> {}));
-
-            /* Shut down the curator decorator; this just kills the internal executor of the decorator
-             * while still allowing it to be used for operations without callbacks.
-             */
-            if (_curatorFramework != null) {
-                _curatorFramework.close();
-            }
 
             /* Shut down message executor.
              */

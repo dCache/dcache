@@ -195,12 +195,15 @@ public class CellCuratorFramework implements CuratorFramework
     @Override
     public void start()
     {
+        // forced by interface, should never be called by dCache
+        throw new RuntimeException();
     }
 
     @Override
     public void close()
     {
-        executor.shutdown();
+        // forced by interface, should never be called by dCache
+        throw new RuntimeException();
     }
 
     @Override
