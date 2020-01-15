@@ -534,6 +534,24 @@ public class NFSv41Door extends AbstractCellComponent implements
                  * disposal on close.
                  */
                 transfer.enforceErrorIfRunning(POISON);
+
+
+		/**
+		 * REVISIT: workaround dCache not being 100% POSIX complaint
+		 *
+		 * If a file is removed before close and as compound with close
+		 * has GETATTR before CLOSE, we will return client ENOENT before
+		 * close operation is processed. As a result, close never called.
+		 */
+		if (transferFinishedMessage.getReturnCode() == CacheException.FILE_NOT_FOUND) {
+		    try {
+			transfer._client.tryReleaseState(openStateId);
+		    } catch (ChimeraNFSException e) {
+			_log.error("Failed release open state {} for file {}: {}",
+				openStateId, transfer.getPnfsId(), e.getMessage());
+		    }
+		}
+
             } else {
                 // it's ok to remove read mover as it's safe to re-create it again.
                 _transfers.remove(openStateId);
