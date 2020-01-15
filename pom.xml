@@ -449,6 +449,17 @@
                 <groupId>com.github.parboiled1</groupId>
                 <artifactId>grappa</artifactId>
                 <version>1.0.4</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-debug-all</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>7.2</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
