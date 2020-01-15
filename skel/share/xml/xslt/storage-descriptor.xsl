@@ -242,7 +242,7 @@
   <xsl:if test="collection">
     <xsl:variable name="total" select="sum(collection/space/total)"/>
     <xsl:variable name="used" select="sum(collection/space/used)"/>
-    <xsl:variable name="reserved" select="sum(collection/space/used)"/>
+    <xsl:variable name="reserved" select="sum(collection/space/reserved)"/>
 
     <xsl:text>        "nearline": {&#x0a;</xsl:text>
     <xsl:value-of select="concat('            &quot;totalsize&quot;: ',$total,',&#x0a;')"/>
