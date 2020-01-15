@@ -984,6 +984,12 @@
                 <version>1.2.0.RELEASE</version>
             </dependency>
             <dependency>
+                <!-- enforce version as javassist used by fst and powermock -->
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.25.0-GA</version>
+            </dependency>
+            <dependency>
                 <groupId>de.ruedigermoeller</groupId>
                 <artifactId>fst</artifactId>
                 <version>${version.fst}</version>
