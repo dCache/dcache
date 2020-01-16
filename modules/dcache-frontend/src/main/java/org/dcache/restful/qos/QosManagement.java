@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -29,8 +30,10 @@ import java.util.List;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
+import org.dcache.qos.QoSTransitionEngine.Qos;
 import org.dcache.restful.util.RequestUser;
 
+import static org.dcache.qos.QoSTransitionEngine.Qos.*;
 
 /**
  * RestFul API for querying and manipulating QoS
@@ -39,13 +42,6 @@ import org.dcache.restful.util.RequestUser;
 @Api(value = "qos", authorizations = {@Authorization("basicAuth")})
 @Path("/qos-management/qos/")
 public class QosManagement {
-
-    public static final String DISK = "disk";
-    public static final String TAPE = "tape";
-    public static final String DISK_TAPE = "disk+tape";
-    public static final String VOLATILE = "volatile";
-    public static final String UNAVAILABLE = "unavailable";
-    public static final String QOS_PIN_REQUEST_ID = "qos";
 
     @Inject
     @Named("geographic-placement")
@@ -74,14 +70,17 @@ public class QosManagement {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
 
-            // query the lis of available QoS for file objects
             if ("file".equals(qosValue)) {
-                JSONArray list = new JSONArray(Arrays.asList(DISK, TAPE, DISK_TAPE, VOLATILE));
+                JSONArray list = new JSONArray(Arrays.asList(DISK.displayName(),
+                                                             TAPE.displayName(),
+                                                             DISK_TAPE.displayName(),
+                                                             VOLATILE.displayName()));
                 json.put("name", list);
-            }
-            // query the lis of available QoS for directory objects
-            else if ("directory".equals(qosValue.trim())) {
-                JSONArray list = new JSONArray(Arrays.asList(DISK, TAPE, DISK_TAPE, VOLATILE));
+            } else if ("directory".equals(qosValue.trim())) {
+                JSONArray list = new JSONArray(Arrays.asList(DISK.displayName(),
+                                                             TAPE.displayName(),
+                                                             DISK_TAPE.displayName(),
+                                                             VOLATILE.displayName()));
                 json.put("name", list);
             } else {
                 throw new NotFoundException();
@@ -119,7 +118,9 @@ public class QosManagement {
             @ApiParam("The file quality of service to query.")
             @PathParam("qos") String qosValue) throws CacheException {
 
-        BackendCapabilityResponse backendCapabilityResponse = new BackendCapabilityResponse();
+        BackendCapabilityResponse backendCapabilityResponse
+                        = new BackendCapabilityResponse();
+
         BackendCapability backendCapability = new BackendCapability();
 
         try {
@@ -130,35 +131,48 @@ public class QosManagement {
             backendCapabilityResponse.setStatus("200");
             backendCapabilityResponse.setMessage("successful");
 
-            // Set data and metadata for "DISK" QoS
-            if (DISK.equals(qosValue)) {
+            QoSMetadata qoSMetadata;
 
-                QoSMetadata qoSMetadata = new QoSMetadata("1", geographicPlacement, "100");
-                setBackendCapability(backendCapability, DISK, Arrays.asList(TAPE, DISK_TAPE), qoSMetadata);
+            switch (Qos.fromDisplayName(qosValue))
+            {
+                case DISK:
+                    qoSMetadata = new QoSMetadata("1",
+                                                  geographicPlacement,
+                                                  "100");
+                    setBackendCapability(backendCapability, DISK.displayName(),
+                                         Arrays.asList(TAPE.displayName(),
+                                                       DISK_TAPE.displayName()),
+                                         qoSMetadata);
+                    break;
+                case TAPE:
+                    qoSMetadata = new QoSMetadata("1",
+                                                  geographicPlacement,
+                                                  "600000");
+                    setBackendCapability(backendCapability, TAPE.displayName(),
+                                         Arrays.asList(DISK_TAPE.displayName()),
+                                         qoSMetadata);
+                    break;
+                case DISK_TAPE:
+                    qoSMetadata = new QoSMetadata("2",
+                                                  geographicPlacement,
+                                                  "100");
+                    setBackendCapability(backendCapability, DISK_TAPE.displayName(),
+                                         Arrays.asList(TAPE.displayName()),
+                                         qoSMetadata);
+                    break;
+                case VOLATILE:
+                    qoSMetadata = new QoSMetadata("0",
+                                                  geographicPlacement,
+                                                  "100");
+                    setBackendCapability(backendCapability, VOLATILE.displayName(),
+                                         Arrays.asList(DISK.displayName(),
+                                                       TAPE.displayName(),
+                                                       DISK_TAPE.displayName()),
+                                         qoSMetadata);
+                    break;
+                default:
+                    throw new NotFoundException();
             }
-            // Set data and metadata for "TAPE" QoS
-            else if (TAPE.equals(qosValue)) {
-
-                QoSMetadata qoSMetadata = new QoSMetadata("1", geographicPlacement, "600000");
-                setBackendCapability(backendCapability, TAPE, Arrays.asList(DISK_TAPE), qoSMetadata);
-
-            }
-            // Set data and metadata for "Disk & TAPE" QoS
-            else if (DISK_TAPE.equals(qosValue)) {
-
-                QoSMetadata qoSMetadata = new QoSMetadata("2", geographicPlacement, "100");
-                setBackendCapability(backendCapability, DISK_TAPE, Arrays.asList(TAPE), qoSMetadata);
-
-            }
-            else if (VOLATILE.equals(qosValue)) {
-                QoSMetadata qoSMetadata = new QoSMetadata("0", geographicPlacement, "100");
-                setBackendCapability(backendCapability, VOLATILE, Arrays.asList(DISK, TAPE, DISK_TAPE), qoSMetadata);
-            }
-            // The QoS is not known or supported.
-            else {
-                throw new NotFoundException();
-            }
-
         } catch (PermissionDeniedCacheException e) {
             if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
@@ -167,6 +181,8 @@ public class QosManagement {
             }
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
+        } catch (UnsupportedOperationException e) {
+            throw new BadRequestException(e);
         }
 
         backendCapabilityResponse.setBackendCapability(backendCapability);
@@ -190,7 +206,8 @@ public class QosManagement {
             @ApiParam("The directory quality of service to query.")
             @PathParam("qos") String qosValue) throws CacheException {
 
-        BackendCapabilityResponse backendCapabilityResponse = new BackendCapabilityResponse();
+        BackendCapabilityResponse backendCapabilityResponse
+                        = new BackendCapabilityResponse();
 
         BackendCapability backendCapability = new BackendCapability();
 
@@ -202,32 +219,45 @@ public class QosManagement {
             backendCapabilityResponse.setStatus("200");
             backendCapabilityResponse.setMessage("successful");
 
-            // Set data and metadata for "DISK" QoS
-            if (DISK.equals(qosValue)) {
+            QoSMetadata qoSMetadata;
 
-                QoSMetadata qoSMetadata = new QoSMetadata("1", geographicPlacement, "100");
-                setBackendCapability(backendCapability, DISK, Arrays.asList(TAPE), qoSMetadata);
+            switch (Qos.fromDisplayName(qosValue))
+            {
+                case DISK:
+                    qoSMetadata = new QoSMetadata("1",
+                                                  geographicPlacement,
+                                                  "100");
+                    setBackendCapability(backendCapability, DISK.displayName(),
+                                         Arrays.asList(TAPE.displayName()),
+                                         qoSMetadata);
+                    break;
+                case TAPE:
+                    qoSMetadata = new QoSMetadata("1",
+                                                  geographicPlacement,
+                                                  "600000");
+                    setBackendCapability(backendCapability, TAPE.displayName(),
+                                         Arrays.asList(DISK.displayName()),
+                                         qoSMetadata);
+                    break;
+                case DISK_TAPE:
+                    qoSMetadata = new QoSMetadata("2",
+                                                  geographicPlacement,
+                                                  "100");
+                    setBackendCapability(backendCapability, DISK_TAPE.displayName(),
+                                         Collections.emptyList(),
+                                         qoSMetadata);
+                    break;
+                case VOLATILE:
+                    qoSMetadata = new QoSMetadata("0",
+                                                  geographicPlacement,
+                                                  "100");
+                    setBackendCapability(backendCapability, VOLATILE.displayName(),
+                                         Collections.emptyList(),
+                                         qoSMetadata);
+                    break;
+                default:
+                    throw new NotFoundException();
             }
-            // Set data and metadata for "TAPE" QoS
-            else if (TAPE.equals(qosValue)) {
-
-                QoSMetadata qoSMetadata = new QoSMetadata("1", geographicPlacement, "600000");
-                setBackendCapability(backendCapability, TAPE, Arrays.asList(DISK), qoSMetadata);
-            }
-            // Set data and metadata for "Disk & TAPE" QoS
-            else if (DISK_TAPE.equals(qosValue)) {
-                QoSMetadata qoSMetadata = new QoSMetadata("2", geographicPlacement, "100");
-                setBackendCapability(backendCapability, DISK_TAPE, Collections.emptyList(), qoSMetadata);
-            }
-            else if (VOLATILE.equals(qosValue)) {
-                QoSMetadata qoSMetadata = new QoSMetadata("0", geographicPlacement, "100");
-                setBackendCapability(backendCapability, VOLATILE, Collections.emptyList(), qoSMetadata);
-            }
-            // The QoS is not known or supported.
-            else {
-                throw new NotFoundException();
-            }
-
         } catch (PermissionDeniedCacheException e) {
             if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
@@ -236,6 +266,8 @@ public class QosManagement {
             }
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
+        } catch (UnsupportedOperationException e) {
+            throw new BadRequestException(e);
         }
 
         backendCapabilityResponse.setBackendCapability(backendCapability);

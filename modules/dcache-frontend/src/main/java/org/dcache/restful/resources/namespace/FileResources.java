@@ -38,19 +38,15 @@ import javax.ws.rs.core.Response;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.RetentionPolicy;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -59,10 +55,8 @@ import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.restful.policyengine.MigrationPolicyEngine;
+import org.dcache.qos.QoSTransitionEngine;
 import org.dcache.restful.providers.JsonFileAttributes;
-import org.dcache.restful.qos.QosManagement;
-import org.dcache.restful.qos.QosManagementNamespace;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
@@ -83,15 +77,10 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 public class FileResources {
     private static final Logger LOG = LoggerFactory.getLogger(FileResources.class);
 
-    private static final Set<FileAttribute> QOS_ATTRIBUTES
-                    = Collections.unmodifiableSet
-                    (EnumSet.of(FileAttribute.PNFSID,
-                                FileAttribute.ACCESS_LATENCY,
-                                FileAttribute.RETENTION_POLICY));
-
     /*
-    This "request" parameter is used to get fully qualified name of the client
-     * or the last proxy that sent the request. Later used for quering locality of the file.
+     * Used to get fully qualified name of the client
+     * or the last proxy that sent the request.
+     * Later used for querying locality of the file.
      */
     @Context
     private HttpServletRequest request;
@@ -277,146 +266,31 @@ public class FileResources {
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
-            PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
+            PnfsHandler pnfsHandler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
             FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
-
-            // FIXME: which attributes do we actually need?
             FileAttributes attributes
-                            = handler.getFileAttributes(path, EnumSet.allOf(FileAttribute.class));
-            AccessLatency currentAccessLatency = attributes.getAccessLatency();
-            RetentionPolicy currentRetentionPolicy = attributes.getRetentionPolicy();
-
+                            = pnfsHandler.getFileAttributes(path,
+                                                            EnumSet.allOf(FileAttribute.class));
             switch (action) {
                 case "mkdir":
                     String name = (String) reqPayload.get("name");
                     FsPath.checkChildName(name, BadRequestException::new);
-                    handler = HandlerBuilders.pnfsHandler(pnfsmanager); // FIXME: non-role identity to ensure correct ownership
-                    handler.createPnfsDirectory(path.child(name).toString());
+                    pnfsHandler = HandlerBuilders.pnfsHandler(pnfsmanager); // FIXME: non-role identity to ensure correct ownership
+                    pnfsHandler.createPnfsDirectory(path.child(name).toString());
                     break;
-
                 case "mv":
                     String dest = (String) reqPayload.get("destination");
                     FsPath target = pathMapper.resolve(request, path, dest);
-                    handler.renameEntry(path.toString(), target.toString(), true);
+                    pnfsHandler.renameEntry(path.toString(), target.toString(), true);
                     break;
-
                 case "qos":
                     String targetQos = reqPayload.getString("target");
-                    JsonFileAttributes fileAttributes = new JsonFileAttributes();
-                    NamespaceUtils.addQoSAttributes(fileAttributes, attributes, request, poolMonitor, pinmanager);
-                    LOG.debug("Request received to change current QoS from {} to: {} for {}", fileAttributes.currentQos, targetQos, path);
-                    FileLocality locality = poolMonitor.getFileLocality(attributes, request.getRemoteHost());
-                    LOG.debug("The Locality of the file: {}", locality);
-                    if (locality == FileLocality.NONE) {
-                        throw new BadRequestException("Transition for directories not supported");
-                    }
-                    LOG.debug("AccessLatency {}, Retention Policy {}.",
-                              currentAccessLatency, currentRetentionPolicy);
-
-                    MigrationPolicyEngine migrationPolicyEngine =
-                            new MigrationPolicyEngine(attributes, poolmanager, poolMonitor);
-
-                    FileAttributes modifiedAttr = new FileAttributes();
-
-                    switch (targetQos) {
-                        case QosManagement.DISK_TAPE:
-                            if (!currentRetentionPolicy.equals(
-                                            RetentionPolicy.CUSTODIAL)) {
-                                modifiedAttr.setRetentionPolicy(
-                                                RetentionPolicy.CUSTODIAL);
-                                migrationPolicyEngine.adjust();
-                            }
-
-                            if (!currentAccessLatency.equals(
-                                            AccessLatency.ONLINE)) {
-                                modifiedAttr.setAccessLatency(
-                                                AccessLatency.ONLINE);
-                            }
-
-                            // REVISIT when Resilience manages QoS for all files, remove
-                            if (!QosManagementNamespace.isPinnedForQoS(
-                                            attributes, pinmanager)) {
-                                QosManagementNamespace.pinForQoS(request,
-                                                                 attributes,
-                                                                 pinmanager);
-                            }
-
-                            break;
-                        case QosManagement.DISK:
-                            switch (locality) {
-                                case ONLINE:
-                                    /*
-                                     *  ONLINE locality may not denote ONLINE access latency.
-                                     *  ONLINE locality and NEARLINE access latency should
-                                     *  not translate to 'Disk' qos.
-                                     */
-                                    if (!currentAccessLatency.equals(
-                                                    AccessLatency.ONLINE)) {
-                                        modifiedAttr.setAccessLatency(
-                                                        AccessLatency.ONLINE);
-                                    }
-
-                                    // REVISIT when Resilience manages QoS for all files, remove
-                                    if (!QosManagementNamespace.isPinnedForQoS(
-                                                    attributes, pinmanager)) {
-                                        QosManagementNamespace.pinForQoS(request,
-                                                                         attributes,
-                                                                         pinmanager);
-                                    }
-
-                                    break;
-                                default:
-                                    if (currentRetentionPolicy.equals(
-                                                    RetentionPolicy.CUSTODIAL)) {
-                                        /*
-                                         *  Technically, to make the QoS semantics in
-                                         *  Chimera consistent, one would need to change this
-                                         *  to REPLICA, even though this would not trigger
-                                         *  deletion from tape.  It is probably best to
-                                         *  continue not supporting this transition.
-                                         */
-                                        throw new BadRequestException(
-                                                        "Unsupported QoS transition");
-                                    }
-                                    break;
-                            }
-                            break;
-                        case QosManagement.TAPE:
-                            if (!currentRetentionPolicy.equals(
-                                            RetentionPolicy.CUSTODIAL)) {
-                                modifiedAttr.setRetentionPolicy(
-                                                RetentionPolicy.CUSTODIAL);
-                                migrationPolicyEngine.adjust();
-                            }
-
-                            if (!currentAccessLatency.equals(
-                                            AccessLatency.NEARLINE)) {
-                                modifiedAttr.setAccessLatency(
-                                                AccessLatency.NEARLINE);
-                            }
-
-                            // REVISIT when Resilience manages QoS for all files, remove
-                            QosManagementNamespace.unpinForQoS(attributes,
-                                                               pinmanager);
-
-                            break;
-
-                        default:
-                            throw new BadRequestException(
-                                            "Unknown target QoS: " + targetQos);
-                    }
-
-                    LOG.debug("modified attributes: {}", modifiedAttr);
-
-                    if (modifiedAttr.isDefined(FileAttribute.ACCESS_LATENCY) ||
-                                    modifiedAttr.isDefined(FileAttribute.RETENTION_POLICY)) {
-                        handler.setFileAttributes(path, modifiedAttr, QOS_ATTRIBUTES);
-                    }
-
-                    break;
-
-                default:
-                    throw new BadRequestException("Unknown action: " + action);
+                    new QoSTransitionEngine(poolmanager,
+                                            poolMonitor,
+                                            pnfsHandler,
+                                            pinmanager)
+                                    .adjustQoS(path, attributes,
+                                               targetQos, request.getRemoteHost());
             }
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
@@ -426,8 +300,12 @@ public class FileResources {
             } else {
                 throw new ForbiddenException(e);
             }
-        } catch (URISyntaxException | JSONException | CacheException
-                        | InterruptedException | NoRouteToCellException e) {
+        } catch (UnsupportedOperationException |
+                        URISyntaxException |
+                        JSONException |
+                        CacheException |
+                        InterruptedException |
+                        NoRouteToCellException e) {
             throw new BadRequestException(e.getMessage(), e);
         }
         return successfulResponse(Response.Status.CREATED);
