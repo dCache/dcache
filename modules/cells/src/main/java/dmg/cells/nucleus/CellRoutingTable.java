@@ -222,6 +222,17 @@ public class CellRoutingTable implements Serializable
                             routes.stream().filter(r -> !r.getTarget().isDomainAddress()).toArray(CellRoute[]::new);
                     return (localRoutes.length > 0) ? localRoutes[random.nextInt(localRoutes.length)] : null;
                 } else if (!routes.isEmpty()) {
+
+                    if (zone.isPresent()) {
+                        CellRoute[] localRoutes = routes
+                                .stream()
+                                .filter(r -> r.getZone().equals(zone))
+                                .toArray(CellRoute[]::new);
+
+                        if (localRoutes.length > 0) {
+                            return localRoutes[random.nextInt(localRoutes.length)];
+                        }
+                    }
                     return routes.get(random.nextInt(routes.size()));
                 }
             }
@@ -240,10 +251,9 @@ public class CellRoutingTable implements Serializable
             }
 
             if (zone.isPresent()) {
-                String z = zone.get();
                 Optional<CellRoute> defaultZonedRoute = _default
                         .stream()
-                        .filter(r -> r.getZone().isPresent() && r.getZone().get().equals(z))
+                        .filter(r -> r.getZone().equals(zone))
                         .findAny();
 
                 if (defaultZonedRoute.isPresent()) {

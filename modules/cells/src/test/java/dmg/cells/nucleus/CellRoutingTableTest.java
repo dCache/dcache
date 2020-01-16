@@ -205,4 +205,69 @@ public class CellRoutingTableTest {
 
         assertEquals(1, alternativeRoutes.size());
     }
+
+    @Test
+    public void testMultipleRoutesQueueWithZone() {
+
+        CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
+        CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
+        CellRoute route1 = new CellRoute("cell-A", gateway1, Optional.of("zone-A"), CellRoute.QUEUE);
+        CellRoute route2 = new CellRoute("cell-A", gateway2, Optional.of("zone-B"), CellRoute.QUEUE);
+
+        routingTable.add(route1);
+        routingTable.add(route2);
+
+        Map<String, Long> alternativeRoutes = IntStream
+                .generate(() -> 1)
+                .limit(10)
+                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-A"), true))
+                .map(r -> r.getZone().get())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        assertEquals(1, alternativeRoutes.size());
+        assertNotNull(alternativeRoutes.get("zone-A"));
+    }
+
+    @Test
+    public void testMultipleRoutesQueueWithZone2() {
+
+        CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
+        CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
+        CellRoute route1 = new CellRoute("cell-A", gateway1, Optional.of("zone-A"), CellRoute.QUEUE);
+        CellRoute route2 = new CellRoute("cell-A", gateway2, Optional.of("zone-B"), CellRoute.QUEUE);
+
+        routingTable.add(route1);
+        routingTable.add(route2);
+
+        Map<String, Long> alternativeRoutes = IntStream
+                .generate(() -> 1)
+                .limit(10)
+                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
+                .map(r -> r.getZone().get())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        assertEquals(2, alternativeRoutes.size());
+    }
+
+    @Test
+    public void testMultipleRoutesQueueWithNoZone() {
+
+        CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
+        CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
+        CellRoute route1 = new CellRoute("cell-A", gateway1, Optional.empty(), CellRoute.QUEUE);
+        CellRoute route2 = new CellRoute("cell-A", gateway2, Optional.empty(), CellRoute.QUEUE);
+
+        routingTable.add(route1);
+        routingTable.add(route2);
+
+        Map<String, Long> alternativeRoutes = IntStream
+                .generate(() -> 1)
+                .limit(10)
+                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-B"), true))
+                .map(r -> r.getTarget())
+                .map(t -> t.toString())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        assertEquals(2, alternativeRoutes.size());
+    }
 }
