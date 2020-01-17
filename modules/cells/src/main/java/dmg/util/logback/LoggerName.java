@@ -51,7 +51,7 @@ public class LoggerName
             return true;
         }
 
-        if (that == null || !that.getClass().equals(LoggerName.class)) {
+        if (that == null || that.getClass() != this.getClass()) {
             return false;
         }
 

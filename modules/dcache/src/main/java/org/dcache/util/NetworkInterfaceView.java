@@ -272,7 +272,7 @@ public class NetworkInterfaceView implements Serializable {
                 return false;
             }
 
-            if(rawOther.getClass().equals(InterfaceAddressView.class)) {
+            if(rawOther.getClass() == this.getClass()) {
                 InterfaceAddressView other = (InterfaceAddressView) rawOther;
 
                 return _maskLength == other.getNetworkPrefixLength() &&
