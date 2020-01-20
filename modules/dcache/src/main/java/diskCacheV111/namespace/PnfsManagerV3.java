@@ -37,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -2235,10 +2236,18 @@ public class PnfsManagerV3
             Activity activity, FsPath path) throws PermissionDeniedCacheException
     {
         if (mask.stream()
-                    .map(PnfsManagerV3::toActivity)
-                    .anyMatch(a -> restriction.isRestricted(a, path))
-                || restriction.isRestricted(activity, path)) {
-            throw new PermissionDeniedCacheException("Permission denied: " + path);
+                .map(PnfsManagerV3::toActivity)
+                .anyMatch(a -> restriction.isRestricted(a, path))) {
+
+            Set<AccessMask> denied = mask.stream()
+                .filter(m -> restriction.isRestricted(toActivity(m), path))
+                .collect(Collectors.toSet());
+
+            throw new PermissionDeniedCacheException("Restriction " + restriction + " denied access for " + denied + " on " + path);
+        }
+
+        if (restriction.isRestricted(activity, path)) {
+            throw new PermissionDeniedCacheException("Restriction " + restriction + " denied activity " + activity + " on " + path);
         }
     }
 }

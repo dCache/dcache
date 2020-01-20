@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.FsPath;
 
@@ -237,6 +238,12 @@ public class Restrictions
                 }
             }
             return false;
+        }
+
+        @Override
+        public String toString()
+        {
+            return restrictions.stream().map(Restriction::toString).collect(Collectors.joining(", ", "CompositeRestriction[", "]"));
         }
     }
 }
