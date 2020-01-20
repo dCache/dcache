@@ -82,10 +82,10 @@ public class CrossOriginResourceSharingHandler extends AbstractHandler
             response.setHeader("Access-Control-Allow-Headers",
                     "Authorization, Content-Type, Suppress-WWW-Authenticate");
             response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setStatus(HttpServletResponse.SC_OK);
-            Request base_request = (request instanceof Request) ?
-                    (Request)request: HttpConnection.getCurrentConnection().getHttpChannel().getRequest();
-            base_request.setHandled(true);
+
+            /* Note: we do not mark the request as handled.  This is to allow
+             * other handlers to add response headers.
+             */
         }
     }
 }
