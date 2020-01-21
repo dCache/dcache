@@ -69,7 +69,7 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
         this.backends = backends;
     }
 
-    public CellAddressCore backendFor(PnfsId pnfsId)
+    private CellAddressCore backendFor(PnfsId pnfsId)
     {
         Iterator<CellAddressCore> iterator = backends.iterator();
         CellAddressCore address = iterator.next();
@@ -85,17 +85,12 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
         return address;
     }
 
-    public CellAddressCore backendFor(PoolManagerMessage msg)
+    private CellAddressCore backendFor(PoolManagerMessage msg)
     {
         if (msg instanceof PoolMgrGetPoolMsg) {
             return backendFor(((PoolMgrGetPoolMsg) msg).getFileAttributes().getPnfsId());
         }
         return serviceAddress;
-    }
-
-    public CellAddressCore backendFor(PoolIoFileMessage msg)
-    {
-        return backendFor(msg.getFileAttributes().getPnfsId());
     }
 
     private static int hash(PnfsId pnfsId, CellAddressCore address)
