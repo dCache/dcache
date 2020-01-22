@@ -6,12 +6,9 @@ import com.google.common.collect.Lists;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
 import com.sleepycat.util.RuntimeExceptionWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.OpenOption;
 import java.util.Collection;
 import java.util.List;
@@ -26,11 +23,14 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.collect.Iterables.elementsEqual;
 import static com.google.common.collect.Iterables.filter;
@@ -50,7 +50,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
 
     private final PnfsId _pnfsId;
     private final AbstractBerkeleyDBReplicaStore _repository;
-    private final long _creationTime;
+    private  long _creationTime;
 
     /**
      * Sticky records held by the file.
@@ -64,8 +64,12 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     private int  _linkCount;
 
     private long _size;
+    private  FileStore _fileStore;
+    // cached storage info
+    private StorageInfo _storageInfo;
 
-    public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId)
+
+    public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId, FileStore fileStore)
     {
         _repository = repository;
         _pnfsId = pnfsId;
@@ -73,18 +77,77 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         _sticky = ImmutableList.of();
         _creationTime =   System.currentTimeMillis();
         _lastAccess = _creationTime;
+        _fileStore = fileStore;
     }
 
     public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId, ReplicaState state,
-                                    Collection<StickyRecord> sticky, BasicFileAttributes attributes)
-    {
+                                    Collection<StickyRecord> sticky, FileStore filestore) throws IOException {
         _repository = repository;
         _pnfsId = pnfsId;
         _state = state;
         setStickyRecords(sticky);
-        _lastAccess = attributes.lastModifiedTime().toMillis();
-        _creationTime = attributes.creationTime().toMillis();
-        _size = attributes.size();
+        _fileStore = filestore;
+
+        StorageInfo storageInfo = getStorageInfo();
+
+        if (storageInfo == null) {
+
+            try {
+                _size = _fileStore.getFileAttributeView(pnfsId).readAttributes().size();
+            } catch (IOException e) {
+                _log.error("Failed to read file size: {}", e.toString());
+            }
+            _state = BROKEN;
+
+        } else {
+
+            AccessTimeInfo accessTimeInfo = repository.getAccessTimeInfo().get(pnfsId.toString());
+            Long size = Long.valueOf(storageInfo.getLegacySize());
+            if (size == 0) {
+                try {
+                    _size = _fileStore.getFileAttributeView(pnfsId).readAttributes().size();
+                    StorageInfo info = _repository.getStorageInfoMap().get(pnfsId.toString());
+                    info.setLegacySize(_size);
+                    _repository.getStorageInfoMap().put(pnfsId.toString(), info);
+                } catch (IOException e) {
+                    _log.error("Failed to set file size: {}", e.toString());
+                }
+
+            } else {
+                _size = size.longValue();
+            }
+
+
+            if (accessTimeInfo != null) {
+                if (accessTimeInfo.getLastAccessTime() != null) {
+                    _lastAccess = accessTimeInfo.getLastAccessTime();
+
+                } else {
+                    _lastAccess = _fileStore.getFileAttributeView(pnfsId).readAttributes().lastAccessTime().toMillis();
+                }
+
+                if (accessTimeInfo.getCreationTime() != null) {
+                    _creationTime = accessTimeInfo.getCreationTime();
+
+                } else {
+                    _creationTime = _fileStore.getFileAttributeView(pnfsId).readAttributes().creationTime().toMillis();
+                }
+
+            } else {
+
+                try {
+                    AccessTimeInfo accessTimeInfoNew = new AccessTimeInfo();
+                    _lastAccess = _fileStore.getFileAttributeView(pnfsId).readAttributes().lastAccessTime().toMillis();
+                    _creationTime = _fileStore.getFileAttributeView(pnfsId).readAttributes().creationTime().toMillis();
+                    accessTimeInfoNew.setLastAccessTime(_lastAccess);
+                    accessTimeInfoNew.setCreationTime(_creationTime);
+                    _repository.getAccessTimeInfo().put(pnfsId.toString(), accessTimeInfoNew);
+                } catch (IOException e) {
+                    _log.error("Failed to set AccessTime size: {}", e.toString());
+                }
+            }
+        }
+
     }
 
     private void setStickyRecords(Iterable<StickyRecord> records)
@@ -113,6 +176,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         return _linkCount;
     }
 
+
     @Override
     public synchronized int getLinkCount()
     {
@@ -136,6 +200,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     {
         try {
             _repository.setLastModifiedTime(_pnfsId, time);
+
         } catch (IOException e) {
             throw new DiskErrorCacheException("Failed to set modification time for " + _pnfsId + ": " + e.toString(), e);
         }
@@ -143,10 +208,15 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     }
 
     @Override
-    public synchronized long getReplicaSize()
-    {
+    public synchronized long getReplicaSize() {
         try {
-            return _state.isMutable() ? _repository.getFileSize(_pnfsId) : _size;
+
+            return _state.isMutable() ? _fileStore
+                    .getFileAttributeView(_pnfsId)
+                    .readAttributes()
+                    .size() : _size;
+
+
         } catch (IOException e) {
             _log.error("Failed to read file size: {}", e.toString());
             return 0;
@@ -155,15 +225,20 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
 
     private synchronized StorageInfo getStorageInfo()
     {
-        return _repository.getStorageInfoMap().get(_pnfsId.toString());
+        if (_storageInfo == null){
+            _storageInfo = _repository.getStorageInfoMap().get(_pnfsId.toString());
+        }
+        return _storageInfo;
     }
 
     @Override
     public synchronized FileAttributes getFileAttributes() throws CacheException
     {
         try {
+
             FileAttributes attributes = FileAttributes.ofPnfsId(_pnfsId);
             StorageInfo storageInfo = getStorageInfo();
+
             if (storageInfo != null) {
                 StorageInfos.injectInto(storageInfo, attributes);
             }
@@ -178,15 +253,31 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         }
     }
 
-    private Void setFileAttributes(FileAttributes attributes) throws CacheException
-    {
+    private Void setFileAttributes(FileAttributes attributes) throws CacheException {
         try {
             String id = _pnfsId.toString();
+            // invalidate cached value
+            _storageInfo = null;
+
+            //TODO to check the case when STORAGEINFO size=0
             if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
                 _repository.getStorageInfoMap().put(id, StorageInfos.extractFrom(attributes));
+
             } else {
                 _repository.getStorageInfoMap().remove(id);
             }
+
+            //TODO check should there be separate methods
+            if (attributes.isDefined(FileAttribute.ACCESS_TIME) && attributes.isDefined(FileAttribute.CREATION_TIME)) {
+                AccessTimeInfo accessTimeInfo = new AccessTimeInfo();
+                accessTimeInfo.setLastAccessTime(attributes.getAccessTime());
+                accessTimeInfo.setCreationTime(attributes.getCreationTime());
+                _repository.getAccessTimeInfo().put(id, accessTimeInfo);
+
+            } else {
+                _repository.getAccessTimeInfo().remove(id);
+            }
+
         } catch (EnvironmentFailureException e) {
             if (!_repository.isValid()) {
                 throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
@@ -274,6 +365,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     private synchronized void storeState() throws CacheException
     {
         try {
+
+
             _repository.getStateMap().put(_pnfsId.toString(), new CacheRepositoryEntryState(_state, _sticky));
         } catch (EnvironmentFailureException e) {
             if (!_repository.isValid()) {
@@ -286,13 +379,20 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     }
 
     static CacheRepositoryEntryImpl load(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId,
-                                         BasicFileAttributes attributes) throws IOException
+                                          FileStore fileStore) throws IOException
     {
         try {
             String id = pnfsId.toString();
+
             CacheRepositoryEntryState state = repository.getStateMap().get(id);
+
             if (state != null) {
-                return new CacheRepositoryEntryImpl(repository, pnfsId, state.getState(), state.stickyRecords(), attributes);
+                return new CacheRepositoryEntryImpl(repository, pnfsId, state.getState(), state.stickyRecords(), fileStore);
+            } else {
+                // no state info. Ether file doesn't exists or it't broken.
+                // provoke FileNotFound
+                fileStore.getFileAttributeView(pnfsId).readAttributes();
+                // fallthrough and return broken record
             }
         } catch (ClassCastException e) {
             _log.warn(e.toString());
@@ -307,7 +407,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
             }
             _log.warn(e.toString());
         }
-        return new CacheRepositoryEntryImpl(repository, pnfsId, BROKEN, ImmutableList.of(), attributes);
+        return new CacheRepositoryEntryImpl(repository, pnfsId, BROKEN, ImmutableList.of(),  fileStore);
     }
 
     private class UpdatableRecordImpl implements UpdatableRecord
@@ -339,6 +439,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
             if (_state != state) {
                 if (_state.isMutable() && !state.isMutable()) {
                     try {
+
                         _size = _repository.getFileSize(_pnfsId);
                     } catch (IOException e) {
                         throw new DiskErrorCacheException("Failed to query file size: " + e, e);

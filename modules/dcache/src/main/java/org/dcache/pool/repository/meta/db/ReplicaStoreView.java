@@ -21,9 +21,14 @@ class ReplicaStoreView
     private final ReplicaStoreDatabase db;
     private final StoredMap<String, StorageInfo> storageInfoMap;
     private final StoredMap<String, CacheRepositoryEntryState> stateMap;
+    private final StoredMap<String, AccessTimeInfo> accessTimeInfo;
+
+
     private final EntryBinding<String> keyBinding;
     private final EntryBinding<StorageInfo> storageInfoBinding;
     private final EntryBinding<CacheRepositoryEntryState> stateBinding;
+    private final EntryBinding<AccessTimeInfo> accessTimeInfoBinding;
+
 
     public ReplicaStoreView(ReplicaStoreDatabase db)
     {
@@ -35,12 +40,20 @@ class ReplicaStoreView
                 new SerialBinding<>(catalog, StorageInfo.class);
         stateBinding =
                 new SerialBinding<>(catalog, CacheRepositoryEntryState.class);
+        accessTimeInfoBinding =
+                new SerialBinding<>(catalog, AccessTimeInfo.class);
         storageInfoMap =
             new StoredMap<>(db.getStorageInfoDatabase(),
                             keyBinding, storageInfoBinding, true);
         stateMap =
             new StoredMap<>(db.getStateDatabase(),
                             keyBinding, stateBinding, true);
+
+        accessTimeInfo =
+                new StoredMap<>(db.getAccessInfoStore(),
+                        keyBinding, accessTimeInfoBinding, true);
+
+
     }
 
     public final StoredMap<String, StorageInfo> getStorageInfoMap()
@@ -52,6 +65,13 @@ class ReplicaStoreView
     {
         return stateMap;
     }
+
+    public final StoredMap<String, AccessTimeInfo> getAccessTimeInfo()
+    {
+        return accessTimeInfo;
+    }
+
+
 
     public final <A,R> R collectKeys(Collector<String,A,R> collector)
     {

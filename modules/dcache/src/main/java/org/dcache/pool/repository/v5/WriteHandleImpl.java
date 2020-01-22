@@ -165,6 +165,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         if (_initialState == ReplicaState.FROM_CLIENT) {
             attributesToUpdate.setAccessLatency(_fileAttributes.getAccessLatency());
             attributesToUpdate.setRetentionPolicy(_fileAttributes.getRetentionPolicy());
+
             if (_fileAttributes.isDefined(SIZE)) {
                 attributesToUpdate.setSize(_fileAttributes.getSize());
             }
@@ -193,11 +194,11 @@ class WriteHandleImpl implements ReplicaDescriptor
 
         try {
             _entry.setLastAccessTime((_atime == null) ? System.currentTimeMillis() : _atime);
-
+            _fileAttributes.setCreationTime(System.currentTimeMillis());
+            _fileAttributes.setAccessTime(System.currentTimeMillis());
             long length = _entry.getReplicaSize();
             verifyFileSize(length);
             _fileAttributes.setSize(length);
-
             boolean namespaceUpdated = false;
             do {
                 /*
@@ -287,6 +288,8 @@ class WriteHandleImpl implements ReplicaDescriptor
              */
             if (_initialState == ReplicaState.FROM_CLIENT) {
                 _fileAttributes.setSize(length);
+                _fileAttributes.setCreationTime(System.currentTimeMillis());
+                _fileAttributes.setAccessTime(System.currentTimeMillis());
             }
         }
 

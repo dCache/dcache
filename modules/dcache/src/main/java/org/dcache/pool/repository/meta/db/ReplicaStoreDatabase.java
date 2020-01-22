@@ -31,10 +31,16 @@ public class ReplicaStoreDatabase
     private static final String CLASS_CATALOG = "java_class_catalog";
     private static final String STORAGE_INFO_STORE = "storage_info_store";
     private static final String STATE_STORE = "state_store";
+    private static final String ACCESS_INFO_STORE = "access_info_store";
+
 
     private final StoredClassCatalog javaCatalog;
     private final Database storageInfoDatabase;
     private final Database stateDatabase;
+    private final Database accessInfoStore;
+
+
+
     private final TransactionRunner transactionRunner;
 
     private boolean _failed;
@@ -70,6 +76,8 @@ public class ReplicaStoreDatabase
             env.openDatabase(null, STORAGE_INFO_STORE, dbConfig);
         stateDatabase = env.openDatabase(null, STATE_STORE, dbConfig);
 
+        accessInfoStore = env.openDatabase(null, ACCESS_INFO_STORE, dbConfig);
+
         transactionRunner = new TransactionRunner(env);
     }
 
@@ -87,6 +95,7 @@ public class ReplicaStoreDatabase
         throws DatabaseException
     {
         if (!_closed) {
+            accessInfoStore.close();
             stateDatabase.close();
             storageInfoDatabase.close();
             javaCatalog.close();
@@ -119,6 +128,13 @@ public class ReplicaStoreDatabase
     {
         return stateDatabase;
     }
+
+    public final Database getAccessInfoStore()
+    {
+        return accessInfoStore;
+    }
+
+
 
     public DiskOrderedCursor openKeyCursor()
     {

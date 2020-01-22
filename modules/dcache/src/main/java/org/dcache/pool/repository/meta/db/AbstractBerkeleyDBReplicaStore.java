@@ -23,7 +23,7 @@ import com.sleepycat.collections.TransactionWorker;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
-import com.sleepycat.je.Transaction;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,6 +136,13 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
     StoredMap<String,CacheRepositoryEntryState> getStateMap()
     {
         return views.getStateMap();
+    }
+
+    /**
+     * Returns a database backed map of all AccessTimeInfo objects.
+     */
+    StoredMap<String, AccessTimeInfo> getAccessTimeInfo() {
+        return views.getAccessTimeInfo();
     }
 
     /** Closes the database. */
