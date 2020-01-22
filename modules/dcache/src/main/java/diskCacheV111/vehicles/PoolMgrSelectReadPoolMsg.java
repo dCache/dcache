@@ -13,6 +13,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.namespace.FileAttribute.*;
+import static diskCacheV111.poolManager.RequestContainerV5.RequestState.*;
 
 /**
  * Requests pool manager to provide a pool from which a given file can
@@ -152,4 +153,12 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
             return _previousStagePool;
         }
     }
+
+    @Override
+    public boolean requiresAffinity() {
+	// require affinity only it stage/p2p is enabled.
+	EnumSet<RequestContainerV5.RequestState> allowedStates = getAllowedStates();
+	return allowedStates.contains(ST_POOL_2_POOL) || allowedStates.contains(ST_STAGE);
+    }
+
 }

@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -87,7 +87,7 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
 
     private CellAddressCore backendFor(PoolManagerMessage msg)
     {
-        if (msg instanceof PoolMgrGetPoolMsg) {
+        if (msg.requiresAffinity() && msg instanceof PoolMgrGetPoolMsg) {
             return backendFor(((PoolMgrGetPoolMsg) msg).getFileAttributes().getPnfsId());
         }
         return serviceAddress;

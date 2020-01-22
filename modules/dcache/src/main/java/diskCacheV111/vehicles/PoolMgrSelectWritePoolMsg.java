@@ -50,4 +50,10 @@ public class PoolMgrSelectWritePoolMsg extends PoolMgrSelectPoolMsg
     {
         return _preallocated;
     }
+
+    @Override
+    public boolean requiresAffinity() {
+	return false;
+    }
+
 }
