@@ -2,9 +2,9 @@ CHAPTER 20.  STAGE PROTECTION
 =============================
 
 Access to tape is expensive. To avoid inefficient use of tape resources, or "stage mayhem" by random, chaotic  user
-activity a mechanism exists in dCahe called "stage protection" that allows to control access to data on tape based
+activity a mechanism exists in dCache called "stage protection" that allows to control access to data on tape based
 on user identity (DN), VO group membership and VO role (defined in FQAN),
-storage group and protocol. Attempts to stage data that does not satisfy criteria of
+storage group and protocol. Attempts to stage data that does not satisfy the criteria of
 stage permission configuration will result in permission denied errors.
 
 -----
@@ -13,8 +13,8 @@ stage permission configuration will result in permission denied errors.
 
 ## Configuration of stage protection
 
-The stage protection rules are captured in stage configuration file which
-is pointed to by  the variable :
+The stage protection rules are captured in a stage configuration file which
+is pointed to by the variable :
 
 ```ini
 dcache.authz.staging = <path>/StageConfiguration.conf
@@ -30,8 +30,8 @@ If set to `PoolManager` like so:
 dcache.authz.staging.pep = PoolManager
 ```
 
-then the stage protection applies to all transfers in the system and stage protection
-configuration file naturally has to be available on the host running `PoolManager`, if
+then the stage protection applies to all transfers in the system and the stage protection
+configuration file naturally has to be available on the host running `PoolManager`. If
 set for `doors` like:
 
 ```ini
@@ -47,7 +47,7 @@ The default settings are `dcache.authz.staging = ` (not set) and
 
 ## Defining stage protection
 
-Stage protection can be setup as a white or a black list.  Blacklisting is achieved by
+Stage protection can be set up as a white or a black list.  Blacklisting is achieved by
 using `!` in front of an expression.
 
 Each line of the list may contain up to four regular expressions
@@ -92,7 +92,7 @@ In the example above:
     `/C=DE/O=DESY/CN=Scooter`, irrespective of which VOMS groups he belongs to, is allowed to stage files located in the storage group
     `sql:chimera@osm`.
 
-If protocol is specified all four parameters must be provided; for
+If a protocol is specified, all four parameters must be provided; for
 example:
 
     ".*" "/atlas/Role=production" "h1:raw@osm" "Htt.*"
@@ -111,19 +111,19 @@ In the example above:
     `sql:chimera@osm` using GFTP protocol.
 
 
-Exact protocol names are `DCap-3.0`, `GFtp-1.0`, `GFtp-2.0`, `Http-1.1`, `NFS4-4.1` and ` Xrootd-2.7`.
-The version suffix is subject to change therefore `.*` comes in handy.
+The exact protocol names are `DCap-3.0`, `GFtp-1.0`, `GFtp-2.0`, `Http-1.1`, `NFS4-4.1` and ` Xrootd-2.7`.
+The version suffix is subject to change, therefore `.*` comes in handy.
 
 Non-authenticated protocols like plain `DCap` protocol or `NFS` protocol (if so setup)
 carry null for DN and FQAN. A `"""` expression will match nulls.
 
-In order to allow all users using `dCap` protocol to stage data for any storage
-group the list configuration would look like:
+In order to allow all users using the `dCap` protocol to stage data for any storage
+group the list, the configuration would look like this:
 
    ""  "" ".*" "DCap.*"
 
 NB: Once stage protection configuration exists, the PEP will process it for match and if
-no match found staging will be denied. Therefore an empty stage configuration file will
+no match is found, staging will be denied. Therefore an empty stage configuration file will
 effectively deny staging for all.
 
 As was mentioned above, black lists can be formed my adding `!<expr>` in front of matching
@@ -139,17 +139,17 @@ In this example:
 -   All non-authenticated users can stage files not belonging to storage groups matching
 `nova*` using any protocol.
 -   All non-authenticated users cannot stage files belonging to storage groups matching
-`nova*` using `NFS` protocol.
+`nova*` using the `NFS` protocol.
 
-NB: A root user is special. All authorization checks are by-passed for root user. Therefore
-in the example above as root user still will be able to stage `nova` data using `NFS` protocol.
+NB: A root user is special. All authorization checks are by-passed for root user. Therefore,
+in the example above, a root user will still be able to stage `nova` data using the `NFS` protocol.
 
-The `!` notation is a convenience feature, the same setup can be expressed in using proper
-Java regular expression for negation:
+The `!` notation is a convenience feature, the same setup can be expressed by using proper
+Java regular expressions for negation:
 
    ".+"
    "" "" "^(?:(?!nova).)*$"
    "" "" "nova.*"          "^(?:(?!NFS4).)*$"
 
-The stage protection configuration file can be edited on the running system at anytime and
-the policies will take effect once file is saved to disk.
+The stage protection configuration file can be edited on the running system at any time and
+the policies will take effect once the file is saved to disk.
