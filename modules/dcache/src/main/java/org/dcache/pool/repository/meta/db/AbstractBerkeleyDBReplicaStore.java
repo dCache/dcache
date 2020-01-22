@@ -138,6 +138,24 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
         return views.getStateMap();
     }
 
+
+    /**
+     * Returns a database backed map of all StorageInfo objects.
+     */
+    StoredMap<String,Long> getLastAccessInfo()
+    {
+        return views.getLastAccessInfo();
+    }
+
+
+    /**
+     * Returns a database backed map of all StorageInfo objects.
+     */
+    StoredMap<String,Long> getCreatTimeInfo()
+    {
+        return views.getCreatTimeInfo();
+    }
+
     /** Closes the database. */
     @Override
     public void close()
@@ -184,6 +202,11 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
     }
 
     public abstract void setLastModifiedTime(PnfsId pnfsId, long time) throws IOException;
+    public abstract void setCreationTime(PnfsId pnfsId, long time) throws IOException;
+
+
+    public abstract void setSize(PnfsId pnfsId, long size) throws IOException;
+
 
     public abstract long getFileSize(PnfsId pnfsId) throws IOException;
 

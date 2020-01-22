@@ -1,5 +1,7 @@
 package org.dcache.pool.repository.v5;
 
+import com.google.common.base.Stopwatch;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,6 +121,8 @@ public class ReplicaRepository
     private static final Logger LOGGER =
             LoggerFactory.getLogger(ReplicaRepository.class);
 
+    private final RequestExecutionTimeGauges<String> gauges
+            = new RequestExecutionTimeGauges<>(ReplicaRepository.class.getName());
     /**
      * Time in millisecs added to each sticky expiration task.  We
      * schedule the task later than the expiration time to account for
@@ -532,6 +536,9 @@ public class ReplicaRepository
     private PnfsId loadRecord(PnfsId id)
             throws CacheException, IllegalStateException,
             InterruptedException {
+        long t0 = System.nanoTime();
+        gauges.addGauge("1");
+
         ReplicaRecord entry = readReplicaRecord(id);
         if (entry != null) {
             ReplicaState state = entry.getState();
@@ -541,6 +548,12 @@ public class ReplicaRepository
         if (_state != State.LOADING) {
             throw new IllegalStateException("Repository was closed during loading.");
         }
+        gauges.update("1", System.nanoTime() - t0);
+        gauges.getAverageExecutionTime("1");
+        //System.out.println("get statistis " + gauges.getAverageExecutionTime("1"));
+        //System.out.println(" gauges"  + gauges.toString());
+
+
         return id;
     }
 
@@ -551,16 +564,28 @@ public class ReplicaRepository
         if (!compareAndSetState(State.INITIALIZED, State.LOADING)) {
             throw new IllegalStateException("Can only load repository after initialization and only once.");
         }
+        long t0 = System.nanoTime();
+        gauges.addGauge("2");
+
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
         try {
             LOGGER.warn("Reading inventory from {}.", _store);
             _store.init();
 
+            //System.out.println("After init : " + stopwatch.toString());
+
             Collection<PnfsId> ids = _store.index();
+
+            //System.out.println("After index: " + stopwatch.toString());
             int fileCount = ids.size();
 
             LOGGER.info("Checking meta data for {} files with {} threads.", fileCount, scanThreads);
             int cnt = 0;
+
+           //System.out.println("Building readReplicaRecord start: " + stopwatch.toString());
             if (scanThreads == 1) {
+
                 for (PnfsId id : ids) {
                     loadRecord(id);
                     _initializationProgress = ((float) ++cnt) / fileCount;
@@ -613,6 +638,8 @@ public class ReplicaRepository
                 if (!compareAndSetState(State.LOADING, State.OPEN)) {
                     throw new IllegalStateException("Repository was closed during loading.");
                 }
+                //System.out.println("Building readReplicaRecord end: " + stopwatch.toString());
+
             } finally {
                 _stateLock.writeLock().unlock();
             }
@@ -621,6 +648,14 @@ public class ReplicaRepository
         }
 
         LOGGER.info("Done generating inventory.");
+      System.out.println("Total: " + stopwatch.toString());
+
+
+      /*  gauges.update("2", System.nanoTime() - t0);
+        gauges.getAverageExecutionTime("2");
+        System.out.println("get stat " + gauges.getAverageExecutionTime("2"));
+        System.out.println(" gauges Total"  + gauges.toString());*/
+
     }
 
     @Override

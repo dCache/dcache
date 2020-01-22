@@ -10,6 +10,8 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.RateLimiter;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.pool.repository.v5.ReplicaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,6 +162,9 @@ public class PoolV4
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolV4.class);
 
     private String _poolName;
+
+    private final RequestExecutionTimeGauges<String> gauges
+            = new RequestExecutionTimeGauges<>(PoolV4.class.getName());
 
     /**
      * pool start time identifier.
@@ -501,6 +506,10 @@ public class PoolV4
     @Override
     public void afterStart()
     {
+
+        long t0 = System.nanoTime();
+        gauges.addGauge("1");
+
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Awaiting initialization");
         _pingThread.start();
         _threadFactory.newThread(() -> {
@@ -536,6 +545,12 @@ public class PoolV4
 
                 LOGGER.info("Repository finished");
             }).start();
+
+       /* gauges.update("1", System.nanoTime() - t0);
+        gauges.getAverageExecutionTime("1");
+        System.out.println("get stat " + gauges.getAverageExecutionTime("1"));
+        System.out.println(" gauges POOLV4"  + gauges.toString());*/
+
     }
 
     @Override

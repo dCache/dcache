@@ -43,6 +43,11 @@ public interface ReplicaRecord
     long getLastAccessTime();
 
     void setLastAccessTime(long time) throws CacheException;
+    void setCreationTime(long time) throws CacheException;
+
+
+    void setSize(long size) throws CacheException;
+
 
     int decrementLinkCount();
 

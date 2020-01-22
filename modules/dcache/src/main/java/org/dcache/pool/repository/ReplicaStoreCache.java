@@ -267,6 +267,43 @@ public class ReplicaStoreCache
             }
         }
 
+
+        @Override
+        public void setCreationTime(long time) throws CacheException
+        {
+            try {
+                CacheEntry currentEntry = new CacheEntryImpl(_record);
+                _record.setCreationTime(time);
+                CacheEntry updatedEntry = new CacheEntryImpl(_record);
+                _stateChangeListener.accessTimeChanged(new EntryChangeEvent("creation time updated", currentEntry, updatedEntry));
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
+        }
+
+        @Override
+        public void setSize(long size) throws CacheException {
+
+            try {
+                CacheEntry currentEntry = new CacheEntryImpl(_record);
+
+               // _record.setSize(currentEntry.getReplicaSize());
+                _record.setSize(size);
+
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
+        }
+
+
         @Override
         public synchronized int decrementLinkCount()
         {

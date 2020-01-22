@@ -61,6 +61,7 @@ public class FlatFileStore implements FileStore
 
     @Override
     public BasicFileAttributeView getFileAttributeView(PnfsId id) {
+        //new RuntimeException("Should not get here").printStackTrace();
         Path p = getPath(id);
         return Files.getFileAttributeView(p, BasicFileAttributeView.class);
     }

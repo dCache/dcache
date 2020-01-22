@@ -123,4 +123,5 @@ public interface ReplicaDescriptor
      * Returns the current size of the replica.
      */
     long getReplicaSize();
+
 }

@@ -2,6 +2,7 @@ package org.dcache.pool.repository.v5;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +97,8 @@ class WriteHandleImpl implements ReplicaDescriptor
 
     /** Last access time of new replica. */
     private Long _atime;
+    private Long _size;
+
 
     private boolean hasChannelBeenCreated;
 
@@ -193,10 +196,15 @@ class WriteHandleImpl implements ReplicaDescriptor
 
         try {
             _entry.setLastAccessTime((_atime == null) ? System.currentTimeMillis() : _atime);
+            _entry.setCreationTime((_atime == null) ? System.currentTimeMillis() : _atime);
 
+            // _entry.setSize((_size == null) ? _entry.getReplicaSize() : _size);
+
+            //System.out.println("test _entry.getReplicaSize()" + _entry.getReplicaSize());
             long length = _entry.getReplicaSize();
             verifyFileSize(length);
             _fileAttributes.setSize(length);
+            //_entry.setSize(_size);
 
             boolean namespaceUpdated = false;
             do {

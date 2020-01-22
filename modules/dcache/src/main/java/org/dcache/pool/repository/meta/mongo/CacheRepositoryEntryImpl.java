@@ -161,6 +161,16 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
+    public void setCreationTime(long time) throws CacheException {
+        
+    }
+
+    @Override
+    public void setSize(long size) throws CacheException {
+
+    }
+
+    @Override
     public synchronized PnfsId getPnfsId() {
         return pnfsId;
     }

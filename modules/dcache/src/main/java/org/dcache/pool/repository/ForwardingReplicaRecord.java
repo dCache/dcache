@@ -78,6 +78,12 @@ public abstract class ForwardingReplicaRecord implements ReplicaRecord
     }
 
     @Override
+    public void setCreationTime(long time) throws CacheException
+    {
+        delegate().setCreationTime(time);
+    }
+
+    @Override
     public long getLastAccessTime()
     {
         return delegate().getLastAccessTime();
@@ -87,6 +93,12 @@ public abstract class ForwardingReplicaRecord implements ReplicaRecord
     public void setLastAccessTime(long time) throws CacheException
     {
         delegate().setLastAccessTime(time);
+    }
+
+    @Override
+    public void setSize(long size) throws CacheException
+    {
+        delegate().setSize(size);
     }
 
     @Override

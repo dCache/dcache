@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.repository.checksums;
 
+import diskCacheV111.util.CacheException;
 import org.dcache.pool.movers.ChecksumChannel;
 
 import java.io.IOException;
@@ -72,4 +73,6 @@ public class ChecksumReplicaRecord extends ForwardingReplicaRecord
             return super.openChannel(mode);
         }
     }
+
+  
 }

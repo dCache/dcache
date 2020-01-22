@@ -104,6 +104,11 @@ public class ReplicaStoreHelper implements ReplicaStore
         }
 
         @Override
+        public void setSize(long size) throws CacheException {
+
+        }
+
+        @Override
         public synchronized int getLinkCount()
         {
             return _linkCount;

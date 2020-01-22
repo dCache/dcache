@@ -104,6 +104,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     {
         _executor.execute(new FireAndForgetTask(() -> {
             ReplicaDescriptor handle = mover.getIoHandle();
+
             try {
                 try {
                     if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
@@ -113,6 +114,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                                                                   Optional.ofNullable(mover.getActualChecksums())
                                                                           .orElse(Collections.emptySet()));
                     }
+
                     handle.commit();
                 } finally {
                     handle.close();
@@ -145,6 +147,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                                         "Transfer failed due to unexpected exception: " + e.getMessage());
                 completionHandler.failed(e, null);
             }
+
             sendBillingMessage(mover, handle.getReplicaSize());
             sendFinished(mover);
         }));

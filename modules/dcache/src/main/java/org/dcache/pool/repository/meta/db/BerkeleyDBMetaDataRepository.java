@@ -1,6 +1,7 @@
 package org.dcache.pool.repository.meta.db;
 
 import com.google.common.base.Stopwatch;
+import com.hazelcast.map.impl.recordstore.Storage;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
@@ -14,6 +15,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,6 +24,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -106,11 +110,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     {
         try {
 
-            BasicFileAttributes attributes = _fileStore.getFileAttributeView(id).readAttributes();
-            if (!attributes.isRegularFile()) {
-                throw new DiskErrorCacheException("Not a regular file: " + _fileStore.get(id));
-            }
-            return CacheRepositoryEntryImpl.load(this, id, attributes);
+            return CacheRepositoryEntryImpl.load(this, id, _fileStore);
         } catch (EnvironmentFailureException e) {
             if (!isValid()) {
                 throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
@@ -133,16 +133,16 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
             throws CacheException
     {
         try {
-
             if (_fileStore.contains(id)) {
                 throw new DuplicateEntryException(id);
             }
             views.getStorageInfoMap().remove(id.toString());
             views.getStateMap().remove(id.toString());
+            views.getLastAccessInfo().remove(id.toString());
             if (flags.contains(StandardOpenOption.CREATE)) {
                 _fileStore.create(id);
             }
-            return new CacheRepositoryEntryImpl(this, id);
+            return new CacheRepositoryEntryImpl(this, id, _fileStore );
         } catch (IOException e) {
             throw new DiskErrorCacheException(
                     "Failed to create new entry " + id + ": " + messageOrClassName(e), e);
@@ -161,6 +161,10 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
         try {
             views.getStorageInfoMap().remove(id.toString());
             views.getStateMap().remove(id.toString());
+            views.getLastAccessInfo().remove(id.toString());
+            views.getLastAccessInfo().remove(id.toString());
+            views.getCreatTimeInfo().remove(id.toString());
+
         } catch (EnvironmentFailureException e) {
             if (!isValid()) {
                 throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
@@ -217,25 +221,93 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
         }
     }
 
+
     @Override
     public void setLastModifiedTime(PnfsId pnfsId, long time) throws IOException
     {
-        _fileStore.getFileAttributeView(pnfsId)
-                .setTimes(FileTime.fromMillis(time), null, null);
+        if (System.getProperty("DCACHE_1") == null){
+            views.getLastAccessInfo().put(pnfsId.toString(), time);
+            //views.getCreatTimeInfo().put(pnfsId.toString(), time);
+
+
+        }
+
+        else{
+
+
+            _fileStore.getFileAttributeView(pnfsId)
+                    .setTimes(FileTime.fromMillis(time), null, null);
+        }
+
+
     }
+
+    @Override
+    public void setCreationTime(PnfsId pnfsId, long time) throws IOException
+    {
+        if (System.getProperty("DCACHE_1") == null){
+           // views.getLastAccessInfo().put(pnfsId.toString(), time);
+            views.getCreatTimeInfo().put(pnfsId.toString(), time);
+
+
+        }
+
+        else{
+
+
+            _fileStore.getFileAttributeView(pnfsId)
+                    .setTimes(FileTime.fromMillis(time), null, null);
+        }
+
+
+    }
+
+    @Override
+    public void setSize(PnfsId pnfsId, long size) throws IOException {
+
+
+        if (System.getProperty("DCACHE_1") == null){
+
+            StorageInfo info =  views.getStorageInfoMap().get(pnfsId.toString());
+
+            info.setLegacySize(size);
+            views.getStorageInfoMap().put(pnfsId.toString(),info);
+        }
+
+        else{
+
+
+
+        }
+    }
+
 
     @Override
     public long getFileSize(PnfsId pnfsId) throws IOException
     {
         try {
-            return _fileStore
-                    .getFileAttributeView(pnfsId)
-                    .readAttributes()
-                    .size();
+            Instant instant = Instant.now();
+            StorageInfo sI = views.getStorageInfoMap().get(pnfsId.toString());
+
+            if (sI != null) {
+                return sI.getLegacySize();
+            }
+
+            else{
+                return _fileStore
+                        .getFileAttributeView(pnfsId)
+                        .readAttributes()
+                        .size();
+            }
+
+
         } catch (NoSuchFileException e) {
             return 0;
         }
     }
+
+
+
 
     @Override
     public URI getUri(PnfsId pnfsId)

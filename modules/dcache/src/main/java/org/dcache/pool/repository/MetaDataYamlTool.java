@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Map;
 
 import diskCacheV111.util.CacheException;
@@ -58,6 +59,10 @@ public class MetaDataYamlTool
 
                     out.format("%s:\n", id);
                     out.format("  state: %s\n", record.getState());
+                    out.format("  lastaccess: %s\n", Instant.ofEpochMilli(record.getLastAccessTime()));
+
+                    //sb.append(ISO8601_FORMAT.format(Instant.ofEpochMilli(entry.getLastAccessTime())))
+
                     out.format("  sticky:\n");
                     for (StickyRecord sticky : record.stickyRecords()) {
                         out.format("    %s: %d\n", sticky.owner(), sticky.expire());

@@ -21,9 +21,18 @@ class ReplicaStoreView
     private final ReplicaStoreDatabase db;
     private final StoredMap<String, StorageInfo> storageInfoMap;
     private final StoredMap<String, CacheRepositoryEntryState> stateMap;
+    private final StoredMap<String, Long> lastAccessInfo;
+    private final StoredMap<String, Long> creatTimeInfo;
+
+
     private final EntryBinding<String> keyBinding;
     private final EntryBinding<StorageInfo> storageInfoBinding;
     private final EntryBinding<CacheRepositoryEntryState> stateBinding;
+    private final EntryBinding<Long> lastAccessBinding;
+    private final EntryBinding<Long> creatTimeBinding;
+
+
+
 
     public ReplicaStoreView(ReplicaStoreDatabase db)
     {
@@ -35,12 +44,25 @@ class ReplicaStoreView
                 new SerialBinding<>(catalog, StorageInfo.class);
         stateBinding =
                 new SerialBinding<>(catalog, CacheRepositoryEntryState.class);
+        lastAccessBinding =
+                new SerialBinding<>(catalog, Long.class);
+
+        creatTimeBinding =
+                new SerialBinding<>(catalog, Long.class);
+
         storageInfoMap =
             new StoredMap<>(db.getStorageInfoDatabase(),
                             keyBinding, storageInfoBinding, true);
         stateMap =
             new StoredMap<>(db.getStateDatabase(),
                             keyBinding, stateBinding, true);
+        lastAccessInfo =
+                new StoredMap<>(db.getLastAccessDatabase(),
+                        keyBinding,lastAccessBinding, true);
+
+        creatTimeInfo =
+                new StoredMap<>(db.getCreationTimeDatabase(),
+                        keyBinding,creatTimeBinding, true);
     }
 
     public final StoredMap<String, StorageInfo> getStorageInfoMap()
@@ -51,6 +73,17 @@ class ReplicaStoreView
     public final StoredMap<String, CacheRepositoryEntryState> getStateMap()
     {
         return stateMap;
+    }
+
+    public final StoredMap<String, Long> getLastAccessInfo()
+    {
+        return lastAccessInfo;
+    }
+
+
+    public final StoredMap<String, Long> getCreatTimeInfo()
+    {
+        return creatTimeInfo;
     }
 
     public final <A,R> R collectKeys(Collector<String,A,R> collector)

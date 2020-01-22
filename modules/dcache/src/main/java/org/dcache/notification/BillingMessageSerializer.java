@@ -73,7 +73,7 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         protocolInfo.put("host", remoteHost.getAddress().getHostAddress());
         o.put("protocolInfo", protocolInfo);
 
-        o.put("initiator", data.getInitiator());
+        o.put(" ", data.getInitiator());
         o.put("isP2p", data.isP2P());
         o.put("transferPath", data.getTransferPath());
         return o.toString().getBytes(UTF_8);

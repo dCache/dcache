@@ -1533,6 +1533,7 @@ public class RequestContainerV5
 
                         if( _bestPool == null) {
                             if( _enforceP2P ){
+
                                nextStep(RequestState.ST_DONE , CONTINUE ) ;
                             }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
                                _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
