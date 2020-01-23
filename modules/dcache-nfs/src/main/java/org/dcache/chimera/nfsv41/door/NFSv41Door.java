@@ -74,7 +74,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -94,6 +96,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.FsExport;
+import org.dcache.nfs.InetAddressMatcher;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
@@ -169,7 +172,6 @@ import org.dcache.oncrpc4j.rpc.gss.GssSessionManager;
 
 import static java.util.stream.Collectors.toList;
 
-import java.util.stream.Stream;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -972,7 +974,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             description = "Show NFSv4 clients and corresponding sessions.")
     public class ShowClientsCmd implements Callable<String> {
 
-        @Argument(required = false, metaVar = "host")
+        @Argument(required = false, metaVar = "host", usage = "address/netmask|pattern")
         String host;
 
         @Override
@@ -981,12 +983,13 @@ public class NFSv41Door extends AbstractCellComponent implements
                 return "NFSv4 server not running.";
             }
 
-            InetAddress clientAddress = InetAddress.getByName(host);
-            StringBuilder sb = new StringBuilder();
+            Predicate<InetAddress> clientMatcher =
+		    host == null ? c -> true: InetAddressMatcher.forPattern(host);
 
+            StringBuilder sb = new StringBuilder();
             _nfs4.getStateHandler().getClients()
                     .stream()
-                    .filter(c -> host == null? true : c.getRemoteAddress().getAddress().equals(clientAddress))
+                    .filter(c -> clientMatcher.test(c.getRemoteAddress().getAddress()))
                     .forEach(c -> {
                         sb.append("    ").append(c).append("\n");
                         for (NFSv41Session session : c.sessions()) {
