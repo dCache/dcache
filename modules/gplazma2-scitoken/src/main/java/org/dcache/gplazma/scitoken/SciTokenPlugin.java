@@ -178,6 +178,9 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
         if (SciTokenScope.isSciTokenScope(scope)) {
             return Optional.of(new SciTokenScope(scope));
         }
+        if (WlcgProfileScope.isWlcgProfileScope(scope)) {
+            return Optional.of(new WlcgProfileScope(scope));
+        }
         return Optional.empty();
     }
 

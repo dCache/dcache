@@ -548,6 +548,8 @@ public class SciTokenPluginTest
         assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/different-file.dat")));
     }
 
+    /* Tests targeting SciToken claims */
+
     @Test
     public void shouldAllowReadOnlyAccess() throws Exception
     {
@@ -877,6 +879,201 @@ public class SciTokenPluginTest
         assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/file.dat")));
         assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/file.dat")));
         assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/new-file.dat")));
+    }
+
+    /* Tests for the WLCG Common profile. */
+
+    @Test
+    public void shouldAllowReadOnlyAccessWithWlcgClaim() throws Exception
+    {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix/path uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("jti", jti)
+                .withClaim("sub", sub)
+                .withClaim("scope", "storage.read:/")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
+                new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
+                new JwtJtiPrincipal("EXAMPLE", jti)));
+        assertFalse(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.ROOT));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/new-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/different-file.dat")));
+    }
+
+    @Test
+    public void shouldAllowReadOnlyAccessWithWlcgClaimWithNonRootPath() throws Exception
+    {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix/path uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("jti", jti)
+                .withClaim("sub", sub)
+                .withClaim("scope", "storage.read:/data/general")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
+                new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
+                new JwtJtiPrincipal("EXAMPLE", jti)));
+        assertFalse(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path/data/general")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path/data")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.ROOT));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/data/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/path/data/general/file.dat")));
+    }
+
+    @Test
+    public void shouldAllowModifyOnlyAccessWithWlcgClaim() throws Exception
+    {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix/path uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("jti", jti)
+                .withClaim("sub", sub)
+                .withClaim("scope", "storage.modify:/")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
+                new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
+                new JwtJtiPrincipal("EXAMPLE", jti)));
+        assertFalse(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/path/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/path/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.ROOT));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/file.dat")));
+    }
+
+    @Test
+    public void shouldAllowModifyOnlyAccessWithWlcgClaimWithNonRootPath() throws Exception
+    {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix/path uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("jti", jti)
+                .withClaim("sub", sub)
+                .withClaim("scope", "storage.modify:/data/general")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
+                new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
+                new JwtJtiPrincipal("EXAMPLE", jti)));
+        assertFalse(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path/data/general")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path/data")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.ROOT));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/data/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/path/data/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/path/data/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/file.dat")));
+    }
+
+    @Test
+    public void shouldAllowCreateOnlyAccessWithWlcgClaim() throws Exception
+    {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix/path uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("jti", jti)
+                .withClaim("sub", sub)
+                .withClaim("scope", "storage.create:/")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
+                new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
+                new JwtJtiPrincipal("EXAMPLE", jti)));
+        assertFalse(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/path/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.ROOT));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/file.dat")));
+    }
+
+    @Test
+    public void shouldAllowCreateOnlyAccessWithWlcgClaimWithNonRootPath() throws Exception
+    {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix/path uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("jti", jti)
+                .withClaim("sub", sub)
+                .withClaim("scope", "storage.create:/data/general")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
+                new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
+                new JwtJtiPrincipal("EXAMPLE", jti)));
+        assertFalse(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path/data/general")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path/data")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.ROOT));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE, FsPath.create("/prefix/path/data/general/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/data/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(UPLOAD, FsPath.create("/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/path/data/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/path/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/prefix/file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/file.dat")));
     }
 
     private void whenAuthenticatingWith(PrincipalSetMaker maker) throws AuthenticationException
