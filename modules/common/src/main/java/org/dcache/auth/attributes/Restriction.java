@@ -151,4 +151,9 @@ public interface Restriction extends LoginAttribute, Serializable
      * (activity,path) pairs that {@code #isRestricted} returns true.
      */
     boolean isSubsumedBy(Restriction other);
+
+    /**
+     * Provide a short, single-line description of this restriction.
+     */
+    String toString();
 }

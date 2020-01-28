@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -95,6 +95,12 @@ public class MultiTargetedRestriction implements Restriction
                     .compare(this.path, other.path, Ordering.usingToString())
                     .compare(this.activities, other.activities, Ordering.natural().lexicographical())
                     .result();
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Authorisation{allowing " + activities + " on " + path + "}";
         }
     }
 
@@ -208,5 +214,11 @@ public class MultiTargetedRestriction implements Restriction
         }
 
         return false;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "MultiTargetedRestriction["+authorisations.toString() + "]";
     }
 }
