@@ -9,9 +9,13 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.LoginStrategyAware;
+import org.dcache.xrootd.core.XrootdAuthorizationHandlerFactory;
 import org.dcache.xrootd.door.LoginAuthenticationHandlerFactory;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
 import org.dcache.xrootd.plugins.AuthenticationProvider;
+import org.dcache.xrootd.plugins.AuthorizationFactory;
+import org.dcache.xrootd.plugins.AuthorizationProvider;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.plugins.InvalidHandlerConfigurationException;
 import org.dcache.xrootd.plugins.ProxyDelegationClientFactory;
@@ -38,10 +42,14 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
     private static final ServiceLoader<AuthenticationProvider> _authenticationProviders =
             ServiceLoader.load(AuthenticationProvider.class);
 
+    private static final ServiceLoader<AuthorizationProvider> _authorizationProviders =
+                    ServiceLoader.load(AuthorizationProvider.class);
+
     private static final ServiceLoader<ProxyDelegationClientFactory> _clientFactories =
                     ServiceLoader.load(ProxyDelegationClientFactory.class);
 
     private static final String GPLAZMA_PREFIX = "gplazma:";
+    private static final String AUTHZ_PREFIX = "authz:";
 
     private LoginStrategy        _loginStrategy;
     private LoginStrategy        _anonymousLoginStrategy;
@@ -100,6 +108,9 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
             if (plugin.startsWith(GPLAZMA_PREFIX)) {
                 String name = plugin.substring(GPLAZMA_PREFIX.length());
                 factories.add(createAuthenticationHandlerFactory(name));
+            } else if (plugin.startsWith(AUTHZ_PREFIX)) {
+                String name = plugin.substring(AUTHZ_PREFIX.length());
+                factories.add(createAuthorizationHandlerFactory(name));
             } else {
                 factories.add(createChannelHandlerFactory(plugin));
             }
@@ -130,6 +141,21 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         }
 
         throw new IllegalArgumentException("Authentication plugin not found: " + name);
+    }
+
+    private ChannelHandlerFactory createAuthorizationHandlerFactory(String name) throws Exception
+    {
+        for (AuthorizationProvider provider: _authorizationProviders) {
+            AuthorizationFactory authzFactory = provider.createFactory(name, _properties);
+            if (authzFactory != null) {
+                if (authzFactory instanceof LoginStrategyAware) {
+                    ((LoginStrategyAware)authzFactory).setLoginStrategy(_loginStrategy);
+                }
+                return new XrootdAuthorizationHandlerFactory(authzFactory);
+            }
+        }
+
+        throw new IllegalArgumentException("Authorization plugin not found: " + name);
     }
 
     private ProxyDelegationClientFactory createProxyDelegationClientFactory(String name)
