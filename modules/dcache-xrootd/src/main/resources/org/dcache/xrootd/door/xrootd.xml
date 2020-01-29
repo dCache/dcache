@@ -191,16 +191,23 @@
     <property name="user" value="${xrootd.authz.user}"/>
   </bean>
 
-  <bean id="loginstrategy" class="org.dcache.auth.UnionLoginStrategy">
-    <description>Login strategy suitable for GSI</description>
-    <property name="loginStrategies">
-      <list>
-	<bean class="org.dcache.services.login.RemoteLoginStrategy">
-	  <property name="cellStub" ref="gPlazma-stub" />
-	</bean>
-      </list>
-    </property>
-    <property name="anonymousAccess" value="${xrootd.authz.anonymous-operations}"/>
+  <bean id="loginstrategy" class="org.dcache.auth.CachingLoginStrategy">
+    <description>Caching login strategy suitable for GSI and SciTokens</description>
+    <constructor-arg index="0">
+      <bean class="org.dcache.auth.UnionLoginStrategy">
+        <property name="loginStrategies">
+          <list>
+            <bean class="org.dcache.services.login.RemoteLoginStrategy">
+              <property name="cellStub" ref="gPlazma-stub" />
+            </bean>
+          </list>
+        </property>
+        <property name="anonymousAccess" value="${xrootd.authz.anonymous-operations}"/>
+      </bean>
+    </constructor-arg>
+    <constructor-arg index="1" value="${xrootd.limits.login-cache.size}"/>
+    <constructor-arg index="2" value="${xrootd.limits.login-cache.lifetime}"/>
+    <constructor-arg index="3" value="${xrootd.limits.login-cache.lifetime.unit}"/>
   </bean>
 
   <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">

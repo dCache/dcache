@@ -12,6 +12,9 @@ check -strong xrootd.net.listen
 check -strong xrootd.net.backlog
 check -strong xrootd.enable.proxy-protocol
 check -strong xrootd.limits.threads
+check -strong xrootd.limits.login-cache.lifetime
+check -strong xrootd.limits.login-cache.lifetime.unit
+check -strong xrootd.limits.login-cache.size
 check -strong xrootd.root
 check -strong xrootd.service.pool.timeout
 check -strong xrootd.service.pool.timeout.unit
