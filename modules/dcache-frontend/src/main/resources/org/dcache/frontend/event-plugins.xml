@@ -30,10 +30,17 @@
   <bean class="org.dcache.restful.events.streams.metronome.Metronome"
 	destroy-method="shutdown"/>
 
+
   <bean class="org.dcache.restful.events.streams.inotify.Inotify">
       <property name="pnfsHandler">
           <bean class="diskCacheV111.util.PnfsHandler">
               <constructor-arg ref="pnfs-stub"/>
+          </bean>
+      </property>
+      <property name="executor">
+          <bean class="org.dcache.util.BoundedCachedExecutor"
+                destroy-method="shutdownNow">
+              <constructor-arg value="10"/>  <!-- Maximum number of threads delivering events -->
           </bean>
       </property>
   </bean>
