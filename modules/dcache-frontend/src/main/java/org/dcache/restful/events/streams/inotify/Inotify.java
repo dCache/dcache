@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
@@ -36,8 +37,8 @@ import org.springframework.beans.factory.annotation.Required;
 import javax.annotation.concurrent.GuardedBy;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -231,6 +232,20 @@ public class Inotify implements EventStream, CellMessageReceiver,
                 requestClose();
             }
         }
+
+        private synchronized void acceptEventIfNotClosed(JsonNode json)
+        {
+            if (!isClosed) {
+                acceptEvent(json);
+            }
+        }
+
+        private synchronized void acceptEventIfSendable(EventType type, String filename, JsonNode json)
+        {
+            if (isSendableEvent(type, filename)) {
+                acceptEvent(json);
+            }
+        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Inotify.class);
@@ -242,7 +257,7 @@ public class Inotify implements EventStream, CellMessageReceiver,
 
     private final Map<WatchIdentity,InotifySelection> selectionByWatch = new ConcurrentHashMap<>();
     private final SetMultimap<PnfsId,InotifySelection> selectionByPnfsId =
-            MultimapBuilder.hashKeys().hashSetValues().build();
+            Multimaps.synchronizedSetMultimap(MultimapBuilder.hashKeys().hashSetValues().build());
     private final ObjectMapper mapper = new ObjectMapper();
 
     private PnfsHandler pnfsHandler;
@@ -344,12 +359,14 @@ public class Inotify implements EventStream, CellMessageReceiver,
     {
         Map<PnfsId,Collection<EventType>> selectedEvents = new HashMap<>();
 
-        selectionByPnfsId.asMap().forEach((id,selections) -> {
-                    // Always subscribe to IN_DELETE_SELF to discover when to close subscription
-                    Collection<EventType> events = EnumSet.of(EventType.IN_DELETE_SELF);
-                    selections.forEach(s -> events.addAll(s.selectedEvents()));
-                    selectedEvents.put(id, events);
-                });
+        synchronized (selectionByPnfsId) {
+            selectionByPnfsId.asMap().forEach((id,selections) -> {
+                        // Always subscribe to IN_DELETE_SELF to discover when to close subscription
+                        Collection<EventType> events = EnumSet.of(EventType.IN_DELETE_SELF);
+                        selections.forEach(s -> events.addAll(s.selectedEvents()));
+                        selectedEvents.put(id, events);
+                    });
+        }
 
         return EventNotifier.toZkData(selectedEvents);
     }
@@ -359,7 +376,7 @@ public class Inotify implements EventStream, CellMessageReceiver,
         message.forEachEvent(this::acceptEvent);
     }
 
-    private synchronized void acceptEvent(Event rawEvent)
+    private void acceptEvent(Event rawEvent)
     {
         LOGGER.debug("accepting event: {}", rawEvent);
 
@@ -367,33 +384,42 @@ public class Inotify implements EventStream, CellMessageReceiver,
 
         case "inotify":
             InotifyEvent inotifyEvent = (InotifyEvent) rawEvent;
-            EventType type = inotifyEvent.getEventType();
-            String filename = inotifyEvent.getName();
 
-            Collection<InotifySelection> selections = inotifyEvent.getTarget() == null
-                    ? selectionByWatch.values()
-                    : selectionByPnfsId.get(inotifyEvent.getTarget());
-
-            if (selections.stream().anyMatch(s -> s.isSendableEvent(type, filename))) {
-                JsonNode json = mapper.convertValue(new InotifyEventPayload(inotifyEvent),
-                        JsonNode.class);
-                selections.stream()
-                        .filter(s -> s.isSendableEvent(type, filename))
-                        .forEach(s -> s.acceptEvent(json));
+            Collection<InotifySelection> targetSelections;
+            if (inotifyEvent.getTarget() == null) {
+                /* The "self" inotify events. */
+                targetSelections = selectionByWatch.values();
+            } else {
+                /* The "child" inotify events. */
+                synchronized (selectionByPnfsId) {
+                    Set<InotifySelection> targetSelectionsView = selectionByPnfsId.get(inotifyEvent.getTarget());
+                    targetSelections = new ArrayList(targetSelectionsView);
+                }
             }
-
-            if (type.equals(EventType.IN_DELETE_SELF)) {
-                selections.forEach(InotifySelection::requestClose);
-            }
+            sendEventToSelections(inotifyEvent, targetSelections);
             break;
 
         case "SYSTEM":
             SystemEvent systemEvent = (SystemEvent) rawEvent;
             JsonNode json = mapper.convertValue(new InotifyEventPayload(systemEvent), JsonNode.class);
-            selectionByWatch.values().stream()
-                    .filter(s -> !s.isClosed())
-                    .forEach(s -> s.acceptEvent(json));
+            selectionByWatch.values().forEach(s -> s.acceptEventIfNotClosed(json));
             break;
+        }
+    }
+
+    private void sendEventToSelections(InotifyEvent event, Collection<InotifySelection> selections)
+    {
+        EventType type = event.getEventType();
+        String filename = event.getName();
+
+        if (selections.stream().anyMatch(s -> s.isSendableEvent(type, filename))) {
+            JsonNode json = mapper.convertValue(new InotifyEventPayload(event),
+                    JsonNode.class);
+            selections.forEach(s -> s.acceptEventIfSendable(type, filename, json));
+        }
+
+        if (type.equals(EventType.IN_DELETE_SELF)) {
+            selections.forEach(InotifySelection::requestClose);
         }
     }
 
