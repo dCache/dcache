@@ -954,7 +954,7 @@ public abstract class AbstractFtpDoorV1
     private final String _ftpDoorName;
     protected Checksum _checkSum;
     protected ChecksumType _optCheckSumType;
-    protected long _allo;
+    protected OptionalLong _allo;
 
     /** List of selected RFC 3659 facts. */
     protected Set<Fact> _currentFacts = Sets.newHashSet(
@@ -1024,7 +1024,7 @@ public abstract class AbstractFtpDoorV1
                 });
             }
 
-            setAllocation(_allo);
+            _allo.ifPresent(this::setAllocation);
             setIoQueue(_settings.getIoQueueName());
 
             _offset = offset;
@@ -2384,13 +2384,14 @@ public abstract class AbstractFtpDoorV1
     {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
 
-        _allo = 0;
+        _allo = OptionalLong.empty();
 
         Matcher matcher = ALLO_PATTERN.matcher(arg);
         checkFTPCommand(matcher.matches(), 501, "Invalid argument");
 
         try {
-            _allo = Long.parseLong(matcher.group(1));
+            long size = Long.parseLong(matcher.group(1));
+            _allo = OptionalLong.of(size);
         } catch (NumberFormatException e) {
             throw new FTPCommandException(501, "Invalid argument");
         }
@@ -3530,7 +3531,7 @@ public abstract class AbstractFtpDoorV1
             LOGGER.error("Retrieve failed", e);
             transfer.abort(451, "Transient internal failure");
         } finally {
-            _allo = 0;
+            _allo = OptionalLong.empty();
         }
     }
 
@@ -3574,7 +3575,7 @@ public abstract class AbstractFtpDoorV1
         checkFTPCommand(xferMode != TransferMode.MODE_X || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
                 504, "Cannot use passive X mode");
         checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
-        checkFTPCommand(!_maximumUploadSize.isPresent() || _allo <= _maximumUploadSize.getAsLong(),
+        checkFTPCommand(!_maximumUploadSize.isPresent() || !_allo.isPresent() || _allo.getAsLong() <= _maximumUploadSize.getAsLong(),
                 552, "File exceeds allowed size");
 
         FtpTransfer transfer =
@@ -3641,7 +3642,7 @@ public abstract class AbstractFtpDoorV1
             transfer.abort(451, "Transient internal failure");
         } finally {
             _checkSum = null;
-            _allo = 0;
+            _allo = OptionalLong.empty();
         }
     }
 
