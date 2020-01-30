@@ -33,6 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -85,6 +87,18 @@ import static org.dcache.restful.util.transfers.Json.readFromJar;
  * An EventStream that provides the client with events based on namespace
  * activity.  The dCache-internal events that this EventStream provides are
  * closely modelled on the inotify(7) API, from Linux.
+ * <p>
+ * Care must be taken when entering the two monitors: Inotify and
+ * InotifySelection.  To avoid lock inversions (ABBA-type deadlocks), we must
+ * guarantee that the Inotify monitor is <emph>NEVER</emph> entered after a
+ * thread has entered the InotifySelection monitor.
+ * <p>
+ * One way to achieve this is to always enter the Inotify monitor before
+ * entering the InotifySelection monitor.  This is sufficient to guarantee
+ * the code is free of such ABBA deadlocks, but this isn't strictly necessary.
+ * If the code can guarantee that the Inotify monitor is never entered then it
+ * is safe to enter the InotifySelection monitor without first entering the
+ * Inotify monitor.
  */
 public class Inotify implements EventStream, CellMessageReceiver,
         CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware
@@ -158,11 +172,13 @@ public class Inotify implements EventStream, CellMessageReceiver,
         }
 
         @Override
-        public synchronized void close()
+        public void close()
         {
             boolean justClosed;
 
             synchronized (this) {
+                /* IMPORTANT: must NOT enter the Inotify monitor while inside
+                 * this InotifySelection monitor. */
                 justClosed = !isClosed;
 
                 if (justClosed) {
@@ -184,8 +200,10 @@ public class Inotify implements EventStream, CellMessageReceiver,
             }
         }
 
+        @GuardedBy("this")
         private void sendEvent(JsonNode json)
         {
+            /* MUST NOT cause this thread to enter the Inotify monitor. */
             eventReceiver.accept(identity.selectionId(), json);
         }
 
