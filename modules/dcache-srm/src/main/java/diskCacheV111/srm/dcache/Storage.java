@@ -256,7 +256,6 @@ public final class Storage
             "space reservation is disabled";
     private static final String SFN_STRING = "SFN=";
 
-
     private static final LoadingCache<InetAddress,String> GET_HOST_BY_ADDR_CACHE =
             CacheBuilder.newBuilder()
                     .expireAfterWrite(10, MINUTES)
@@ -868,30 +867,45 @@ public final class Storage
         }
 
         int port = surl.getPort();
-        boolean result = doors.stream().anyMatch(i -> (port == -1 || port == i.getPort())
-                && i.getProtocolFamily().equals(srmProtocol)
-                && i.getAddresses().stream()
-                        .map(InetAddress::getHostName)
-                        .anyMatch(n -> n.equalsIgnoreCase(surl.getHost())));
-        if (_log.isDebugEnabled() && result == false) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Identifying SURL ").append(surl).append(" as non-local: no matching door:\n");
-            for (LoginBrokerInfo i : doors) {
-                sb.append("    ").append(i.toString()).append(" ");
-                if (port != -1 && port != i.getPort()) {
-                    sb.append("mismatch on port");
-                } else if (!i.getProtocolFamily().equals(srmProtocol)) {
-                    sb.append("mismatch on family");
-                } else if (!i.getAddresses().stream().map(InetAddress::getHostName).anyMatch(n -> n.equalsIgnoreCase(surl.getHost()))) {
-                    sb.append("mismatch on hostname: ");
-                    sb.append(i.getAddresses().stream().map(InetAddress::getHostName).collect(Collectors.joining(", ")));
-                } else {
-                    sb.append("unknown reason");
+        boolean result = false;
+
+        try {
+            InetAddress address = InetAddress.getByName(surl.getHost());
+            result = doors
+                .stream()
+                .anyMatch(i -> (port == -1 || port == i.getPort())
+                          && i.getProtocolFamily().equals(srmProtocol)
+                          && i.getAddresses().stream()
+                          .map(InetAddress::getHostAddress)
+                          .anyMatch(n -> n.equalsIgnoreCase(address.getHostAddress())));
+            if (_log.isDebugEnabled() && result == false) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Identifying SURL ").append(surl).append(" as non-local: no matching door:\n");
+                for (LoginBrokerInfo i : doors) {
+                    sb.append("    ").append(i.toString()).append(" ");
+                    if (port != -1 && port != i.getPort()) {
+                        sb.append("mismatch on port");
+                    } else if (!i.getProtocolFamily().equals(srmProtocol)) {
+                        sb.append("mismatch on family");
+                    } else if (!i.getAddresses()
+                               .stream()
+                               .map(InetAddress::getHostAddress)
+                               .anyMatch(n -> n.equalsIgnoreCase(address.getHostAddress()))) {
+                        sb.append("mismatch on hostip: ");
+                        sb.append(i.getAddresses()
+                                  .stream()
+                                  .map(InetAddress::getHostAddress)
+                                  .collect(Collectors.joining(", ")));
+                    } else {
+                        sb.append("unknown reason");
+                    }
+                    sb.append('\n');
                 }
-                sb.append('\n');
+                _log.debug(sb.toString());
             }
-            _log.debug(sb.toString());
+        } catch (UnknownHostException ignored) {
         }
+
         return result;
     }
 
