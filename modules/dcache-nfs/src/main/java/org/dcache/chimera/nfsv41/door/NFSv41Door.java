@@ -878,7 +878,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             pw.printf("  IO queue                : %s\n", _ioQueue);
             pw.printf("  Supported Layout types  : %s\n", _supportedDrivers.keySet());
             pw.printf("  Number of NFSv4 clients : %d\n", _nfs4.getStateHandler().getClients().size());
-            pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getEntries().stream().count());
+            pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getEntries().size());
             pw.printf("  Active transfers        : %d\n", _transfers.values().size());
             pw.printf("  Known proxy adapters    : %d\n", _proxyIoFactory.getCount());
         }
