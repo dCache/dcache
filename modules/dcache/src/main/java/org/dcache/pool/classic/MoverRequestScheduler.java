@@ -131,6 +131,8 @@ public class MoverRequestScheduler
      */
     private volatile boolean _isShutdown;
 
+    private boolean _loggedQueuingMovers;
+
     public enum Order
     {
         FIFO, LIFO
@@ -266,6 +268,10 @@ public class MoverRequestScheduler
             return true;
         } else {
             _queue.add(request);
+            if (!_loggedQueuingMovers) {
+                LOGGER.warn("Mover queue \"{}\" is now queuing movers", _name);
+                _loggedQueuingMovers = true;
+            }
             return false;
         }
     }
@@ -282,6 +288,14 @@ public class MoverRequestScheduler
         PrioritizedRequest request = _queue.poll();
         if (request == null) {
             _semaphore.release();
+
+            /* We now have (at least) one "mover slot" free.  Therefore, the
+             * pool will accept the next mover (for this queue) without queuing.
+             */
+            if (_loggedQueuingMovers) {
+                LOGGER.warn("Next mover on mover queue \"{}\" will not be queued", _name);
+                _loggedQueuingMovers = false;
+            }
         }
         return request;
     }
