@@ -146,8 +146,6 @@ public final class RestoreResources {
                                                  @DefaultValue("pool,started")
                                                  @QueryParam("sort") String sort) {
         try {
-            RequestUser.checkAuthenticated();
-
             if (!RequestUser.canViewFileOperations(unlimitedOperationVisibility)) {
                 throw new ForbiddenException("Restores can only be accessed by admin users.");
             }

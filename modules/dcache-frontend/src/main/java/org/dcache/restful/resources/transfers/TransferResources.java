@@ -152,8 +152,6 @@ public final class TransferResources {
                                                    @DefaultValue("door,waiting")
                                                    @QueryParam("sort") String sort) {
         try {
-            RequestUser.checkAuthenticated();
-
             Long suid = RequestUser.getSubjectUidForFileOperations(unlimitedOperationVisibility);
 
             return service.get(token,
