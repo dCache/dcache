@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginStrategyAware;
+import org.dcache.gsi.KeyPairCache;
 import org.dcache.xrootd.core.XrootdAuthorizationHandlerFactory;
 import org.dcache.xrootd.door.LoginAuthenticationHandlerFactory;
 import org.dcache.xrootd.plugins.AuthenticationFactory;
@@ -75,6 +77,13 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         }
     }
 
+    public void shutdown()
+    {
+        if (_gsiDelegationProvider != null) {
+            _gsiDelegationProvider.shutdown();
+        }
+    }
+
     @Required
     public void setLoginStrategy(LoginStrategy loginStrategy)
     {
@@ -86,12 +95,6 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
             LoginStrategy anonymousLoginStrategy)
     {
         _anonymousLoginStrategy = anonymousLoginStrategy;
-    }
-
-    @Required
-    public void setGsiDelegationProvider(ProxyDelegationStore gsiDelegationProvider)
-    {
-        _gsiDelegationProvider = gsiDelegationProvider;
     }
 
     @Override
@@ -164,7 +167,7 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
             try {
                 if (factory instanceof GSIProxyDelegationClientFactory) {
                     ((GSIProxyDelegationClientFactory)factory)
-                                    .setProvider(_gsiDelegationProvider);
+                                    .setProvider(getGsiProxyDelegationProvider());
                 }
                 if (factory.createClient(name, _properties) != null) {
                     return factory;
@@ -177,5 +180,33 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
 
         LOGGER.debug("No delegation client for {}.", name);
         return null;
+    }
+
+    private ProxyDelegationStore getGsiProxyDelegationProvider()
+    {
+        LOGGER.debug("get ProxyDelegationProvider called");
+
+        /*
+         *  Should be singleton.
+         */
+        if (_gsiDelegationProvider != null) {
+            return _gsiDelegationProvider;
+        }
+
+        LOGGER.debug("constructing and initializing ProxyDelegationStore");
+
+        String caPath = _properties.getProperty("xrootd.gsi.ca.path");
+        Long refresh  = Long.valueOf(_properties.getProperty("xrootd.gsi.ca.refresh"));
+        TimeUnit refreshUnit = TimeUnit.valueOf(_properties.getProperty("xrootd.gsi.ca.refresh.unit"));
+        String vomsDir = _properties.getProperty("xrootd.gsi.vomsdir.dir");
+        _gsiDelegationProvider = new ProxyDelegationStore();
+        _gsiDelegationProvider.setCaCertificatePath(caPath);
+        _gsiDelegationProvider.setTrustAnchorRefreshInterval(refresh);
+        _gsiDelegationProvider.setTrustAnchorRefreshIntervalUnit(refreshUnit);
+        _gsiDelegationProvider.setVomsDir(vomsDir);
+        _gsiDelegationProvider.setKeyPairCache(new KeyPairCache(1, TimeUnit.MINUTES));
+        _gsiDelegationProvider.initialize();
+
+        return _gsiDelegationProvider;
     }
 }
