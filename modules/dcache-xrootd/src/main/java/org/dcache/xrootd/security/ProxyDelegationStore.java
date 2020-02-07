@@ -23,7 +23,6 @@ import org.italiangrid.voms.ac.VOMSACValidator;
 import org.italiangrid.voms.store.VOMSTrustStore;
 import org.italiangrid.voms.store.VOMSTrustStores;
 import org.italiangrid.voms.util.CertificateValidatorBuilder;
-import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,13 +64,11 @@ public class ProxyDelegationStore
                                                     certChainValidator);
     }
 
-    @Required
     public void setVomsDir(String vomsDir)
     {
         this.vomsDir = vomsDir;
     }
 
-    @Required
     public void setCaCertificatePath(String caCertificatePath)
     {
         this.caCertificatePath = caCertificatePath;
@@ -82,13 +79,11 @@ public class ProxyDelegationStore
         this.keyPairCache = keyPairCache;
     }
 
-    @Required
     public void setTrustAnchorRefreshInterval(long trustAnchorRefreshInterval)
     {
         this.trustAnchorRefreshInterval = trustAnchorRefreshInterval;
     }
 
-    @Required
     public void setTrustAnchorRefreshIntervalUnit(TimeUnit trustAnchorRefreshIntervalUnit)
     {
         this.trustAnchorRefreshIntervalUnit = trustAnchorRefreshIntervalUnit;
