@@ -38,6 +38,7 @@ end
 onerror continue
 eval ${alarms.enable.cleaner} true ==
 exec env checkAlarmCleanerProperites -ifok
+onerror shutdown
 
 create org.dcache.alarms.logback.LogServerCell ${alarms.cell.name} \
         "classpath:org/dcache/alarms/logback/alarms.xml \
