@@ -41,8 +41,7 @@ check -strong xrootd.authz.user
 check xrootd.authz.read-paths
 check xrootd.authz.write-paths
 
-onerror continue
-
+onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${xrootd.cell.name} \
        "classpath:org/dcache/xrootd/door/xrootd.xml \
         -consume=${xrootd.cell.consume} \
