@@ -43,13 +43,11 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -69,6 +67,7 @@ import org.dcache.events.NotificationMessage;
 import org.dcache.events.SystemEvent;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.events.InotifyEvent;
+import org.dcache.util.RepeatableTaskRunner;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -188,18 +187,6 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     }
 
     /**
-     * The current state of the sender task.
-     */
-    private enum SenderState {
-        /** Currently no sender task. */
-        NOT_RUNNING,
-        /** Sender task is running and will terminate once finished. */
-        FINAL_RUN,
-        /** Sender task is running and will start another run once the current run completes. */
-        NONFINAL_RUN
-    }
-
-    /**
      * Represents an event receiver's subscription to events that target some
      * specific file or directory.  The name Watch is used as this class is
      * somewhat similar to the inotify(7) concept.
@@ -257,7 +244,7 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
         public synchronized void enqueueMessage(Event event)
         {
             if (in.offer(event)) {
-                notifyEventToSend();
+                sender.start();
             } else if (!overflow) {
                 LOGGER.warn("Inotify overflow: too slow sending events");
                 overflow = true;
@@ -293,15 +280,13 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     private final Map<CellAddressCore,EventReceiver> receivers = new ConcurrentHashMap<>();
     private final ListMultimap<PnfsId, Watch> watchesByPnfsId =
             synchronizedListMultimap(MultimapBuilder.hashKeys().arrayListValues().build());
-    private final AtomicReference<SenderState> senderTask =
-            new AtomicReference<>(SenderState.NOT_RUNNING);
 
     private Executor dispatchExecutor;
-    private Executor senderExecutor;
     private boolean dispatchOverflow;
     private boolean overflowNotificationScheduled;
     private int batchSize;
     private int maximumQueuedEvents;
+    private RepeatableTaskRunner sender;
 
     @Override
     public void setCuratorFramework(CuratorFramework client)
@@ -324,7 +309,7 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     @Required
     public void setSenderExecutor(Executor executor)
     {
-        senderExecutor = executor;
+        sender = new RepeatableTaskRunner(executor, this::sendQueuedEvents);
     }
 
     @Required
@@ -468,38 +453,23 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
         }
     }
 
-    private void notifyEventToSend()
-    {
-        if (senderTask.compareAndSet(SenderState.FINAL_RUN, SenderState.NONFINAL_RUN)) {
-            LOGGER.debug("Sender task updated to non-final run");
-        } else if (senderTask.compareAndSet(SenderState.NOT_RUNNING, SenderState.FINAL_RUN)) {
-            LOGGER.debug("Executing sender task");
-            senderExecutor.execute(this::sendQueuedEvents);
-        }
-    }
-
     private void sendQueuedEvents()
     {
-        do {
-            LOGGER.debug("Sender task starting send run");
-            senderTask.set(SenderState.FINAL_RUN);
+        LOGGER.debug("Starting send queued events run");
 
-            receivers.forEach((door, receiver) -> {
-                        List<Event> events = receiver.drainQueuedEvents();
+        receivers.forEach((door, receiver) -> {
+                    List<Event> events = receiver.drainQueuedEvents();
 
-                        CellPath path = new CellPath(door);
+                    CellPath path = new CellPath(door);
 
-                        int sent = 0;
-                        while (sent < events.size()) {
-                            int upper = Math.min(events.size(), sent+batchSize);
-                            List<Event> batch = events.subList(sent, upper);
-                            LOGGER.debug("Sending events: {}", batch);
-                            eventSender.notify(path, new NotificationMessage(batch));
-                            sent += batch.size();
-                        }
-                    });
-
-        } while (!senderTask.compareAndSet(SenderState.FINAL_RUN, SenderState.NOT_RUNNING));
-        LOGGER.debug("Sender task terminating");
+                    int sent = 0;
+                    while (sent < events.size()) {
+                        int upper = Math.min(events.size(), sent+batchSize);
+                        List<Event> batch = events.subList(sent, upper);
+                        LOGGER.debug("Sending events: {}", batch);
+                        eventSender.notify(path, new NotificationMessage(batch));
+                        sent += batch.size();
+                    }
+                });
     }
 }
