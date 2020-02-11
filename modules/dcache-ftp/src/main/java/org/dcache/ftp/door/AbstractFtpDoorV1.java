@@ -954,7 +954,7 @@ public abstract class AbstractFtpDoorV1
     private final String _ftpDoorName;
     protected Checksum _checkSum;
     protected ChecksumType _optCheckSumType;
-    protected OptionalLong _allo;
+    protected OptionalLong _allo = OptionalLong.empty();
 
     /** List of selected RFC 3659 facts. */
     protected Set<Fact> _currentFacts = Sets.newHashSet(
