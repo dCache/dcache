@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,10 +17,13 @@
  */
 package org.dcache.gplazma.scitoken;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -37,9 +40,9 @@ public abstract class ForwardingJsonNode extends JsonNode
     }
 
     @Override
-    public JsonParser.NumberType getNumberType()
+    public JsonParser.NumberType numberType()
     {
-        return delegate().getNumberType();
+        return delegate().numberType();
     }
 
     @Override
@@ -121,8 +124,38 @@ public abstract class ForwardingJsonNode extends JsonNode
     }
 
     @Override
+    public <T extends JsonNode> T deepCopy() {
+        return delegate().deepCopy();
+    }
+
+    @Override
     public boolean equals(Object o)
     {
         return delegate().equals(o);
+    }
+
+    @Override
+    protected JsonNode _at(JsonPointer jsonPointer) {
+        return null;
+    }
+
+    @Override
+    public JsonNodeType getNodeType() {
+        return delegate().getNodeType();
+    }
+
+    @Override
+    public JsonParser traverse(ObjectCodec objectCodec) {
+        return delegate().traverse(objectCodec);
+    }
+
+    @Override
+    public void serialize(JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        delegate().serialize(jsonGenerator,serializerProvider);
+    }
+
+    @Override
+    public void serializeWithType(JsonGenerator jsonGenerator, SerializerProvider serializerProvider, TypeSerializer typeSerializer) throws IOException {
+        delegate().serializeWithType(jsonGenerator, serializerProvider, typeSerializer);
     }
 }

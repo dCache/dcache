@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,10 +17,10 @@
  */
 package org.dcache.gplazma.scitoken;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableSet;
 import org.apache.http.client.HttpClient;
-import org.codehaus.jackson.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

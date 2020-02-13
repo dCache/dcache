@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,9 +17,9 @@
  */
 package org.dcache.gplazma.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +100,7 @@ public class JsonWebToken
         checkArgument(elements.size() == 3, "Wrong number of '.' in token");
 
         JsonNode header = decodeToJson(elements.get(0));
-        alg = header.get("alg").getTextValue();
+        alg = header.get("alg").textValue();
         typ = getOptionalString(header, "typ");
         kid = getOptionalString(header, "kid");
 
@@ -111,7 +111,7 @@ public class JsonWebToken
     private String getOptionalString(JsonNode object, String key)
     {
         JsonNode node = object.get(key);
-        return node == null ? null : node.getTextValue();
+        return node == null ? null : node.textValue();
     }
 
     @Nullable
@@ -155,7 +155,7 @@ public class JsonWebToken
     {
         return Optional.ofNullable(payload.get(key))
                 .filter(JsonNode::isTextual)
-                .map(JsonNode::getTextValue);
+                .map(JsonNode::textValue);
     }
 
     /**
@@ -181,10 +181,10 @@ public class JsonWebToken
         if (node.isArray()) {
             return StreamSupport.stream(node.spliterator(), false)
                     .filter(JsonNode::isTextual) // Non text array elements are simply ignored
-                    .map(JsonNode::getTextValue)
+                    .map(JsonNode::textValue)
                     .collect(Collectors.toList());
         } else  if (node.isTextual()) {
-            return Collections.singletonList(node.getTextValue());
+            return Collections.singletonList(node.textValue());
         } else {
             throw new RuntimeException("Unable to convert node " + node
                     + " to List<String>");
