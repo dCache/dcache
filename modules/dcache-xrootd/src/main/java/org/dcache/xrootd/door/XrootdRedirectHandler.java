@@ -328,16 +328,30 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 }
             }
 
-            // ok, open was successful
-            InetSocketAddress address = transfer.getRedirect();
-            _log.info("Redirecting to {}", address);
-
-            /* xrootd developers say that IPv6 addresses must always be URI quoted.
-             * The spec doesn't require this, but clients depend on it.
+            /*
+             * ok, open was successful
              */
-            return new RedirectResponse<>(
-                    req, InetAddresses.toUriString(address.getAddress()),
-                    address.getPort(), opaqueString, "");
+            InetSocketAddress address = transfer.getRedirect();
+
+            /*
+             *  Do not use the IP address as host name, as this will block
+             *  TLS from working.
+             *
+             *  According to https://tools.ietf.org/html/rfc5280#section-4.2.1.6
+             *  an IP is required to be in the list of Subject Alternative Names
+             *  in the host certificate, but these are rarely added in practice.
+             *  TLS enforces the RFC and this is a workaround.
+             */
+            String host = address.getHostName();
+            if (InetAddresses.isInetAddress(host)) {
+                _log.warn("Unable to resolve IP address {} "
+                                          + "to a canonical name", host);
+            }
+
+            _log.info("Redirecting to {}, {}", host, address);
+
+            return new RedirectResponse<>(req, host,address.getPort(),
+                                          opaqueString, "");
         } catch (FileNotFoundCacheException e) {
             return withError(req, xrootdErrorCode(e.getRc()), "No such file");
         } catch (FileExistsCacheException e) {
