@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:property-placeholder/>
+    <context:annotation-config/>
+
+    <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
+        <property name="destination" value="${telemetry.service.poolmanager}"/>
+        <property name="timeout" value="30000"/>
+    </bean>
+
+    <bean id="instance-data" class="org.dcache.telemetry.InstanceData">
+        <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="siteName" value="${telemetry.instance.site-name}"/>
+        <property name="latitude" value="${telemetry.instance.location.latitude}"/>
+        <property name="longitude" value="${telemetry.instance.location.longitude}"/>
+    </bean>
+
+    <bean id="sendData" class="org.dcache.telemetry.SendData">
+        <property name="instanceData" ref="instance-data"/>
+        <property name="urlStr" value="${telemetry.destination.url}"/>
+        <property name="enable" value="${telemetry.cell.enable}"/>
+    </bean>
+
+
+</beans>

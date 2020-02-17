@@ -1,0 +1,10 @@
+check -strong telemetry.cell.name
+check -strong telemetry.instance.site-name
+check -strong telemetry.cell.enable
+check telemetry.instance.location.latitude
+check telemetry.instance.location.longitude
+check -strong telemetry.service.poolmanager
+check -strong telemetry.destination.url
+
+create org.dcache.cells.UniversalSpringCell "${telemetry.cell.name}" \
+    "classpath:org/dcache/telemetry/telemetry.xml"
