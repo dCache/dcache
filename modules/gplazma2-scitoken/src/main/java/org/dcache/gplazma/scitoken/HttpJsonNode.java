@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,15 +17,22 @@
  */
 package org.dcache.gplazma.scitoken;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.google.common.net.MediaType;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.MissingNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,10 +42,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
@@ -86,7 +93,7 @@ public class HttpJsonNode extends PreparationJsonNode
 
     public HttpJsonNode(HttpClient client, Supplier<Optional<String>> url, Duration cacheHit, Duration cacheMiss)
     {
-        this.client = requireNonNull(client);
+        this.client = Objects.requireNonNull(client);
         this.urlSupplier = url;
         this.cacheHit = cacheHit;
         this.cacheMiss = cacheMiss;
@@ -168,5 +175,30 @@ public class HttpJsonNode extends PreparationJsonNode
     protected JsonNode delegate()
     {
         return cached;
+    }
+
+    @Override
+    protected JsonNode _at(JsonPointer jsonPointer) {
+        return cached.at(jsonPointer);
+    }
+
+    @Override
+    public JsonNodeType getNodeType() {
+        return cached.getNodeType();
+    }
+
+    @Override
+    public JsonParser traverse(ObjectCodec objectCodec) {
+        return cached.traverse();
+    }
+
+    @Override
+    public void serialize(JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void serializeWithType(JsonGenerator jsonGenerator, SerializerProvider serializerProvider, TypeSerializer typeSerializer) throws IOException {
+        throw new UnsupportedOperationException();
     }
 }

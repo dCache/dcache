@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,9 +17,9 @@
  */
 package org.dcache.gplazma.scitoken;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.List;
 
@@ -38,10 +38,10 @@ public abstract class PreparationJsonNode extends ForwardingJsonNode
     }
 
     @Override
-    public JsonParser.NumberType getNumberType()
+    public JsonParser.NumberType numberType()
     {
         prepare();
-        return super.getNumberType();
+        return super.numberType();
     }
 
     @Override
