@@ -166,7 +166,9 @@ public class SpringLiquibase
                         }
                     }
                 } finally {
-                    liquibase.forceReleaseLocks();
+		    if(_shouldUpdate) {
+			liquibase.forceReleaseLocks();
+		    }
                 }
             } catch (LiquibaseException e) {
                 throw new SQLException("Schema migration failed", e);
