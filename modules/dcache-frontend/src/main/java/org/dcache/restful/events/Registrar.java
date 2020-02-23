@@ -91,6 +91,7 @@ public class Registrar implements CellLifeCycleAware
     private final ConcurrentHashMap<UidClientId,List<String>> _channelsByUidClientId = new ConcurrentHashMap<>();
     private final Random random = new Random();
     private int maximumChannelsPerUser;
+    private int eventBacklog;
     private long defaultDisconnectTimeout;
 
     @Inject
@@ -103,6 +104,12 @@ public class Registrar implements CellLifeCycleAware
     public void setMaximumChannelsPerUser(int max)
     {
         maximumChannelsPerUser = max;
+    }
+
+    @Required
+    public void setEventBacklog(int backlog)
+    {
+        eventBacklog = backlog;
     }
 
     public int getMaximumChannelsPerUser()
@@ -152,7 +159,7 @@ public class Registrar implements CellLifeCycleAware
         }
 
         Channel channel = new Channel(executor, repository, user, defaultDisconnectTimeout,
-                (type, subId) -> serialiser.buildUrl(id, type, subId));
+                (type, subId) -> serialiser.buildUrl(id, type, subId), eventBacklog);
         _channels.put(id, channel);
 
         channel.onClose(() -> {

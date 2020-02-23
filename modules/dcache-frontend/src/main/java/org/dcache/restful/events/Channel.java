@@ -136,7 +136,7 @@ public class Channel extends CloseableWithTasks
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Channel.class);
 
-    private final EvictingQueue<Event> ringBuffer = EvictingQueue.create(16384);
+    private final EvictingQueue<Event> ringBuffer;
     private final ScheduledExecutorService executor;
     private final AtomicInteger queueSize = new AtomicInteger();
     private final Map<SubscriptionId,Subscription> subscriptionsByIdentity
@@ -154,7 +154,8 @@ public class Channel extends CloseableWithTasks
 
     public Channel(ScheduledExecutorService executor,
             EventStreamRepository repository, Subject subject, long timeout,
-            BiFunction<String,String,String> subscriptionValueBuilder)
+            BiFunction<String,String,String> subscriptionValueBuilder,
+            int eventBacklog)
     {
         this.executor = executor;
         this.repository = repository;
@@ -162,6 +163,7 @@ public class Channel extends CloseableWithTasks
 
         this.timeout = timeout;
         this.subscriptionValueBuilder = subscriptionValueBuilder;
+        ringBuffer = EvictingQueue.create(eventBacklog);
 
         onClose(() -> {
                     subscriptionsByIdentity.values().forEach(Subscription::close);
