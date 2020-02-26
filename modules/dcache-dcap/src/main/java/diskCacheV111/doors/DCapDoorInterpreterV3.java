@@ -2226,7 +2226,7 @@ public class DCapDoorInterpreterV3
 
         public void poolPassiveIoFileMessage( PoolPassiveIoFileMessage<byte[]> reply) {
 
-            InetSocketAddress poolSocketAddress = reply.socketAddress();
+            InetSocketAddress poolSocketAddress = reply.socketAddresses()[0];
 
             StringBuilder sb = new StringBuilder() ;
             sb.append(_sessionId).append(" ").

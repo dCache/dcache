@@ -3,10 +3,11 @@ package diskCacheV111.vehicles;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 
+import static java.util.Objects.requireNonNull;
+
 public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessage {
 
     private static final long serialVersionUID = -8019787998659861618L;
-    private final InetSocketAddress _socketAddress;
     private final InetSocketAddress[] _socketAddresses;
     private final T _challange;
 
@@ -30,22 +31,13 @@ public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessag
      */
     public PoolPassiveIoFileMessage(String pool, InetSocketAddress[] socketAddresses, T challenge,  long verifier) {
         super(pool);
-        _socketAddresses = socketAddresses;
-        _socketAddress = _socketAddresses[0];
+        _socketAddresses = requireNonNull(socketAddresses, "Socket address is not defined.");
         _challange = challenge;
         _verifier = verifier;
     }
 
-    public InetSocketAddress socketAddress() {
-        return _socketAddress;
-    }
-
     public InetSocketAddress[] socketAddresses() {
-        /*
-         * A bit of crappy code to handle old/new version of the class.
-         */
-        return _socketAddresses == null?
-                new InetSocketAddress[] { _socketAddress } : _socketAddresses;
+        return _socketAddresses;
     }
 
     public long getVerifier() {
