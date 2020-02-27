@@ -37,7 +37,7 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.nfs.v4.NfsIdMapping;
 import org.dcache.oncrpc4j.rpc.RpcLoginService;
 import org.dcache.oncrpc4j.rpc.RpcTransport;
-import org.dcache.utils.SubjectHolder;
+import org.dcache.nfs.util.SubjectHolder;
 
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
