@@ -1,18 +1,19 @@
 package org.dcache.chimera.nfsv41.door;
 
-import com.google.common.collect.ImmutableMap;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
+import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.CreateMode;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.ProducerListener;
 
 import javax.security.auth.Subject;
 
@@ -57,6 +58,7 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -82,6 +84,7 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
@@ -115,6 +118,7 @@ import org.dcache.nfs.v3.xdr.mount_prot;
 import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.ClientCB;
 import org.dcache.nfs.v4.CompoundContext;
+import org.dcache.nfs.v4.EphemeralClientRecoveryStore;
 import org.dcache.nfs.v4.FlexFileLayoutDriver;
 import org.dcache.nfs.v4.Layout;
 import org.dcache.nfs.v4.NFS4Client;
@@ -123,6 +127,7 @@ import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
+import org.dcache.nfs.v4.NFSv4StateHandler;
 import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.device_addr4;
@@ -185,9 +190,15 @@ import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
-        CellMessageReceiver, CellInfoProvider {
+        CellMessageReceiver, CellInfoProvider, CuratorFrameworkAware {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
+
+
+    /**
+     * Path to doors container within zookeeper
+     */
+    private static final String ZK_DOORS_PATH = "/dcache/nfs/doors";
 
     /**
      * Layout type specific driver.
@@ -320,6 +331,11 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private StatsDecoratedOperationExecutor _executor;
 
+    /**
+     * Handle to Zookeeper.
+     */
+    private CuratorFramework _curator;
+
     public void setEventNotifier(EventNotifier notifier) {
         _eventNotifier = notifier;
     }
@@ -407,6 +423,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         _vfsCache = new VfsCache(_chimeraVfs, _vfsCacheConfig);
         _vfs = _eventNotifier == null ? _vfsCache : wrapWithMonitoring(_vfsCache);
 
+
+
         MountServer ms = new MountServer(_exportFile, _vfs);
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
@@ -440,7 +458,17 @@ public class NFSv41Door extends AbstractCellComponent implements
                             _accessLogMode)
                     );
 
+                    int stateHandlerId = getOrCreateId(ZK_DOORS_PATH,
+                            getCellName() + "@" + getCellDomainName(),
+                            "state-handler-id");
+
+                    NFSv4StateHandler stateHandler = new NFSv4StateHandler(
+                            NFSv4Defaults.NFS4_LEASE_TIME,
+                            stateHandlerId,
+                            new EphemeralClientRecoveryStore());
+
                     _nfs4 = new NFSServerV41.Builder()
+                            .withStateHandler(stateHandler)
                             .withDeviceManager(_dm)
                             .withExportTable(_exportFile)
                             .withVfs(_vfs)
@@ -882,6 +910,55 @@ public class NFSv41Door extends AbstractCellComponent implements
             pw.printf("  Active transfers        : %d\n", _transfers.values().size());
             pw.printf("  Known proxy adapters    : %d\n", _proxyIoFactory.getCount());
         }
+    }
+
+    @Override
+    public void setCuratorFramework(CuratorFramework client) {
+	_curator = client;
+    }
+
+    /**
+     * Get from zookeeper a instance wide unique ID associated with this door. If id
+     * doesn't exist, then a global counter is used to assign one and store for
+     * the next time.
+     * @param base The root of the zookeeper tree to use.
+     * @param identifier The system wide identifier for this service.
+     * @param storeName Path where service id is stored.
+     * @return newly created or stored id for this door.
+     * @throws Exception
+     *
+     * REVISIT: this logic can be used by other components as well.
+     */
+    private int getOrCreateId(String base, String identifier, String storeName) throws Exception {
+	String doorNode = ZKPaths.makePath(base, identifier);
+
+	int stateMgrId;
+	InterProcessSemaphoreMutex lock = new InterProcessSemaphoreMutex(_curator, base);
+	lock.acquire();
+	try {
+	    String idNode = ZKPaths.makePath(doorNode, storeName);
+	    org.apache.zookeeper.data.Stat zkStat = _curator.checkExists().forPath(idNode);
+	    if (zkStat == null || zkStat.getDataLength() == 0) {
+
+                // use parent's change version as desired counter
+                org.apache.zookeeper.data.Stat parentStat = _curator.setData()
+                        .forPath(base);
+                stateMgrId = parentStat.getVersion();
+
+		_curator.create()
+			.orSetData()
+			.creatingParentContainersIfNeeded()
+			.withMode(CreateMode.PERSISTENT)
+			.forPath(idNode, Integer.toString(stateMgrId).getBytes(StandardCharsets.US_ASCII));
+	    } else {
+		byte[] data = _curator.getData().forPath(idNode);
+		stateMgrId = Integer.parseInt(new String(data, StandardCharsets.US_ASCII));
+	    }
+
+	} finally {
+	    lock.release();
+	}
+	return stateMgrId;
     }
 
     @Command(name = "kill mover", hint = "Kill mover on the pool.")
