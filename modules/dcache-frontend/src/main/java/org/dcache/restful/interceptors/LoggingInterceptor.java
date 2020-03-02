@@ -19,7 +19,6 @@ package org.dcache.restful.interceptors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.output.TeeOutputStream;
 import com.google.common.base.Utf8;
 import org.apache.commons.io.input.TeeInputStream;
 import org.slf4j.Logger;
@@ -76,13 +75,15 @@ public class LoggingInterceptor implements ReaderInterceptor, WriterInterceptor
             WebApplicationException
     {
         ByteArrayOutputStream capture = new ByteArrayOutputStream();
-        TeeOutputStream tos = new TeeOutputStream(context.getOutputStream(), capture);
-        context.setOutputStream(tos);
+        LimitedTeeOutputStream tee = new LimitedTeeOutputStream(context.getOutputStream(),
+                capture, MAXIMUM_FIELD_SIZE);
+        context.setOutputStream(tee);
 
         try {
             context.proceed();
         } finally {
-            String entity = describeEntity(capture.toByteArray(), context);
+            String entity = describeEntity(capture.toByteArray(), context,
+                    tee.isBranchTruncated());
             request.setAttribute(RESPONSE_ENTITY_KEY, entity);
         }
     }
@@ -97,17 +98,23 @@ public class LoggingInterceptor implements ReaderInterceptor, WriterInterceptor
         try {
             return context.proceed();
         } finally {
-            String entity = describeEntity(capture.toByteArray(), context);
+            String entity = describeEntity(capture.toByteArray(), context, false);
             request.setAttribute(REQUEST_ENTITY_KEY, entity);
         }
     }
 
-    private String describeEntity(byte[] entityData, InterceptorContext context)
+    private String describeEntity(byte[] entityData, InterceptorContext context,
+            boolean isTruncated)
     {
         if (entityData.length == 0) {
             return null; /* suppress recording anything */
         } else if (Utf8.isWellFormed(entityData)) {
             String data = new String(entityData, StandardCharsets.UTF_8);
+
+            if (isTruncated) {
+                return data.substring(0, data.length()-ELLIPSIS.length()) + ELLIPSIS;
+            }
+
             MediaType type = context.getMediaType();
             if (type != null && type.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
                 data = minimiseJson(data);
