@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,7 +32,7 @@ public class FileInfoTest extends TestCase {
     public static void main(String[] argv) {
 	junit.textui.TestRunner.run (suite());
     }
-    
+
     public static Test suite() {
 	return new TestSuite(FileInfoTest.class);
     }
@@ -43,7 +43,7 @@ public class FileInfoTest extends TestCase {
 
     public void testRegular() throws Exception {
 	FileInfo f1 = new FileInfo("drwxr-xr-x   2      guest  other  1536  Jan 31 15:15  run.bat");
-	
+
 	assertEquals(" run.bat", f1.getName());
 	assertEquals(true, f1.isDirectory());
 	assertEquals(1536, f1.getSize());
@@ -63,7 +63,7 @@ public class FileInfoTest extends TestCase {
 
     public void testSpace() throws Exception {
 	FileInfo f3 = new FileInfo("drwxrwxr-x    2 gawor    globus   512 Dec 26  2001 gatekeeper file 2");
-	
+
 	assertEquals("gatekeeper file 2", f3.getName());
 	assertEquals(true, f3.isDirectory());
 	assertEquals(512, f3.getSize());
@@ -73,7 +73,7 @@ public class FileInfoTest extends TestCase {
 
     public void testFileWithDate() throws Exception {
 	FileInfo f4 = new FileInfo("drwxrwxr-x    2 gawor    globus   512 Dec 26  2001 gatekeeper-2001");
-	
+
 	assertEquals("gatekeeper-2001", f4.getName());
 	assertEquals(true, f4.isDirectory());
 	assertEquals(512, f4.getSize());
@@ -83,7 +83,7 @@ public class FileInfoTest extends TestCase {
 
     public void testFileWithDateWithSpace() throws Exception {
 	FileInfo f4 = new FileInfo("drwxrwxr-x    2 gawor    globus   512 Dec 26  2001 gatekeeper-2001   a b c  ");
-	
+
 	assertEquals("gatekeeper-2001   a b c  ", f4.getName());
 	assertEquals(true, f4.isDirectory());
 	assertEquals(512, f4.getSize());
@@ -93,7 +93,7 @@ public class FileInfoTest extends TestCase {
 
     public void testRegular2() throws Exception {
 	FileInfo f4 = new FileInfo("drwxrwxr-x   2 7        7            4096 May  1  1994 bin");
-	
+
 	assertEquals("bin", f4.getName());
 	assertEquals(true, f4.isDirectory());
 	assertEquals(4096, f4.getSize());
@@ -146,35 +146,35 @@ public class FileInfoTest extends TestCase {
 	assertEquals(FileInfo.UNKNOWN_NUMBER,f5.getSize());
     }
 
-    public void testPermission() throws Exception { 
-        FileInfo f1 = new FileInfo("-rwxrw-r--   2      guest  other  1536  Jan 31 15:15  run.bat"); 
-        int mode = (1 << 8) + (1 << 7) + (1 << 6)  +  (1 << 5) + (1 << 4)  +  (1 << 2); 
-        assertEquals(mode,f1.getMode()); 
-        assertEquals("764",f1.getModeAsString()); 
-        assertEquals(true,f1.userCanRead()); 
-        assertEquals(true,f1.userCanWrite()); 
-        assertEquals(true,f1.userCanExecute()); 
-        assertEquals(true,f1.groupCanRead()); 
-        assertEquals(true,f1.groupCanWrite()); 
-        assertEquals(false,f1.groupCanExecute()); 
-        assertEquals(true,f1.allCanRead()); 
-        assertEquals(false,f1.allCanWrite()); 
-        assertEquals(false,f1.allCanExecute()); 
- 
-        f1 = new FileInfo("------x-wx   2      guest  other  1536  Jan 31 15:15 run.bat"); 
-        mode = (1 << 3) +  (1 << 1) + (1 << 0); 
-        assertEquals(mode,f1.getMode()); 
-        assertEquals("013",f1.getModeAsString()); 
-        assertEquals(false,f1.userCanRead()); 
-        assertEquals(false,f1.userCanWrite()); 
-        assertEquals(false,f1.userCanExecute()); 
-        assertEquals(false,f1.groupCanRead()); 
-        assertEquals(false,f1.groupCanWrite()); 
-        assertEquals(true,f1.groupCanExecute()); 
-        assertEquals(false,f1.allCanRead()); 
-        assertEquals(true,f1.allCanWrite()); 
-        assertEquals(true,f1.allCanExecute()); 
-    } 
+    public void testPermission() throws Exception {
+        FileInfo f1 = new FileInfo("-rwxrw-r--   2      guest  other  1536  Jan 31 15:15  run.bat");
+        int mode = (1 << 8) + (1 << 7) + (1 << 6)  +  (1 << 5) + (1 << 4)  +  (1 << 2);
+        assertEquals(mode,f1.getMode());
+        assertEquals("764",f1.getModeAsString());
+        assertEquals(true,f1.userCanRead());
+        assertEquals(true,f1.userCanWrite());
+        assertEquals(true,f1.userCanExecute());
+        assertEquals(true,f1.groupCanRead());
+        assertEquals(true,f1.groupCanWrite());
+        assertEquals(false,f1.groupCanExecute());
+        assertEquals(true,f1.allCanRead());
+        assertEquals(false,f1.allCanWrite());
+        assertEquals(false,f1.allCanExecute());
+
+        f1 = new FileInfo("------x-wx   2      guest  other  1536  Jan 31 15:15 run.bat");
+        mode = (1 << 3) +  (1 << 1) + 1;
+        assertEquals(mode,f1.getMode());
+        assertEquals("013",f1.getModeAsString());
+        assertEquals(false,f1.userCanRead());
+        assertEquals(false,f1.userCanWrite());
+        assertEquals(false,f1.userCanExecute());
+        assertEquals(false,f1.groupCanRead());
+        assertEquals(false,f1.groupCanWrite());
+        assertEquals(true,f1.groupCanExecute());
+        assertEquals(false,f1.allCanRead());
+        assertEquals(true,f1.allCanWrite());
+        assertEquals(true,f1.allCanExecute());
+    }
 
     /*
     public void test() throws Exception {
@@ -191,14 +191,14 @@ public class FileInfoTest extends TestCase {
 	    "drwxrwxr-x  72 7        7            4096 Oct 25 15:58 pub\n" +
 	    "drwxrwxr-x   3 7        7            4096 Mar  1  1994 usr\n" +
 	    "drwxr-sr-x   2 793      76           4096 May 10  1999 wiki\n";
-    
+
 	java.io.BufferedReader r = new java.io.BufferedReader(new java.io.StringReader(b));
 	String line;
 	while( (line = r.readLine()) != null) {
 	    System.out.println(line);
 	    new FileInfo(line);
 	}
-	       
+
     }
     */
 
