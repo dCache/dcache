@@ -77,13 +77,13 @@ To use curl to copy a file into your dCache you will need to set webdav.redirect
 Write the file `test.txt`
 
 ```console-root
-curl -T test.txt http://webdav-door.example.org:2880/data/world-writable/
+curl -T test.txt http://webdav-door.example.org:2880/data/world-writable/test.txt
 ```
 
 and read it
 
 ```console-root
-curl http://webdav-door.example.org:2880/data/world-writable/testfile.txt
+curl http://webdav-door.example.org:2880/data/world-writable/test.txt
 ```
 
 ### DCAP
