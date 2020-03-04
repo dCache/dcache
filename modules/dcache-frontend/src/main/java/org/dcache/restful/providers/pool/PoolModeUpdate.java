@@ -101,15 +101,15 @@ public class PoolModeUpdate implements Serializable {
         return PoolV2Mode.ENABLED;
     }
 
-    public void setRdonly(boolean rdonly) {
-        this.rdonly = rdonly;
+    public void setRdonly(Boolean rdonly) {
+        this.rdonly = rdonly == null ? false : rdonly;
     }
 
-    public void setResilience(boolean resilience) {
-        this.resilience = resilience;
+    public void setResilience(Boolean resilience) {
+        this.resilience = resilience == null ? false : resilience;
     }
 
-    public void setStrict(boolean strict) {
-        this.strict = strict;
+    public void setStrict(Boolean strict) {
+        this.strict = strict == null ? false: strict;
     }
 }
