@@ -323,7 +323,9 @@ public final class PoolInfoCollectorUtils {
         HistogramMetadata metadata = new HistogramMetadata();
 
         for (CountingHistogram h : allHistograms) {
-            double currentMaxBin = h.getHighestBin();
+            Double highestBin = h.getHighestBin();
+            double currentMaxBin = highestBin == null ?
+                            Double.MIN_VALUE : highestBin;
             if (currentMaxBin > maxBinValue) {
                 standard = h;
                 maxBinValue = currentMaxBin;
