@@ -1,17 +1,11 @@
 package dmg.cells.nucleus ;
 
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.InvalidClassException;
-import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -98,6 +92,8 @@ public final class CellMessage implements Cloneable , Serializable {
     if( _mode == ORIGINAL_MODE ) {
         sb.append(";C=").
                 append(_message.getClass().getName());
+        sb.append(";M=").
+                append(_message.toString());
     } else {
         sb.append(";C=Stream");
     }
