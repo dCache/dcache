@@ -1109,6 +1109,10 @@ public class ChimeraNameSpaceProvider
                     case STORAGEINFO:
                         _extractor.setStorageInfo(inode, attr.getStorageInfo());
                         break;
+                    case XATTR:
+                        // not supported in permanent storage yet
+                        _log.info("request to store extended attributes: {}", attr.getXattrs());
+                        break;
                     default:
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }

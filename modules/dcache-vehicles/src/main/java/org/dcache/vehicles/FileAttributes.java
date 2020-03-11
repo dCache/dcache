@@ -174,6 +174,11 @@ public class FileAttributes implements Serializable, Cloneable {
      */
     private String _cacheClass;
 
+    /**
+     * Key value map of extended file attributes.
+     */
+    private Map<String, String> _xattr;
+
     @Override
     public FileAttributes clone()
     {
@@ -268,6 +273,9 @@ public class FileAttributes implements Serializable, Cloneable {
                 clone.setCacheClass(getCacheClass());
             }
 
+            if (isDefined(XATTR)) {
+                clone.setXattrs(_xattr);
+            }
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Bad clone: " + e, e);
@@ -626,6 +634,18 @@ public class FileAttributes implements Serializable, Cloneable {
         return _nlink;
     }
 
+
+    public void setXattrs(Map<String, String> xattrs)
+    {
+        define(XATTR);
+        _xattr = xattrs;
+    }
+
+    public Map<String, String> getXattrs()
+    {
+        guard(XATTR);
+        return _xattr;
+    }
     /**
      * Remove the {@link FileType} corresponding to the file.  The FileType
      * must be specified before this method is called.  Subsequent getFileType
@@ -666,6 +686,7 @@ public class FileAttributes implements Serializable, Cloneable {
                 .add("storageClass", _storageClass)
                 .add("cacheClass", _cacheClass)
                 .add("hsm", _hsm)
+                .add("xattr", _xattr)
                 .omitNullValues()
                 .toString();
     }
@@ -964,6 +985,22 @@ public class FileAttributes implements Serializable, Cloneable {
         public Builder cacheClass(String cacheClass)
         {
             setCacheClass(cacheClass);
+            return this;
+        }
+
+        public Builder xattr(String name, String value) {
+            if (!isDefined(XATTR)) {
+                setXattrs(new HashMap());
+            }
+            getXattrs().put(name, value);
+            return this;
+        }
+
+        public Builder xattrs(Map<String, String> xattrs) {
+            if (!isDefined(XATTR)) {
+                setXattrs(new HashMap());
+            }
+            getXattrs().putAll(xattrs);
             return this;
         }
     }

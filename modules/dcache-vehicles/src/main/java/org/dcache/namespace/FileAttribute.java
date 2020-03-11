@@ -33,5 +33,9 @@ public enum FileAttribute {
     /**
      * @since 3.0
      */
-    NLINK   // Be careful not to send this to pools before next golden release
+    NLINK,   // Be careful not to send this to pools before next golden release
+    /**
+     * @since 6.2
+     */
+    XATTR // Be careful not to send this to pools before next golden release (7.2)
 }
