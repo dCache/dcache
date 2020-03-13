@@ -13,6 +13,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.net.InetAddresses;
+import io.milton.http.FileItem;
 import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
@@ -54,6 +55,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -99,7 +101,6 @@ import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.LoginAttributes;
-import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -120,6 +121,7 @@ import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.TransferRetryPolicy;
+import org.dcache.util.Xattrs;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
@@ -1298,6 +1300,20 @@ public class DcacheResourceFactory
     }
 
     /**
+     * Returns request params.
+     */
+    private static  Map<String, String> getXattrsFromRequest() {
+        Map<String, String> m = new HashMap<>();
+        Map<String, FileItem> files = new HashMap<>();
+        try {
+            HttpManager.request().parseRequestParameters(m, files);
+        } catch (Exception e) {
+            throw new RuntimeException();
+        }
+        return Xattrs.from(m);
+    }
+
+    /**
      * Returns the location URI of the current request. This is the
      * full request URI excluding user information, query and fragments.
      */
@@ -1657,6 +1673,15 @@ public class DcacheResourceFactory
         {
             FileAttributes attributes = super.fileAttributesForNameSpace();
             _mtime.map(Instant::toEpochMilli).ifPresent(attributes::setModificationTime);
+
+            /**
+             * Add user provided extended attributes, which will be sent to the pool.
+             */
+            Map<String, String> xattr = getXattrsFromRequest();
+            if (!xattr.isEmpty()) {
+                attributes.setXattrs(xattr);
+            }
+
             return attributes;
         }
 
