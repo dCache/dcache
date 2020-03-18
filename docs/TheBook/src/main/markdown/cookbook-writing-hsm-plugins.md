@@ -26,7 +26,7 @@ A nearline storage drive must support three types of requests: flush to the
 nearline storage, stage from the nearline storage, and removal of a file from a
 nearline storage. dCache calls out to the driver providing a corresponding
 request object, either
-[org.dcache.pool.nearline.spi.FlushRequest](https://github.com/dCache/dcache/blob/master/modules/dcache-nearline-spi/src/main/java/org/dcache/pool/nearline/spi/FlushRequest),
+[org.dcache.pool.nearline.spi.FlushRequest](https://github.com/dCache/dcache/blob/master/modules/dcache-nearline-spi/src/main/java/org/dcache/pool/nearline/spi/FlushRequest.java),
 [org.dcache.pool.nearline.spi.StageRequest](https://github.com/dCache/dcache/blob/master/modules/dcache-nearline-spi/src/main/java/org/dcache/pool/nearline/spi/StageRequest.java),
 or
 [org.dcache.pool.nearline.spi.RemoveRequest](https://github.com/dCache/dcache/blob/master/modules/dcache-nearline-spi/src/main/java/org/dcache/pool/nearline/spi/RemoveRequest.java).
@@ -129,12 +129,40 @@ In fact, the `script` driver shipped with dCache is a subclass of
 
 ## Maven Archetype
 
-A Maven Archetype is a template for new Maven projects. We provide an archetype
-as a starting point for writing nearline storage plugins for dCache. To
-instantiate the archetype, run
+The easiest way to develop your own nearline storage plugin is to use a Maven
+Archetype, a template for new Maven projects. dCache provides an archetype, called
+`dcache-nearline-plugin-archetype`, that generates all essential directories and
+files to create a ready to use plugin. To use the archetype for your own plugin,
+you have to execute the following steps:
+
+First, you need to get the source code of dCache and change it to version 6.0.11.
+This can easily be done with
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$ git clone https://github.com/dCache/dcache.git
+$ cd dcache
+$ git checkout 6.0.11
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Furthermore, you have to check if Maven uses Java 8. To check the version number,
+run
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ mvn archetype:generate
+$ mvn -v
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This will give you an output with the java-version among other information. You
+are now ready to install the archetype. Therefore run the following command in
+your dCache directory:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$ mvn clean install -DskipTests -am -pl archetypes/dcache-nearline-plugin-archetype
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now you're ready to generate the archetype. Head into the directory where you want
+to develop the plugin and run
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$ mvn archetype:generate -DarchetypeCatalog=local
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maven will prompt you to select an archetype from a list. Select
@@ -155,43 +183,42 @@ different versions of dCache (we provide no guarantees though!).
 Example:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ mvn archetype:generate
+$ mvn archetype:generate -DarchetypeCatalog=local
 [INFO] Scanning for projects...
 [INFO]
-[INFO] ------------------------------------------------------------------------
+[INFO] ------------------< org.apache.maven:standalone-pom >-------------------
 [INFO] Building Maven Stub Project (No POM) 1
-[INFO] ------------------------------------------------------------------------
+[INFO] --------------------------------[ pom ]---------------------------------
 [INFO]
-[INFO] >>> maven-archetype-plugin:2.2:generate (default-cli) > generate-sources @ standalone-pom >>>
+[INFO] >>> maven-archetype-plugin:3.1.2:generate (default-cli) > generate-sources @ standalone-pom >>>
 [INFO]
-[INFO] <<< maven-archetype-plugin:2.2:generate (default-cli) < generate-sources @ standalone-pom <<<
+[INFO] <<< maven-archetype-plugin:3.1.2:generate (default-cli) < generate-sources @ standalone-pom <<<
 [INFO]
-[INFO] --- maven-archetype-plugin:2.2:generate (default-cli) @ standalone-pom ---
+[INFO]
+[INFO] --- maven-archetype-plugin:3.1.2:generate (default-cli) @ standalone-pom ---
 [INFO] Generating project in Interactive mode
 [INFO] No archetype defined. Using maven-archetype-quickstart (org.apache.maven.archetypes:maven-archetype-quickstart:1.0)
 Choose archetype:
-1: https://download.dcache.org/nexus/content/repositories/releases/ -> org.dcache:xrootd4j-channelhandler-plugin-archetype (-)
-2: https://download.dcache.org/nexus/content/repositories/releases/ -> org.dcache:xrootd4j-authz-plugin-archetype (-)
-3: https://download.dcache.org/nexus/content/repositories/releases/ -> org.dcache:dcache-nearline-plugin-archetype (-)
-Choose a number or apply filter (format: [groupId:]artifactId, case sensitive contains): : 3
-Define value for property 'groupId': : org.example
-Define value for property 'artifactId': : test-nearlinestorage
-Define value for property 'version':  1.0-SNAPSHOT: :
-Define value for property 'package':  org.example: : org.example.dcache
-[INFO] Using property: dcache = 2.16.5
-Define value for property 'description': : Test NearlineStorage to demonstrate the archetype
-Define value for property 'name':  org.example.dcache.test-nearlinestorage: : org.example.test
+1: local -> org.dcache:dcache-nearline-plugin-archetype (dCache Nearline Storage Plugin Archetype)
+Choose a number or apply filter (format: [groupId:]artifactId, case sensitive contains): : 1
+Define value for property 'groupId': org.example
+Define value for property 'artifactId': test-nearlinestorage
+Define value for property 'version' 1.0-SNAPSHOT: :
+Define value for property 'package' org.example: : org.example.dcache
+[INFO] Using property: dcache = 6.0.11
+Define value for property 'description': Test NearlineStorage to demonstrate the archetype
+Define value for property 'name' org.example.dcache.test-nearlinestorage: : org.example.test
 Confirm properties configuration:
 groupId: org.example
 artifactId: test-nearlinestorage
 version: 1.0-SNAPSHOT
 package: org.example.dcache
-dcache: 2.16.5
+dcache: 6.0.11
 description: Test NearlineStorage to demonstrate the archetype
 name: org.example.test
  Y: : y
 [INFO] ----------------------------------------------------------------------------
-[INFO] Using following parameters for creating project from Archetype: dcache-nearline-plugin-archetype:2.16.5
+[INFO] Using following parameters for creating project from Archetype: dcache-nearline-plugin-archetype:6.0.11
 [INFO] ----------------------------------------------------------------------------
 [INFO] Parameter: groupId, Value: org.example
 [INFO] Parameter: artifactId, Value: test-nearlinestorage
@@ -201,17 +228,16 @@ name: org.example.test
 [INFO] Parameter: package, Value: org.example.dcache
 [INFO] Parameter: version, Value: 1.0-SNAPSHOT
 [INFO] Parameter: name, Value: org.example.test
-[INFO] Parameter: dcache, Value: 2.16.5
+[INFO] Parameter: dcache, Value: 6.0.11
 [INFO] Parameter: groupId, Value: org.example
 [INFO] Parameter: description, Value: Test NearlineStorage to demonstrate the archetype
 [INFO] Parameter: artifactId, Value: test-nearlinestorage
-[INFO] project created from Archetype in dir: /private/tmp/test-nearlinestorage
+[INFO] Project created from Archetype in dir: /private/tmp/test-nearlinestorage
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time: 08:50 min
-[INFO] Finished at: 2016-07-14T10:28:50+02:00
-[INFO] Final Memory: 16M/304M
+[INFO] Total time:  01:56 min
+[INFO] Finished at: 2020-03-18T12:26:17+01:00
 [INFO] ------------------------------------------------------------------------
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -243,17 +269,22 @@ $ tree
                 └── services
                     └── org.dcache.pool.nearline.spi.NearlineStorageProvider
 
-10 directories, 8 files
+12 directories, 9 files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To build your plugin and create a jar file, you can use Maven, too:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $ mvn package
 [INFO] Scanning for projects...
 [INFO]
-[INFO] ------------------------------------------------------------------------
+[INFO] ------------------< org.example:test-nearlinestorage >------------------
 [INFO] Building Test NearlineStorage to demonstrate the archetype 1.0-SNAPSHOT
-[INFO] ------------------------------------------------------------------------
+[INFO] --------------------------------[ jar ]---------------------------------
 [INFO]
 [INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ test-nearlinestorage ---
 [WARNING] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
-[INFO] Copying 0 resource
+[INFO] Copying 1 resource
 [INFO]
 [INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ test-nearlinestorage ---
 [INFO] Changes detected - recompiling the module!
@@ -281,13 +312,12 @@ $ mvn package
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time: 1.510 s
-[INFO] Finished at: 2016-07-14T10:33:29+02:00
-[INFO] Final Memory: 23M/306M
+[INFO] Total time:  3.508 s
+[INFO] Finished at: 2020-03-18T12:28:41+01:00
 [INFO] ------------------------------------------------------------------------
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The resulting tar file can be shipped to customers and unpackaged in
+The resulting jar-file in `target/` can be shipped to customers and moved to
 `/usr/local/share/dcache/plugins`. Obviously you need to modify the generated
 files to do something useful first.
 
