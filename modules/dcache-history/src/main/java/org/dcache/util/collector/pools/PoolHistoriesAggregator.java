@@ -97,8 +97,7 @@ public class PoolHistoriesAggregator extends PoolInfoAggregator {
         long timestamp = System.currentTimeMillis();
         CountingHistogram model = PoolInfoCollectorUtils.mergeLastAccess(pools);
         PoolData poolData = new PoolData();
-        SweeperData sweeperData = new SweeperData();
-        sweeperData.setLastAccessHistogram(model);
+        SweeperData sweeperData = new SweeperData(model);
         poolData.setSweeperData(sweeperData);
         group.setInfo(poolData);
         PoolInfoCollectorUtils.updateFstatTimeSeries(model.getMetadata(), group, timestamp);

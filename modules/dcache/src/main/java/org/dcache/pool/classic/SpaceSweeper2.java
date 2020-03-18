@@ -341,7 +341,10 @@ public class SpaceSweeper2
     @Override
     public SweeperData getDataObject()
     {
-        SweeperData info = new SweeperData();
+        CountingHistogram histogram =
+                        SweeperData.createUnconfiguredLastAccessHistogram();
+
+        SweeperData info = new SweeperData(histogram);
         info.setLabel("Space Sweeper v2");
         info.setMargin(_margin);
 
@@ -376,10 +379,9 @@ public class SpaceSweeper2
             fileLifetime.add((double)lvalue);
         }
 
-        CountingHistogram histogram = SweeperData.createLastAccessHistogram();
         histogram.setData(fileLifetime);
         histogram.configure();
-        info.setLastAccessHistogram(histogram);
+
         return info;
     }
 

@@ -304,7 +304,7 @@ public final class PoolInfoCollectorUtils {
                              .collect(Collectors.toList());
 
         CountingHistogram groupHistogram
-                        = SweeperData.createLastAccessHistogram();
+                        = SweeperData.createUnconfiguredLastAccessHistogram();
 
         if (allHistograms.isEmpty()) {
             groupHistogram.setData(Collections.EMPTY_LIST);
@@ -324,19 +324,11 @@ public final class PoolInfoCollectorUtils {
 
         for (CountingHistogram h : allHistograms) {
             Double highestBin = h.getHighestBin();
-            /*
-             *  REVISIT.   This is a temporary fix for backport (6.1).
-             *  A null highestBin means the histogram has
-             *  not been initialized; this also means the metadata
-             *  object will be null.
-             */
-            if (highestBin != null) {
-                metadata.mergeStatistics(h.getMetadata());
-                if (highestBin > maxBinValue) {
-                    standard = h;
-                    maxBinValue = highestBin;
-                }
+            if (highestBin > maxBinValue) {
+                standard = h;
+                maxBinValue = highestBin;
             }
+            metadata.mergeStatistics(h.getMetadata());
         }
 
         int binCount = standard.getBinCount();

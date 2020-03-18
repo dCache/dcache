@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.pool.classic.json;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.util.histograms.CountingHistogram;
@@ -78,11 +79,39 @@ public class SweeperData implements Serializable {
     private static final String IDENTIFIER = "Time Since Last Access";
     private static final int BIN_COUNT = 61;
 
-    private CountingHistogram lastAccess = createLastAccessHistogram();
+    private static final CountingHistogram DEFAULT_HISTOGRAM
+        = createDefaultHistogram();
+
+    public static CountingHistogram createUnconfiguredLastAccessHistogram() {
+        CountingHistogram histogram = new CountingHistogram();
+        histogram.setDataUnitLabel(SweeperData.DATA_UNIT_LABEL);
+        histogram.setBinCount(BIN_COUNT);
+        histogram.setBinUnit(BIN_UNIT);
+        histogram.setBinUnitLabel(SweeperData.BIN_UNIT_LABEL);
+        histogram.setIdentifier(IDENTIFIER);
+        return histogram;
+    }
+
+    private static CountingHistogram createDefaultHistogram() {
+        CountingHistogram histogram = createUnconfiguredLastAccessHistogram();
+        histogram.setData(Collections.EMPTY_LIST);
+        histogram.configure();
+        return histogram;
+    }
+
+    private CountingHistogram lastAccess;
     private String            label;
     private Integer           lruQueueSize;
     private Long              lruTimestamp;
     private Double            margin;
+
+    public SweeperData() {
+        lastAccess = DEFAULT_HISTOGRAM;
+    }
+
+    public SweeperData(CountingHistogram lastAccess) {
+        this.lastAccess = lastAccess;
+    }
 
     public String getLabel() {
         return label;
@@ -120,15 +149,5 @@ public class SweeperData implements Serializable {
 
     public void setMargin(Double margin) {
         this.margin = margin;
-    }
-
-    public static CountingHistogram createLastAccessHistogram() {
-        CountingHistogram histogram = new CountingHistogram();
-        histogram.setDataUnitLabel(SweeperData.DATA_UNIT_LABEL);
-        histogram.setBinCount(BIN_COUNT);
-        histogram.setBinUnit(BIN_UNIT);
-        histogram.setBinUnitLabel(SweeperData.BIN_UNIT_LABEL);
-        histogram.setIdentifier(IDENTIFIER);
-        return histogram;
     }
 }

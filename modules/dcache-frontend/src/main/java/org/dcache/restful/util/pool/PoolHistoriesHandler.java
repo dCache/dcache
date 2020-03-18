@@ -263,8 +263,7 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
         group.setInfo(poolData);
 
         CountingHistogram model = getAggregateFileLifetime(group.getKey(), pools);
-        SweeperData sweeperData = new SweeperData();
-        sweeperData.setLastAccessHistogram(model);
+        SweeperData sweeperData = new SweeperData(model);
         poolData.setSweeperData(sweeperData);
 
         try {

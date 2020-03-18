@@ -61,7 +61,6 @@ package org.dcache.services.history.pools;
 
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -85,7 +84,6 @@ import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.util.collector.ListenableFutureWrapper;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.collector.pools.PoolLiveDataCollector;
-import org.dcache.util.histograms.CountingHistogram;
 import org.dcache.util.histograms.TimeseriesHistogram;
 import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
@@ -145,13 +143,7 @@ public final class PoolTimeseriesServiceImpl extends
             }
         }
 
-        SweeperData sweeperData = new SweeperData();
-        CountingHistogram histogram = SweeperData.createLastAccessHistogram();
-        histogram.setData(Collections.EMPTY_LIST);
-        histogram.configure();
-        sweeperData.setLastAccessHistogram(histogram);
-
-        return sweeperData;
+        return new SweeperData();
     }
 
     public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String key,
