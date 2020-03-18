@@ -324,13 +324,19 @@ public final class PoolInfoCollectorUtils {
 
         for (CountingHistogram h : allHistograms) {
             Double highestBin = h.getHighestBin();
-            double currentMaxBin = highestBin == null ?
-                            Double.MIN_VALUE : highestBin;
-            if (currentMaxBin > maxBinValue) {
-                standard = h;
-                maxBinValue = currentMaxBin;
+            /*
+             *  REVISIT.   This is a temporary fix for backport (6.1).
+             *  A null highestBin means the histogram has
+             *  not been initialized; this also means the metadata
+             *  object will be null.
+             */
+            if (highestBin != null) {
+                metadata.mergeStatistics(h.getMetadata());
+                if (highestBin > maxBinValue) {
+                    standard = h;
+                    maxBinValue = highestBin;
+                }
             }
-            metadata.mergeStatistics(h.getMetadata());
         }
 
         int binCount = standard.getBinCount();
