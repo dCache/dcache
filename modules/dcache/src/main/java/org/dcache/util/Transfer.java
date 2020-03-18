@@ -51,6 +51,7 @@ import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -141,6 +142,8 @@ public class Transfer implements Comparable<Transfer>
 
     private Set<FileAttribute> _additionalAttributes =
             EnumSet.noneOf(FileAttribute.class);
+
+    private MoverInfoMessage moverInfoMessage;
 
     private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
 
@@ -591,6 +594,7 @@ public class Transfer implements Comparable<Transfer>
     {
         setFileAttributes(msg.getFileAttributes());
         setProtocolInfo(msg.getProtocolInfo());
+        moverInfoMessage = msg.getMoverInfo();
         if (msg.getReturnCode() != 0) {
             finished(CacheExceptionFactory.exceptionOf(msg));
         } else {
@@ -1261,6 +1265,9 @@ public class Transfer implements Comparable<Transfer>
         _billing.notify(msg);
 
         _isBillingNotified = true;
+
+        msg.setMoverInfo(moverInfoMessage);
+
         _kafkaSender.accept(msg);
     }
 

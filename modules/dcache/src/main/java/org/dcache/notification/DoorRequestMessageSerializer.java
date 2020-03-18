@@ -8,14 +8,26 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Map;
 
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DoorRequestMessageSerializer implements Serializer<DoorRequestInfoMessage> {
+
+    private static final String[] REDUNDANT_MOVER_DATA_KEYS
+                    = {
+                        "subject",
+                        "pnfsid",
+                        "fileSize",
+                        "initiator",
+                        "billingPath",
+                        "storageInfo"
+                      };
 
     @Override
     public byte[] serialize(String topic, DoorRequestInfoMessage data) {
@@ -54,8 +66,16 @@ public class DoorRequestMessageSerializer implements Serializer<DoorRequestInfoM
         if (info != null) {
             o.put("storageInfo", info.getStorageClass() + "@" + info.getHsm());
         }
-        return o.toString().getBytes(UTF_8);
 
+        MoverInfoMessage moverInfoMessage = data.getMoverInfo();
+
+        if (moverInfoMessage != null) {
+            JSONObject moverInfo = BillingMessageSerializer.transform(moverInfoMessage);
+            Arrays.stream(REDUNDANT_MOVER_DATA_KEYS).forEach(moverInfo::remove);
+            o.put("moverInfo", moverInfo);
+        }
+
+        return o.toString().getBytes(UTF_8);
     }
 
     @Override

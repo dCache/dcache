@@ -145,12 +145,13 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                                         "Transfer failed due to unexpected exception: " + e.getMessage());
                 completionHandler.failed(e, null);
             }
-            sendBillingMessage(mover, handle.getReplicaSize());
-            sendFinished(mover);
+            MoverInfoMessage moverInfoMessage =
+                            sendBillingMessage(mover, handle.getReplicaSize());
+            sendFinished(mover, moverInfoMessage);
         }));
     }
 
-    public void sendBillingMessage(Mover<?> mover, long fileSize) {
+    public MoverInfoMessage sendBillingMessage(Mover<?> mover, long fileSize) {
 
         FileAttributes fileAttributes = mover.getFileAttributes();
 
@@ -178,6 +179,8 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         _billing.notify(infoWithStats);
 
         _kafkaSender.accept(infoWithStats);
+
+        return infoWithStats;
     }
 
 
@@ -203,7 +206,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         return info;
      }
 
-    public void sendFinished(Mover<?> mover) {
+    public void sendFinished(Mover<?> mover, MoverInfoMessage moverInfoMessage) {
         DoorTransferFinishedMessage finished =
                 new DoorTransferFinishedMessage(mover.getClientId(),
                         mover.getFileAttributes().getPnfsId(),
@@ -211,6 +214,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                         mover.getFileAttributes(),
                         _poolName,
                         mover.getQueueName());
+        finished.setMoverInfo(moverInfoMessage);
         if (mover.getErrorCode() == 0) {
             finished.setSucceeded();
         } else {

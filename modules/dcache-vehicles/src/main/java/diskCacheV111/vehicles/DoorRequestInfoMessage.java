@@ -1,7 +1,5 @@
 package diskCacheV111.vehicles;
 
-import com.google.common.base.MoreObjects;
-
 import javax.security.auth.Subject;
 
 import dmg.cells.nucleus.CellAddressCore;
@@ -16,6 +14,8 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 
     private static final long serialVersionUID = 2469895982145157834L;
     private String _transferPath;
+
+    private MoverInfoMessage moverInfo;
 
     public DoorRequestInfoMessage(CellAddressCore address)
     {
@@ -66,6 +66,16 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     public String getClientChain()
     {
         return _clientChain;
+    }
+
+    public MoverInfoMessage getMoverInfo()
+    {
+        return moverInfo;
+    }
+
+    public void setMoverInfo(MoverInfoMessage moverInfo)
+    {
+        this.moverInfo = moverInfo;
     }
 
     public String getOwner()

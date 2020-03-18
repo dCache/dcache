@@ -18,14 +18,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
 
-    @Override
-    public byte[] serialize(String topic, MoverInfoMessage data) {
-
+    static JSONObject transform(MoverInfoMessage data) {
         JSONObject o = new JSONObject();
         o.put("version", "1.0");
         o.put("msgType", data.getMessageType());
         o.put("date", DateTimeFormatter.ISO_OFFSET_DATE_TIME
-                .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()), ZoneId.systemDefault())));
+                        .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()), ZoneId.systemDefault())));
         o.put("queuingTime", data.getTimeQueued());
         o.put("cellName", data.getCellAddress().getCellName());
         o.put("cellType", data.getCellType());
@@ -34,6 +32,7 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         if (!Double.isNaN(data.getMeanReadBandwidth())) {
             o.put("meanReadBandwidth", data.getMeanReadBandwidth());
         }
+
         if (!Double.isNaN(data.getMeanWriteBandwidth())) {
             o.put("meanWriteBandwidth", data.getMeanWriteBandwidth());
         }
@@ -46,7 +45,6 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         JSONObject status = new JSONObject();
         status.put("code", data.getResultCode());
         status.put("msg", data.getMessage());
-
         o.put("status", status);
 
         o.put("session", data.getTransaction());
@@ -76,8 +74,12 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         o.put("initiator", data.getInitiator());
         o.put("isP2p", data.isP2P());
         o.put("transferPath", data.getTransferPath());
-        return o.toString().getBytes(UTF_8);
+        return o;
+    }
 
+    @Override
+    public byte[] serialize(String topic, MoverInfoMessage data) {
+        return transform(data).toString().getBytes(UTF_8);
     }
 
     @Override

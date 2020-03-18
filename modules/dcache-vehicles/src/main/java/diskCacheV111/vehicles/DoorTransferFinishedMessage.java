@@ -21,6 +21,8 @@ public class DoorTransferFinishedMessage extends Message {
    private final String _ioQueueName;
    private static final long serialVersionUID = -7563456962335030196L;
 
+   private MoverInfoMessage moverInfo;
+
    public DoorTransferFinishedMessage(long id,
                                       PnfsId pnfsId,
                                       ProtocolInfo protocol,
@@ -45,6 +47,16 @@ public class DoorTransferFinishedMessage extends Message {
 
    public FileAttributes getFileAttributes() {
        return _fileAttributes;
+   }
+
+   public MoverInfoMessage getMoverInfo()
+   {
+       return moverInfo;
+   }
+
+   public void setMoverInfo(MoverInfoMessage moverInfo)
+   {
+       this.moverInfo = moverInfo;
    }
 
    public PnfsId getPnfsId() {
