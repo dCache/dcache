@@ -991,6 +991,10 @@ public class ChimeraNameSpaceProvider
                 stat = inode.statCache();
                 attributes.setNlink(stat.getNlink());
                 break;
+            case XATTR:
+                // as some brave components query for all defined attributes
+                // REVISIT: xattrs not stored yet
+                break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
             }
