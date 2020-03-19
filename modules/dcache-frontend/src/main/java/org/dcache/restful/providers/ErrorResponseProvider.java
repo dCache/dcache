@@ -20,10 +20,12 @@ package org.dcache.restful.providers;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.google.common.base.Throwables;
 import org.json.JSONObject;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -65,13 +67,18 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception>
                     "Unable to interpret JSON: " + firstLineOf(e.getMessage()));
         } else if (e instanceof BadRequestException) {
             return buildResponse(Response.Status.BAD_REQUEST,
-                    e.getMessage() == null ? "Bad request" : e.getMessage());
+                                 getMessage(e, "Bad request"));
+        } else if (e instanceof NotFoundException) {
+            return buildResponse(Response.Status.NOT_FOUND,
+                                 getMessage(e, "Not found"));
         } else if (e instanceof InternalServerErrorException) {
             return buildResponse(Response.Status.INTERNAL_SERVER_ERROR,
-                    e.getMessage() == null ? "Internal error" : e.getMessage());
+                                 getMessage(e, "Internal error"));
         } else if (e instanceof WebApplicationException) {
             Response r = ((WebApplicationException)e).getResponse();
-            return buildResponse(r.getStatus(), r.getStatusInfo().getReasonPhrase(), r.getLocation());
+            return buildResponse(r.getStatus(),
+                                 r.getStatusInfo().getReasonPhrase(),
+                                 r.getLocation());
         } else {
             // All other Exceptions are bug -- log them.
             Thread t = Thread.currentThread();
@@ -94,5 +101,26 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception>
         JSONObject json = new JSONObject();
         json.put("errors", Collections.singletonList(error));
         return Response.status(status).entity(json.toString()).location(location).build();
+    }
+
+    private String getMessage(Exception e, String defaultMessage)
+    {
+        String message = null;
+
+        Throwable cause = Throwables.getRootCause(e);
+
+        if (cause != null) {
+            message = cause.getMessage();
+        }
+
+        if (message == null) {
+            message = e.getMessage();
+        }
+
+        if (message == null) {
+            message = defaultMessage;
+        }
+
+        return message;
     }
 }
