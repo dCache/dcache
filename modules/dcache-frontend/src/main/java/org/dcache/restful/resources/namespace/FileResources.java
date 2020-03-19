@@ -38,7 +38,6 @@ import javax.ws.rs.core.Response;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -138,7 +137,11 @@ public class FileResources {
                                                 @QueryParam("offset") String offset) throws CacheException
     {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
-        Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
+        Set<FileAttribute> attributes =
+                        NamespaceUtils.getRequestedAttributes(isLocality,
+                                                              isLocations,
+                                                              isQos,
+                                                              false);
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
         try {
@@ -268,9 +271,6 @@ public class FileResources {
             String action = (String) reqPayload.get("action");
             PnfsHandler pnfsHandler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
             FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
-            FileAttributes attributes
-                            = pnfsHandler.getFileAttributes(path,
-                                                            EnumSet.allOf(FileAttribute.class));
             switch (action) {
                 case "mkdir":
                     String name = (String) reqPayload.get("name");
@@ -289,7 +289,7 @@ public class FileResources {
                                             poolMonitor,
                                             pnfsHandler,
                                             pinmanager)
-                                    .adjustQoS(path, attributes,
+                                    .adjustQoS(path,
                                                targetQos, request.getRemoteHost());
             }
         } catch (FileNotFoundCacheException e) {

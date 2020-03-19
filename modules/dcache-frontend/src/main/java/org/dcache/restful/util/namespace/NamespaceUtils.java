@@ -1,6 +1,11 @@
 package org.dcache.restful.util.namespace;
 
+import com.google.common.collect.ImmutableSet;
+
 import javax.servlet.http.HttpServletRequest;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -190,6 +195,48 @@ public final class NamespaceUtils {
             json.setStorageInfo(info);
             json.setSuris(info.locations());
         }
+    }
+
+    public static Set<FileAttribute> getRequestedAttributes(boolean locality,
+                                                            boolean locations,
+                                                            boolean qos,
+                                                            boolean optional) {
+        Set<FileAttribute> attributes = new HashSet<>();
+        attributes.add(FileAttribute.PNFSID);
+        attributes.add(FileAttribute.NLINK);
+        attributes.add(FileAttribute.MODIFICATION_TIME);
+        attributes.add(FileAttribute.CREATION_TIME);
+        attributes.add(FileAttribute.SIZE);
+        attributes.add(FileAttribute.TYPE);
+
+        if (locations || locality || qos || optional) {
+            attributes.add(FileAttribute.LOCATIONS);
+        }
+
+        if (locality || qos || optional) {
+            attributes.add(FileAttribute.STORAGEINFO);
+            attributes.add(FileAttribute.FLAGS);
+            attributes.add(FileAttribute.HSM);
+        }
+
+        if (qos || optional) {
+            attributes.add(FileAttribute.ACCESS_LATENCY);
+            attributes.add(FileAttribute.RETENTION_POLICY);
+        }
+
+        if (optional) {
+            attributes.add(FileAttribute.ACL);
+            attributes.add(FileAttribute.ACCESS_TIME);
+            attributes.add(FileAttribute.CACHECLASS);
+            attributes.add(FileAttribute.CHECKSUM);
+            attributes.add(FileAttribute.CHANGE_TIME);
+            attributes.add(FileAttribute.OWNER_GROUP);
+            attributes.add(FileAttribute.MODE);
+            attributes.add(FileAttribute.OWNER);
+            attributes.add(FileAttribute.STORAGECLASS);
+        }
+
+        return ImmutableSet.copyOf(attributes);
     }
 
     /**

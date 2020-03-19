@@ -18,6 +18,7 @@
  */
 package org.dcache.qos;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +90,20 @@ public class QoSTransitionEngine
         return cellStub.sendAndWait(message).getCount() != 0;
     }
 
-    private static final Set<FileAttribute> QOS_ATTRIBUTES
+    private static final Set<FileAttribute> TRANSITION_ATTRIBUTES
+                    = Sets.immutableEnumSet(FileAttribute.PNFSID,
+                                            FileAttribute.ACCESS_LATENCY,
+                                            FileAttribute.RETENTION_POLICY,
+                                            FileAttribute.STORAGEINFO,
+                                            FileAttribute.CHECKSUM,
+                                            FileAttribute.SIZE,
+                                            FileAttribute.TYPE,
+                                            FileAttribute.CACHECLASS,
+                                            FileAttribute.HSM,
+                                            FileAttribute.FLAGS,
+                                            FileAttribute.LOCATIONS);
+
+    private static final Set<FileAttribute> UPDATE_ATTRIBUTES
                     = Collections.unmodifiableSet
                     (EnumSet.of(FileAttribute.PNFSID,
                                 FileAttribute.ACCESS_LATENCY,
@@ -189,7 +203,6 @@ public class QoSTransitionEngine
     }
 
     public void adjustQoS(FsPath path,
-                          FileAttributes attributes,
                           String target,
                           String remoteHost)
                     throws  UnsupportedOperationException,
@@ -198,6 +211,9 @@ public class QoSTransitionEngine
                             InterruptedException,
                             NoRouteToCellException
     {
+        FileAttributes attributes
+                        = pnfsHandler.getFileAttributes(path,
+                                                        TRANSITION_ATTRIBUTES);
         FileLocality locality = getLocality(attributes, remoteHost);
 
         LOGGER.debug("The Locality of the file: {}", locality);
@@ -303,7 +319,7 @@ public class QoSTransitionEngine
 
         if (modifiedAttr.isDefined(FileAttribute.ACCESS_LATENCY) ||
                         modifiedAttr.isDefined(FileAttribute.RETENTION_POLICY)) {
-            pnfsHandler.setFileAttributes(path, modifiedAttr, QOS_ATTRIBUTES);
+            pnfsHandler.setFileAttributes(path, modifiedAttr, UPDATE_ATTRIBUTES);
         }
     }
 
