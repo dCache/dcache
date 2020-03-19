@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByHsmMessage;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
@@ -102,15 +103,16 @@ public class MigrationPolicyEngine {
 
     //TODO currently this functionality is limited in a way that the file can be migrated only to one pool.
     public void adjust() throws InterruptedException, CacheException, NoRouteToCellException {
-
-        Collection<String> targetPools = getTargetPolls(fileAttributes, cellStub);
         Collection<String> sourcePools = getSourcePools(fileAttributes);
 
         if (sourcePools.isEmpty()) {
-            throw new CacheException("No file locations found");
+            throw new FileNotFoundCacheException("No source locations found");
         }
+
+        Collection<String> targetPools = getTargetPolls(fileAttributes, cellStub);
+
         if (targetPools.isEmpty()) {
-            throw new InternalError("No HSM pool found");
+            throw new FileNotFoundCacheException("No HSM pool available");
         }
 
         List<String> samePools = targetPools.stream().filter(n->
