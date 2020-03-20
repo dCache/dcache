@@ -27,39 +27,21 @@ import java.util.Set;
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;
 import org.dcache.xrootd.core.XrootdException;
-import org.dcache.xrootd.core.XrootdRequestHandler;
-import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.core.XrootdProtocolRequestHandler;
 import org.dcache.xrootd.protocol.messages.LocateRequest;
 import org.dcache.xrootd.protocol.messages.LocateResponse;
-import org.dcache.xrootd.protocol.messages.ProtocolRequest;
-import org.dcache.xrootd.protocol.messages.ProtocolResponse;
 import org.dcache.xrootd.protocol.messages.QueryRequest;
 import org.dcache.xrootd.protocol.messages.QueryResponse;
 import org.dcache.xrootd.protocol.messages.SetRequest;
 import org.dcache.xrootd.protocol.messages.SetResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
-import org.dcache.xrootd.security.SigningPolicy;
 import org.dcache.xrootd.util.ChecksumInfo;
 
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Unsupported;
 
-public class AbstractXrootdRequestHandler extends XrootdRequestHandler
+public class AbstractXrootdRequestHandler extends XrootdProtocolRequestHandler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractXrootdRequestHandler.class);
-
-    protected SigningPolicy signingPolicy;
-
-    public void setSigningPolicy(SigningPolicy signingPolicy)
-    {
-        this.signingPolicy = signingPolicy;
-    }
-
-    @Override
-    protected XrootdResponse<ProtocolRequest> doOnProtocolRequest(ChannelHandlerContext ctx, ProtocolRequest msg)
-            throws XrootdException
-    {
-        return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER, signingPolicy);
-    }
 
     @Override
     protected XrootdResponse<LocateRequest> doOnLocate(ChannelHandlerContext ctx, LocateRequest msg) throws XrootdException
@@ -124,5 +106,4 @@ public class AbstractXrootdRequestHandler extends XrootdRequestHandler
         throw new XrootdException(kXR_Unsupported, "No checksum available "
                         + "for this file.");
     }
-
 }

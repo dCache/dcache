@@ -85,6 +85,7 @@ import org.dcache.xrootd.protocol.messages.StatRequest;
 import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
+import org.dcache.xrootd.security.TLSSessionInfo;
 import org.dcache.xrootd.tpc.protocol.messages.InboundReadResponse;
 import org.dcache.xrootd.tpc.protocol.messages.InboundRedirectResponse;
 import org.dcache.xrootd.util.ByteBuffersProvider;
@@ -131,7 +132,8 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                               ChannelHandlerContext ctx,
                               XrootdTransferService service,
                               String userUrn,
-                              XrootdTpcInfo info)
+                              XrootdTpcInfo info,
+                              TLSSessionInfo tlsSessionInfo)
     {
         super(channel, posc);
         userResponseCtx = ctx;
@@ -139,6 +141,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                                      info,
                                      this,
                                      service.getThirdPartyShutdownExecutor());
+        client.setTlsSessionInfo(tlsSessionInfo);
         client.setResponseTimeout(service.getTpcServerResponseTimeoutInSeconds());
         group = service.getThirdPartyClientGroup();
         authPlugins = service.getTpcClientPlugins();
@@ -233,6 +236,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                                          info,
                                          this,
                                          current.getExecutor());
+            client.setTlsSessionInfo(new TLSSessionInfo(current.getTlsSessionInfo()));
             client.configureRedirects(current);
             current.shutDown(ctx);
 

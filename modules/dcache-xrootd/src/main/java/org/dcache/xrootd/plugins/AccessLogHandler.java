@@ -367,6 +367,12 @@ public class AccessLogHandler extends ChannelDuplexHandler
             return "locate";
         case kXR_truncate:
             return "truncate";
+        case kXR_sigver:
+            return "sigver";
+        case kXR_pgread:
+            return "pgread";
+        case kXR_writev:
+            return "writev";
         default:
             return String.valueOf(request.getRequestId());
         }

@@ -134,6 +134,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     {
         if (event instanceof LoginEvent) {
             loggedIn((LoginEvent) event);
+        } else {
+            super.userEventTriggered(ctx, event);
         }
     }
 

@@ -227,17 +227,37 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 
     @Override
     protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg)
+                    throws XrootdException
     {
         XrootdSessionIdentifier sessionId = new XrootdSessionIdentifier();
-        /*
-         * It is only necessary to tell the client to observe the unix protocol
-         * if security is on and signed hashes are being enforced.
-         *
-         * We also need to swap the decoder.
-         */
         String sec;
 
-        if (signingPolicy.isSigningOn() && signingPolicy.isForceSigning()) {
+        /**
+         *   If TLS is on, we don't need authentication.
+         *
+         *   If login protection is set, TLS should already have been activated
+         *   just before the kXR_protocol response
+         *   (#super.doOnProtocolRequest).
+         *
+         *   Otherwise, we should turn it on here, because authentication
+         *   (UNIX) will not be required and #doOnAuthentication will not
+         *   be called.  Passing in kXR_login or kXR_auth should make no
+         *   difference here.
+         */
+        if (tlsSessionInfo.serverUsesTls()) {
+            boolean startedTLS = tlsSessionInfo.serverTransitionedToTLS(kXR_login,
+                                                                        ctx);
+            _log.debug("kXR_login, server has now transitioned to tls? {}.",
+                       startedTLS);
+            sec = "";
+        } else if (signingPolicy.isSigningOn() && signingPolicy.isForceSigning()) {
+            /*
+             * It is only necessary to tell the client to observe
+             * the unix protocol if security is on and signed hashes
+             * are being enforced.
+             *
+             * We also need to swap the decoder.
+             */
             sec = "&P=unix";
             ctx.pipeline().addAfter("decoder",
                                         "sigverDecoder",
@@ -246,7 +266,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             ctx.pipeline().remove("decoder");
             _log.debug("swapped decoder for sigverDecoder.");
         } else {
+            /*
+             *  No authentication is enforced, and no TLS either.
+             */
             sec = "";
+            _log.debug("no authentication or TLS enforced.");
         }
 
         return new LoginResponse(msg, sessionId, sec);
@@ -256,6 +280,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     protected XrootdResponse<AuthenticationRequest> doOnAuthentication(ChannelHandlerContext ctx,
                                                                        AuthenticationRequest msg)
     {
+        /**
+         *  Should only receive this request if signed hash verification is
+         *  on (e.g., using UNIX protocol).
+         */
         return withOk(msg);
     }
 
@@ -317,7 +345,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                         descriptor = new TpcWriteDescriptor(file, posc, ctx,
                                                             _server,
                                                             opaqueMap.get("org.dcache.xrootd.client"),
-                                                            tpcInfo);
+                                                            tpcInfo,
+                                                            tlsSessionInfo);
                     } else {
                         descriptor = new WriteDescriptor(file, posc);
                     }

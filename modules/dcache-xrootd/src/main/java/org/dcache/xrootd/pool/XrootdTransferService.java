@@ -61,9 +61,16 @@ import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.plugins.XrootdTLSHandlerFactory;
+import org.dcache.xrootd.plugins.tls.SSLHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.security.SigningPolicy;
+import org.dcache.xrootd.security.TLSSessionInfo;
 import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
+import org.dcache.xrootd.util.ServerProtocolFlags;
+
+import static org.dcache.xrootd.plugins.XrootdTLSHandlerFactory.CLIENT_TLS;
+import static org.dcache.xrootd.plugins.XrootdTLSHandlerFactory.SERVER_TLS;
 
 /**
  * xrootd transfer service.
@@ -138,10 +145,12 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     private List<ChannelHandlerFactory> plugins;
     private List<ChannelHandlerFactory> accessLogPlugins;
     private List<ChannelHandlerFactory> tpcClientPlugins;
+    private List<ChannelHandlerFactory> sslHandlerFactories;
     private Map<String, String>         queryConfig;
     private NioEventLoopGroup           thirdPartyClientGroup;
     private ScheduledExecutorService    thirdPartyShutdownExecutor;
     private SigningPolicy               signingPolicy;
+    private ServerProtocolFlags         serverProtocolFlags;
     private long                        tpcServerResponseTimeout;
     private TimeUnit                    tpcServerResponseTimeoutUnit;
 
@@ -195,6 +204,18 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public void setSigningPolicy(SigningPolicy signingPolicy)
     {
         this.signingPolicy = signingPolicy;
+    }
+
+    @Required
+    public void setServerProtocolFlags(ServerProtocolFlags serverProtocolFlags)
+    {
+        this.serverProtocolFlags = serverProtocolFlags;
+    }
+
+    @Required
+    public void setSslHandlerFactories(List<ChannelHandlerFactory> sslHandlerFactories)
+    {
+        this.sslHandlerFactories = sslHandlerFactories;
     }
 
     @Resource
@@ -307,11 +328,29 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                                                          clientIdleTimeout,
                                                          clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
+
+        /*
+         *  The TLSSessionInfo needs to be shared between
+         *  the authentication handler and the redirect handler.
+         *
+         *  The TLSSessionInfo on the pool should carry inbound and outbound
+         *  handlers (server and client) in case of a third-party request.
+         */
+        TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(serverProtocolFlags);
+        SSLHandlerFactory factory
+                        = XrootdTLSHandlerFactory.getHandlerFactory(SERVER_TLS,
+                                                                    sslHandlerFactories);
+        tlsSessionInfo.setServerSslHandlerFactory(factory);
+        factory = XrootdTLSHandlerFactory.getHandlerFactory(CLIENT_TLS,
+                                                              sslHandlerFactories);
+        tlsSessionInfo.setClientSslHandlerFactory(factory);
+
         XrootdPoolRequestHandler handler
                         = new XrootdPoolRequestHandler(this,
                                                        maxFrameSize,
                                                        queryConfig);
         handler.setSigningPolicy(signingPolicy);
+        handler.setTlsSessionInfo(tlsSessionInfo);
         pipeline.addLast("transfer", handler);
     }
 

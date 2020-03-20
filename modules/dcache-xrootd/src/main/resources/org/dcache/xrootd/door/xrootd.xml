@@ -103,6 +103,7 @@
     <property name="door" ref="door"/>
     <property name="channelHandlerFactories" ref="channelhandler-factories"/>
     <property name="accessLogHandlerFactories" ref="accesslog-factories"/>
+    <property name="SSLHandlerFactories" ref="ssl-handler-factories"/>
     <property name="rootPath" value="${xrootd.root}"/>
     <property name="queryConfig">
         <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
@@ -116,6 +117,27 @@
     </property>
     <property name="expectedProxyProtocol" value="${xrootd.enable.proxy-protocol}"/>
     <property name="signingPolicy" ref="signing-policy"/>
+    <property name="serverProtocolFlags">
+        <bean class="org.dcache.xrootd.util.ServerProtocolFlags">
+          <property name="allowsAnonymousGPFile" value="false"/>
+          <property name="dataServer" value="false"/>
+          <property name="loadBalancingServer" value="false"/>
+          <property name="managerRole" value="true"/>
+          <property name="metaServerRole" value="false"/>
+          <property name="proxyServerRole" value="false"/>
+          <property name="mode" value="${xrootd.security.tls.mode}"/>
+          <property name="requiresTLSForData" value="${xrootd.security.tls.require-data}"/>
+          <property name="requiresTLSForGPF" value="${xrootd.security.tls.require-gpf}"/>
+          <property name="requiresTLSForLogin" value="${xrootd.security.tls.require-login}"/>
+          <property name="requiresTLSForSession" value="${xrootd.security.tls.require-session}"/>
+          <property name="serverRole" value="false"/>
+          <property name="supervisorRole" value="false"/>
+          <property name="supportsGPFile" value="false"/>
+          <property name="supportsPersistOnClose" value="false"/>
+          <property name="supportsPGReadWrite" value="false"/>
+          <property name="supportsTLS" value="true"/>
+        </bean>
+    </property>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -131,6 +153,12 @@
         class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
     <description>Factory for access log handler</description>
     <property name="plugins" value="access-log"/>
+  </bean>
+
+  <bean id="ssl-handler-factories"
+        class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
+    <description>Factory for ssl (tls) handler</description>
+    <property name="plugins" value="ssl-handler"/>
   </bean>
 
   <bean id="channelhandler-factories"

@@ -159,6 +159,31 @@ xrootd.authz.write-paths=/pnfs/<example.org>/wpath1:/pnfs/<example.org>/wpath2
 
 A restart of the `xrootd` door is required to make the changes take effect. As soon as any of the above properties are set, all read or write requests to directories not matching the allowed path lists will be refused. Symlinks are however not restricted to these prefixes.
 
+### TLS
+
+As of 6.2, dCache supports TLS according to the protocol requirements
+specified by the XrootD Protocol 5.0.
+
+XrootD allows a negotiation between the client and server as to when to initiate
+the TLS handshake.  The server-side options are explained in the _xrootd.properties_
+file.  Currently supported is the ability to require TLS on all connections to
+the door and pool, or to make TLS optional, depending on the client.  One
+can also specify whether to begin TLS before login or after.  The latter option
+is useful in the case of TLS being used with a strong authentication protocol
+such as GSI, in which case it would make sense not to protect the login as GSI
+already requires a Diffie-Hellman handshake to protect the passing of
+credential information.
+
+For third-party, the dCache embedded client (on the destination server) will
+initiate TLS if (a) TLS is available on the destination pool (not turned off),
+and (b) the source server supports or requires it.  In the case that the source
+does not support TLS, but the triggering client has expressed 'tls.tpc=1'
+(requiring TLS on TPC), the connection will fail.
+
+As of 6.2, dCache has not yet implemented the GP file or data channel options;
+stay tuned for further developments in those areas.
+
+
 ### Token-based authorization
 
 The `xrootd` dCache implementation includes a generic mechanism to plug in different authorization handlers. The only plugin available so far implements token-based authorization as suggested in [http://people.web.psi.ch/feichtinger/doc/authz.pdf](https://www.psi.ch/search/phonebook-and-e-mail-directory?q=feichtinger).

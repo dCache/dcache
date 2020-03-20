@@ -40,6 +40,11 @@ check -strong pool.mover.xrootd.frame-size
 check -strong pool.mover.xrootd.port.min
 check -strong pool.mover.xrootd.port.max
 check pool.mover.xrootd.plugins
+check -strong pool.mover.xrootd.security.tls.mode
+check -strong pool.mover.xrootd.security.tls.require-login
+check -strong pool.mover.xrootd.security.tls.require-session
+check -strong pool.mover.xrootd.security.tls.require-data
+check -strong pool.mover.xrootd.security.tls.require-gpf
 check -strong pool.mover.http.threads
 check -strong pool.mover.http.timeout.idle
 check -strong pool.mover.http.timeout.idle.unit

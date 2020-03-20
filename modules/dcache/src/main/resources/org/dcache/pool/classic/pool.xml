@@ -386,6 +386,12 @@
               <property name="plugins" value="${pool.mover.xrootd.plugins}"/>
           </bean>
       </property>
+      <property name="sslHandlerFactories">
+        <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
+          <description>Factory for ssl handler</description>
+          <property name="plugins" value="ssl-handler,ssl-client-handler"/>
+        </bean>
+      </property>
       <property name="doorStub" ref="doorStub"/>
       <property name="portRange">
           <bean class="org.dcache.util.NettyPortRange">
@@ -407,6 +413,27 @@
       <property name="signingPolicy" ref="signing-policy"/>
       <property name="tpcServerResponseTimeout" value="${pool.mover.xrootd.tpc-server-response-timeout}"/>
       <property name="tpcServerResponseTimeoutUnit" value="${pool.mover.xrootd.tpc-server-response-timeout.unit}"/>
+    <property name="serverProtocolFlags">
+      <bean class="org.dcache.xrootd.util.ServerProtocolFlags">
+        <property name="allowsAnonymousGPFile" value="false"/>
+        <property name="dataServer" value="false"/>
+        <property name="loadBalancingServer" value="false"/>
+        <property name="managerRole" value="false"/>
+        <property name="metaServerRole" value="false"/>
+        <property name="proxyServerRole" value="false"/>
+        <property name="mode" value="${pool.mover.xrootd.security.tls.mode}"/>
+        <property name="requiresTLSForData" value="${pool.mover.xrootd.security.tls.require-data}"/>
+        <property name="requiresTLSForGPF" value="${pool.mover.xrootd.security.tls.require-gpf}"/>
+        <property name="requiresTLSForLogin" value="${pool.mover.xrootd.security.tls.require-login}"/>
+        <property name="requiresTLSForSession" value="${pool.mover.xrootd.security.tls.require-session}"/>
+        <property name="serverRole" value="true"/>
+        <property name="supervisorRole" value="false"/>
+        <property name="supportsGPFile" value="false"/>
+        <property name="supportsPersistOnClose" value="false"/>
+        <property name="supportsPGReadWrite" value="false"/>
+        <property name="supportsTLS" value="true"/>
+      </bean>
+    </property>
   </bean>
 
   <bean id="http-transfer-service-parent" class="org.dcache.http.HttpTransferService"
@@ -485,6 +512,7 @@
                  be removed in the future. -->
             <entry key="Xrootd-2" value-ref="xrootd-transfer-service"/>
             <entry key="Xrootd-4" value-ref="xrootd-transfer-service"/>
+            <entry key="Xrootd-5" value-ref="xrootd-transfer-service"/>
             <entry key="Http-1" value-ref="http-transfer-service"/>
             <entry key="RemoteHttpDataTransfer-1" value-ref="remote-http-transfer-service"/>
             <entry key="RemoteHttpsDataTransfer-1" value-ref="remote-http-transfer-service"/>

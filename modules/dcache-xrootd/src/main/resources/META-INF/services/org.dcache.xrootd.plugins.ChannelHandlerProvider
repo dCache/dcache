@@ -1,1 +1,2 @@
 org.dcache.xrootd.plugins.AccessLogHandlerProvider
+org.dcache.xrootd.plugins.XrootdTLSHandlerProvider

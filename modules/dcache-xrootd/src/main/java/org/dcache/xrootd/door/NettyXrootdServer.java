@@ -45,8 +45,14 @@ import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.plugins.XrootdTLSHandlerFactory;
+import org.dcache.xrootd.plugins.tls.SSLHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.security.SigningPolicy;
+import org.dcache.xrootd.security.TLSSessionInfo;
+import org.dcache.xrootd.util.ServerProtocolFlags;
+
+import static org.dcache.xrootd.plugins.XrootdTLSHandlerFactory.SERVER_TLS;
 
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure
@@ -68,6 +74,7 @@ public class NettyXrootdServer implements CellIdentityAware
     private ConnectionTracker           _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
     private List<ChannelHandlerFactory> _accessLogHandlerFactories;
+    private List<ChannelHandlerFactory> _sslHandlerFactories;
     private FsPath _rootPath;
     private InetAddress _address;
     private String sessionPrefix;
@@ -77,6 +84,7 @@ public class NettyXrootdServer implements CellIdentityAware
     private Map<String, String> _appIoQueues;
     private CellAddressCore _myAddress;
     private SigningPolicy               _signingPolicy;
+    private ServerProtocolFlags         _serverProtocolFlags;
 
     private boolean _expectProxyProtocol;
 
@@ -95,6 +103,12 @@ public class NettyXrootdServer implements CellIdentityAware
     public void setSigningPolicy(SigningPolicy config)
     {
         _signingPolicy = config;
+    }
+
+    @Required
+    public void setServerProtocolFlags(ServerProtocolFlags serverProtocolFlags)
+    {
+        _serverProtocolFlags = serverProtocolFlags;
     }
 
     public String getAddress()
@@ -154,6 +168,12 @@ public class NettyXrootdServer implements CellIdentityAware
                     List<ChannelHandlerFactory> channelHandlerFactories)
     {
         _accessLogHandlerFactories = channelHandlerFactories;
+    }
+
+    @Required
+    public void setSSLHandlerFactories(List<ChannelHandlerFactory> channelHandlerFactories)
+    {
+        _sslHandlerFactories = channelHandlerFactories;
     }
 
     /**
@@ -241,18 +261,34 @@ public class NettyXrootdServer implements CellIdentityAware
                                              factory.createHandler());
                         }
 
+                        /*
+                         *  The TLSSessionInfo needs to be shared between
+                         *  the authentication handler and the redirect handler.
+                         *
+                         *  The door only needs one for incoming requests (server).
+                         */
+                        SSLHandlerFactory sslHandlerFactory
+                                        = XrootdTLSHandlerFactory.getHandlerFactory(SERVER_TLS,
+                                                                                    _sslHandlerFactories);
+                        TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(_serverProtocolFlags);
+                        tlsSessionInfo.setServerSslHandlerFactory(sslHandlerFactory);
+
                         for (ChannelHandlerFactory factory: _channelHandlerFactories) {
                             ChannelHandler handler = factory.createHandler();
                             if (handler instanceof XrootdAuthenticationHandler) {
                                 /*
-                                 *  This is to support security level/signed hash verification.
+                                 *  This is to support security level/signed hash verification
+                                 *  or for TLS.
                                  */
-                                ((XrootdAuthenticationHandler)handler).setSigningPolicy(_signingPolicy);
+                                XrootdAuthenticationHandler authn = (XrootdAuthenticationHandler)handler;
+                                authn.setSigningPolicy(_signingPolicy);
+                                authn.setTlsSessionInfo(tlsSessionInfo);
                             }
                             pipeline.addLast("plugin:" + factory.getName(), handler);
                         }
                         XrootdRedirectHandler handler = new XrootdRedirectHandler(_door, _rootPath, _requestExecutor, _queryConfig, _appIoQueues);
                         handler.setSigningPolicy(_signingPolicy);
+                        handler.setTlsSessionInfo(tlsSessionInfo);
                         pipeline.addLast("redirector", handler);
                     }
                 });
