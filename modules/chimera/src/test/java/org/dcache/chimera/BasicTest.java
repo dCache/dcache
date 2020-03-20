@@ -38,9 +38,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 public class BasicTest extends ChimeraTestCaseHelper {
@@ -1327,5 +1325,27 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Instant removeTime = ctime.toInstant();
         Duration diff = Duration.between(removeTime, Instant.now()).abs();
         assertTrue(diff.toMinutes() < 2);
+    }
+
+    @Test
+    public void testOverflowOnJomboFiles() throws ChimeraFsException {
+
+        Stat stat = new Stat();
+        stat.setSize(Long.MAX_VALUE);
+
+        FsInode file1 = _fs.createFile(_rootInode, "file1", 0, 0, 0644);
+        file1.setStat(stat);
+        FsInode file2 = _fs.createFile(_rootInode, "file2", 0, 0, 0644);
+        file2.setStat(stat);
+
+        FsStat fsStat = _fs.getFsStat();
+        assertThat(fsStat.getUsedFiles(),greaterThan(0L));
+    }
+    @Test
+    public void testEmptyFsStat() throws ChimeraFsException {
+
+        FsStat fsStat = _fs.getFsStat();
+        assertThat(fsStat.getUsedSpace(), is(0L));
+        assertThat(fsStat.getUsedFiles(), is(0L));
     }
 }
