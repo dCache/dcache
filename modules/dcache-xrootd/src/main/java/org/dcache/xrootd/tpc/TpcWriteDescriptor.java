@@ -234,16 +234,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                                          this,
                                          current.getExecutor());
             client.configureRedirects(current);
-
-            try {
-                current.shutDown(ctx);
-            } catch (InterruptedException e) {
-                LOGGER.warn("redirect, shutdown of old client, channel {}, "
-                                            + "stream {} was interrupted.",
-                            current.getChannelFuture().channel().id(),
-                            current.getStreamId());
-                return;
-            }
+            current.shutDown(ctx);
 
             if (!client.canRedirect()) {
                 throw new XrootdException(kXR_ServerError, "Client was redirected "

@@ -18,13 +18,10 @@
 package org.dcache.xrootd.plugins;
 
 import com.google.common.base.Strings;
-import com.google.common.net.HostAndPort;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.haproxy.HAProxyCommand;
-import io.netty.handler.codec.haproxy.HAProxyMessage;
 import org.slf4j.Logger;
 
 import javax.security.auth.Subject;
@@ -66,7 +63,9 @@ import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.FileStatus;
 
 import static com.google.common.base.Strings.emptyToNull;
-import static org.dcache.util.NetLoggerBuilder.Level.*;
+import static org.dcache.util.NetLoggerBuilder.Level.DEBUG;
+import static org.dcache.util.NetLoggerBuilder.Level.ERROR;
+import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 @ChannelHandler.Sharable
@@ -320,8 +319,8 @@ public class AccessLogHandler extends ChannelDuplexHandler
             return "close";
         case kXR_dirlist:
             return "dirlist";
-        case kXR_getfile:
-            return "getfile";
+        case kXR_gpfile:
+            return "gpfile";
         case kXR_protocol:
             return "protocol";
         case kXR_login:
@@ -334,8 +333,8 @@ public class AccessLogHandler extends ChannelDuplexHandler
             return "open";
         case kXR_ping:
             return "ping";
-        case kXR_putfile:
-            return "putfile";
+        case kXR_chkpoint:
+            return "chkpoint";
         case kXR_read:
             return "read";
         case kXR_rm:
@@ -350,8 +349,8 @@ public class AccessLogHandler extends ChannelDuplexHandler
             return "set";
         case kXR_write:
             return "write";
-        case kXR_admin:
-            return "admin";
+        case kXR_fattr:
+            return "fattr";
         case kXR_prepare:
             return "prepare";
         case kXR_statx:
@@ -362,8 +361,8 @@ public class AccessLogHandler extends ChannelDuplexHandler
             return "bind";
         case kXR_readv:
             return "readv";
-        case kXR_verifyw:
-            return "verifyw";
+        case kXR_pgwrite:
+            return "pgwrite";
         case kXR_locate:
             return "locate";
         case kXR_truncate:
