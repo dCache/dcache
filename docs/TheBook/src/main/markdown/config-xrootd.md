@@ -186,7 +186,76 @@ stay tuned for further developments in those areas.
 
 ### Token-based authorization
 
-The `xrootd` dCache implementation includes a generic mechanism to plug in different authorization handlers. The only plugin available so far implements token-based authorization as suggested in [http://people.web.psi.ch/feichtinger/doc/authz.pdf](https://www.psi.ch/search/phonebook-and-e-mail-directory?q=feichtinger).
+The `xrootd` dCache implementation includes a generic mechanism to plug in different authorization handlers. 
+
+#### SciTokens
+
+As of 6.2, xrootd authorization has been integrated with gPlazma SciToken support.
+
+Add
+
+```
+auth    sufficient	scitoken
+```
+
+to the _gplazma.conf_ configuration file in order to enable authorization.
+
+The token for xrootd is passed as an 'authz' query element on paths.
+For example,
+
+```
+xrdcp500 -f xroots://dmsdca15.fnal.gov:1095//pnfs/fs/usr/test/arossi/volatile/tls-1/testdata?authz=eyJ0eXAiOiJKV1QiLCJhb... /dev/null
+```
+
+dCache will support different tokens during the same client session, as well as
+different tokens on source and destination endpoints in a third-party transfer.
+
+To enable scitoken authorization on an xrootd door, use "authz:scitokens"
+to load the authorization plugin.
+
+Here is an example layout configuration:
+
+```
+##
+ #  1095: TLS LOGIN, TLS mode=STRICT, SCITOKEN AUTHZ
+##
+[xrootd-${host.name}Domain]
+[xrootd-${host.name}Domain/xrootd]
+xrootd.cell.name=xrootd-${host.name}
+xrootd.net.port=1095
+xrootd.authz.write-paths=/pnfs/fs/usr/test
+xrootd.authz.read-paths=/pnfs/fs/usr/test
+xrootd.security.tls.mode=STRICT
+xrootd.security.tls.require-login=true
+xrootd.plugins=gplazma:none,authz:scitokens
+xrootd.plugin!scitokens.strict=true
+```
+
+Note that the above configuration enforces TLS (STRICT); this is highly recommended
+with SciToken authorization as the token hash is not secure unless encrypted.
+While it is not strictly required to start TLS at login (since the actual token
+is not passed until a request involving a path, in this case, 'open') ––
+``xrootd.security.tls.require-session=true``
+would have been sufficient –– the extra protection on login of course will not
+hurt.
+
+The xrootd protocol states that the server can specify supporting
+different authentication protocols via a list which the client
+should try in order.  While our library code allows for the chaining
+of multiple such handlers, dCache currently only supports one protocol,
+either GSI or none, at a time.
+
+Authorization, on the other hand, takes place after the authentication
+phase; the current library code assumes that the authorization module it
+loads is the only procedure allowed, and there is no provision for passing
+a failed authorization on to a successive handler on the pipeline.
+
+We thus make provision here for failing over to "standard" behavior
+via ``xrootd.plugin!scitokens.strict``.   If it is ``true``, then
+the presence of a scitoken is required.  If ``false``, and the token is missing,
+whatever restrictions that are already in force from the login apply.
+
+#### Token-based authorization as suggested in [http://people.web.psi.ch/feichtinger/doc/authz.pdf](https://www.psi.ch/search/phonebook-and-e-mail-directory?q=feichtinger).
 
 The first thing to do is to setup the keystore. The keystore file
 basically specifies all RSA-keypairs used within the authorization
