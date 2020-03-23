@@ -112,4 +112,34 @@ public class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
                          ps.setString(3, value);
                      });
     }
+
+    @Override
+    void setXattr(FsInode inode, String attr, byte[] value, FileSystemProvider.SetXattrMode mode) throws ChimeraFsException {
+
+        switch (mode) {
+            case CREATE: {
+                int n = _jdbc.update("INSERT INTO t_xattr (inumber, ikey, ivalue) VALUES (?,?,?)" +
+                                "ON CONFLICT ON CONSTRAINT i_xattr_pkey DO NOTHING",
+                        inode.ino(), attr, value);
+                if (n == 0) {
+                    throw new FileExistsChimeraFsException();
+                }
+                break;
+            }
+            case REPLACE: {
+                int n = _jdbc.update("UPDATE t_xattr SET ivalue = ? WHERE  inumber = ? AND ikey = ?",
+                        value, inode.ino(), attr);
+                if (n == 0) {
+                    throw new NoXdataChimeraException(attr);
+                }
+                break;
+            }
+            case EITHER: {
+                _jdbc.update("INSERT INTO t_xattr (inumber, ikey, ivalue) VALUES (?,?,?)" +
+                                "ON CONFLICT ON CONSTRAINT i_xattr_pkey DO UPDATE SET ivalue = EXCLUDED.ivalue",
+                        inode.ino(), attr, value);
+            }
+        }
+    }
+
 }
