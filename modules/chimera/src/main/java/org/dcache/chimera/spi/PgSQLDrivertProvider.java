@@ -3,8 +3,6 @@ package org.dcache.chimera.spi;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.sql.DataSource;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsSqlDriver;
@@ -14,10 +12,6 @@ import org.dcache.chimera.PgSQLFsSqlDriver;
 import static org.dcache.util.SqlHelper.tryToClose;
 
 public class PgSQLDrivertProvider implements DBDriverProvider {
-
-
-    // pattern to match versions like: 1.2.3 or 1.2rc1 or 1.2
-    private final static Pattern VERSION_PATTERN = Pattern.compile("(?<maj>\\d+)\\.(?<min>\\d+)(?:(\\.(\\d+))|(\\w+))?");
 
     @Override
     public boolean isSupportDB(DataSource dataSource) throws SQLException {
@@ -55,20 +49,9 @@ public class PgSQLDrivertProvider implements DBDriverProvider {
         Connection dbConnection = null;
         try {
             dbConnection = dataSource.getConnection();
-            String databaseProductVersion = dbConnection.getMetaData().getDatabaseProductVersion();
 
-            Matcher m = VERSION_PATTERN.matcher(databaseProductVersion);
-
-            int maj = 0;
-            int min = 0;
-
-            try {
-                if (m.matches()) {
-                    maj = Integer.parseInt(m.group("maj"));
-                    min = Integer.parseInt(m.group("min"));
-                }
-            } catch (NumberFormatException ignored) {
-            }
+            int maj = dbConnection.getMetaData().getDatabaseMajorVersion();
+            int min = dbConnection.getMetaData().getDatabaseMinorVersion();
 
             if ((maj > 9) || (maj == 9 && min >= 5)) {
                 return new PgSQL95FsSqlDriver(dataSource);
