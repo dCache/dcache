@@ -1430,6 +1430,37 @@ public class JdbcFs implements FileSystemProvider {
        throw new ChimeraFsException(NOT_IMPL);
     }
 
+
+    @Override
+    public byte[] getXattr(FsInode inode, String attr) throws ChimeraFsException {
+        return inTransaction(status -> _sqlDriver.getXattr(inode, attr));
+    }
+
+    @Override
+    public void setXattr(FsInode inode, String attr, byte[] value, SetXattrMode mode) throws ChimeraFsException {
+        inTransaction(status -> {
+            try {
+                _sqlDriver.setXattr(inode, attr, value, mode);
+            } catch (DuplicateKeyException e) {
+                throw new FileExistsChimeraFsException(e);
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public Collection<String> listXattrs(FsInode inode) throws ChimeraFsException {
+        return inTransaction(status -> _sqlDriver.listXattrs(inode));
+    }
+
+    @Override
+    public void removeXattr(FsInode inode, String attr) throws ChimeraFsException {
+        inTransaction(status -> {
+            _sqlDriver.removeXattr(inode, attr);
+            return null;
+        });
+    }
+
     @Override
     public List<PinInfo> listPins(FsInode pnfsid) throws ChimeraFsException {
        throw new ChimeraFsException(NOT_IMPL);

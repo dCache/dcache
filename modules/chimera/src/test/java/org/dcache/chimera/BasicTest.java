@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -38,6 +39,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
+import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
@@ -1347,5 +1349,133 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsStat fsStat = _fs.getFsStat();
         assertThat(fsStat.getUsedSpace(), is(0L));
         assertThat(fsStat.getUsedFiles(), is(0L));
+    }
+
+    @Test
+    public void testSetGetXattr() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        String key = "attr1";
+        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
+        byte[] result = _fs.getXattr(inode, key);
+
+        assertArrayEquals("Get xattr returns unexpected value", value, result);
+    }
+
+    @Test(expected = FileExistsChimeraFsException.class)
+    public void testExclusiveCreateXattr() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        String key = "attr1";
+        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
+        _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
+    }
+
+    @Test(expected = NoXdataChimeraException.class)
+    public void testUpdateOnlyXattr() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        String key = "attr1";
+        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        _fs.setXattr(inode, key, value, SetXattrMode.REPLACE);
+    }
+
+    @Test
+    public void testUpdateExistingXattr() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        String key = "attr1";
+        byte[] value1 = "cat".getBytes(StandardCharsets.UTF_8);
+        byte[] value2 = "cat2".getBytes(StandardCharsets.UTF_8);
+        _fs.setXattr(inode, key, value1, SetXattrMode.CREATE);
+        _fs.setXattr(inode, key, value2, SetXattrMode.REPLACE);
+        byte[] result = _fs.getXattr(inode, key);
+
+        assertArrayEquals("Get xattr returns unexpected value", value2, result);
+    }
+
+    @Test
+    public void testUpdateOrCreateXattr() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        String key = "attr1";
+        byte[] value1 = "cat".getBytes(StandardCharsets.UTF_8);
+        byte[] value2 = "cat2".getBytes(StandardCharsets.UTF_8);
+        _fs.setXattr(inode, key, value1, SetXattrMode.EITHER);
+        byte[] result = _fs.getXattr(inode, key);
+
+        assertArrayEquals("Get xattr returns unexpected value", value1, result);
+
+        _fs.setXattr(inode, key, value2, SetXattrMode.EITHER);
+        result = _fs.getXattr(inode, key);
+
+        assertArrayEquals("Get xattr returns unexpected value", value2, result);
+    }
+
+    @Test(expected = NoXdataChimeraException.class)
+    public void testGetXattrNoSet() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        String key = "attr1";
+        _fs.getXattr(inode, key);
+    }
+
+    @Test
+    public void testListXattrNoAttrs() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        Collection<String> xattrs = _fs.listXattrs(inode);
+        assertTrue("Unexpected attributed by newly created file", xattrs.isEmpty());
+    }
+
+    @Test
+    public void testListXattrAfterSet() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        String key = "attr1";
+        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
+
+        Collection<String> xattrs = _fs.listXattrs(inode);
+
+        assertEquals("Unexpected number of attributes", 1, xattrs.size());
+    }
+
+    @Test(expected = NoXdataChimeraException.class)
+    public void testRemoveXattrNoAttrs() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+        String key = "attr1";
+        _fs.removeXattr(inode, key);
+    }
+
+    @Test
+    public void testRemoveXattrAfterSet() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+        String key = "attr1";
+        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
+        _fs.removeXattr(inode, key);
     }
 }

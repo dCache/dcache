@@ -22,6 +22,7 @@ import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.jdbc.LobRetrievalFailureException;
@@ -76,6 +77,7 @@ import org.dcache.util.ChecksumType;
 
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
 
 /**
  * SQL driver
@@ -1884,4 +1886,86 @@ public class FsSqlDriver {
         preparedStatement.setLong(idx++, inode.ino());
         return preparedStatement;
     }
+
+    /**
+     * Get an Extended Attribute of a inode.
+     * @param inode file system object.
+     * @param attr extended attribute name.
+     * @return value of the attribute.
+     * @throws ChimeraFsException
+     */
+    byte[] getXattr(FsInode inode, String attr) throws ChimeraFsException {
+        try {
+            return _jdbc.queryForObject("SELECT ivalue FROM t_xattr WHERE inumber=? AND ikey=?",
+                    (rs, rn) -> {
+                        return rs.getBytes("ivalue");
+                    },
+                    inode.ino(), attr);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoXdataChimeraException(attr);
+        }
+    }
+
+    /**
+     * Set or change extended attribute of a given file system object.
+     * @param inode file system object.
+     * @param attr extended attribute name.
+     * @param value of the attribute.
+     * @throws ChimeraFsException
+     */
+    void setXattr(FsInode inode, String attr, byte[] value, SetXattrMode mode) throws ChimeraFsException {
+        switch (mode) {
+            case CREATE: {
+                _jdbc.update("INSERT INTO t_xattr (inumber, ikey, ivalue) VALUES (?,?,?)",
+                        inode.ino(), attr, value);
+                break;
+            }
+            case REPLACE: {
+                int n = _jdbc.update("UPDATE t_xattr SET ivalue = ? WHERE  inumber = ? AND ikey = ?",
+                        value, inode.ino(), attr);
+                if (n == 0) {
+                    throw new NoXdataChimeraException(attr);
+                }
+                break;
+            }
+            case EITHER: {
+                int n = _jdbc.update("UPDATE t_xattr SET ivalue = ? WHERE  inumber = ? AND ikey = ?",
+                        value, inode.ino(), attr);
+                if (n == 0) {
+                    _jdbc.update("INSERT INTO t_xattr (inumber, ikey, ivalue) VALUES (?,?,?)",
+                            inode.ino(), attr, value);
+                }
+            }
+        }
+    }
+
+    /**
+     * Retrieve an array of extended attribute names for a given file system object.
+     *
+     * @param inode file system object.
+     * @return an array of extended attribute names.
+     * @throws ChimeraFsException
+     */
+    List<String> listXattrs(FsInode inode) throws ChimeraFsException {
+        return _jdbc.query("SELECT ikey FROM t_xattr where inumber=?",
+                (rs, rn) -> {
+                    return rs.getString("ikey");
+                },
+                inode.ino());
+    }
+
+    /**
+     * Remove specified extended attribute for a given file system object.
+     *
+     * @param inode file system object.
+     * @param attr extended attribute name.
+     * @throws ChimeraFsException
+     */
+    void removeXattr(FsInode inode, String attr) throws ChimeraFsException {
+        int n = _jdbc.update("DELETE FROM t_xattr WHERE inumber=? AND ikey=?", inode.ino(), attr);
+        if (n == 0) {
+            throw new NoXdataChimeraException(attr);
+        }
+    }
+
 }

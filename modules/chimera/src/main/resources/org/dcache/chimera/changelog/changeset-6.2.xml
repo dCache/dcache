@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="29" author="tigran">
+        <comment>Add extended attribute support</comment>
+
+        <createTable tableName="t_xattr">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ikey" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ivalue" type="BLOB">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="inumber, ikey" constraintName="i_xattr_pkey" tableName="t_xattr"/>
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_xattr"
+                                 constraintName="i_xattr_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <dropTable tableName="t_xattr"/>
+        </rollback>
+
+    </changeSet>
+</databaseChangeLog>
