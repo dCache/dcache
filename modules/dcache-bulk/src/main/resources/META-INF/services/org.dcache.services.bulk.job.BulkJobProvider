@@ -1,0 +1,2 @@
+org.dcache.services.bulk.plugins.BFirstWalkJobProvider
+org.dcache.services.bulk.plugins.DFirstWalkJobProvider
