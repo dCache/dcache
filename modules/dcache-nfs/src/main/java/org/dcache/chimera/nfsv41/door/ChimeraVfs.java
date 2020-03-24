@@ -65,6 +65,7 @@ import org.dcache.chimera.InvalidArgumentChimeraException;
 import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
+import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.chimera.PermissionDeniedChimeraFsException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.nfs.status.BadHandleException;
@@ -76,6 +77,7 @@ import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.NoEntException;
 import org.dcache.nfs.status.NotDirException;
 import org.dcache.nfs.status.NotEmptyException;
+import org.dcache.nfs.status.NoXattrException;
 import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.status.StaleException;
 import org.dcache.nfs.v4.NfsIdMapping;
@@ -583,6 +585,61 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         List<ACE> acl = _fs.getACL(fsInode);
         org.dcache.chimera.posix.Stat stat = _fs.stat(fsInode);
         return checkAcl(subject, acl, stat.getUid(), stat.getGid(), access);
+    }
+
+
+    @Override
+    public byte[] getXattr(Inode inode, String attr) throws IOException {
+        FsInode fsInode = toFsInode(inode);
+        try {
+            return _fs.getXattr(fsInode, attr);
+        } catch (NoXdataChimeraException e) {
+            throw new NoXattrException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void setXattr(Inode inode, String attr, byte[] value, SetXattrMode mode) throws IOException {
+        FsInode fsInode = toFsInode(inode);
+
+        FileSystemProvider.SetXattrMode m;
+        switch (mode) {
+            case CREATE:
+                m = FileSystemProvider.SetXattrMode.CREATE;
+                break;
+            case REPLACE:
+                m = FileSystemProvider.SetXattrMode.REPLACE;
+                break;
+
+            case EITHER:
+                m = FileSystemProvider.SetXattrMode.EITHER;
+                break;
+            default:
+                throw new RuntimeException();
+        }
+        try {
+            _fs.setXattr(fsInode, attr, value, m);
+        } catch (NoXdataChimeraException e) {
+            throw new NoXattrException(e.getMessage(), e);
+        } catch (FileExistsChimeraFsException e) {
+            throw new ExistException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public String[] listXattrs(Inode inode) throws IOException {
+        FsInode fsInode = toFsInode(inode);
+        return _fs.listXattrs(fsInode).stream().toArray(String[]::new);
+    }
+
+    @Override
+    public void removeXattr(Inode inode, String attr) throws IOException {
+        FsInode fsInode = toFsInode(inode);
+        try {
+            _fs.removeXattr(fsInode, attr);
+        } catch (NoXdataChimeraException e) {
+            throw new NoXattrException(e.getMessage(), e);
+        }
     }
 
     private Access checkAcl(Subject subject, List<ACE> acl, int owner, int group, int access) {
