@@ -36,4 +36,30 @@
         </rollback>
 
     </changeSet>
+
+    <changeSet id="30" author="tigran" dbms="postgresql">
+        <comment>Update f_create_inode stored procedure to postgres95 friendly</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_create_inode95(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS bigint AS $$
+            DECLARE
+                newid bigint;
+            BEGIN
+                INSERT INTO t_inodes VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0) RETURNING inumber INTO newid;
+                INSERT INTO t_dirs VALUES (parent, newid, name) ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING;
+                IF NOT FOUND THEN
+                    -- no rows get updated
+                    RETURN -1;
+                END IF;
+                UPDATE t_inodes SET inlink=inlink+1,imtime=now,ictime=now,igeneration=igeneration+1 WHERE inumber = parent;
+                RETURN newid;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+
+        <rollback>
+            <sql>
+               DROP FUNCTION IF EXISTS f_create_inode95(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp);
+            </sql>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
