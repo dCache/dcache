@@ -67,7 +67,7 @@ public class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
                                 cs.setInt(7, owner);
                                 cs.setInt(8, group);
                                 cs.setLong(9, size);
-                                cs.setInt(10, _ioMode);
+                                cs.setInt(10, FileState.CREATED.getValue());
                                 cs.setTimestamp(11, now);
                             },
                             rs -> rs.next() ? rs.getLong(1) : null);
