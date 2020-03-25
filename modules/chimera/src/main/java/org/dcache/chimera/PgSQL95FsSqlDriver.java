@@ -24,6 +24,7 @@ import javax.sql.DataSource;
 
 import java.sql.Timestamp;
 
+import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 
 /**
