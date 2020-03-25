@@ -18,6 +18,7 @@ package org.dcache.chimera;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.IncorrectUpdateSemanticsDataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 
 import javax.sql.DataSource;
