@@ -28,17 +28,20 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
@@ -46,9 +49,12 @@ import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
 import org.dcache.pool.classic.ReplicaStatePolicy;
+import org.dcache.pool.migration.PoolMigrationCopyReplicaMessage;
+import org.dcache.pool.migration.PoolMigrationMessage;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.qos.QoSTransitionEngine.Qos.*;
@@ -58,7 +64,8 @@ import static org.dcache.qos.QoSTransitionEngine.Qos.*;
  *   The code has been extracted from dcache-frontend in order to make it
  *   available to other modules (such as the bulk service).
  */
-public class QoSTransitionEngine
+public class QoSTransitionEngine extends
+                AbstractMessageCallback<PoolMigrationMessage>
 {
     public static final Logger LOGGER
                     = LoggerFactory.getLogger(QoSTransitionEngine.class);
@@ -184,11 +191,20 @@ public class QoSTransitionEngine
     private final PoolMonitor poolMonitor;
     private final PnfsHandler pnfsHandler;
     private final CellStub pinManager;
+    private final boolean synchronous;
+
+    private int rc;
+    private Object migrationError;
+    private boolean done;
 
     public QoSTransitionEngine(PoolMonitor poolMonitor,
                                CellStub pinManager)
     {
-        this(null, poolMonitor, null, pinManager);
+        this(null,
+             poolMonitor,
+             null,
+             pinManager,
+             false);
     }
 
     public QoSTransitionEngine(CellStub poolManager,
@@ -196,10 +212,25 @@ public class QoSTransitionEngine
                                PnfsHandler pnfsHandler,
                                CellStub pinManager)
     {
+        this(poolManager,
+             poolMonitor,
+             pnfsHandler,
+             pinManager,
+             false);
+    }
+
+    public QoSTransitionEngine(CellStub poolManager,
+                               PoolMonitor poolMonitor,
+                               PnfsHandler pnfsHandler,
+                               CellStub pinManager,
+                               boolean synchronous)
+    {
         this.poolManager = poolManager;
         this.poolMonitor = poolMonitor;
         this.pnfsHandler = pnfsHandler;
         this.pinManager = pinManager;
+        this.synchronous = synchronous;
+        this.done = false;
     }
 
     public void adjustQoS(FsPath path,
@@ -242,14 +273,9 @@ public class QoSTransitionEngine
         switch(qosTarget)
         {
             case DISK_TAPE:
-                if (!currentRetentionPolicy.equals(
-                                RetentionPolicy.CUSTODIAL)) {
-                    modifiedAttr.setRetentionPolicy(
-                                    RetentionPolicy.CUSTODIAL);
-                    new MigrationPolicyEngine(attributes,
-                                              poolManager,
-                                              poolMonitor).adjust();
-                }
+                conditionallyMigrateToTapePool(attributes,
+                                               modifiedAttr,
+                                               currentRetentionPolicy);
 
                 if (!currentAccessLatency.equals(AccessLatency.ONLINE)) {
                     modifiedAttr.setAccessLatency(AccessLatency.ONLINE);
@@ -294,14 +320,9 @@ public class QoSTransitionEngine
                 }
                 break;
             case TAPE:
-                if (!currentRetentionPolicy.equals(
-                                RetentionPolicy.CUSTODIAL)) {
-                    modifiedAttr.setRetentionPolicy(
-                                    RetentionPolicy.CUSTODIAL);
-                    new MigrationPolicyEngine(attributes,
-                                              poolManager,
-                                              poolMonitor).adjust();
-                }
+                conditionallyMigrateToTapePool(attributes,
+                                               modifiedAttr,
+                                               currentRetentionPolicy);
 
                 if (!currentAccessLatency.equals(
                                 AccessLatency.NEARLINE)) {
@@ -321,6 +342,29 @@ public class QoSTransitionEngine
                         modifiedAttr.isDefined(FileAttribute.RETENTION_POLICY)) {
             pnfsHandler.setFileAttributes(path, modifiedAttr, UPDATE_ATTRIBUTES);
         }
+
+        if (synchronous) {
+            waitForCompletion(attributes.getPnfsId());
+        } else {
+            /*
+             * Done for the sake of semantic consistency, though the
+             * value is never read in asynchronous mode.
+             */
+            synchronized (this)
+            {
+                done = true;
+            }
+        }
+    }
+
+    @Override
+    public synchronized void failure(int rc, Object error)
+    {
+        LOGGER.error("QoS migration failed {}: {}.", rc, error);
+        this.rc = rc;
+        migrationError = error;
+        done = true;
+        notifyAll();
     }
 
     /*
@@ -329,7 +373,8 @@ public class QoSTransitionEngine
      */
     public QosStatus getQosStatus(FileAttributes attributes, String remoteHost)
                     throws InterruptedException, CacheException,
-                    NoRouteToCellException {
+                    NoRouteToCellException
+    {
         boolean isPinnedForQoS
                         = QoSTransitionEngine.isPinnedForQoS(attributes, pinManager);
         FileLocality locality = getLocality(attributes, remoteHost);
@@ -419,6 +464,36 @@ public class QoSTransitionEngine
         }
     }
 
+    @Override
+    public synchronized void success(PoolMigrationMessage message)
+    {
+        LOGGER.debug("QoS migration success for {}.",
+                     message.getPnfsId());
+        done = true;
+        notifyAll();
+    }
+
+    private void conditionallyMigrateToTapePool(FileAttributes attributes,
+                                                FileAttributes modifiedAttr,
+                                                RetentionPolicy currentRetentionPolicy)
+                    throws InterruptedException, CacheException,
+                    NoRouteToCellException {
+        if (!currentRetentionPolicy.equals(RetentionPolicy.CUSTODIAL)) {
+            modifiedAttr.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
+        }
+
+        if (!attributes.getStorageInfo().isStored()) {
+            MigrationPolicyEngine engine
+                            = new MigrationPolicyEngine(attributes,
+                                                        poolManager,
+                                                        poolMonitor);
+            if (synchronous) {
+                engine.setCallback(this);
+            }
+            engine.adjust();
+        }
+    }
+
     private QosStatus directoryQoS(FileAttributes attributes)
     {
         ReplicaState state = POOL_POLICY.getTargetState(attributes);
@@ -484,5 +559,37 @@ public class QoSTransitionEngine
                         = new PinManagerUnpinMessage(attributes.getPnfsId());
         message.setRequestId(QOS_PIN_REQUEST_ID);
         pinManager.notify(message);
+    }
+
+    private void waitForCompletion(PnfsId id) throws CacheException,
+                    InterruptedException, NoRouteToCellException
+    {
+        synchronized(this)
+        {
+            while (!done)
+            {
+                try {
+                    wait(TimeUnit.SECONDS.toMillis(1));
+                } catch (InterruptedException e) {
+                    LOGGER.debug("QoS migration interrupted {}.", id);
+                }
+            }
+        }
+
+        if (migrationError != null) {
+            if (migrationError instanceof CacheException) {
+                throw (CacheException)migrationError;
+            } else if (migrationError instanceof  InterruptedException) {
+                throw (InterruptedException)migrationError;
+            } else if (migrationError instanceof NoRouteToCellException) {
+                throw (NoRouteToCellException)migrationError;
+            } else if (migrationError instanceof RuntimeException) {
+                throw (RuntimeException)migrationError;
+            } else if (migrationError instanceof Throwable) {
+                throw CacheExceptionFactory.exceptionOf(rc,
+                                                        "migration failure for " + id,
+                                                        (Throwable)migrationError);
+            }
+        }
     }
 }

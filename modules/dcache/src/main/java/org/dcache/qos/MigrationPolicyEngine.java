@@ -19,6 +19,8 @@
 package org.dcache.qos;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +43,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyReplicaMessage;
+import org.dcache.pool.migration.PoolMigrationMessage;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
@@ -53,11 +56,39 @@ import static java.util.Arrays.asList;
  */
 public class MigrationPolicyEngine
 {
-    private final FileAttributes     fileAttributes;
-    private final CellStub           cellStub;
-    private final PoolMonitor        poolMonitor;
-    private final UUID               uuid = UUID.randomUUID();
-    private       List<StickyRecord> stickyRecords;
+    private static final Logger LOGGER
+                    = LoggerFactory.getLogger(MigrationPolicyEngine.class);
+    private static final AbstractMessageCallback<PoolMigrationMessage>
+                                DEFAULT_CALLBACK =
+                    new AbstractMessageCallback<PoolMigrationMessage>()
+                    {
+                        @Override
+                        public void failure(int rc, Object error)
+                        {
+                            LOGGER.error("QoS migration failure: {}, {}", rc, error);
+                        }
+
+                        @Override
+                        public void success(PoolMigrationMessage message)
+                        {
+                            LOGGER.debug("QoS migration success: {}",
+                                         message.getPnfsId());
+                        }
+
+                        @Override
+                        public void timeout(String message)
+                        {
+                            LOGGER.warn("QoS migration timed out: {}", message);
+                        }
+                    };
+
+
+    private final FileAttributes        fileAttributes;
+    private final CellStub              cellStub;
+    private final PoolMonitor           poolMonitor;
+    private final UUID                  uuid = UUID.randomUUID();
+    private       List<StickyRecord>    stickyRecords;
+    private AbstractMessageCallback<PoolMigrationMessage> callback;
 
     public MigrationPolicyEngine(FileAttributes fileAttributes,
                                  CellStub cellStub,
@@ -99,6 +130,10 @@ public class MigrationPolicyEngine
 
         boolean isOnHsmPool = !samePools.isEmpty();
 
+        if (callback == null) {
+            callback = DEFAULT_CALLBACK;
+        }
+
         if (fileAttributes.getStorageInfo().locations().isEmpty()
                         || !isOnHsmPool) {
 
@@ -127,25 +162,21 @@ public class MigrationPolicyEngine
             CellStub.addCallback(cellStub.send(new CellPath(pool.getAddress()),
                                                message,
                                                CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL),
-                                 new AbstractMessageCallback<PoolMigrationCopyReplicaMessage>()
-                                 {
-                                     @Override
-                                     public void failure(int rc, Object error)
-                                     {
-                                     }
-
-                                     @Override
-                                     public void success(PoolMigrationCopyReplicaMessage message)
-                                     {
-                                     }
-
-                                     @Override
-                                     public void timeout(String message)
-                                     {
-                                     }
-                                 },
-                                 MoreExecutors.directExecutor());
+                                 callback, MoreExecutors.directExecutor());
+        } else {
+            /**
+             *  In this case, we need to guarantee that any external callback
+             *  is notified.
+             */
+            callback.success(new PoolMigrationMessage(uuid,
+                                                      null,
+                                                      fileAttributes.getPnfsId()));
         }
+    }
+
+    public void setCallback(AbstractMessageCallback<PoolMigrationMessage> callback)
+    {
+        this.callback = callback;
     }
 
     private String getRandomPool(Collection<String> targetPools)
