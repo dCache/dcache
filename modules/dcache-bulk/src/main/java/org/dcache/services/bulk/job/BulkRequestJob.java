@@ -103,6 +103,17 @@ public class BulkRequestJob extends MultipleTargetJob
     }
 
     @Override
+    protected void doOnCancellation()
+    {
+       /*
+        *  We do not need to call the completion handler
+        *  because this job is never added to the parent-child map,
+        *  and that method relies on the parent key, which for
+        *  this kind of job is null.
+        */
+    }
+
+    @Override
     public void setNamespaceHandler(PnfsHandler pnfsHandler)
     {
         this.pnfsHandler = pnfsHandler;

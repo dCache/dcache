@@ -133,7 +133,7 @@ public abstract class BulkJob implements Runnable
                                                                 + ":" + state);
                 }
 
-                completionHandler.jobCancelled(this);
+                doOnCancellation();
                 return true;
             default:
                 /*
@@ -320,5 +320,10 @@ public abstract class BulkJob implements Runnable
     protected void doInitialize()
     {
         // Optional
+    }
+
+    protected void doOnCancellation()
+    {
+        completionHandler.jobCancelled(this);
     }
 }
