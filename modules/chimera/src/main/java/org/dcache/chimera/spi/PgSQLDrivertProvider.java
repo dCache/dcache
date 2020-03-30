@@ -7,7 +7,6 @@ import javax.sql.DataSource;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsSqlDriver;
 import org.dcache.chimera.PgSQL95FsSqlDriver;
-import org.dcache.chimera.PgSQLFsSqlDriver;
 
 import static org.dcache.util.SqlHelper.tryToClose;
 
@@ -56,7 +55,7 @@ public class PgSQLDrivertProvider implements DBDriverProvider {
             if ((maj > 9) || (maj == 9 && min >= 5)) {
                 return new PgSQL95FsSqlDriver(dataSource);
             } else {
-                return new PgSQLFsSqlDriver(dataSource);
+                throw new IllegalArgumentException("Required PostgreSQL 9.5 or newer");
             }
         } finally {
             tryToClose(dbConnection);

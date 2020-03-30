@@ -96,7 +96,6 @@ typically experiences very poor performance with its default
 configuration.  Tuning a PostgreSQL server is outside the scope of
 this chapter.
 
-
 First we install PostgreSQL's "Building Project" yum repository:
 
 ```console-root
@@ -108,10 +107,9 @@ rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg
 |   1:pgdg-redhat-repo-42.0-4          ################################# [100%]
 ```
 
-Then, install the server package for PostgreSQL.  In this example, we
-are installing PostgreSQL v10.  In general, we recommend using the
-latest version and upgrading your PostgreSQL version as new versions
-become available.
+Then, install the server package for PostgreSQL. The minimal supported PostgreSQL version
+is 9.5. In general, we recommend using the latest version and upgrading your PostgreSQL version as
+new versions becomes available. The example below uses PostgreSQL v10.
 
 ```console-root
 yum install postgresql10-server
