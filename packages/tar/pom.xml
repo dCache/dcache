@@ -19,8 +19,29 @@
   </properties>
 
   <build>
-      <finalName>dcache-${project.version}</finalName>
+      <finalName>dcache-${tar.version}</finalName>
       <plugins>
+
+          <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>build-helper-maven-plugin</artifactId>
+              <executions>
+                  <execution>
+                      <id>regex-property</id>
+                      <goals>
+                          <goal>regex-property</goal>
+                      </goals>
+                      <configuration>
+                          <name>tar.version</name>
+                          <value>${project.version}</value>
+                          <regex>-SNAPSHOT</regex>
+                          <replacement>-\${git.commit.id.abbrev}</replacement>
+                          <failIfNoMatch>false</failIfNoMatch>
+                      </configuration>
+                  </execution>
+              </executions>
+          </plugin>
+
           <plugin>
               <artifactId>maven-resources-plugin</artifactId>
               <executions>
