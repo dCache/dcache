@@ -6,7 +6,6 @@ A test setup for development
 
 - java runtime 8 or newer
 - maven 3.1.1 or newer
-- ruby (used by hsm script)
 
 ## Configuration
 
@@ -31,6 +30,7 @@ On initialization the following directories are created:
 - tape connected pools
   - pool_write
   - pool_read
+  - pool_sm
 
 - resilient pools
   - pool_res1

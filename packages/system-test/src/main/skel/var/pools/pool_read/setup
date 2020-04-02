@@ -1,4 +1,4 @@
-hsm create osm osm -hsmBase=var/pools/tape/ -hsmInstance=osm -command=share/lib/hsmcp.rb -c:puts=1 -c:gets=1 -c:removes=1
+hsm create osm osm copy -directory=var/pools/tape/ -hsmInstance=osm -c:puts=1 -c:gets=1 -c:removes=1
 
 csm set checksumtype ADLER32
 csm set policy -scrub=off
