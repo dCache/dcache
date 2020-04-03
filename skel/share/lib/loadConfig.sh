@@ -56,7 +56,7 @@ isJavaVersionOk()
 {
     version=$($JAVA -version 2>&1)
     case $version in
-        *1.[8]*|*9*|*1[0-1]*)
+        *1[1-9]*)
             return 0
             ;;
         *)
@@ -184,7 +184,7 @@ loadConfig()
 
 # Get java location
 if ! findJava || ! isJavaVersionOk; then
-    echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 8"
+    echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 11"
     echo "or newer."
     exit 1
 fi

@@ -56,8 +56,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <source.version>1.8</source.version>
-        <target.version>1.8</target.version>
+        <java.version>11</java.version>
 
         <version.slf4j>1.7.26</version.slf4j>
         <version.milton>2.7.3.0-dcache-1</version.milton>
@@ -1045,9 +1044,16 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.5.1</version>
+                    <version>3.8.0</version>
                     <configuration>
                         <showDeprecation>true</showDeprecation>
+                        <release>${java.verson}</release>
+                        <compilerArgs>
+                            <arg>--add-modules=java.security.jgss</arg>
+                        </compilerArgs>
+                        <!-- without forking compilation happens in the
+                        same process, so no arguments are applied -->
+                        <fork>true</fork>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1065,9 +1071,9 @@
                     </dependencies>
                     <configuration>
                         <XterminateAfterCompilation>true</XterminateAfterCompilation>
-                        <source>${source.version}</source>
-                        <target>${target.version}</target>
-                        <complianceLevel>${source.version}</complianceLevel>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <complianceLevel>${java.version}</complianceLevel>
                         <XhasMember>true</XhasMember>
                         <sources>
                             <source>
@@ -1144,12 +1150,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-		    <!-- Cannot upgrade until SUREFIRE-1719:
-
-			 https://issues.apache.org/jira/browse/SUREFIRE-1719
-
-			 is resolved -->
-                    <version>2.19.1</version>
+                    <version>3.0.0-M4</version>
+                    <configuration>
+                        <argLine>
+                            ${argLine} --add-modules=java.security.jgss
+                        </argLine>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1276,8 +1282,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>${source.version}</source>
-                    <target>${target.version}</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
 
@@ -1335,7 +1341,7 @@
                     <!-- dCache uses the singleton anti-pattern in way
                          too many places. That unfortunately means we have
                          to accept the overhead of forking each test run. -->
-                    <forkCount>1C</forkCount>
+                    <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
@@ -1389,6 +1395,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.5</version>
+                <configuration>
+                    <sourceEncoding>utf-8</sourceEncoding>
+                    <minimumTokens>100</minimumTokens>
+                    <targetJdk>${java.version}</targetJdk>
+                </configuration>
             </plugin>
         </plugins>
     </reporting>
