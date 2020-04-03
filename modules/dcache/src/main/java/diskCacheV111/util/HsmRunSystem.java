@@ -49,7 +49,7 @@ public class HsmRunSystem extends RunSystem
                 throw new CacheException(returnCode,
                                          "HSM script failed (script reported: "
                                          + returnCode + ": "
-                                         + getErrorString());
+                                         + getErrorString() + ")");
             }
         } catch (InProgressCacheException e) {
             throw e;
