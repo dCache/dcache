@@ -57,6 +57,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>11</java.version>
+        <argLine>--add-modules=java.security.jgss</argLine>
+
 
         <version.slf4j>1.7.26</version.slf4j>
         <version.milton>2.7.3.0-dcache-1</version.milton>
@@ -1048,9 +1050,6 @@
                     <configuration>
                         <showDeprecation>true</showDeprecation>
                         <release>${java.verson}</release>
-                        <compilerArgs>
-                            <arg>--add-modules=java.security.jgss</arg>
-                        </compilerArgs>
                         <!-- without forking compilation happens in the
                         same process, so no arguments are applied -->
                         <fork>true</fork>
@@ -1151,11 +1150,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.0.0-M4</version>
-                    <configuration>
-                        <argLine>
-                            ${argLine} --add-modules=java.security.jgss
-                        </argLine>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
