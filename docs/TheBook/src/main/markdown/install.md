@@ -44,7 +44,7 @@ different.
 The minimum requirement is a single computer running the latest
 CentOS-7 Linux distribution, with the following packages installed:
 
-  * java-1.8.0-openjdk-devel
+  * java-11-openjdk-headless
   * httpd-tools
 
 This chapter also describes how to get a server-side certificate from
@@ -78,7 +78,7 @@ rpm -ivh https://www.dcache.org/downloads/1.9/repo/##SERIES##/dcache-##VERSION##
 First, install OpenJDK and httpd-tools packages.
 
 ```console-root
-yum install java-1.8.0-openjdk-devel httpd-tools
+yum install java-11-openjdk-headless httpd-tools
 ```
 
 ### Installing PostgreSQL
