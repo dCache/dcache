@@ -62,7 +62,9 @@ package org.dcache.resilience.util;
 import org.junit.Before;
 import org.junit.Test;
 
+import diskCacheV111.poolManager.StorageUnitInfoExtractor;
 import diskCacheV111.util.CacheException;
+
 import org.dcache.resilience.TestBase;
 
 import static org.junit.Assert.assertEquals;

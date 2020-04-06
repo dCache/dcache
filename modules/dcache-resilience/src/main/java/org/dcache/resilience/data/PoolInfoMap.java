@@ -90,6 +90,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.StorageUnit;
+import diskCacheV111.poolManager.StorageUnitInfoExtractor;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
@@ -100,7 +101,6 @@ import org.dcache.resilience.handlers.PoolInfoChangeHandler;
 import org.dcache.resilience.util.CopyLocationExtractor;
 import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.RandomSelectionStrategy;
-import org.dcache.resilience.util.StorageUnitInfoExtractor;
 import org.dcache.util.NonReindexableList;
 import org.dcache.vehicles.FileAttributes;
 

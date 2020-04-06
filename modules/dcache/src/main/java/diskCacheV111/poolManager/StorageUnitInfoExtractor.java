@@ -57,30 +57,30 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.resilience.util;
+package diskCacheV111.poolManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-import diskCacheV111.poolManager.StorageUnit;
 
 /**
- * <p>Utilities for finding storage unit info relevant to resilient pool group
+ * <p>Utilities for finding storage unit info relevant to pool group
  *      operations.</p>
  */
-public final class StorageUnitInfoExtractor {
+public final class StorageUnitInfoExtractor
+{
     /**
      * @param resilientOnly return only resilient groups.
      * @return all the pool groups to which this storage unit is linked.
      */
     public static Collection<String> getPoolGroupsFor(String unitName,
                                                       PoolSelectionUnit psu,
-                                                      boolean resilientOnly) {
+                                                      boolean resilientOnly)
+    {
         return psu.getPoolGroups().values().stream()
                   .filter((g) -> (resilientOnly ? g.isResilient() : true) &&
                                   hasStorageUnit(g.getName(), unitName, psu))
@@ -92,7 +92,8 @@ public final class StorageUnitInfoExtractor {
      * @return all the resilient pool groups to which this storage unit is linked.
      */
     public static Collection<String> getResilientGroupsFor(String unitName,
-                                                           PoolSelectionUnit psu) {
+                                                           PoolSelectionUnit psu)
+    {
         return getPoolGroupsFor(unitName, psu, true);
     }
 
@@ -100,7 +101,8 @@ public final class StorageUnitInfoExtractor {
      * @return all the storage units linked to this pool group.
      */
     public static Collection<StorageUnit> getStorageUnitsInGroup(String name,
-                                                                 PoolSelectionUnit psu) {
+                                                                 PoolSelectionUnit psu)
+    {
         Collection<StorageUnit> units = new ArrayList<>();
         psu.getLinksPointingToPoolGroup(name).stream()
                         .map(SelectionLink::getUnitGroupsTargetedBy)
@@ -118,7 +120,8 @@ public final class StorageUnitInfoExtractor {
      * associated with it via a link, and the storage group is resilient.
      */
     public static boolean hasResilientStorageUnit(String poolGroup,
-                                                  PoolSelectionUnit psu) {
+                                                  PoolSelectionUnit psu)
+    {
         return getStorageUnitsInGroup(poolGroup, psu)
                         .stream()
                         .filter((u) -> u.getRequiredCopies() != null)
@@ -127,7 +130,8 @@ public final class StorageUnitInfoExtractor {
 
     private static boolean hasStorageUnit(String poolGroup,
                                           String storageUnit,
-                                          PoolSelectionUnit psu) {
+                                          PoolSelectionUnit psu)
+    {
         return getStorageUnitsInGroup(poolGroup, psu).stream()
                         .filter((sunit) -> sunit.getName().equals(storageUnit))
                         .findAny().isPresent();
