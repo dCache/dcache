@@ -194,6 +194,7 @@
       <property name="billingStub" ref="billing-stub"/>
       <property name="hsmSet" ref="hsmset"/>
       <property name="allocator" ref="allocator" />
+      <property name="fileStore" ref="file-store" />
   </bean>
 
   <bean id="hsmset" class="org.dcache.pool.nearline.HsmSet">

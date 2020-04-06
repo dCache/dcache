@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -109,6 +109,7 @@ import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryChangeEvent;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaState;
@@ -148,6 +149,7 @@ public class NearlineStorageHandler
     private ScheduledExecutorService scheduledExecutor;
     private ListeningExecutorService executor;
     private Repository               repository;
+    private FileStore                fileStore;
     private ChecksumModule           checksumModule;
     private PnfsHandler              pnfs;
     private CellStub                 billingStub;
@@ -225,6 +227,11 @@ public class NearlineStorageHandler
     @Required
     public void setAllocator(Allocator allocator) {
         this.allocator = allocator;
+    }
+
+    @Required
+    public void setFileStore(FileStore fileStore) {
+        this.fileStore = fileStore;
     }
 
     @PostConstruct
@@ -1217,6 +1224,12 @@ public class NearlineStorageHandler
             PnfsId pnfsId = getFileAttributes().getPnfsId();
             if (cause != null) {
                 deallocateSpace();
+                // cleanup leftovers from HSM driver
+                try {
+                    fileStore.remove(pnfsId);
+                } catch (IOException e) {
+                    LOGGER.error("Failed to remove partially staged file: {}", e.getMessage());
+                }
                 if (cause instanceof InterruptedException || cause instanceof CancellationException) {
                     cause = new TimeoutCacheException("Stage was cancelled.", cause);
                 }
