@@ -19,6 +19,8 @@
 package org.dcache.qos;
 
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.AccessLatency;
@@ -41,7 +44,6 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
@@ -49,14 +51,14 @@ import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
 import org.dcache.pool.classic.ReplicaStatePolicy;
-import org.dcache.pool.migration.PoolMigrationCopyReplicaMessage;
-import org.dcache.pool.migration.PoolMigrationMessage;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+import static diskCacheV111.util.CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
 import static org.dcache.qos.QoSTransitionEngine.Qos.*;
 
 /**
@@ -64,8 +66,7 @@ import static org.dcache.qos.QoSTransitionEngine.Qos.*;
  *   The code has been extracted from dcache-frontend in order to make it
  *   available to other modules (such as the bulk service).
  */
-public class QoSTransitionEngine extends
-                AbstractMessageCallback<PoolMigrationMessage>
+public class QoSTransitionEngine extends MigrationCopyCompletionHandler
 {
     public static final Logger LOGGER
                     = LoggerFactory.getLogger(QoSTransitionEngine.class);
@@ -193,9 +194,13 @@ public class QoSTransitionEngine extends
     private final CellStub pinManager;
     private final boolean synchronous;
 
-    private int rc;
-    private Object migrationError;
-    private boolean done;
+    private Object error;
+    private boolean wait;
+    private boolean cancelled;
+
+    private MigrationPolicyEngine                  engine;
+    private ListenableFuture<PinManagerPinMessage> pinFuture;
+    private FileAttributes                         attributes;
 
     public QoSTransitionEngine(PoolMonitor poolMonitor,
                                CellStub pinManager)
@@ -230,7 +235,7 @@ public class QoSTransitionEngine extends
         this.pnfsHandler = pnfsHandler;
         this.pinManager = pinManager;
         this.synchronous = synchronous;
-        this.done = false;
+        this.wait = false;
     }
 
     public void adjustQoS(FsPath path,
@@ -242,22 +247,22 @@ public class QoSTransitionEngine extends
                             InterruptedException,
                             NoRouteToCellException
     {
-        FileAttributes attributes
-                        = pnfsHandler.getFileAttributes(path,
-                                                        TRANSITION_ATTRIBUTES);
-        FileLocality locality = getLocality(attributes, remoteHost);
+        attributes = pnfsHandler.getFileAttributes(path, TRANSITION_ATTRIBUTES);
+        FileLocality locality = getLocality(remoteHost);
+        PnfsId id = attributes.getPnfsId();
 
-        LOGGER.debug("The Locality of the file: {}", locality);
+        LOGGER.debug("{} locality: {}", id, locality);
 
         if (locality == FileLocality.NONE) {
-            throw new UnsupportedOperationException("Transition for directories not supported");
+            throw new UnsupportedOperationException("Transition for directories "
+                                                                    + "not supported");
         }
 
         Qos qosTarget;
 
         try {
             qosTarget = Qos.fromDisplayName(target);
-            LOGGER.debug("New target QoS {}.", qosTarget);
+            LOGGER.debug("{}, new target QoS {}.", id, qosTarget);
         } catch (IllegalArgumentException e) {
             throw new UnsupportedOperationException("Bad QoS Target type", e);
         }
@@ -265,105 +270,117 @@ public class QoSTransitionEngine extends
         AccessLatency currentAccessLatency = attributes.getAccessLatency();
         RetentionPolicy currentRetentionPolicy = attributes.getRetentionPolicy();
 
-        LOGGER.debug("AccessLatency {}, Retention Policy {}.",
+        LOGGER.debug("{}, AccessLatency {}, Retention Policy {}.", id,
                   currentAccessLatency, currentRetentionPolicy);
 
         FileAttributes modifiedAttr = new FileAttributes();
 
+        /*
+         *  The following order for synchronous mode is enforced:
+         *
+         *  1.  migration of file to HSM pool, if necessary.
+         *  2.  updating of namespace, if necessary.
+         *  3.  pinning or unpinning, if necessary.
+         *
+         *  The call to the pnfs handler is asynchronous, so 1 is guaranteed
+         *  to complete before 2 or 3 is called, but 2 may not finish
+         *  before 3.  The latter is relatively unimportant as the two
+         *  operations are independent (and 3 may eventually become
+         *  redundant).
+         */
         switch(qosTarget)
         {
             case DISK_TAPE:
-                conditionallyMigrateToTapePool(attributes,
-                                               modifiedAttr,
-                                               currentRetentionPolicy);
+                if (locality == FileLocality.ONLINE) {
+                    LOGGER.debug("{}, attempting to migrate.", id);
+                    conditionallyMigrateToTapePool(modifiedAttr,
+                                                   currentRetentionPolicy);
+                }
 
                 if (!currentAccessLatency.equals(AccessLatency.ONLINE)) {
+                    LOGGER.debug("{}, changing access latency to ONLINE", id);
                     modifiedAttr.setAccessLatency(AccessLatency.ONLINE);
                 }
 
+                updateNamespace(modifiedAttr, id, path);
+
                 // REVISIT when Resilience manages QoS for all files, remove
-                if (!isPinnedForQoS(attributes)) {
-                    pinForQoS(attributes, remoteHost);
+                if (!isPinnedForQoS()) {
+                    LOGGER.debug("{}, pinning for QoS.", id);
+                    pinForQoS(remoteHost);
                 }
 
                 break;
             case DISK:
-                switch (locality) {
-                    case ONLINE:
-                        /*
-                         *  ONLINE locality may not denote ONLINE access latency.
-                         *  ONLINE locality and NEARLINE access latency should
-                         *  not translate to 'Disk' qos.
-                         */
-                        if (!currentAccessLatency.equals(AccessLatency.ONLINE)) {
-                            modifiedAttr.setAccessLatency(AccessLatency.ONLINE);
-                        }
+                if (locality == FileLocality.ONLINE) {
+                    /*
+                     *  ONLINE locality may not denote ONLINE access latency.
+                     *  ONLINE locality and NEARLINE access latency should
+                     *  not translate to 'Disk' qos.
+                     */
+                    if (!currentAccessLatency.equals(AccessLatency.ONLINE)) {
+                        LOGGER.debug("{}, changing access latency to ONLINE", id);
+                        modifiedAttr.setAccessLatency(AccessLatency.ONLINE);
+                        updateNamespace(modifiedAttr, id, path);
+                    }
 
-                        // REVISIT when Resilience manages QoS for all files, remove
-                        if (!isPinnedForQoS(attributes)) {
-                            pinForQoS(attributes, remoteHost);
-                        }
-
-                        break;
-                    default:
-                        if (currentRetentionPolicy.equals(RetentionPolicy.CUSTODIAL)) {
-                            /*
-                             *  Technically, to make the QoS semantics in
-                             *  Chimera consistent, one would need to change this
-                             *  to REPLICA, even though this would not trigger
-                             *  deletion from tape.  It is probably best to
-                             *  continue not supporting this transition.
-                             */
-                            throw new UnsupportedOperationException("Unsupported QoS transition");
-                        }
-                        break;
+                    // REVISIT when Resilience manages QoS for all files, remove
+                    if (!isPinnedForQoS()) {
+                        LOGGER.debug("{}, pinning for QoS.", id);
+                        pinForQoS(remoteHost);
+                    }
+                } else if (currentRetentionPolicy.equals(RetentionPolicy.CUSTODIAL)) {
+                    /*
+                     *  Technically, to make the QoS semantics in
+                     *  Chimera consistent, one would need to change this
+                     *  to REPLICA, even though this would not trigger
+                     *  deletion from tape.  It is probably best to
+                     *  continue not supporting this transition.
+                     */
+                    throw new UnsupportedOperationException("Unsupported QoS transition");
                 }
                 break;
             case TAPE:
-                conditionallyMigrateToTapePool(attributes,
-                                               modifiedAttr,
-                                               currentRetentionPolicy);
-
-                if (!currentAccessLatency.equals(
-                                AccessLatency.NEARLINE)) {
-                    modifiedAttr.setAccessLatency(
-                                    AccessLatency.NEARLINE);
+                if (locality == FileLocality.ONLINE) {
+                    LOGGER.debug("{}, attempting to migrate.", id);
+                    conditionallyMigrateToTapePool(modifiedAttr,
+                                                   currentRetentionPolicy);
                 }
 
+                if (!currentAccessLatency.equals(AccessLatency.NEARLINE)) {
+                    LOGGER.debug("{}, changing access latency to NEARLINE", id);
+                    modifiedAttr.setAccessLatency(AccessLatency.NEARLINE);
+                }
+
+                updateNamespace(modifiedAttr, id, path);
+
                 // REVISIT when Resilience manages QoS for all files, remove
-                unpinForQoS(attributes);
+                LOGGER.debug("{}, unpinning QoS.", id);
+                unpinForQoS();
 
                 break;
             default:
                 throw new UnsupportedOperationException("Unsupported QoS target for transition");
         }
-
-        if (modifiedAttr.isDefined(FileAttribute.ACCESS_LATENCY) ||
-                        modifiedAttr.isDefined(FileAttribute.RETENTION_POLICY)) {
-            pnfsHandler.setFileAttributes(path, modifiedAttr, UPDATE_ATTRIBUTES);
-        }
-
-        if (synchronous) {
-            waitForCompletion(attributes.getPnfsId());
-        } else {
-            /*
-             * Done for the sake of semantic consistency, though the
-             * value is never read in asynchronous mode.
-             */
-            synchronized (this)
-            {
-                done = true;
-            }
-        }
     }
 
-    @Override
-    public synchronized void failure(int rc, Object error)
+    public synchronized void cancel()
     {
-        LOGGER.error("QoS migration failed {}: {}.", rc, error);
-        this.rc = rc;
-        migrationError = error;
-        done = true;
+        cancelled = true;
+        wait = false;
+
+        if (engine != null) {
+            engine.cancel();
+        }
+
+        if (pinFuture != null) {
+            pinFuture.cancel(true);
+            /*
+             *  Pinning should be reversed in this case.
+             */
+            unpinForQoS();
+        }
+
         notifyAll();
     }
 
@@ -375,9 +392,10 @@ public class QoSTransitionEngine extends
                     throws InterruptedException, CacheException,
                     NoRouteToCellException
     {
+        this.attributes = attributes;
         boolean isPinnedForQoS
                         = QoSTransitionEngine.isPinnedForQoS(attributes, pinManager);
-        FileLocality locality = getLocality(attributes, remoteHost);
+        FileLocality locality = getLocality(remoteHost);
         AccessLatency currentAccessLatency
                         = attributes.getAccessLatencyIfPresent().orElse(null);
         RetentionPolicy currentRetentionPolicy
@@ -454,7 +472,7 @@ public class QoSTransitionEngine extends
                  */
             case NONE:
                 // implies the target is a directory.
-                return directoryQoS(attributes);
+                return directoryQoS();
             case UNAVAILABLE:
                 return new QosStatus(UNAVAILABLE);
             case LOST:
@@ -465,36 +483,54 @@ public class QoSTransitionEngine extends
     }
 
     @Override
-    public synchronized void success(PoolMigrationMessage message)
+    protected void failure(PnfsId id, Object error)
     {
-        LOGGER.debug("QoS migration success for {}.",
-                     message.getPnfsId());
-        done = true;
+        LOGGER.error("QoS migration failed {}: {}.", error);
+        this.error = error;
+        wait = false;
         notifyAll();
     }
 
-    private void conditionallyMigrateToTapePool(FileAttributes attributes,
-                                                FileAttributes modifiedAttr,
+    @Override
+    protected void success(PnfsId id)
+    {
+        LOGGER.debug("QoS migration success for {}.", id);
+        wait = false;
+        notifyAll();
+    }
+
+    private void conditionallyMigrateToTapePool(FileAttributes modifiedAttr,
                                                 RetentionPolicy currentRetentionPolicy)
                     throws InterruptedException, CacheException,
                     NoRouteToCellException {
         if (!currentRetentionPolicy.equals(RetentionPolicy.CUSTODIAL)) {
             modifiedAttr.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
+            attributes.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
         }
 
         if (!attributes.getStorageInfo().isStored()) {
-            MigrationPolicyEngine engine
-                            = new MigrationPolicyEngine(attributes,
-                                                        poolManager,
-                                                        poolMonitor);
+            engine = new MigrationPolicyEngine(attributes,
+                                               poolManager,
+                                               poolMonitor);
             if (synchronous) {
-                engine.setCallback(this);
+                engine.setHandler(this);
+                synchronized(this) {
+                    if (!cancelled) {
+                        wait = true;
+                    }
+                }
             }
-            engine.adjust();
+
+            if (!isCancelled()) {
+                engine.adjust();
+                if (synchronous) {
+                    waitForCompletion();
+                }
+            }
         }
     }
 
-    private QosStatus directoryQoS(FileAttributes attributes)
+    private QosStatus directoryQoS()
     {
         ReplicaState state = POOL_POLICY.getTargetState(attributes);
         boolean isSticky = POOL_POLICY.getStickyRecords(attributes).stream()
@@ -508,16 +544,18 @@ public class QoSTransitionEngine extends
         return new QosStatus(qos);
     }
 
-    private FileLocality getLocality(FileAttributes attributes,
-                                     String remoteHost)
+    private FileLocality getLocality(String remoteHost)
     {
         return poolMonitor.getFileLocality(attributes, remoteHost);
     }
 
-    private boolean isPinnedForQoS(FileAttributes attributes)
-                    throws CacheException,
-                    InterruptedException,
-                    NoRouteToCellException
+    private synchronized boolean isCancelled()
+    {
+        return cancelled;
+    }
+
+    private boolean isPinnedForQoS() throws CacheException,
+                    InterruptedException, NoRouteToCellException
     {
         return isPinnedForQoS(attributes, pinManager);
     }
@@ -526,9 +564,8 @@ public class QoSTransitionEngine extends
      *  The QOS_PIN_REQUEST_ID is stored for the pin to allow filtering on files
      *  that are pinned by Qos or SRM.
      */
-    private void pinForQoS(FileAttributes attributes,
-                           String remoteHost)
-                    throws URISyntaxException
+    private void pinForQoS(String remoteHost) throws URISyntaxException,
+                    InterruptedException, CacheException, NoRouteToCellException
     {
         HttpProtocolInfo protocolInfo =
                         new HttpProtocolInfo("Http", 1, 1,
@@ -547,13 +584,58 @@ public class QoSTransitionEngine extends
                                                  QOS_PIN_REQUEST_ID,
                                                  -1);
 
-        pinManager.notify(message);
+        if (synchronous) {
+            synchronized(this)
+            {
+                if (!cancelled) {
+                    wait = true;
+                }
+            }
+
+            if (!isCancelled()) {
+                pinFuture = pinManager.send(message, Long.MAX_VALUE);
+                pinFuture.addListener(() -> {
+                    synchronized (QoSTransitionEngine.this) {
+                        try {
+                            PinManagerPinMessage reply = getUninterruptibly(
+                                            pinFuture);
+                            if (reply.getReturnCode() != 0) {
+                                error = reply.getErrorObject();
+                            }
+                        } catch (ExecutionException e) {
+                            error = e.getCause();
+                        }
+                        wait = false;
+                        LOGGER.debug("{} QoS pin finished.",
+                                     attributes.getPnfsId());
+                        QoSTransitionEngine.this.notifyAll();
+                    }
+                }, MoreExecutors.directExecutor());
+
+                waitForCompletion();
+            }
+        } else {
+            pinManager.notify(message);
+        }
+    }
+
+    private void updateNamespace(FileAttributes modifiedAttr,
+                                 PnfsId id,
+                                 FsPath path)
+                    throws CacheException
+    {
+        if (modifiedAttr.isDefined(FileAttribute.ACCESS_LATENCY) ||
+                        modifiedAttr.isDefined(FileAttribute.RETENTION_POLICY)) {
+            LOGGER.debug("{}, calling setFileAttributes", id);
+            pnfsHandler.setFileAttributes(path, modifiedAttr, UPDATE_ATTRIBUTES);
+        }
     }
 
     /**
      *  Only unpin files stored with the QOS_PIN_REQUEST_ID.
+     *  We do not need to wait for the pin manager to return a reply.
      */
-    private void unpinForQoS(FileAttributes attributes)
+    private void unpinForQoS()
     {
         PinManagerUnpinMessage message
                         = new PinManagerUnpinMessage(attributes.getPnfsId());
@@ -561,34 +643,39 @@ public class QoSTransitionEngine extends
         pinManager.notify(message);
     }
 
-    private void waitForCompletion(PnfsId id) throws CacheException,
+    private void waitForCompletion() throws CacheException,
                     InterruptedException, NoRouteToCellException
     {
+        PnfsId id = attributes.getPnfsId();
+        LOGGER.debug("{} waitForCompletion", id);
+
         synchronized(this)
         {
-            while (!done)
+            while (wait)
             {
                 try {
                     wait(TimeUnit.SECONDS.toMillis(1));
                 } catch (InterruptedException e) {
-                    LOGGER.debug("QoS migration interrupted {}.", id);
+                    LOGGER.debug("{} waitForCompletion interrupted.", id);
                 }
             }
         }
 
-        if (migrationError != null) {
-            if (migrationError instanceof CacheException) {
-                throw (CacheException)migrationError;
-            } else if (migrationError instanceof  InterruptedException) {
-                throw (InterruptedException)migrationError;
-            } else if (migrationError instanceof NoRouteToCellException) {
-                throw (NoRouteToCellException)migrationError;
-            } else if (migrationError instanceof RuntimeException) {
-                throw (RuntimeException)migrationError;
-            } else if (migrationError instanceof Throwable) {
-                throw CacheExceptionFactory.exceptionOf(rc,
-                                                        "migration failure for " + id,
-                                                        (Throwable)migrationError);
+        LOGGER.debug("{} waitForCompletion, done; error {}", id, error);
+
+        if (error!= null) {
+            if (error instanceof CacheException) {
+                throw (CacheException)error;
+            } else if (error instanceof  InterruptedException) {
+                throw (InterruptedException)error;
+            } else if (error instanceof NoRouteToCellException) {
+                throw (NoRouteToCellException)error;
+            } else if (error instanceof RuntimeException) {
+                throw (RuntimeException)error;
+            } else if (error instanceof Throwable) {
+                throw CacheExceptionFactory.exceptionOf(UNEXPECTED_SYSTEM_EXCEPTION,
+                                                        "QoS transition failure for " + id,
+                                                        (Throwable)error);
             }
         }
     }

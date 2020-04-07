@@ -18,38 +18,42 @@
  */
 package org.dcache.qos;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.StorageUnitInfoExtractor;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.vehicles.PoolManagerGetPoolsByHsmMessage;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyReplicaMessage;
 import org.dcache.pool.migration.PoolMigrationMessage;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.Arrays.asList;
 
 /**
  *   Handles copying of a file to a pool which is attached to an HSM.
@@ -57,38 +61,45 @@ import static java.util.Arrays.asList;
 public class MigrationPolicyEngine
 {
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(MigrationPolicyEngine.class);
-    private static final AbstractMessageCallback<PoolMigrationMessage>
-                                DEFAULT_CALLBACK =
-                    new AbstractMessageCallback<PoolMigrationMessage>()
-                    {
-                        @Override
-                        public void failure(int rc, Object error)
-                        {
-                            LOGGER.error("QoS migration failure: {}, {}", rc, error);
-                        }
+                                                 = LoggerFactory.getLogger(
+                    MigrationPolicyEngine.class);
 
-                        @Override
-                        public void success(PoolMigrationMessage message)
-                        {
-                            LOGGER.debug("QoS migration success: {}",
-                                         message.getPnfsId());
-                        }
+    private static Set<String> getPoolsLinkedToStorageUnit(PoolSelectionUnit psu,
+                                                           FileAttributes attributes)
+    {
+        String unitKey = attributes.getStorageClass() + "@" + attributes.getHsm();
 
-                        @Override
-                        public void timeout(String message)
-                        {
-                            LOGGER.warn("QoS migration timed out: {}", message);
-                        }
-                    };
+        return StorageUnitInfoExtractor.getPoolGroupsFor(unitKey,
+                                                         psu,
+                                                         false)
+                                       .stream()
+                                       .map(pgroup -> psu.getPoolsByPoolGroup(pgroup))
+                                       .flatMap(c -> c.stream())
+                                       .map(SelectionPool::getName)
+                                       .collect(Collectors.toSet());
+    }
 
+    private class NopHandler extends MigrationCopyCompletionHandler
+    {
+        @Override
+        protected void failure(PnfsId id, Object error) {
+            LOGGER.error("{}: QoS migration failure: {}", id, error);
+        }
 
-    private final FileAttributes        fileAttributes;
-    private final CellStub              cellStub;
-    private final PoolMonitor           poolMonitor;
-    private final UUID                  uuid = UUID.randomUUID();
-    private       List<StickyRecord>    stickyRecords;
-    private AbstractMessageCallback<PoolMigrationMessage> callback;
+        @Override
+        protected void success(PnfsId id) {
+            LOGGER.debug("{}: QoS migration success", id);
+        }
+    }
+
+    private final   FileAttributes                                fileAttributes;
+    private final   CellStub                                      cellStub;
+    private final   PoolMonitor                                   poolMonitor;
+    private final   UUID                                          uuid = UUID.randomUUID();
+    private         List<StickyRecord>                            stickyRecords;
+    private         ListenableFuture<PoolMigrationMessage>        future;
+    private         MigrationCopyCompletionHandler                handler;
+    private         boolean                                       cancelled;
 
     public MigrationPolicyEngine(FileAttributes fileAttributes,
                                  CellStub cellStub,
@@ -108,20 +119,26 @@ public class MigrationPolicyEngine
      *   TODO currently this functionality is limited in a way
      *   TODO that the file can be migrated only to one pool.
      */
-    public void adjust() throws InterruptedException, CacheException,
+    public synchronized void adjust() throws InterruptedException, CacheException,
                     NoRouteToCellException
     {
-        Collection<String> sourcePools = getSourcePools(fileAttributes);
+        if (cancelled) {
+            return;
+        }
+
+        PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
+
+        Collection<String> sourcePools = fileAttributes.getLocations();
 
         if (sourcePools.isEmpty()) {
             throw new FileNotFoundCacheException("No source locations found");
         }
 
-        Collection<String> targetPools = getTargetPools(fileAttributes,
-                                                        cellStub);
+        Collection<String> targetPools = getTargetPools(fileAttributes, psu);
 
         if (targetPools.isEmpty()) {
-            throw new FileNotFoundCacheException("No HSM pool available");
+            throw CacheExceptionFactory.exceptionOf(CacheException.NO_POOL_CONFIGURED,
+                                                    "No HSM pool available");
         }
 
         List<String> samePools = targetPools.stream()
@@ -130,8 +147,14 @@ public class MigrationPolicyEngine
 
         boolean isOnHsmPool = !samePools.isEmpty();
 
-        if (callback == null) {
-            callback = DEFAULT_CALLBACK;
+        PnfsId id = fileAttributes.getPnfsId();
+        List<URI> locations = fileAttributes.getStorageInfo().locations();
+
+        LOGGER.debug("{}, adjust; locations {}, already on hsm pool? {}: ",
+                     id, locations, isOnHsmPool);
+
+        if (handler == null) {
+            handler = new NopHandler();
         }
 
         if (fileAttributes.getStorageInfo().locations().isEmpty()
@@ -144,8 +167,12 @@ public class MigrationPolicyEngine
                             samePools.get(0) :
                             getRandomPool(targetPools);
 
-            PoolSelectionUnit.SelectionPool pool
-                            = poolMonitor.getPoolSelectionUnit().getPool(target);
+            LOGGER.debug("{}, selected source {}, selected target {}",
+                         id, sourcePool, target);
+
+            PoolSelectionUnit.SelectionPool pool = psu.getPool(target);
+
+            LOGGER.debug("{}, target pool {}", id, pool);
 
             PoolMigrationCopyReplicaMessage message
                             = new PoolMigrationCopyReplicaMessage(uuid,
@@ -159,24 +186,35 @@ public class MigrationPolicyEngine
                                                                   false
             );
 
-            CellStub.addCallback(cellStub.send(new CellPath(pool.getAddress()),
-                                               message,
-                                               CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL),
-                                 callback, MoreExecutors.directExecutor());
+            LOGGER.debug("{}, sending migration copy replica message to {}.",
+                         id, pool.getAddress());
+            future = cellStub.send(new CellPath(pool.getAddress()),
+                                   message,
+                                   CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL);
+
+            future.addListener(() -> handler.handleReply(future),
+                               MoreExecutors.directExecutor());
         } else {
             /**
              *  In this case, we need to guarantee that any external callback
              *  is notified.
              */
-            callback.success(new PoolMigrationMessage(uuid,
-                                                      null,
-                                                      fileAttributes.getPnfsId()));
+            LOGGER.debug("{}, no need to migrate, notifying callback", id);
+            handler.success(id);
         }
     }
 
-    public void setCallback(AbstractMessageCallback<PoolMigrationMessage> callback)
+    public synchronized void cancel()
     {
-        this.callback = callback;
+        cancelled = true;
+        if (future != null) {
+            future.cancel(true);
+        }
+    }
+
+    public void setHandler(MigrationCopyCompletionHandler handler)
+    {
+        this.handler = handler;
     }
 
     private String getRandomPool(Collection<String> targetPools)
@@ -194,26 +232,17 @@ public class MigrationPolicyEngine
         return pool;
     }
 
-    private Collection<String> getSourcePools(FileAttributes fileAttributes)
-    {
-        Collection<String> pools = fileAttributes.getLocations();
-        return pools;
-    }
-
     private Collection<String> getTargetPools(FileAttributes fileAttributes,
-                                              CellStub cellStub)
-                    throws InterruptedException, CacheException,
-                    NoRouteToCellException
+                                              PoolSelectionUnit psu)
     {
+        Set<String> linkedPools = getPoolsLinkedToStorageUnit(psu, fileAttributes);
+        Set<String> hsms = ImmutableSet.of(fileAttributes.getHsm());
 
-        Collection<String> hsms = asList(fileAttributes.getHsm());
-
-        Collection<PoolManagerPoolInformation> targetPools =
-                        cellStub.sendAndWait(new PoolManagerGetPoolsByHsmMessage(hsms))
-                                .getPools();
-
-        return targetPools.stream()
-                          .map(PoolManagerPoolInformation::getName)
-                          .collect(Collectors.toSet());
+        return Arrays.stream(psu.getActivePools())
+              .map(psu::getPool)
+              .filter(p -> p.hasAnyHsmFrom(hsms))
+              .map(SelectionPool::getName)
+              .filter(name -> linkedPools.contains(name))
+              .collect(Collectors.toSet());
     }
 }
