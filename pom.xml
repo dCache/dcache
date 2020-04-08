@@ -1248,10 +1248,32 @@
                          upgrading -->
                     <version>3.0.0-M2</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.gaul</groupId>
+                    <artifactId>modernizer-maven-plugin</artifactId>
+                    <version>2.1.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.gaul</groupId>
+                <artifactId>modernizer-maven-plugin</artifactId>
+                <configuration>
+                    <javaVersion>${java.version}</javaVersion>
+                    <failOnViolations>false</failOnViolations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>modernizer</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>modernizer</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
