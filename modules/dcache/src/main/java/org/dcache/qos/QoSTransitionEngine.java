@@ -483,7 +483,7 @@ public class QoSTransitionEngine extends MigrationCopyCompletionHandler
     }
 
     @Override
-    protected void failure(PnfsId id, Object error)
+    protected synchronized void failure(PnfsId id, Object error)
     {
         LOGGER.error("QoS migration failed {}: {}.", error);
         this.error = error;
@@ -492,7 +492,7 @@ public class QoSTransitionEngine extends MigrationCopyCompletionHandler
     }
 
     @Override
-    protected void success(PnfsId id)
+    protected synchronized void success(PnfsId id)
     {
         LOGGER.debug("QoS migration success for {}.", id);
         wait = false;
