@@ -70,16 +70,15 @@ public class CompletableFuturesTest {
         assertTrue(completable.isDone());
     }
 
-//    requires Java9+
-//    @Test(expected = ExecutionException.class)
-//    public void shouldFailWhenCompletableIsFailed() throws InterruptedException, ExecutionException {
-//
-//        CompletableFuture<Void> completable = CompletableFuture.failedFuture(new IOException());
-//
-//        ListenableFuture<Void> listenable = CompletableFutures.fromCompletableFuture(completable);
-//        assertTrue(listenable.isDone());
-//        listenable.get();
-//    }
+    @Test(expected = ExecutionException.class)
+    public void shouldFailWhenCompletableCreatedFailed() throws InterruptedException, ExecutionException {
+
+        CompletableFuture<Void> completable = CompletableFuture.failedFuture(new IOException());
+
+        ListenableFuture<Void> listenable = CompletableFutures.fromCompletableFuture(completable);
+        assertTrue(listenable.isDone());
+        listenable.get();
+    }
 
     @Test(expected = ExecutionException.class)
     public void shouldFailWhenCompletableIsFailed() throws InterruptedException, ExecutionException {

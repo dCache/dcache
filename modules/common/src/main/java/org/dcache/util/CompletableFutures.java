@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2018 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2018 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -107,19 +107,6 @@ public class CompletableFutures {
                 completable.completeExceptionally(t);
             }
         }, MoreExecutors.directExecutor());
-        return completable;
-    }
-
-    /**
-     * Create CompletableFuture that is completed exceptionally.
-     * @param <T> The result type returned by this Future's {@code get} method
-     * @param t the throwable.
-     * @return exceptionally completed future.
-     */
-     // Revisit: drop after java9+ migration.
-    public static <T> CompletableFuture<T> failedFuture(Throwable t) {
-        final CompletableFuture<T> completable = new CompletableFuture<>();
-        completable.completeExceptionally(t);
         return completable;
     }
 }

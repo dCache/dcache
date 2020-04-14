@@ -31,7 +31,6 @@ import dmg.util.TimebasedCounter;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
-import static org.dcache.util.CompletableFutures.failedFuture;
 
 class CellGlue
 {
@@ -275,8 +274,7 @@ class CellGlue
     {
         CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus == null) {
-            // REVISIT: Java 9+
-            return failedFuture(new NoSuchElementException("No such cell: " + cellName));
+            return CompletableFuture.failedFuture(new NoSuchElementException("No such cell: " + cellName));
         }
         return kill(sender, nucleus);
     }
@@ -408,8 +406,7 @@ class CellGlue
         String cellToKill = destination.getCellName();
 
         if (_cellList.get(cellToKill) != destination) {
-            // REVISIT: Java 9+
-            return failedFuture(new NoSuchElementException("No such cell: " + cellToKill));
+            return CompletableFuture.failedFuture(new NoSuchElementException("No such cell: " + cellToKill));
         }
 
         /* Mark the cell as being killed to prevent it from being killed more
