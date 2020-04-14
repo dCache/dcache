@@ -155,7 +155,7 @@ public final class TargetExpansionJob extends MultipleTargetJob
         }
 
         try {
-            expand(target, key);
+            expand(target, key, parentKey, attributes);
         } catch (CacheException | BulkServiceException e) {
             errorObject = e;
             completionHandler.jobFailed(this);
@@ -170,7 +170,10 @@ public final class TargetExpansionJob extends MultipleTargetJob
         completionHandler.jobCompleted(this);
     }
 
-    private void expand(String target, BulkJobKey parentKey)
+    private void expand(String target,
+                        BulkJobKey key,
+                        BulkJobKey parentKey,
+                        FileAttributes attributes)
                     throws CacheException, BulkServiceException
     {
         /*
@@ -182,27 +185,33 @@ public final class TargetExpansionJob extends MultipleTargetJob
             return;
         }
 
-        LOGGER.trace("{}, expand() called for {}.", loggingPrefix(), target);
+        LOGGER.debug("{}, expand() called for {}: key {}, parent {}.",
+                     loggingPrefix(),
+                     target,
+                     key.getJobId(),
+                     parentKey.getJobId());
 
         if (expansionType == ExpansionType.BREADTH_FIRST) {
             /*
              *  In breadth-first it should not matter that directories
              *  are processed as targets before their children.
              */
-            checkForDirectoryTarget(target, key, attributes);
+            checkForDirectoryTarget(target, parentKey, attributes);
         }
 
         try {
+            LOGGER.debug("{}, listing target {}", key.getJobId(), target);
             DirectoryStream stream = getDirectoryListing(target);
-
+            LOGGER.debug("{}, handling children", key.getJobId());
             for (DirectoryEntry entry : stream) {
-                handleChildTarget(target, parentKey, entry);
+                handleChildTarget(target, key, entry);
                 if (isTerminated()) {
                     LOGGER.debug("{}, expansion job for {} {}; returning ...",
                                  loggingPrefix(), target, state.name());
                     return;
                 }
             }
+            LOGGER.debug("{}, finished handling children", key.getJobId());
 
             if (expansionType == ExpansionType.DEPTH_FIRST) {
                 /*
@@ -219,18 +228,21 @@ public final class TargetExpansionJob extends MultipleTargetJob
                                              + "{} to terminate.",
                              loggingPrefix(),
                              expansionType.name(),
-                             parentKey.getJobId());
+                             key.getJobId());
 
-                completionHandler.waitForChildren(parentKey.getJobId());
+                completionHandler.waitForChildren(key.getJobId());
+
+                LOGGER.debug("{}, {}, children of " + "{} have terminated.",
+                            loggingPrefix(),
+                            expansionType.name(),
+                            key.getJobId());
 
                 /*
                  *  In depth-first it may indeed be necessary to process
                  *  directories as targets only after all their children
                  *  have terminated, so we do this here.
                  */
-                checkForDirectoryTarget(target,
-                                        key,
-                                        attributes);
+                checkForDirectoryTarget(target, parentKey, attributes);
             }
         } catch (InterruptedException e) {
             State state = getState();
@@ -258,7 +270,7 @@ public final class TargetExpansionJob extends MultipleTargetJob
      *  Depth-first does not submit a new job, but calls expand recursively.
      */
     private void handleChildTarget(String target,
-                                   BulkJobKey parentKey,
+                                   BulkJobKey key,
                                    DirectoryEntry entry)
                     throws CacheException, BulkServiceException
     {
@@ -272,7 +284,7 @@ public final class TargetExpansionJob extends MultipleTargetJob
         }
 
         LOGGER.trace("{}, handleChildTarget() called for {}, entry {}, parent {}.",
-                     loggingPrefix(), target, entry.getName(), parentKey.getKey());
+                     loggingPrefix(), target, entry.getName(), key.getKey());
 
         String childTarget = target + "/" + entry.getName();
         FileAttributes attributes = entry.getFileAttributes();
@@ -305,7 +317,10 @@ public final class TargetExpansionJob extends MultipleTargetJob
                                  *  This expansion only returns when all such
                                  *  children complete.
                                  */
-                                expand(childTarget, BulkJobKey.newKey(request.getId()));
+                                expand(childTarget,
+                                       BulkJobKey.newKey(request.getId()),
+                                       key,
+                                       attributes);
                                 break;
                         }
                         break;
@@ -317,7 +332,7 @@ public final class TargetExpansionJob extends MultipleTargetJob
                          *  expand method.
                          */
                         checkForDirectoryTarget(childTarget,
-                                                parentKey,
+                                                key,
                                                 attributes);
                         break;
                         /*
@@ -330,13 +345,12 @@ public final class TargetExpansionJob extends MultipleTargetJob
                 break;
             case LINK:
             case REGULAR:
-                checkForFileTarget(childTarget,
-                                   parentKey,
-                                   attributes);
+                checkForFileTarget(childTarget, key, attributes);
                 break;
             case SPECIAL:
             default:
-                LOGGER.trace("{}, handleChildTarget(), cannot handle special file {}.",
+                LOGGER.trace("{}, handleChildTarget(), "
+                                             + "cannot handle special file {}.",
                              loggingPrefix(), childTarget);
                 break;
         }
