@@ -57,42 +57,104 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.bulk.plugins;
+package org.dcache.services.bulk.job;
 
-import java.util.Collections;
-import java.util.Set;
-
-import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
-import org.dcache.services.bulk.job.BulkJobKey;
-import org.dcache.services.bulk.job.BulkJobProvider;
-import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
-
-import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.BOTH;
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 
 /**
- *  Provides a test activity for admin interface testing.
+ *  Metadata for optional argument to a bulk job.
  */
-public class BFirstWalkJobProvider extends BulkJobProvider<BFirstWalkJob>
+public class BulkJobArgumentDescriptor
 {
-    public BFirstWalkJobProvider()
+    private final String name;
+    private final String description;
+    private final boolean required;
+    private final String defaultValue;
+    private final String valueSpec;
+
+    public BulkJobArgumentDescriptor(String name,
+                                     String description,
+                                     String valueSpec,
+                                     boolean required,
+                                     String defaultValue)
     {
-        super("BREADTH-FIRST-WALK", BOTH, ExpansionType.BREADTH_FIRST);
+        this.name = Preconditions.checkNotNull(name,"name cannot "
+                        + "be null.");
+        this.description = Preconditions.checkNotNull(name,"description "
+                        + "cannot be null.");
+        this.valueSpec = Preconditions.checkNotNull(valueSpec,
+                                                    "possible values "
+                                                                    + "must be "
+                                                                    + "specified");
+        this.required = required;
+        if (!required) {
+            Preconditions.checkNotNull(defaultValue, "default value "
+                                       + "must be provided if arg is not required.");
+            this.defaultValue = defaultValue;
+        } else {
+            this.defaultValue = null;
+        }
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public boolean isRequired()
+    {
+        return required;
+    }
+
+    public String getDefaultValue()
+    {
+        return defaultValue;
+    }
+
+    public String getValueSpec()
+    {
+        return valueSpec;
+    }
+
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append(name)
+               .append(", [")
+               .append(valueSpec)
+               .append("](required ")
+               .append(required)
+               .append(") ");
+        if (!required) {
+            builder.append("(default ").append(defaultValue).append(") ");
+        }
+
+        return builder.append("[").append(description).append("]").toString();
     }
 
     @Override
-    public BFirstWalkJob createJob(BulkJobKey key, BulkJobKey parentKey)
+    public int hashCode()
     {
-        return new BFirstWalkJob(key, parentKey, activity);
+        return Objects.hashCode(name);
     }
 
     @Override
-    public Class<BFirstWalkJob> getJobClass()
+    public boolean equals(Object other)
     {
-        return BFirstWalkJob.class;
-    }
+       if (other == null) {
+           return false;
+       }
 
-    public Set<BulkJobArgumentDescriptor> getArguments()
-    {
-        return Collections.EMPTY_SET;
+       if (!(other instanceof BulkJobArgumentDescriptor)) {
+           return false;
+       }
+
+       return name.equals(((BulkJobArgumentDescriptor) other).name);
     }
 }

@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.job;
 
+import java.util.Set;
+
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.job.MultipleTargetJob.TargetType;
@@ -73,8 +75,8 @@ import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
  */
 public abstract class BulkJobProvider<J extends SingleTargetJob>
 {
-    protected final String activity;
-    protected final TargetType targetType;
+    protected final String        activity;
+    protected final TargetType    targetType;
     protected final ExpansionType expansionType;
 
     protected BulkJobProvider(String activity,
@@ -154,4 +156,11 @@ public abstract class BulkJobProvider<J extends SingleTargetJob>
      * @return class of the job.
      */
     public abstract Class<J> getJobClass();
+
+    /**
+     * For metadata purposes (e.g., listing the possible arguments).
+     *
+     * @return argument set.
+     */
+    public abstract Set<BulkJobArgumentDescriptor> getArguments();
 }

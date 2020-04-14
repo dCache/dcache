@@ -59,6 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins;
 
+import java.util.Collections;
+import java.util.Set;
+
+import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
 import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.BulkJobProvider;
 import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
@@ -85,5 +89,10 @@ public class DFirstWalkJobProvider extends BulkJobProvider<DFirstWalkJob>
     public Class<DFirstWalkJob> getJobClass()
     {
         return DFirstWalkJob.class;
+    }
+
+    public Set<BulkJobArgumentDescriptor> getArguments()
+    {
+        return Collections.EMPTY_SET;
     }
 }
