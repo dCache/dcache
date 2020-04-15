@@ -82,7 +82,7 @@ public class BulkJobArgumentDescriptor
     {
         this.name = requireNonNull(name,"name cannot "
                         + "be null.");
-        this.description = requireNonNull(name,"description "
+        this.description = requireNonNull(description,"description "
                         + "cannot be null.");
         this.valueSpec = requireNonNull(valueSpec,
                                                     "possible values "
