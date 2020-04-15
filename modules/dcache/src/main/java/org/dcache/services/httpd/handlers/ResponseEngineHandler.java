@@ -16,7 +16,7 @@ import dmg.util.HttpResponseEngine;
 
 import org.dcache.services.httpd.util.StandardHttpRequest;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Wraps calls to {@link HttpResponseEngine} aliases with the Jetty handler API.
@@ -35,7 +35,7 @@ public class ResponseEngineHandler extends AbstractHandler
     public void handle(String target, Request baseRequest,
                     HttpServletRequest request, HttpServletResponse response)
                     throws IOException, ServletException {
-        checkNotNull(engine);
+        requireNonNull(engine);
         try {
             HttpRequest proxy = new StandardHttpRequest(request, response);
             engine.queryUrl(proxy);

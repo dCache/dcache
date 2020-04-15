@@ -107,8 +107,8 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.acl.enums.AccessType.*;
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.auth.attributes.Activity.*;
@@ -1502,7 +1502,7 @@ public class PnfsManagerV3
             _requestor = requestor;
             _uoid = uoid;
             _delay = delay;
-            _directory = checkNotNull(_msg.getFsPath());
+            _directory = requireNonNull(_msg.getFsPath());
             _subject = _msg.getSubject();
             _restriction = _msg.getRestriction();
             _deadline =

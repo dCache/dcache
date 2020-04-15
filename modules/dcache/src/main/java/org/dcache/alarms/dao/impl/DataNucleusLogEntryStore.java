@@ -81,8 +81,8 @@ import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.alarms.dao.LogEntryDAO;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * DataNucleus wrapper to underlying alarm store.<br>
@@ -292,7 +292,7 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
     }
 
     public void setCleanerDeleteThresholdUnit(TimeUnit timeUnit) {
-        cleanerDeleteThresholdUnit = checkNotNull(timeUnit);
+        cleanerDeleteThresholdUnit = requireNonNull(timeUnit);
     }
 
     public void setCleanerEnabled(boolean cleanerEnabled) {
@@ -304,7 +304,7 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
     }
 
     public void setCleanerSleepIntervalUnit(TimeUnit timeUnit) {
-        cleanerSleepIntervalUnit = checkNotNull(timeUnit);
+        cleanerSleepIntervalUnit = requireNonNull(timeUnit);
     }
 
     public void shutdown() {

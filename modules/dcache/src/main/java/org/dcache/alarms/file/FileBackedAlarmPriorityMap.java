@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.file;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.BufferedReader;
@@ -81,6 +80,8 @@ import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.vehicles.alarms.AlarmPriorityMapRequestMessage;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Uses a simple properties file to maintain current settings.
@@ -192,7 +193,7 @@ public final class FileBackedAlarmPriorityMap
     }
 
     public void setPropertiesPath(String propertiesPath) {
-        this.propertiesPath = Preconditions.checkNotNull(propertiesPath);
+        this.propertiesPath = requireNonNull(propertiesPath);
     }
 
     private void overrideFromSavedMappings(Properties env) throws IOException {

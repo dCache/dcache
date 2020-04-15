@@ -60,7 +60,7 @@ import org.dcache.gplazma.validation.ValidationStrategy;
 import org.dcache.gplazma.validation.ValidationStrategyFactory;
 import org.dcache.util.AppendOnlySet;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Collections2.filter;
@@ -257,7 +257,7 @@ public class GPlazma
     public LoginReply login(Subject subject, LoginMonitor monitor)
             throws AuthenticationException
     {
-        checkNotNull(subject, "subject is null");
+        requireNonNull(subject, "subject is null");
 
         Setup setup;
 

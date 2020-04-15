@@ -9,7 +9,7 @@ import diskCacheV111.poolManager.RequestContainerV5;
 
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
@@ -35,13 +35,13 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
                                 EnumSet<RequestContainerV5.RequestState> allowedStates)
     {
         super(fileAttributes);
-        _protocolInfo = checkNotNull(protocolInfo);
-        _allowedStates = checkNotNull(allowedStates);
+        _protocolInfo = requireNonNull(protocolInfo);
+        _allowedStates = requireNonNull(allowedStates);
     }
 
     @Nonnull
     public ProtocolInfo getProtocolInfo(){ return _protocolInfo; }
-    public void setProtocolInfo( ProtocolInfo protocolInfo ){ _protocolInfo = checkNotNull(protocolInfo); }
+    public void setProtocolInfo( ProtocolInfo protocolInfo ){ _protocolInfo = requireNonNull(protocolInfo); }
     public void setIoQueueName( String ioQueueName ){ _ioQueueName = ioQueueName ; }
     public String getIoQueueName(){ return _ioQueueName ; }
 

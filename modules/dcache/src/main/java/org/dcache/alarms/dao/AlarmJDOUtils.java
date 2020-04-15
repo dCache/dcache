@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
 import javax.jdo.FetchPlan;
@@ -75,6 +74,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.dcache.alarms.LogEntry;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Convenience methods for generating JDO queries from {@link LogEntry}
@@ -170,7 +171,7 @@ public class AlarmJDOUtils {
      * Construct filter based on values for the before and closed (AND'd).
      */
     public static AlarmDAOFilter getDeleteBeforeFilter(Long before) {
-        Preconditions.checkNotNull(before);
+        requireNonNull(before);
         AlarmDAOFilter filter = new AlarmDAOFilter();
         filter.filter = "lastUpdate<=b && closed==t";
         filter.parameters = "java.lang.Long b, java.lang.Boolean t";

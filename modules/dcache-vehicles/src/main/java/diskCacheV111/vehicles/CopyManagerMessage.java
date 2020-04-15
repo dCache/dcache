@@ -2,7 +2,7 @@ package diskCacheV111.vehicles;
 
 import org.dcache.auth.attributes.Restriction;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Patrick F.
@@ -37,7 +37,7 @@ public class CopyManagerMessage extends Message
 
   public void setRestriction(Restriction restriction)
   {
-      this.restriction = checkNotNull(restriction);
+      this.restriction = requireNonNull(restriction);
   }
 
   /** Getter for property gsiftpUrl.

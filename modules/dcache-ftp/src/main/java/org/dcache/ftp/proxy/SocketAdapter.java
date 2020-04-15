@@ -91,7 +91,6 @@ import org.dcache.util.PortRange;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.ftp.TransferMode.MODE_E;
 import static org.dcache.ftp.TransferMode.MODE_S;
 import static org.dcache.ftp.proxy.ProxyAdapter.Direction.UPLOAD;

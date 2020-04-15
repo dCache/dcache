@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.restful.util.transfers;
 
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Ordering;
 
 import javax.security.auth.Subject;
@@ -82,6 +81,8 @@ import diskCacheV111.vehicles.IoJobInfo;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * <p>Utility class for aiding in the extraction of
@@ -130,7 +131,7 @@ public final class TransferCollectionUtils {
     }
 
     public static String transferKey(String door, Long serialId) {
-        Preconditions.checkNotNull(door,
+        requireNonNull(door,
                                    "Transfer key must have a door value.");
 
         if (serialId == null) {

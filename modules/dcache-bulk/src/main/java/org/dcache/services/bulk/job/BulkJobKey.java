@@ -66,6 +66,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.dcache.services.bulk.BulkServiceException;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  *  For storage and searching.
  */
@@ -81,7 +83,7 @@ public class BulkJobKey
     {
         try {
             String error = "Cannot construct key without request id.";
-            return new BulkJobKey(Preconditions.checkNotNull(requestId, error),
+            return new BulkJobKey(requireNonNull(requestId, error),
                                   ID_GENERATOR.getAndIncrement());
         } catch (IllegalArgumentException e) {
             throw new BulkServiceException("newKey", e);

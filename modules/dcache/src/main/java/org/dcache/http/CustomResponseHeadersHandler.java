@@ -7,7 +7,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMessage;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Support for injecting admin-supplied custom headers into the response headers.
@@ -18,7 +18,7 @@ public class CustomResponseHeadersHandler extends ChannelOutboundHandlerAdapter
 
     public CustomResponseHeadersHandler(ImmutableMap<String,String> customHeaders)
     {
-        this.customHeaders = checkNotNull(customHeaders);
+        this.customHeaders = requireNonNull(customHeaders);
     }
 
     @Override

@@ -4,7 +4,7 @@ import com.google.common.base.Objects;
 
 import java.util.Properties;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -21,10 +21,10 @@ public class ConfigurationItem {
             String pluginName,
             Properties pluginProperties) {
 
-        this.type = checkNotNull(type, "type is null");
-        this.control = checkNotNull(control, "control is null");
-        this.pluginName = checkNotNull(pluginName, "pluginName is null");
-        this.pluginProperties = checkNotNull(pluginProperties, "pluginProperties is null");
+        this.type = requireNonNull(type, "type is null");
+        this.control = requireNonNull(control, "control is null");
+        this.pluginName = requireNonNull(pluginName, "pluginName is null");
+        this.pluginProperties = requireNonNull(pluginProperties, "pluginProperties is null");
     }
 
     /**

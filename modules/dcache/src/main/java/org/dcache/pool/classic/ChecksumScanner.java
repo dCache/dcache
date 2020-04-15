@@ -38,9 +38,8 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.util.Checksum;
-import org.dcache.util.Exceptions;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static dmg.util.CommandException.checkCommand;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
@@ -528,7 +527,7 @@ public class ChecksumScanner
 
         public synchronized void setAbortMessage(String reason)
         {
-            _abortMessage = checkNotNull(reason);
+            _abortMessage = requireNonNull(reason);
         }
 
         private synchronized void stopped()

@@ -5,7 +5,7 @@ import com.google.common.util.concurrent.AbstractService;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * This class wraps a GPlazmaPlugin instance and controls the lifecycle calls to the
@@ -19,9 +19,9 @@ public class GPlazmaPluginService<T extends GPlazmaPlugin> extends AbstractServi
 
     public GPlazmaPluginService(T plugin, String name, ConfigurationItemControl control)
     {
-        checkNotNull(plugin, "plugin is null");
-        checkNotNull(control, "control is null");
-        checkNotNull(name, "name is null");
+        requireNonNull(plugin, "plugin is null");
+        requireNonNull(control, "control is null");
+        requireNonNull(name, "name is null");
 
         _plugin = plugin;
         _control = control;

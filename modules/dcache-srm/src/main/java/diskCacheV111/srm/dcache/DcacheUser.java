@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -33,7 +33,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.Request;
 import org.dcache.util.NetLoggerBuilder;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static diskCacheV111.srm.dcache.CanonicalizingByteArrayStore.Token;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -61,7 +61,7 @@ public class DcacheUser implements SRMUser
     {
         this.isLoggedIn = true;
         this.token = token;
-        this.subject = checkNotNull(login.getSubject());
+        this.subject = requireNonNull(login.getSubject());
         this.restriction = login.getRestriction();
         this.root =
                 login.getLoginAttributes().stream()

@@ -14,7 +14,7 @@ import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SrmStatusOfGetRequest
 {
@@ -28,7 +28,7 @@ public class SrmStatusOfGetRequest
             SRM srm,
             String clientHost)
     {
-        this.request = checkNotNull(request);
+        this.request = requireNonNull(request);
     }
 
     public SrmStatusOfGetRequestResponse getResponse()

@@ -15,8 +15,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.Message;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -43,7 +42,7 @@ public class Reserve extends Message{
         this.sizeInBytes = sizeInBytes;
         this.lifetime = lifetime;
         this.accessLatency = accessLatency;
-        this.retentionPolicy = checkNotNull(retentionPolicy);
+        this.retentionPolicy = requireNonNull(retentionPolicy);
         this.description = description;
         this.linkgroupName = linkgroupName;
         setReplyRequired(true);

@@ -6,7 +6,7 @@ import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 
 import org.dcache.cells.CellStub;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 class PoolListByPoolGroup
     extends PoolListFromPoolManager
@@ -16,8 +16,8 @@ class PoolListByPoolGroup
 
     public PoolListByPoolGroup(CellStub poolManager, Iterable<String> poolGroups)
     {
-        _poolManager = checkNotNull(poolManager);
-        _poolGroups = checkNotNull(poolGroups);
+        _poolManager = requireNonNull(poolManager);
+        _poolGroups = requireNonNull(poolGroups);
     }
 
     @Override

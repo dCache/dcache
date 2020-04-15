@@ -68,8 +68,6 @@ package org.dcache.space;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
@@ -91,12 +89,9 @@ import java.util.concurrent.Executor;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -104,15 +99,13 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.util.concurrent.Futures.immediateFuture;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -132,7 +125,7 @@ public class ReservationCaches
 
         public GetSpaceTokensKey(Set<Principal> principals, String description)
         {
-            this.principals = checkNotNull(principals);
+            this.principals = requireNonNull(principals);
             this.description = description;
         }
 

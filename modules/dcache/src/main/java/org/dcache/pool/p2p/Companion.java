@@ -72,7 +72,7 @@ import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.ByteUnit.KiB;
 
 /**
@@ -190,9 +190,9 @@ class Companion
         _pool = pool;
         _sourcePoolName = sourcePoolName;
 
-        _destinationPoolCellname = checkNotNull(destinationPoolCellname, "Destination pool name is unknown.");
-        _destinationPoolCellDomainName = checkNotNull(destinationPoolCellDomainName, "Destination domain name is unknown.");
-        _fileAttributes = checkNotNull(fileAttributes, "File attributes is missing.");
+        _destinationPoolCellname = requireNonNull(destinationPoolCellname, "Destination pool name is unknown.");
+        _destinationPoolCellDomainName = requireNonNull(destinationPoolCellDomainName, "Destination domain name is unknown.");
+        _fileAttributes = requireNonNull(fileAttributes, "File attributes is missing.");
 
         _sslContext = getContextIfNeeded.get();
 

@@ -54,8 +54,9 @@ import org.dcache.util.Args;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
-import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.*;
+import static java.util.Objects.requireNonNull;
 import static java.util.Comparator.comparing;
+import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.*;
 
 public class PoolSelectionUnitV2
         implements Serializable, PoolSelectionUnit, PoolSelectionUnitAccess, CellSetupProvider,
@@ -562,7 +563,7 @@ public class PoolSelectionUnitV2
     @Override
     public PoolPreferenceLevel[] match(DirectionType type,  String netUnitName, String protocolUnitName,
                                        FileAttributes fileAttributes, String linkGroupName, Predicate<String> exclude) {
-        Preconditions.checkNotNull(exclude,
+        requireNonNull(exclude,
                                    "Predicate argument cannot be null.");
 
         StorageInfo storageInfo = fileAttributes.getStorageInfo();

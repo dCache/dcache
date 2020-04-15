@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
@@ -21,7 +20,7 @@ import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 /**
  *
  * @author timur
@@ -53,7 +52,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
     @Override
     public Configuration parse(String configuration) throws ParseException {
 
-        checkNotNull(configuration, "Configuration must not be NULL");
+        requireNonNull(configuration, "Configuration must not be NULL");
 
         return parse(new BufferedReader(new StringReader(configuration)));
     }
@@ -67,7 +66,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
     @Override
     public Configuration parse(File configurationFile) throws ParseException {
 
-        checkNotNull(configurationFile, "ConfigurationFile must not be NULL.");
+        requireNonNull(configurationFile, "ConfigurationFile must not be NULL.");
 
         try {
             return parse(Files.newBufferedReader(configurationFile.toPath(), Charset.defaultCharset()));

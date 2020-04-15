@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,7 +24,7 @@ import java.nio.channels.CompletionHandler;
 
 import org.dcache.pool.classic.Cancellable;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -153,7 +153,7 @@ public abstract class TryCatchTemplate<V, A> implements Cancellable, CompletionH
     protected void setCancellable(Cancellable cancellable)
     {
         checkState(_cancellable == null);
-        _cancellable = checkNotNull(cancellable);
+        _cancellable = requireNonNull(cancellable);
     }
 
     /**

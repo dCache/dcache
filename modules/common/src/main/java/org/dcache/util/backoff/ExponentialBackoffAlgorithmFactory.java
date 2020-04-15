@@ -61,8 +61,8 @@ package org.dcache.util.backoff;
 
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Factory implementation for creating an {@link ExponentialBackoffAlgorithm}.
@@ -173,18 +173,18 @@ public class ExponentialBackoffAlgorithmFactory implements
     }
 
     public void setMaxUnit(TimeUnit maxUnit) {
-        checkNotNull(maxUnit);
+        requireNonNull(maxUnit);
         this.maxUnit = maxUnit;
     }
 
     public void setMinDelay(Long minDelay) {
-        checkNotNull(minDelay);
+        requireNonNull(minDelay);
         checkArgument(minDelay > 0);
         this.minDelay = minDelay;
     }
 
     public void setMinUnit(TimeUnit minUnit) {
-        checkNotNull(minUnit);
+        requireNonNull(minUnit);
         this.minUnit = minUnit;
     }
 

@@ -1,6 +1,5 @@
 package org.dcache.srm.shell;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.FutureCallback;
@@ -56,7 +55,7 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
@@ -75,12 +74,12 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
     public void setSrm(ISRM srm)
     {
-        this.srm = checkNotNull(srm);
+        this.srm = requireNonNull(srm);
     }
 
     public void setFileTransferAgent(FileTransferAgent agent)
     {
-        this.agent = checkNotNull(agent);
+        this.agent = requireNonNull(agent);
     }
 
     @Nonnull

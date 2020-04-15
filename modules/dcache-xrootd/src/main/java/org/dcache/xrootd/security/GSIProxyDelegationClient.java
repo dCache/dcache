@@ -17,7 +17,6 @@
  */
 package org.dcache.xrootd.security;
 
-import com.google.common.base.Preconditions;
 import eu.emi.security.authn.x509.X509Credential;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -45,6 +44,7 @@ import org.dcache.xrootd.plugins.authn.gsi.SerializableX509Credential;
 import org.dcache.xrootd.plugins.authn.gsi.X509ProxyDelegationClient;
 import org.dcache.xrootd.util.ProxyRequest;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static java.util.Arrays.asList;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
@@ -68,7 +68,7 @@ public class GSIProxyDelegationClient extends X509ProxyDelegationClient
 
     GSIProxyDelegationClient(ProxyDelegationStore store)
     {
-        Preconditions.checkNotNull(store, "GSIProxyDelegationClient "
+        requireNonNull(store, "GSIProxyDelegationClient "
                         + "cannot be constructed with null store.");
         vomsValidator = store.vomsValidator;
         delegations = store.delegations;

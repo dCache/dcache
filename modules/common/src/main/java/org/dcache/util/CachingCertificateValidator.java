@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -36,12 +36,11 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.singletonList;
 
 /**
@@ -63,7 +62,7 @@ public class CachingCertificateValidator implements X509CertChainValidatorExt
     @Override
     public ValidationResult validate(final X509Certificate[] certChain)
     {
-        checkNotNull(certChain, "Cannot validate a null cert chain.");
+        requireNonNull(certChain, "Cannot validate a null cert chain.");
         checkArgument(certChain.length > 0, "Cannot validate a cert chain of length 0.");
 
         int pos = 0;

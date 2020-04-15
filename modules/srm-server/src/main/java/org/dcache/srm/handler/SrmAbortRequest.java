@@ -13,7 +13,7 @@ import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SrmAbortRequest
 {
@@ -29,7 +29,7 @@ public class SrmAbortRequest
             String clientHost)
     {
         this.user = user;
-        this.request = checkNotNull(request);
+        this.request = requireNonNull(request);
     }
 
     public SrmAbortRequestResponse getResponse()

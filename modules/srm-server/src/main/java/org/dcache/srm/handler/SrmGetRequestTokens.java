@@ -19,7 +19,7 @@ import org.dcache.srm.v2_2.TRequestTokenReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SrmGetRequestTokens
 {
@@ -37,9 +37,9 @@ public class SrmGetRequestTokens
                                SRM srm,
                                String clientHost)
     {
-        this.request = checkNotNull(request);
-        this.user = checkNotNull(user);
-        this.srm = checkNotNull(srm);
+        this.request = requireNonNull(request);
+        this.user = requireNonNull(user);
+        this.srm = requireNonNull(srm);
     }
 
     public SrmGetRequestTokensResponse getResponse()

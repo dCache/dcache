@@ -6,8 +6,8 @@ import com.google.common.io.BaseEncoding;
 import java.io.Serializable;
 import java.security.MessageDigest;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.padStart;
 import static org.dcache.util.ChecksumType.ADLER32;
 
@@ -52,8 +52,8 @@ public class Checksum  implements Serializable
      */
     public Checksum(ChecksumType type, String value)
     {
-        checkNotNull(type, "type may not be null");
-        checkNotNull(value, "value may not be null");
+        requireNonNull(type, "type may not be null");
+        requireNonNull(value, "value may not be null");
 
         this.type = type;
         this.value = normalise(type, value);
@@ -148,7 +148,7 @@ public class Checksum  implements Serializable
      */
     public static Checksum parseChecksum(String digest)
     {
-        checkNotNull(digest, "value may not be null");
+        requireNonNull(digest, "value may not be null");
 
         int del = digest.indexOf(DELIMITER);
         if (del < 1) {

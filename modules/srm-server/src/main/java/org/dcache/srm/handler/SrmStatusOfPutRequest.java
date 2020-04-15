@@ -17,7 +17,7 @@ import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SrmStatusOfPutRequest
 {
@@ -34,7 +34,7 @@ public class SrmStatusOfPutRequest
             SRM srm,
             String clientHost)
     {
-        this.statusOfPutRequestRequest = checkNotNull(statusOfPutRequestRequest);
+        this.statusOfPutRequestRequest = requireNonNull(statusOfPutRequestRequest);
     }
 
     public SrmStatusOfPutRequestResponse getResponse()

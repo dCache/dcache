@@ -29,7 +29,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLLifetimeReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.srm.handler.ReturnStatuses.*;
@@ -51,9 +51,9 @@ public class SrmExtendFileLifeTime
                                  SRM srm,
                                  String clientHost)
     {
-        this.request = checkNotNull(request);
-        this.user = checkNotNull(user);
-        this.storage = checkNotNull(storage);
+        this.request = requireNonNull(request);
+        this.user = requireNonNull(user);
+        this.storage = requireNonNull(storage);
         this.configuration = srm.getConfiguration();
     }
 

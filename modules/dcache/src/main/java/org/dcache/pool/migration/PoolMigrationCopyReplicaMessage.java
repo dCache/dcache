@@ -10,7 +10,7 @@ import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * MigrationModuleServer message to request that a replica is
@@ -38,9 +38,9 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
                                            @Nullable Long atime, boolean isMetaOnly)
     {
         super(uuid, pool, fileAttributes.getPnfsId());
-        _fileAttributes = checkNotNull(fileAttributes);
-        _state = checkNotNull(state);
-        _stickyRecords = checkNotNull(stickyRecords);
+        _fileAttributes = requireNonNull(fileAttributes);
+        _state = requireNonNull(state);
+        _stickyRecords = requireNonNull(stickyRecords);
         _computeChecksumOnUpdate = computeChecksumOnUpdate;
         _forceSourceMode = forceSourceMode;
         _atime = atime;

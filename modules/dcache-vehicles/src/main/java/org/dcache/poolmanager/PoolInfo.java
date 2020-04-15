@@ -8,7 +8,7 @@ import diskCacheV111.pools.PoolCostInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PoolInfo implements Serializable
 {
@@ -19,9 +19,9 @@ public class PoolInfo implements Serializable
 
     public PoolInfo(CellAddressCore address, PoolCostInfo cost, ImmutableMap<String,String> tags)
     {
-        checkNotNull(address);
-        checkNotNull(cost);
-        checkNotNull(tags);
+        requireNonNull(address);
+        requireNonNull(cost);
+        requireNonNull(tags);
         _address = address;
         _cost = cost;
         _tags = tags;

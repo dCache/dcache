@@ -10,7 +10,7 @@ import diskCacheV111.vehicles.Message;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 
 public class PinManagerExtendPinMessage extends Message
@@ -24,7 +24,7 @@ public class PinManagerExtendPinMessage extends Message
 
     public PinManagerExtendPinMessage(FileAttributes fileAttributes, long pinId, long lifetime)
     {
-        checkNotNull(fileAttributes);
+        requireNonNull(fileAttributes);
         _fileAttributes = fileAttributes;
         _pinId = pinId;
         _lifetime = lifetime;

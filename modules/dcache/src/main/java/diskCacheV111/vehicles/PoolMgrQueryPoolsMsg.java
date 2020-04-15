@@ -10,7 +10,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PoolMgrQueryPoolsMsg extends PoolManagerMessage
 {
@@ -27,10 +27,10 @@ public class PoolMgrQueryPoolsMsg extends PoolManagerMessage
             String protocolUnit,
             String netUnitName,
             FileAttributes fileAttributes) {
-       _accessType       = checkNotNull(accessType);
-       _protocolUnitName = checkNotNull(protocolUnit);
-       _netUnitName      = checkNotNull(netUnitName);
-       _fileAttributes   = checkNotNull(fileAttributes);
+       _accessType       = requireNonNull(accessType);
+       _protocolUnitName = requireNonNull(protocolUnit);
+       _netUnitName      = requireNonNull(netUnitName);
+       _fileAttributes   = requireNonNull(fileAttributes);
        checkArgument(fileAttributes.isDefined(FileAttribute.STORAGEINFO));
 
        setReplyRequired(true);

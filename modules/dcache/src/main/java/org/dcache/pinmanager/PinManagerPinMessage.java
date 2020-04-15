@@ -12,7 +12,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 
 public class PinManagerPinMessage extends Message
@@ -34,8 +34,8 @@ public class PinManagerPinMessage extends Message
                                 String requestId,
                                 long lifetime)
     {
-        _fileAttributes = checkNotNull(fileAttributes);
-        _protocolInfo = checkNotNull(protocolInfo);
+        _fileAttributes = requireNonNull(fileAttributes);
+        _protocolInfo = requireNonNull(protocolInfo);
         _requestId = requestId;
         _lifetime = lifetime;
     }
@@ -100,7 +100,7 @@ public class PinManagerPinMessage extends Message
 
     public void setFileAttributes(FileAttributes attributes)
     {
-        _fileAttributes = checkNotNull(attributes);
+        _fileAttributes = requireNonNull(attributes);
     }
 
     public ProtocolInfo getProtocolInfo()

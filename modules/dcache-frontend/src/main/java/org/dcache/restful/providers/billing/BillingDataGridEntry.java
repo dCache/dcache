@@ -69,6 +69,9 @@ import org.dcache.util.histograms.TimeFrame.Type;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
 
+import static java.util.Objects.requireNonNull;
+
+
 @ApiModel(description = "Defines a possible grid entry based on four enumerations:  "
                                 + "type, series type, series data type and bin type.")
 public final class BillingDataGridEntry {
@@ -93,7 +96,7 @@ public final class BillingDataGridEntry {
     }
 
     public BillingDataGridEntry(String toParse) {
-        Preconditions.checkNotNull(toParse,
+        requireNonNull(toParse,
                                    "String value cannot be null.");
 
         String[] parts = toParse.split("_");
@@ -110,14 +113,14 @@ public final class BillingDataGridEntry {
     public BillingDataGridEntry(SeriesType type,
                                 SeriesDataType dataType,
                                 TimeFrame timeFrame) {
-        Preconditions.checkNotNull(type, "Series type cannot be null.");
-        Preconditions.checkNotNull(dataType,
+        requireNonNull(type, "Series type cannot be null.");
+        requireNonNull(dataType,
                                    "Series data type cannot be null.");
-        Preconditions.checkNotNull(timeFrame,
+        requireNonNull(timeFrame,
                                    "TimeFrame cannot be null.");
-        Preconditions.checkNotNull(timeFrame.getTimebin(),
+        requireNonNull(timeFrame.getTimebin(),
                                    "Bin type  cannot be null.");
-        Preconditions.checkNotNull(timeFrame.getTimeframe(),
+        requireNonNull(timeFrame.getTimeframe(),
                                    "Range type cannot be null.");
         this.type = type;
         this.dataType = dataType;

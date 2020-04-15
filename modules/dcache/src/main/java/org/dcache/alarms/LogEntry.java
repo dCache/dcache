@@ -68,6 +68,8 @@ import java.util.Date;
 
 import org.dcache.util.IRegexFilterable;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Storage class for all log events.<br>
  *
@@ -238,7 +240,7 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
     }
 
     public void setKey(String key) {
-        this.key = Preconditions.checkNotNull(key, "key is null");
+        this.key = requireNonNull(key, "key is null");
     }
 
     public void setLastUpdate(Long lastUpdate) {

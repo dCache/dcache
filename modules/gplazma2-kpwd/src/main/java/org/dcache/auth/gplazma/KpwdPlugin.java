@@ -29,8 +29,8 @@ import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
@@ -55,7 +55,7 @@ class KpwdPrincipal
     final boolean isReadOnly;
 
     public KpwdPrincipal(UserAuthBase record) {
-        checkNotNull(record);
+        requireNonNull(record);
         name = record.Username;
         uid = record.UID;
         home = record.Home;

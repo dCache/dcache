@@ -12,8 +12,8 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.namespace.FileAttribute.*;
 
 
@@ -39,7 +39,7 @@ public class Pool2PoolTransferMsg extends PoolMessage {
                                  FileAttributes fileAttributes){
         super( sourcePoolName ) ;
 
-        checkNotNull(fileAttributes);
+        requireNonNull(fileAttributes);
         checkArgument(fileAttributes.isDefined(EnumSet.of(PNFSID)));
 
         _fileAttributes = fileAttributes;

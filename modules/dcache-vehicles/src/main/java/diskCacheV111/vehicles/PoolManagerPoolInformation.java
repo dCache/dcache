@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import diskCacheV111.pools.PoolCostInfo;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PoolManagerPoolInformation
     implements Serializable
@@ -18,7 +18,7 @@ public class PoolManagerPoolInformation
     public PoolManagerPoolInformation(String name, PoolCostInfo poolCostInfo, double cpuCost)
     {
         _name = name;
-        _poolCostInfo = checkNotNull(poolCostInfo);
+        _poolCostInfo = requireNonNull(poolCostInfo);
         _cpuCost = cpuCost;
     }
 

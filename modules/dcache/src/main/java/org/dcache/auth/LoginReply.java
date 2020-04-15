@@ -11,7 +11,7 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.collect.Iterables.filter;
 
 /**
@@ -33,8 +33,8 @@ public class LoginReply
 
     public LoginReply(Subject subject, Set<LoginAttribute> attributes)
     {
-        _subject = checkNotNull(subject);
-        _attributes = checkNotNull(attributes);
+        _subject = requireNonNull(subject);
+        _attributes = requireNonNull(attributes);
     }
 
     /**

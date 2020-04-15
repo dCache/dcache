@@ -10,7 +10,7 @@ import java.net.UnknownHostException;
 import java.security.Principal;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * An object of type Origin contains information about the origin of a
@@ -44,7 +44,7 @@ public class Origin implements Principal, Serializable
      *            Request origin Internet address.
      */
     public Origin(InetAddress address) {
-        _address = checkNotNull(address);
+        _address = requireNonNull(address);
         _clientChain = ImmutableList.of(address);
     }
 
@@ -58,7 +58,7 @@ public class Origin implements Principal, Serializable
      * @throws UnknownHostException
      */
     public Origin(String host) throws UnknownHostException {
-        _address = InetAddress.getByName(checkNotNull(host));
+        _address = InetAddress.getByName(requireNonNull(host));
         _clientChain = ImmutableList.of(_address);
     }
 

@@ -24,7 +24,7 @@ import com.google.common.collect.Iterables;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * This class contains static utility methods that operate on or return objects
@@ -54,7 +54,7 @@ public class Assumptions
 
         public CompositeAssumption(ImmutableSet<Assumption> assumptions)
         {
-            this.assumptions = checkNotNull(assumptions);
+            this.assumptions = requireNonNull(assumptions);
         }
 
         @Override

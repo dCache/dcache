@@ -9,7 +9,7 @@ import java.util.Optional;
 import org.dcache.auth.OpenIdCredential;
 import org.dcache.util.ChecksumType;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Patrick F.
@@ -50,7 +50,7 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
         this.addr = addr ;
         this.sourceHttpUrl = url;
         this.isVerificationRequired = isVerificationRequired;
-        this.headers = checkNotNull(headers);
+        this.headers = requireNonNull(headers);
         this.openIdCredential = openIdCredential;
         this.desiredChecksum = desiredChecksum.orElse(null);
     }

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -106,7 +106,7 @@ import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.tpc.XrootdTpcInfoCleanerTask;
 import org.dcache.xrootd.util.FileStatus;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static diskCacheV111.util.MissingResourceCacheException.checkResourceNotMissing;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
@@ -321,7 +321,7 @@ public class XrootdDoor
 
     public void setMoverTimeoutUnit(TimeUnit unit)
     {
-        _moverTimeoutUnit = checkNotNull(unit);
+        _moverTimeoutUnit = requireNonNull(unit);
     }
 
     public TimeUnit getMoverTimeoutUnit()

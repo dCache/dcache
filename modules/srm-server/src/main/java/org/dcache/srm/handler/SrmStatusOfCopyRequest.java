@@ -14,7 +14,7 @@ import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SrmStatusOfCopyRequest
 {
@@ -27,7 +27,7 @@ public class SrmStatusOfCopyRequest
                                   SRM srm,
                                   String clientHost)
     {
-        this.request = checkNotNull(request);
+        this.request = requireNonNull(request);
     }
 
     public SrmStatusOfCopyRequestResponse getResponse()

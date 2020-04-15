@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -44,7 +44,7 @@ import org.dcache.auth.FQAN;
 import org.dcache.cells.CellStub;
 import org.dcache.gridsite.CredentialStore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class CredentialService
@@ -83,7 +83,7 @@ public class CredentialService
     @Required
     public void setHost(String host)
     {
-        _host = checkNotNull(host);
+        _host = requireNonNull(host);
     }
 
     @Nonnull

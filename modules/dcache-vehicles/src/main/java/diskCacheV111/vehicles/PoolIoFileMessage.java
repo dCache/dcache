@@ -8,8 +8,8 @@ import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.assumption.Assumptions;
 import org.dcache.vehicles.FileAttributes;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
@@ -35,7 +35,7 @@ public class PoolIoFileMessage extends PoolMessage {
     {
         super(pool);
 
-        checkNotNull(fileAttributes);
+        requireNonNull(fileAttributes);
         checkArgument(fileAttributes.isDefined(EnumSet.of(STORAGEINFO, PNFSID)));
 
         _fileAttributes = fileAttributes;

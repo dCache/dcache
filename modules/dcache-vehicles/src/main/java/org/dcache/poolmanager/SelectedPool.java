@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,7 +26,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.assumption.Assumptions;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Result of a pool selection.
@@ -44,14 +44,14 @@ public class SelectedPool implements Serializable
 
     public SelectedPool(PoolInfo info)
     {
-        this.info = checkNotNull(info);
+        this.info = requireNonNull(info);
         this.assumption = Assumptions.none();
     }
 
     public SelectedPool(PoolInfo info, Assumption assumption)
     {
-        this.info = checkNotNull(info);
-        this.assumption = checkNotNull(assumption);
+        this.info = requireNonNull(info);
+        this.assumption = requireNonNull(assumption);
     }
 
     public PoolInfo info()

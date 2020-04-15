@@ -13,7 +13,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Base class for messages to PnfsManager.
@@ -57,7 +57,7 @@ public class PnfsMessage extends Message {
 
     public void setAccessMask(Set<AccessMask> mask)
     {
-        _mask = checkNotNull(mask);
+        _mask = requireNonNull(mask);
     }
 
     public Set<AccessMask> getAccessMask()
@@ -78,7 +78,7 @@ public class PnfsMessage extends Message {
 
     public void setRestriction(Restriction restriction)
     {
-        _restriction = checkNotNull(restriction);
+        _restriction = requireNonNull(restriction);
     }
 
     public Restriction getRestriction()

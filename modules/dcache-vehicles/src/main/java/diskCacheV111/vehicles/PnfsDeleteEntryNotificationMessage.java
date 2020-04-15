@@ -2,7 +2,7 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PnfsDeleteEntryNotificationMessage extends PnfsMessage
 {
@@ -10,7 +10,7 @@ public class PnfsDeleteEntryNotificationMessage extends PnfsMessage
 
     public PnfsDeleteEntryNotificationMessage(PnfsId pnfsId)
     {
-        super(checkNotNull(pnfsId));
+        super(requireNonNull(pnfsId));
         setReplyRequired(true);
     }
 }

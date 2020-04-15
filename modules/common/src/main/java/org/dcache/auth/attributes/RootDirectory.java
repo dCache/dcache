@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import diskCacheV111.util.FsPath;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Immutable encapsulation of a user's root directory. Used as session
@@ -18,7 +18,7 @@ public class RootDirectory implements LoginAttribute, Serializable
 
     public RootDirectory(String root)
     {
-        checkNotNull(root);
+        requireNonNull(root);
         _root = root;
     }
 

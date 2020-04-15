@@ -65,6 +65,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * <p>Base (generic) container for histogram data.  Bean which can be used for
  * persistence, e.g., as JSON object.</p>
@@ -99,7 +101,7 @@ public abstract class HistogramModel implements Serializable {
     }
 
     protected HistogramModel(HistogramModel copy) {
-        Preconditions.checkNotNull(copy);
+        requireNonNull(copy);
 
         binCount = copy.binCount;
         binWidth = copy.binWidth;
@@ -212,24 +214,24 @@ public abstract class HistogramModel implements Serializable {
      */
     public Histogram toHistogram() {
         Histogram histogram = new Histogram();
-        histogram.setIdentifier(Preconditions.checkNotNull(identifier,
+        histogram.setIdentifier(requireNonNull(identifier,
                                                            "No histogram identifier provided."));
-        Preconditions.checkNotNull(binUnit,
+        requireNonNull(binUnit,
                                    "No histogram binUnit provided.");
-        Preconditions.checkNotNull(binWidth,
+        requireNonNull(binWidth,
                                    "No histogram binWidth provided.");
         histogram.setBinSize(binUnit * binWidth);
-        histogram.setBinUnit(Preconditions.checkNotNull(binUnitLabel,
+        histogram.setBinUnit(requireNonNull(binUnitLabel,
                                                         "No histogram bin label provided."));
-        histogram.setDataUnit(Preconditions.checkNotNull(dataUnitLabel,
+        histogram.setDataUnit(requireNonNull(dataUnitLabel,
                                                          "No histogram data label provided."));
-        histogram.setLowestBin(Preconditions.checkNotNull(lowestBin,
+        histogram.setLowestBin(requireNonNull(lowestBin,
                                                           "Lowest histogram bin not provided."));
 
-        int len = Preconditions.checkNotNull(binCount,
+        int len = requireNonNull(binCount,
                                              "No histogram bin count provided.");
 
-        Preconditions.checkNotNull(data, "Histogram data list missing.");
+        requireNonNull(data, "Histogram data list missing.");
         Preconditions.checkArgument(data.size() == len,
                                     String.format(DATA_SIZE_ERROR,
                                                   binCount,

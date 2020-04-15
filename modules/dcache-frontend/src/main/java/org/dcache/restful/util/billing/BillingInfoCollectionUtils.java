@@ -59,8 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.billing;
 
-import com.google.common.base.Preconditions;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -74,6 +72,8 @@ import org.dcache.util.histograms.TimeFrame.Type;
 import org.dcache.vehicles.billing.BillingDataRequestMessage;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * <p>Provides methods for generating and transforming messages to be
@@ -288,11 +288,11 @@ public final class BillingInfoCollectionUtils {
     private static BillingDataGridEntry transform(
                     BillingDataRequestMessage request) {
         SeriesDataType dataType = request.getDataType();
-        Preconditions.checkNotNull(dataType);
+        requireNonNull(dataType);
         SeriesType type = request.getType();
-        Preconditions.checkNotNull(type);
+        requireNonNull(type);
         TimeFrame timeFrame = request.getTimeFrame();
-        Preconditions.checkNotNull(timeFrame);
+        requireNonNull(timeFrame);
         return new BillingDataGridEntry(type,
                                         dataType,
                                         timeFrame);

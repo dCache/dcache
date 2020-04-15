@@ -12,7 +12,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ExecutionException;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * MonitoringProxy can be used to decorate a any class implementing an interface
@@ -39,9 +39,9 @@ public class MonitoringProxy  <T> implements InvocationHandler {
     private MonitoringProxy(T monitoredObject,
             RequestCounters<Method> counter,
             RequestExecutionTimeGauges<Method> gauge) {
-        this.monitoredObject = checkNotNull(monitoredObject);
-        this.counter = checkNotNull(counter);
-        this.gauge = checkNotNull(gauge);
+        this.monitoredObject = requireNonNull(monitoredObject);
+        this.counter = requireNonNull(counter);
+        this.gauge = requireNonNull(gauge);
     }
 
     @Override

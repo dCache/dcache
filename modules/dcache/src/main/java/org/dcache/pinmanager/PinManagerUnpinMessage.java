@@ -3,7 +3,7 @@ package org.dcache.pinmanager;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PinManagerUnpinMessage extends Message
 {
@@ -15,7 +15,7 @@ public class PinManagerUnpinMessage extends Message
 
     public PinManagerUnpinMessage(PnfsId pnfsId)
     {
-        checkNotNull(pnfsId);
+        requireNonNull(pnfsId);
         _pnfsId = pnfsId;
     }
 

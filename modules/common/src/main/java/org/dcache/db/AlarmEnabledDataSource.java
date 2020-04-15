@@ -76,7 +76,7 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.NetworkUtils;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A decorator which allows exception thrown by the connection
@@ -101,9 +101,9 @@ public class AlarmEnabledDataSource extends ForwardingObject implements DataSour
     public AlarmEnabledDataSource(String url,
                                   String connectorName,
                                   DataSource delegate) {
-        this.connectorName = checkNotNull(connectorName);
-        this.url = checkNotNull(url);
-        this.delegate = checkNotNull(delegate);
+        this.connectorName = requireNonNull(connectorName);
+        this.url = requireNonNull(url);
+        this.delegate = requireNonNull(delegate);
     }
 
     /** Accessor for admin shell. */

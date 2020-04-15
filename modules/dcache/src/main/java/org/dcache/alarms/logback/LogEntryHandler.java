@@ -1,4 +1,4 @@
-  /*
+/*
 COPYRIGHT STATUS:
 Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
 software are sponsored by the U.S. Department of Energy under Contract No.
@@ -59,13 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
-  import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.net.SMTPAppender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.spi.CyclicBufferTracker;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +91,8 @@ import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.spi.LogEntryListener;
 import org.dcache.alarms.spi.LogEntryListenerFactory;
 import org.dcache.util.BoundedCachedExecutor;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * <p>For server-side interception of log messages.</p>
@@ -267,7 +268,7 @@ public class LogEntryHandler implements ApplicationContextAware {
     }
 
     public void setEmailThreshold(String emailThreshold) {
-        Preconditions.checkNotNull(emailThreshold);
+        requireNonNull(emailThreshold);
         this.emailThreshold = AlarmPriority.valueOf(emailThreshold.toUpperCase());
     }
 

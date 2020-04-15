@@ -83,8 +83,8 @@ import org.dcache.pool.repository.json.RepositoryData;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
@@ -792,8 +792,8 @@ public class ReplicaRepository
                CacheException,
                InterruptedException
     {
-        checkNotNull(id);
-        checkNotNull(owner);
+        requireNonNull(id);
+        requireNonNull(owner);
         checkArgument(expire >= -1, "Expiration time must be -1 or non-negative");
 
         _stateLock.readLock().lock();

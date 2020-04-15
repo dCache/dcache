@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 
 import diskCacheV111.vehicles.Message;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class XrootdDoorAdressInfoMessage extends Message
 {
@@ -17,7 +17,7 @@ public class XrootdDoorAdressInfoMessage extends Message
     public XrootdDoorAdressInfoMessage(int xrootdFileHandle, InetSocketAddress socketAddress)
     {
         this.xrootdFileHandle = xrootdFileHandle;
-        this.socketAddress = checkNotNull(socketAddress);
+        this.socketAddress = requireNonNull(socketAddress);
     }
 
     public int getXrootdFileHandle()

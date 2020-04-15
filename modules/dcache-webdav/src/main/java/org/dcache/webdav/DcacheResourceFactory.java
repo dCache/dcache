@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
@@ -128,7 +127,7 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.collect.Iterables.cycle;
 import static com.google.common.collect.Iterables.limit;
 import static java.util.Arrays.asList;
@@ -294,7 +293,7 @@ public class DcacheResourceFactory
 
     public void setKillTimeoutUnit(TimeUnit unit)
     {
-        _killTimeoutUnit = checkNotNull(unit);
+        _killTimeoutUnit = requireNonNull(unit);
     }
 
     public TimeUnit getKillTimeoutUnit()
@@ -327,7 +326,7 @@ public class DcacheResourceFactory
 
     public void setMoverTimeoutUnit(TimeUnit unit)
     {
-        _moverTimeoutUnit = checkNotNull(unit);
+        _moverTimeoutUnit = requireNonNull(unit);
         _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
     }
 
@@ -358,7 +357,7 @@ public class DcacheResourceFactory
 
     public void setTransferConfirmationTimeoutUnit(TimeUnit unit)
     {
-        _transferConfirmationTimeoutUnit = checkNotNull(unit);
+        _transferConfirmationTimeoutUnit = requireNonNull(unit);
     }
 
     public TimeUnit getTransferConfirmationTimeoutUnit()

@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 import org.dcache.pool.assumption.Assumption;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PoolCostInfo implements Serializable
 {
@@ -37,7 +37,7 @@ public class PoolCostInfo implements Serializable
     public PoolCostInfo(String poolName, String defaultQueue)
     {
         _poolName = poolName;
-        _defaultQueueName = checkNotNull(defaultQueue);
+        _defaultQueueName = requireNonNull(defaultQueue);
         _space = new PoolSpaceInfo(0, 0, 0, 0);
         _extendedMoverHash = new HashMap<>();
     }
@@ -45,7 +45,7 @@ public class PoolCostInfo implements Serializable
     public PoolCostInfo(String defaultQueue, Assumption.Pool info)
     {
         _poolName = info.name();
-        _defaultQueueName = checkNotNull(defaultQueue);
+        _defaultQueueName = requireNonNull(defaultQueue);
         _space = info.space();
         _extendedMoverHash = info.movers().stream().collect(Collectors.toMap(q -> q.getName(), q -> q));
         _p2pClient = info.p2PClient();

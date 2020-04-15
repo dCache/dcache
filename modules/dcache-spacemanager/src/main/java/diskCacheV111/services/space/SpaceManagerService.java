@@ -116,7 +116,7 @@ import org.dcache.util.BoundedExecutor;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
@@ -747,7 +747,7 @@ public final class SpaceManagerService
     private void transferStarting(PoolAcceptFileMessage message) throws DataAccessException, SpaceException
     {
         LOGGER.trace("transferStarting({})", message);
-        PnfsId pnfsId = checkNotNull(message.getPnfsId());
+        PnfsId pnfsId = requireNonNull(message.getPnfsId());
         FileAttributes fileAttributes = message.getFileAttributes();
         VOInfo owner = getVoInfo(message.getSubject());
         long sizeInBytes = message.getPreallocated();

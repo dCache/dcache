@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -30,7 +29,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SrmCopy implements CredentialAwareHandler
 {
@@ -52,17 +51,17 @@ public class SrmCopy implements CredentialAwareHandler
                    SRM srm,
                    String clientHost)
     {
-        this.request = checkNotNull(request);
-        this.user = checkNotNull(user);
+        this.request = requireNonNull(request);
+        this.user = requireNonNull(user);
         this.configuration = srm.getConfiguration();
         this.clientHost = clientHost;
-        this.srm = checkNotNull(srm);
+        this.srm = requireNonNull(srm);
     }
 
     @Override
     public void setCredential(RequestCredential credential)
     {
-        this.credential = checkNotNull(credential);
+        this.credential = requireNonNull(credential);
     }
 
     public SrmCopyResponse getResponse()

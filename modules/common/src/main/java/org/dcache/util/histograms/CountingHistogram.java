@@ -65,6 +65,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * <p>Maintains a histogram data set which consists of a fixed number
@@ -89,12 +90,12 @@ public class CountingHistogram extends HistogramModel {
 
     @Override
     public void configure() {
-        Preconditions.checkNotNull(data, "no values set.");
-        Preconditions.checkNotNull(binCount,
+        requireNonNull(data, "no values set.");
+        requireNonNull(binCount,
                                    "bin count must be defined.");
         Preconditions.checkArgument(binCount > 1,
                                     "bin count must be > 1.");
-        Preconditions.checkNotNull(binUnit,
+        requireNonNull(binUnit,
                                    "bin unit must be defined.");
         Preconditions.checkArgument(binUnit > 0,
                                     "bin unit must be > 0.");

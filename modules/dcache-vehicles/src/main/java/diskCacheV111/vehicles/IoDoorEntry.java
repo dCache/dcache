@@ -11,7 +11,7 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.auth.Subjects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class IoDoorEntry implements Serializable
 {
@@ -37,7 +37,7 @@ public class IoDoorEntry implements Serializable
         _pool = pool;
         _status = status;
         _waitingSince = waitingSince;
-        _replyHost = checkNotNull(replyHost);
+        _replyHost = requireNonNull(replyHost);
     }
 
     public long getSerialId()

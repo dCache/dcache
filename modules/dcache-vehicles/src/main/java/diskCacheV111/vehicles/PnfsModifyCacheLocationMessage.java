@@ -4,7 +4,7 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PnfsModifyCacheLocationMessage extends PnfsMessage {
 
@@ -13,7 +13,7 @@ public class PnfsModifyCacheLocationMessage extends PnfsMessage {
     private static final long serialVersionUID = -7996549495498661141L;
 
     public PnfsModifyCacheLocationMessage(PnfsId pnfsId, String poolName){
-        super(checkNotNull(pnfsId));
+        super(requireNonNull(pnfsId));
         _poolName = poolName;
     }
 

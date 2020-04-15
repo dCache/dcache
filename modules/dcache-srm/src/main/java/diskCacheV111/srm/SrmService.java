@@ -106,7 +106,7 @@ import org.dcache.srm.handler.CredentialAwareHandler;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -143,7 +143,7 @@ public class SrmService implements CellMessageReceiver, CuratorFrameworkAware, C
     @Required
     public void setSrmId(String id)
     {
-        this.id = checkNotNull(id);
+        this.id = requireNonNull(id);
     }
 
     @Required

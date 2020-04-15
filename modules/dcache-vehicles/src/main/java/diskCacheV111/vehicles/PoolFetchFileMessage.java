@@ -4,7 +4,7 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * restore file from HSM
@@ -18,7 +18,7 @@ public class PoolFetchFileMessage extends PoolMessage {
     public PoolFetchFileMessage(String poolName, FileAttributes fileAttributes)
     {
         super(poolName);
-        _fileAttributes = checkNotNull(fileAttributes);
+        _fileAttributes = requireNonNull(fileAttributes);
         setReplyRequired(true);
     }
 

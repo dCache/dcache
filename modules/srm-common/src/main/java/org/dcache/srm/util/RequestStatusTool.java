@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -21,7 +21,7 @@ public class RequestStatusTool {
 
     public static final boolean isFailedRequestStatus(@Nonnull TReturnStatus returnStatus)
     {
-           TStatusCode statusCode = checkNotNull(returnStatus.getStatusCode());
+           TStatusCode statusCode = requireNonNull(returnStatus.getStatusCode());
            return
                statusCode != TStatusCode.SRM_PARTIAL_SUCCESS &&
                statusCode != TStatusCode.SRM_REQUEST_INPROGRESS &&
@@ -34,7 +34,7 @@ public class RequestStatusTool {
 
     public static final boolean isFailedFileRequestStatus(@Nonnull TReturnStatus returnStatus)
     {
-           TStatusCode statusCode = checkNotNull(returnStatus.getStatusCode());
+           TStatusCode statusCode = requireNonNull(returnStatus.getStatusCode());
            return
                statusCode != TStatusCode.SRM_SPACE_AVAILABLE &&
                statusCode != TStatusCode.SRM_FILE_PINNED &&
@@ -50,7 +50,7 @@ public class RequestStatusTool {
 
     public static final boolean isTransientStateStatus(@Nonnull TReturnStatus returnStatus)
     {
-           TStatusCode statusCode = checkNotNull(returnStatus.getStatusCode());
+           TStatusCode statusCode = requireNonNull(returnStatus.getStatusCode());
            return
                statusCode == TStatusCode.SRM_REQUEST_QUEUED ||
                    statusCode == TStatusCode.SRM_REQUEST_INPROGRESS;

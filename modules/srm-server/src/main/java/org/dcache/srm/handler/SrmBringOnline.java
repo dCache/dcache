@@ -26,7 +26,7 @@ import org.dcache.srm.v2_2.TGetFileRequest;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
 import static java.util.Arrays.asList;
@@ -50,11 +50,11 @@ public class SrmBringOnline
                           SRM srm,
                           String clientHost)
     {
-        this.srm = checkNotNull(srm);
-        this.request = checkNotNull(request);
-        this.user = checkNotNull(user);
+        this.srm = requireNonNull(srm);
+        this.request = requireNonNull(request);
+        this.user = requireNonNull(user);
         this.clientHost = clientHost;
-        this.storage = checkNotNull(storage);
+        this.storage = requireNonNull(storage);
         this.configuration = srm.getConfiguration();
     }
 

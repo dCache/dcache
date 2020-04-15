@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 
 public class Callables
 {
@@ -80,7 +81,7 @@ public class Callables
                 Callable<T> delegate, long duration, TimeUnit unit)
         {
             Preconditions.checkArgument(duration > 0);
-            this.delegate = Preconditions.checkNotNull(delegate);
+            this.delegate = requireNonNull(delegate);
             this.durationNanos = unit.toNanos(duration);
         }
 

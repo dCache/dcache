@@ -1,12 +1,9 @@
 package org.dcache.pinmanager;
 
-
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import static java.util.Objects.requireNonNull;
 
 public class PinManagerCountPinsMessage extends Message {
     private static final long serialVersionUID = 7314454233774958888L;
@@ -16,12 +13,12 @@ public class PinManagerCountPinsMessage extends Message {
     private int count;
 
     public PinManagerCountPinsMessage(PnfsId pnfsId) {
-        _pnfsId = checkNotNull(pnfsId);
+        _pnfsId = requireNonNull(pnfsId);
         _requestId = null;
     }
 
     public PinManagerCountPinsMessage(PnfsId pnfsId, String requestId) {
-        _pnfsId = checkNotNull(pnfsId);
+        _pnfsId = requireNonNull(pnfsId);
         _requestId = requestId;
     }
 

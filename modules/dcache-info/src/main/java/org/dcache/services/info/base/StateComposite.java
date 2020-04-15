@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A StateComposite is an aggregation of zero or more StateComponents.  StateComposites
@@ -94,7 +94,7 @@ public class StateComposite implements StateComponent
      * Our private usage below: build a new Mortal StateComposite with a
      * link to persistentMetadata.
      *
-     * @param ref the corresponding StatePersistentMetadata object.
+     * @param persistentMetadata the corresponding StatePersistentMetadata object.
      * @param lifetime the minimum lifetime of this object, in seconds.
      */
     private StateComposite(StatePersistentMetadata persistentMetadata, long lifetime)
@@ -282,7 +282,7 @@ public class StateComposite implements StateComponent
     @Override
     public void acceptVisitor(StateTransition transition, StatePath ourPath, StateVisitor visitor)
     {
-        checkNotNull(transition);
+        requireNonNull(transition);
         LOGGER.trace("acceptVisitor; transition={}, path={})", transition, ourPath);
 
         Map<String,String> branchMetadata = getMetadataInfo();

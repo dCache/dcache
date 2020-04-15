@@ -60,7 +60,7 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
+import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -83,7 +83,7 @@ public class LogEntryXMLInitializer {
      * @throws IOException
      */
     public LogEntryXMLInitializer(String xmlPath) throws IOException {
-        File xmlStore = new File(Preconditions.checkNotNull(xmlPath));
+        File xmlStore = new File(requireNonNull(xmlPath));
         if (!xmlStore.exists()) {
             if (!xmlStore.getParentFile().isDirectory()) {
                 String parent = xmlStore.getParentFile().getAbsolutePath();

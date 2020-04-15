@@ -26,10 +26,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+
 import dmg.util.Formats;
 import dmg.util.PropertiesBackedReplaceable;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * The ConfigurationProperties class represents a set of dCache
@@ -257,8 +258,8 @@ public class ConfigurationProperties
     @Override
     public synchronized Object put(Object rawKey, Object value)
     {
-        checkNotNull(rawKey, "A property key must not be null");
-        checkNotNull(value, "A property value must not be null");
+        requireNonNull(rawKey, "A property key must not be null");
+        requireNonNull(value, "A property value must not be null");
 
         AnnotatedKey key = new AnnotatedKey(rawKey, value);
         String name = key.getPropertyName();

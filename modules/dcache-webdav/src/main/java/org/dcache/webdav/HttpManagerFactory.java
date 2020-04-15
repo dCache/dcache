@@ -20,7 +20,7 @@ import java.util.Date;
 import org.dcache.http.PathMapper;
 import org.dcache.webdav.federation.FederationResponseHandler;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBean
 {
@@ -126,7 +126,7 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
     @Required
     public void setPathMapper(PathMapper mapper)
     {
-        _pathMapper = checkNotNull(mapper);
+        _pathMapper = requireNonNull(mapper);
     }
 
     /**

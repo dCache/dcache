@@ -64,6 +64,8 @@ import org.apache.commons.math3.util.FastMath;
 
 import java.util.ArrayList;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * <p>Maintains a histogram data set which consists of a fixed number of
  * time value bins; the window is maintained by rotating a circular
@@ -94,17 +96,17 @@ public class TimeseriesHistogram extends HistogramModel
 
     @Override
     public void configure() {
-        Preconditions.checkNotNull(identifier,
+        requireNonNull(identifier,
                                    "histogram type must be defined.");
-        Preconditions.checkNotNull(binCount,
+        requireNonNull(binCount,
                                    "bin count must be defined.");
         Preconditions.checkArgument(binCount > 1,
                                     "bin count must be > 1.");
-        Preconditions.checkNotNull(binUnit,
+        requireNonNull(binUnit,
                                    "bin unit must be defined.");
         Preconditions.checkArgument(binUnit > 0,
                                     "bin unit must be > 0.");
-        Preconditions.checkNotNull(highestBin,
+        requireNonNull(highestBin,
                                    "highest bin must be defined.");
 
         computeBinSizeFromWidthAndUnit();

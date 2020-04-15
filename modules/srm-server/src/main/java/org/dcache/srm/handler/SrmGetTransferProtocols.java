@@ -14,7 +14,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TSupportedTransferProtocol;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SrmGetTransferProtocols
 {
@@ -30,7 +30,7 @@ public class SrmGetTransferProtocols
                                    SRM srm,
                                    String clientHost)
     {
-        this.srm = checkNotNull(srm);
+        this.srm = requireNonNull(srm);
     }
 
     public SrmGetTransferProtocolsResponse getResponse()

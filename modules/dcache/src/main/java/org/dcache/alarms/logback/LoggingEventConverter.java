@@ -61,7 +61,6 @@ package org.dcache.alarms.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
-import com.google.common.base.Preconditions;
 import org.slf4j.Marker;
 
 import java.util.Iterator;
@@ -76,6 +75,8 @@ import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.NDC;
 import org.dcache.util.NetworkUtils;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * This class provides the binding between the logback-specific
@@ -115,7 +116,7 @@ final class LoggingEventConverter {
         }
 
         Marker alarmType = typeMarker.iterator().next();
-        Preconditions.checkNotNull(alarmType);
+        requireNonNull(alarmType);
         return alarmType.getName();
     }
 

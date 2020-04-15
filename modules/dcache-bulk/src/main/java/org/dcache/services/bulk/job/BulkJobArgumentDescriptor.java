@@ -60,7 +60,8 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.job;
 
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  *  Metadata for optional argument to a bulk job.
@@ -79,17 +80,17 @@ public class BulkJobArgumentDescriptor
                                      boolean required,
                                      String defaultValue)
     {
-        this.name = Preconditions.checkNotNull(name,"name cannot "
+        this.name = requireNonNull(name,"name cannot "
                         + "be null.");
-        this.description = Preconditions.checkNotNull(name,"description "
+        this.description = requireNonNull(name,"description "
                         + "cannot be null.");
-        this.valueSpec = Preconditions.checkNotNull(valueSpec,
+        this.valueSpec = requireNonNull(valueSpec,
                                                     "possible values "
                                                                     + "must be "
                                                                     + "specified");
         this.required = required;
         if (!required) {
-            Preconditions.checkNotNull(defaultValue, "default value "
+            requireNonNull(defaultValue, "default value "
                                        + "must be provided if arg is not required.");
             this.defaultValue = defaultValue;
         } else {

@@ -26,8 +26,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.Monitor;
 
-import diskCacheV111.vehicles.RemoveFileInfoMessage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,8 +119,8 @@ import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.util.concurrent.Futures.transformAsync;
 import static org.dcache.namespace.FileAttribute.PNFSID;
@@ -175,7 +173,7 @@ public class NearlineStorageHandler
     @Required
     public void setScheduledExecutor(ScheduledExecutorService executor)
     {
-        this.scheduledExecutor = checkNotNull(executor);
+        this.scheduledExecutor = requireNonNull(executor);
     }
 
 
@@ -188,37 +186,37 @@ public class NearlineStorageHandler
     @Required
     public void setExecutor(ListeningExecutorService executor)
     {
-        this.executor = checkNotNull(executor);
+        this.executor = requireNonNull(executor);
     }
 
     @Required
     public void setRepository(Repository repository)
     {
-        this.repository = checkNotNull(repository);
+        this.repository = requireNonNull(repository);
     }
 
     @Required
     public void setChecksumModule(ChecksumModule checksumModule)
     {
-        this.checksumModule = checkNotNull(checksumModule);
+        this.checksumModule = requireNonNull(checksumModule);
     }
 
     @Required
     public void setPnfsHandler(PnfsHandler pnfs)
     {
-        this.pnfs = checkNotNull(pnfs);
+        this.pnfs = requireNonNull(pnfs);
     }
 
     @Required
     public void setBillingStub(CellStub billingStub)
     {
-        this.billingStub = checkNotNull(billingStub);
+        this.billingStub = requireNonNull(billingStub);
     }
 
     @Required
     public void setHsmSet(HsmSet hsmSet)
     {
-        this.hsmSet = checkNotNull(hsmSet);
+        this.hsmSet = requireNonNull(hsmSet);
     }
 
     @Required

@@ -9,7 +9,7 @@ import diskCacheV111.vehicles.Message;
 
 import org.dcache.auth.attributes.LoginAttribute;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Requests a login by a login cell.
@@ -50,7 +50,7 @@ public class LoginMessage extends Message
 
     public void setLoginAttributes(Set<LoginAttribute> loginAttributes)
     {
-        _loginAttributes = checkNotNull(loginAttributes);
+        _loginAttributes = requireNonNull(loginAttributes);
     }
 
     public Set<LoginAttribute> getLoginAttributes()

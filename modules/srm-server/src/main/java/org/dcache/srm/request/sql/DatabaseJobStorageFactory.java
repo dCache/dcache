@@ -45,7 +45,7 @@ import org.dcache.srm.scheduler.SharedMemoryCacheJobStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Configuration.DatabaseParameters;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class DatabaseJobStorageFactory extends JobStorageFactory
 {
@@ -85,8 +85,8 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
     public DatabaseJobStorageFactory(@Nonnull String srmId, Configuration config, SRMUserPersistenceManager manager)
             throws DataAccessException, IOException
     {
-        checkNotNull(srmId);
-        checkNotNull(manager);
+        requireNonNull(srmId);
+        requireNonNull(manager);
         executor = new ThreadPoolExecutor(
                 config.getJdbcExecutionThreadNum(), config.getJdbcExecutionThreadNum(),
                 0L, TimeUnit.MILLISECONDS,

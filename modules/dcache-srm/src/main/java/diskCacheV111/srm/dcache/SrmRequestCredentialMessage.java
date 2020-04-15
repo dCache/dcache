@@ -1,6 +1,5 @@
 package diskCacheV111.srm.dcache;
 
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -11,9 +10,8 @@ import diskCacheV111.vehicles.Message;
 
 import org.dcache.auth.FQAN;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.*;
-
-
 
 /**
  * Query an SRM instance for a delegated credential that matches the given DN
@@ -36,7 +34,7 @@ public class SrmRequestCredentialMessage extends Message
      */
     public SrmRequestCredentialMessage(String dn, @Nullable String primaryFqan)
     {
-        _dn = checkNotNull(dn);
+        _dn = requireNonNull(dn);
         _primaryFqan = primaryFqan == null ? null : new FQAN(primaryFqan);
     }
 
@@ -54,7 +52,7 @@ public class SrmRequestCredentialMessage extends Message
 
     public void setPrivateKey(PrivateKey key)
     {
-        _privateKey = checkNotNull(key);
+        _privateKey = requireNonNull(key);
     }
 
     @Nonnull
@@ -66,7 +64,7 @@ public class SrmRequestCredentialMessage extends Message
 
     public void setCertificateChain(X509Certificate[] certificates)
     {
-        checkNotNull(certificates);
+        requireNonNull(certificates);
         checkArgument(certificates.length != 0,
                 "credential is invalid if certificate list is empty.");
         _certificates = certificates;

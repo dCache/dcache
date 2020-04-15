@@ -90,8 +90,8 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This implementation adapts {@link ch.qos.logback.classic.net.SimpleSocketServer}
@@ -158,7 +158,7 @@ public final class LogEntryServer implements Runnable {
     }
 
     public void setHandler(LogEntryHandler handler) {
-        this.handler = checkNotNull(handler);
+        this.handler = requireNonNull(handler);
     }
 
     public void setPort(Integer port) {

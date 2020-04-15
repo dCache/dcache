@@ -44,7 +44,7 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static io.milton.http.Response.Status.*;
 
 /**
@@ -85,7 +85,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
 
     public void setPathMapper(PathMapper mapper)
     {
-        pathMapper = checkNotNull(mapper);
+        pathMapper = requireNonNull(mapper);
     }
 
     public void setAuthenticationService(AuthenticationService authenticationService)

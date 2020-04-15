@@ -35,7 +35,7 @@ import org.dcache.pool.statistics.IoStatisticsReplicaRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.*;
 import static org.dcache.namespace.FileAttribute.*;
@@ -107,14 +107,14 @@ class WriteHandleImpl implements ReplicaDescriptor
                     ReplicaState targetState,
                     List<StickyRecord> stickyRecords)
     {
-        _repository = checkNotNull(repository);
-        _allocator = checkNotNull(allocator);
-        _pnfs = checkNotNull(pnfs);
-        _entry = checkNotNull(entry);
-        _fileAttributes = checkNotNull(fileAttributes);
+        _repository = requireNonNull(repository);
+        _allocator = requireNonNull(allocator);
+        _pnfs = requireNonNull(pnfs);
+        _entry = requireNonNull(entry);
+        _fileAttributes = requireNonNull(fileAttributes);
         _initialState = entry.getState();
-        _targetState = checkNotNull(targetState);
-        _stickyRecords = checkNotNull(stickyRecords);
+        _targetState = requireNonNull(targetState);
+        _stickyRecords = requireNonNull(stickyRecords);
         _state = HandleState.OPEN;
 
         checkState(_initialState != ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));

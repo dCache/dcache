@@ -21,8 +21,8 @@ import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.instanceOf;
 
 /**
@@ -102,7 +102,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
      * @throws PEPClientConfigurationException
      */
     private PEPClientConfiguration initPepConfiguration(Properties properties) throws PEPClientConfigurationException {
-        checkNotNull(properties, G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL);
+        requireNonNull(properties, G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL);
 
         PEPClientConfiguration pepConfig = new PEPClientConfiguration();
 

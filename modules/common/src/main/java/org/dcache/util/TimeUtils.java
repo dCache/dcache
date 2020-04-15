@@ -1,27 +1,24 @@
 package org.dcache.util;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.*;
 import static org.dcache.util.Strings.toThreeSigFig;
@@ -89,9 +86,9 @@ public class TimeUtils
         private long remainder;
 
         public DurationParser(Long duration, TimeUnit durationUnit) {
-            this.duration = Preconditions.checkNotNull(duration,
+            this.duration = requireNonNull(duration,
                             "duration was null");
-            this.durationUnit = Preconditions.checkNotNull(durationUnit,
+            this.durationUnit = requireNonNull(durationUnit,
                             "durationUnit was null");
             durations = new HashMap<>();
             remainder = durationUnit.toNanos(duration);
@@ -172,14 +169,14 @@ public class TimeUtils
 
         public DurationFormatter(String format)
         {
-            Preconditions.checkNotNull(format,
+            requireNonNull(format,
                             "Format string must be specified.");
             this.format = format;
         }
 
         public String format(long duration, TimeUnit unit)
         {
-            Preconditions.checkNotNull(unit,
+            requireNonNull(unit,
                             "Duration time unit must be specified.");
             TimeUnit[] sortedDimensions = getSortedDimensions();
             durations = new DurationParser(duration, unit);

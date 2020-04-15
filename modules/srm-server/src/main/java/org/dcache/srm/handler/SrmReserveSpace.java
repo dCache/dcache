@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -28,7 +27,7 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -50,11 +49,11 @@ public class SrmReserveSpace
                            SRM srm,
                            String clientHost)
     {
-        this.request = checkNotNull(request);
-        this.user = checkNotNull(user);
-        this.configuration = checkNotNull(srm.getConfiguration());
-        this.client_host = checkNotNull(clientHost);
-        this.srm = checkNotNull(srm);
+        this.request = requireNonNull(request);
+        this.user = requireNonNull(user);
+        this.configuration = requireNonNull(srm.getConfiguration());
+        this.client_host = requireNonNull(clientHost);
+        this.srm = requireNonNull(srm);
     }
 
     public SrmReserveSpaceResponse getResponse()

@@ -27,7 +27,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.CacheExceptionFactory;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -193,7 +193,7 @@ public class CellStub
      */
     public void setRateLimiter(RateLimiter rateLimiter)
     {
-        _rateLimiter = checkNotNull(rateLimiter);
+        _rateLimiter = requireNonNull(rateLimiter);
     }
 
     public RateLimiter getRateLimiter()
@@ -410,7 +410,7 @@ public class CellStub
     public <T> ListenableFuture<T> send(
             CellPath destination, Serializable message, Class<T> type, long timeout, CellEndpoint.SendFlag... flags)
     {
-        CellMessage envelope = new CellMessage(checkNotNull(destination), checkNotNull(message));
+        CellMessage envelope = new CellMessage(requireNonNull(destination), requireNonNull(message));
         Semaphore concurrency = _concurrency;
         CallbackFuture<T> future = new CallbackFuture<>(type, concurrency);
         concurrency.acquireUninterruptibly();

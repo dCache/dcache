@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,18 +17,12 @@
  */
 package org.dcache.pool.migration;
 
-import com.google.common.util.concurrent.MoreExecutors;
-
-
 import java.util.Collection;
-import java.util.stream.Collectors;
-
+import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByHsmMessage;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-
 import org.dcache.cells.CellStub;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 
 public class PoolListByHsm
@@ -39,8 +33,8 @@ public class PoolListByHsm
 
     public PoolListByHsm(CellStub poolManager, Collection<String> hsms)
     {
-        _poolManager = checkNotNull(poolManager);
-        _hsms = checkNotNull(hsms);
+        _poolManager = requireNonNull(poolManager);
+        _hsms = requireNonNull(hsms);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package diskCacheV111.vehicles;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class PoolManagerGetPoolsByPoolGroupMessage
     extends PoolManagerGetPoolsMessage
@@ -11,7 +11,7 @@ public class PoolManagerGetPoolsByPoolGroupMessage
 
     public PoolManagerGetPoolsByPoolGroupMessage(Iterable<String> poolGroups)
     {
-        _poolGroups = checkNotNull(poolGroups);
+        _poolGroups = requireNonNull(poolGroups);
     }
 
     public Iterable<String> getPoolGroups()

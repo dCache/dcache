@@ -31,7 +31,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
 import static java.util.Arrays.asList;
@@ -55,12 +55,12 @@ public class SrmPrepareToPut
                            SRM srm,
                            String clientHost)
     {
-        this.request = checkNotNull(request);
-        this.user = checkNotNull(user);
-        this.storage = checkNotNull(storage);
-        this.configuration = checkNotNull(srm.getConfiguration());
+        this.request = requireNonNull(request);
+        this.user = requireNonNull(user);
+        this.storage = requireNonNull(storage);
+        this.configuration = requireNonNull(srm.getConfiguration());
         this.clientHost = clientHost;
-        this.srm = checkNotNull(srm);
+        this.srm = requireNonNull(srm);
     }
 
     public SrmPrepareToPutResponse getResponse()

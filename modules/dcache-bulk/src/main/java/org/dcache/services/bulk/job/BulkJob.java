@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.job;
 
-import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,6 +70,8 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.services.bulk.BulkJobExecutionException;
 import org.dcache.services.bulk.handlers.BulkJobCompletionHandler;
 import org.dcache.vehicles.FileAttributes;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  *  The basic bulk job definition.
@@ -196,7 +197,7 @@ public abstract class BulkJob implements Runnable
     public void initialize()
     {
         LOGGER.trace("BulkJob, initialize() called ...");
-        Preconditions.checkNotNull(completionHandler,
+        requireNonNull(completionHandler,
                                    "Job completion handler "
                                                    + "was not set!  This is a bug.");
 
@@ -268,7 +269,7 @@ public abstract class BulkJob implements Runnable
 
     public synchronized void setState(State state)
     {
-        Preconditions.checkNotNull(state);
+        requireNonNull(state);
 
         switch (this.state)
         {

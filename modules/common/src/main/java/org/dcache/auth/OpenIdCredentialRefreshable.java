@@ -9,7 +9,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.json.JSONException;
@@ -22,7 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class OpenIdCredentialRefreshable extends WrappingOpenIdCredential
 {
@@ -31,8 +30,8 @@ public class OpenIdCredentialRefreshable extends WrappingOpenIdCredential
     private final HttpClient client;
 
     public OpenIdCredentialRefreshable(OpenIdCredential credential, HttpClient client) {
-        super(checkNotNull(credential, "OpenId Credential can't be null"));
-        this.client = checkNotNull(client, "Http Client can't be null");
+        super(requireNonNull(credential, "OpenId Credential can't be null"));
+        this.client = requireNonNull(client, "Http Client can't be null");
     }
 
     @Override

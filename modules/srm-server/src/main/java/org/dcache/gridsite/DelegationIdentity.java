@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,10 +23,10 @@ import com.google.common.hash.Hashing;
 
 import org.dcache.delegation.gridsite2.DelegationException;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.CharMatcher.JAVA_LETTER_OR_DIGIT;
 import static com.google.common.base.CharMatcher.anyOf;
 import static com.google.common.base.Charsets.UTF_8;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.gridsite.Utilities.assertThat;
 
 /**
@@ -45,8 +45,8 @@ public class DelegationIdentity
 
     public DelegationIdentity(String dn, String delegationId) throws DelegationException
     {
-        _dn = checkNotNull(dn);
-        _delegationId = checkNotNull(delegationId);
+        _dn = requireNonNull(dn);
+        _delegationId = requireNonNull(delegationId);
 
         assertThat(VALID_DELEGATION_ID_CHARACTERS.matchesAllOf(delegationId),
                 "delegationID \"" + delegationId + "\" is not valid");

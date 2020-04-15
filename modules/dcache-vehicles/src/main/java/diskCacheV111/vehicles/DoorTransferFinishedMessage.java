@@ -7,7 +7,7 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Signals the completion of a transfer on a pool.
@@ -30,10 +30,10 @@ public class DoorTransferFinishedMessage extends Message {
                                       String poolName,
                                       @Nullable String ioQueueName) {
        setId(id);
-       _fileAttributes = checkNotNull(fileAttributes);
-       _protocol = checkNotNull(protocol);
-       _pnfsId   = checkNotNull(pnfsId);
-       _poolName = checkNotNull(poolName);
+       _fileAttributes = requireNonNull(fileAttributes);
+       _protocol = requireNonNull(protocol);
+       _pnfsId   = requireNonNull(pnfsId);
+       _poolName = requireNonNull(poolName);
        _ioQueueName = ioQueueName;
    }
 

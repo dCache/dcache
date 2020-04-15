@@ -1,6 +1,6 @@
 package org.dcache.vehicles;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class BeanQuerySinglePropertyMessage extends BeanQueryMessage
 {
@@ -9,7 +9,7 @@ public class BeanQuerySinglePropertyMessage extends BeanQueryMessage
 
     public BeanQuerySinglePropertyMessage(String aPropertyName)
     {
-        checkNotNull(aPropertyName);
+        requireNonNull(aPropertyName);
         propertyName = aPropertyName;
     }
 

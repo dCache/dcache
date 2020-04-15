@@ -93,7 +93,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.TimeUtils;
 import org.dcache.util.TimeUtils.TimeUnitFormat;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -131,8 +131,8 @@ public abstract class Request extends Job {
         this.max_update_period = max_update_period;
         this.description = description;
         this.client_host = client_host;
-        this.user = checkNotNull(user);
-        this.srmId = checkNotNull(srmId);
+        this.user = requireNonNull(user);
+        this.srmId = requireNonNull(srmId);
     }
 
    /**
@@ -162,7 +162,7 @@ public abstract class Request extends Job {
         this.description = description;
         this.client_host = client_host;
         this.user = user;
-        this.srmId = checkNotNull(srmId);
+        this.srmId = requireNonNull(srmId);
         LOGGER.debug("restored");
         max_update_period = DEFAULT_MAX_UPDATE_PERIOD;
     }

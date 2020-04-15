@@ -118,8 +118,6 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.cells.receivers;
 
-import com.google.common.base.Preconditions;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -156,6 +154,8 @@ import org.dcache.vehicles.billing.BillingDataRequestMessage;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * <p>Serves up billing time-series data.</p>
  *
@@ -171,11 +171,11 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
 
     private static <T extends BaseEntry> Class<T> mapClass(
                     BillingDataRequestMessage data) {
-        Preconditions.checkNotNull(data);
+        requireNonNull(data);
         TimeFrame timeFrame = data.getTimeFrame();
-        Preconditions.checkNotNull(timeFrame);
+        requireNonNull(timeFrame);
         BinType binType = timeFrame.getTimebin();
-        Preconditions.checkNotNull(binType);
+        requireNonNull(binType);
 
         switch (data.getType()) {
             case CACHED:
@@ -216,9 +216,9 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
 
     private static String mapField(BillingDataRequestMessage data) {
         SeriesDataType dataType = data.getDataType();
-        Preconditions.checkNotNull(dataType, "Data type must be specified.");
+        requireNonNull(dataType, "Data type must be specified.");
         SeriesType type = data.getType();
-        Preconditions.checkNotNull(type, "Series type must be specified.");
+        requireNonNull(type, "Series type must be specified.");
 
         switch (type) {
             case CACHED:

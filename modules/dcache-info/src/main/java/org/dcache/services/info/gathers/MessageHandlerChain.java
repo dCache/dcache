@@ -23,7 +23,7 @@ import dmg.cells.nucleus.UOID;
 
 import dmg.cells.nucleus.CellMessageSender;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 
 /**
@@ -199,7 +199,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     @Override
     public void putMetricTTL(UOID messageId, long ttl)
     {
-        checkNotNull(messageId, "Attempting to record ttl against null messageId");
+        requireNonNull(messageId, "Attempting to record ttl against null messageId");
 
         LOGGER.trace("Adding metric ttl {} against message-ID {}", ttl, messageId);
         _msgMetadata.put(messageId, new MessageMetadata(ttl));

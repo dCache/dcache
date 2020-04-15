@@ -59,8 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
+import static java.util.Objects.requireNonNull;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import org.apache.commons.math3.util.FastMath;
 
 import java.io.Serializable;
@@ -115,7 +115,7 @@ public final class HistogramMetadata implements Serializable {
     }
 
     public HistogramMetadata(HistogramMetadata copy) {
-        Preconditions.checkNotNull(copy,
+        requireNonNull(copy,
                                    "Metadata copy object is null.");
         lastUpdateInMillis = copy.lastUpdateInMillis;
         count = copy.count;
@@ -176,7 +176,7 @@ public final class HistogramMetadata implements Serializable {
      *          on the basis of the additional data from the input object.
      */
     public HistogramMetadata mergeStatistics(HistogramMetadata metadata) {
-        Preconditions.checkNotNull(metadata, "Cannot merge statistics, "
+        requireNonNull(metadata, "Cannot merge statistics, "
                         + "metadata object was null.");
         count += metadata.count;
         sum += metadata.sum;
@@ -286,7 +286,7 @@ public final class HistogramMetadata implements Serializable {
      * @return this object updated
      */
     public HistogramMetadata updateStatistics(Double lastValue, long now) {
-        Preconditions.checkNotNull(lastValue, "Can only update "
+        requireNonNull(lastValue, "Can only update "
                         + "using nonnull value.");
         ++count;
         sum += lastValue;

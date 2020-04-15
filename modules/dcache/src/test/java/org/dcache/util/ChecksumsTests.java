@@ -8,7 +8,6 @@ import org.hamcrest.TypeSafeMatcher;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,7 +18,7 @@ import java.util.Set;
 
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.Arrays.asList;
 import static org.dcache.util.ChecksumType.*;
 import static org.hamcrest.Matchers.*;
@@ -467,22 +466,22 @@ public class ChecksumsTests
 
         public ChecksumBuilder ofType(ChecksumType type)
         {
-            checkNotNull(type);
+            requireNonNull(type);
             _type = type;
             return this;
         }
 
         public ChecksumBuilder withValue(String value)
         {
-            checkNotNull(value);
+            requireNonNull(value);
             _value = value;
             return this;
         }
 
         public Checksum build()
         {
-            checkNotNull(_value);
-            checkNotNull(_type);
+            requireNonNull(_value);
+            requireNonNull(_type);
             return new Checksum(_type, _value);
         }
     }

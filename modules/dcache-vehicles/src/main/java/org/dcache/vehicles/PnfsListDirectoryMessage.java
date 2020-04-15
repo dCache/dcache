@@ -15,7 +15,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Glob;
 import org.dcache.util.list.DirectoryEntry;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Requests a directory listing. Since the result set may be very
@@ -57,7 +57,7 @@ public class PnfsListDirectoryMessage extends PnfsMessage
                                     Range<Integer> range,
                                     Set<FileAttribute> attr)
     {
-        setPnfsPath(checkNotNull(path));
+        setPnfsPath(requireNonNull(path));
         setReplyRequired(true);
         _pattern = pattern;
         _lower = range.hasLowerBound() ? range.lowerEndpoint() : null;

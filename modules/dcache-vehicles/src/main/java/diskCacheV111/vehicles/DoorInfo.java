@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class DoorInfo implements Serializable
 {
@@ -21,14 +21,14 @@ public class DoorInfo implements Serializable
 
     public DoorInfo(String cellName, String cellDomainName)
     {
-        _cellName       = checkNotNull(cellName);
-        _cellDomainName = checkNotNull(cellDomainName);
+        _cellName       = requireNonNull(cellName);
+        _cellDomainName = requireNonNull(cellDomainName);
     }
 
     public void setProtocol(String protocolFamily, String protocolVersion)
     {
-        _protocolFamily = checkNotNull(protocolFamily);
-        _protocolVersion = checkNotNull(protocolVersion);
+        _protocolFamily = requireNonNull(protocolFamily);
+        _protocolVersion = requireNonNull(protocolVersion);
     }
 
     @Nonnull
@@ -57,12 +57,12 @@ public class DoorInfo implements Serializable
 
     public void setOwner(String owner)
     {
-        _owner = checkNotNull(owner);
+        _owner = requireNonNull(owner);
     }
 
     public void setProcess(String process)
     {
-        _process = checkNotNull(process);
+        _process = requireNonNull(process);
     }
 
     @Nonnull

@@ -98,6 +98,7 @@ import org.dcache.srm.scheduler.spi.TransferStrategyProvider;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.base.Strings.padEnd;
 import static com.google.common.base.Strings.repeat;
@@ -161,7 +162,7 @@ public class Scheduler <T extends Job> implements JobStateChangeAware
     public Scheduler(String id, Class<T> type)
     {
         this.type = type;
-        this.id = checkNotNull(id);
+        this.id = requireNonNull(id);
         checkArgument(!id.isEmpty(), "need non-empty string as an id");
 
         workSupplyService = new WorkSupplyService();

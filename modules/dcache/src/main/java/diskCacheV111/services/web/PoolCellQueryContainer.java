@@ -11,7 +11,7 @@ import java.util.Map;
 
 import diskCacheV111.pools.PoolCellInfo;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 class PoolCellQueryInfo implements Serializable
 {
@@ -22,7 +22,7 @@ class PoolCellQueryInfo implements Serializable
 
     public PoolCellQueryInfo(PoolCellInfo poolInfo, long pingTime, long arrivalTime)
     {
-        _poolInfo = checkNotNull(poolInfo);
+        _poolInfo = requireNonNull(poolInfo);
         _pingTime = pingTime;
         _arrivalTime = arrivalTime;
     }

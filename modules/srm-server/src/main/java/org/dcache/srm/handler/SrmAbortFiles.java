@@ -22,7 +22,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 public class SrmAbortFiles
@@ -39,7 +39,7 @@ public class SrmAbortFiles
             String clientHost)
     {
         this.user = user;
-        this.request = checkNotNull(request);
+        this.request = requireNonNull(request);
     }
 
     public SrmAbortFilesResponse getResponse()

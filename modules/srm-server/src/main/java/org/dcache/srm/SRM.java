@@ -129,6 +129,7 @@ import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.concat;
 import static java.util.Arrays.asList;
@@ -228,7 +229,7 @@ public class SRM implements CellLifeCycleAware
     @Required
     public void setSrmId(@Nonnull String id)
     {
-        srmId = checkNotNull(id);
+        srmId = requireNonNull(id);
     }
 
     @Nonnull
@@ -239,7 +240,7 @@ public class SRM implements CellLifeCycleAware
 
     public void setSchedulers(SchedulerContainer schedulers)
     {
-        this.schedulers = checkNotNull(schedulers);
+        this.schedulers = requireNonNull(schedulers);
     }
 
     @Required
@@ -252,12 +253,12 @@ public class SRM implements CellLifeCycleAware
     @Required
     public void setSrmUserPersistenceManager(SRMUserPersistenceManager manager)
     {
-        this.manager = checkNotNull(manager);
+        this.manager = requireNonNull(manager);
     }
 
     public void setExecutor(java.util.concurrent.ScheduledExecutorService executor)
     {
-        this.executor = checkNotNull(executor);
+        this.executor = requireNonNull(executor);
     }
 
     public static final synchronized void setSRM(SRM srm)

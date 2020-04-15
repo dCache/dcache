@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class JobInfo implements Serializable {
 
@@ -25,7 +25,7 @@ public class JobInfo implements Serializable {
     public JobInfo(long submitTime, long startTime, String status, int id, String clientName , long clientId ){
       _submitTime = submitTime ;
       _startTime  = startTime;
-      _status     = checkNotNull(status);
+      _status     = requireNonNull(status);
       _jobId      = id;
       _client   = clientName ;
       _clientId = clientId ;

@@ -21,8 +21,7 @@ import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.util.Configuration;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -38,8 +37,8 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
             throws DataAccessException
     {
         super(configuration, executor);
-        srmUserPersistenceManager = checkNotNull(manager);
-        this.srmId = checkNotNull(srmId);
+        srmUserPersistenceManager = requireNonNull(manager);
+        this.srmId = requireNonNull(srmId);
     }
 
     protected abstract R getRequest(

@@ -20,7 +20,7 @@ import org.dcache.srm.v2_2.SrmLsResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SrmLs
 {
@@ -42,13 +42,13 @@ public class SrmLs
                  SRM srm,
                  String clientHost)
     {
-        this.request = checkNotNull(request);
-        this.user = checkNotNull(user);
+        this.request = requireNonNull(request);
+        this.user = requireNonNull(user);
         this.max_results_num = srm.getConfiguration().getMaxNumberOfLsEntries();
         this.maxNumOfLevels = srm.getConfiguration().getMaxNumberOfLsLevels();
         this.clientHost = clientHost;
         this.configuration = srm.getConfiguration();
-        this.srm = checkNotNull(srm);
+        this.srm = requireNonNull(srm);
     }
 
     public SrmLsResponse getResponse()

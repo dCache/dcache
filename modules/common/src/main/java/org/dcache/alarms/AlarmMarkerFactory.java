@@ -49,11 +49,12 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
-import com.google.common.base.Preconditions;
 import org.slf4j.IMarkerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import java.util.Iterator;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Provides internal API for constructing alarm markers.
@@ -119,8 +120,8 @@ public final class AlarmMarkerFactory {
     }
 
     private static Marker getSubmarker(Marker marker, String name) {
-        Preconditions.checkNotNull(marker);
-        Preconditions.checkNotNull(name);
+        requireNonNull(marker);
+        requireNonNull(name);
         for (Iterator<Marker> m = marker.iterator(); m.hasNext();) {
             Marker next = m.next();
             if (name.equals(next.getName())) {

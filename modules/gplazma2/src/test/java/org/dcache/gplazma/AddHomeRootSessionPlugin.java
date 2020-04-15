@@ -1,7 +1,5 @@
 package org.dcache.gplazma;
 
-import com.google.common.base.Preconditions;
-
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
@@ -12,6 +10,8 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * This plugin adds a specified home, root and readOnly attribute to
@@ -37,7 +37,7 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
 
     public AddHomeRootSessionPlugin(Properties properties) {
 
-        root = new RootDirectory(Preconditions.checkNotNull(properties.getProperty(ROOT_KEY), "Root directory must be set."));
+        root = new RootDirectory(requireNonNull(properties.getProperty(ROOT_KEY), "Root directory must be set."));
         user = new UserNamePrincipal(properties.getProperty(USER_KEY, USER_DEFAULT));
         home = new HomeDirectory(properties.getProperty(HOME_KEY, HOME_DEFAULT));
         boolean isReadonly = Boolean.valueOf(properties.getProperty(READONLY_KEY, READONLY_DEFAULT));

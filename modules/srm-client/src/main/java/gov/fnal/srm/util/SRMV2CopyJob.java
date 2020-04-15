@@ -84,7 +84,7 @@ import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class SRMV2CopyJob implements CopyJob {
     private java.net.URI from;
@@ -101,14 +101,14 @@ public class SRMV2CopyJob implements CopyJob {
 
 
     public SRMV2CopyJob(java.net.URI from, java.net.URI to, ISRM srm, String requestToken, Logger logger, java.net.URI surl, boolean isSrmPrepareToGet, SRMClient client) {
-        this.from = checkNotNull(from);
-        this.to = checkNotNull(to);
-        this.srm = checkNotNull(srm);
-        this.requestToken = checkNotNull(requestToken);
-        this.logger = checkNotNull(logger);
-        this.surl = checkNotNull(surl);
+        this.from = requireNonNull(from);
+        this.to = requireNonNull(to);
+        this.srm = requireNonNull(srm);
+        this.requestToken = requireNonNull(requestToken);
+        this.logger = requireNonNull(logger);
+        this.surl = requireNonNull(surl);
         this.isSrmPrepareToGet = isSrmPrepareToGet;
-        this.client = checkNotNull(client);
+        this.client = requireNonNull(client);
     }
 
     @Override

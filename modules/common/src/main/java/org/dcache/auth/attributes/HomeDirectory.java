@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import diskCacheV111.util.FsPath;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Encapsulation of a user's home. Used as session data of a
@@ -18,7 +18,7 @@ public class HomeDirectory implements LoginAttribute, Serializable
 
     public HomeDirectory(String home)
     {
-        checkNotNull(home);
+        requireNonNull(home);
         _home = home;
     }
 
