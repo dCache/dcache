@@ -1049,7 +1049,7 @@
                     <version>3.8.0</version>
                     <configuration>
                         <showDeprecation>true</showDeprecation>
-                        <release>${java.verson}</release>
+                        <release>${java.version}</release>
                         <!-- without forking compilation happens in the
                         same process, so no arguments are applied -->
                         <fork>true</fork>
