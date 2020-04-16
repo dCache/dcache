@@ -1,5 +1,6 @@
 package org.dcache.chimera.namespace;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
@@ -50,23 +51,26 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                     try {
                         URI uri = builder.build(isEncoded(location)).toUri();
                         info.addLocation(uri);
-                        for (String part : uri.getQuery().split("&")) {
-                            String[] data = part.split("=");
-                            String key    = data[0];
-                            String value  = (data.length == 2 ? data[1] : "");
-                            switch (key) {
-                            case "bfid":
-                                info.setBitfileId(value);
-                                break;
-                            case "volume":
-                                info.setVolume(value);
-                                break;
-                            case "location_cookie":
-                                info.setLocation(value);
-                                break;
-                            case "original_name":
-                                info.setPath(value);
-                                break;
+                        String queryString = uri.getQuery();
+                        if (!Strings.isNullOrEmpty(queryString)) {
+                            for (String part : uri.getQuery().split("&")) {
+                                String[] data = part.split("=");
+                                String key = data[0];
+                                String value = (data.length == 2 ? data[1] : "");
+                                switch (key) {
+                                    case "bfid":
+                                        info.setBitfileId(value);
+                                        break;
+                                    case "volume":
+                                        info.setVolume(value);
+                                        break;
+                                    case "location_cookie":
+                                        info.setLocation(value);
+                                        break;
+                                    case "original_name":
+                                        info.setPath(value);
+                                        break;
+                                }
                             }
                         }
                     } catch (UnsupportedEncodingException ignore) {
