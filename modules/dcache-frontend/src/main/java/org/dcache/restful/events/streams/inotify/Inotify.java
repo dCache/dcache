@@ -135,6 +135,7 @@ public class Inotify implements EventStream, CellMessageReceiver,
             if (selector.flags().contains(AddWatchFlag.IN_MASK_ADD)) {
                 InotifySelector combinedSelector = new InotifySelector();
                 combinedSelector.setPath(selector.getPath());
+                combinedSelector.setFsPath(selector.getFsPath());
 
                 EnumSet<AddWatchFlag> newFlags = EnumSet.copyOf(selector.flags());
                 newFlags.addAll(this.selector.flags());
@@ -405,6 +406,9 @@ public class Inotify implements EventStream, CellMessageReceiver,
         try {
             InotifySelector selector = mapper.readerFor(InotifySelector.class)
                     .readValue(serialisedSelector);
+            String clientPath = selector.getPath();
+            FsPath dCachePath = FsPath.create(clientPath);
+            selector.setFsPath(dCachePath);
             return selector.validationError().orElseGet(() ->
                     select(context.channelId(), receiver, selector));
         } catch (JsonMappingException e) {
