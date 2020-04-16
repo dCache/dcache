@@ -79,6 +79,7 @@ import org.dcache.events.NotificationMessage;
 import org.dcache.events.SystemEvent;
 import org.dcache.restful.events.spi.EventStream;
 import org.dcache.restful.events.spi.SelectedEventStream;
+import org.dcache.restful.events.spi.SelectionContext;
 import org.dcache.restful.events.spi.SelectionResult;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.util.RepeatableTaskRunner;
@@ -476,13 +477,14 @@ public class Inotify implements EventStream, CellMessageReceiver,
     }
 
     @Override
-    public SelectionResult select(String channelId, BiConsumer<String,JsonNode> receiver,
+    public SelectionResult select(SelectionContext context, BiConsumer<String,JsonNode> receiver,
             JsonNode serialisedSelector)
     {
         try {
             InotifySelector selector = mapper.readerFor(InotifySelector.class)
                     .readValue(serialisedSelector);
-            return selector.validationError().orElseGet(() -> select(channelId, receiver, selector));
+            return selector.validationError().orElseGet(() ->
+                    select(context.channelId(), receiver, selector));
         } catch (JsonMappingException e) {
             int index = e.getMessage().indexOf('\n');
             String msg = index == -1 ? e.getMessage() : e.getMessage().substring(0, index);
