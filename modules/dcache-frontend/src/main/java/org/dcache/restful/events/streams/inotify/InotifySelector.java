@@ -31,6 +31,9 @@ import diskCacheV111.util.FsPath;
 
 import org.dcache.restful.events.spi.SelectionResult;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
+
 /**
  * The desired selection of events, as supplied by the client using a JSON
  * representation.  This is equivalent to the inotify_add_watch(2) arguments.
@@ -48,10 +51,24 @@ class InotifySelector
     @JsonIgnore
     private FsPath fsPath;
 
+    /**
+     * Specify the client-supplied path.  This may differ from the dCache
+     * path if the door has a non-default root path, or the user issuing the
+     * subscription request has a non-default root path.
+     */
     public void setPath(String path)
     {
-        this.path = path;
-        fsPath = FsPath.create(path);
+        this.path = requireNonNull(path);
+    }
+
+    /**
+     * Specify the dCache (internal) path.  This may differ from the
+     * client-supplied path if the door has a non-default root path, or the
+     * user issuing the subscription request has a non-default root path.
+     */
+    public void setFsPath(FsPath path)
+    {
+        fsPath = requireNonNull(path);
     }
 
     @JsonSetter("flags")
@@ -91,11 +108,13 @@ class InotifySelector
 
     public String getPath()
     {
+        checkState(path != null, "path was not specified");
         return path;
     }
 
     public FsPath getFsPath()
     {
+        checkState(fsPath != null, "fsPath was not specified");
         return fsPath;
     }
 
