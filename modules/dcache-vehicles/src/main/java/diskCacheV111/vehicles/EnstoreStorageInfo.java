@@ -60,6 +60,18 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
    public String getVolume(){ return _volume ; }
    public String getLocation(){ return _location ; }
 
+   @Override
+   public String getKey( String key ){
+      switch (key) {
+         case "store":
+            return _group;
+         case "group":
+            return _family;
+         default:
+            return super.getKey(key);
+      }
+   }
+
    public static void main (String[] args) throws Exception {
        ObjectInputStream io = new ObjectInputStream (
           new FileInputStream(args[0]));
