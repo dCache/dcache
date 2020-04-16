@@ -91,6 +91,7 @@ public interface EventStream
     /**
      * Make provision for supplying selected events to the receiver.  The
      * {@literal receiver} argument must not block when receiving an event.
+     * @param context ancillary information for EventStream implementations.
      * @param receiver the recipient of a selection-id and JSON event data.
      * The selection-id must correspond to some
      * {@link SelectedEventStream#getId()} value and the JSON event data must
@@ -100,6 +101,7 @@ public interface EventStream
      * @return the result of processing the subscription request
      */
     @NotNull
-    SelectionResult select(String channelId, @NotNull BiConsumer<String,JsonNode> receiver,
+    SelectionResult select(@NotNull SelectionContext context,
+            @NotNull BiConsumer<String,JsonNode> receiver,
             @NotNull JsonNode selector);
 }
