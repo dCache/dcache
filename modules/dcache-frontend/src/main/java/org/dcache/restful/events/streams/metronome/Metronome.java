@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import org.dcache.restful.events.spi.EventStream;
+import org.dcache.restful.events.spi.SelectionContext;
 
 import static org.dcache.restful.util.transfers.Json.readFromJar;
 
@@ -104,8 +105,8 @@ public class Metronome implements EventStream
     }
 
     @Override
-    public SelectionResult select(String channelId, BiConsumer<String,JsonNode> receiver,
-            JsonNode serialisedSelector)
+    public SelectionResult select(SelectionContext context,
+            BiConsumer<String,JsonNode> receiver, JsonNode serialisedSelector)
     {
         Selector selector = deserialise(serialisedSelector);
         SelectionResult result = selector.validationError();
