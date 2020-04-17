@@ -117,8 +117,8 @@ import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
 import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.ClientCB;
+import org.dcache.nfs.v4.ClientRecoveryStore;
 import org.dcache.nfs.v4.CompoundContext;
-import org.dcache.nfs.v4.EphemeralClientRecoveryStore;
 import org.dcache.nfs.v4.FlexFileLayoutDriver;
 import org.dcache.nfs.v4.Layout;
 import org.dcache.nfs.v4.NFS4Client;
@@ -336,6 +336,11 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private CuratorFramework _curator;
 
+    /**
+     * Store for active client records.
+     */
+    private ClientRecoveryStore _clientStore;
+
     public void setEventNotifier(EventNotifier notifier) {
         _eventNotifier = notifier;
     }
@@ -409,6 +414,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         _manageGids = manageGids;
     }
 
+    @Required
+    public void setClientStore(ClientRecoveryStore clientStore) {
+        _clientStore = clientStore;
+    }
+
     public VirtualFileSystem wrapWithMonitoring(VirtualFileSystem inner) {
         MonitoringVfs monitor = new MonitoringVfs();
         monitor.setInner(inner);
@@ -465,7 +475,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     NFSv4StateHandler stateHandler = new NFSv4StateHandler(
                             NFSv4Defaults.NFS4_LEASE_TIME,
                             stateHandlerId,
-                            new EphemeralClientRecoveryStore());
+                            _clientStore);
 
                     _nfs4 = new NFSServerV41.Builder()
                             .withStateHandler(stateHandler)

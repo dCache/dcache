@@ -115,6 +115,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(700,dcache,dcache) /var/lib/dcache/pool-history
 %attr(700,dcache,dcache) /var/lib/dcache/resilience
 %attr(700,dcache,dcache) /var/lib/dcache/statistics
+%attr(700,dcache,dcache) /var/lib/dcache/nfs
 %attr(750,dcache,dcache) /var/lib/dcache/billing
 %attr(770,dcache,dcache) /var/lib/dcache/star
 %attr(755,dcache,dcache) /var/spool/dcache/star

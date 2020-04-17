@@ -92,6 +92,7 @@
                 <include>var/resilience/**</include>
                 <include>var/run/**</include>
                 <include>var/statistics/**</include>
+                <include>var/nfs/**</include>
             </includes>
             <excludes>
                 <exclude>**/.empty-dir</exclude>

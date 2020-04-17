@@ -30,6 +30,7 @@ Please fix this and reinstall this package." >&2
     chown dcache:dcache /var/lib/dcache/statistics
     chown dcache:dcache /var/lib/dcache/credentials
     chown dcache:dcache /var/lib/dcache/star
+    chown dcache:dcache /var/lib/dcache/nfs
     chown dcache:dcache /var/log/dcache
     chown dcache:dcache /var/spool/dcache/star
 
@@ -40,6 +41,7 @@ Please fix this and reinstall this package." >&2
     chmod 700 /var/lib/dcache/pool-history
     chmod 700 /var/lib/dcache/resilience
     chmod 700 /var/lib/dcache/statistics
+    chmod 700 /var/lib/dcache/nfs
 
     # allow somewhat more relaxed permissions elsewhere
     chmod 750 /var/lib/dcache/billing

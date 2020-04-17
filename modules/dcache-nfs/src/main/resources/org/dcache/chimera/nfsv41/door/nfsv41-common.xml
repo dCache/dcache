@@ -184,6 +184,11 @@
         <property name="root" value="/"/>
     </bean>
 
+
+    <bean name="clientStore" class="org.dcache.nfs.v4.BerkeleyDBClientStore" destroy-method="close">
+        <constructor-arg value="${nfs.clientdb.location}" />
+    </bean>
+
     <bean abstract="true" id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
           init-method="init" destroy-method="destroy" depends-on="rpcbind">
         <description>dCache implementation of NFSv4.1 MDS</description>
@@ -210,6 +215,7 @@
         <property name="vfsCacheConfig" ref="cache-config"/>
         <property name="accessLogMode" value="${nfs.enable.access-log}" />
         <property name="manageGroups" value="${nfs.idmap.manage-gids}" />
+        <property name="clientStore" ref="clientStore" />
     </bean>
 
     <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
