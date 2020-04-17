@@ -226,18 +226,14 @@ public abstract class BulkJob implements Runnable
     {
         LOGGER.trace("{}, run() called ...", key);
 
-        synchronized (this)
-        {
-            state = State.STARTED;
-            startTime = System.currentTimeMillis();
-        }
+        setState(State.STARTED);
 
         doRun();
 
-        synchronized (this)
-        {
-            state = State.COMPLETED;
-        }
+        /*
+         *  If cancelled or failed, this call will not change the state.
+         */
+        setState(State.COMPLETED);
 
         postCompletion();
     }
@@ -284,6 +280,7 @@ public abstract class BulkJob implements Runnable
                     case COMPLETED:
                     case FAILED:
                         this.state = state;
+                        startTime = System.currentTimeMillis();
                         break;
                 }
                 break;
