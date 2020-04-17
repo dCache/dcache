@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.sse.OutboundSseEvent;
@@ -382,8 +383,8 @@ public class Channel extends CloseableWithTasks
         }
     }
 
-    public SubscriptionResult subscribe(final String channelId, String eventType,
-            JsonNode selector)
+    public SubscriptionResult subscribe(final HttpServletRequest request,
+            final String channelId, String eventType, JsonNode selector)
     {
         EventStream es = repository.getEventStream(eventType)
                     .orElseThrow(() -> new BadRequestException("Unknown event type: " + eventType));
@@ -392,6 +393,11 @@ public class Channel extends CloseableWithTasks
             @Override
             public String channelId() {
                 return channelId;
+            }
+
+            @Override
+            public HttpServletRequest httpServletRequest() {
+                return request;
             }
         };
 
