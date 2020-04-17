@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DELETE;
@@ -517,13 +518,14 @@ public class EventResources
     @Path("/channels/{id}/subscriptions/{type}")
     public Response subscribe(
             @Context UriInfo uriInfo,
+            @Context HttpServletRequest request,
             @NotNull @PathParam("id") String channelId,
             @NotNull @PathParam("type") String eventType,
             JsonNode selector)
     {
         checkRequestNotBad(selector != null, "Missing JSON entity in POST request");
         Channel channel = channelForId(channelId);
-        SubscriptionResult result = channel.subscribe(channelId, eventType, selector);
+        SubscriptionResult result = channel.subscribe(request, channelId, eventType, selector);
 
         switch (result.getStatus()) {
         case CREATED:
