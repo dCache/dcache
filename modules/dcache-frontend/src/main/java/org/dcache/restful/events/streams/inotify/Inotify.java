@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.concurrent.GuardedBy;
+import javax.inject.Inject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,6 +78,7 @@ import org.dcache.namespace.events.InotifyEvent;
 import org.dcache.namespace.events.EventType;
 import org.dcache.events.NotificationMessage;
 import org.dcache.events.SystemEvent;
+import org.dcache.http.PathMapper;
 import org.dcache.restful.events.spi.EventStream;
 import org.dcache.restful.events.spi.SelectedEventStream;
 import org.dcache.restful.events.spi.SelectionContext;
@@ -313,6 +315,9 @@ public class Inotify implements EventStream, CellMessageReceiver,
     private PersistentNode subscriptions;
     private Executor executor;
 
+    @Inject
+    private PathMapper pathMapper;
+
     @Override
     public void setCuratorFramework(CuratorFramework client)
     {
@@ -485,10 +490,13 @@ public class Inotify implements EventStream, CellMessageReceiver,
             InotifySelector selector = mapper.readerFor(InotifySelector.class)
                     .readValue(serialisedSelector);
             String clientPath = selector.getPath();
-            FsPath dCachePath = FsPath.create(clientPath);
+            FsPath dCachePath = pathMapper.asDcachePath(context.httpServletRequest(),
+                    clientPath, PermissionDeniedCacheException::new);
             selector.setFsPath(dCachePath);
             return selector.validationError().orElseGet(() ->
                     select(context.channelId(), receiver, selector));
+        } catch (PermissionDeniedCacheException e) {
+            return SelectionResult.permissionDenied(e.getMessage());
         } catch (JsonMappingException e) {
             int index = e.getMessage().indexOf('\n');
             String msg = index == -1 ? e.getMessage() : e.getMessage().substring(0, index);
