@@ -57,34 +57,70 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.bulk.store.memory;
+package org.dcache.services.bulk;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.dcache.services.bulk.BulkStorageException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- *  Provides read-write locks and definitions of load and save.
+ *  Groups requests by failure type, which is the canonical name of the
+ *  associated Throwable class.
  */
-abstract class InMemoryStore
+public class BulkFailures implements Serializable
 {
-    protected static final Logger        LOGGER
-                    = LoggerFactory.getLogger(InMemoryStore.class);
+    private static final long serialVersionUID = 8533779422283110521L;
 
-    protected final        ReadWriteLock lock   = new ReentrantReadWriteLock(true);
-    protected final        Lock          write  = lock.writeLock();
-    protected final        Lock          read   = lock.readLock();
+    private Map<String, List<String>> failures;
 
-    /**
-     * Support for interfaces requiring load and save.
-     */
-    public void save() throws BulkStorageException
+    public Map<String, List<String>> getFailures()
     {
-        throw new BulkStorageException("Not supported for in-memory storage.");
+        return failures;
+    }
+
+    public void setFailures(Map<String, List<String>> failures)
+    {
+        this.failures = failures;
+    }
+
+    public void put(String path, Throwable e)
+    {
+        Throwable cause = Throwables.getRootCause(e);
+
+        if (failures == null) {
+            failures = new HashMap<>();
+        }
+
+        String clzz = cause.getClass().getCanonicalName();
+        List<String> paths
+                        = failures.computeIfAbsent(clzz,
+                                                   k -> new ArrayList<>());
+        paths.add(path + " : " + cause.getMessage());
+    }
+
+    public int count()
+    {
+        if (failures == null) {
+            return 0;
+        }
+        return failures.values().stream().mapToInt(List::size).sum();
+    }
+
+    public Map<String, List<String>> cloneFailures()
+    {
+        Map<String, List<String>> map = new HashMap<>();
+        if (failures != null) {
+            failures.entrySet().stream()
+                    .forEach(entry -> {
+                        map.put(entry.getKey(),
+                                ImmutableList.copyOf(entry.getValue()));
+                    });
+        }
+        return map;
     }
 }

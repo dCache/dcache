@@ -57,34 +57,19 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.bulk.store.memory;
+package org.dcache.services.bulk;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.dcache.services.bulk.BulkStorageException;
-
-/**
- *  Provides read-write locks and definitions of load and save.
- */
-abstract class InMemoryStore
+public class BulkRequestStorageException extends BulkStorageException
 {
-    protected static final Logger        LOGGER
-                    = LoggerFactory.getLogger(InMemoryStore.class);
+    private static final long serialVersionUID = 1881388905813183790L;
 
-    protected final        ReadWriteLock lock   = new ReentrantReadWriteLock(true);
-    protected final        Lock          write  = lock.writeLock();
-    protected final        Lock          read   = lock.readLock();
-
-    /**
-     * Support for interfaces requiring load and save.
-     */
-    public void save() throws BulkStorageException
+    public BulkRequestStorageException(String message)
     {
-        throw new BulkStorageException("Not supported for in-memory storage.");
+        super(message);
+    }
+
+    public BulkRequestStorageException(String message, Throwable cause)
+    {
+        super(message, cause);
     }
 }
