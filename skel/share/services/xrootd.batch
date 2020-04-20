@@ -37,6 +37,7 @@ check -strong xrootd.security.tls.require-login
 check -strong xrootd.security.tls.require-session
 check -strong xrootd.security.tls.require-data
 check -strong xrootd.security.tls.require-gpf
+check -strong xrootd.security.tls.require-tpc
 check -strong xrootd.security.tls.hostcert.key
 check -strong xrootd.security.tls.hostcert.cert
 check -strong xrootd.security.tls.ca.path

@@ -45,6 +45,7 @@ check -strong pool.mover.xrootd.security.tls.require-login
 check -strong pool.mover.xrootd.security.tls.require-session
 check -strong pool.mover.xrootd.security.tls.require-data
 check -strong pool.mover.xrootd.security.tls.require-gpf
+check -strong pool.mover.xrootd.security.tls.require-tpc
 check -strong pool.mover.http.threads
 check -strong pool.mover.http.timeout.idle
 check -strong pool.mover.http.timeout.idle.unit

@@ -245,7 +245,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
      */
     @Override
     protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx, OpenRequest req)
-        throws XrootdException
     {
         /*
          * TODO
@@ -432,6 +431,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
              * server shut down is okay.
              */
             return withError(req, kXR_ServerError, "Server shutdown");
+        } catch (XrootdException e) {
+            return withError(req, e.getError(), e.getMessage());
         }
     }
 
@@ -453,7 +454,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                                                 Map<String,String> opaque,
                                                 FsPath fsPath,
                                                 String remoteHost)
-                    throws CacheException
+                    throws CacheException, XrootdException
     {
         if (!_door.isReadAllowed(fsPath)) {
             throw new PermissionDeniedCacheException(
@@ -478,6 +479,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             _log.debug("{} –– not a third-party request.", req);
             return null;  // proceed as usual with mover + redirect
         }
+
+        enforceClientTlsIfDestinationRequiresItForTpc(opaque);
 
         /*
          * Check the session for the delegated credential to avoid hanging
@@ -557,7 +560,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         }
 
         /*
-         *  The request originated from the TPC client, indicating dCache
+         *  The request originated from the TPC client, indicating door
          *  is the source.
          */
         if (opaque.containsKey("tpc.dst")) {
@@ -586,8 +589,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         }
 
         /*
-         *  The request originated from the TPC client, indicating dCache
-         *  is the destination.  Remove the rendezvous info (not needed),
+         *  The request originated from the TPC client, indicating door
+         *  is the destination.
+         *
+         *  First check for TLS capability if this is required.
+         *
+         *  Remove the rendezvous info (not needed),
          *  allow mover to start and redirect the client to the pool.
          *
          *  It is not necessary to delegate the tpc information through the

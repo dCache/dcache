@@ -314,6 +314,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                                 + UUID_PREFIX + " property.");
             }
 
+            enforceClientTlsIfDestinationRequiresItForTpc(opaqueMap);
+
             NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel file
                             = _server.openFile(uuid, false);
             if (file == null) {

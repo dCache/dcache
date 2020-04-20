@@ -427,6 +427,7 @@
         <property name="requiresTLSForGPF" value="${pool.mover.xrootd.security.tls.require-gpf}"/>
         <property name="requiresTLSForLogin" value="${pool.mover.xrootd.security.tls.require-login}"/>
         <property name="requiresTLSForSession" value="${pool.mover.xrootd.security.tls.require-session}"/>
+        <property name="requiresTLSForTPC" value="${pool.mover.xrootd.security.tls.require-tpc}"/>
         <property name="serverRole" value="true"/>
         <property name="supervisorRole" value="false"/>
         <property name="supportsGPFile" value="false"/>
