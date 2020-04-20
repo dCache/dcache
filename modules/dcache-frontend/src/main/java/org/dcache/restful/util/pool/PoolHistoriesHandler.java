@@ -91,8 +91,6 @@ import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
 
-import static dmg.cells.nucleus.CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL;
-
 /**
  * <p>Called during the collection gathering in order to obtain
  * historical (i.e., stateful) pool data such as queue/mover timeseries
@@ -159,8 +157,7 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
 
         try {
             message = historyService.sendAndWait(message,
-                                                 historyService.getTimeoutInMillis(),
-                                                 RETRY_ON_NO_ROUTE_TO_CELL);
+                                                 historyService.getTimeoutInMillis());
         } catch (NoRouteToCellException | InterruptedException | TimeoutCacheException e) {
             LOGGER.debug("Could not fetch aggregated lifetime data for {}: {}.",
                          poolGroup, e.getMessage());
@@ -199,8 +196,7 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
         message.setPool(pool);
         message.setKeys(types);
         message = historyService.sendAndWait(message,
-                                             historyService.getTimeoutInMillis(),
-                                             RETRY_ON_NO_ROUTE_TO_CELL);
+                                             historyService.getTimeoutInMillis());
         return message.getHistogramMap();
     }
 
