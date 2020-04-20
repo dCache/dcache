@@ -1,6 +1,5 @@
 package org.dcache.services.httpd.probe;
 
-import com.google.common.base.Charsets;
 import com.google.gson.GsonBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.InvalidMessageCacheException;
@@ -20,6 +19,8 @@ import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Provides a simple interface to query bean properties of
@@ -56,7 +57,7 @@ public class ProbeResponseEngine implements HttpResponseEngine, CellMessageSende
             BeanQueryMessage queryReply = stub.sendAndWait(new CellPath(urlItems[1]), queryMessage);
 
             request.setContentType("application/json; charset=utf-8");
-            Writer writer = new OutputStreamWriter(request.getOutputStream(), Charsets.UTF_8);
+            Writer writer = new OutputStreamWriter(request.getOutputStream(), UTF_8);
             writer.append(new GsonBuilder().serializeSpecialFloatingPointValues().setPrettyPrinting().disableHtmlEscaping().create().toJson(queryReply
                     .getResult()));
             writer.flush();

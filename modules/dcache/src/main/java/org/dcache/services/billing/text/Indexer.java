@@ -1,6 +1,5 @@
 package org.dcache.services.billing.text;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
@@ -74,6 +73,7 @@ import static com.google.common.io.Files.isFile;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.util.ByteUnit.KiB;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Indexer
 {
@@ -135,7 +135,7 @@ public class Indexer
         if (args.hasOption("find")) {
             Collection<String> searchTerms;
             if (args.hasOption("f")) {
-                searchTerms = Files.readAllLines(new File(args.getOption("f")).toPath(), Charsets.UTF_8);
+                searchTerms = Files.readAllLines(new File(args.getOption("f")).toPath(), UTF_8);
             } else if (args.argc() > 0) {
                 searchTerms = args.getArguments();
             } else {
@@ -383,7 +383,7 @@ public class Indexer
     private static void grep(final Collection<String> searchTerms, File file, PrintWriter out)
             throws IOException
     {
-        asCharSource(file, Charsets.UTF_8).readLines(new LineProcessor<Void>()
+        asCharSource(file, UTF_8).readLines(new LineProcessor<Void>()
         {
             @Override
             public boolean processLine(String line) throws IOException
@@ -528,7 +528,7 @@ public class Indexer
             IndexProcessor processor = new IndexProcessor(formats);
             Set<String> index;
             try (ParallelizingLineProcessor<Set<String>> parallelizer = new ParallelizingLineProcessor<>(threads, processor)) {
-                index = asCharSource(file, Charsets.UTF_8).readLines(parallelizer);
+                index = asCharSource(file, UTF_8).readLines(parallelizer);
             }
             return index;
         } catch (IOException e) {
@@ -558,7 +558,7 @@ public class Indexer
     private static BloomFilter<CharSequence> produceBloomFilter(double fpp, Set<String> index)
     {
         BloomFilter<CharSequence> filter =
-                BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), index.size(), fpp);
+                BloomFilter.create(Funnels.stringFunnel(UTF_8), index.size(), fpp);
         index.forEach(filter::put);
         return filter;
     }

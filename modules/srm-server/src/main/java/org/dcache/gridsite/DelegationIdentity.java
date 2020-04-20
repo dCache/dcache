@@ -26,8 +26,9 @@ import org.dcache.delegation.gridsite2.DelegationException;
 import static java.util.Objects.requireNonNull;
 import static com.google.common.base.CharMatcher.JAVA_LETTER_OR_DIGIT;
 import static com.google.common.base.CharMatcher.anyOf;
-import static com.google.common.base.Charsets.UTF_8;
 import static org.dcache.gridsite.Utilities.assertThat;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * The identity of a delegated credential.  A delegated credential, whether

@@ -16,8 +16,6 @@
  */
 package org.dcache.chimera;
 
-import com.google.common.base.Charsets;
-
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class FsInode_PSET extends FsInode {
     private static final String SIZE   = "size";
@@ -107,7 +107,7 @@ public class FsInode_PSET extends FsInode {
             sb.append(arg).append(':');
         }
 
-        return byteBase(sb.toString().getBytes(Charsets.UTF_8));
+        return byteBase(sb.toString().getBytes(UTF_8));
     }
 
     @Override

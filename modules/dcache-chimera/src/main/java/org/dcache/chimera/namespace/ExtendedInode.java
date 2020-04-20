@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,7 +17,6 @@
  */
 package org.dcache.chimera.namespace;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -45,6 +44,8 @@ import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A Chimera inode extension that provides easy access to and caching of data
@@ -162,7 +163,7 @@ public class ExtendedInode extends FsInode
             if (data == null || data.length == 0) {
                 return ImmutableList.of();
             }
-            return ByteSource.wrap(data).asCharSource(Charsets.UTF_8).readLines();
+            return ByteSource.wrap(data).asCharSource(UTF_8).readLines();
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }

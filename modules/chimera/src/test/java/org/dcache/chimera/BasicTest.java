@@ -1,6 +1,5 @@
 package org.dcache.chimera;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -17,7 +16,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,6 +40,7 @@ import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class BasicTest extends ChimeraTestCaseHelper {
 
@@ -379,7 +378,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         FsInode linkBase = _rootInode.mkdir("links");
 
-        _fs.createLink(linkBase, "file123", 0, 0, 0644, "/files/file123".getBytes(Charsets.UTF_8));
+        _fs.createLink(linkBase, "file123", 0, 0, 0644, "/files/file123".getBytes(UTF_8));
         _fs.remove("/links/file123");
     }
 
@@ -390,7 +389,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode linkBase = _rootInode.mkdir("links");
         FsInode fileInode = fileBase.create("file123", 0, 0, 0644);
 
-        _fs.createLink(linkBase, "file123", 0, 0, 0644, "/files/file123".getBytes(Charsets.UTF_8));
+        _fs.createLink(linkBase, "file123", 0, 0, 0644, "/files/file123".getBytes(UTF_8));
         _fs.remove("/links/file123");
 
         assertTrue("original file is gone!", fileInode.exists());
@@ -1149,7 +1148,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test(expected = InvalidArgumentChimeraException.class)
     public void testSetSizeOnNonFile() throws Exception {
         FsInode dir = _rootInode.mkdir("dir1");
-        FsInode link = _rootInode.createLink("link1", 1, 1, 0777, "dir1".getBytes(StandardCharsets.UTF_8));
+        FsInode link = _rootInode.createLink("link1", 1, 1, 0777, "dir1".getBytes(UTF_8));
         Stat stat = new Stat();
         stat.setSize(1);
         link.setStat(stat);
@@ -1236,11 +1235,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode file = _fs.createFile(_rootInode, "aFile", 0, 0, 0755 | UnixPermission.S_IFREG, UnixPermission.S_IFREG);
         FsInode level = _fs.createFileLevel(file, 2);
 
-        byte[] data = "some random data".getBytes(StandardCharsets.UTF_8);
+        byte[] data = "some random data".getBytes(UTF_8);
         int n = level.write(0, data, 0, data.length);
         assertEquals("incorrect number of bytes", data.length, n);
 
-        byte[] moreData = "some more random data".getBytes(StandardCharsets.UTF_8);
+        byte[] moreData = "some more random data".getBytes(UTF_8);
         n = level.write(0, moreData, 0, moreData.length);
         assertEquals("incorrect number of bytes", moreData.length, n);
 
@@ -1253,7 +1252,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.createTag(top, "aTag");
 
         FsInode tagInode = new FsInode_TAG(_fs, top.ino(), "aTag");
-        byte[] data = "data".getBytes(StandardCharsets.UTF_8);
+        byte[] data = "data".getBytes(UTF_8);
         tagInode.write(0, data, 0, data.length);
 
         long tagid = tagInode.stat().getIno();
@@ -1287,7 +1286,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
             d = d.mkdir(Integer.toString(i));
         }
 
-        byte[] tagData = "some random tag".getBytes(StandardCharsets.UTF_8);
+        byte[] tagData = "some random tag".getBytes(UTF_8);
         _fs.createTag(top, tagName);
         _fs.setTag(top, tagName, tagData, 0, tagData.length);
 
@@ -1358,7 +1357,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode inode = _fs.createFile(dir, "aFile");
 
         String key = "attr1";
-        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        byte[] value = "cat".getBytes(UTF_8);
         _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
         byte[] result = _fs.getXattr(inode, key);
 
@@ -1372,7 +1371,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode inode = _fs.createFile(dir, "aFile");
 
         String key = "attr1";
-        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        byte[] value = "cat".getBytes(UTF_8);
         _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
         _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
     }
@@ -1384,7 +1383,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode inode = _fs.createFile(dir, "aFile");
 
         String key = "attr1";
-        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        byte[] value = "cat".getBytes(UTF_8);
         _fs.setXattr(inode, key, value, SetXattrMode.REPLACE);
     }
 
@@ -1395,8 +1394,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode inode = _fs.createFile(dir, "aFile");
 
         String key = "attr1";
-        byte[] value1 = "cat".getBytes(StandardCharsets.UTF_8);
-        byte[] value2 = "cat2".getBytes(StandardCharsets.UTF_8);
+        byte[] value1 = "cat".getBytes(UTF_8);
+        byte[] value2 = "cat2".getBytes(UTF_8);
         _fs.setXattr(inode, key, value1, SetXattrMode.CREATE);
         _fs.setXattr(inode, key, value2, SetXattrMode.REPLACE);
         byte[] result = _fs.getXattr(inode, key);
@@ -1411,8 +1410,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode inode = _fs.createFile(dir, "aFile");
 
         String key = "attr1";
-        byte[] value1 = "cat".getBytes(StandardCharsets.UTF_8);
-        byte[] value2 = "cat2".getBytes(StandardCharsets.UTF_8);
+        byte[] value1 = "cat".getBytes(UTF_8);
+        byte[] value2 = "cat2".getBytes(UTF_8);
         _fs.setXattr(inode, key, value1, SetXattrMode.EITHER);
         byte[] result = _fs.getXattr(inode, key);
 
@@ -1451,7 +1450,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode inode = _fs.createFile(dir, "aFile");
 
         String key = "attr1";
-        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        byte[] value = "cat".getBytes(UTF_8);
         _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
 
         Collection<String> xattrs = _fs.listXattrs(inode);
@@ -1474,7 +1473,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode dir = _fs.mkdir("/test");
         FsInode inode = _fs.createFile(dir, "aFile");
         String key = "attr1";
-        byte[] value = "cat".getBytes(StandardCharsets.UTF_8);
+        byte[] value = "cat".getBytes(UTF_8);
         _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
         _fs.removeXattr(inode, key);
     }

@@ -1,6 +1,5 @@
 package org.dcache.chimera.namespace;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -97,6 +96,7 @@ import org.dcache.chimera.FileState;
 
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider, CellInfoProvider
@@ -417,7 +417,7 @@ public class ChimeraNameSpaceProvider
                 assignAttributes.undefine(OWNER, OWNER_GROUP, MODE);
 
                 inode = _fs.createLink(parent, newEntryFile.getName(), uid, gid,
-                        mode, dest.getBytes(Charsets.UTF_8));
+                        mode, dest.getBytes(UTF_8));
             } catch (UncheckedIOException e) {
                 throw e.getCause();
             }
@@ -1378,7 +1378,7 @@ public class ChimeraNameSpaceProvider
              */
             Map<String, byte[]> tags = Maps.newHashMap(parentOfPath.getTags());
             if (spaceToken != null) {
-                tags.put(TAG_WRITE_TOKEN, spaceToken.getBytes(Charsets.UTF_8));
+                tags.put(TAG_WRITE_TOKEN, spaceToken.getBytes(UTF_8));
 
                 /* If client provides space token to upload to, the access latency and
                  * retention policy tags of the upload directory must be disregarded.
@@ -1387,15 +1387,15 @@ public class ChimeraNameSpaceProvider
                 tags.remove(TAG_RETENTION_POLICY);
             }
             if (al != null) {
-                tags.put(TAG_ACCESS_LATENCY, al.toString().getBytes(Charsets.UTF_8));
+                tags.put(TAG_ACCESS_LATENCY, al.toString().getBytes(UTF_8));
             }
             if (rp != null) {
-                tags.put(TAG_RETENTION_POLICY, rp.toString().getBytes(Charsets.UTF_8));
+                tags.put(TAG_RETENTION_POLICY, rp.toString().getBytes(UTF_8));
             }
             if (size != null) {
-                tags.put(TAG_EXPECTED_SIZE, size.toString().getBytes(Charsets.UTF_8));
+                tags.put(TAG_EXPECTED_SIZE, size.toString().getBytes(UTF_8));
             }
-            tags.put(TAG_PATH, path.toString().getBytes(Charsets.UTF_8));
+            tags.put(TAG_PATH, path.toString().getBytes(UTF_8));
 
             /* Upload directory may optionally be relative to the user's root path. Whether
              * that's the case depends on if the configured upload directory is an absolute

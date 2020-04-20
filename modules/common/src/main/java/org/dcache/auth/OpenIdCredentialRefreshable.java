@@ -1,6 +1,5 @@
 package org.dcache.auth;
 
-import com.google.common.base.Charsets;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthenticationException;
@@ -22,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class OpenIdCredentialRefreshable extends WrappingOpenIdCredential
 {
@@ -51,7 +51,7 @@ public class OpenIdCredentialRefreshable extends WrappingOpenIdCredential
     private synchronized void refreshOpenIdCredentials() throws IOException, AuthenticationException
     {
         HttpPost post = new HttpPost(credential.getOpenidProvider());
-        BasicScheme scheme = new BasicScheme(Charsets.UTF_8);
+        BasicScheme scheme = new BasicScheme(UTF_8);
         UsernamePasswordCredentials clientCreds = new UsernamePasswordCredentials(
                 credential.getClientCredential().getId(),
                 credential.getClientCredential().getSecret());
@@ -83,7 +83,7 @@ public class OpenIdCredentialRefreshable extends WrappingOpenIdCredential
     {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         response.getEntity().writeTo(os);
-        return new JSONObject(new String(os.toByteArray(), Charsets.UTF_8));
+        return new JSONObject(new String(os.toByteArray(), UTF_8));
     }
 
     private void updateCredential(JSONObject json) throws IOException

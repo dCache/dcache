@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,7 +19,6 @@
 
 package org.dcache.gridsite;
 
-import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -40,6 +39,7 @@ import org.dcache.delegation.gridsite2.DelegationException;
 
 import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.gridsite.Utilities.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Implementation of the Delegation interface, as defined by the WSDL.  Most
@@ -155,7 +155,7 @@ public class DelegationService implements CellMessageReceiver
     private String generateDelegationId(Subject subject) throws DelegationException
     {
         String generator = Subjects.getDn(subject) + Subjects.getFqans(subject);
-        byte[] raw = generator.getBytes(Charsets.UTF_8);
+        byte[] raw = generator.getBytes(UTF_8);
         byte[] digest = Hashing.sha1().hashBytes(raw).asBytes();
         return BaseEncoding.base16().encode(digest, 0, 20);
     }

@@ -1,6 +1,5 @@
 package org.dcache.services.info;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -42,6 +41,7 @@ import static com.google.common.base.Throwables.propagate;
 import static com.google.common.collect.Iterables.find;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class provides support for querying the info cell via the admin
@@ -130,7 +130,7 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
                     Arrays.asList(urlItems).subList(1, urlItems.length);
 
             try {
-                byte[] raw = resultCache.get(path).getBytes(Charsets.UTF_8);
+                byte[] raw = resultCache.get(path).getBytes(UTF_8);
                 request.printHttpHeader(raw.length);
                 request.setContentType(this._mimeType);
                 out.write(raw);

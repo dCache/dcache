@@ -2,7 +2,6 @@ package org.dcache.gplazma.oidc.helpers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
 import com.google.common.base.Stopwatch;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -24,6 +23,8 @@ import java.net.URI;
 import org.dcache.util.Strings;
 import org.dcache.util.TimeUtils;
 import org.dcache.util.Version;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JsonHttpClient
 {
@@ -55,7 +56,7 @@ public class JsonHttpClient
     {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         response.writeTo(os);
-        String responseAsJson = new String(os.toByteArray(), Charsets.UTF_8);
+        String responseAsJson = new String(os.toByteArray(), UTF_8);
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode json = mapper.readValue(responseAsJson, JsonNode.class);

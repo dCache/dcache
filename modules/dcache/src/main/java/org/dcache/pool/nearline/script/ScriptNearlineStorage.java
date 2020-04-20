@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,6 @@
 package org.dcache.pool.nearline.script;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -63,6 +62,7 @@ import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Arrays.asList;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * NearlineStorage implementation doing callouts to an HSM integration script.
@@ -255,7 +255,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         try {
             if (checksumFile.exists()) {
                 try {
-                    List<String> lines = Files.readAllLines(checksumFile.toPath(), Charsets.US_ASCII);
+                    List<String> lines = Files.readAllLines(checksumFile.toPath(), US_ASCII);
                     if (! lines.isEmpty()) {
                         Checksum checksum = new Checksum(ChecksumType.ADLER32, lines.get(0));
                         return Collections.singleton(checksum);

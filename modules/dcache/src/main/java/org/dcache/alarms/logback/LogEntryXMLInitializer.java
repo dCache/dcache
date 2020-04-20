@@ -59,13 +59,14 @@ documents or software obtained from this server.
 */
 package org.dcache.alarms.logback;
 
-import com.google.common.base.Charsets;
-import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+
+import static java.util.Objects.requireNonNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Runs when XML database is used.  Checks that storage file exists.
@@ -89,7 +90,7 @@ public class LogEntryXMLInitializer {
                 String parent = xmlStore.getParentFile().getAbsolutePath();
                 throw new FileNotFoundException(parent + " is not a directory");
             }
-            Files.write(xmlStore.toPath(), EMPTY_XML_STORE.getBytes(Charsets.UTF_8));
+            Files.write(xmlStore.toPath(), EMPTY_XML_STORE.getBytes(UTF_8));
         }
     }
 }

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,7 +17,6 @@
  */
 package org.dcache.webdav.transfer;
 
-import com.google.common.base.Charsets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
@@ -75,6 +74,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.security.util.X509Credentials;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class acts as a client to credential services.
@@ -187,7 +187,7 @@ public class CredentialServiceClient
             throws UnsupportedEncodingException, AuthenticationException
     {
         UsernamePasswordCredentials clientCreds = new UsernamePasswordCredentials(clientId, clientSecret);
-        BasicScheme scheme = new BasicScheme(Charsets.UTF_8);
+        BasicScheme scheme = new BasicScheme(UTF_8);
 
         HttpPost post = new HttpPost(tokenEndPoint(host));
         List<NameValuePair> params = new ArrayList<>();
@@ -208,7 +208,7 @@ public class CredentialServiceClient
         if (response.getStatusLine().getStatusCode() == 200) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             response.getEntity().writeTo(os);
-            return new JSONObject(new String(os.toByteArray(), Charsets.UTF_8));
+            return new JSONObject(new String(os.toByteArray(), UTF_8));
         } else {
             throw new IOException("Http Request Error (" +
                     response.getStatusLine().getStatusCode() + "): [" +

@@ -1,6 +1,5 @@
 package org.dcache.util.cli;
 
-import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.LineProcessor;
 import jline.console.ConsoleReader;
@@ -31,6 +30,8 @@ import org.dcache.util.Args;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.fusesource.jansi.Ansi.Color.RED;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 
 /**
  * A simple framework for providing a CLI Shell.  A basic application has as
@@ -109,7 +110,7 @@ public abstract class ShellApplication implements Closeable
     public void execute(InputStream in, final PrintStream out, final boolean echo) throws IOException
     {
         CharStreams.readLines(
-                new InputStreamReader(in, Charsets.US_ASCII),
+                new InputStreamReader(in, US_ASCII),
                 new LineProcessor<Object>()
                 {
                     @Override

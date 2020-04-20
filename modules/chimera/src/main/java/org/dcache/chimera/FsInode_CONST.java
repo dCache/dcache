@@ -16,8 +16,8 @@
  */
 package org.dcache.chimera;
 
-import com.google.common.base.Charsets;
 import org.dcache.chimera.posix.Stat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class FsInode_CONST extends FsInode {
 
@@ -27,7 +27,7 @@ public class FsInode_CONST extends FsInode {
     public FsInode_CONST(FileSystemProvider fs, long ino) {
         super(fs, ino, FsInodeType.CONST);
 
-        _version = (_title + '\n' + _fs.getInfo() + '\n').getBytes(Charsets.UTF_8);
+        _version = (_title + '\n' + _fs.getInfo() + '\n').getBytes(UTF_8);
     }
 
     @Override
