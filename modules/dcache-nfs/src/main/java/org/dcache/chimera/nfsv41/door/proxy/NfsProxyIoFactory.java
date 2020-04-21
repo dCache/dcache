@@ -201,7 +201,7 @@ retry:  while (true) {
         try {
             adapter.close();
         } catch (IOException e) {
-            _log.error("failed to close io adapter: ", e.getMessage());
+            _log.error("failed to close io adapter: {}", e.getMessage());
         }
     }
 

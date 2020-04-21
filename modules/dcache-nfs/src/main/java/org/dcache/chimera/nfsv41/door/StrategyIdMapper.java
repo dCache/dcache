@@ -223,7 +223,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         InternetDomainName domainName = InternetDomainName.from(fqdn);
         if (!domainName.hasParent()) {
             // DNS is not configured, or we got something like localhost
-            LOGGER.warn("The FQDN {} has no parent, using default nfs4domain:",
+            LOGGER.warn("The FQDN {} has no parent, using default nfs4domain: {}",
                     fqdn, DEFAULT_NFS4_DOMAIN);
             return DEFAULT_NFS4_DOMAIN;
         }
