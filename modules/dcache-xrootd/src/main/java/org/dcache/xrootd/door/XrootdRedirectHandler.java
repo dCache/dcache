@@ -330,13 +330,18 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             */
             XrootdTransfer transfer;
             if (neededPerm == FilePerm.WRITE) {
-                boolean createDir = req.isMkPath();
+                /**
+                 *  boolean createDir = req.isMkPath() has
+                 *  been changed to default to true
+                 *  so as to conform to the general expectations that this
+                 *  behavior should not depend on the client.
+                 */
                 boolean overwrite = req.isDelete() && !req.isNew();
                 boolean persistOnSuccessfulClose = (req.getOptions()
                         & XrootdProtocol.kXR_posc) == XrootdProtocol.kXR_posc;
                 // TODO: replace with req.isPersistOnSuccessfulClose() with the latest xrootd4j
                 transfer = _door.write(remoteAddress, path, triedHosts,
-                        ioQueue, uuid, createDir, overwrite, size,
+                        ioQueue, uuid, true, overwrite, size,
                                        sessionInfo.getMaximumUploadSize(),
                         localAddress, req.getSubject(), sessionInfo.getRestriction(),
                                        persistOnSuccessfulClose,
