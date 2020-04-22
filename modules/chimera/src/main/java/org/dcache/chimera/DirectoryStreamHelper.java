@@ -22,25 +22,11 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DirectoryStreamHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectoryStreamHelper.class);
-
-    /**
-     * Returns a {@link List} of {@link HimeraDirectoryEntry} in the directory {@code inode}.
-     * @param inode of a directory to be listed
-     * @return a list of {@link HimeraDirectoryEntry}
-     * @throws IOException
-     */
-    public static List<HimeraDirectoryEntry> listOf(FsInode inode) throws IOException, IOHimeraFsException {
-        try (DirectoryStreamB<HimeraDirectoryEntry> dirStream = inode.newDirectoryStream()) {
-            return dirStream.stream().collect(Collectors.toList());
-        }
-    }
 
     /**
      * Returns a {@link Stream} of {@link HimeraDirectoryEntry} in the directory {@code inode}.
