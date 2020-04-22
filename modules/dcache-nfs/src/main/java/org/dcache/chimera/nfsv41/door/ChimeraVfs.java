@@ -20,7 +20,6 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +32,8 @@ import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceFlags;
@@ -266,12 +267,12 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         // ignore whatever is sent by client
         byte[] currentVerifier = directoryVerifier(inode);
 
-        List<DirectoryEntry> list = Lists.transform(
-                DirectoryStreamHelper.listOf(parentFsInode),
-                e -> new DirectoryEntry(e.getName(),
-                        toInode(e.getInode()),
-                        fromChimeraStat(e.getStat(), e.getInode().ino()),
-                        directoryCookieOf(e.getStat(), e.getName())));
+        TreeSet<DirectoryEntry> list = DirectoryStreamHelper.streamOf(parentFsInode)
+            .map(e -> new DirectoryEntry(e.getName(), toInode(e.getInode()),
+                    fromChimeraStat(e.getStat(), e.getInode().ino()),
+                    directoryCookieOf(e.getStat(), e.getName()))
+            )
+            .collect(Collectors.toCollection(TreeSet::new));
 
         return new DirectoryStream(currentVerifier, list);
     }
