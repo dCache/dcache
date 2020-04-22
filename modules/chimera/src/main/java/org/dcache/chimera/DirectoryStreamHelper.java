@@ -19,38 +19,54 @@ package org.dcache.chimera;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DirectoryStreamHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectoryStreamHelper.class);
 
     /**
-     * Convert directory stream into a {@link List}.
+     * Returns a {@link List} of {@link HimeraDirectoryEntry} in the directory {@code inode}.
      * @param inode of a directory to be listed
      * @return a list of {@link HimeraDirectoryEntry}
      * @throws IOException
      */
     public static List<HimeraDirectoryEntry> listOf(FsInode inode) throws IOException, IOHimeraFsException {
-
-        List<HimeraDirectoryEntry> directoryList;
-
-        int estimatedListSize = inode.statCache().getNlink();
-        if (estimatedListSize < 0) {
-            throw new RuntimeException("Invalid nlink count for directory: " + inode);
-        } else {
-            directoryList = new ArrayList<>(estimatedListSize);
+        try (DirectoryStreamB<HimeraDirectoryEntry> dirStream = inode.newDirectoryStream()) {
+            return dirStream.stream().collect(Collectors.toList());
         }
+    }
 
-        try (DirectoryStreamB<HimeraDirectoryEntry> dirStream =
-                inode.newDirectoryStream()) {
-            for (HimeraDirectoryEntry e : dirStream) {
-                directoryList.add(e);
+    /**
+     * Returns a {@link Stream} of {@link HimeraDirectoryEntry} in the directory {@code inode}.
+     *
+     *  After this method returns, then any subsequent I/O exception that occurs while listing the directory is wrapped
+     *  in an UncheckedIOException.
+     *
+     * The returned stream keeps a db Connection. The try-with-resources construct should be used to ensure that the stream's
+     * close method is invoked after the stream operations are completed.
+     *
+     * @param inode of a directory to be listed
+     * @return a stream of {@link HimeraDirectoryEntry}
+     * @throws IOException
+     */
+    public static Stream<HimeraDirectoryEntry> streamOf(FsInode inode) throws IOException, IOHimeraFsException {
+        DirectoryStreamB<HimeraDirectoryEntry> listStream = inode.newDirectoryStream();
+        return listStream.stream().onClose(uncheckedRunnable(listStream));
+    }
+
+    private static Runnable uncheckedRunnable(Closeable closeable) {
+        return () -> {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        }
-
-        return directoryList;
+        };
     }
 }

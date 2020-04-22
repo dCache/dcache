@@ -18,6 +18,8 @@ package org.dcache.chimera;
 
 import java.io.Closeable;
 import java.util.Iterator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * An object to iterate over the entries in a directory. A directory stream
@@ -43,14 +45,21 @@ public interface DirectoryStreamB<T> extends Closeable, Iterable<T> {
         /**
          * Decides if the given directory entry should be accepted or filtered.
          *
-         * @param   entry
-         *          the directory entry to be tested
-         *
-         * @return  {@code true} if the directory entry should be accepted
+         * @param entry the directory entry to be tested
+         * @return {@code true} if the directory entry should be accepted
          */
         boolean accept(T entry);
     }
 
     @Override
     Iterator<T> iterator();
+
+    /**
+     * Returns a sequential {@code Stream} directory entries.
+     *
+     * @return a sequential {@code Stream} over the entries in the directory.
+     */
+    default Stream<T> stream() {
+        return StreamSupport.stream(spliterator(), false);
+    }
 }
