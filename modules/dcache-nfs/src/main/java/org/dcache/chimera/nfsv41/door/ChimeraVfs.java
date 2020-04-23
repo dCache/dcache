@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2019 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2020 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@ import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.stream.Stream;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -62,6 +63,7 @@ import org.dcache.chimera.FsInode_PSET;
 import org.dcache.chimera.FsInode_SURI;
 import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.FsInode_TAGS;
+import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.InvalidArgumentChimeraException;
 import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
@@ -267,14 +269,15 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         // ignore whatever is sent by client
         byte[] currentVerifier = directoryVerifier(inode);
 
-        TreeSet<DirectoryEntry> list = DirectoryStreamHelper.streamOf(parentFsInode)
-            .map(e -> new DirectoryEntry(e.getName(), toInode(e.getInode()),
-                    fromChimeraStat(e.getStat(), e.getInode().ino()),
-                    directoryCookieOf(e.getStat(), e.getName()))
-            )
-            .collect(Collectors.toCollection(TreeSet::new));
+        try(Stream<HimeraDirectoryEntry> dirStream = DirectoryStreamHelper.streamOf(parentFsInode)) {
+            TreeSet<DirectoryEntry> list = dirStream.map(e -> new DirectoryEntry(e.getName(), toInode(e.getInode()),
+                            fromChimeraStat(e.getStat(), e.getInode().ino()),
+                            directoryCookieOf(e.getStat(), e.getName()))
+                    )
+                    .collect(Collectors.toCollection(TreeSet::new));
 
-        return new DirectoryStream(currentVerifier, list);
+            return new DirectoryStream(currentVerifier, list);
+        }
     }
 
     @Override
