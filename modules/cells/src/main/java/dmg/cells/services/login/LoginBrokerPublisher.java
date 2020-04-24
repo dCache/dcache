@@ -112,7 +112,7 @@ public class LoginBrokerPublisher
         public String call() throws IllegalArgumentException
         {
             checkArgument(time >= 2, "Update time out of range.");
-            setBrokerUpdateTime(_brokerUpdateTime, _brokerUpdateTimeUnit);
+            setBrokerUpdateTime(time, TimeUnit.SECONDS);
             return "";
         }
     }
