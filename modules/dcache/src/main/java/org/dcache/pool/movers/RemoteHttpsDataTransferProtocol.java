@@ -3,8 +3,7 @@ package org.dcache.pool.movers;
 import eu.emi.security.authn.x509.X509CertChainValidator;
 import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -61,7 +60,7 @@ public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProto
     }
 
     @Override
-    public CloseableHttpClient createHttpClient() throws CacheException
+    protected HttpClientBuilder customise(HttpClientBuilder builder) throws CacheException
     {
         try {
             KeyManager[] keyManagers;
@@ -76,7 +75,7 @@ public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProto
                     keyManagers,
                     new TrustManager[]{trustManager},
                     secureRandom);
-            return HttpClients.custom().setUserAgent(USER_AGENT).setSSLContext(context).build();
+            return super.customise(builder).setSSLContext(context);
         } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
             throw new CacheException("failed to build http client: " + e.getMessage(), e);
         }

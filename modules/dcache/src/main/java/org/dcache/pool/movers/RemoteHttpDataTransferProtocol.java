@@ -5,17 +5,22 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.ProtocolException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultRedirectStrategy;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
@@ -29,12 +34,9 @@ import java.nio.channels.Channels;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -52,22 +54,21 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
-import org.dcache.util.Strings;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Maps.uniqueIndex;
+import static diskCacheV111.util.ThirdPartyTransferFailedCacheException.checkThirdPartyTransferSuccessful;
+import static dmg.util.Exceptions.getMessageWithCauses;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.util.ByteUnit.GiB;
 import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.util.Exceptions.genericCheck;
-import static org.dcache.util.TimeUtils.describeDuration;
-import static diskCacheV111.util.ThirdPartyTransferFailedCacheException.checkThirdPartyTransferSuccessful;
-import static dmg.util.Exceptions.getMessageWithCauses;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.util.Exceptions.messageOrClassName;
 import static org.dcache.util.Strings.describeSize;
 import static org.dcache.util.Strings.toThreeSigFig;
+import static org.dcache.util.TimeUtils.describeDuration;
 
 /**
  * This class implements transfers of data between a pool and some remote
@@ -137,6 +138,17 @@ import static org.dcache.util.Strings.toThreeSigFig;
 public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         ChecksumMover
 {
+    private enum HeaderFlags {
+        /** Do not include any Authorization request header. */
+        NO_AUTHORIZATION_HEADER
+    }
+
+    private static final Set<HeaderFlags> REDIRECTED_REQUEST
+            = EnumSet.of(HeaderFlags.NO_AUTHORIZATION_HEADER);
+
+    private static final Set<HeaderFlags> INITIAL_REQUEST
+            = EnumSet.noneOf(HeaderFlags.class);
+
     private static final Logger _log =
         LoggerFactory.getLogger(RemoteHttpDataTransferProtocol.class);
 
@@ -188,6 +200,33 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     // REVISIT: we may wish to generate a value based on the algorithms dCache
     // supports
     private static final String WANT_DIGEST_VALUE = "adler32;q=1, md5;q=0.8";
+
+    private static final RedirectStrategy DROP_AUTHORIZATION_HEADER = new DefaultRedirectStrategy() {
+
+                @Override
+                public HttpUriRequest getRedirect(final HttpRequest request,
+                        final HttpResponse response, final HttpContext context)
+                        throws ProtocolException
+                {
+                    HttpUriRequest redirect = super.getRedirect(request, response, context);
+
+                    /* If this method returns an HttpUriRequest that has no
+                     * HTTP headers then the RedirectExec code will copy all
+                     * the headers from the original request into the
+                     * HttpUriRequest.   DefaultRedirectStrategy returns such
+                     * requests under several circumstances.  Therefore, in
+                     * order to suppress the Authorization header we
+                     * <em>must</em> ensure the returned request includes
+                     * headers.
+                     */
+                    if (!redirect.headerIterator().hasNext()) {
+                        redirect.setHeaders(request.getAllHeaders());
+                    }
+
+                    redirect.removeHeaders("Authorization");
+                    return redirect;
+                }
+            };
 
     protected static final String USER_AGENT = "dCache/" +
             Version.of(RemoteHttpDataTransferProtocol.class).getVersion();
@@ -251,7 +290,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     protected CloseableHttpClient createHttpClient() throws CacheException
     {
-        return HttpClients.custom().setUserAgent(USER_AGENT).build();
+        return customise(HttpClients.custom()).build();
+    }
+
+    protected HttpClientBuilder customise(HttpClientBuilder builder) throws CacheException
+    {
+        return builder
+                .setUserAgent(USER_AGENT)
+                .setRedirectStrategy(DROP_AUTHORIZATION_HEADER);
     }
 
     private void receiveFile(final RemoteHttpDataTransferProtocolInfo info)
@@ -309,7 +355,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     {
         HttpGet get = new HttpGet(info.getUri());
         get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
-        addHeadersToRequest(info, get);
+        addHeadersToRequest(info, get, INITIAL_REQUEST);
         get.setConfig(RequestConfig.custom()
                               .setConnectTimeout(CONNECTION_TIMEOUT)
                               .setSocketTimeout(GET_SOCKET_TIMEOUT)
@@ -376,8 +422,9 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         List<URI> redirections = null;
 
         try {
-            for (int attempt = 0; attempt < MAX_REDIRECTIONS; attempt++) {
-                HttpPut put = buildPutRequest(info, location, length);
+            for (int redirectionCount = 0; redirectionCount < MAX_REDIRECTIONS; redirectionCount++) {
+                HttpPut put = buildPutRequest(info, location, length,
+                        redirectionCount > 0 ? REDIRECTED_REQUEST : INITIAL_REQUEST);
 
                 try (CloseableHttpResponse response = _client.execute(put)) {
                     StatusLine status = response.getStatusLine();
@@ -455,8 +502,16 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 + " number of redirections: " + redirections);
     }
 
+    /**
+     * Build a PUT request for this attempt to upload the file.
+     * @param info the information from the door
+     * @param location The URL to target
+     * @param length The size of the file
+     * @param flags Options that control the PUT request
+     * @return A corresponding PUT request.
+     */
     private HttpPut buildPutRequest(RemoteHttpDataTransferProtocolInfo info,
-            URI location, long length)
+            URI location, long length, Set<HeaderFlags> flags)
     {
         HttpPut put = new HttpPut(location);
         put.setConfig(RequestConfig.custom()
@@ -464,7 +519,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                                   .setExpectContinueEnabled(true)
                                   .setSocketTimeout(0)
                                   .build());
-        addHeadersToRequest(info, put);
+        addHeadersToRequest(info, put, flags);
         put.setEntity(new InputStreamEntity(Channels.newInputStream(_channel), length));
 
         // FIXME add SO_KEEPALIVE setting
@@ -584,7 +639,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                                   .setConnectTimeout(CONNECTION_TIMEOUT)
                                   .setSocketTimeout(SOCKET_TIMEOUT)
                                   .build());
-        addHeadersToRequest(info, head);
+        addHeadersToRequest(info, head, INITIAL_REQUEST);
         return head;
     }
 
@@ -677,19 +732,27 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                                  .setConnectTimeout(CONNECTION_TIMEOUT)
                                  .setSocketTimeout(SOCKET_TIMEOUT)
                                  .build());
-        addHeadersToRequest(info, delete);
+        addHeadersToRequest(info, delete, INITIAL_REQUEST);
 
         return delete;
     }
 
     private void addHeadersToRequest(RemoteHttpDataTransferProtocolInfo info,
-                                    HttpRequest request)
+                                    HttpRequest request,
+                                    Set<HeaderFlags> flags)
     {
+        boolean dropAuthorizationHeader = flags.contains(HeaderFlags.NO_AUTHORIZATION_HEADER);
+
         info.getHeaders().forEach(request::addHeader);
-        if (info.hasTokenCredential()) {
+
+        if (info.hasTokenCredential() && !dropAuthorizationHeader) {
             request.addHeader("Authorization",
                     AUTH_BEARER +
                             new OpenIdCredentialRefreshable(info.getTokenCredential(), _client).getBearerToken());
+        }
+
+        if (dropAuthorizationHeader) {
+            request.removeHeaders("Authorization");
         }
     }
 
