@@ -10,6 +10,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  * person. This is in contrast to a LoginNamePrincipal.
  *
  * @see LoginNamePrincipal
+ * @since 2.1
  */
 public class UserNamePrincipal implements Principal, Serializable
 {

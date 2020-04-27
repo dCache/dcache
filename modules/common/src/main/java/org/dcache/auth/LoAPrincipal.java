@@ -8,6 +8,7 @@ import java.security.Principal;
  * is) that the user's identity, as described in the material used to
  * authenticate, accurately reflects the identity of the person issuing
  * the request.
+ * @since 2.14
  */
 public class LoAPrincipal implements Principal, Serializable
 {

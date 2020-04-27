@@ -20,6 +20,7 @@ import javax.security.auth.x500.X500Principal;
 
 /**
  * A Globus DN principal. The Globus DN is in the form: "/CN=foo/O=bar".
+ * @since 2.14
  */
 public class GlobusPrincipal
         extends SimplePrincipal

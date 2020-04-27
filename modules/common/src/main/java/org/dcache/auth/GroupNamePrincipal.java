@@ -1,8 +1,10 @@
 package org.dcache.auth;
 
 import java.io.Serializable;
-import java.security.Principal;
 
+/**
+ * @since 2.1
+ */
 public class GroupNamePrincipal implements GroupPrincipal, Serializable
 {
     private static final long serialVersionUID = -9202753005930409597L;

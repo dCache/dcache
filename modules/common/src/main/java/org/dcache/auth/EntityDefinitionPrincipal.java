@@ -22,6 +22,7 @@ import java.security.Principal;
 
 /**
  * The principal that defines what kind of entity has authenticated.
+ * @since 2.14
  */
 public class EntityDefinitionPrincipal implements Principal, Serializable
 {

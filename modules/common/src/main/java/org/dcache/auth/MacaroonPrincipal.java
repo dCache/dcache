@@ -24,6 +24,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Identifies the Macaroon used to authorise the activity.
+ * @since 3.2
  */
 public class MacaroonPrincipal implements Principal, Serializable
 {

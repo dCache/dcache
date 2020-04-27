@@ -23,6 +23,7 @@ import java.security.Principal;
 /**
  * Any principal that where the value is unique only within a specific OAuth2
  * provider.
+ * @since 5.1
  */
 public abstract class OpScopedPrincipal implements Principal, Serializable
 {

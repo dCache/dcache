@@ -6,6 +6,9 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+/**
+ * @since 2.16
+ */
 public class EmailAddressPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = -5091924321331479809L;

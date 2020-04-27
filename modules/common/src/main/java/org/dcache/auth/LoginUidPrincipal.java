@@ -10,6 +10,7 @@ import java.security.Principal;
  * decisions based on this principal.
  *
  * @see UidPrincipal
+ * @since 2.1
  */
 public class LoginUidPrincipal implements Principal, Serializable
 {

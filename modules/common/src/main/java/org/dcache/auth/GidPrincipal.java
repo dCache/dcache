@@ -16,6 +16,7 @@ import java.security.Principal;
  * authorisation decisions on the presence of GidPrincipal.
  *
  * @see LoginGidPrincipal
+ * @since 2.1
  */
 public class GidPrincipal implements GroupPrincipal, Serializable
 {

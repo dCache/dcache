@@ -10,6 +10,7 @@ import java.security.Principal;
  * recommended not to use this principal for any authorisation decisions.
  *
  * @see UserNamePrincipal
+ * @since 2.1
  */
 public class LoginNamePrincipal implements Principal, Serializable
 {

@@ -28,6 +28,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  * A principal that represents the user authenticated with a certificate
  * authority that has some specific IGTF status.  The status is defined in
  * that certificate authority's .info file.
+ * @since 3.1
  */
 public class IGTFStatusPrincipal implements Principal
 {

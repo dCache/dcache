@@ -10,6 +10,7 @@ import java.security.Principal;
  * authorisation decisions based on this principal.
  *
  * @see GidPrincipal
+ * @since 2.1
  */
 public class LoginGidPrincipal implements Principal, Serializable
 {

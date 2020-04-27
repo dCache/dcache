@@ -18,6 +18,7 @@
  */
 package org.dcache.auth;
 
+import java.io.Serializable;
 import java.security.Principal;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -26,6 +27,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  * An IGTFPolicyPrincipal represents that the user has authenticated with
  * an X.509 credential issued by a Certificate Authority that satisfies
  * some IGTF policy.  These policies are define in policy-*.info files.
+ * @since 3.1
  */
 public class IGTFPolicyPrincipal implements Principal
 {

@@ -1,13 +1,13 @@
 package org.dcache.auth;
 
 import java.io.Serializable;
-import java.security.Principal;
 
 /**
  * This class represents a fully qualified attribute
  * name (FQAN). FQANPrincipal is similar in purpose to
  * org.glite.security.voms.FQAN, except that the latter does not
  * implement the Principal and Serializable interfaces.
+ * @since 2.1
  */
 public class FQANPrincipal implements GroupPrincipal, Serializable
 {

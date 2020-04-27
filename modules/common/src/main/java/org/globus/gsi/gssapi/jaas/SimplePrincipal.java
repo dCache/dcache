@@ -19,6 +19,7 @@ import java.security.Principal;
 
 /**
  * Simple string-based principal.
+ * @since 2.14
  */
 public class SimplePrincipal
         implements Principal, Serializable
