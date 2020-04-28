@@ -233,7 +233,7 @@ public class CDC implements AutoCloseable
      * Setup message related diagnostic context for the calling
      * thread. Adds information about a message to the MDC and NDC.
      *
-     * @see clearMessageContext
+     * @see #clearMessageContext
      */
     public static void setMessageContext(CellMessage envelope)
     {
@@ -248,7 +248,7 @@ public class CDC implements AutoCloseable
      * to be in the same state as when <code>setMessageContext</code>
      * returned.
      *
-     * @see setMessageContext
+     * @see #setMessageContext
      */
     public static void clearMessageContext()
     {
