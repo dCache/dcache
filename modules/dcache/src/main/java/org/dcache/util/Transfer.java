@@ -549,7 +549,7 @@ public class Transfer implements Comparable<Transfer>
     public synchronized String getTransaction()
     {
         if (_session != null) {
-            return _session.toString() + ":" + _id;
+            return _session + ":" + _id;
         } else if (_cellAddress != null) {
             return "door:" + _cellAddress + ":" + _id;
         } else {
