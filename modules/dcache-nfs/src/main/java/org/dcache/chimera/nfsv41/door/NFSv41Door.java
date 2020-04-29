@@ -1488,16 +1488,17 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         public synchronized void shutdownMover() throws NfsIoException, DelayException {
 
-            if (!hasMover()) {
-                // the mover clean-up will not be called, thus we have to clean manually
-                _transfers.remove(_openStateid.stateid());
-                return;
-            }
+            try (CDC ignored = CDC.reset(getCellName(), getCellDomainName())) {
+                restoreSession();
 
-            _log.debug("Shuting down transfer: {}", this);
-            killMover(0, "killed by door: returning layout");
+                if (!hasMover()) {
+                    // the mover clean-up will not be called, thus we have to clean manually
+                    _transfers.remove(_openStateid.stateid());
+                    return;
+                }
 
-            try {
+                _log.debug("Shuting down transfer: {}", this);
+                killMover(0, "killed by door: returning layout");
                 // wait for clean mover shutdown only for writes only
                 if (isWrite() && !waitForMover(NFS_REQUEST_BLOCKING)) {
                     throw new DelayException("Mover not stopped");
