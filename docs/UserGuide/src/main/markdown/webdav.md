@@ -1328,22 +1328,22 @@ success: Created
 dCache takes data integrity very seriously.  This includes
 transferring data with remote servers.  Under normal circumstances,
 dCache will only consider a third-party transfer successful if the
-data-bearing HTTP request (either a GET for pull, or PUT for push)
+data-bearing HTTP request (either a `GET` for pull, or `PUT` for push)
 indicates a success and the integrity of the new copy is verified.
 
 There are two complementary ways to verify the new copy has not become
-corrupted: checking the file size matches and the file's checksum
+corrupted: checking the file size matches and the file checksum
 matches.
 
 For pull requests, the file's size is normally included in the
-response headers of the GET request; however, for push requests the
-response headers to the PUT request usually do not contain the file's
-size.  Therefore, a subsequent `HEAD` request is often needed after a
-successful `PUT` request.
+response headers of the `GET` request; however, for push requests the
+response headers to the `PUT` request usually do not contain the
+file's size.  Therefore, a subsequent `HEAD` request is often needed
+after a successful `PUT` request.
 
 The checksum of the remote file is obtained using RFC 3230
 `Want-Digest` headers.  For pull requests, this header is included in
-the `GET request; however, for the `PUT` request the `Want-Digest`
+the `GET` request; however, for the `PUT` request the `Want-Digest`
 header is included in the subsequent `HEAD` request.
 
 Although dCache supports RFC 3230, the standard is not widely
