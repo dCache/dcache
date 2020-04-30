@@ -671,7 +671,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
         NFS4Client client = null;
-        try(CDC ignored = CDC.reset(getCellName(), getCellDomainName())) {
+        CDC cdcContext = CDC.reset(getCellName(), getCellDomainName());
+        try {
 
             FsInode inode = _chimeraVfs.inodeFromBytes(nfsInode.getFileId());
             PnfsId pnfsId = new PnfsId(inode.getId());
@@ -792,6 +793,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             throw asNfsException(e, LayoutTryLaterException.class);
         } catch (InterruptedException e) {
             throw new LayoutTryLaterException(e.getMessage(), e);
+        } finally {
+             cdcContext.close();
         }
 
     }
@@ -1488,8 +1491,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         public synchronized void shutdownMover() throws NfsIoException, DelayException {
 
-            try (CDC ignored = CDC.reset(getCellName(), getCellDomainName())) {
-                restoreSession();
+            CDC cdcContext = CDC.reset(getCellName(), getCellDomainName());
+            restoreSession();
+            try {
 
                 if (!hasMover()) {
                     // the mover clean-up will not be called, thus we have to clean manually
@@ -1511,6 +1515,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 _log.info("Failed to kill mover: {}@{} : {}",
                         getMoverId(), getPool(), e.getMessage());
                 throw new NfsIoException(e.getMessage(), e);
+            } finally {
+                cdcContext.close();
             }
         }
 
