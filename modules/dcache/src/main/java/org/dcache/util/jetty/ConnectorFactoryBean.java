@@ -387,7 +387,7 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
         factories.add(httpConnectionFactory);
 
         ServerConnector serverConnector =
-                new ServerConnector(server, null, null, null, acceptors, -1, factories.stream().toArray(ConnectionFactory[]::new));
+                new ServerConnector(server, null, null, null, acceptors, -1, factories.toArray(ConnectionFactory[]::new));
         serverConnector.setPort(port);
         serverConnector.setHost(host);
         serverConnector.setAcceptQueueSize(backlog);

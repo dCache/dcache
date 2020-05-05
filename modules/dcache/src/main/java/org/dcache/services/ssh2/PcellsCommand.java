@@ -169,7 +169,7 @@ public class PcellsCommand implements Command, Runnable
                             case "LoginBroker":
                                 String cmd = frame.getPayload().toString();
                                 if (cmd.startsWith("ls") && cmd.contains("-binary")) {
-                                    result = _loginBrokerSource.doors().stream().toArray(LoginBrokerInfo[]::new);
+                                    result = _loginBrokerSource.doors().toArray(LoginBrokerInfo[]::new);
                                 } else {
                                     result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
                                 }

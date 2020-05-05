@@ -133,7 +133,6 @@ public final class CellInfoResources {
                      .collect(Collectors.toList())
                      .stream()
                      .sorted(Comparator.comparing(CellData::getCellName))
-                     .collect(Collectors.toList())
-                     .toArray(new CellData[0]);
+                     .toArray(CellData[]::new);
     }
 }

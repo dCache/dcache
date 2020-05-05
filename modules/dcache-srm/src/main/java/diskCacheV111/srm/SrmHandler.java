@@ -553,7 +553,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             status = new TReturnStatus(SRM_FAILURE, "No request statuses have been retrieved.");
         }
         return new SrmGetRequestSummaryResponse(
-                status, new ArrayOfTRequestSummary(summaries.stream().toArray(TRequestSummary[]::new)));
+                status, new ArrayOfTRequestSummary(summaries.toArray(TRequestSummary[]::new)));
     }
 
     /**
@@ -792,7 +792,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             }
         }
         ArrayOfTRequestTokenReturn arrayOfRequestTokens = new ArrayOfTRequestTokenReturn(
-                tokens.stream().toArray(TRequestTokenReturn[]::new));
+                tokens.toArray(TRequestTokenReturn[]::new));
         return new SrmGetRequestTokensResponse(new TReturnStatus(SRM_SUCCESS, "Request processed successfully."), arrayOfRequestTokens);
     }
 

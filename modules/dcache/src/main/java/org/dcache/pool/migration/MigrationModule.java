@@ -1109,8 +1109,7 @@ public class MigrationModule
         info.setLabel("Migration");
         info.setJobInfo(_jobs.keySet().stream()
                                       .map(this::getJobSummary)
-                                      .collect(Collectors.toList())
-                                      .toArray(new String[0]));
+                                      .toArray(String[]::new));
         return info;
     }
 

@@ -633,7 +633,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     @Override
     public String[] listXattrs(Inode inode) throws IOException {
         FsInode fsInode = toFsInode(inode);
-        return _fs.listXattrs(fsInode).stream().toArray(String[]::new);
+        return _fs.listXattrs(fsInode).toArray(String[]::new);
     }
 
     @Override

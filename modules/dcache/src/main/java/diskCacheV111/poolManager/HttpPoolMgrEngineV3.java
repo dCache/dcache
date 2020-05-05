@@ -810,8 +810,7 @@ public class HttpPoolMgrEngineV3 implements
 
         RestoreHandlerInfo[] list = _lazyRestoreList.stream()
                                                     .map(o -> o[0])
-                                                    .collect(Collectors.toList())
-                                                    .toArray(new RestoreHandlerInfo[0]);
+                                                    .toArray(RestoreHandlerInfo[]::new);
         Arrays.sort(list, new OurComparator(sorting));
 
         html.beginTable("sortable",

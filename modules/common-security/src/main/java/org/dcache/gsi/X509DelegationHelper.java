@@ -47,8 +47,7 @@ public final class X509DelegationHelper
                                                KeyPairCache keyPairs)
                     throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        X509Certificate[] certificates = path.getCertificates().stream()
-                                             .toArray(X509Certificate[]::new);
+        X509Certificate[] certificates = path.getCertificates().toArray(X509Certificate[]::new);
         if (certificates.length == 0) {
             throw new IllegalArgumentException("Certificate path is empty.");
         }
