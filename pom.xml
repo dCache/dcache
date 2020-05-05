@@ -214,7 +214,7 @@
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>3.4.14</version>
+                <version>3.5.7</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.sun.jmx</groupId>
