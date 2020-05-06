@@ -368,7 +368,7 @@ public class SRM implements CellLifeCycleAware
         List<String> putProtocols = asList(storage.supportedPutProtocols());
         ImmutableList<String> protocols =
                 ImmutableSet.copyOf(concat(getProtocols, putProtocols)).asList();
-        return protocols.toArray(new String[protocols.size()]);
+        return protocols.toArray(String[]::new);
     }
 
     /**

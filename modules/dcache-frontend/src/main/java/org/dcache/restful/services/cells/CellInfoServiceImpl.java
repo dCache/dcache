@@ -169,7 +169,7 @@ public class CellInfoServiceImpl extends
         try {
             processor.process(data);
             synchronized (this) {
-                currentKnownCells = data.keySet().toArray(new String[0]);
+                currentKnownCells = data.keySet().toArray(String[]::new);
                 Arrays.sort(currentKnownCells);
             }
         } catch (IllegalStateException e) {

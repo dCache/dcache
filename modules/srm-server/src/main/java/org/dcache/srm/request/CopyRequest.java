@@ -200,7 +200,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
 
         clientTransport = getConfiguration().getClientTransport();
-        protocols = allowedProtocols.toArray(new String[allowedProtocols.size()]);
+        protocols = allowedProtocols.toArray(String[]::new);
         this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
@@ -260,7 +260,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
         clientTransport = getConfiguration().getClientTransport();
 
-        protocols = allowedProtocols.toArray(new String[allowedProtocols.size()]);
+        protocols = allowedProtocols.toArray(String[]::new);
         this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
@@ -400,7 +400,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 }
             }
             String[] remoteSurlsUniqueArray = remoteSurlToFileReqIds.keySet()
-                            .toArray(new String[remoteSurlToFileReqIds.size()]);
+                            .toArray(String[]::new);
             if (LOGGER.isDebugEnabled()) {
                 for (int i = 0; i < remoteSurlsUniqueArray.length; ++i) {
                     LOGGER.debug("remoteSurlsUniqueArray[{}]={}", i,
@@ -490,7 +490,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
 
         int uniqueCount = remoteSurlToFileReqIds.size();
-        String[] uniqueSurls = remoteSurlToFileReqIds.keySet().toArray(new String[uniqueCount]);
+        String[] uniqueSurls = remoteSurlToFileReqIds.keySet().toArray(String[]::new);
         String[] destinationSurls = new String[uniqueCount];
         long[] sizes = new long[uniqueCount];
         for (int i = 0; i < uniqueCount; ++i) {

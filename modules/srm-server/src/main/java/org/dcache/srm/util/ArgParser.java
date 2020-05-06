@@ -604,9 +604,8 @@ public class ArgParser
         {
              throw new IllegalArgumentException("command line hasn't been parsed yet");
         }
-        String[] rc = new String[arguments.size()];
-        arguments.toArray(rc);
-        return rc;
+
+        return arguments.toArray(String[]::new);
     }
     
   /**

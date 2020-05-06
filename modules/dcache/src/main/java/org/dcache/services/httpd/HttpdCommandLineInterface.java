@@ -143,7 +143,7 @@ public class HttpdCommandLineInterface
             Class<? extends HttpResponseEngine> c = Class.forName(specific).asSubclass(HttpResponseEngine.class);
             Constructor<? extends HttpResponseEngine> constr = c.getConstructor(String[].class);
             try {
-                HttpResponseEngine engine = constr.newInstance(new Object[] { args.getArguments().toArray(new String[args.argc()]) });
+                HttpResponseEngine engine = constr.newInstance(new Object[] { args.getArguments().toArray(String[]::new) });
                 handler = new ResponseEngineHandler((HttpResponseEngine) beanFactory.initializeBean(engine, alias));
             } catch (InvocationTargetException e) {
                 Throwables.propagateIfPossible(e.getCause());

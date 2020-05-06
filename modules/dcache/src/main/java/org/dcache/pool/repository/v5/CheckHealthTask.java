@@ -297,7 +297,7 @@ class CheckHealthTask implements Runnable
                 arguments.add(scanWord());
                 scanWhitespace();
             }
-            return arguments.toArray(new String[arguments.size()]);
+            return arguments.toArray(String[]::new);
         }
 
         /**

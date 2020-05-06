@@ -102,7 +102,7 @@ public final class Strings {
                 matchList.add(groupMatch);
             }
         }
-        return matchList.toArray(new String[matchList.size()]);
+        return matchList.toArray(String[]::new);
     }
 
     public static int plainLength(String s)

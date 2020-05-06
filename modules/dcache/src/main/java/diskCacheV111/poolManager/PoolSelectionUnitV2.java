@@ -790,7 +790,7 @@ public class PoolSelectionUnitV2
                         current.add(link);
                     }
             }
-            List<Link>[] x = listList.toArray(new List[listList.size()]);
+            List<Link>[] x = listList.toArray(List[]::new);
             result = new PoolPreferenceLevel[x.length];
             //
             // resolve the links to the pools

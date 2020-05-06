@@ -198,7 +198,7 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao
 
         public Object[] getArgumentsAsArray()
         {
-            return arguments.toArray(new Object[arguments.size()]);
+            return arguments.toArray(Object[]::new);
         }
     }
 

@@ -309,7 +309,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
         } while (set.next());
         statement.close();
-        return l.toArray(new Job.JobHistory[l.size()]);
+        return l.toArray(Job.JobHistory[]::new);
     }
 
     // this method returns ids as a set of "Long" id

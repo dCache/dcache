@@ -46,6 +46,6 @@ public class PnfsCommandProcessor {
             }
         }
 
-        return list.isEmpty() ? new String[] {command} : list.toArray(new String[0]);
+        return list.isEmpty() ? new String[] {command} : list.toArray(String[]::new);
     }
 }

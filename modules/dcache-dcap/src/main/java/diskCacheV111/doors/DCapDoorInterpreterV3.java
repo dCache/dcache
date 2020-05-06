@@ -722,7 +722,7 @@ public class DCapDoorInterpreterV3
             }
         }
 
-        info.setIoDoorEntries( list.toArray(new IoDoorEntry[list.size()]) );
+        info.setIoDoorEntries(list.toArray(IoDoorEntry[]::new));
         if( args.hasOption("binary") ) {
             return info;
         } else {

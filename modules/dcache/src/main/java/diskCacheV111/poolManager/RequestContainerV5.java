@@ -679,7 +679,7 @@ public class RequestContainerV5
           }
           list.add( h.getRestoreHandlerInfo() ) ;
        }
-       return list.toArray( new RestoreHandlerInfo[list.size()] ) ;
+       return list.toArray(RestoreHandlerInfo[]::new) ;
     }
 
     public void messageArrived(CellMessage envelope,

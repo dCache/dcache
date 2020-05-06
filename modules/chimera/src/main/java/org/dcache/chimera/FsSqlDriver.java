@@ -1043,7 +1043,7 @@ public class FsSqlDriver {
     String[] tags(FsInode inode) {
         List<String> tags = _jdbc.queryForList("SELECT itagname FROM t_tags where inumber=?",
                                                String.class, inode.ino());
-        return tags.toArray(new String[tags.size()]);
+        return tags.toArray(String[]::new);
     }
 
     Map<String,byte[]> getAllTags(FsInode inode) {

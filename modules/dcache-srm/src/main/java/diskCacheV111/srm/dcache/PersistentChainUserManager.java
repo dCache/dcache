@@ -96,7 +96,7 @@ public final class PersistentChainUserManager extends DcacheUserManager
     private GlobusPrincipal getGlobusPrincipal(CertPath path)
     {
         List<X509Certificate> certificates = (List<X509Certificate>) path.getCertificates();
-        X509Certificate[] chain = certificates.toArray(new X509Certificate[certificates.size()]);
+        X509Certificate[] chain = certificates.toArray(X509Certificate[]::new);
         return new GlobusPrincipal(convertFromRfc2253(getOriginalUserDN(chain).getName(), true));
     }
 }

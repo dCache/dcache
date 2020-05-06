@@ -550,7 +550,7 @@ public final class OperationStatistics {
         builder.append(POOLS_TITLE);
 
         Pattern pattern = regex == null ? null : Pattern.compile(regex);
-        String[] pools = this.pools.toArray(new String[0]);
+        String[] pools = this.pools.toArray(String[]::new);
         Arrays.sort(pools);
 
         long[] totals = new long[] { 0, 0, 0, 0, 0, 0, 0 };

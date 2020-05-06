@@ -479,6 +479,6 @@ public class Crypto
                 break;
             }
         }
-        return banned.toArray(new String[banned.size()]);
+        return banned.toArray(String[]::new);
     }
 }

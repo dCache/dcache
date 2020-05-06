@@ -181,7 +181,7 @@ public class SRMClientV2 implements ISRM {
                 paths.add(uri.getPath());
             }
         }
-        return paths.toArray(new String[paths.size()]);
+        return paths.toArray(String[]::new);
     }
 
     static {

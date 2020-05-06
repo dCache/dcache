@@ -193,8 +193,7 @@ public class ConfigurationParserTests
                 configuration.getConfigurationItemList();
 
         ConfigurationItem[] configItemArray =
-                configItemList
-                        .toArray(new ConfigurationItem[configItemList.size()]);
+                configItemList.toArray(ConfigurationItem[]::new);
         logger.debug("Parsed TEST_CONFIG is \n{}", configuration);
 
         assertArrayEquals(TEST_CONFIG_ARRAY, configItemArray);

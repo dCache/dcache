@@ -182,7 +182,7 @@ public class       AclCell
       while( st.hasMoreTokens() ){
          result.add(dict.valueOf(st.nextToken())) ;
       }
-      return result.toArray(new Object[result.size()]);
+      return result.toArray(Object[]::new);
   }
   ///////////////////////////////////////////////////////////////////////////
   //

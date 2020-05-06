@@ -28,6 +28,6 @@ class PGroup extends PoolCore implements SelectionPoolGroup {
     }
 
     private String[] getPools() {
-        return _poolList.keySet().toArray(new String[_poolList.size()]);
+        return _poolList.keySet().toArray(String[]::new);
     }
 }

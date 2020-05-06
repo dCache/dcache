@@ -1629,7 +1629,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             doorInfo.setProtocol("NFSV4.1", "0");
             doorInfo.setOwner("");
             doorInfo.setProcess("");
-            doorInfo.setIoDoorEntries(entries.toArray(new IoDoorEntry[0]));
+            doorInfo.setIoDoorEntries(entries.toArray(IoDoorEntry[]::new));
             return isBinary ? doorInfo : doorInfo.toString();
         }
     }

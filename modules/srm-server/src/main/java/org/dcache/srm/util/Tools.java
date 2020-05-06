@@ -48,7 +48,7 @@ public class Tools {
                 }
             }
         }
-        return protList.toArray(new String[protList.size()]);
+        return protList.toArray(String[]::new);
     }
 
 }

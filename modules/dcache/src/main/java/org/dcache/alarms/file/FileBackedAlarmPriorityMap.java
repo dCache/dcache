@@ -120,7 +120,7 @@ public final class FileBackedAlarmPriorityMap
     @Override
     public String getSortedList() {
         String[] keys
-            = internalMap.keySet().toArray(new String[internalMap.size()]);
+            = internalMap.keySet().toArray(String[]::new);
         Arrays.sort(keys);
         StringBuilder list = new StringBuilder();
         for (String key: keys) {

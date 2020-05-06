@@ -357,8 +357,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         getContainerRequest().incrementGlobalEntryCounter();
                 }
                 metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList
-                        .toArray(new TMetaDataPathDetail[metadataPathDetailList
-                                .size()])));
+                        .toArray(TMetaDataPathDetail[]::new)));
         }
 
         private void getRecursiveMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
@@ -487,8 +486,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         }
                 }
                 metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList
-                        .toArray(new TMetaDataPathDetail[metadataPathDetailList
-                                .size()])));
+                        .toArray(TMetaDataPathDetail[]::new)));
         }
 
         private TPermissionMode maskToTPermissionMode(int permMask) {

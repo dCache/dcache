@@ -83,7 +83,7 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
 
     public String getInfo() {
         StringBuilder builder = new StringBuilder();
-        String[] locations = locationsToFiles.keySet().toArray(new String[0]);
+        String[] locations = locationsToFiles.keySet().toArray(String[]::new);
         Arrays.sort(locations);
 
         for (String location : locations) {

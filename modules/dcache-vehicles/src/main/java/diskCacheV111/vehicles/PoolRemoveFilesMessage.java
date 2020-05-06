@@ -11,7 +11,7 @@ public class PoolRemoveFilesMessage extends PoolMessage {
     private static final long serialVersionUID = 7090652304453652269L;
 
     public PoolRemoveFilesMessage(String poolName, Collection<String> files){
-        this(poolName, files.toArray(new String[files.size()]));
+        this(poolName, files.toArray(String[]::new));
     }
 
     public PoolRemoveFilesMessage(String poolName, String... files){

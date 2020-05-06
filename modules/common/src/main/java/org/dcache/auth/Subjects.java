@@ -540,7 +540,7 @@ public class Subjects
             appendComma(sb);
             if (credential instanceof CertPath) {
                 List<X509Certificate> certificates = (List<X509Certificate>) ((CertPath) credential).getCertificates();
-                X509Certificate[] chain = certificates.toArray(new X509Certificate[certificates.size()]);
+                X509Certificate[] chain = certificates.toArray(X509Certificate[]::new);
                 appendX509Array(sb, chain);
             } else if (credential instanceof X509Certificate[]) {
                 appendX509Array(sb, (X509Certificate[])credential);

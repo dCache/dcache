@@ -307,7 +307,7 @@ public final class CopyLocationExtractorTest extends TestBase {
                         (pool) -> poolInfoMap.getTags(pool).isEmpty()).map(
                         (i) -> poolInfoMap.getPool(i)).collect(
                         Collectors.toList());
-        offlinePools(offline.toArray(new String[0]));
+        offlinePools(offline.toArray(String[]::new));
     }
 
     private void givenFilesWithExcessLocations() {

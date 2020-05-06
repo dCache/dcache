@@ -500,7 +500,7 @@ public class FQANTest {
             fqans.add( new FQAN( voAndGroup + roleSuffix + capabilitySuffix));
         }
 
-        return fqans.toArray( new FQAN[fqans.size()]);
+        return fqans.toArray(FQAN[]::new);
     }
 
     private static boolean isIncludeable( Set<FqanElements> allWith,

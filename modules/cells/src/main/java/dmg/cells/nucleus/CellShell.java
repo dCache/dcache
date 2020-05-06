@@ -408,7 +408,7 @@ public class CellShell extends CommandInterpreter
 
    public CellTunnelInfo[] ac_getcelltunnelinfos( Args args ){
        List<CellTunnelInfo> cellTunnelInfos = _nucleus.getCellTunnelInfos();
-       return cellTunnelInfos.toArray(new CellTunnelInfo[cellTunnelInfos.size()]);
+       return cellTunnelInfos.toArray(CellTunnelInfo[]::new);
    }
 
     @Command(name = "getcellinfo", hint = "display cell information",
@@ -464,7 +464,7 @@ public class CellShell extends CommandInterpreter
                 }
             }
 
-            return infoList.toArray(new CellInfo[infoList.size()]);
+            return infoList.toArray(CellInfo[]::new);
         }
     }
 

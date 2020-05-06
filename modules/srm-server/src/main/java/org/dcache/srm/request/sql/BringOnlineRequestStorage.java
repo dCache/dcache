@@ -203,7 +203,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                         DESCRIPTION,
                         CLIENTHOST,
                         STATUSCODE,
-                        protocols.toArray(new String[protocols.size()]));
+                        protocols.toArray(String[]::new));
 
     }
 

@@ -157,7 +157,7 @@ final class TestCostModule implements CostModule {
 
     String dumpInfo() {
         StringBuilder builder = new StringBuilder();
-        String[] keys = poolInfoMap.keySet().toArray(new String[0]);
+        String[] keys = poolInfoMap.keySet().toArray(String[]::new);
         Arrays.sort(keys);
         for (String pool: keys) {
             builder.append(pool).append("\n");

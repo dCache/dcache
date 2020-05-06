@@ -32,7 +32,7 @@ public class LinkGroupAuthorizationRecord {
     }
 
     public VOInfo[]  getVOInfoArray() {
-        return voinfos.toArray(new VOInfo[voinfos.size()]);
+        return voinfos.toArray(VOInfo[]::new);
     }
 }
 

@@ -144,7 +144,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                 lastStateTransitionTime, jobHistoryArray, fileRequests,
                 retryDeltaTime, should_updateretryDeltaTime, description,
                 client_host, statusCodeString);
-        this.protocols = protocols.toArray(new String[protocols.size()]);
+        this.protocols = protocols.toArray(String[]::new);
         this.isStagingAllowed = true; // FIXME record this value in the database.
     }
 

@@ -73,8 +73,7 @@ public class SrmGetRequestTokens
                                                 description));
             tokens.addAll(srm.getLsRequestIds(user,
                                               description));
-            Long[] tokenLongs = tokens
-                    .toArray(new Long[tokens.size()]);
+            Long[] tokenLongs = tokens.toArray(Long[]::new);
             String[] tokenStrings = new String[tokenLongs.length];
             for (int i = 0; i < tokenLongs.length; ++i) {
                 tokenStrings[i] = tokenLongs[i].toString();

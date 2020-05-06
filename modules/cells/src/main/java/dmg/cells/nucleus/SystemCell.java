@@ -205,7 +205,7 @@ public class      SystemCell
         /* Now wait.
          */
         try {
-            CompletableFuture<Void>[]  futuresAsArray = futures.values().toArray(new CompletableFuture[0]);
+            CompletableFuture<Void>[]  futuresAsArray = futures.values().toArray(CompletableFuture[]::new);
             try {
                 CompletableFuture.allOf(futuresAsArray).get(softTimeout, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {

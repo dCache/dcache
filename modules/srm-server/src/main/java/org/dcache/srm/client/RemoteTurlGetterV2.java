@@ -335,7 +335,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 if(haveCompletedFileRequests){
                     String [] pendingSurlStrings =
                             pendingSurlsToIndex.keySet()
-                                    .toArray(new String[pendingSurlsToIndex.size()]);
+                                    .toArray(String[]::new);
                     expectedResponseLength= pendingSurlStrings.length;
                     URI surlArray[] = new URI[expectedResponseLength];
 

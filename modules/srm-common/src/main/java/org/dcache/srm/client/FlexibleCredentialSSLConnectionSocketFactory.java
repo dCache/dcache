@@ -195,7 +195,7 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
                 }
             }
             if (!enabledProtocols.isEmpty()) {
-                sslsock.setEnabledProtocols(enabledProtocols.toArray(new String[enabledProtocols.size()]));
+                sslsock.setEnabledProtocols(enabledProtocols.toArray(String[]::new));
             }
         }
         if (supportedCipherSuites != null) {

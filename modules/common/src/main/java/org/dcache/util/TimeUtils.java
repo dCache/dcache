@@ -225,7 +225,7 @@ public class TimeUtils
                 }
             }
 
-            TimeUnit[] sorted = units.toArray(new TimeUnit[units.size()]);
+            TimeUnit[] sorted = units.toArray(TimeUnit[]::new);
             Arrays.sort(sorted, comparator);
             return sorted;
         }

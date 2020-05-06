@@ -2470,7 +2470,7 @@ public class Configuration extends ConnectionConfiguration {
             throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
         }
 
-        surls = args.getArguments().toArray(new String[numberOfArguments]);
+        surls = args.getArguments().toArray(String[]::new);
         srmUrl = new URI(args.argv(0));
 
         //
@@ -2549,7 +2549,7 @@ public class Configuration extends ConnectionConfiguration {
                     }
                     int number_of_sources = numberOfArguments - 1;
                     from = args.getArguments().subList(0, number_of_sources).
-                            toArray(new String[number_of_sources]);
+                            toArray(String[]::new);
                     to  = args.argv(number_of_sources);
                 }
                 else {

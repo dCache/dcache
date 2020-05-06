@@ -1210,8 +1210,7 @@ public class XrootdDoor
         doorInfo.setProtocol(XROOTD_PROTOCOL_STRING, XROOTD_PROTOCOL_VERSION);
         doorInfo.setOwner("");
         doorInfo.setProcess("");
-        doorInfo.setIoDoorEntries(entries
-                .toArray(new IoDoorEntry[entries.size()]));
+        doorInfo.setIoDoorEntries(entries.toArray(IoDoorEntry[]::new));
         return args.hasOption("binary") ? doorInfo : doorInfo.toString();
     }
 

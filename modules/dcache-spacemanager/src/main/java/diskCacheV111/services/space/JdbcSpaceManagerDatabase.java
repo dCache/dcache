@@ -602,7 +602,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
 
         public Object[] getArguments()
         {
-            return arguments.toArray(new Object[arguments.size()]);
+            return arguments.toArray(Object[]::new);
         }
     }
 
@@ -848,7 +848,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                 "SELECT voGroup,voRole FROM " + LINKGROUP_VO_TABLE + " WHERE linkGroupId=?",
                 (vo, i) -> new VOInfo(vo.getString("vogroup"), vo.getString("vorole")),
                 lg.getId());
-        lg.setVOs(vos.toArray(new VOInfo[vos.size()]));
+        lg.setVOs(vos.toArray(VOInfo[]::new));
         return lg;
     }
 

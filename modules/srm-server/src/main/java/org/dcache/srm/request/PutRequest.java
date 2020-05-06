@@ -153,7 +153,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
                 jobHistoryArray, fileRequests, retryDeltaTime,
                 should_updateretryDeltaTime, description, client_host,
                 statusCodeString);
-        this.protocols = protocols.toArray(new String[protocols.size()]);
+        this.protocols = protocols.toArray(String[]::new);
     }
 
     @Nonnull

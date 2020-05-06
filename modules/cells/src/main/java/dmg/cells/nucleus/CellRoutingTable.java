@@ -338,7 +338,7 @@ public class CellRoutingTable implements Serializable
         if (dumpsterRoute != null) {
             routes.add(dumpsterRoute);
         }
-        return routes.toArray(new CellRoute[routes.size()]);
+        return routes.toArray(CellRoute[]::new);
     }
 
     public boolean hasDefaultRoute()

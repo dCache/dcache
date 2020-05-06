@@ -34,7 +34,7 @@ public class ClassicCellsTopology
     {
         Collection<CellDomainNode> nodes =
                 buildTopologyMap(_cellAddress.getCellDomainName()).values();
-        _infoMap = nodes.toArray(new CellDomainNode[nodes.size()]);
+        _infoMap = nodes.toArray(CellDomainNode[]::new);
     }
 
     @Override

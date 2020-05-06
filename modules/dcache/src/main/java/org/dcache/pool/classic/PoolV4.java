@@ -737,7 +737,7 @@ public class PoolV4
             info.setHybridInventory(_hybridCurrent);
         }
 
-        info.setInetAddresses(NetworkUtils.getLocalAddresses().toArray(new InetAddress[0]));
+        info.setInetAddresses(NetworkUtils.getLocalAddresses().toArray(InetAddress[]::new));
 
         if (_hasTapeBackend) {
             info.setLargeFileStore(Lsf.NONE);

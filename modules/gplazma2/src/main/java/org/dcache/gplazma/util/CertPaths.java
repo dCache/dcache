@@ -28,7 +28,7 @@ public class CertPaths
     {
         Preconditions.checkArgument(certPath.getType().equals(CertificateFactories.X_509));
         List<X509Certificate> certificates = (List<X509Certificate>) certPath.getCertificates();
-        return certificates.toArray(new X509Certificate[certificates.size()]);
+        return certificates.toArray(X509Certificate[]::new);
     }
 
     public static GlobusPrincipal getOriginalUserDnAsGlobusPrincipal(CertPath credential)

@@ -1353,8 +1353,7 @@ public class DcacheResourceFactory
         doorInfo.setProtocol("HTTP", "1.1");
         doorInfo.setOwner("");
         doorInfo.setProcess("");
-        doorInfo.setIoDoorEntries(transfers
-                .toArray(new IoDoorEntry[transfers.size()]));
+        doorInfo.setIoDoorEntries(transfers.toArray(IoDoorEntry[]::new));
         return args.hasOption("binary") ? doorInfo : doorInfo.toString();
     }
 

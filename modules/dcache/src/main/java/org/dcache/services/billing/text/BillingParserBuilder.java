@@ -92,7 +92,7 @@ public class BillingParserBuilder
 
         final ImmutableMultimap<Pattern, String> patterns =
                 ImmutableMultimap.copyOf(filterValues(attributesByPattern, in(this.attributes)));
-        final String[] attributes = this.attributes.toArray(new String[this.attributes.size()]);
+        final String[] attributes = this.attributes.toArray(String[]::new);
         return line -> findMatchAsArray(line, patterns, attributes);
     }
 
