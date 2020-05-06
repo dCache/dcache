@@ -68,20 +68,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 
     @Override
     public int compareTo(PnfsId pnfsId) {
-        if( pnfsId == this ) {
-            return 0;
-        }
-
-        int i;
-        for (i = 0; (i < _a.length) && (_a[i] == pnfsId._a[i]); i++) {
-        }
-        if (i == _a.length) {
-            return 0;
-        }
-        int t = _a[i] < 0 ? 256 + _a[i] : _a[i];
-        int o = pnfsId._a[i] < 0 ? 256 + pnfsId._a[i] : pnfsId._a[i];
-
-        return t < o ? -1 : 1;
+        return Arrays.compare(_a, pnfsId._a);
     }
 
     @Override
