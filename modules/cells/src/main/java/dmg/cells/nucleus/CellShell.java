@@ -2500,7 +2500,7 @@ public class CellShell extends CommandInterpreter
         String path = "/";
 
         @Override
-        public String call() throws CommandException
+        public String call() throws CommandException, IllegalArgumentException
         {
             try {
                 return String.join("\n", _nucleus.getCuratorFramework().getChildren().forPath(path));
@@ -2519,7 +2519,7 @@ public class CellShell extends CommandInterpreter
         String path;
 
         @Override
-        public String call() throws CommandException
+        public String call() throws CommandException, IllegalArgumentException
         {
             try {
                 return new String(_nucleus.getCuratorFramework().getData().forPath(path), StandardCharsets.UTF_8);
