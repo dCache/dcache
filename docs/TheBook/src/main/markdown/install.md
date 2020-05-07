@@ -42,10 +42,8 @@ and Ubuntu), but the instructions and responses may be slightly
 different.
 
 The minimum requirement is a single computer running the latest
-CentOS-7 Linux distribution, with the following packages installed:
-
-  * java-11-openjdk-headless
-  * httpd-tools
+CentOS-7 Linux distribution with the httpd-tools package installed.
+The general system requirements are listed is the respective Preface section [Minimum System Requirements](https://github.com/dCache/dcache/blob/master/docs/TheBook/src/main/markdown/preface.md#minimum-system-requirements).
 
 This chapter also describes how to get a server-side certificate from
 the Let's Encrypt service.  Obtaining a Let's Encrypt certificate
