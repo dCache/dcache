@@ -78,9 +78,15 @@ based file/directory authorization.
 
 For a minimal test installation:
 
-- Hardware: contemporary CPU, 1 GiB of RAM , 500 MiB free hard disk space
+- Hardware:
+  - Contemporary CPU
+  - At least 1 GiB of RAM
+  - At least 500 MiB free disk space
 
-- Software: OpenJDK 11, Postgres SQL Server 9.5 or later, ZooKeeper version 3.5 (in case of a standalone ZooKeeper installation)
+- Software:
+  - OpenJDK 11
+  - Postgres SQL Server 9.5 or later
+  - ZooKeeper version 3.5 (in case of a standalone ZooKeeper installation)
 
 For high performance production scenarios, the hardware requirements greatly
 differ, which makes it impossible to provide such parameters here. However, if
