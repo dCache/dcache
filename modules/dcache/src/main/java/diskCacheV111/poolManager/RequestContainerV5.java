@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.Serializable;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -240,7 +241,7 @@ public class RequestContainerV5
         _poolStub = poolStub;
     }
 
-    public void messageArrived(CellMessage envelope, Object message)
+    public void messageArrived(CellMessage envelope, Serializable message)
     {
         UOID uoid = envelope.getLastUOID();
         PoolRequestHandler handler;
