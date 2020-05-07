@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -107,11 +107,8 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             try {
                 try {
                     if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
-                        handle.addChecksums(Optional.ofNullable(mover.getExpectedChecksums())
-                                                    .orElse(Collections.emptySet()));
-                        _checksumModule.enforcePostTransferPolicy(handle,
-                                                                  Optional.ofNullable(mover.getActualChecksums())
-                                                                          .orElse(Collections.emptySet()));
+                        handle.addChecksums(mover.getExpectedChecksums());
+                        _checksumModule.enforcePostTransferPolicy(handle,mover.getActualChecksums());
                     }
                     handle.commit();
                 } finally {
