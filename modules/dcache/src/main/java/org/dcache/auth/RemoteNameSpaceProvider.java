@@ -249,4 +249,28 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
         return _pnfs.request(new PnfsCancelUpload(subject, Restrictions.none(),
                 uploadPath, path, requested, explanation)).getDeletedFiles();
     }
+
+    public byte[] readExtendedAttribute(Subject subject, FsPath path, String name)
+            throws CacheException
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void writeExtendedAttribute(Subject subject, FsPath path, String name,
+            byte[] value, SetExtendedAttributeMode mode) throws CacheException
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public Set<String> listExtendedAttributes(Subject subject, FsPath path)
+            throws CacheException
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void removeExtendedAttribute(Subject subject, FsPath path, String name)
+            throws CacheException
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

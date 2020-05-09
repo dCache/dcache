@@ -11,7 +11,10 @@ import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NoAttributeCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 
@@ -56,6 +59,32 @@ public interface NameSpaceProvider
         {
             return name;
         }
+    }
+
+    /**
+     * The modes for setting an extended attribute.  The semantics are based
+     * on NFSv4 extended attributes (see RFC 8276).
+     */
+    public enum SetExtendedAttributeMode
+    {
+        /**
+         * Create a new extended attribute.  Fails with
+         * AttributeExistsCacheException if the attribute already exists.
+         */
+        CREATE,
+
+        /**
+         * Replace an existing extended attribute.  Fails with
+         * NoAttributeCacheException if the attribute does not already
+         * exist.
+         */
+        REPLACE,
+
+        /**
+         * Create a new extended attribute or replace the value, if the attribute
+         * exists.
+         */
+        EITHER
     }
 
     /**
@@ -328,4 +357,65 @@ public interface NameSpaceProvider
      */
     Collection<FileAttributes> cancelUpload(Subject subject, FsPath uploadPath, FsPath path,
             Set<FileAttribute> attr, String explanation) throws CacheException;
+
+    /**
+     * Obtain the value of an extended attribute.
+     * @param subject The user making the request.
+     * @param path The file from which the extended attribute is read.
+     * @param name The ID of the extended attribute.
+     * @return The contents of this extended attribute.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to read
+     * this attribute.
+     * @throws CacheException a generic failure in reading the attribute.
+     */
+    byte[] readExtendedAttribute(Subject subject, FsPath path, String name)
+            throws CacheException;
+
+    /**
+     * Create or modify the value of an extended attribute.
+     * @param subject The user making the request.
+     * @param path The file for which the extended attribute is created or
+     * modified.
+     * @param name The ID of the extended attribute.
+     * @param value The value of the attribute if the operation is successful.
+     * @param mode How the attribute value is to be updated.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to modify
+     * this attribute.
+     * @throws AttributeExistsCacheException if mode is
+     * SetExtendedAttributeMode.CREATE and the attribute exists.
+     * @throws NoAttributeCacheException if mode is
+     * SetExtendedAttributeMode.MODIFY and the attribute does not exist.
+     * @throws CacheException a generic failure in modify the attribute.
+     */
+    void writeExtendedAttribute(Subject subject, FsPath path, String name,
+            byte[] value, SetExtendedAttributeMode mode)
+            throws CacheException;
+
+    /**
+     * List all currently existing extended attributes for a file.
+     * @param subject The user making the request.
+     * @param path The file from which all extended attribute are listed.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     * list attributes of this file.
+     * @throws CacheException a generic failure in listing the attributes.
+     */
+    Set<String> listExtendedAttributes(Subject subject, FsPath path)
+            throws CacheException;
+
+    /**
+     * Remove an extended attribute from a file.
+     * @param subject The user making the request.
+     * @param path The file from which the extended attribute is deleted.
+     * @param name The extended attribute to remove.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     * remove the attribute.
+     * @throws NoAttributeCacheException if the attribute does not exist.
+     * @throws CacheException a generic failure in removing the attribute.
+     */
+    void removeExtendedAttribute(Subject subject, FsPath path, String name)
+            throws CacheException;
 }

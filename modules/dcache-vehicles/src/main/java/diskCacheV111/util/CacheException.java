@@ -137,6 +137,12 @@ public class CacheException extends Exception
     /** Mover was not found **/
     public static final int MOVER_NOT_FOUND = 10028;
 
+    /** Tried to create attribute but it already exists. **/
+    public static final int ATTRIBUTE_EXISTS = 10029;
+
+    /** Tried to modify attribute but it does not exists. **/
+    public static final int NO_ATTRIBUTE = 10030;
+
     /**
      * default error code. <b>It's recommended to use more specific error
      * codes</b>

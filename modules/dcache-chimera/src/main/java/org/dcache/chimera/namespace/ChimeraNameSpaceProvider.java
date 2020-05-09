@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +38,7 @@ import java.util.stream.Stream;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.AttributeExistsCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -45,6 +47,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.LockedCacheException;
+import diskCacheV111.util.NoAttributeCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -93,6 +96,8 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 
 import org.dcache.chimera.FileState;
+import org.dcache.chimera.NoXdataChimeraException;
+import org.dcache.util.Exceptions;
 
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
@@ -1620,4 +1625,137 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    public byte[] readExtendedAttribute(Subject subject, FsPath path, String name)
+            throws CacheException
+    {
+        try {
+            ExtendedInode target = pathToInode(subject, path.toString());
+
+            if (!Subjects.isRoot(subject)) {
+                FileAttributes attributes = getFileAttributesForPermissionHandler(target);
+                if (target.isDirectory()) {
+                    if (_permissionHandler.canListDir(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                } else {
+                    if (_permissionHandler.canReadFile(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                }
+            }
+
+            return _fs.getXattr(target, name);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file " + path);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to list extended attributes: "
+                    + Exceptions.messageOrClassName(e), e);
+        }
+    }
+
+    public void writeExtendedAttribute(Subject subject, FsPath path, String name,
+            byte[] value, SetExtendedAttributeMode mode) throws CacheException
+    {
+        try {
+            ExtendedInode target = pathToInode(subject, path.toString());
+
+            if (!Subjects.isRoot(subject)) {
+                FileAttributes attributes = getFileAttributesForPermissionHandler(target);
+                if (target.isDirectory()) {
+                    if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                } else {
+                    if (_permissionHandler.canWriteFile(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                }
+            }
+
+            FileSystemProvider.SetXattrMode m;
+            switch (mode) {
+            case CREATE:
+                m = FileSystemProvider.SetXattrMode.CREATE;
+                break;
+            case REPLACE:
+                m = FileSystemProvider.SetXattrMode.REPLACE;
+                break;
+            case EITHER:
+                m = FileSystemProvider.SetXattrMode.EITHER;
+                break;
+            default:
+                throw new RuntimeException();
+            }
+
+            _fs.setXattr(target, name, value, m);
+        } catch (NoXdataChimeraException e) {
+            throw new NoAttributeCacheException(e.getMessage(), e);
+        } catch (FileExistsChimeraFsException e) {
+            throw new AttributeExistsCacheException(e.getMessage(), e);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file " + path);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to list extended attributes: "
+                    + Exceptions.messageOrClassName(e), e);
+        }
+    }
+
+    public Set<String> listExtendedAttributes(Subject subject, FsPath path)
+            throws CacheException
+    {
+        try {
+            ExtendedInode target = pathToInode(subject, path.toString());
+
+            if (!Subjects.isRoot(subject)) {
+                FileAttributes attributes = getFileAttributesForPermissionHandler(target);
+                if (target.isDirectory()) {
+                    if (_permissionHandler.canListDir(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                } else {
+                    if (_permissionHandler.canReadFile(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                }
+            }
+
+            return _fs.listXattrs(target);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file " + path);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to list extended attributes: "
+                    + Exceptions.messageOrClassName(e), e);
+        }
+    }
+
+    public void removeExtendedAttribute(Subject subject, FsPath path, String name)
+            throws CacheException
+    {
+        try {
+            ExtendedInode target = pathToInode(subject, path.toString());
+
+            if (!Subjects.isRoot(subject)) {
+                FileAttributes attributes = getFileAttributesForPermissionHandler(target);
+                if (target.isDirectory()) {
+                    if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                } else {
+                    if (_permissionHandler.canWriteFile(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                }
+            }
+
+            _fs.removeXattr(target, name);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file " + path);
+        } catch (NoXdataChimeraException e) {
+            throw new NoAttributeCacheException("No attribute " + name + " for file " + path,
+                    e);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to list extended attributes: "
+                    + Exceptions.messageOrClassName(e), e);
+        }
+    }
 }

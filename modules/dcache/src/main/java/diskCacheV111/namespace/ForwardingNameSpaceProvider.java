@@ -201,4 +201,32 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider
     {
         return delegate().cancelUpload(subject, uploadPath, path, attr, explanation);
     }
+
+    @Override
+    public byte[] readExtendedAttribute(Subject subject, FsPath path, String name)
+            throws CacheException
+    {
+        return delegate().readExtendedAttribute(subject, path, name);
+    }
+
+    @Override
+    public void writeExtendedAttribute(Subject subject, FsPath path, String name,
+            byte[] value, SetExtendedAttributeMode mode) throws CacheException
+    {
+        delegate().writeExtendedAttribute(subject, path, name, value, mode);
+    }
+
+    @Override
+    public Set<String> listExtendedAttributes(Subject subject, FsPath path)
+            throws CacheException
+    {
+        return delegate().listExtendedAttributes(subject, path);
+    }
+
+    @Override
+    public void removeExtendedAttribute(Subject subject, FsPath path, String name)
+            throws CacheException
+    {
+        delegate().removeExtendedAttribute(subject, path, name);
+    }
 }
