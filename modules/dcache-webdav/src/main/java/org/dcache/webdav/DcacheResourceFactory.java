@@ -50,6 +50,7 @@ import java.net.UnknownHostException;
 import java.security.AccessController;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
@@ -84,6 +85,8 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
+import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage.Mode;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -1478,6 +1481,35 @@ public class DcacheResourceFactory
         return lookupWriteToken(path)
                 .flatMap(this::lookupSpaceById)
                 .isPresent();
+    }
+
+    Set<String> listExtendedAttributes(FsPath path) throws CacheException
+    {
+        return _pnfs.listExtendedAttributes(path);
+    }
+
+    byte[] readExtendedAttribute(FsPath path, String name) throws CacheException
+    {
+        return _pnfs.readExtendedAttribute(path, name);
+    }
+
+    Map<String,byte[]> readExtendedAttributes(FsPath path, Collection<String> names)
+            throws CacheException
+    {
+        PnfsReadExtendedAttributesMessage message =
+                new PnfsReadExtendedAttributesMessage(path.toString());
+        names.forEach(message::addName);
+        return _pnfs.request(message).getAllValues();
+    }
+
+    void writeExtendedAttribute(FsPath path, String name, byte[] value) throws CacheException
+    {
+        _pnfs.writeExtendedAttribute(path, name, value, Mode.EITHER);
+    }
+
+    void removeExtendedAttribute(FsPath path, String name) throws CacheException
+    {
+        _pnfs.removeExtendedAttribute(path, name);
     }
 
     /**

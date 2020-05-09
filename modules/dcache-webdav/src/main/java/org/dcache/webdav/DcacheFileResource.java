@@ -4,9 +4,11 @@ import com.google.common.collect.ImmutableMap;
 import io.milton.http.Auth;
 import io.milton.http.Range;
 import io.milton.http.Request;
+import io.milton.http.Response;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.property.PropertySource;
 import io.milton.property.PropertySource.PropertyMetaData;
 import io.milton.property.PropertySource.PropertySetException;
 import io.milton.resource.DeletableResource;
@@ -15,6 +17,8 @@ import io.milton.resource.MultiNamespaceCustomPropertyResource;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import org.eclipse.jetty.io.EofException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.namespace.QName;
 
@@ -23,6 +27,8 @@ import java.io.OutputStream;
 import java.net.FileNameMap;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +57,8 @@ public class DcacheFileResource
     implements GetableResource, DeletableResource,
     MultiNamespaceCustomPropertyResource
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DcacheFileResource.class);
+
     private static final FileNameMap MIME_TYPE_MAP =
         URLConnection.getFileNameMap();
 
@@ -206,16 +214,22 @@ public class DcacheFileResource
     @Override
     public Object getProperty(QName qname)
     {
-        switch (qname.getNamespaceURI()) {
-        case DCACHE_NAMESPACE_URI:
-            return getDcacheProperty(qname.getLocalPart());
-        case SRM_NAMESPACE_URI:
-            return getSrmProperty(qname.getLocalPart());
+        Object value = super.getProperty(qname);
+
+        if (value != null) {
+            return value;
         }
 
-        // Milton filters out unknown properties by checking with the
-        // PropertyMetaData, so if we get here then it's a bug.
-        throw new RuntimeException("unknown property " + qname);
+        String name = qname.getLocalPart();
+
+        switch (qname.getNamespaceURI()) {
+        case DCACHE_NAMESPACE_URI:
+            return getDcacheProperty(name);
+        case SRM_NAMESPACE_URI:
+            return getSrmProperty(name);
+        default:
+            return null;
+        }
     }
 
     private Object getDcacheProperty(String localPart)
@@ -244,30 +258,31 @@ public class DcacheFileResource
     }
 
     @Override
-    public void setProperty(QName qname, Object o) throws PropertySetException,
-            NotAuthorizedException
-    {
-        // Handle any updates here.
-
-        // We should not see any read-only or unknown properties as Milton
-        // discovers them from PropertyMetaData and filters out any attempt by
-        // end-users.
-        throw new RuntimeException("Attempt to update " +
-                (PROPERTY_METADATA.containsKey(qname) ? "read-only" : "unknown") +
-                "property " + qname);
-    }
-
-    @Override
     public PropertyMetaData getPropertyMetaData(QName qname)
     {
+        PropertyMetaData metadata = super.getPropertyMetaData(qname);
+
         // Milton accepts null and PropertyMetaData.UNKNOWN to mean the
         // property is unknown.
-        return PROPERTY_METADATA.get(qname);
+        if (metadata == null || metadata.isUnknown()) {
+            metadata = PROPERTY_METADATA.get(qname);
+        }
+
+        return metadata == null ? PropertyMetaData.UNKNOWN : metadata;
     }
 
     @Override
     public List<QName> getAllPropertyNames()
     {
-        return PROPERTY_METADATA.keySet().asList();
+        List<QName> genericNames = super.getAllPropertyNames();
+
+        if (genericNames.isEmpty()) {
+            return new ArrayList<>(PROPERTY_METADATA.keySet());
+        }
+
+        List<QName> names = new ArrayList<>(PROPERTY_METADATA.size() + genericNames.size());
+        names.addAll(PROPERTY_METADATA.keySet());
+        names.addAll(genericNames);
+        return names;
     }
 }

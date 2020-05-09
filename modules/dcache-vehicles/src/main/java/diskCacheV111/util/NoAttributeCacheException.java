@@ -23,6 +23,11 @@ package diskCacheV111.util;
  */
 public class NoAttributeCacheException extends CacheException
 {
+    public NoAttributeCacheException(String message)
+    {
+        this(message, null);
+    }
+
     public NoAttributeCacheException(String message, Throwable cause)
     {
         super(NO_ATTRIBUTE, message, cause);

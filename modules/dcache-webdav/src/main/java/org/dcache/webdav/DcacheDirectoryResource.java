@@ -289,6 +289,12 @@ public class DcacheDirectoryResource
     @Override
     public Object getProperty(QName name)
     {
+        Object value = super.getProperty(name);
+
+        if (value != null) {
+            return value;
+        }
+
         try {
             if (name.equals(QUOTA_AVAILABLE)) {
                 return _factory.spaceForPath(_path).getAvailableSpaceInBytes();
@@ -306,25 +312,35 @@ public class DcacheDirectoryResource
     }
 
     @Override
-    public void setProperty(QName name, Object value) throws PropertySetException, NotAuthorizedException
-    {
-        /* All properties are read-only, so any invocation is a Milton bug. */
-        throw new RuntimeException("Attempt to update property " + name);
-    }
-
-    @Override
     public PropertyMetaData getPropertyMetaData(QName name)
     {
-        return QUOTA_PROPERTIES.contains(name) && _factory.isSpaceManaged(_path)
-                ? READONLY_LONG
-                : PropertyMetaData.UNKNOWN;
+        PropertyMetaData metadata = super.getPropertyMetaData(name);
+
+        if (!_factory.isSpaceManaged(_path)) {
+            return metadata;
+        }
+
+        // Milton accepts null and PropertyMetaData.UNKNOWN to mean the
+        // property is unknown.
+        if ((metadata == null || metadata.isUnknown()) && QUOTA_PROPERTIES.contains(name)) {
+            metadata = READONLY_LONG;
+        }
+
+        return metadata;
     }
 
     @Override
     public List<QName> getAllPropertyNames()
     {
-        return _factory.isSpaceManaged(_path)
-                ? new ArrayList(QUOTA_PROPERTIES)
-                : Collections.emptyList();
+        List<QName> genericNames = super.getAllPropertyNames();
+
+        if (!_factory.isSpaceManaged(_path)) {
+            return genericNames;
+        }
+
+        List<QName> names = new ArrayList<>(QUOTA_PROPERTIES.size() + genericNames.size());
+        names.addAll(QUOTA_PROPERTIES);
+        names.addAll(genericNames);
+        return names;
     }
 }
