@@ -61,9 +61,13 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
+import diskCacheV111.vehicles.PnfsListExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
+import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
+import diskCacheV111.vehicles.PnfsRemoveExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
+import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
@@ -217,6 +221,10 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsCreateUploadPath.class);
         _gauges.addGauge(PnfsCommitUpload.class);
         _gauges.addGauge(PnfsCancelUpload.class);
+        _gauges.addGauge(PnfsListExtendedAttributesMessage.class);
+        _gauges.addGauge(PnfsReadExtendedAttributesMessage.class);
+        _gauges.addGauge(PnfsWriteExtendedAttributesMessage.class);
+        _gauges.addGauge(PnfsRemoveExtendedAttributesMessage.class);
     }
 
     public PnfsManagerV3()
@@ -1759,6 +1767,14 @@ public class PnfsManagerV3
             setFileAttributes((PnfsSetFileAttributes) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsRemoveChecksumMessage) {
             removeChecksum((PnfsRemoveChecksumMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsListExtendedAttributesMessage) {
+            listExtendedAttributes((PnfsListExtendedAttributesMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsReadExtendedAttributesMessage) {
+            readExtendedAttributes((PnfsReadExtendedAttributesMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsWriteExtendedAttributesMessage) {
+            writeExtendedAttributes((PnfsWriteExtendedAttributesMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsRemoveExtendedAttributesMessage) {
+            removeExtendedAttributes((PnfsRemoveExtendedAttributesMessage) pnfsMessage);
         } else {
             _log.warn("Unexpected message class [{}] from source [{}]",
                       pnfsMessage.getClass(), message.getSourcePath());
@@ -2027,6 +2043,119 @@ public class PnfsManagerV3
         }catch(RuntimeException e) {
             _log.error("Error while updating file attributes: " + e.getMessage(), e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
+    }
+
+    private void listExtendedAttributes(PnfsListExtendedAttributesMessage message)
+    {
+        try {
+            if (message.getFsPath() == null) {
+                throw new CacheException("PNFS-ID based xattr listing is not supported");
+            }
+
+            populatePnfsId(message);
+            checkMask(message);
+            checkRestriction(message, READ_METADATA);
+
+            Set<String> names =_nameSpaceProvider.listExtendedAttributes(message.getSubject(),
+                    message.getFsPath());
+
+            message.setNames(names);
+            message.setSucceeded();
+        } catch (CacheException e) {
+            message.setFailed(e.getRc(), e);
+        }
+    }
+
+    private void readExtendedAttributes(PnfsReadExtendedAttributesMessage message)
+    {
+        try {
+            if (message.getFsPath() == null) {
+                throw new CacheException("PNFS-ID based xattr reading is not supported");
+            }
+
+            populatePnfsId(message);
+            checkMask(message);
+            checkRestriction(message, READ_METADATA);
+
+            FsPath path = message.getFsPath();
+            for (String name : message.getAllNames()) {
+                byte[] value = _nameSpaceProvider.readExtendedAttribute(message.getSubject(), path, name);
+                message.putValue(name, value);
+            }
+
+            message.clearNames();
+            message.setSucceeded();
+        } catch (CacheException e) {
+            message.clear();
+            message.setFailed(e.getRc(), e);
+        }
+    }
+
+    private void writeExtendedAttributes(PnfsWriteExtendedAttributesMessage message)
+    {
+        try {
+            if (message.getFsPath() == null) {
+                throw new CacheException("PNFS-ID based xattr writing is not supported");
+            }
+
+            populatePnfsId(message);
+            checkMask(message);
+            checkRestriction(message, UPDATE_METADATA);
+
+            FsPath path = message.getFsPath();
+
+            NameSpaceProvider.SetExtendedAttributeMode m;
+            switch (message.getMode()) {
+            case CREATE:
+                m = NameSpaceProvider.SetExtendedAttributeMode.CREATE;
+                break;
+            case MODIFY:
+                m = NameSpaceProvider.SetExtendedAttributeMode.REPLACE;
+                break;
+            case EITHER:
+                m = NameSpaceProvider.SetExtendedAttributeMode.EITHER;
+                break;
+            default:
+                throw new RuntimeException("Unknown mode " + message.getMode());
+            }
+
+            for (Map.Entry<String,byte[]> modification : message.getAllValues().entrySet()) {
+                _nameSpaceProvider.writeExtendedAttribute(message.getSubject(), path,
+                        modification.getKey(), modification.getValue(), m);
+            }
+
+            message.clearValues();
+            message.setSucceeded();
+        } catch (CacheException e) {
+            message.clearValues();
+            message.setFailed(e.getRc(), e);
+        }
+    }
+
+    private void removeExtendedAttributes(PnfsRemoveExtendedAttributesMessage message)
+    {
+        try {
+            if (message.getFsPath() == null) {
+                throw new CacheException("PNFS-ID based xattr removal is not supported");
+            }
+
+            populatePnfsId(message);
+            checkMask(message);
+            checkRestriction(message, UPDATE_METADATA);
+
+            FsPath path = message.getFsPath();
+
+            for (String name : message.getAllNames()) {
+                _nameSpaceProvider.removeExtendedAttribute(message.getSubject(),
+                        path, name);
+            }
+
+            message.clearNames();
+            message.setSucceeded();
+        } catch (CacheException e) {
+            message.clearNames();
+            message.setFailed(e.getRc(), e);
         }
     }
 
