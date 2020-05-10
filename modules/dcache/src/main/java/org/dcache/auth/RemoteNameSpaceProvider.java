@@ -5,6 +5,7 @@ import com.google.common.collect.Range;
 import javax.security.auth.Subject;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -22,6 +23,10 @@ import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsFlagMessage;
+import diskCacheV111.vehicles.PnfsListExtendedAttributesMessage;
+import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
+import diskCacheV111.vehicles.PnfsRemoveExtendedAttributesMessage;
+import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
 
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.namespace.CreateOption;
@@ -253,24 +258,57 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     public byte[] readExtendedAttribute(Subject subject, FsPath path, String name)
             throws CacheException
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        PnfsReadExtendedAttributesMessage message =
+                new PnfsReadExtendedAttributesMessage(path.toString());
+        message.addName(name);
+        message.setSubject(subject);
+        message.setRestriction(Restrictions.none());
+        return _pnfs.request(message).getAllValues().get(name);
     }
 
     public void writeExtendedAttribute(Subject subject, FsPath path, String name,
             byte[] value, SetExtendedAttributeMode mode) throws CacheException
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        PnfsWriteExtendedAttributesMessage.Mode m;
+        switch (mode) {
+        case CREATE:
+            m = PnfsWriteExtendedAttributesMessage.Mode.CREATE;
+            break;
+        case REPLACE:
+            m = PnfsWriteExtendedAttributesMessage.Mode.MODIFY;
+            break;
+        case EITHER:
+            m = PnfsWriteExtendedAttributesMessage.Mode.EITHER;
+            break;
+        default:
+            throw new RuntimeException("Unknown mode " + mode);
+        }
+        PnfsWriteExtendedAttributesMessage message =
+                new PnfsWriteExtendedAttributesMessage(path.toString(), m);
+        message.setSubject(subject);
+        message.setRestriction(Restrictions.none());
+        message.putValue(name, value);
+        _pnfs.request(message);
     }
 
     public Set<String> listExtendedAttributes(Subject subject, FsPath path)
             throws CacheException
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        PnfsListExtendedAttributesMessage message =
+                new PnfsListExtendedAttributesMessage(path.toString());
+        message.setSubject(subject);
+        message.setRestriction(Restrictions.none());
+        return _pnfs.request(message).getNames();
     }
 
     public void removeExtendedAttribute(Subject subject, FsPath path, String name)
             throws CacheException
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        PnfsRemoveExtendedAttributesMessage message =
+                new PnfsRemoveExtendedAttributesMessage(path.toString());
+        message.addName(name);
+        message.setSubject(subject);
+        message.setRestriction(Restrictions.none());
+        _pnfs.request(message);
     }
 }
