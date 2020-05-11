@@ -8,6 +8,7 @@ Chapter 5. WebDAV
     + [Redirection](#redirection)
     + [Checksums](#checksums)
 + [Directory operations](#directory-operations)
++ [Properties](#properties)
 + [Requesting macaroons](#requesting-macaroons)
     + [Inspecting a macaroon](#inspecting-a-macaroon)
     + [Adding extra caveats](#adding-extra-caveats)
@@ -441,7 +442,7 @@ its checksum.
 curl -L -D my-data.headers -H 'Want-Digest: adler32' -o my-data http://dcache.example.org/public/my-data
 |  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
 |100 60.3M  100 60.3M    0     0   820k      0  0:01:15  0:01:15 --:--:--  731k
-grep Digest: /tmp/headers 
+grep Digest: /tmp/headers
 |Digest: adler32=5ae07809
 ```
 
@@ -659,6 +660,309 @@ that are also authorised from this bearer token.  This is particularly
 useful when used with macaroons, as it provides an interactive view of
 dCache powered by macaroons.
 
+
+## Properties
+
+Properties are a standard feature of the WebDAV protocol.  They are
+arbitrary key-value pairs that describe files and directories in the
+WebDAV server.
+
+Property names are XML fully qualified names, which are also known as
+qnames.  Conceptually, a qname has two logical parts: a namespace and
+a local name.  The namespace groups together related properties and is
+identified by a URI.  The local name is something that identifies the
+specific WebDAV property within the namespace, the name must be a
+valid XML element name.  When writing a qname, a prefix is used to
+link the XML elements with their corresponding namespace.  For
+example, a WebDAV property from the
+`http://example.org/webdav-properties` namespace with the local name
+of `property-1` may be written:
+
+```xml
+<wd:property-1 xmlns:wd="http://example.org/webdav-properties"/>
+```
+
+This is using the prefix `wd` as a short-hand representation of the
+namespace.  The specific choice of prefix (`wd` in this example) is
+arbitrary: any valid value is allowed, provided it does not clash with
+some other namespace prefix in the document.
+
+There are two kinds of WebDAV properties: dead and live.  Dead
+properties are one where the values come exclusively from the client;
+the WebDAV server stores dead properties but does not act on them.
+Live properties are properties that have some significance to the
+WebDAV server; for example, coming from the target file's data, the
+target directory's content, or from some internal metadata of the
+target.
+
+dCache does not support dead properties.  Attempts to create such
+properties will fail.
+
+dCache supports live WebDAV properties that provide information about
+the files stored in dCache and the directories within which those
+files are organised.  The available read-only live properties include
+the file's checksum and SRM locality.  dCache also supports mutable
+live properties, such as file and directory extended attributes.
+
+In this section, examples are given to show WebDAV properties in
+action.  These examples are low-level, using the `curl` command and
+exposing details of the WebDAV protocol.  We recommend you use a
+dedicated WebDAV client that has built-in support for properties as
+this should make working with properties easier.
+
+### Obtaining the current value of specific properties
+
+A WebDAV client makes a `PROPFIND` request to discover the current
+value of one or more properties.  The client sends an XML entity when
+making this request, listing which properties the server should
+provide.
+
+The following request entity requests two properties: the SRM
+`FileLocality` property and the DAV standard `creationdate` property.
+
+```xml
+<?xml version="1.0"?>
+<propfind xmlns="DAV:"
+          xmlns:srm="http://srm.lbl.gov/StorageResourceManager">
+    <prop>
+        <srm:FileLocality/>
+        <creationdate/>
+    </prop>
+</propfind>
+```
+
+Here is an example curl command that requests these two property
+values, along with dCache's response with the current value of these
+two properties.
+
+```console-user
+echo '<?xml version="1.0"?><propfind xmlns="DAV:"><prop><srm:FileLocality xmlns:srm="http://srm.lbl.gov/StorageResourceManager"/><creationdate/></prop></propfind>' | curl -s -T- -X PROPFIND https://dcache.example.org/public/test-1 | xmllint -format -
+|<?xml version="1.0" encoding="utf-8"?>
+|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager" xmlns:d="DAV:">
+|  <d:response>
+|    <d:href>/public/test-1</d:href>
+|    <d:propstat>
+|      <d:prop>
+|        <ns1:FileLocality>NEARLINE</ns1:FileLocality>
+|        <d:creationdate>2020-05-11T12:13:17Z</d:creationdate>
+|      </d:prop>
+|      <d:status>HTTP/1.1 200 OK</d:status>
+|    </d:propstat>
+|  </d:response>
+|</d:multistatus>
+```
+
+### Obtaining all property values
+
+The special term `<allprop/>` tells the WebDAV server to return all
+properties for a specific file or directory.  An `<allprop/>` request
+entity looks like:
+
+```xml
+<?xml version="1.0"?>
+<propfind xmlns="DAV:">
+    <allprop/>
+</propfind>
+```
+
+The following example shows curl making an `<allprop/>` request
+against the file `/public/test-1`, along with the response from
+dCache.
+
+```console-user
+echo '<?xml version="1.0"?><propfind xmlns="DAV:"><allprop/></propfind>' | curl -s -T- -X PROPFIND https://dcache.example.org/public/test-1 | xmllint -format -
+|<?xml version="1.0" encoding="utf-8"?>
+|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:ns2="http://www.dcache.org/2013/webdav" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager" xmlns:d="DAV:">
+|  <d:response>
+|    <d:href>/public/test-1</d:href>
+|    <d:propstat>
+|      <d:prop>
+|        <ns1:AccessLatency>ONLINE</ns1:AccessLatency>
+|        <ns1:RetentionPolicy>REPLICA</ns1:RetentionPolicy>
+|        <ns2:Checksums>adler32=af543afc</ns2:Checksums>
+|        <ns1:FileLocality>NEARLINE</ns1:FileLocality>
+|        <d:getcreated>2020-05-11T12:13:17Z</d:getcreated>
+|        <d:creationdate>2020-05-11T12:13:17Z</d:creationdate>
+|        <d:getlastmodified>Mon, 11 May 2020 12:13:17 GMT</d:getlastmodified>
+|        <d:getetag>"0000FC2FCCBC9B2B43D08C672D1FE83AA0E8_61297885"</d:getetag>
+|        <d:iscollection>FALSE</d:iscollection>
+|        <d:displayname>test-1</d:displayname>
+|        <d:isreadonly>TRUE</d:isreadonly>
+|        <d:name>test-1</d:name>
+|        <d:supported-report-set/>
+|        <d:getcontentlength>1099016</d:getcontentlength>
+|      </d:prop>
+|      <d:status>HTTP/1.1 200 OK</d:status>
+|    </d:propstat>
+|    <d:propstat>
+|      <d:prop>
+|        <d:getcontenttype/>
+|        <d:resourcetype/>
+|      </d:prop>
+|      <d:status>HTTP/1.1 404 Not Found</d:status>
+|    </d:propstat>
+|  </d:response>
+|</d:multistatus>
+```
+
+Although the `<allprop/>` request is convenient, providing all
+information about the targeted file or directory can also include
+properties that are computationally expensive to calculate.  Such
+calculations are a waste of resources if these property values are not
+of interest.  Therefore it is strongly recommended that clients should
+avoid `<allprop/>` requests whenever possible.
+
+### Updating a property value
+
+The `PROPPATCH` verb may be used to update an existing WebDAV
+property.  The property is automatically created if it does not
+already exist.
+
+Creating and updating properties are only supported in dCache in
+connection with extended attributes, which are described in more
+detail later.
+
+The following XML shows an example entity sent with a PROPPATCH
+request to create or modify two extended attributes: `attribute-1` and
+`attribute-2`.
+
+```xml
+<?xml version="1.0"?>
+<propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr">
+    <set>
+        <prop>
+	    <xa:attribute-1>new value 1</xa:attribute-1>
+	    <xa:attribute-2>new value 2</xa:attribute-2>
+	</prop>
+    </set>
+</propertyupdate>
+```
+
+The following command shows a complete example where a `curl` command
+updates these two properties.
+
+```console-user
+echo '<?xml version="1.0"?><propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr"><set><prop><xa:attribute-1>new value 1</xa:attribute-1><xa:attribute-2>new value 2</xa:attribute-2></prop></set></propertyupdate>' | curl -s -T- -X PROPPATCH https://dcache.example.org/public/test-1 | xmllint -format -
+|<?xml version="1.0" encoding="utf-8"?>
+|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:d="DAV:">
+|  <d:response>
+|    <d:href>/public/test-1</d:href>
+|    <d:propstat>
+|      <d:prop>
+|        <attribute-1/>
+|        <attribute-2/>
+|      </d:prop>
+|      <d:status>HTTP/1.1 404 Not Found</d:status>
+|    </d:propstat>
+|  </d:response>
+|</d:multistatus>
+```
+
+### Removing a property.
+
+The `PROPPATCH` verb is also used to remove a property from a target
+file or directory.  It is not necessary to verify whether the property
+exists; removing a non-existing property does not result in an error.
+
+As with updating properties, removing properties are only supported in
+dCache in connection with extended attributes.
+
+The following example shows the request entity when removing two
+properties.
+
+```xml
+<?xml version="1.0"?>
+<propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr">
+    <remove>
+        <prop>
+	    <xa:attribute-1/>
+	    <xa:attribute-2/>
+	</prop>
+    </remove>
+</propertyupdate>
+```
+
+Here is a complete example showing the removal of these two
+properties.
+
+```console-user
+echo '<?xml version="1.0"?><propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr"><remove><prop><xa:attribute-1/><xa:attribute-2/></prop></remove></propertyupdate>' | curl -s -T- -X PROPPATCH https://dcache.example.org/public/test-1 | xmllint -format -
+|<?xml version="1.0" encoding="utf-8"?>
+|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:d="DAV:">
+|  <d:response>
+|    <d:href>/public/test-1</d:href>
+|    <d:propstat>
+|      <d:prop>
+|        <attribute-1/>
+|        <attribute-2/>
+|      </d:prop>
+|      <d:status>HTTP/1.1 404 Not Found</d:status>
+|    </d:propstat>
+|  </d:response>
+|</d:multistatus>
+```
+
+### Working with extended attributes
+
+Extended attributes are arbitrary key-value pairs that may be assigned
+to files and directories in dCache.  An extended attribute has an
+equivalent WebDAV property, through which the extended attribute may
+be created, queried, modified and removed.
+
+An extended attribute has a corresponding WebDAV property by taking
+the extended attribute's name as the property's local part with
+`http://www.dcache.org/2020/xattr` as the namespace; for example, the
+extended attribute `attribute-1` is the WebDAV property
+`<xa:attribute-1 xmlns:xa="http://www.dcache.org/2020/xattr"/>`
+
+To query specific extended attributes of a file or directory a
+PROPFIND request is made with a request entity like:
+
+```xml
+<?xml version="1.0"?>
+<propfind xmlns="DAV:"
+          xmlns:xa="http://www.dcache.org/2020/xattr">
+    <prop>
+        <xa:attribute-1/>
+        <xa:attribute-2/>
+    </prop>
+</propfind>
+```
+
+The `<allprop/>` query will yield all extended attributes assigned to
+the target file or directory, along with all other WebDAV properties.
+
+Extended attributes may be created or modified using a `PROPPATCH`
+request with a request entity like:
+
+```xml
+<?xml version="1.0"?>
+<propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr">
+    <set>
+        <prop>
+	    <xa:attribute-1>new value 1</xa:attribute-1>
+	    <xa:attribute-2>new value 2</xa:attribute-2>
+	</prop>
+    </set>
+</propertyupdate>
+```
+
+Finally, extended attributes may be removed using a `PROPPATCH`
+request with a request entity like:
+
+```xml
+<?xml version="1.0"?>
+<propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr">
+    <remove>
+        <prop>
+	    <xa:attribute-1/>
+	    <xa:attribute-2/>
+	</prop>
+    </remove>
+</propertyupdate>
+```
+
+
 ## Requesting macaroons
 
 A client may request dCache issue a macaroon by making a specific
@@ -770,7 +1074,7 @@ from pymacaroons import Macaroon
 import sys
 
 for line in sys.stdin:
-    m = Macaroon.deserialize(line)    
+    m = Macaroon.deserialize(line)
     print(m.inspect())
 ```
 
@@ -1524,4 +1828,3 @@ curl -D- -E /tmp/x509up_u1000 -X COPY -H 'Credential: none' -H 'RequireChecksumV
 |End
 |success: Created
 ```
-
