@@ -28,7 +28,24 @@ import diskCacheV111.util.PnfsId;
 public class PnfsWriteExtendedAttributesMessage extends PnfsMessage
 {
     public enum Mode {
-        CREATE, MODIFY, EITHER;
+        /**
+         * Create a new extended attribute.  Fails with
+         * AttributeExistsCacheException if the attribute already exists.
+         */
+        CREATE,
+
+        /**
+         * Replace an existing extended attribute.  Fails with
+         * NoAttributeCacheException if the attribute does not already
+         * exist.
+         */
+        MODIFY,
+
+        /**
+         * Create a new extended attribute, or replace the value if the
+         * attribute exists.
+         */
+        EITHER;
     }
 
     private final Mode _mode;
