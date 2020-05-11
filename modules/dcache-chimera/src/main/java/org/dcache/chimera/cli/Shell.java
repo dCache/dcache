@@ -34,12 +34,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.RetentionPolicy;
 
+import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
@@ -50,6 +52,7 @@ import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACEParser;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
+import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsFactory;
@@ -1051,6 +1054,113 @@ public class Shell extends ShellApplication
         {
             FsInode inode = lookup(path);
             fs.removeInodeChecksum(inode, type.getType());
+            return null;
+        }
+    }
+
+    @Command(name = "xattr ls", hint = "list extended attributes",
+            description = "Obtain the a list of all extended attributes that"
+                    + " are currently assigned to a file.")
+    public class ExtendedAttributesListCommand implements Callable<Serializable>
+    {
+        @Argument(usage = "The file to examine")
+        File path;
+
+        @Option(name="quote", usage = "Whether to place extended attribute"
+                + " values with within double-quote marks.")
+        boolean quote;
+
+        @Override
+        public Serializable call() throws ChimeraFsException
+        {
+            FsInode inode = lookup(path);
+            return fs.listXattrs(inode).stream()
+                    .map(m -> quote ? ("\"" + m + "\"") : m)
+                    .collect(Collectors.joining("\n    ", "    ", "\n"));
+        }
+    }
+
+    @Command(name = "xattr get", hint = "query an extended attribute value.",
+            description = "Obtain the current value of a specific extended"
+                    + " attribute assigned to a file.")
+    public class ExtendedAttributesGetCommand implements Callable<Serializable>
+    {
+        @Argument(index = 0, usage = "The file to query")
+        File path;
+
+        @Argument(index = 1, usage = "The name of the extended attribute")
+        String name;
+
+        @Option(name="quote", usage = "Whether to wrap values with"
+                + " double-quote marks.")
+        boolean quote;
+
+        @Override
+        public Serializable call() throws ChimeraFsException
+        {
+            FsInode inode = lookup(path);
+            String value = new String(fs.getXattr(inode, name),
+                    StandardCharsets.UTF_8);
+            return quote ? ("\"" + value + "\"") : value;
+        }
+    }
+
+    @Command(name = "xattr set", hint = "modify an extended attribute",
+            description = "Create or modify the current value of an extended"
+                    + " attribute.  The 'mode' option is specifies whether the"
+                    + " attribute is created (if it does not exist) and"
+                    + " whether the attribute is modified (if it does exist).")
+    public class ExtendedAttributesSetCommand implements Callable<Serializable>
+    {
+        @Argument(index = 0, usage = "The file to modify")
+        File path;
+
+        @Argument(index = 1, usage = "The name of the extended attribute")
+        String name;
+
+        @Argument(index = 2, usage = "The value for this extended attribute")
+        String value;
+
+        @Option(name = "mode", usage = "How to react if the attribute already"
+                + " exists or does not exist.  The values have the following"
+                + " meaning:\n\n"
+                + "    CREATE: add the attribute if it does not already exist;\n"
+                + "        fail the operation if attribute already exists.\n\n"
+                + "    REPLACE: update the attribute if it already exists; fail\n"
+                + "        the operation if the attribute does not exist.\n\n"
+                + "    EITHER: add the attribute if it does not already exist\n"
+                + "        or update the value if it already exists.")
+        FileSystemProvider.SetXattrMode mode = FileSystemProvider.SetXattrMode.EITHER;
+
+        @Override
+        public Serializable call() throws ChimeraFsException, CommandException
+        {
+            try {
+                FsInode inode = lookup(path);
+                fs.setXattr(inode, name, value.getBytes(StandardCharsets.UTF_8), mode);
+                return "";
+            } catch (FileExistsChimeraFsException e) {
+                // FIXME work-around to return a reasonable error message
+                throw new CommandException("Attribute exists " + name);
+            }
+        }
+    }
+
+    @Command(name = "xattr rm", hint = "remove an extended attribute",
+            description = "Remove the attribute from the file.")
+    public class ExtendedAttributesRmCommand implements Callable<Serializable>
+    {
+        @Argument(index = 0, usage = "The file to modify")
+        File path;
+
+        @Argument(index = 1, usage = "The name of the extended attribute")
+        String name;
+
+        @Override
+        public Serializable call() throws ChimeraFsException
+        {
+            FsInode inode = lookup(path);
+            fs.removeXattr(inode, name);
             return null;
         }
     }
