@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Arrays;
@@ -23,7 +25,6 @@ import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.AbstractOperationExecutor;
 import org.dcache.nfs.v4.NFSServerV41;
-import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.OperationBIND_CONN_TO_SESSION;
 import org.dcache.nfs.v4.OperationCREATE_SESSION;
 import org.dcache.nfs.v4.OperationDESTROY_CLIENTID;
@@ -61,6 +62,11 @@ public class NFSv4MoverHandler {
     private static final Logger _log = LoggerFactory.getLogger(NFSv4MoverHandler.class.getName());
 
     /**
+     * The number of missed leases before pool will query door for mover validation.
+     */
+    private static final int LEASE_MISSES = 3;
+
+    /**
      * RPC service
      */
     private final OncRpcSvc _rpcService;
@@ -80,13 +86,13 @@ public class NFSv4MoverHandler {
      */
     private final CellStub _door;
 
-    /**
-     * A time window in millis during which we accept idle movers.
-     */
-    private static final long IDLE_PERIOD = TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME * 5);
-
     private final ScheduledExecutorService _cleanerExecutor;
     private final long _bootVerifier;
+
+    /**
+     * Mover inactivity time before pool will query the door for mover validation.
+     */
+    private final Duration deadMoverIdleTime;
 
     public NFSv4MoverHandler(PortRange portRange, IoStrategy ioStrategy,
             boolean withGss, String serverId, CellStub door, long bootVerifier)
@@ -125,7 +131,10 @@ public class NFSv4MoverHandler {
                 .setNameFormat("NFS mover validationthread")
                 .build()
         );
-        _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), IDLE_PERIOD, IDLE_PERIOD, TimeUnit.MILLISECONDS);
+
+        // Make mover validation schedule to match nfs state handler lease timeout.
+        deadMoverIdleTime = Duration.ofSeconds(_embededDS.getStateHandler().getLeaseTime()).multipliedBy(LEASE_MISSES);
+        _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), deadMoverIdleTime.toSeconds(), deadMoverIdleTime.toSeconds(), TimeUnit.SECONDS);
     }
 
     /**
@@ -246,12 +255,14 @@ public class NFSv4MoverHandler {
 
         @Override
         public void run() {
-            long now = System.currentTimeMillis();
+            Instant now = Instant.now();
+
             _activeIO.values()
                     .stream()
-                    .filter(mover -> (!mover.hasSession() && (now - mover.getLastTransferred() > IDLE_PERIOD)))
+                    .filter(NfsMover::hasSession)
+                    .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred()).plus(deadMoverIdleTime).isBefore(now))
                     .forEach(mover -> {
-                        _log.debug("Verifing inactive mover {}", mover);
+                        _log.debug("Verifying inactive mover {}", mover);
                         final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
                         CellStub.addCallback(_door.send(mover.getPathToDoor(),
                                 new DoorValidateMoverMessage<>(-1, mover.getFileAttributes().getPnfsId(), _bootVerifier, legacyStateId)),
