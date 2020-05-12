@@ -110,6 +110,10 @@ public class ZooKeeperCell extends AbstractCell
         checkArgument(autoPurgeInterval > 0, "zookeeper.auto-purge.purge-interval must be non-negative.");
         zkServer = new PatchedZooKeeperServer();
 
+        // Zookeeper 3.5.4+ now by default requires the existence of snapshot files. In order to keep the
+        // requirements for dCache users as before, we configure the embedded ZooKeeper to not require such a file.
+        System.setProperty("zookeeper.snapshot.trust.empty", "true");
+
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);
         zkServer.setTxnLogFactory(txnLog);
         zkServer.setTickTime((int) tickTimeUnit.toMillis(tickTime));
