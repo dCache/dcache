@@ -78,4 +78,9 @@ public class SelectedPool implements Serializable
     {
         return info.getAddress();
     }
+
+    @Override
+    public String toString() {
+        return name();
+    }
 }

@@ -952,7 +952,7 @@ public class RequestContainerV5
             if (_poolCandidate != null) {
                 return _poolCandidate.name();
             } else if (_p2pDestinationPool != null) {
-                return (_p2pSourcePool == null ? POOL_UNKNOWN_STRING : _p2pSourcePool)
+                return (_p2pSourcePool == null ? POOL_UNKNOWN_STRING : _p2pSourcePool.name())
                     + "->" + _p2pDestinationPool.name();
             } else {
                 return POOL_UNKNOWN_STRING;
