@@ -1,6 +1,6 @@
 package org.dcache.pool.repository.v5;
 
-
+import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +54,6 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
-import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -121,8 +120,6 @@ public class ReplicaRepository
     private static final Logger LOGGER =
             LoggerFactory.getLogger(ReplicaRepository.class);
 
-    private final RequestExecutionTimeGauges<String> gauges
-            = new RequestExecutionTimeGauges<>(ReplicaRepository.class.getName());
     /**
      * Time in millisecs added to each sticky expiration task.  We
      * schedule the task later than the expiration time to account for
@@ -131,8 +128,6 @@ public class ReplicaRepository
     public static final long EXPIRATION_CLOCKSHIFT_EXTRA_TIME = 1000L;
 
     public static final long DEFAULT_GAP = GiB.toBytes(4L);
-
-    public static final String POOL_RESTART_TIME = "restarttime";
 
     private final List<FaultListener> _faultListeners =
         new CopyOnWriteArrayList<>();
@@ -558,9 +553,8 @@ public class ReplicaRepository
         if (!compareAndSetState(State.INITIALIZED, State.LOADING)) {
             throw new IllegalStateException("Can only load repository after initialization and only once.");
         }
-        long t0 = System.nanoTime();
-        gauges.addGauge(POOL_RESTART_TIME);
 
+        Stopwatch watch = Stopwatch.createStarted();
         try {
             LOGGER.warn("Reading inventory from {}.", _store);
             _store.init();
@@ -631,12 +625,7 @@ public class ReplicaRepository
             compareAndSetState(State.LOADING, State.FAILED);
         }
 
-        gauges.update(POOL_RESTART_TIME, System.nanoTime() - t0);
-
-        LOGGER.info("Done generating inventory.");
-        LOGGER.info("Total time {}.", gauges.getAverageExecutionTime(POOL_RESTART_TIME) );
-
-
+        LOGGER.info("Done generating inventory in {}", watch);
     }
 
     @Override
