@@ -20,7 +20,6 @@ package org.dcache.qos;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,6 @@ import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyReplicaMessage;
@@ -79,27 +77,11 @@ public class MigrationPolicyEngine
                                        .collect(Collectors.toSet());
     }
 
-    private class NopHandler extends MigrationCopyCompletionHandler
-    {
-        @Override
-        protected void failure(PnfsId id, Object error) {
-            LOGGER.error("{}: QoS migration failure: {}", id, error);
-        }
-
-        @Override
-        protected void success(PnfsId id) {
-            LOGGER.debug("{}: QoS migration success", id);
-        }
-    }
-
     private final   FileAttributes                                fileAttributes;
     private final   CellStub                                      cellStub;
     private final   PoolMonitor                                   poolMonitor;
     private final   UUID                                          uuid = UUID.randomUUID();
     private         List<StickyRecord>                            stickyRecords;
-    private         ListenableFuture<PoolMigrationMessage>        future;
-    private         MigrationCopyCompletionHandler                handler;
-    private         boolean                                       cancelled;
 
     public MigrationPolicyEngine(FileAttributes fileAttributes,
                                  CellStub cellStub,
@@ -119,13 +101,9 @@ public class MigrationPolicyEngine
      *   TODO currently this functionality is limited in a way
      *   TODO that the file can be migrated only to one pool.
      */
-    public synchronized void adjust() throws InterruptedException, CacheException,
-                    NoRouteToCellException
+    public synchronized ListenableFuture<PoolMigrationMessage> adjust()
+                    throws CacheException
     {
-        if (cancelled) {
-            return;
-        }
-
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         Collection<String> sourcePools = fileAttributes.getLocations();
@@ -153,9 +131,7 @@ public class MigrationPolicyEngine
         LOGGER.debug("{}, adjust; locations {}, already on hsm pool? {}: ",
                      id, locations, isOnHsmPool);
 
-        if (handler == null) {
-            handler = new NopHandler();
-        }
+        ListenableFuture<PoolMigrationMessage> future = null;
 
         if (fileAttributes.getStorageInfo().locations().isEmpty()
                         || !isOnHsmPool) {
@@ -191,30 +167,11 @@ public class MigrationPolicyEngine
             future = cellStub.send(new CellPath(pool.getAddress()),
                                    message,
                                    CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL);
-
-            future.addListener(() -> handler.handleReply(future),
-                               MoreExecutors.directExecutor());
         } else {
-            /**
-             *  In this case, we need to guarantee that any external callback
-             *  is notified.
-             */
-            LOGGER.debug("{}, no need to migrate, notifying callback", id);
-            handler.success(id);
+            LOGGER.debug("{}, no need to migrate", id);
         }
-    }
 
-    public synchronized void cancel()
-    {
-        cancelled = true;
-        if (future != null) {
-            future.cancel(true);
-        }
-    }
-
-    public void setHandler(MigrationCopyCompletionHandler handler)
-    {
-        this.handler = handler;
+        return future;
     }
 
     private String getRandomPool(Collection<String> targetPools)
