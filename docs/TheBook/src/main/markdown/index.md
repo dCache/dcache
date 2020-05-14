@@ -105,6 +105,8 @@ dCache Book
 
         -   [Storage Descriptor / SRR](srr.md)
 
+        -   [Using Kafka](kafkaproducer.md)
+
 -   [Chapter III. Cookbook](cookbook.md)
 
     -   [High Availability with Replicable
