@@ -4,6 +4,8 @@ package org.dcache.pool.classic;
 import java.util.ArrayList;
 import java.util.List;
 
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.ForwardingAllocator;
 import org.dcache.pool.repository.OutOfDiskException;
@@ -62,7 +64,7 @@ public class FairQueueAllocator extends ForwardingAllocator
      * such that the sweeper knows that additional space is required.
      */
     @Override
-    public void allocate(long space) throws InterruptedException, OutOfDiskException
+    public void allocate(PnfsId id, long space) throws InterruptedException, OutOfDiskException
     {
         checkArgument(space >= 0, "Cannot allocate negative space");
 
@@ -70,7 +72,7 @@ public class FairQueueAllocator extends ForwardingAllocator
         enqueue(self);
         try {
             waitForTurn(self);
-            super.allocate(space);
+            super.allocate(id, space);
         } finally {
             dequeue(self);
         }

@@ -4,12 +4,15 @@ import org.junit.Test;
 
 import java.util.Random;
 
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.repository.Account;
 
 import static org.junit.Assert.*;
 
 public class DiskSpaceAllocatorTest {
 
+    static final PnfsId ID = new PnfsId("000000000000000000000000000000000000");
 
     @Test
     public void testNegativeTotalSpace() {
@@ -71,7 +74,7 @@ public class DiskSpaceAllocatorTest {
         account.setTotal(2);
 
         try {
-            account.allocate(-1);
+            account.allocate(ID, -1);
             fail("IllegalArgumentException should be thrown in case of size < 0");
         }catch(final IllegalArgumentException iae) {
             //OK
@@ -91,7 +94,7 @@ public class DiskSpaceAllocatorTest {
 
         final long allocSize = space / 2;
 
-        account.allocateNow(allocSize);
+        account.allocateNow(ID, allocSize);
 
         assertEquals("used space do not match allocated space", allocSize, account.getUsed());
         assertEquals("free space do not match after alloc", space - allocSize, account.getFree());
@@ -110,9 +113,9 @@ public class DiskSpaceAllocatorTest {
         final Account account = new Account();
         account.setTotal(space);
 
-        account.allocateNow(allocSize);
-        account.allocateNow(allocSize);
-        account.allocateNow(allocSize);
+        account.allocateNow(ID, allocSize);
+        account.allocateNow(ID, allocSize);
+        account.allocateNow(ID, allocSize);
 
         assertEquals("used space do not match allocated space", 3*allocSize, account.getUsed());
         assertEquals("free space do not match after alloc", space - 3*allocSize, account.getFree());
@@ -130,9 +133,9 @@ public class DiskSpaceAllocatorTest {
 
         final long allocSize = space / 2;
 
-        account.allocateNow(allocSize);
+        account.allocateNow(ID, allocSize);
 
-        account.free(allocSize);
+        account.free(ID, allocSize);
 
         assertEquals("used space do not match after free", 0, account.getUsed());
         assertEquals("free space do not match after free", space, account.getFree());
@@ -150,8 +153,8 @@ public class DiskSpaceAllocatorTest {
 
         final long allocSize = space / 2;
 
-        account.allocateNow(allocSize);
-        assertFalse("allocateNow should return false if there is no space available", account.allocateNow(space));
+        account.allocateNow(ID, allocSize);
+        assertFalse("allocateNow should return false if there is no space available", account.allocateNow(ID, space));
     }
 
 
@@ -166,7 +169,7 @@ public class DiskSpaceAllocatorTest {
         final Account account = new Account();
         account.setTotal(space);
 
-        account.allocateNow(allocSize);
+        account.allocateNow(ID, allocSize);
 
         assertEquals("used space do not match allocated space", allocSize, account.getUsed());
         assertEquals("free space do not match after alloc",space - allocSize, account.getFree());
@@ -175,7 +178,7 @@ public class DiskSpaceAllocatorTest {
         DiskSpaceAllocationTestHelper.delayedFreeEntry(account, allocSize, delay);
 
         // Should block until space is freed.
-        account.allocate(space);
+        account.allocate(ID, space);
 
         assertEquals("used space do not match allocated space", space, account.getUsed());
         assertEquals("free space do not match after alloc", 0, account.getFree());
@@ -194,7 +197,7 @@ public class DiskSpaceAllocatorTest {
 
         final long allocSize = space / 4;
 
-        account.allocateNow(allocSize);
+        account.allocateNow(ID, allocSize);
 
         account.setTotal(newTotal);
 
@@ -217,7 +220,7 @@ public class DiskSpaceAllocatorTest {
 
         final long allocSize = space / 4;
 
-        account.allocateNow(allocSize);
+        account.allocateNow(ID, allocSize);
 
         account.setTotal(newTotal);
 
@@ -239,7 +242,7 @@ public class DiskSpaceAllocatorTest {
 
         final long allocSize = space / 2;
 
-        account.allocateNow(allocSize);
+        account.allocateNow(ID, allocSize);
 
         try {
             account.setTotal(newTotal);
@@ -263,7 +266,7 @@ public class DiskSpaceAllocatorTest {
         final long delay = 100;
 
         // Allocate all the space
-        account.allocateNow( initialTotalSize);
+        account.allocateNow(ID, initialTotalSize);
 
         assertEquals( "Used size incorrect", initialTotalSize, account.getUsed());
         assertEquals( "Free size incorrect", 0, account.getFree());
@@ -271,7 +274,7 @@ public class DiskSpaceAllocatorTest {
         DiskSpaceAllocationTestHelper.delayedAddSpace(account, newTotalSize, delay);
 
         final long newAllocSize = initialTotalSize/4;
-        account.allocate(newAllocSize);
+        account.allocate(ID, newAllocSize);
 
         final long newUsedSize = initialTotalSize + newAllocSize;
 
@@ -289,6 +292,6 @@ public class DiskSpaceAllocatorTest {
         final Account account = new Account();
         account.setTotal(space);
 
-        account.free(4);
+        account.free(ID, 4);
     }
 }

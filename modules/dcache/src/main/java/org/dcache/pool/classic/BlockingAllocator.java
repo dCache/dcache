@@ -17,6 +17,8 @@
  */
 package org.dcache.pool.classic;
 
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.repository.Account;
 
 /**
@@ -32,8 +34,8 @@ public class BlockingAllocator extends AccountAllocator
     }
 
     @Override
-    public void allocate(long size) throws InterruptedException
+    public void allocate(PnfsId id, long size) throws InterruptedException
     {
-        _account.allocate(size);
+        _account.allocate(id, size);
     }
 }

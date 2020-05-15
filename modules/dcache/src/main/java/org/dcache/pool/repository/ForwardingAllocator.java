@@ -17,6 +17,8 @@
  */
 package org.dcache.pool.repository;
 
+import diskCacheV111.util.PnfsId;
+
 /**
  * An Allocator that forwards all calls to some other Allocator.
  */
@@ -25,14 +27,14 @@ public abstract class ForwardingAllocator implements Allocator
     protected abstract Allocator getAllocator();
 
     @Override
-    public void allocate(long size) throws IllegalStateException, IllegalArgumentException, InterruptedException, OutOfDiskException
+    public void allocate(PnfsId id, long size) throws IllegalStateException, IllegalArgumentException, InterruptedException, OutOfDiskException
     {
-        getAllocator().allocate(size);
+        getAllocator().allocate(id, size);
     }
 
     @Override
-    public void free(long size) throws IllegalStateException, IllegalArgumentException
+    public void free(PnfsId id, long size) throws IllegalStateException, IllegalArgumentException
     {
-        getAllocator().free(size);
+        getAllocator().free(id, size);
     }
 }

@@ -2,6 +2,8 @@ package org.dcache.tests.repository;
 
 import org.dcache.pool.repository.Account;
 
+import static org.dcache.tests.repository.DiskSpaceAllocatorTest.ID;
+
 public class DiskSpaceAllocationTestHelper {
 
 
@@ -15,7 +17,7 @@ public class DiskSpaceAllocationTestHelper {
      * for the given entry after a delay of at least milli milliseconds.
      * @param spaceAllocator The Account object to free space within
      * @param entry The size of data to remove
-     * @param millis The minimum delay, in milliseconds, before executing spaceAllocator.free(). 
+     * @param millis The minimum delay, in milliseconds, before executing spaceAllocator.free().
      */
     public static void delayedFreeEntry( final Account spaceAllocator, final long size, final long millis) {
 
@@ -24,7 +26,7 @@ public class DiskSpaceAllocationTestHelper {
             public void run() {
                 try {
                     Thread.sleep(millis);
-                    spaceAllocator.free(size);
+                    spaceAllocator.free(ID, size);
                 }catch(Exception e) {
                     // ignore
                 }
@@ -57,7 +59,7 @@ public class DiskSpaceAllocationTestHelper {
             @Override
             public void run() {
                 try {
-                    spaceAllocator.allocate(size);
+                    spaceAllocator.allocate(ID, size);
                 }catch(Exception e) {
                     // ignore
                 }

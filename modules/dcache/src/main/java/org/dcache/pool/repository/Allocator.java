@@ -1,5 +1,7 @@
 package org.dcache.pool.repository;
 
+import diskCacheV111.util.PnfsId;
+
 /**
  * An allocator supports methods for allocating and freeing space.
  */
@@ -15,7 +17,7 @@ public interface Allocator
      * than 0.
      * @throws OutOfDiskException if no further capacity is available.
      */
-    void allocate(long size)
+    void allocate(PnfsId id, long size)
         throws IllegalStateException,
                IllegalArgumentException,
                InterruptedException,
@@ -30,6 +32,6 @@ public interface Allocator
      * @throws IllegalStateException if operation is not allowed at
      * this point
      */
-    void free(long size)
+    void free(PnfsId id, long size)
         throws IllegalStateException, IllegalArgumentException;
 }

@@ -150,7 +150,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                 : OPEN_OPTIONS;
 
         RepositoryChannel channel = new AllocatorAwareRepositoryChannel(_entry.openChannel(options),
-                _allocator);
+                _fileAttributes.getPnfsId(), _allocator);
         hasChannelBeenCreated = true;
         return channel;
     }

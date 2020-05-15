@@ -1135,7 +1135,8 @@ public class NearlineStorageHandler
             if (allocationFuture == null) {
                 allocationFuture = register(executor.submit(
                         () -> {
-                            allocator.allocate(descriptor.getFileAttributes().getSize());
+                            allocator.allocate(getFileAttributes().getPnfsId(),
+                                    descriptor.getFileAttributes().getSize());
                             return null;
                         }
                 ));
@@ -1210,7 +1211,8 @@ public class NearlineStorageHandler
         private synchronized void deallocateSpace()
         {
             if (allocationFuture != null && !allocationFuture.cancel(false)) {
-                allocator.free(getFileAttributes().getSize());
+                allocator.free(getFileAttributes().getPnfsId(),
+                        getFileAttributes().getSize());
             }
         }
 

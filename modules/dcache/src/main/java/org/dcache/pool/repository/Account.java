@@ -1,6 +1,8 @@
 package org.dcache.pool.repository;
 
 
+import diskCacheV111.util.PnfsId;
+
 /**
  * Encapsulation of space accounting information for a
  * repository.
@@ -66,7 +68,7 @@ public class Account
     /**
      * Moves <code>space</code> bytes from used to free space.
      */
-    public synchronized void free(long space)
+    public synchronized void free(PnfsId id, long space)
     {
         if (space < 0) {
             throw new IllegalArgumentException("Cannot free negative space.");
@@ -86,7 +88,7 @@ public class Account
      *
      * @return true if and only if the request was served
      */
-    public synchronized boolean allocateNow(long request)
+    public synchronized boolean allocateNow(PnfsId id, long request)
              throws InterruptedException
     {
         if (request < 0) {
@@ -115,7 +117,7 @@ public class Account
      * call blocks. Space is not allocated until the complete request
      * can be served. For this reason, large requests can starve.
      */
-    public synchronized void allocate(long request)
+    public synchronized void allocate(PnfsId id, long request)
         throws InterruptedException
     {
         if (request < 0) {
@@ -134,7 +136,7 @@ public class Account
         }
     }
 
-    public synchronized void growTotalAndUsed(long delta)
+    public synchronized void growTotalAndUsed(PnfsId id, long delta)
     {
         if (delta < 0) {
             throw new IllegalArgumentException("Argument must be non-negative.");
@@ -159,7 +161,7 @@ public class Account
         notifyAll();
     }
 
-    public synchronized void adjustRemovable(long delta)
+    public synchronized void adjustRemovable(PnfsId id, long delta)
     {
         long removable = _removable + delta;
         if (removable < 0) {
@@ -172,7 +174,7 @@ public class Account
         notifyAll();
     }
 
-    public synchronized void adjustPrecious(long delta)
+    public synchronized void adjustPrecious(PnfsId id, long delta)
     {
         long precious = _precious + delta;
         if (precious < 0) {

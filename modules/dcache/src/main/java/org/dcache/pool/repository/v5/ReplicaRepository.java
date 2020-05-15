@@ -387,6 +387,7 @@ public class ReplicaRepository
                 @Override
                 public void stateChanged(StateChangeEvent event)
                 {
+                    PnfsId id = event.getPnfsId();
                     if (event.getOldState() != NEW || event.getNewState() != REMOVED) {
                         if (event.getOldState() == NEW) {
                             long size = event.getNewEntry().getReplicaSize();
@@ -396,7 +397,7 @@ public class ReplicaRepository
                              * adjust the allocation here.
                              */
                             if (size > 0) {
-                                _account.growTotalAndUsed(size);
+                                _account.growTotalAndUsed(id, size);
                             }
                             scheduleExpirationTask(event.getNewEntry());
                         }
@@ -404,14 +405,13 @@ public class ReplicaRepository
                         updateRemovable(event.getNewEntry());
 
                         if (event.getOldState() != PRECIOUS && event.getNewState() == PRECIOUS) {
-                            _account.adjustPrecious(event.getNewEntry().getReplicaSize());
+                            _account.adjustPrecious(id, event.getNewEntry().getReplicaSize());
                         } else if (event.getOldState() == PRECIOUS && event.getNewState() != PRECIOUS) {
-                            _account.adjustPrecious(-event.getOldEntry().getReplicaSize());
+                            _account.adjustPrecious(id, -event.getOldEntry().getReplicaSize());
                         }
 
                         _stateChangeListeners.stateChanged(event);
                     }
-                    PnfsId id = event.getPnfsId();
                     switch (event.getNewState()) {
                     case REMOVED:
                         if (event.getOldState() != NEW) {
@@ -433,7 +433,7 @@ public class ReplicaRepository
                          */
                         long size = event.getOldEntry().getReplicaSize();
                         if (size > 0L) {
-                            _account.free(size);
+                            _account.free(id, size);
                         }
                         break;
                     }
@@ -1060,11 +1060,11 @@ public class ReplicaRepository
         PnfsId id = entry.getPnfsId();
         if (_sweeper.isRemovable(entry)) {
             if (_removable.add(id)) {
-                _account.adjustRemovable(entry.getReplicaSize());
+                _account.adjustRemovable(id, entry.getReplicaSize());
             }
         } else {
             if (_removable.remove(id)) {
-                _account.adjustRemovable(-entry.getReplicaSize());
+                _account.adjustRemovable(id, -entry.getReplicaSize());
             }
         }
     }

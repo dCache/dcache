@@ -17,6 +17,8 @@
  */
 package org.dcache.pool.repository;
 
+import diskCacheV111.util.PnfsId;
+
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
@@ -42,22 +44,22 @@ public class LimitedAllocator extends ForwardingAllocator
     }
 
     @Override
-    public synchronized void allocate(long size) throws IllegalStateException,
+    public synchronized void allocate(PnfsId id, long size) throws IllegalStateException,
             IllegalArgumentException, InterruptedException, OutOfDiskException
     {
         checkArgument(size >= 0);
         if (_currentSize + size > _maximumSize) {
             throw new OutOfDiskException("Exceeded allowed upload size");
         }
-        super.allocate(size);
+        super.allocate(id, size);
         _currentSize += size;
     }
 
     @Override
-    public synchronized void free(long size) throws IllegalStateException, IllegalArgumentException
+    public synchronized void free(PnfsId id, long size) throws IllegalStateException, IllegalArgumentException
     {
         checkArgument(size >= 0);
-        super.free(size);
+        super.free(id, size);
         _currentSize -= size;
     }
 }

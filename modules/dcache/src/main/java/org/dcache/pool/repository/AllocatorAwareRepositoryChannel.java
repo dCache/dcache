@@ -29,8 +29,11 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.util.stream.Stream;
 
+import diskCacheV111.util.PnfsId;
+
 import static org.dcache.util.ByteUnit.MiB;
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 /**
  * An implementation of RepositoryChannel that takes care of space
@@ -44,6 +47,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
     private final RepositoryChannel inner;
     private final Allocator allocator;
     private long allocated;
+    private PnfsId id;
 
     /**
      * The minimum number of bytes to increment the space allocation.
@@ -57,11 +61,12 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
 
     private final Object positionLock = new Object();
 
-    public AllocatorAwareRepositoryChannel(RepositoryChannel inner, Allocator allocator) throws IOException {
+    public AllocatorAwareRepositoryChannel(RepositoryChannel inner, PnfsId id, Allocator allocator) throws IOException {
         this.inner = inner;
         this.allocator = allocator;
         // file existing in the repository already have allocated space.
         this.allocated = inner.size();
+        this.id = requireNonNull(id);
     }
 
     @Override
@@ -79,7 +84,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
             if (length > allocated) {
                 LOGGER.error("BUG detected! Under allocation detected: expected {}, current: {}.", length, allocated);
                 try {
-                    allocator.allocate(length - allocated);
+                    allocator.allocate(id, length - allocated);
                 } catch (InterruptedException e) {
                     /*
                      * Space allocation is broken now. The entry size
@@ -93,7 +98,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
                     Thread.currentThread().interrupt();
                 }
             } else if (length < allocated) {
-                allocator.free(allocated - length);
+                allocator.free(id, allocated - length);
             }
         }
         super.close();
@@ -203,11 +208,11 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
     {
         long delta = Math.max(minRequired, SPACE_INC);
         try {
-            allocator.allocate(delta);
+            allocator.allocate(id, delta);
         } catch (OutOfDiskException e) {
             // Try again, but this time with the minimum required.
             delta = minRequired;
-            allocator.allocate(delta);
+            allocator.allocate(id, delta);
         }
         LOGGER.trace("preallocate: {}", delta);
         return delta;

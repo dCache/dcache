@@ -17,6 +17,8 @@
  */
 package org.dcache.pool.classic;
 
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
 
@@ -35,8 +37,8 @@ public abstract class AccountAllocator implements Allocator
     }
 
     @Override
-    public void free(long space)
+    public void free(PnfsId id, long space)
     {
-        _account.free(space);
+        _account.free(id, space);
     }
 }

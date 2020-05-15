@@ -17,6 +17,8 @@
  */
 package org.dcache.pool.classic;
 
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.OutOfDiskException;
 
@@ -33,9 +35,9 @@ public class ImmediateAllocator extends AccountAllocator
     }
 
     @Override
-    public void allocate(long size) throws InterruptedException, OutOfDiskException
+    public void allocate(PnfsId id, long size) throws InterruptedException, OutOfDiskException
     {
-        if (!_account.allocateNow(size)) {
+        if (!_account.allocateNow(id, size)) {
             throw new OutOfDiskException("Out of space");
         }
     }
