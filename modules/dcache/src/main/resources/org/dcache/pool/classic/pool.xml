@@ -321,11 +321,6 @@
     <property name="poolMode" ref="pool-mode"/>
   </bean>
 
-  <bean id="account"
-        class="org.dcache.pool.repository.Account">
-    <description>Repository space accounting</description>
-  </bean>
-
   <bean id="allocator" class="org.dcache.pool.classic.FairQueueAllocator">
     <description>Space allocation policy for nearline storage</description>
     <constructor-arg>
@@ -796,5 +791,19 @@
 
     <beans profile="inotify-false">
         <bean id="replica-store" parent="checksum-replica-store"/>
+    </beans>
+
+    <beans profile="account-checking-false">
+      <bean id="account"
+            class="org.dcache.pool.repository.Account">
+	<description>Repository space accounting</description>
+      </bean>
+    </beans>
+
+    <beans profile="account-checking-true">
+      <bean id="account"
+            class="org.dcache.pool.repository.FileTrackingAccount">
+	<description>Repository space accounting</description>
+      </bean>
     </beans>
 </beans>

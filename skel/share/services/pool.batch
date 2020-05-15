@@ -107,7 +107,7 @@ onerror shutdown
 create org.dcache.cells.UniversalSpringCell "${pool.cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
     -consume=${pool.cell.consume} -cellClass=Pool \
-    -profiles=healthcheck-${pool.enable.repository-check},backend-${pool.backend},kafka-${pool.enable.kafka},httpsredirect-${pool.enable.encrypted-transfers},p2phttps-${pool.enable.encrypted.p2p-transfers},inotify-${pool.inotify-generation.enable}\
+    -profiles=healthcheck-${pool.enable.repository-check},backend-${pool.backend},kafka-${pool.enable.kafka},httpsredirect-${pool.enable.encrypted-transfers},p2phttps-${pool.enable.encrypted.p2p-transfers},inotify-${pool.inotify-generation.enable},account-checking-${pool.enable.account-file-checking}\
     -cell.max-message-threads=${pool.cell.max-message-threads} -cell.max-messages-queued=${pool.cell.max-messages-queued} \
     -setupClass=pool -setupFile=\"${pool.path}/setup\" \
     -ftpAllowIncomingConnections=\"${pool.mover.ftp.allow-incoming-connections}\" \
