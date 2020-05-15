@@ -524,15 +524,25 @@ public final class Strings {
     {
         if (value == 0) {
             return "0";
-        }
-
-        if (value >= 1) {
-            if (value < 10) {
-                return String.format("%.2f", value);
-            } else if (value < 100) {
-                return String.format("%.1f", value);
-            } else if (value < max) {
-                return String.format("%.0f", value);
+        } else if (value < 0) {
+            if (value <= -1) {
+                if (value > -10) {
+                    return String.format("%.2f", value);
+                } else if (value > -100) {
+                    return String.format("%.1f", value);
+                } else if (Math.abs(value) < max) {
+                    return String.format("%.0f", value);
+                }
+            }
+        } else {
+            if (value >= 1) {
+                if (value < 10) {
+                    return String.format("%.2f", value);
+                } else if (value < 100) {
+                    return String.format("%.1f", value);
+                } else if (value < max) {
+                    return String.format("%.0f", value);
+                }
             }
         }
         return THREE_SIG_FIG_FORMAT.format(value);
