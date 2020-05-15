@@ -4,13 +4,15 @@ A test setup for development
 
 ## Requirements
 
-- java runtime 8 or newer
+- java runtime 11 or newer
 - maven 3.1.1 or newer
 
 ## Configuration
 
 The System test provides a basic, but rich configuration to explore dCache functionality.
-> Note The setup provides all-in-one configuration and doesn't accept connections from any other Domains.
+> Note that the setup provides an all-in-one configuration and doesn't accept connections from any other Domains. There is no core domain configured by default.
+
+> Also note that the embedded database only allows connections from at most one process. Cells that require databse access consequently need to be run in the same domain.
 
 On initialization the following directories are created:
 
