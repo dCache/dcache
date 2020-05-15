@@ -840,7 +840,7 @@ public class PoolV4
             message.setSucceeded();
         } catch (OutOfDateCacheException e) {
             if (_pingLimiter.tryAcquire()) {
-                _pingThread.sendPoolManagerMessage(true);
+                _pingThread.sendPoolManagerMessage();
             }
             message.setFailed(e.getRc(), e.getMessage());
         } catch (FileNotInCacheException | FileInCacheException e) {
@@ -1372,7 +1372,7 @@ public class PoolV4
             (errorString == null) ? "Requested by operator" : errorString;
         _poolMode.setMode(mode);
 
-        _pingThread.sendPoolManagerMessage(true);
+        _pingThread.sendPoolManagerMessage();
         LOGGER.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
     }
 
@@ -1386,7 +1386,7 @@ public class PoolV4
         _poolStatusCode = 0;
         _poolStatusMessage = "OK";
 
-        _pingThread.sendPoolManagerMessage(true);
+        _pingThread.sendPoolManagerMessage();
         LOGGER.warn("Pool mode changed to {}", _poolMode);
     }
 
@@ -1416,7 +1416,7 @@ public class PoolV4
             LOGGER.debug("Ping thread started");
             try {
                 while (!Thread.interrupted()) {
-                    sendPoolManagerMessage(true);
+                    sendPoolManagerMessage();
                     Thread.sleep(_heartbeat * 1000);
                 }
             } catch (InterruptedException e) {
@@ -1436,11 +1436,9 @@ public class PoolV4
             return _heartbeat;
         }
 
-        public synchronized void sendPoolManagerMessage(boolean forceSend)
+        public synchronized void sendPoolManagerMessage()
         {
-            if (forceSend || _storageQueue.poolStatusChanged()) {
-                send(getPoolManagerMessage());
-            }
+            send(getPoolManagerMessage());
         }
 
         private CellMessage getPoolManagerMessage()
