@@ -211,11 +211,11 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     public synchronized long getReplicaSize() {
         try {
 
-            return _state.isMutable() ? _fileStore
+            // use cached value only for file in 'trusted state'
+            return _state == CACHED || _state == PRECIOUS ? _size: _fileStore
                     .getFileAttributeView(_pnfsId)
                     .readAttributes()
-                    .size() : _size;
-
+                    .size();
 
         } catch (IOException e) {
             _log.error("Failed to read file size: {}", e.toString());

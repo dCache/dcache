@@ -44,6 +44,8 @@ import org.dcache.pool.repository.StickyRecord;
 
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.pool.repository.ReplicaState.CACHED;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.UpdatableRecord {
@@ -168,9 +170,14 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     @Override
     public synchronized long getReplicaSize() {
         try {
-            return state.getState().isMutable()
-                    ? fileStore.getFileAttributeView(pnfsId).readAttributes().size()
-                    : size;
+
+            ReplicaState replicaState = state.getState();
+
+            // use cached value only for file in 'trusted state'
+            return replicaState == CACHED || replicaState == PRECIOUS ? size: fileStore
+                    .getFileAttributeView(pnfsId)
+                    .readAttributes()
+                    .size();
         } catch (NoSuchFileException e) {
             return 0;
         } catch (IOException e) {
