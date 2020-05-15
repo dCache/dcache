@@ -4,8 +4,8 @@ A test setup for development
 
 ## Requirements
 
-- java runtime 11 or newer
-- maven 3.1.1 or newer
+- java 11 or newer
+- maven 3.5.0 or newer
 
 ## Configuration
 
