@@ -431,7 +431,10 @@ public class ReplicaRepository
                          * to disk. We rely on never having anything on disk that we haven't accounted
                          * for in the Account object.
                          */
-                        _account.free(event.getOldEntry().getReplicaSize());
+                        long size = event.getOldEntry().getReplicaSize();
+                        if (size > 0L) {
+                            _account.free(size);
+                        }
                         break;
                     }
                 }
