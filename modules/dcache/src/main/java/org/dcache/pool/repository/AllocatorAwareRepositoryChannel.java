@@ -92,7 +92,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
                             + "the operation was interrupted. The pool is now over allocated.");
                     Thread.currentThread().interrupt();
                 }
-            } else {
+            } else if (length < allocated) {
                 allocator.free(allocated - length);
             }
         }
