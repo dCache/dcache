@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -62,6 +63,9 @@ import org.dcache.tests.cells.Message;
 import org.dcache.util.ByteUnit;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 import static org.dcache.pool.repository.ReplicaState.*;
 import static org.junit.Assert.*;
@@ -120,7 +124,6 @@ public class RepositorySubsystemTest
             channel.write(ByteBuffer.allocate((int) size));
         }
     }
-
     private void createEntry(final FileAttributes attributes,
                              final ReplicaState state,
                              final List<StickyRecord> sticky)
@@ -503,6 +506,22 @@ public class RepositorySubsystemTest
                 }
             }
         };
+    }
+
+    @Test(expected=IOException.class)
+    public void testFileIsBroken()
+            throws IOException, IllegalTransitionException,
+            CacheException, InterruptedException
+    {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
+        ReplicaDescriptor handle =  repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
+        Path file = Paths.get(handle.getReplicaFile());
+        Files.write(file, "APPEND".getBytes(), WRITE, APPEND);
+        handle.createChannel();
+
     }
 
     @Test

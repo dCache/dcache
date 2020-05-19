@@ -1,6 +1,8 @@
 package org.dcache.pool.repository.v5;
 
 import com.google.common.collect.ImmutableSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -14,12 +16,14 @@ import diskCacheV111.util.PnfsHandler;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.inotify.InotifyReplicaRecord;
 import org.dcache.pool.statistics.IoStatisticsReplicaRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
+
 
 import static java.util.Objects.requireNonNull;
 import static com.google.common.collect.Iterables.unmodifiableIterable;
@@ -35,6 +39,9 @@ class ReadHandleImpl implements ReplicaDescriptor
             .addAll(OPEN_OPTIONS)
             .add(InotifyReplicaRecord.OpenFlags.ENABLE_INOTIFY_MONITORING)
             .build();
+
+    protected static final Logger LOGGER = LoggerFactory.getLogger(ReadHandleImpl.class);
+
 
     private final PnfsHandler _pnfs;
     private final ReplicaRecord _entry;
@@ -68,9 +75,21 @@ class ReadHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public RepositoryChannel createChannel() throws IOException
-    {
-        return _entry.openChannel(_openOptions);
+    public RepositoryChannel createChannel() throws IOException {
+        RepositoryChannel channel = _entry.openChannel(_openOptions);
+        long fileSizeAlloc = channel.size();
+        if (_fileAttributes.getSize() != fileSizeAlloc) {
+            try {
+                _entry.update("Filesystem and pool database file sizes are inconsistent",
+                        r -> r.setState(ReplicaState.BROKEN));
+                channel.close();
+                throw new IOException("Failed to read the file, because file is Broken.");
+
+            } catch (CacheException e) {
+                LOGGER.warn("Filesystem and pool database file sizes inconsistency: {}", e.toString());
+            }
+        }
+        return channel;
     }
 
     /**
