@@ -1449,7 +1449,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public Collection<String> listXattrs(FsInode inode) throws ChimeraFsException {
+    public Set<String> listXattrs(FsInode inode) throws ChimeraFsException {
         return inTransaction(status -> _sqlDriver.listXattrs(inode));
     }
 

@@ -52,11 +52,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1943,15 +1945,18 @@ public class FsSqlDriver {
      * Retrieve an array of extended attribute names for a given file system object.
      *
      * @param inode file system object.
-     * @return an array of extended attribute names.
+     * @return a set of extended attribute names.
      * @throws ChimeraFsException
      */
-    List<String> listXattrs(FsInode inode) throws ChimeraFsException {
-        return _jdbc.query("SELECT ikey FROM t_xattr where inumber=?",
-                (rs, rn) -> {
-                    return rs.getString("ikey");
+    Set<String> listXattrs(FsInode inode) throws ChimeraFsException {
+        Set<String> names = new HashSet<>();
+        _jdbc.query("SELECT ikey FROM t_xattr where inumber=?",
+                (rs) -> {
+                    String name = rs.getString("ikey");
+                    names.add(name);
                 },
                 inode.ino());
+        return names;
     }
 
     /**

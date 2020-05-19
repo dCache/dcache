@@ -464,10 +464,10 @@ public interface FileSystemProvider extends Closeable {
      * Retrieve an array of extended attribute names for a given file system object.
      *
      * @param inode file system object.
-     * @return an array of extended attribute names.
+     * @return a set of extended attribute names.
      * @throws ChimeraFsException
      */
-    Collection<String> listXattrs(FsInode inode) throws ChimeraFsException;
+    Set<String> listXattrs(FsInode inode) throws ChimeraFsException;
 
     /**
      * Remove specified extended attribute for a given file system object.
