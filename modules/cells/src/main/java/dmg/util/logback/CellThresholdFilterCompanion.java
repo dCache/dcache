@@ -34,7 +34,13 @@ public class CellThresholdFilterCompanion extends Filter<ILoggingEvent>
         String cell = (mdc == null) ? null : mdc.get(CDC.MDC_CELL);
         CellNucleus nucleus = CellNucleus.getLogTargetForCell(cell);
         if (nucleus == null) {
-            return FilterReply.NEUTRAL;
+            // No specific cell nucleus of even SystemCell exists. We are in bootstrap phase, e.g. on our own ...
+            Level level = RootFilterThresholds.getInstance().getThreshold(event.getLoggerName(), _name);
+            if (event.getLevel().isGreaterOrEqual(level)) {
+                return FilterReply.NEUTRAL;
+            } else {
+                return FilterReply.DENY;
+            }
         }
 
         FilterThresholdSet thresholds = nucleus.getLoggingThresholds();
