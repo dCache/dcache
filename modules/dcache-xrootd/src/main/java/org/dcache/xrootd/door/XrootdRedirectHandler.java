@@ -31,6 +31,7 @@ import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -260,7 +261,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         InetSocketAddress remoteAddress = getSourceAddress();
         SessionInfo sessionInfo = sessionInfo();
 
-
         Map<String,String> opaque;
 
         try {
@@ -311,11 +311,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             }
 
             _log.info("OPAQUE : {}", opaque);
-            Set<String> triedHosts
-                            = Arrays.stream(Strings.nullToEmpty(opaque.get("tried"))
-                                                   .split(","))
-                                    .collect(Collectors.toSet());
-            _log.info("TRIED : {}", triedHosts);
+            Set<String> triedHosts = extractTriedHosts(opaque);
+
             UUID uuid = UUID.randomUUID();
             opaque.put(UUID_PREFIX, uuid.toString());
             /*
@@ -623,6 +620,25 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         String error = String.format("Request metadata is invalid: %s: %s, %s.",
                                      req, fsPath, remoteHost);
         throw new CacheException(CacheException.THIRD_PARTY_TRANSFER_FAILED, error);
+    }
+
+    private Set<String> extractTriedHosts(Map<String, String> opaque)
+        throws XrootdException
+    {
+        String tried = Strings.emptyToNull(opaque.get("tried"));
+        if (tried == null) {
+            return Collections.EMPTY_SET;
+        } else if (!_door.isTriedHostsEnabled()) {
+            throw new XrootdException(kXR_InvalidRequest,
+                                      "tried hosts option not supported.");
+        }
+
+        Set<String> triedHosts
+                        = Arrays.stream(tried.split(","))
+                                .collect(Collectors.toSet());
+        _log.info("TRIED : {}", triedHosts);
+
+        return triedHosts;
     }
 
     private String getTpcClientId(XrootdSession session) {
