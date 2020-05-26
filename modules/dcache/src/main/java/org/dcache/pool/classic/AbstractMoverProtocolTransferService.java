@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.io.SyncFailedException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutorService;
@@ -152,6 +153,8 @@ public abstract class AbstractMoverProtocolTransferService
                             } catch (SyncFailedException e) {
                                 fileIoChannel.sync();
                                 LOGGER.info("First sync failed [{}], but second sync suceeded", e );
+                            } catch (ClosedChannelException e) {
+                                LOGGER.debug("Replica channel closed by mover");
                             }
                         }
                     } else {
