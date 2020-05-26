@@ -21,12 +21,15 @@ public class AllocatorAwareRepositoryChannelTest {
     private RepositoryChannel inner;
     private AllocatorAwareRepositoryChannel allocatorChannel;
     private Allocator allocator;
+    private Repository repository;
 
     @Before
     public void setUp() throws IOException {
         inner = mock(RepositoryChannel.class);
         allocator = mock(Allocator.class);
-        allocatorChannel = new AllocatorAwareRepositoryChannel(inner, ID, allocator);
+        repository = mock(Repository.class);
+        allocatorChannel = new AllocatorAwareRepositoryChannel(inner, repository,
+                ID, allocator);
     }
 
     @Test
