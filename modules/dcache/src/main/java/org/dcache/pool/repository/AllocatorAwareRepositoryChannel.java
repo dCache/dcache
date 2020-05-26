@@ -29,8 +29,14 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.util.stream.Stream;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+
+import org.dcache.util.Exceptions;
+
 import static org.dcache.util.ByteUnit.MiB;
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 /**
  * An implementation of RepositoryChannel that takes care of space
@@ -43,7 +49,9 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
 
     private final RepositoryChannel inner;
     private final Allocator allocator;
+    private final Repository repository;
     private long allocated;
+    private PnfsId id;
 
     /**
      * The minimum number of bytes to increment the space allocation.
@@ -57,11 +65,14 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
 
     private final Object positionLock = new Object();
 
-    public AllocatorAwareRepositoryChannel(RepositoryChannel inner, Allocator allocator) throws IOException {
+    public AllocatorAwareRepositoryChannel(RepositoryChannel inner,
+            Repository repository, PnfsId id, Allocator allocator) throws IOException {
+        this.repository = repository;
         this.inner = inner;
         this.allocator = allocator;
         // file existing in the repository already have allocated space.
         this.allocated = inner.size();
+        this.id = requireNonNull(id);
     }
 
     @Override
@@ -72,31 +83,55 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
     @Override
     public synchronized void close() throws IOException {
 
-        synchronized (allocationLock) {
-            long length = size();
-            LOGGER.debug("Adjusting allocation: allocated: {}, file size: {}",
-                    allocated, length);
-            if (length > allocated) {
-                LOGGER.error("BUG detected! Under allocation detected: expected {}, current: {}.", length, allocated);
-                try {
-                    allocator.allocate(length - allocated);
-                } catch (InterruptedException e) {
-                    /*
-                     * Space allocation is broken now. The entry size
-                     * matches up with what was actually allocated,
-                     * however the file on disk is too large.
-                     *
-                     * Should only happen during shutdown, so no harm done.
-                     */
-                    LOGGER.warn("Failed to adjust space reservation because "
-                            + "the operation was interrupted. The pool is now over allocated.");
-                    Thread.currentThread().interrupt();
+        try {
+            synchronized (allocationLock) {
+                long length = replicaSize();
+                LOGGER.debug("Adjusting allocation: allocated: {}, file size: {}",
+                        allocated, length);
+                if (length > allocated) {
+                    LOGGER.error("BUG detected! Under allocation detected: expected {}, current: {}.", length, allocated);
+                    try {
+                        allocator.allocate(length - allocated);
+                    } catch (InterruptedException e) {
+                        /*
+                         * Space allocation is broken now. The entry size
+                         * matches up with what was actually allocated,
+                         * however the file on disk is too large.
+                         *
+                         * Should only happen during shutdown, so no harm done.
+                         */
+                        LOGGER.warn("Failed to adjust space reservation because "
+                                + "the operation was interrupted. The pool is now over allocated.");
+                        Thread.currentThread().interrupt();
+                    }
+                } else {
+                    allocator.free(allocated - length);
                 }
-            } else {
-                allocator.free(allocated - length);
             }
+        } catch (CacheException e) {
+            LOGGER.error("Failed to discover replica size after transfer: {}.  Pool capacity"
+                    + " is no longer accurate. YOU SHOULD RESTART THE POOL NOW.",
+                    Exceptions.messageOrClassName(e));
+        } catch (InterruptedException e) {
+            LOGGER.warn("Interrupted while determining replica size.  Pool"
+                    + " capacity is no longer accurate.  YOU SHOULD RESTART THE"
+                    + " POOL NOW.");
+            Thread.currentThread().interrupt();
         }
         super.close();
+    }
+
+    private long replicaSize() throws CacheException, InterruptedException
+    {
+        try {
+            return size();
+        } catch (ClosedChannelException e) {
+            LOGGER.debug("Channel is already closed; asking repository for replica size");
+        } catch (IOException e) {
+            LOGGER.warn("Failed to discover replica size: {}", Exceptions.messageOrClassName(e));
+        }
+
+        return repository.getEntry(id).getReplicaSize();
     }
 
     @Override
