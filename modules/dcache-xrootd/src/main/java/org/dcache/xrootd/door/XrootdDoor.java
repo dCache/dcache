@@ -179,6 +179,8 @@ public class XrootdDoor
     private final Map<Integer,XrootdTransfer> _transfers =
         new ConcurrentHashMap<>();
 
+    private boolean triedHostsEnabled;
+
     @Autowired(required = false)
     private void setKafkaTemplate(
                     @Qualifier("billing-template") KafkaTemplate kafkaTemplate )
@@ -324,6 +326,12 @@ public class XrootdDoor
         _moverTimeoutUnit = checkNotNull(unit);
     }
 
+    @Required
+    public void setTriedHostsEnabled(boolean triedHostsEnabled)
+    {
+        this.triedHostsEnabled = triedHostsEnabled;
+    }
+
     public TimeUnit getMoverTimeoutUnit()
     {
         return _moverTimeoutUnit;
@@ -343,6 +351,11 @@ public class XrootdDoor
                                                                                         _tpcFdIndex)),
                                      TPC_EVICT_DELAY, TPC_EVICT_DELAY,
                                      TimeUnit.MILLISECONDS);
+    }
+
+    public boolean isTriedHostsEnabled()
+    {
+        return triedHostsEnabled;
     }
 
     @Override
