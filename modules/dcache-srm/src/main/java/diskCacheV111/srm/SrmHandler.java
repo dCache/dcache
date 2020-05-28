@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -44,7 +44,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.security.auth.Subject;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
@@ -82,8 +81,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
-import org.dcache.commons.stats.rrd.RrdRequestCounters;
-import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
@@ -250,10 +247,6 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
 
     private PathChildrenCache backends;
 
-    private String counterRrdDirectory;
-
-    private String gaugeRrdDirectory;
-
     private boolean isClientDNSLookup;
 
     private LoginStrategy loginStrategy;
@@ -267,16 +260,6 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
     public void setCuratorFramework(CuratorFramework client)
     {
         this.client = client;
-    }
-
-    public void setCounterRrdDirectory(String counterRrdDirectory)
-    {
-        this.counterRrdDirectory = counterRrdDirectory;
-    }
-
-    public void setGaugeRrdDirectory(String gaugeRrdDirectory)
-    {
-        this.gaugeRrdDirectory = gaugeRrdDirectory;
     }
 
     public void setClientDNSLookup(boolean clientDNSLookup)
@@ -305,22 +288,6 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
     @PostConstruct
     public void init() throws Exception
     {
-        if (!Strings.isNullOrEmpty(counterRrdDirectory)) {
-            String rrddir = counterRrdDirectory + File.separatorChar + "srmv2";
-            RrdRequestCounters<?> rrdSrmServerCounters =
-                    new RrdRequestCounters<>(srmServerCounters, rrddir);
-            rrdSrmServerCounters.startRrdUpdates();
-            rrdSrmServerCounters.startRrdGraphPlots();
-        }
-
-        if (!Strings.isNullOrEmpty(gaugeRrdDirectory)) {
-            File rrddir = new File(gaugeRrdDirectory + File.separatorChar + "srmv2");
-            RrdRequestExecutionTimeGauges<?> rrdSrmServerGauges =
-                    new RrdRequestExecutionTimeGauges<>(srmServerGauges, rrddir);
-            rrdSrmServerGauges.startRrdUpdates();
-            rrdSrmServerGauges.startRrdGraphPlots();
-        }
-
         backends = new PathChildrenCache(client, "/dcache/srm/backends", true);
         backends.start();
     }

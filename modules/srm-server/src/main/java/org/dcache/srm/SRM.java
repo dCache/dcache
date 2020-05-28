@@ -77,7 +77,6 @@ import org.springframework.dao.DataAccessException;
 
 import javax.annotation.Nonnull;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -101,8 +100,6 @@ import dmg.cells.nucleus.CellLifeCycleAware;
 import org.dcache.commons.stats.MonitoringProxy;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
-import org.dcache.commons.stats.rrd.RrdRequestCounters;
-import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.ContainerRequest;
@@ -148,9 +145,7 @@ public class SRM implements CellLifeCycleAware
     private RequestCredentialStorage requestCredentialStorage;
     private final AbstractStorageElement storage;
     private final RequestCounters<Method> abstractStorageElementCounters;
-    private RrdRequestCounters<?> rrdAstractStorageElementCounters;
     private final RequestExecutionTimeGauges<Method> abstractStorageElementGauges;
-    private RrdRequestExecutionTimeGauges<?> rrdAstractStorageElementGauges;
     private SchedulerContainer schedulers;
     private DatabaseJobStorageFactory databaseFactory;
     private SRMUserPersistenceManager manager;
@@ -184,27 +179,6 @@ public class SRM implements CellLifeCycleAware
                 storage,
                 abstractStorageElementCounters,
                 abstractStorageElementGauges);
-
-        if (configuration.getCounterRrdDirectory() != null) {
-            String rrddir =  configuration.getCounterRrdDirectory() +
-                    File.separatorChar + "storage";
-
-            rrdAstractStorageElementCounters =
-                    new RrdRequestCounters<>(abstractStorageElementCounters, rrddir);
-            rrdAstractStorageElementCounters.startRrdUpdates();
-            rrdAstractStorageElementCounters.startRrdGraphPlots();
-
-
-        }
-        if (configuration.getGaugeRrdDirectory() != null) {
-            File rrddir = new File (configuration.getGaugeRrdDirectory() +
-                    File.separatorChar + "storage");
-
-            rrdAstractStorageElementGauges =
-                    new RrdRequestExecutionTimeGauges<>(abstractStorageElementGauges, rrddir);
-            rrdAstractStorageElementGauges.startRrdUpdates();
-            rrdAstractStorageElementGauges.startRrdGraphPlots();
-        }
 
         if (config.isGsissl()) {
             String protocol_property = System.getProperty("java.protocol.handler.pkgs");

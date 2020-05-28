@@ -160,8 +160,6 @@ public class Configuration {
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
     private boolean clientDNSLookup=false;
-    private String counterRrdDirectory = null;
-    private String gaugeRrdDirectory = null;
     protected String clientTransport = Transport.GSI.name();
     private DataSource dataSource;
     private PlatformTransactionManager transactionManager;
@@ -816,34 +814,6 @@ public class Configuration {
 
     public void setLsMaxPollPeriod(long lsMaxPollPeriod) {
         this.lsMaxPollPeriod = lsMaxPollPeriod;
-    }
-
-    /**
-     * @return the rrdDirectory
-     */
-    public String getCounterRrdDirectory() {
-        return counterRrdDirectory;
-    }
-
-    /**
-     * @param rrdDirectory the rrdDirectory to set
-     */
-    public void setCounterRrdDirectory(String rrdDirectory) {
-        this.counterRrdDirectory = rrdDirectory;
-    }
-
-    /**
-     * @return the gaugeRrdDirectory
-     */
-    public String getGaugeRrdDirectory() {
-        return gaugeRrdDirectory;
-    }
-
-    /**
-     * @param gaugeRrdDirectory the gaugeRrdDirectory to set
-     */
-    public void setGaugeRrdDirectory(String gaugeRrdDirectory) {
-        this.gaugeRrdDirectory = gaugeRrdDirectory;
     }
 
     /**

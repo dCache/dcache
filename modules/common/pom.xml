@@ -19,10 +19,6 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.rrd4j</groupId>
-        <artifactId>rrd4j</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
