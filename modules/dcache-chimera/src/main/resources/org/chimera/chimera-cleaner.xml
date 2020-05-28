@@ -2,7 +2,7 @@
 <!--
   ~ dCache - http://www.dcache.org/
   ~
-  ~ Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+  ~ Copyright (C) 2017 - 2020 Deutsches Elektronen-Synchrotron
   ~
   ~ This program is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Affero General Public License as
@@ -60,7 +60,7 @@
                                         <entry key="minimumIdle" value="${cleaner.db.connections.idle}"/>
                                         <entry key="maximumPoolSize" value="${cleaner.db.connections.max}"/>
                                     </map>
-                               </property>
+                                </property>
                             </bean>
                         </constructor-arg>
                     </bean>
@@ -89,12 +89,21 @@
         <property name="customEditors">
             <map>
                 <entry key="java.lang.String[]"
-                       value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor" />
+                       value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor"/>
             </map>
         </property>
     </bean>
 
-    <bean id="abstractCleaner" abstract="true" class="org.dcache.chimera.namespace.AbstractCleaner" init-method="init">
+    <bean id="ha-service-leadership-manager" class="org.dcache.chimera.namespace.HAServiceLeadershipManager"
+          init-method="initZkLeaderListener" destroy-method="shutdown">
+        <description>Manages leadership coordination for HA services</description>
+        <constructor-arg value="cleaner"/>
+        <property name="leadershipListener">
+            <ref bean="leaderlistener-group"/>
+        </property>
+    </bean>
+
+    <bean id="abstractCleaner" abstract="true" class="org.dcache.chimera.namespace.AbstractCleaner">
         <property name="poolStub" ref="pool-stub"/>
         <property name="dataSource" ref="data-source"/>
         <property name="executor" ref="scheduled-thread-pool"/>
@@ -104,22 +113,32 @@
         <property name="refreshIntervalUnit" value="${cleaner.limits.period.unit}"/>
         <property name="gracePeriod"
                   value="#{ T(org.dcache.util.TimeUtils).durationOf('${cleaner.service.grace-period}', '${cleaner.service.grace-period.unit}')}"/>
+        <property name="haServiceLeadershipManager">
+            <ref bean="ha-service-leadership-manager"/>
+        </property>
+    </bean>
 
+    <bean id="baseleaderlistener-group" abstract="true" class="org.dcache.chimera.namespace.LeadershipListenerGroup">
+        <description>Propagates leadership change notifications to managed listeners</description>
+        <property name="leaderElectionAwareComponents">
+            <set>
+                <ref bean="disk-cleaner"/>
+            </set>
+        </property>
     </bean>
 
     <bean id="disk-cleaner" class="org.dcache.chimera.namespace.DiskCleaner" parent="abstractCleaner">
-    <description>Disk Cleaner removes files from corresponding pools and then from DB as well</description>
+        <description>Disk Cleaner removes files from corresponding pools and then from DB as well</description>
         <property name="recoverTimer" value="${cleaner.service.pool.retry-period}"/>
         <property name="recoverTimerUnit" value="${cleaner.service.pool.retry-period.unit}"/>
         <property name="processAtOnce" value="${cleaner.limits.batch-size}"/>
         <property name="notificationStub" ref="notification-stub"/>
-
     </bean>
 
     <beans profile="hsmcleaner-true">
         <bean id="hsm-cleaner" class="org.dcache.chimera.namespace.HsmCleaner" parent="abstractCleaner"
-                    init-method="init" destroy-method="shutdown">
-            <description>Hsm Cleaner romoves files from HSM</description>
+              init-method="init" destroy-method="shutdown">
+            <description>Hsm Cleaner removes files from HSM</description>
             <!-- check-->
             <property name="maxFilesPerRequest" value="${cleaner.limits.hsm-batch-size}"/>
             <property name="timeout"
@@ -129,6 +148,18 @@
             <property name="hsmTimeout" value="${cleaner.service.pool.hsm-timeout}"/>
             <property name="hsmTimeoutUnit" value="${cleaner.service.pool.hsm-timeout.unit}"/>
         </bean>
+
+        <bean id="leaderlistener-group" parent="baseleaderlistener-group">
+            <property name="leaderElectionAwareComponents">
+                <set merge="true">
+                    <ref bean="hsm-cleaner"/>
+                </set>
+            </property>
+        </bean>
+    </beans>
+
+    <beans profile="!hsmcleaner-true">
+        <bean id="leaderlistener-group" parent="baseleaderlistener-group"/>
     </beans>
 
 </beans>

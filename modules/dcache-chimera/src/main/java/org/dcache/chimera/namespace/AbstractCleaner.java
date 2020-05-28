@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,9 +16,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.dcache.chimera.namespace;
 
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -29,25 +29,27 @@ import javax.sql.DataSource;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
 import dmg.cells.nucleus.CellPath;
-
 import org.dcache.cells.CellStub;
-
 
 /**
  *
  * Abstract base class representing common properties for DiskCleaner and HsmCleaner.
  *
  */
-public abstract class AbstractCleaner
+public abstract class AbstractCleaner implements LeaderLatchListener
 {
 
     private static final Logger _log =
             LoggerFactory.getLogger(DiskCleaner.class);
+
     protected ScheduledExecutorService _executor;
+    private ScheduledFuture<?> _cleanerTask;
+
     /**
      * CellStub used for sending messages to pools.
      */
@@ -69,6 +71,14 @@ public abstract class AbstractCleaner
      * removed by cleaner.
      */
     protected Duration _gracePeriod;
+
+    /** Manager for a Cleaner's HA group membership and leadership state changes */
+    protected HAServiceLeadershipManager _haServiceLeadershipManager;
+
+    @Required
+    public void setHaServiceLeadershipManager(HAServiceLeadershipManager manager) {
+        _haServiceLeadershipManager = Objects.requireNonNull(manager);
+    }
 
     @Required
     public void setExecutor(ScheduledExecutorService executor)
@@ -123,19 +133,36 @@ public abstract class AbstractCleaner
 
     protected abstract void runDelete() throws InterruptedException;
 
+    private void scheduleCleanerTask() {
+        _cleanerTask = _executor.scheduleWithFixedDelay(() -> {
+            try {
+                AbstractCleaner.this.runDelete();
+            } catch (InterruptedException e) {
+                _log.info("Cleaner was interrupted");
+            } catch (DataAccessException e) {
+                _log.error("Database failure: {}", e.getMessage());
+            } catch (IllegalStateException e) {
+                _log.error("Illegal state: {}", e.getMessage());
+            }
 
-    public void init() {
-        _executor.scheduleWithFixedDelay(() -> {
-
-                    try {
-                        AbstractCleaner.this.runDelete();
-                    } catch (InterruptedException e) {
-                        _log.info("Cleaner was interrupted");
-                    } catch (DataAccessException e) {
-                        _log.error("Database failure: {}", e.getMessage());
-                    }
-
-                }, _refreshInterval, _refreshInterval,
-                _refreshIntervalUnit);
+        }, _refreshInterval, _refreshInterval,
+        _refreshIntervalUnit);
     }
+
+    private void cancelCleanerTask() {
+        if (_cleanerTask != null) {
+            _cleanerTask.cancel(true);
+        }
+    }
+
+    @Override
+    public void isLeader() {
+        scheduleCleanerTask();
+    }
+
+    @Override
+    public void notLeader() {
+        cancelCleanerTask();
+    }
+
 }

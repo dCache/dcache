@@ -37,10 +37,9 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellLifeCycleAware;
-
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
@@ -52,6 +51,7 @@ import org.dcache.util.TimeUtils;
 import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
+import static dmg.util.CommandException.checkCommand;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
@@ -63,8 +63,7 @@ import static java.util.stream.Collectors.toList;
  * removes them from the corresponding pools and then from the table as well.
  * @since 1.8
  */
-
-public class DiskCleaner extends AbstractCleaner implements  CellCommandListener, CellLifeCycleAware, CellInfoProvider {
+public class DiskCleaner extends AbstractCleaner implements  CellCommandListener, CellInfoProvider {
     private static final Logger _log =
             LoggerFactory.getLogger(DiskCleaner.class);
 
@@ -77,7 +76,6 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
     private TimeUnit _recoverTimerUnit;
     private int _processAtOnce;
     private CellStub _notificationStub;
-
 
     @Required
     public void setRecoverTimer(long recoverTimer)
@@ -109,7 +107,6 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
      *
      * @throws InterruptedException
      */
-
     @Override
     protected void runDelete() throws InterruptedException
     {
@@ -157,7 +154,6 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         } catch (RuntimeException e) {
             _log.error("Bug detected", e);
         }
-
     }
 
     /**
@@ -242,7 +238,6 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
      * @param removeList list of files to be removed from this pool
      * @throws InterruptedException
      */
-
     private void sendRemoveToPoolCleaner(String poolName, List<String> removeList)
             throws InterruptedException, CacheException, NoRouteToCellException
     {
@@ -310,7 +305,6 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                         .collect(toList()));
     }
 
-
     /**
      * cleanPoolComplete
      * delete all files from the pool 'poolName' found in the trash-table for this pool
@@ -347,30 +341,17 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         }
     }
 
-    /*
-     * Cell specific
-    */
-    @Override
-    public void getInfo(PrintWriter pw)
-    {
-        pw.printf("Disk Cleaner Info : \n");
-        pw.printf("Refresh Interval: %s\n", _refreshInterval);
-        pw.printf("Refresh Interval Unit: %s\n", _refreshIntervalUnit);
-        pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
-        pw.printf("Reply Timeout:  %d\n", _poolStub.getTimeout());
-        pw.printf("Number of files processed at once:  %d\n", _processAtOnce);
-        pw.printf("Delete notification targets:  %s\n", Arrays.toString(_deleteNotificationTargets));
-    }
-
     ////////////////////////////////////////////////////////////////////////////
+
     @Command(name = "rundelete",
             hint = "run cleaner",
             description = "Delete all files found in the trash-table irrespective of the pool.")
     public class RundeleteCommand implements Callable<String>
     {
         @Override
-        public String call() throws InterruptedException
+        public String call() throws InterruptedException, CommandException
         {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
             runDelete(getPoolList());
             return "";
         }
@@ -401,8 +382,9 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         String poolName;
 
         @Override
-        public String call()
+        public String call() throws CommandException
         {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
             if (_poolsBlackList.remove(poolName) != null) {
                 return "Pool " + poolName + " is removed from the Black List ";
             }
@@ -412,8 +394,9 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
     public static final String hh_clean_file =
             "<pnfsID> # clean this file (file will be deleted from DISK)";
-    public String ac_clean_file_$_1(Args args) throws InterruptedException, CacheException, NoRouteToCellException
+    public String ac_clean_file_$_1(Args args) throws InterruptedException, CacheException, NoRouteToCellException, CommandException
     {
+        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
         try {
             String pnfsid = args.argv(0);
             List<String> removeFile = Collections.singletonList(pnfsid);
@@ -437,8 +420,9 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
     }
 
     public static final String hh_clean_pool = "<poolName> # clean this pool ";
-    public String ac_clean_pool_$_1(Args args) throws CacheException, InterruptedException, NoRouteToCellException
+    public String ac_clean_pool_$_1(Args args) throws CacheException, InterruptedException, NoRouteToCellException, CommandException
     {
+        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
         String poolName = args.argv(0);
         if (_poolsBlackList.containsKey(poolName)) {
             return "This pool is not available for the moment and therefore will not be cleaned.";
@@ -450,8 +434,9 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
     public static final String hh_set_refresh = "[<refreshTimeInSeconds>]";
     public static final String fh_set_refresh =
             "Alters refresh rate and triggers a new run. Maximum rate is every 5 seconds.";
-    public String ac_set_refresh_$_0_1(Args args)
+    public String ac_set_refresh_$_0_1(Args args) throws CommandException
     {
+        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
         if (args.argc() > 0) {
             long newRefresh = Long.parseLong(args.argv(0));
             if (newRefresh < 5) {
@@ -480,8 +465,9 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
     }
 
     public static final String hh_set_processedAtOnce = "<processedAtOnce> # max number of files sent to pool for processing at once ";
-    public String ac_set_processedAtOnce_$_1(Args args)
+    public String ac_set_processedAtOnce_$_1(Args args) throws CommandException
     {
+        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
         if (args.argc() > 0) {
             int processAtOnce = Integer.parseInt(args.argv(0));
             if (processAtOnce <= 0) {
@@ -491,6 +477,18 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         }
 
         return "Number of files processed at once set to " + _processAtOnce;
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.printf("Disk Cleaner Info : \n");
+        pw.printf("Refresh Interval: %s\n", _refreshInterval);
+        pw.printf("Refresh Interval Unit: %s\n", _refreshIntervalUnit);
+        pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
+        pw.printf("Reply Timeout:  %d\n", _poolStub.getTimeout());
+        pw.printf("Number of files processed at once:  %d\n", _processAtOnce);
+        pw.printf("Delete notification targets:  %s\n", Arrays.toString(_deleteNotificationTargets));
     }
 
 }
