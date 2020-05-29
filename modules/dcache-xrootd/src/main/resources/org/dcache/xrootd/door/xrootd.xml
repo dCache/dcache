@@ -159,7 +159,7 @@
   <bean id="ssl-handler-factories"
         class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
     <description>Factory for ssl (tls) handler</description>
-    <property name="plugins" value="ssl-handler"/>
+    <property name="plugins" value="${xrootd.security.ssl-plugins}"/>
   </bean>
 
   <bean id="channelhandler-factories"

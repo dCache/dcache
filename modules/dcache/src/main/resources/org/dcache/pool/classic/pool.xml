@@ -390,7 +390,7 @@
       <property name="sslHandlerFactories">
         <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
           <description>Factory for ssl handler</description>
-          <property name="plugins" value="ssl-handler,ssl-client-handler"/>
+          <property name="plugins" value="${pool.mover.xrootd.security.ssl-plugins}"/>
         </bean>
       </property>
       <property name="doorStub" ref="doorStub"/>
