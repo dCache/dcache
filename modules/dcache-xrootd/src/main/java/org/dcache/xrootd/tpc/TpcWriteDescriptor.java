@@ -59,8 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.xrootd.tpc;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,10 +94,7 @@ import org.dcache.xrootd.util.ByteBuffersProvider;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.ParseException;
 
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgInvalid;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
+import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 /**
  * <p>An extension of the WriteDescriptor allowing for delayed response to
@@ -333,5 +333,34 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                     throws IOException
     {
         write((ByteBuffersProvider)inboundReadResponse);
+    }
+
+    public void shutDown()
+    {
+        if (client == null) {
+            return;
+        }
+
+        ChannelFuture future = client.getChannelFuture();
+        if (future == null) {
+            return;
+        }
+
+        Channel channel = future.channel();
+        if (channel == null) {
+            return;
+        }
+
+        ChannelPipeline pipeline = channel.pipeline();
+        if (pipeline == null) {
+            return;
+        }
+
+        ChannelHandlerContext ctx = pipeline.lastContext();
+        if (ctx == null) {
+            return;
+        }
+
+        client.shutDown(ctx);
     }
 }
