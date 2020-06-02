@@ -59,8 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.xrootd.tpc;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -332,5 +335,38 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                     throws IOException
     {
         write((ByteBuffersProvider)inboundReadResponse);
+    }
+
+    public void shutDown()
+    {
+        if (client == null) {
+            return;
+        }
+
+        ChannelFuture future = client.getChannelFuture();
+        if (future == null) {
+            return;
+        }
+
+        Channel channel = future.channel();
+        if (channel == null) {
+            return;
+        }
+
+        ChannelPipeline pipeline = channel.pipeline();
+        if (pipeline == null) {
+            return;
+        }
+
+        ChannelHandlerContext ctx = pipeline.lastContext();
+        if (ctx == null) {
+            return;
+        }
+
+        try {
+            client.shutDown(ctx);
+        } catch (InterruptedException e) {
+            LOGGER.debug("shutDown(), shutdown of tpc client was interrupted.");
+        }
     }
 }
