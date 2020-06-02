@@ -181,6 +181,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         /* close leftover descriptors */
         for (FileDescriptor descriptor : _descriptors) {
             if (descriptor != null) {
+                if (descriptor instanceof TpcWriteDescriptor) {
+                    ((TpcWriteDescriptor)descriptor).shutDown();
+                }
+
                 if (descriptor.isPersistOnSuccessfulClose()) {
                     descriptor.getChannel().release(new FileCorruptedCacheException(
                             "File was opened with Persist On Successful Close and not closed."));
