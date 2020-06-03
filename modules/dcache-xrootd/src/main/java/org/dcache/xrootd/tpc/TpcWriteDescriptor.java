@@ -361,6 +361,10 @@ public final class TpcWriteDescriptor extends WriteDescriptor
             return;
         }
 
-        client.shutDown(ctx);
+        try {
+            client.shutDown(ctx);
+        } catch (InterruptedException e) {
+            LOGGER.debug("shutDown of tpc client interrupted.");
+        }
     }
 }
