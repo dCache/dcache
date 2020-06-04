@@ -41,7 +41,7 @@ After reading exports file dCache will read the content of the
 directory with additional export tables. The location of directory
 defined by **nfs.export.dir** property and default to
 `/etc/exports.d`. Only files ending with *.exports* are
-considered. Files staring with a dot are ignored. The format of the
+considered. Files starting with a dot are ignored. The format of the
 export tables is similar to the one which is provided by Linux:
 
     #
