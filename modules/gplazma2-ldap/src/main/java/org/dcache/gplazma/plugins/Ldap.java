@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 - 2019 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2017 - 2020 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -22,11 +22,6 @@ package org.dcache.gplazma.plugins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.security.auth.UserPrincipal;
-import com.sun.security.auth.module.LdapLoginModule;
-
-import com.google.common.collect.ImmutableMap;
-
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -37,9 +32,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.naming.ldap.InitialLdapContext;
-import javax.security.auth.Subject;
-import javax.security.auth.login.FailedLoginException;
-import javax.security.auth.login.LoginException;
 
 import java.security.Principal;
 import java.util.function.Predicate;
@@ -94,9 +86,6 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazmaMappingPlugin, GPlazmaAuthenticationPlugin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Ldap.class);
-
-    private static final String USERNAME_KEY = "javax.security.auth.login.name";
-    private static final String PASSWORD_KEY = "javax.security.auth.login.password";
 
     /*
      * LDAP attibute names as defined by http://www.ietf.org/rfc/rfc2307.txt
@@ -295,11 +284,6 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     private final ReplaceKeywords userRootTransformation;
 
     /**
-     * Options used by auth.
-     */
-    private final Map<String, Object> globalLoginOptions;
-
-    /**
      * If true, then map stage will try to use uidNUmber field if UidPrincipal is
      * present.
      */
@@ -367,13 +351,6 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             ldapConnectionProperties.put(Context.SECURITY_PRINCIPAL, properties.getProperty(LDAP_BINDDN));
             ldapConnectionProperties.put(Context.SECURITY_CREDENTIALS, properties.getProperty(LDAP_BINDPW));
         }
-
-        globalLoginOptions = ImmutableMap.of(
-                "userProvider", ldapUrl + "/" + peopleOU,
-                "useSSL", Boolean.toString(isSSL),
-                "userFilter", String.format(userFilter, "{USERNAME}"),
-                "useFirstPass", "true"
-        );
     }
 
     @Override
@@ -383,34 +360,44 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
         checkAuthentication(password.isPresent(), "no login name");
 
-        Subject subject = new Subject();
-        LdapLoginModule loginModule = new LdapLoginModule();
+        try (AutoCloseableLdapContext ctx = new AutoCloseableLdapContext()) {
 
-        Map<String, Object> loginOptions = ImmutableMap.<String, Object>builder()
-                .put(USERNAME_KEY, password.get().getUsername())
-                .put(PASSWORD_KEY, password.get().getPassword().toCharArray())
-                .build();
+            // get user DN based on provided user name
+            SearchControls constraints = buildSearchControls();
+            NamingEnumeration<SearchResult> results = ctx.search(peopleOU,
+                    String.format("(%s=%s)", USER_ID_ATTRIBUTE, password.get().getUsername()),
+                    constraints);
 
-        loginModule.initialize(subject, null, loginOptions, globalLoginOptions);
+            String userDN = null;
+            try {
+                if (results.hasMore()) {
+                    userDN = results.next().getNameInNamespace();
+                }
+            } finally {
+                results.close();
+            }
 
-        try {
-            loginModule.login();
-            loginModule.commit();
-            subject.getPrincipals(UserPrincipal.class).stream()
-                    .map(Principal::getName)
-                    .map(UserNamePrincipal::new)
-                    .forEach(identifiedPrincipals::add);
+            if (userDN == null) {
+                throw new AuthenticationException("No such users: " + password.get().getUsername());
+            }
 
-            tryToLogout(loginModule);
-        } catch (FailedLoginException e) {
-            tryToAbortLogin(loginModule);
-            throw new AuthenticationException(e.getMessage(), e);
-        } catch (LoginException e) {
-            tryToAbortLogin(loginModule);
-            LOGGER.warn("LDAP login failed: {}", e.getMessage());
+            // trigger new connection with new bind dn.
+            ctx.addToEnvironment(Context.SECURITY_AUTHENTICATION, "simple");
+            ctx.addToEnvironment(Context.SECURITY_PRINCIPAL, userDN);
+            ctx.addToEnvironment(Context.SECURITY_CREDENTIALS, password.get().getPassword().toCharArray());
+
+            // disable connection pooling to avoid extra thread for the new InitialLdapContext.
+            ctx.addToEnvironment("com.sun.jndi.ldap.connect.pool", "false");
+
+            InitialLdapContext loginCtx = new InitialLdapContext(ctx.getEnvironment(), null);
+            loginCtx.close();
+
+            // bind succeeded.
+            identifiedPrincipals.add(new UserNamePrincipal(password.get().getUsername()));
+
+        } catch (NamingException e) {
             throw new AuthenticationException(e.getMessage(), e);
         }
-
     }
 
     @Override
@@ -639,21 +626,4 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     private <T> Optional<T> findFirst(Collection<T> collection, Predicate<T> predicate) {
         return collection.stream().filter(predicate).findFirst();
     }
-
-    private static void tryToLogout(LdapLoginModule loginModule) {
-        try {
-            loginModule.logout();
-        } catch (LoginException e) {
-            LOGGER.debug("Falied to logout/un-bind from LDAP context.");
-        }
-    }
-
-    private void tryToAbortLogin(LdapLoginModule loginModule) {
-        try {
-            loginModule.abort();
-        } catch (LoginException ee) {
-            LOGGER.warn("LDAP abort failed: {}", ee.getMessage());
-        }
-    }
-
 }
