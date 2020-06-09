@@ -4,7 +4,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -801,7 +800,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Override
     public List<deviceid4> getDeviceList(CompoundContext context, GETDEVICELIST4args args) {
-        return Lists.newArrayList(_poolDeviceMap.getDeviceIds());
+        return _poolDeviceMap.getDevices()
+                .stream()
+                .map(PoolDS::getDeviceId)
+                .collect(toList());
     }
 
     private void logLayoutErrors(CompoundContext context, ff_layoutreturn4 lr) {
@@ -919,7 +921,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             pw.printf("  IO queue                : %s\n", _ioQueue);
             pw.printf("  Supported Layout types  : %s\n", _supportedDrivers.keySet());
             pw.printf("  Number of NFSv4 clients : %d\n", _nfs4.getStateHandler().getClients().size());
-            pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getEntries().size());
+            pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getDevices().size());
             pw.printf("  Active transfers        : %d\n", _transfers.values().size());
             pw.printf("  Known proxy adapters    : %d\n", _proxyIoFactory.getCount());
         }
@@ -1106,9 +1108,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() throws IOException {
-            return _poolDeviceMap.getEntries()
+            return _poolDeviceMap.getDevices()
                     .stream()
-                    .map(Map.Entry::getValue)
                     .filter(p -> pool == null ? true : p.getName().equals(pool))
                     .map(Object::toString)
                     .collect(Collectors.joining("\n"));

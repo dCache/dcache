@@ -1,10 +1,10 @@
 package org.dcache.chimera.nfsv41.door;
 
-import com.google.common.collect.ImmutableSet;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfsv41.door.NFSv41Door.PoolDS;
@@ -48,16 +48,7 @@ public class PoolDeviceMap {
     Collection<PoolDS> getDevices() {
         _rlock.lock();
         try {
-            return ImmutableSet.copyOf(_poolNameToIpMap.values());
-        } finally {
-            _rlock.unlock();
-        }
-    }
-
-    Collection<deviceid4> getDeviceIds() {
-        _rlock.lock();
-        try {
-            return ImmutableSet.copyOf(_deviceMap.keySet());
+            return Set.copyOf(_poolNameToIpMap.values());
         } finally {
             _rlock.unlock();
         }
@@ -90,15 +81,6 @@ public class PoolDeviceMap {
         _rlock.lock();
         try {
             return _deviceMap.get(deviceId);
-        } finally {
-            _rlock.unlock();
-        }
-    }
-
-    Collection<Map.Entry<String,PoolDS>> getEntries() {
-        _rlock.lock();
-        try {
-            return ImmutableSet.copyOf(_poolNameToIpMap.entrySet());
         } finally {
             _rlock.unlock();
         }
