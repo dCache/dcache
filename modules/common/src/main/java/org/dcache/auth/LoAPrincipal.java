@@ -58,4 +58,22 @@ public class LoAPrincipal implements Principal, Serializable
     {
         return getClass().getSimpleName() + '[' + getName() + ']';
     }
+
+    private Object readResolve()
+    {
+        if (_loa == LoA.IGTF_LOA_CEDER) {
+            return new LoAPrincipal(LoA.IGTF_LOA_CEDAR);
+        }
+
+        return this;
+    }
+
+    private Object writeReplace()
+    {
+        if (_loa == LoA.IGTF_LOA_CEDER) {
+            return new LoAPrincipal(LoA.IGTF_LOA_CEDAR);
+        }
+
+        return this;
+    }
 }

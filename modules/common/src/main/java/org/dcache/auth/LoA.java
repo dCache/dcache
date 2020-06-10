@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015-2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -120,6 +120,13 @@ public enum LoA
      * of generalisation</a>.
      */
     IGTF_LOA_CEDAR("IGTF:CEDAR"),
+
+    /**
+     * DO NOT USE.  This is an incorrect label.  It is included here only for
+     * backwards compatibility when deserializing LoA; for example, within
+     * an LoAPrincipal.
+     */
+    IGTF_LOA_CEDER("IGTF:CEDER"),
 
     /**
      * The IGTF DOGWOOD LoA profile.  This is derived from {@link #IGTF_AP_IOTA}.
