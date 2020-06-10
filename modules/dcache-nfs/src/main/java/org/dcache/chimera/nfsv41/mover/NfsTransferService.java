@@ -254,17 +254,29 @@ public class NfsTransferService
         return addresses.stream().map(address -> new InetSocketAddress(address, port)).toArray(InetSocketAddress[]::new);
     }
 
+    // REVISIT: remove when RHEL6 is dead (November 30, 2020)
     private InetSocketAddress[] localSocketAddresses(NfsMover mover) throws SocketException {
 
         InetSocketAddress[] addressesToUse;
         if (_sortMultipathList) {
-            addressesToUse = new InetSocketAddress[_localSocketAddresses.length + 1];
-            System.arraycopy(_localSocketAddresses, 0, addressesToUse, 1, _localSocketAddresses.length);
 
             InetSocketAddress preferredInterface = new InetSocketAddress(
                     NetworkUtils.getLocalAddress(mover.getProtocolInfo().getSocketAddress().getAddress()),
                     _nfsIO.getLocalAddress().getPort());
-            addressesToUse[0] = preferredInterface;
+
+            addressesToUse = _localSocketAddresses.clone();
+            // go through all addresses and swap preferred address with the first entry.
+            for (int i = 0; i < addressesToUse.length; i++) {
+                InetSocketAddress currentAddress = addressesToUse[i];
+                if (currentAddress.equals(preferredInterface)) {
+                    // If the first one nothing to do, otherwise - swap.
+                    if (i != 0) {
+                        addressesToUse[i] = addressesToUse[0];
+                        addressesToUse[0] = currentAddress;
+                    }
+                    break;
+                }
+            }
         } else {
             addressesToUse = _localSocketAddresses;
         }
