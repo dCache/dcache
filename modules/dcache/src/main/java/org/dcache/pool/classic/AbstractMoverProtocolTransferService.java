@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -197,6 +197,8 @@ public abstract class AbstractMoverProtocolTransferService
         }
 
         private synchronized void cleanThread() {
+            // clear the interrupted status in case that mover thread was interrupted by timeout manager
+            _thread.interrupted();
             _thread = null;
         }
 
