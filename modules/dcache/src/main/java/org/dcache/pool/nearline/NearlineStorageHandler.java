@@ -1440,7 +1440,7 @@ public class NearlineStorageHandler
     }
 
     @Command(name = "rm ls",
-            hint = "list store queue",
+            hint = "list tape remove queue",
             description = "List the HSM requests on the remove queue.\n\n" +
                     "The columns in the output show: job id, job status, pnfs id, request counter, " +
                     "and request submission time.")
