@@ -438,8 +438,8 @@
     </property>
   </bean>
 
-  <bean id="http-transfer-service-parent" class="org.dcache.http.HttpTransferService"
-          depends-on="rep">
+  <bean id="http-transfer-service-parent" abstract="true"
+            class="org.dcache.http.HttpTransferService" depends-on="rep">
         <description>HTTP transfer service</description>
         <property name="postTransferService" ref="post-transfer-service"/>
         <property name="threads" value="${pool.mover.http.threads}"/>
