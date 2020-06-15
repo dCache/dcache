@@ -354,15 +354,10 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         pipeline.addLast("transfer", handler);
     }
 
-    @PreDestroy
     @Override
-    public synchronized void shutdown() {
-        super.shutdown();
-        thirdPartyClientGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
-        try {
-            thirdPartyClientGroup.terminationFuture().sync();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+    protected void initialiseShutdown()
+    {
+        super.initialiseShutdown();
+        shutdownGracefully(thirdPartyClientGroup);
     }
 }

@@ -43,6 +43,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -136,6 +138,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     protected CellStub doorStub;
 
     private CellAddressCore address;
+
+    private final List<io.netty.util.concurrent.Future<?>> shutdownFutures = new ArrayList<>();
 
     public NettyTransferService(String name)
     {
@@ -297,16 +301,34 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     @PreDestroy
     public synchronized void shutdown()
     {
+        LOGGER.debug("NettyTransferService#shutdown started");
+        initialiseShutdown();
+        awaitShutdownCompletion();
+        LOGGER.debug("NettyTransferService#shutdown completed");
+    }
+
+    protected void initialiseShutdown()
+    {
         stopServer();
         timeoutScheduler.shutdown();
 
-        acceptGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
-        socketGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+        shutdownGracefully(acceptGroup);
+        shutdownGracefully(socketGroup);
+    }
 
+    protected void shutdownGracefully(NioEventLoopGroup group)
+    {
+        io.netty.util.concurrent.Future<?> terminationFuture = group.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+        shutdownFutures.add(terminationFuture);
+    }
+
+    private void awaitShutdownCompletion()
+    {
         try {
             if (timeoutScheduler.awaitTermination(3, TimeUnit.SECONDS)) {
-                acceptGroup.terminationFuture().sync();
-                socketGroup.terminationFuture().sync();
+                for (io.netty.util.concurrent.Future<?> f : shutdownFutures) {
+                    f.sync();
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
