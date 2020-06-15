@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
@@ -857,7 +858,8 @@ public class RequestContainerV5
          * Indicates the next time a TTL of a request message will be
          * exceeded.
          */
-        private long _nextTtlTimeout = Long.MAX_VALUE;
+        private long    _nextTtlTimeout = Long.MAX_VALUE;
+        private boolean _failOnExcluded;
 
         public PoolRequestHandler(PnfsId pnfsId,
                                   String poolGroup,
@@ -919,11 +921,14 @@ public class RequestContainerV5
               _destinationFileStatus = ((PoolMgrReplicateFileMsg)request).getDestinationFileStatus() ;
            }
 
+           Set<String> excluded = request.getExcludedHosts();
+           _failOnExcluded = excluded != null && !excluded.isEmpty();
+
            _poolSelector =
                _poolMonitor.getPoolSelector(_fileAttributes,
                        _protocolInfo,
                        _linkGroup,
-                       request.getExcludedHosts());
+                       excluded);
            //
            //
            //
@@ -1816,7 +1821,7 @@ public class RequestContainerV5
 
         private void suspendIfEnabled(String status)
         {
-            if (_onError.equals("suspend")) {
+            if (_onError.equals("suspend") && !_failOnExcluded) {
                 suspend(status);
             } else {
                 fail();
