@@ -220,6 +220,12 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
         // Java doesn't provide a way to discover local domain.....
         String fqdn = InetAddress.getLocalHost().getCanonicalHostName();
+        if (!InternetDomainName.isValid(fqdn)) {
+            LOGGER.warn("The FQDN {} can't be associated with a domain name, using default nfs4domain: {}",
+                    fqdn, DEFAULT_NFS4_DOMAIN);
+            return DEFAULT_NFS4_DOMAIN;
+        }
+
         InternetDomainName domainName = InternetDomainName.from(fqdn);
         if (!domainName.hasParent()) {
             // DNS is not configured, or we got something like localhost
