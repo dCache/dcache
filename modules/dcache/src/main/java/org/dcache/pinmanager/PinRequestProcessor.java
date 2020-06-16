@@ -37,6 +37,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.SelectedPool;
@@ -98,7 +99,7 @@ public class PinRequestProcessor
     private PinDao _dao;
     private CellStub _poolStub;
     private CellStub _pnfsStub;
-    private CellStub _poolManagerStub;
+    private PoolManagerStub _poolManagerStub;
     private CheckStagePermission _checkStagePermission;
     private long _maxLifetime;
     private TimeUnit _maxLifetimeUnit;
@@ -136,7 +137,7 @@ public class PinRequestProcessor
     }
 
     @Required
-    public void setPoolManagerStub(CellStub stub)
+    public void setPoolManagerStub(PoolManagerStub stub)
     {
         _poolManagerStub = stub;
     }
@@ -351,7 +352,7 @@ public class PinRequestProcessor
                                          task.getReadPoolSelectionContext(),
                                          checkStaging(task));
         msg.setSubject(task.getSubject());
-        CellStub.addCallback(_poolManagerStub.send(msg),
+        CellStub.addCallback(_poolManagerStub.sendAsync(msg),
                              new AbstractMessageCallback<PoolMgrSelectReadPoolMsg>()
                              {
                                  @Override
@@ -529,7 +530,7 @@ public class PinRequestProcessor
     private Date getExpirationTimeForPoolSelection()
     {
         long now = System.currentTimeMillis();
-        long timeout = _poolManagerStub.getTimeoutInMillis();
+        long timeout = _poolManagerStub.getPoolManagerTimeoutInMillis();
         return new Date(now + 2 * (timeout + RETRY_DELAY));
     }
 

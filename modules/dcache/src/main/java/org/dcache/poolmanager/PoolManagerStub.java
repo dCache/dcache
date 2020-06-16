@@ -91,6 +91,13 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     }
 
     /**
+     * Returns the communication timeout with Pool Manager in milliseconds.
+     */
+    public long getPoolManagerTimeoutInMillis() {
+        return maxPoolManagerTimeoutUnit.toMillis(maxPoolManagerTimeout);
+    }
+
+    /**
      * Sets a maximum timeout for pool requests.
      *
      * <p>If {@link PoolManagerStub#startAsync(CellAddressCore, PoolIoFileMessage, long)} is
@@ -106,6 +113,13 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     public void setMaximumPoolTimeoutUnit(TimeUnit unit)
     {
         maxPoolTimeoutUnit = unit;
+    }
+
+    /**
+     * Returns the communication timeout with Pool in milliseconds.
+     */
+    public long getPoolTimeoutInMillis() {
+        return maxPoolTimeoutUnit.toMillis(maxPoolTimeout);
     }
 
     /**
