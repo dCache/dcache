@@ -1,6 +1,8 @@
 package org.dcache.pinmanager;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Test;
 
@@ -39,6 +41,8 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolManagerMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -59,6 +63,8 @@ import org.dcache.pinmanager.model.Pin;
 import org.dcache.pool.assumption.Assumptions;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.PoolManagerHandler;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.SelectedPool;
@@ -127,7 +133,7 @@ public class PinManagerTests
                     return msg;
                 }
             });
-        processor.setPoolManagerStub(new TestStub(new CellAddressCore("PinManager")) {
+        processor.setPoolManagerStub(new TestPoolManagerStub(new CellAddressCore("PinManager")) {
                 public PoolMgrSelectReadPoolMsg messageArrived(PoolMgrSelectReadPoolMsg msg)
                 {
                     msg.setPool(POOL1);
@@ -798,5 +804,34 @@ class TestStub extends CellStub implements CellMessageReceiver
     {
         setDestination("dummy");
         setCellEndpoint(new TestEndpoint(address, this));
+    }
+}
+
+class TestPoolManagerStub extends PoolManagerStub implements CellMessageReceiver
+{
+    public TestPoolManagerStub(CellAddressCore address)
+    {
+        setCellEndpoint(new TestEndpoint(address, this));
+        setHandler(new PoolManagerHandler() {
+            @Override
+            public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellEndpoint endpoint, CellAddressCore pool, T msg, long timeout) {
+                return Futures.immediateFuture(msg);
+            }
+
+            @Override
+            public void start(CellEndpoint endpoint, CellMessage envelope, PoolIoFileMessage msg) {
+
+            }
+
+            @Override
+            public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(CellEndpoint endpoint, T msg, long timeout) {
+                return Futures.immediateFuture(msg);
+            }
+
+            @Override
+            public void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg) {
+
+            }
+        });
     }
 }
