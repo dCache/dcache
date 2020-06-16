@@ -35,6 +35,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.SmartLifecycle;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -73,6 +74,7 @@ import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.ChannelCdcSessionHandlerWrapper;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NettyPortRange;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
@@ -88,7 +90,7 @@ import static com.google.common.base.Preconditions.checkState;
  * the Netty channel to close.
  */
 public abstract class NettyTransferService<P extends ProtocolInfo>
-    implements TransferService<NettyMover<P>>, MoverFactory, CellIdentityAware
+    implements TransferService<NettyMover<P>>, MoverFactory, CellIdentityAware, SmartLifecycle
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(NettyTransferService.class);
@@ -287,8 +289,11 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         }
     }
 
-    @PostConstruct
-    public synchronized void init()
+    /**
+     * Method used by Spring to tell this bean to start.
+     */
+    @Override
+    public synchronized void start()
     {
         timeoutScheduler =
                 Executors.newSingleThreadScheduledExecutor(
@@ -298,13 +303,46 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                 name + "-net-%d").build()));
     }
 
-    @PreDestroy
-    public synchronized void shutdown()
+    @Override
+    public synchronized boolean isRunning()
     {
-        LOGGER.debug("NettyTransferService#shutdown started");
+        return timeoutScheduler != null;
+    }
+
+
+    /**
+     * Method used by Spring to tell this bean to shutdown synchronously.
+     */
+    @Override
+    public synchronized void stop()
+    {
+        LOGGER.debug("NettyTransferService#stop started");
         initialiseShutdown();
         awaitShutdownCompletion();
-        LOGGER.debug("NettyTransferService#shutdown completed");
+        LOGGER.debug("NettyTransferService#stop completed");
+    }
+
+    /**
+     * Method used by Spring to tell this bean to shutdown asynchronously.
+     * @param callback The callback that must be called.
+     */
+    @Override
+    public synchronized void stop(final Runnable callback)
+    {
+        LOGGER.debug("NettyTransferService#stop (with callback) started");
+        initialiseShutdown();
+        LOGGER.debug("NettyTransferService#stop (with callback) shutdown initialised");
+        Runnable reportShutdownCompleted = new FireAndForgetTask(() ->
+                {
+                    LOGGER.debug("NettyTransferService#stop (with callback) waiting thread started");
+                    try {
+                        awaitShutdownCompletion();
+                        LOGGER.debug("NettyTransferService#stop (with callback) shutdown completed");
+                    } finally {
+                        callback.run();
+                    }
+                });
+        new Thread(reportShutdownCompleted, name + "-async-shutdown").run();
     }
 
     protected void initialiseShutdown()

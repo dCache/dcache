@@ -173,10 +173,9 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         return thirdPartyShutdownExecutor;
     }
 
-    @PostConstruct
     @Override
-    public synchronized void init() {
-        super.init();
+    public synchronized void start() {
+        super.start();
         ThreadFactory factory = new ThreadFactoryBuilder()
                         .setNameFormat("xrootd-tpc-client-%d")
                         .build();
