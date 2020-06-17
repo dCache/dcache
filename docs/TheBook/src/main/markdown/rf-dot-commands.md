@@ -174,12 +174,18 @@ Allows users to pin or stage files.
 * ``pin``
 * ``stage``
 * ``bringonline``
+* ``unpin``
 
-These are equivalent options.
+The first three are equivalent options.
 
 ``duration`` must be 0 or a positive integer: 0 will unpin all pins
 for which you are authorised to remove, a positive integer will create
 a new pin with that duration.
+
+For ``pin``, ``stage`` and ``bringonline``, this argument is optional
+and defaults to 300 (seconds), or 5 minutes.
+
+``unpin`` takes no arguments and is equivalent to ``pin 0``.
 
 ``unit`` can be replaced by:
 

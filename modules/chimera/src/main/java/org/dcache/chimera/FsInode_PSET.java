@@ -27,11 +27,14 @@ import org.dcache.util.ChecksumType;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class FsInode_PSET extends FsInode {
+    private static final long DEFAULT_DURATION_IN_SECS = 300;
+
     private static final String SIZE   = "size";
     private static final String IO     = "io";
     private static final String ONLN   = "bringonline";
     private static final String STG    = "stage";
     private static final String PIN    = "pin";
+    private static final String UNPIN  = "unpin";
     private static final String CKS    = "checksum";
 
     private final String[] _args;
@@ -75,6 +78,9 @@ public class FsInode_PSET extends FsInode {
                 case STG:
                 case PIN:
                     handlePinRequest();
+                    break;
+                case UNPIN:
+                    _fs.unpin(new FsInode(_fs, ino()));
                     break;
                 case CKS:
                     handleSetChecksum();
@@ -132,6 +138,7 @@ public class FsInode_PSET extends FsInode {
     private void handlePinRequest() throws ChimeraFsException {
         long lifetime;
         TimeUnit unit = TimeUnit.SECONDS;
+
         if (_args.length > 1) {
             try {
                 lifetime = Long.parseLong(_args[1]);
@@ -142,7 +149,7 @@ public class FsInode_PSET extends FsInode {
                 throw new InvalidArgumentChimeraException("Negative pin durations are not allowed");
             }
         } else {
-            lifetime = 0;
+            lifetime = DEFAULT_DURATION_IN_SECS;
         }
 
         if (_args.length > 2) {
@@ -152,6 +159,7 @@ public class FsInode_PSET extends FsInode {
                 throw new InvalidArgumentChimeraException("Invalid units: " + _args[2]);
             }
         }
+
         lifetime = unit.toMillis(lifetime);
 
         if (lifetime == 0) {
