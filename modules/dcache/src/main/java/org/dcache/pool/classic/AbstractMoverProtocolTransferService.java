@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.InterruptedIOException;
 import java.io.SyncFailedException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
@@ -184,9 +185,15 @@ public abstract class AbstractMoverProtocolTransferService
             }
         }
 
-        private void runMover(RepositoryChannel fileIoChannel) throws Exception
-        {
-            _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
+        private void runMover(RepositoryChannel fileIoChannel) throws Exception {
+            try {
+                _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
+            } finally {
+                // if mover was interrupted outside of any blocking IO operation or a wait/sleep/join ... calls
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("Mover thread was interrupted.");
+                }
+            }
         }
 
         private synchronized void setThread() throws InterruptedException {
@@ -197,8 +204,6 @@ public abstract class AbstractMoverProtocolTransferService
         }
 
         private synchronized void cleanThread() {
-            // clear the interrupted status in case that mover thread was interrupted by timeout manager
-            _thread.interrupted();
             _thread = null;
         }
 
