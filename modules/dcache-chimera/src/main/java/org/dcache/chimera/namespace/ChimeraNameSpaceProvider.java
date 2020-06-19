@@ -20,10 +20,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +98,7 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 
 import org.dcache.chimera.FileState;
+import org.dcache.chimera.FileSystemProvider.SetXattrMode;
 import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.util.Exceptions;
 
@@ -997,8 +1000,13 @@ public class ChimeraNameSpaceProvider
                 attributes.setNlink(stat.getNlink());
                 break;
             case XATTR:
-                // as some brave components query for all defined attributes
-                // REVISIT: xattrs not stored yet
+                Set<String> names = _fs.listXattrs(inode);
+                Map<String,String> xattrs = new HashMap<>(names.size());
+                for (String name : names) {
+                    byte[] data = _fs.getXattr(inode, name);
+                    xattrs.put(name, new String(data, StandardCharsets.UTF_8));
+                }
+                attributes.setXattrs(xattrs);
                 break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
@@ -1119,8 +1127,6 @@ public class ChimeraNameSpaceProvider
                         _extractor.setStorageInfo(inode, attr.getStorageInfo());
                         break;
                     case XATTR:
-                        // not supported in permanent storage yet
-                        _log.info("request to store extended attributes: {}", attr.getXattrs());
                         break;
                     default:
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
@@ -1128,6 +1134,16 @@ public class ChimeraNameSpaceProvider
             }
             if (stat.isDefinedAny()) {
                 inode.setStat(stat);
+            }
+
+            if (attr.isDefined(XATTR)) {
+                Map<String,String> xattrs = attr.getXattrs();
+
+                for (Map.Entry<String,String> e : xattrs.entrySet()) {
+                    _fs.setXattr(inode, e.getKey(),
+                            e.getValue().getBytes(StandardCharsets.UTF_8),
+                            SetXattrMode.EITHER);
+                }
             }
 
             if (attr.isDefined(FileAttribute.LOCATIONS)) {

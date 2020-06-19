@@ -12,6 +12,9 @@ import org.dcache.namespace.FileAttribute;
 /**
  * Vehicle for get files combined attributes.
  *
+ * If the set of desired FileAttribute values includes FileAttribute.XATTR then
+ * all extended attributes of the target are included in the reply.
+ *
  * @since 1.9.4
  */
 public class PnfsGetFileAttributes extends PnfsMessage {

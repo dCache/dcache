@@ -16,6 +16,15 @@ import org.dcache.namespace.FileAttribute;
  * arguments or update them to a different value; currently, this effect is
  * limited to FileAttribute.ACCESS_TIME and FileAttribute.CHANGE_TIME.
  *
+ * Sending this message with a FileAttributes object containing an
+ * FileAttribute.XATTR value will establish the specified key-value pairs as
+ * extended attributes of the target.  If the target already has extended
+ * attributes then those with the same name are overwritten and the others are
+ * left unmodified.
+ *
+ * If the set of FileAttribute values to acquire includes FileAttribute.XATTR
+ * then all extended attributes are included in the reply.
+ *
  * @since 1.9.4
  */
 public class PnfsSetFileAttributes extends PnfsMessage {
