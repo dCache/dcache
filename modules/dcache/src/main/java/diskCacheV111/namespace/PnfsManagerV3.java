@@ -129,6 +129,8 @@ public class PnfsManagerV3
 
     private static final CellMessage SHUTDOWN_SENTINEL = new CellMessage();
 
+    private static final String STORAGE_INFO_XATTR_PREFIX = "xattr.";
+
     private final Random _random = new Random(System.currentTimeMillis());
 
     private final RequestExecutionTimeGauges<Class<? extends PnfsMessage>> _gauges =
@@ -1239,8 +1241,10 @@ public class PnfsManagerV3
                 }
                 info.setKey("uid", Integer.toString(assign.getOwnerIfPresent().orElse(-1)));
                 info.setKey("gid", Integer.toString(assign.getGroupIfPresent().orElse(-1)));
+
+                // REVISIT: consider removing xattr injection once pools can accept FileAttribute.XATTR
                 if (assign.isDefined(XATTR)) {
-                    assign.getXattrs().forEach((k,v) -> info.setKey(k, v));
+                    assign.getXattrs().forEach((k,v) -> info.setKey(STORAGE_INFO_XATTR_PREFIX+k, v));
                 }
 
                 pnfsMessage.setPnfsId(attrs.getPnfsId());
@@ -1971,6 +1975,7 @@ public class PnfsManagerV3
                 requested = EnumSet.copyOf(requested);
                 requested.add(FileAttribute.OWNER);
                 requested.add(FileAttribute.OWNER_GROUP);
+                requested.add(FileAttribute.XATTR);
             }
             FileAttributes attrs =
                 _nameSpaceProvider.getFileAttributes(subject,
@@ -1984,6 +1989,11 @@ public class PnfsManagerV3
                 }
                 storageInfo.setKey("uid", Integer.toString(attrs.getOwner()));
                 storageInfo.setKey("gid", Integer.toString(attrs.getGroup()));
+
+                // REVISIT: consider removing xattr injection once pools can accept FileAttribute.XATTR
+                if (attrs.isDefined(XATTR)) {
+                    attrs.getXattrs().forEach((k,v) -> storageInfo.setKey(STORAGE_INFO_XATTR_PREFIX+k, v));
+                }
             }
 
             message.setFileAttributes(attrs);

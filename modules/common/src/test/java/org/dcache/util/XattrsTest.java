@@ -29,7 +29,7 @@ public class XattrsTest {
 
         Map<String, String> xattrs = Xattrs.from(uri);
         assertThat(xattrs, aMapWithSize(1));
-        assertThat(xattrs, hasEntry("xattr.key1", "value1"));
+        assertThat(xattrs, hasEntry("key1", "value1"));
     }
 
     @Test
@@ -38,8 +38,8 @@ public class XattrsTest {
 
         Map<String, String> xattrs = Xattrs.from(uri);
         assertThat(xattrs, aMapWithSize(2));
-        assertThat(xattrs, hasEntry("xattr.key1", "value1"));
-        assertThat(xattrs, hasEntry("xattr.key2", "value2"));
+        assertThat(xattrs, hasEntry("key1", "value1"));
+        assertThat(xattrs, hasEntry("key2", "value2"));
     }
 
     @Test
@@ -48,7 +48,27 @@ public class XattrsTest {
 
         Map<String, String> xattrs = Xattrs.from(uri);
         assertThat(xattrs, aMapWithSize(1));
-        assertThat(xattrs, hasEntry("xattr.key1", "value1"));
+        assertThat(xattrs, hasEntry("key1", "value1"));
+    }
+
+    @Test
+    public void testUriXattrPercentEncodedSpaceKey() {
+        URI uri = URI.create("http://server.example.com/foo?xattr.key%20name=value");
+
+        Map<String, String> xattrs = Xattrs.from(uri);
+
+        assertThat(xattrs, aMapWithSize(1));
+        assertThat(xattrs, hasEntry("key name", "value"));
+    }
+
+    @Test
+    public void testUriXattrEncodedPlusKey() {
+        URI uri = URI.create("http://server.example.com/foo?xattr.key%2bname=value");
+
+        Map<String, String> xattrs = Xattrs.from(uri);
+
+        assertThat(xattrs, aMapWithSize(1));
+        assertThat(xattrs, hasEntry("key+name", "value"));
     }
 
     @Test(expected = NullPointerException.class)
@@ -73,7 +93,7 @@ public class XattrsTest {
 
         Map<String, String> xattrs = Xattrs.from(params);
         assertThat(xattrs, aMapWithSize(1));
-        assertThat(xattrs, hasEntry("xattr.key1", "value1"));
+        assertThat(xattrs, hasEntry("key1", "value1"));
     }
 
     @Test
@@ -85,8 +105,8 @@ public class XattrsTest {
 
         Map<String, String> xattrs = Xattrs.from(params);
         assertThat(xattrs, aMapWithSize(2));
-        assertThat(xattrs, hasEntry("xattr.key1", "value1"));
-        assertThat(xattrs, hasEntry("xattr.key2", "value2"));
+        assertThat(xattrs, hasEntry("key1", "value1"));
+        assertThat(xattrs, hasEntry("key2", "value2"));
     }
 
     @Test
@@ -98,7 +118,7 @@ public class XattrsTest {
 
         Map<String, String> xattrs = Xattrs.from(params);
         assertThat(xattrs, aMapWithSize(1));
-        assertThat(xattrs, hasEntry("xattr.key1", "value1"));
+        assertThat(xattrs, hasEntry("key1", "value1"));
     }
 
     @Test(expected = NullPointerException.class)

@@ -45,7 +45,7 @@ public final class Xattrs {
                 .entrySet()
                 .stream()
                 .filter(e -> e.getKey().startsWith(XATTR_PREFIX))
-                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(toMap(Xattrs::getName, Map.Entry::getValue));
     }
 
     /**
@@ -61,6 +61,15 @@ public final class Xattrs {
         return params.entrySet()
                 .stream()
                 .filter(e -> e.getKey().startsWith(XATTR_PREFIX))
-                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(toMap(Xattrs::getName, Map.Entry::getValue));
+    }
+
+    /**
+     * Convert a URL query key-value pair to the corresponding extended
+     * attribute name.
+     */
+    private static String getName(Map.Entry<String,String> entry)
+    {
+        return entry.getKey().substring(XATTR_PREFIX.length());
     }
 }
