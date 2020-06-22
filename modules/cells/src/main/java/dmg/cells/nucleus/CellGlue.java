@@ -328,23 +328,24 @@ class CellGlue
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < n; i++) {
             Thread thread = threads[i];
-            if (thread.isAlive() && !thread.isDaemon() || LOGGER.isDebugEnabled()) {
+            StackTraceElement[] elements = thread.getStackTrace();
+            boolean isAlive = elements.length != 0; // Avoid race between isAlive and getStackTrace
+            if (isAlive && !thread.isDaemon() || LOGGER.isDebugEnabled()) {
+                if (sb.length() > 0) {
+                    sb.append('\n');
+                }
                 sb.append("Thread: ").append(thread.getName()).append(" [");
-                sb.append(thread.isAlive() ? "A" : "-");
+                sb.append(isAlive ? "A" : "-");
                 sb.append(thread.isDaemon() ? "D" : "-");
                 sb.append(thread.isInterrupted() ? "I" : "-");
                 sb.append("] (").append(thread.getPriority()).append(") ").append(thread.getState()).append('\n');
-                StackTraceElement[] elements = thread.getStackTrace();
                 for (int j = 0; j < elements.length; j++) {
-                    StackTraceElement el = elements [j];
-                    sb.append("    ").append(el);
-                    if (j < elements.length-1) {
+                    if (j > 0) {
                         sb.append('\n');
                     }
+                    StackTraceElement el = elements [j];
+                    sb.append("    ").append(el);
                 }
-            }
-            if (i < n-1) {
-                sb.append('\n');
             }
         }
         LOGGER.warn("Thread Group \"{}\":\n{}",
