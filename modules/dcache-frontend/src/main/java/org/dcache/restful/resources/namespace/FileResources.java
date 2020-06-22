@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.naming.directory.NoSuchAttributeException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -32,20 +34,30 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import diskCacheV111.util.AttributeExistsCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NoAttributeCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
+import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage.Mode;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -131,6 +143,8 @@ public class FileResources {
                                                 @ApiParam(value="Whether to include quality of service.")
                                                 @DefaultValue("false")
                                                 @QueryParam("qos") boolean isQos,
+                                                @ApiParam("Whether to include extended attributes.")
+                                                @QueryParam("xattr") boolean isXattr,
                                                 @ApiParam("Limit number of replies in directory listing.")
                                                 @QueryParam("limit") String limit,
                                                 @ApiParam("Number of entries to skip in directory listing.")
@@ -141,6 +155,7 @@ public class FileResources {
                         NamespaceUtils.getRequestedAttributes(isLocality,
                                                               isLocations,
                                                               isQos,
+                                                              isXattr,
                                                               false);
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
@@ -231,6 +246,8 @@ public class FileResources {
                 @ApiResponse(code = 401, message = "Unauthorized"),
                 @ApiResponse(code = 403, message = "Forbidden"),
                 @ApiResponse(code = 404, message = "Not Found"),
+                @ApiResponse(code = 409, message = "Attribute already exists"),
+                @ApiResponse(code = 409, message = "No such attribute"),
                 @ApiResponse(code = 500, message = "Internal Server Error"),
             })
     @Consumes({MediaType.APPLICATION_JSON})
@@ -239,6 +256,7 @@ public class FileResources {
                                  @PathParam("path") String requestPath,
                                  @ApiParam(value = "A JSON object that has an 'action' "
                                              + "item with a String value.\n"
+                                             + "\n"
                                              + "If the 'action' value is 'mkdir' "
                                              + "then a new directory is created "
                                              + "with the name taken from the "
@@ -246,6 +264,7 @@ public class FileResources {
                                              + "item.  This directory is created "
                                              + "within the supplied path parameter, "
                                              + "which must be an existing directory.\n"
+                                             + "\n"
                                              + "If action is 'mv' then the file "
                                              + "or directory specified by the path "
                                              + "parameter is moved and/or "
@@ -255,14 +274,68 @@ public class FileResources {
                                              + "'destination' value is a relative "
                                              + "path then it is resolved against "
                                              + "the path parameter value.\n"
+                                             + "\n"
                                              + "If action is 'qos' then the value "
                                              + "of the JSON object 'target' item "
-                                             + "describes the desired QoS.",
+                                             + "describes the desired QoS."
+                                             + "\n"
+                                             + "If action is 'rm-xattr' then "
+                                             + "extended attributes of a file "
+                                             + "or directory are removed as "
+                                             + "given by the 'names' item.  The "
+                                             + "'names' value is either a "
+                                             + "string or an array of strings."
+                                             + "\n"
+                                             + "If action is 'set-xattr' then "
+                                             + "extended attributes are created "
+                                             + "or modified.  The optional "
+                                             + "'mode' item controls whether to "
+                                             + "create a new attribute (CREATE), "
+                                             + "to modify an existing attribute "
+                                             + "(MODIFY), or to assign the value "
+                                             + "by either creating a new "
+                                             + "attribute or modifying an "
+                                             + "existing attribute (EITHER).  "
+                                             + "EITHER is the default mode.  The "
+                                             + "'attributes' item value is a JSON "
+                                             + "Object with the new attributes,"
+                                             + "where the JSON Object's key is "
+                                             + "the attribute name and the "
+                                             + "corresponding JSON Object's "
+                                             + "value is this attribute's value.",
                                          required = true,
                                          examples = @Example({
-                                             @ExampleProperty("{\n"
-                                                         + "    \"action\" : \"mv\""
-                                                         + "    \"destination\" : \"../foo\""
+                                             @ExampleProperty(mediaType = "MV",
+                                                     value = "{\n"
+                                                         + "    \"action\" : \"mv\",\n"
+                                                         + "    \"destination\" : \"../foo\"\n"
+                                                         + "}"),
+                                             @ExampleProperty(mediaType = "MKDIR",
+                                                     value = "{\n"
+                                                         + "    \"action\" : \"mkdir\",\n"
+                                                         + "    \"name\" : \"new-subdir\"\n"
+                                                         + "}"),
+                                             @ExampleProperty(mediaType = "QOS",
+                                                     value = "{\n"
+                                                         + "    \"action\" : \"qos\",\n"
+                                                         + "    \"target\" : \"DISK+TAPE\"\n"
+                                                         + "}"),
+                                             @ExampleProperty(mediaType = "SET-XATTR",
+                                                     value = "{\n"
+                                                         + "    \"action\" : \"set-xattr\",\n"
+                                                         + "    \"mode\" : \"CREATE\",\n"
+                                                         + "    \"attributes\" : {\n"
+                                                         + "        \"attr-1\": \"First attribute\",\n"
+                                                         + "        \"attr-2\": \"Second attribute\"\n"
+                                                         + "    }\n"
+                                                         + "}"),
+                                             @ExampleProperty(mediaType = "RM-XATTR",
+                                                     value = "{\n"
+                                                         + "    \"action\" : \"rm-xattr\"\n"
+                                                         + "    \"names\" : [\n"
+                                                         + "        \"attr-1\",\n"
+                                                         + "        \"attr-2\"\n"
+                                                         + "    ]\n"
                                                          + "}")}))
                                  String requestPayload)
     {
@@ -291,6 +364,34 @@ public class FileResources {
                                             pinmanager)
                                     .adjustQoS(path,
                                                targetQos, request.getRemoteHost());
+                    break;
+                case "rm-xattr":
+                    Object namesArgument = reqPayload.get("names");
+                    if (namesArgument instanceof String) {
+                        pnfsHandler.removeExtendedAttribute(path, (String)namesArgument);
+                    } else if (namesArgument instanceof JSONArray) {
+                        JSONArray namesArray = (JSONArray)namesArgument;
+                        List<String> names = new ArrayList<>(namesArray.length());
+                        for (int i = 0; i < namesArray.length(); i++) {
+                            names.add(namesArray.getString(i));
+                        }
+                        pnfsHandler.removeExtendedAttribute(path, names);
+                    } else {
+                        throw new JSONException("\"names\" is not a String or an array");
+                    }
+                    break;
+                case "set-xattr":
+                    String modeString = reqPayload.optString("mode", "EITHER");
+                    Mode mode = modeOf(modeString);
+
+                    JSONObject attributeOject = reqPayload.getJSONObject("attributes");
+                    Map<String,byte[]> attributes = new HashMap<>(attributeOject.length());
+                    for (String key : attributeOject.keySet()) {
+                        String value = attributeOject.getString(key);
+                        attributes.put(key, value.getBytes(StandardCharsets.UTF_8));
+                    }
+                    pnfsHandler.writeExtendedAttribute(path, attributes, mode);
+                    break;
             }
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
@@ -300,6 +401,12 @@ public class FileResources {
             } else {
                 throw new ForbiddenException(e);
             }
+        } catch (AttributeExistsCacheException e) {
+            throw new WebApplicationException(Response.status(409, "Attribute already exist")
+                    .build());
+        } catch (NoAttributeCacheException e) {
+            throw new WebApplicationException(Response.status(409, "No such attribute")
+                    .build());
         } catch (UnsupportedOperationException |
                         URISyntaxException |
                         JSONException |
@@ -309,6 +416,16 @@ public class FileResources {
             throw new BadRequestException(e.getMessage(), e);
         }
         return successfulResponse(Response.Status.CREATED);
+    }
+
+    private Mode modeOf(String value) throws JSONException
+    {
+        try {
+            return Mode.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            throw new JSONException("Unknown mode \"" + value + "\", must be"
+                    + " one of " + Arrays.asList(Mode.values()));
+        }
     }
 
     @DELETE

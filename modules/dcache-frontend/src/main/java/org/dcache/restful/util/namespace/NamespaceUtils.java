@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -127,6 +128,11 @@ public final class NamespaceUtils {
         if (isOptional) {
             addAllOptionalAttributes(json, attributes);
         }
+
+        if (attributes.isDefined(FileAttribute.XATTR)) {
+            Map<String,String> xattr = attributes.getXattrs();
+            json.setExtendedAttributes(xattr);
+        }
     }
 
     /**
@@ -200,6 +206,7 @@ public final class NamespaceUtils {
     public static Set<FileAttribute> getRequestedAttributes(boolean locality,
                                                             boolean locations,
                                                             boolean qos,
+                                                            boolean xattr,
                                                             boolean optional) {
         Set<FileAttribute> attributes = new HashSet<>();
         attributes.add(FileAttribute.PNFSID);
@@ -234,6 +241,10 @@ public final class NamespaceUtils {
             attributes.add(FileAttribute.MODE);
             attributes.add(FileAttribute.OWNER);
             attributes.add(FileAttribute.STORAGECLASS);
+        }
+
+        if (xattr) {
+            attributes.add(FileAttribute.XATTR);
         }
 
         return ImmutableSet.copyOf(attributes);

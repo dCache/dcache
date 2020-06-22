@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -700,6 +701,30 @@ public class PnfsHandler implements CellMessageSender
     }
 
     /**
+     * Create or modify the value of extended attributes.
+     * @param path The file for which the extended attribute is created or
+     * modified.
+     * @param xattrs The attributes to modify.
+     * @param mode How the attribute value is to be updated.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     * modify this attribute.
+     * @throws AttributeExistsCacheException if mode is Mode.CREATE and the
+     * attribute exists.
+     * @throws NoAttributeCacheException if mode is Mode.MODIFY and the
+     * attribute does not exist.
+     * @throws CacheException a generic failure in modify the attribute.
+     */
+    public void writeExtendedAttribute(FsPath path, Map<String,byte[]> xattrs,
+            Mode mode) throws CacheException
+    {
+        PnfsWriteExtendedAttributesMessage message =
+                new PnfsWriteExtendedAttributesMessage(path.toString(), mode);
+        xattrs.forEach(message::putValue);
+        request(message);
+    }
+
+    /**
      * Remove an extended attribute from a file.
      * @param path The file from which the extended attribute is deleted.
      * @param name The name of the extended attribute to remove.
@@ -715,6 +740,25 @@ public class PnfsHandler implements CellMessageSender
         PnfsRemoveExtendedAttributesMessage message =
                 new PnfsRemoveExtendedAttributesMessage(path.toString());
         message.addName(name);
+        request(message);
+    }
+
+    /**
+     * Remove extended attributes from a file.
+     * @param path The file from which the extended attribute is deleted.
+     * @param names The names of the extended attributes to remove.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     * remove the attribute.
+     * @throws NoAttributeCacheException if the attribute does not exist.
+     * @throws CacheException a generic failure in removing the attribute.
+     */
+    public void removeExtendedAttribute(FsPath path, Collection<String> names)
+            throws CacheException
+    {
+        PnfsRemoveExtendedAttributesMessage message =
+                new PnfsRemoveExtendedAttributesMessage(path.toString());
+        names.forEach(message::addName);
         request(message);
     }
 }

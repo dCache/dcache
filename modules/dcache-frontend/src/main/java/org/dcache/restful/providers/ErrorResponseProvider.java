@@ -76,8 +76,8 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception>
                                  getMessage(e, "Internal error"));
         } else if (e instanceof WebApplicationException) {
             Response r = ((WebApplicationException)e).getResponse();
-            return buildResponse(r.getStatus(),
-                                 r.getStatusInfo().getReasonPhrase(),
+            String reasonPhrase = r.getStatusInfo().getReasonPhrase();
+            return buildResponse(r.getStatus(), reasonPhrase, reasonPhrase,
                                  r.getLocation());
         } else {
             // All other Exceptions are bug -- log them.
@@ -90,17 +90,21 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception>
 
     private Response buildResponse(Status status, String jsonMessage)
     {
-        return buildResponse(status.getStatusCode(), jsonMessage, null);
+        return buildResponse(status.getStatusCode(), null, jsonMessage, null);
     }
 
-    private Response buildResponse(int status, String jsonMessage, URI location)
+    private Response buildResponse(int status, String reasonPhrase, String jsonMessage, URI location)
     {
         JSONObject error = new JSONObject();
         error.put("status", String.valueOf(status));
         error.put("message", jsonMessage);
         JSONObject json = new JSONObject();
         json.put("errors", Collections.singletonList(error));
-        return Response.status(status).entity(json.toString()).location(location).build();
+
+        return (reasonPhrase == null ? Response.status(status) : Response.status(status, reasonPhrase))
+                .entity(json.toString())
+                .location(location)
+                .build();
     }
 
     private String getMessage(Exception e, String defaultMessage)

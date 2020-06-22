@@ -134,6 +134,9 @@ public class JsonFileAttributes
     @ApiModelProperty("The target QoS if the file is changing QoS.")
     public String targetQos;
 
+    @ApiModelProperty("File's extended attributes.")
+    private Map<String,String> xattr;
+
     public ACL getAcl() {
         return _acl;
     }
@@ -404,4 +407,11 @@ public class JsonFileAttributes
         return targetQos;
     }
 
+    public void setExtendedAttributes(Map<String,String> attributes) {
+        xattr = attributes;
+    }
+
+    public Map<String,String> getExtendedAttributes() {
+        return xattr;
+    }
 }
