@@ -156,9 +156,9 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
 
     @Override
     public boolean requiresAffinity() {
-	// require affinity only it stage/p2p is enabled.
-	EnumSet<RequestContainerV5.RequestState> allowedStates = getAllowedStates();
-	return allowedStates.contains(ST_POOL_2_POOL) || allowedStates.contains(ST_STAGE);
+        // require affinity only it stage/p2p is enabled.
+        EnumSet<RequestContainerV5.RequestState> allowedStates = getAllowedStates();
+        return allowedStates.contains(ST_POOL_2_POOL) || allowedStates.contains(ST_STAGE);
     }
 
 }

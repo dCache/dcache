@@ -53,7 +53,7 @@ public class PoolMgrSelectWritePoolMsg extends PoolMgrSelectPoolMsg
 
     @Override
     public boolean requiresAffinity() {
-	return false;
+        return false;
     }
 
 }

@@ -24,10 +24,10 @@ public class PoolManagerMessage extends Message {
      */
     public boolean requiresAffinity() {
         /*
-	 * By default, all messages prefer the message affinity.
-	 * Subclasses my override to change the behaviour.
-	 */
-	return true;
+         * By default, all messages prefer the message affinity.
+         * Subclasses my override to change the behaviour.
+         */
+        return true;
     }
 }
 
