@@ -123,7 +123,6 @@
         <bouncycastle.version>1.54</bouncycastle.version>
         <datanucleus-core.version>5.2.2</datanucleus-core.version>
         <datanucleus.plugin.version>5.2.1</datanucleus.plugin.version>
-        <hazelcast.version>3.12.5</hazelcast.version>
     </properties>
 
     <scm>
@@ -947,11 +946,6 @@
                 <version>${version.jackson}</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.hazelcast</groupId>
-                <artifactId>hazelcast</artifactId>
-                <version>${hazelcast.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>javax.json</artifactId>
