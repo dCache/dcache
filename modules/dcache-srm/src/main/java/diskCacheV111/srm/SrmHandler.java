@@ -431,7 +431,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
-            throw Throwables.propagate(e.getCause());
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -504,9 +505,10 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                             entry.getKey(), ((SRMException) cause).getStatusCode(), cause.getMessage()));
                     hasFailure = true;
                 } else {
-                    Throwables.propagateIfInstanceOf(cause, CacheException.class);
-                    Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
-                    throw Throwables.propagate(cause);
+                    Throwables.throwIfInstanceOf(cause, CacheException.class);
+                    Throwables.throwIfInstanceOf(cause, NoRouteToCellException.class);
+                    Throwables.throwIfUnchecked(e);
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -718,7 +720,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             try {
                 field.set(request, token);
             } catch (IllegalAccessException e) {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
     }
@@ -738,7 +740,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                     return new MappedRequest(request, path, f, token);
                 }
             } catch (IllegalAccessException e) {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         }
         return null;
@@ -802,7 +804,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             try {
                 f.set(o, prefix(response.getId(), (String) f.get(o)));
             } catch (IllegalAccessException e) {
-                Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         });
         return o;

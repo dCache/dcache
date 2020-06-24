@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -517,7 +517,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             } catch (XrootdException e) {
                 throw e;
             } catch (Exception e) {
-                throw Throwables.propagate(e);
+                Throwables.throwIfUnchecked(e);
+                throw new RuntimeException(e);
             }
         } else {
             return new RedirectResponse<>(msg,

@@ -98,7 +98,7 @@ public class PersistentLoginUserManager extends DcacheUserManager
                 out.writeObject(attribute);
             }
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         return encoded.toByteArray();
     }
@@ -123,7 +123,7 @@ public class PersistentLoginUserManager extends DcacheUserManager
                 attributes.add((LoginAttribute) in.readObject());
             }
         } catch (ClassNotFoundException | IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         return new LoginReply(new Subject(false, principals, emptySet(), emptySet()), attributes);
     }

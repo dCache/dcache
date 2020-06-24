@@ -15,8 +15,6 @@ import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StringStateValue;
 
-import static com.google.common.base.Throwables.propagate;
-
 /**
  * Serialise state into a json object.
  */
@@ -41,7 +39,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
         try {
             _writer.name(path.getLastElement()).value(metric.getValue());
         } catch (IOException e) {
-            propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -51,7 +49,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
         try {
             _writer.name(path.getLastElement()).value(metric.getValue());
         } catch (IOException e) {
-            propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -61,7 +59,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
         try {
             _writer.name(path.getLastElement()).value(metric.getValue());
         } catch (IOException e) {
-            propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -71,7 +69,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
         try {
             _writer.name(path.getLastElement()).value(metric.getValue());
         } catch (IOException e) {
-            propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -86,7 +84,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
             _writer.name(path.getLastElement());
             _writer.beginObject();
         } catch (IOException e) {
-            propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -100,7 +98,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
         try {
             _writer.endObject();
         } catch (IOException e) {
-            propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -140,7 +138,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
             _string.append('\n');
             _writer.close();
         } catch (IOException e) {
-            propagate(e);
+            throw new RuntimeException(e);
         }
 
         return _string.toString();

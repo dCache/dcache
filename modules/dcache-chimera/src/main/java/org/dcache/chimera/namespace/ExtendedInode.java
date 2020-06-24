@@ -165,7 +165,7 @@ public class ExtendedInode extends FsInode
             }
             return ByteSource.wrap(data).asCharSource(UTF_8).readLines();
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

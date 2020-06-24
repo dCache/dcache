@@ -176,7 +176,8 @@ public class BackoffControllerTest
         try {
             status = controller.call(() -> targetReplies.removeFirst());
         } catch (Exception e) {
-            Throwables.propagate(e);
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
     }
 

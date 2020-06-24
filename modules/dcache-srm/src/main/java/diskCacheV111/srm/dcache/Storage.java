@@ -1224,9 +1224,11 @@ public final class Storage
                     error = e;
                 }
             } while (iterator.hasNext());
-            Throwables.propagateIfInstanceOf(error, CacheException.class);
-            Throwables.propagateIfInstanceOf(error, NoRouteToCellException.class);
-            throw Throwables.propagate(error);
+            Throwables.throwIfInstanceOf(error, CacheException.class);
+            Throwables.throwIfInstanceOf(error, NoRouteToCellException.class);
+            Throwables.throwIfUnchecked(error);
+            throw new RuntimeException(error);
+
         }
         throw new FileIsNewCacheException("No file was uploaded.");
     }
@@ -2306,8 +2308,11 @@ public final class Storage
             }
             return Arrays.stream(tokens).mapToObj(Long::toString).toArray(String[]::new);
         } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
-            throw Throwables.propagate(e.getCause());
+            Throwable cause = e.getCause();
+            Throwables.throwIfInstanceOf(cause, SRMException.class);
+            Throwables.throwIfUnchecked(cause);
+            throw new RuntimeException(cause);
+
         }
     }
 

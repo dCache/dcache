@@ -87,7 +87,7 @@ public final class PersistentChainUserManager extends DcacheUserManager
                 return new DcacheUser(token, getGlobusPrincipal(path));
             }
         } catch (CertificateException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         } catch (SRMInternalErrorException e) {
             throw new DataRetrievalFailureException("Failed to retrieve user identity", e);
         }

@@ -117,7 +117,8 @@ public class CredentialService
             _delegationEndpoint = new URI("https", null, _host, _httpsPort, "/srm/delegation", null, null);
         } catch (URISyntaxException e) {
             LOGGER.error("Failed to create delegation endpoint: {}", e);
-            throw Throwables.propagate(e);
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
     }
 

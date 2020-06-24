@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,6 @@
 package org.dcache.chimera;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.base.Throwables;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -30,7 +29,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -318,7 +316,7 @@ public class PerformanceTest extends Thread
                 info.setHsm("hsm");
                 info.setKey("store", "test");
                 info.setKey("group", "disk");
-                info.addLocation(new URI("osm://hsm/?store=test&group=disk&bdif=1234"));
+                info.addLocation(URI.create("osm://hsm/?store=test&group=disk&bdif=1234"));
                 provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
                         FileAttributes.ofStorageInfo(info), EnumSet.noneOf(FileAttribute.class));
                 break;
@@ -335,8 +333,6 @@ public class PerformanceTest extends Thread
             }
         } catch (CacheException e) {
             System.err.println("Exception " + aOp.getUserInput() + " :" + e.getMessage());
-        } catch (URISyntaxException e) {
-            Throwables.propagate(e);
         }
     }
 

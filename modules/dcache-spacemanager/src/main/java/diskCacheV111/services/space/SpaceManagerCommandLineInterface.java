@@ -103,10 +103,11 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 // These are usually a result of the user querying for an object that doesn't exist.
                 return e.getMessage();
             } catch (Exception e) {
-                Throwables.propagateIfInstanceOf(e, CommandSyntaxException.class);
-                Throwables.propagateIfInstanceOf(e, SpaceException.class);
-                Throwables.propagateIfInstanceOf(e, CacheException.class);
-                throw Throwables.propagate(e);
+                Throwables.throwIfInstanceOf(e, CommandSyntaxException.class);
+                Throwables.throwIfInstanceOf(e, SpaceException.class);
+                Throwables.throwIfInstanceOf(e, CacheException.class);
+                Throwables.throwIfUnchecked(e);
+                throw new RuntimeException(e);
             }
         }
 

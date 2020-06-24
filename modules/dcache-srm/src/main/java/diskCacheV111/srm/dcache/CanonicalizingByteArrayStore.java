@@ -232,7 +232,9 @@ public final class CanonicalizingByteArrayStore
         try {
             return canonicalizationCache.get(id, () -> new Token(id));
         } catch (UncheckedExecutionException | ExecutionException e) {
-            throw Throwables.propagate(e.getCause());
+            Throwable cause = e.getCause();
+            Throwables.throwIfUnchecked(cause);
+            throw new RuntimeException(cause);
         }
     }
 

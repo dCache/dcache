@@ -129,7 +129,9 @@ public class TransferCollector extends CellMessagingCollector<Map<String, Transf
             }
             return refreshedData;
         } catch (ExecutionException e) {
-            throw Throwables.propagate(e.getCause());
+            Throwable t = e.getCause();
+            Throwables.throwIfUnchecked(t);
+            throw new RuntimeException(t);
         }
     }
 

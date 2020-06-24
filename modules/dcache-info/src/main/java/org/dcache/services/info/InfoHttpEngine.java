@@ -37,7 +37,7 @@ import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.notNull;
-import static com.google.common.base.Throwables.propagate;
+import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.collect.Iterables.find;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -152,7 +152,8 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
                     throw new HttpException(503, "Received interrupt " +
                             "whilst processing data. Please try again later.");
                 }
-                propagate(cause);
+                throwIfUnchecked(cause);
+                throw new RuntimeException(cause);
             } catch (IOException e) {
                 LOGGER.error("Failed to send response: {}", e.getMessage());
             }
