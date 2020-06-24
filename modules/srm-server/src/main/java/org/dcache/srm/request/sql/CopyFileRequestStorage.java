@@ -13,15 +13,14 @@ package org.dcache.srm.request.sql;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.escape.CharEscaperBuilder;
 import com.google.common.escape.Escaper;
 import org.springframework.dao.DataAccessException;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -88,14 +87,10 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
     private static ImmutableMap<String,String> deserialiseMap(String serialised)
     {
         ImmutableMap.Builder<String,String> builder = new ImmutableMap.Builder<>();
-        for (Map.Entry<String,String> entry : Splitter.on(',').omitEmptyStrings().
+        for (Map.Entry<String, String> entry : Splitter.on(',').omitEmptyStrings().
                 withKeyValueSeparator('=').split(serialised).entrySet()) {
-            try {
-                builder.put(URLDecoder.decode(entry.getKey(), "UTF-8"),
-                        URLDecoder.decode(entry.getValue(), "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                Throwables.propagate(e);
-            }
+            builder.put(URLDecoder.decode(entry.getKey(), StandardCharsets.UTF_8),
+                    URLDecoder.decode(entry.getValue(), StandardCharsets.UTF_8));
         }
         return builder.build();
     }
