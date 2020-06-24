@@ -629,7 +629,7 @@ file (`/bin/echo`).  Including this other file's checksum when
 uploading the file `/bin/bash` is used to simulate data corruption.
 
 ```console-user
-✔ 13:19:59 dCache [master ✚1] $ curl -D- -L -T /bin/bash -H "Content-MD5: $(md5sum /bin/echo | cut -d' ' -f1 | xxd -r -p | base64)" -E /tmp/x509up_u1000 https://dcache.example.org/Users/paul/file-content-md5
+curl -D- -L -T /bin/bash -H "Content-MD5: $(md5sum /bin/echo | cut -d' ' -f1 | xxd -r -p | base64)" -E /tmp/x509up_u1000 https://dcache.example.org/Users/paul/file-content-md5
 |HTTP/1.1 100 Continue
 |
 |HTTP/1.1 400 Checksum mismatch (expected=[2:29f4bf55fe826e5b167340f91aeb0f49], actual=[1:af543afc, 2:ac56f4b8fac5739ccdb45777d313becf])
@@ -736,20 +736,20 @@ values, along with dCache's response with the current value of these
 two properties.
 
 ```console-user
-echo '<?xml version="1.0"?><propfind xmlns="DAV:"><prop><srm:FileLocality xmlns:srm="http://srm.lbl.gov/StorageResourceManager"/><creationdate/></prop></propfind>' | curl -s -T- -X PROPFIND https://dcache.example.org/public/test-1 | xmllint -format -
-|<?xml version="1.0" encoding="utf-8"?>
-|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager" xmlns:d="DAV:">
-|  <d:response>
-|    <d:href>/public/test-1</d:href>
-|    <d:propstat>
-|      <d:prop>
-|        <ns1:FileLocality>NEARLINE</ns1:FileLocality>
-|        <d:creationdate>2020-05-11T12:13:17Z</d:creationdate>
-|      </d:prop>
-|      <d:status>HTTP/1.1 200 OK</d:status>
-|    </d:propstat>
-|  </d:response>
-|</d:multistatus>
+echo '<?xml version="1.0"?><propfind xmlns="DAV:"><prop><srm:FileLocality xmlns:srm="http://srm.lbl.gov/StorageResourceManager"/><creationdate/>&lt;/prop></propfind>' | curl -s -T- -X PROPFIND https://dcache.example.org/public/test-1 | xmllint -format -
+|&lt;?xml version="1.0" encoding="utf-8"?>
+|&lt;d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager" xmlns:d="DAV:">
+|  &lt;d:response>
+|    &lt;d:href>/public/test-1&lt;/d:href>
+|    &lt;d:propstat>
+|      &lt;d:prop>
+|        &lt;ns1:FileLocality>NEARLINE&lt;/ns1:FileLocality>
+|        &lt;d:creationdate>2020-05-11T12:13:17Z&lt;/d:creationdate>
+|      &lt;/d:prop>
+|      &lt;d:status>HTTP/1.1 200 OK&lt;/d:status>
+|    &lt;/d:propstat>
+|  &lt;/d:response>
+|&lt;/d:multistatus>
 ```
 
 ### Obtaining all property values
@@ -771,38 +771,38 @@ dCache.
 
 ```console-user
 echo '<?xml version="1.0"?><propfind xmlns="DAV:"><allprop/></propfind>' | curl -s -T- -X PROPFIND https://dcache.example.org/public/test-1 | xmllint -format -
-|<?xml version="1.0" encoding="utf-8"?>
-|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:ns2="http://www.dcache.org/2013/webdav" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager" xmlns:d="DAV:">
-|  <d:response>
-|    <d:href>/public/test-1</d:href>
-|    <d:propstat>
-|      <d:prop>
-|        <ns1:AccessLatency>ONLINE</ns1:AccessLatency>
-|        <ns1:RetentionPolicy>REPLICA</ns1:RetentionPolicy>
-|        <ns2:Checksums>adler32=af543afc</ns2:Checksums>
-|        <ns1:FileLocality>NEARLINE</ns1:FileLocality>
-|        <d:getcreated>2020-05-11T12:13:17Z</d:getcreated>
-|        <d:creationdate>2020-05-11T12:13:17Z</d:creationdate>
-|        <d:getlastmodified>Mon, 11 May 2020 12:13:17 GMT</d:getlastmodified>
-|        <d:getetag>"0000FC2FCCBC9B2B43D08C672D1FE83AA0E8_61297885"</d:getetag>
-|        <d:iscollection>FALSE</d:iscollection>
-|        <d:displayname>test-1</d:displayname>
-|        <d:isreadonly>TRUE</d:isreadonly>
-|        <d:name>test-1</d:name>
-|        <d:supported-report-set/>
-|        <d:getcontentlength>1099016</d:getcontentlength>
-|      </d:prop>
-|      <d:status>HTTP/1.1 200 OK</d:status>
-|    </d:propstat>
-|    <d:propstat>
-|      <d:prop>
-|        <d:getcontenttype/>
-|        <d:resourcetype/>
-|      </d:prop>
-|      <d:status>HTTP/1.1 404 Not Found</d:status>
-|    </d:propstat>
-|  </d:response>
-|</d:multistatus>
+|&lt;?xml version="1.0" encoding="utf-8"?>
+|&lt;d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:ns2="http://www.dcache.org/2013/webdav" xmlns:ns1="http://srm.lbl.gov/StorageResourceManager" xmlns:d="DAV:">
+|  &lt;d:response>
+|    &lt;d:href>/public/test-1&lt;/d:href>
+|    &lt;d:propstat>
+|      &lt;d:prop>
+|        &lt;ns1:AccessLatency>ONLINE&lt;/ns1:AccessLatency>
+|        &lt;ns1:RetentionPolicy>REPLICA&lt;/ns1:RetentionPolicy>
+|        &lt;ns2:Checksums>adler32=af543afc&lt;/ns2:Checksums>
+|        &lt;ns1:FileLocality>NEARLINE&lt;/ns1:FileLocality>
+|        &lt;d:getcreated>2020-05-11T12:13:17Z&lt;/d:getcreated>
+|        &lt;d:creationdate>2020-05-11T12:13:17Z&lt;/d:creationdate>
+|        &lt;d:getlastmodified>Mon, 11 May 2020 12:13:17 GMT&lt;/d:getlastmodified>
+|        &lt;d:getetag>"0000FC2FCCBC9B2B43D08C672D1FE83AA0E8_61297885"&lt;/d:getetag>
+|        &lt;d:iscollection>FALSE&lt;/d:iscollection>
+|        &lt;d:displayname>test-1&lt;/d:displayname>
+|        &lt;d:isreadonly>TRUE&lt;/d:isreadonly>
+|        &lt;d:name>test-1&lt;/d:name>
+|        &lt;d:supported-report-set/>
+|        &lt;d:getcontentlength>1099016&lt;/d:getcontentlength>
+|      &lt;/d:prop>
+|      &lt;d:status>HTTP/1.1 200 OK&lt;/d:status>
+|    &lt;/d:propstat>
+|    &lt;d:propstat>
+|      &lt;d:prop>
+|        &lt;d:getcontenttype/>
+|        &lt;d:resourcetype/>
+|      &lt;/d:prop>
+|      &lt;d:status>HTTP/1.1 404 Not Found&lt;/d:status>
+|    &lt;/d:propstat>
+|  &lt;/d:response>
+|&lt;/d:multistatus>
 ```
 
 Although the `<allprop/>` request is convenient, providing all
@@ -831,9 +831,9 @@ request to create or modify two extended attributes: `attribute-1` and
 <propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr">
     <set>
         <prop>
-	    <xa:attribute-1>new value 1</xa:attribute-1>
-	    <xa:attribute-2>new value 2</xa:attribute-2>
-	</prop>
+            <xa:attribute-1>new value 1</xa:attribute-1>
+            <xa:attribute-2>new value 2</xa:attribute-2>
+        </prop>
     </set>
 </propertyupdate>
 ```
@@ -843,19 +843,19 @@ updates these two properties.
 
 ```console-user
 echo '<?xml version="1.0"?><propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr"><set><prop><xa:attribute-1>new value 1</xa:attribute-1><xa:attribute-2>new value 2</xa:attribute-2></prop></set></propertyupdate>' | curl -s -T- -X PROPPATCH https://dcache.example.org/public/test-1 | xmllint -format -
-|<?xml version="1.0" encoding="utf-8"?>
-|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:d="DAV:">
-|  <d:response>
-|    <d:href>/public/test-1</d:href>
-|    <d:propstat>
-|      <d:prop>
-|        <attribute-1/>
-|        <attribute-2/>
-|      </d:prop>
-|      <d:status>HTTP/1.1 404 Not Found</d:status>
-|    </d:propstat>
-|  </d:response>
-|</d:multistatus>
+|&lt;?xml version="1.0" encoding="utf-8"?>
+|&lt;d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:d="DAV:">
+|  &lt;d:response>
+|    &lt;d:href>/public/test-1&lt;/d:href>
+|    &lt;d:propstat>
+|      &lt;d:prop>
+|        &lt;attribute-1/>
+|        &lt;attribute-2/>
+|      &lt;/d:prop>
+|      &lt;d:status>HTTP/1.1 404 Not Found&lt;/d:status>
+|    &lt;/d:propstat>
+|  &lt;/d:response>
+|&lt;/d:multistatus>
 ```
 
 ### Removing a property.
@@ -875,9 +875,9 @@ properties.
 <propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr">
     <remove>
         <prop>
-	    <xa:attribute-1/>
-	    <xa:attribute-2/>
-	</prop>
+            <xa:attribute-1/>
+            <xa:attribute-2/>
+        </prop>
     </remove>
 </propertyupdate>
 ```
@@ -887,19 +887,19 @@ properties.
 
 ```console-user
 echo '<?xml version="1.0"?><propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr"><remove><prop><xa:attribute-1/><xa:attribute-2/></prop></remove></propertyupdate>' | curl -s -T- -X PROPPATCH https://dcache.example.org/public/test-1 | xmllint -format -
-|<?xml version="1.0" encoding="utf-8"?>
-|<d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:d="DAV:">
-|  <d:response>
-|    <d:href>/public/test-1</d:href>
-|    <d:propstat>
-|      <d:prop>
-|        <attribute-1/>
-|        <attribute-2/>
-|      </d:prop>
-|      <d:status>HTTP/1.1 404 Not Found</d:status>
-|    </d:propstat>
-|  </d:response>
-|</d:multistatus>
+|&lt;?xml version="1.0" encoding="utf-8"?>
+|&lt;d:multistatus xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:d="DAV:">
+|  &lt;d:response>
+|    &lt;d:href>/public/test-1&lt;/d:href>
+|    &lt;d:propstat>
+|      &lt;d:prop>
+|        &lt;attribute-1/>
+|        &lt;attribute-2/>
+|      &lt;/d:prop>
+|      &lt;d:status>HTTP/1.1 404 Not Found&lt;/d:status>
+|    &lt;/d:propstat>
+|  &lt;/d:response>
+|&lt;/d:multistatus>
 ```
 
 ### Working with extended attributes
@@ -940,9 +940,9 @@ request with a request entity like:
 <propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr">
     <set>
         <prop>
-	    <xa:attribute-1>new value 1</xa:attribute-1>
-	    <xa:attribute-2>new value 2</xa:attribute-2>
-	</prop>
+            <xa:attribute-1>new value 1</xa:attribute-1>
+            <xa:attribute-2>new value 2</xa:attribute-2>
+        </prop>
     </set>
 </propertyupdate>
 ```
@@ -955,9 +955,9 @@ request with a request entity like:
 <propertyupdate xmlns="DAV:" xmlns:xa="http://www.dcache.org/2020/xattr">
     <remove>
         <prop>
-	    <xa:attribute-1/>
-	    <xa:attribute-2/>
-	</prop>
+            <xa:attribute-1/>
+            <xa:attribute-2/>
+        </prop>
     </remove>
 </propertyupdate>
 ```
