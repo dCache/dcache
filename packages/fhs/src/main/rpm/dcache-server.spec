@@ -7,9 +7,6 @@ BuildArch: noarch
 Prefix: /
 Packager: dCache.org <support@dcache.org>.
 
-Obsoletes: dCacheConfigure
-Obsoletes: dcache-server
-Provides: dCachePostInstallConfigurationScripts
 AutoReqProv: no
 Requires(pre): shadow-utils
 Requires(post): chkconfig
