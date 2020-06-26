@@ -89,7 +89,7 @@ if [ $1 -eq 0 ] ; then
     /sbin/chkconfig --del dcache-server
 fi
 
-%systemd_preun dcache.service
+%systemd_preun dcache.target
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -97,7 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 /lib/systemd/system-generators/dcache-generator
-/lib/systemd/system/dcache.service
+/lib/systemd/system/dcache.target
 /usr/sbin/dcache-storage-descriptor
 /usr/sbin/dcache-info-provider
 /usr/sbin/dcache-billing-indexer

@@ -841,18 +841,17 @@ systemctl daemon-reload
 > - dcache.home
 > - dcache.java.library.path
 
-To inspect all generated units of dcache.service the `systemd list-dependencies` command can be used. For example:
+To inspect all generated units of dcache.target the `systemd list-dependencies` command can be used. For example:
 
 ```console-root
-systemctl list-dependencies  dcache.service
-|dcache.service
+systemctl list-dependencies dcache.target
+|dcache.target
 |● ├─dcache@coreDomain.service
 |● ├─dcache@gplazmaDomain.service
 |● ├─dcache@namespaceDomain.service
 |● ├─dcache@nfsDomain.service
 |● ├─dcache@poolDomain.service
-|● ├─dcache@poolmanagerDomain.service
-|...
+|● └─dcache@poolmanagerDomain.service
 ```
 
 Each unit can be operated independently, e.g. started, stopped or enabled:
@@ -871,10 +870,10 @@ systemctl status dcache@coreDomain
 |             └─13296 /usr/bin/java -server -Xmx512m -XX:MaxDirectMemorySize=512m ...
 ```
 
-Nevertheless, all services can be operated together as `dcache.service`
+Nevertheless, all services can be operated together as `dcache.target`
 
 ```console-root
-systemctl start dcache.service
+systemctl start dcache.target
 ```
 
 > **ATTENTION**: Never use the `sysV` dcache script to start or stop dCache when systemd is
@@ -887,7 +886,7 @@ All services systemd starts have their stdout/stderr connected to journald. This
 To access dcache logs `journalctl` command can be used:
 
 ```console-root
-journalctl -f -u dcache.service
+journalctl -f -u dcache.target
 ```
 
 or for a specific domain

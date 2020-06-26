@@ -2,7 +2,7 @@
 
 if type "systemctl" > /dev/null 2>&1; then
 	#Note: Users may have overriden the units and changed the dependencies between them, thus stop both, the “global” and the instance units.
-        systemctl stop dcache.service
+        systemctl stop dcache.target
         systemctl stop dcache@*.service
 else
         invoke-rc.d dcache stop || :
