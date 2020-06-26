@@ -9,6 +9,7 @@ Chapter 5. WebDAV
     + [Checksums](#checksums)
 + [Directory operations](#directory-operations)
 + [Properties](#properties)
++ [Extended Attributes](#extended-attributes)
 + [Requesting macaroons](#requesting-macaroons)
     + [Inspecting a macaroon](#inspecting-a-macaroon)
     + [Adding extra caveats](#adding-extra-caveats)
@@ -902,18 +903,76 @@ echo '<?xml version="1.0"?><propertyupdate xmlns="DAV:" xmlns:xa="http://www.dca
 |&lt;/d:multistatus>
 ```
 
-### Working with extended attributes
+## Extended attributes
 
 Extended attributes are arbitrary key-value pairs that may be assigned
-to files and directories in dCache.  An extended attribute has an
-equivalent WebDAV property, through which the extended attribute may
-be created, queried, modified and removed.
+to files and directories in dCache.
 
-An extended attribute has a corresponding WebDAV property by taking
-the extended attribute's name as the property's local part with
-`http://www.dcache.org/2020/xattr` as the namespace; for example, the
-extended attribute `attribute-1` is the WebDAV property
-`<xa:attribute-1 xmlns:xa="http://www.dcache.org/2020/xattr"/>`
+### Extended attributes when uploading
+
+It is possible to assign extended attributes to a file as part of the
+upload process.  To do this, simply add the attribute definitions to
+the URL's query-part using a simple encoding.
+
+The query part of a URL is what appears after the question mark
+character.  It often contains key-value pairs using the equals symbol
+(`=`).  Multiple key-value pairs are usually separated by the
+ampersand character (`&`).  Here is an arbitrary example that shows a
+query-part `http://example.org/path/to/file?key1=value1&key2=value2`.
+In this example, the query-part is `key1=value1&key2=value2`.
+
+To define an extended attribute when uploading a file, prefix the
+attribute name with `xattr.` and append `=` and the attribute value;
+for example, the extended attribute "foo" with value "bar" would be
+written `xattr.foo=bar`.  This defintion is included in the upload
+URL query-part.
+
+As with other parts of a URL, if the extended attribute value contains
+spaces then they must be written using url-encoded (percent-escaped);
+for example, the extended attribute "foo" with value "bar baz" would
+be defined as `xattr.foo=bar%20baz` in the URL's query-part.
+Depending on your client, you may find spaces are encoded
+automatically.
+
+Multiple extended attributes may be defined when uploading a file.
+The corresponding definitions are concatenated within the URL
+query-part using the `&` separator; for example, to define two
+attributes "name1" and "name2" that have values "value 1" and "value
+2" (respectively) an upload URL may be written as
+`xattr.name1=value%201&xattr.name2=value%202`.
+
+The following is a complete example URL that may be used when
+uploading data.  The new file is located as `/Users/paul/new-data.md5`
+and will have two extended attributes ("name1" and "name2") described
+above.
+
+```
+https://dcache.example.org/Users/paul/new-data.md5?xattr.name1=value%201&xattr.name2=value%202
+```
+
+The following example shows a curl command that uses the above URL to
+simultaneously upload a file and assign it two extended attributes.
+
+```console-user
+curl -E /tmp/x509up_u1000 -L -T new-data.md5 'https://dcache.example.org/Users/paul/new-data.md5?xattr.name1=value%201&xattr.name2=value%202'
+```
+
+Note that the URL is placed within quote marks.  This is to prevent
+the shell interpreting the `&` character as a control operator, which
+would result in the shell executing the command in the background.
+The subsequent characters would then be interpreted as additional
+shell commands.
+
+
+### Extended attributes as WebDAV properties
+
+An extended attribute has an equivalent WebDAV property, through which
+the extended attribute may be created, queried, modified and removed.
+This property has the extended attribute's name as the property's
+local part with `http://www.dcache.org/2020/xattr` as the namespace;
+for example, the extended attribute `attribute-1` is the WebDAV
+property `<xa:attribute-1
+xmlns:xa="http://www.dcache.org/2020/xattr"/>`
 
 To query specific extended attributes of a file or directory a
 PROPFIND request is made with a request entity like:
