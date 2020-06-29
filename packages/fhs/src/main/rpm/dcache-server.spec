@@ -14,7 +14,7 @@ Requires(preun): chkconfig
 # This is for /sbin/service
 Requires(preun): initscripts
 Requires: which
-Requires: java,systemd
+Requires: java
 
 License: Distributable
 Group: Applications/System
@@ -89,7 +89,11 @@ if [ $1 -eq 0 ] ; then
     /sbin/chkconfig --del dcache-server
 fi
 
-%systemd_preun dcache.service
+# as we produce multi-platform RPM don't use RPMS native mechanisms to handle systemd services.
+# REVISIT: remove in dCache 7.0.
+if [ -x /usr/bin/systemctl ]; then
+ /usr/bin/systemctl stop dcache.service
+ fi
 
 %clean
 rm -rf $RPM_BUILD_ROOT
