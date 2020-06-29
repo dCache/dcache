@@ -23,4 +23,21 @@
         <destName>dcache</destName>
       </file>
     </files>
+    <fileSets>
+        <fileSet>
+            <directory>${filtered-skel}/lib/systemd/system</directory>
+            <outputDirectory>lib/systemd/system</outputDirectory>
+            <fileMode>0644</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+        <fileSet>
+            <directory>${filtered-skel}/lib/systemd/system-generators</directory>
+            <outputDirectory>lib/systemd/system-generators</outputDirectory>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
+            </excludes>
+            <fileMode>755</fileMode>
+            <directoryMode>755</directoryMode>
+        </fileSet>
+    </fileSets>
 </assembly>

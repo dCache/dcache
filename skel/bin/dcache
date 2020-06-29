@@ -197,6 +197,19 @@ parseOptions() # $1 = list of valid options
     return $count
 }
 
+# warn users about script deprecation
+deprecationWarning()
+{
+    script="$(printCanonicalPath $0)"
+    if [ $script = "/usr/bin/dcache" ]; then
+        echo ""
+        echo "WARNING:"
+        echo "  \"`basename $0` $1\" is deprecated and will be removed in the future."
+        echo "   Please consider switching to systemctl to manage dCache."
+        echo ""
+    fi
+}
+
 # Dumps the heap. Terminates the script in case of failure.
 dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 {
@@ -327,6 +340,7 @@ lib="$(getProperty dcache.paths.share.lib)"
 
 case "$1" in
     start)
+        deprecationWarning $1
         shift
         . ${lib}/utils.sh
         . ${lib}/services.sh
@@ -343,6 +357,7 @@ case "$1" in
         ;;
 
     stop)
+        deprecationWarning $1
         shift
 
         . ${lib}/utils.sh
@@ -362,6 +377,7 @@ case "$1" in
         ;;
 
     restart)
+        deprecationWarning $1
         shift
         . ${lib}/utils.sh
         . ${lib}/services.sh
@@ -379,6 +395,7 @@ case "$1" in
         ;;
 
     condrestart)
+        deprecationWarning $1
         shift
         . ${lib}/utils.sh
         . ${lib}/services.sh
@@ -400,6 +417,7 @@ case "$1" in
         ;;
 
     status)
+        deprecationWarning $1
         shift
         . ${lib}/utils.sh
         . ${lib}/services.sh

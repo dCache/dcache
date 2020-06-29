@@ -14,6 +14,7 @@ Requires(preun): chkconfig
 # This is for /sbin/service
 Requires(preun): initscripts
 Requires: which
+Requires: java,systemd
 
 License: Distributable
 Group: Applications/System
@@ -81,16 +82,22 @@ if [ ! -f /usr/share/dcache/lib/services.sh ]; then
 fi
 
 %preun
+
+# as sysV and systemd are allowed try to stop both
 if [ $1 -eq 0 ] ; then
     /sbin/service dcache-server stop >/dev/null 2>&1
     /sbin/chkconfig --del dcache-server
 fi
+
+%systemd_preun dcache.service
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
+/lib/systemd/system-generators/dcache-generator
+/lib/systemd/system/dcache.service
 /usr/sbin/dcache-storage-descriptor
 /usr/sbin/dcache-info-provider
 /usr/sbin/dcache-billing-indexer

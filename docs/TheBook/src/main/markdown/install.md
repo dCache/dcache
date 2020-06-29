@@ -792,6 +792,10 @@ possible to configure pools so they are limited.
 
 Finally, dCache can be started now.
 
+There are two ways to start dCache. These are as a classic `sysV` -like daemon or as a  `systemd` service.
+
+#### Using sysV -like daemon
+
 ```console-root
 dcache start
 |Starting dCacheDomain done
@@ -821,6 +825,80 @@ some details, logged as dCache starts:
 19 Jul 2019 16:49:11 (pool1) [] Pool mode changed to enabled
 19 Jul 2019 16:49:11 (PoolManager) [pool1 PoolManagerPoolUp] Pool pool1 changed from mode disabled(store,stage,p2p-client,loading)  to enabled.
 ```
+
+#### Using systemd service
+
+dCache uses systemd's generator functionality to create a service for each defined domain in the layout file. That's why, before starting the service all dynamic systemd units should be generated:
+
+```console-root
+systemctl daemon-reload
+```
+
+> You need to regenerate dynamic units every time when new domains are added or removed as well as when systemd affected properties are modified. Those properties are:
+> - dcache.user
+> - dcache.java.options.extra
+> - dcache.restart.delay
+> - dcache.home
+> - dcache.java.library.path
+
+To inspect all generated units of dcache.service the `systemd list-dependencies` command can be used. For example:
+
+```console-root
+systemctl list-dependencies  dcache.service
+|dcache.service
+|● ├─dcache@coreDomain.service
+|● ├─dcache@gplazmaDomain.service
+|● ├─dcache@namespaceDomain.service
+|● ├─dcache@nfsDomain.service
+|● ├─dcache@poolDomain.service
+|● ├─dcache@poolmanagerDomain.service
+|...
+```
+
+Each unit can be operated independently, e.g. started, stopped or enabled:
+
+For example:
+```console-root
+systemctl start dcache@coreDomain
+systemctl status dcache@coreDomain
+|● dcache@coreDomain.service - dCache coreDomain domain
+|     Loaded: loaded (/run/systemd/generator/dcache@coreDomain.service; generated)
+|     Active: active (running) since Fri 2020-06-26 14:56:54 CEST; 10s ago
+|   Main PID: 13296 (java)
+|      Tasks: 30 (limit: 19031)
+|     Memory: 230.6M
+|     CGroup: /system.slice/system-dcache.slice/dcache@coreDomain.service
+|             └─13296 /usr/bin/java -server -Xmx512m -XX:MaxDirectMemorySize=512m ...
+```
+
+Nevertheless, all services can be operated together as `dcache.service`
+
+```console-root
+systemctl start dcache.service
+```
+
+> **ATTENTION**: Never use the `sysV` dcache script to start or stop dCache when systemd is
+used to managed dCache as service.
+
+The dCache, with the default logback config, writes domain logs to stdout/err.
+
+All services systemd starts have their stdout/stderr connected to journald. This is the case for dCache as well, as with the default logback config, all domain logs are written to to stdout/err.
+
+To access dcache logs `journalctl` command can be used:
+
+```console-root
+journalctl -f -u dcache.service
+```
+
+or for a specific domain
+
+```console-root
+journalctl -f -u dcache@coreDomain
+```
+
+> Note: The billing, access or event log files, which are still written by dCache itself are still written into log file in the */var/log/dcache* directory.
+
+To redirect dcache domain logs into a file the *logback.xml* file should be adjusted or *rsyslog* forwarding enabled in */etc/systemd/journald.conf*
 
 ### Transferring data
 
