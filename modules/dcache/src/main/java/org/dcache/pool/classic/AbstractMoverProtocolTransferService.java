@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.SyncFailedException;
 import java.lang.reflect.InvocationTargetException;
@@ -137,33 +138,29 @@ public abstract class AbstractMoverProtocolTransferService
         public void run() {
             try {
                 setThread();
-                try (RepositoryChannel fileIoChannel = _mover.openChannel()) {
+                RepositoryChannel fileIoChannel = _mover.openChannel();
+                try {
                     if (_mover.getIoMode().contains(StandardOpenOption.WRITE)) {
-                        try {
-                            handleChecksumMover();
-                            runMover(fileIoChannel);
-                        } finally {
-                            try {
-                                fileIoChannel.sync();
-                            } catch (SyncFailedException e) {
-                                fileIoChannel.sync();
-                                LOGGER.info("First sync failed [{}], but second sync suceeded", e );
-                            } catch (ClosedChannelException e) {
-                                LOGGER.debug("Replica channel closed by mover");
-                            }
-                        }
+                        runMoverForWrite(fileIoChannel);
                     } else {
-                        runMover(fileIoChannel);
+                        runMoverForRead(fileIoChannel);
                     }
-                } catch (Throwable t) {
-                    _completionHandler.failed(t, null);
-                    return;
+                } catch (ClosedChannelException | InterruptedIOException e) {
+                    // clear interrupted state
+                    Thread.interrupted();
+                    throw new InterruptedException(e.getMessage());
+                } finally {
+                    fileIoChannel.close();
                 }
+
                 _completionHandler.completed(null, null);
+
             } catch (InterruptedException e) {
                 InterruptedException why = _explanation == null ? e :
                         new InterruptedException(_explanation);
                 _completionHandler.failed(why, null);
+            } catch (Throwable t) {
+                _completionHandler.failed(t, null);
             } finally {
                 cleanThread();
             }
@@ -179,10 +176,35 @@ public abstract class AbstractMoverProtocolTransferService
             }
         }
 
-        private void runMover(RepositoryChannel fileIoChannel) throws Exception {
+        private void runMoverForRead(RepositoryChannel fileIoChannel) throws Exception {
             try {
                 _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
             } finally {
+                // if mover was interrupted outside of any blocking IO operation or a wait/sleep/join ... calls
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("Mover thread was interrupted.");
+                }
+            }
+        }
+
+        private void tryToSync(RepositoryChannel channel) throws IOException {
+            if (channel.isOpen()) {
+                try {
+                    channel.sync();
+                } catch (SyncFailedException e) {
+                    channel.sync();
+                    LOGGER.info("First sync failed [{}], but second sync succeeded", e);
+                }
+            }
+        }
+
+        private void runMoverForWrite(RepositoryChannel fileIoChannel) throws Exception {
+            handleChecksumMover();
+            try {
+                _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
+            } finally {
+                tryToSync(fileIoChannel);
+
                 // if mover was interrupted outside of any blocking IO operation or a wait/sleep/join ... calls
                 if (Thread.interrupted()) {
                     throw new InterruptedException("Mover thread was interrupted.");
@@ -198,6 +220,12 @@ public abstract class AbstractMoverProtocolTransferService
         }
 
         private synchronized void cleanThread() {
+            // clear interrupt flag before returning to thread pool
+            boolean leftInterrupted = Thread.interrupted();
+            if (leftInterrupted) {
+                LOGGER.error("BUG detected: mover thread {} left in interrupted state." +
+                        " Please report to support@dcache.org", _thread.getName());
+            }
             _thread = null;
         }
 
