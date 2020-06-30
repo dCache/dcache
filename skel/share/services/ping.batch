@@ -1,0 +1,12 @@
+# Starts ping service
+
+onerror shutdown
+
+check -strong ping.cell.name
+check -strong ping.cell.consume
+check -strong ping.limit.max-wait
+check -strong ping.limit.max-wait.unit
+
+create org.dcache.cells.UniversalSpringCell ${ping.cell.name} \
+    "classpath:org/dcache/services/bulk/ping.xml \
+    -consume=${ping.cell.consume}"
