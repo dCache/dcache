@@ -32,11 +32,6 @@ dCache is a distributed mass storage system.
 This package contains the server components.
 
 %pre
-if [ -d /opt/d-cache/classes ]; then
-   echo "Can't update package in /opt (/opt/d-cache/classes exists)"
-   exit 1
-fi
-
 /sbin/service dcache-server stop >/dev/null 2>&1
 
 # Make sure the system user and group exist, and that
