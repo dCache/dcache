@@ -80,13 +80,17 @@ import static java.util.Objects.requireNonNull;
  *  of activity (use the SingleTargetJob instead).  It is public
  *  only because it needs to be visible to other internal packages.
  */
-public abstract class BulkJob implements Runnable
+public abstract class BulkJob implements Runnable, Comparable<BulkJob>
 {
     protected static final Logger LOGGER = LoggerFactory.getLogger(BulkJob.class);
 
+    private static final String INVALID_STATE_TRANSITION =
+                        "%s: invalid bulk job state transition %s to %s; "
+                                        + "please report this to dcache.org.";
+
     public enum State
     {
-        CREATED, INITIALIZED, STARTED, CANCELLED, COMPLETED, FAILED
+        CREATED, INITIALIZED, STARTED, WAITING, CANCELLED, COMPLETED, FAILED
     }
 
     protected final BulkJobKey key;
@@ -109,12 +113,14 @@ public abstract class BulkJob implements Runnable
     protected Future                   future;
 
     private   long           startTime;
+    private   boolean        valid;
 
     protected BulkJob(BulkJobKey key, BulkJobKey parentKey, String activity)
     {
         this.key = key;
         this.parentKey = parentKey;
         this.activity = activity;
+        this.valid = true;
     }
 
     public synchronized boolean cancel()
@@ -124,6 +130,7 @@ public abstract class BulkJob implements Runnable
             case CREATED:
             case INITIALIZED:
             case STARTED:
+            case WAITING:
                 state = State.CANCELLED;
                 if (future != null) {
                     future.cancel(true);
@@ -142,6 +149,16 @@ public abstract class BulkJob implements Runnable
                  */
                 return false;
         }
+    }
+
+    @Override
+    public int compareTo(BulkJob other)
+    {
+        if (other == null) {
+            return -1;
+        }
+
+        return key.toString().compareTo(other.getKey().toString());
     }
 
     public String getActivity()
@@ -209,6 +226,23 @@ public abstract class BulkJob implements Runnable
         }
     }
 
+    public synchronized BulkJob invalidate()
+    {
+        valid = false;
+        return this;
+    }
+
+    public synchronized boolean isReady()
+    {
+        switch (state)
+        {
+            case CREATED:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     public synchronized boolean isTerminated()
     {
         switch (state)
@@ -222,6 +256,16 @@ public abstract class BulkJob implements Runnable
         }
     }
 
+    public synchronized boolean isValid()
+    {
+        return valid;
+    }
+
+    public synchronized boolean isWaiting()
+    {
+        return state == State.WAITING;
+    }
+
     public void run()
     {
         LOGGER.trace("{}, run() called ...", key);
@@ -229,13 +273,6 @@ public abstract class BulkJob implements Runnable
         setState(State.STARTED);
 
         doRun();
-
-        /*
-         *  If cancelled or failed, this call will not change the state.
-         */
-        setState(State.COMPLETED);
-
-        postCompletion();
     }
 
     public void setAttributes(FileAttributes attributes)
@@ -273,26 +310,61 @@ public abstract class BulkJob implements Runnable
             case COMPLETED:
             case FAILED:
                 break;
+            case WAITING:
+                switch (state)
+                {
+                    case CANCELLED:
+                    case COMPLETED:
+                    case FAILED:
+                        this.state = state;
+                        postCompletion();
+                        break;
+                    default:
+                        throw new IllegalStateException(
+                                        String.format(INVALID_STATE_TRANSITION,
+                                                      key.getKey(),
+                                                      this.state,
+                                                      state));
+                }
+                break;
             case STARTED:
                 switch (state)
                 {
                     case CANCELLED:
                     case COMPLETED:
                     case FAILED:
+                        postCompletion();
+                    case WAITING:
                         this.state = state;
-                        startTime = System.currentTimeMillis();
                         break;
+                    default:
+                        throw new IllegalStateException(
+                                        String.format(INVALID_STATE_TRANSITION,
+                                                      key.getKey(),
+                                                      this.state,
+                                                      state));
                 }
                 break;
             case INITIALIZED:
                 switch (state)
                 {
+                    case STARTED:
+                        startTime = System.currentTimeMillis();
+                        this.state = state;
+                        break;
                     case CANCELLED:
                     case COMPLETED:
                     case FAILED:
-                    case STARTED:
                         this.state = state;
+                        postCompletion();
                         break;
+                    case WAITING:
+                    default:
+                        throw new IllegalStateException(
+                                        String.format(INVALID_STATE_TRANSITION,
+                                                      key.getKey(),
+                                                      this.state,
+                                                      state));
                 }
                 break;
             case CREATED:

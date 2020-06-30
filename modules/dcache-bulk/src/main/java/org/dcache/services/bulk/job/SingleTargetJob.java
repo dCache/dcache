@@ -60,8 +60,11 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.job;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import diskCacheV111.util.FsPath;
+import diskCacheV111.vehicles.Message;
 
 /**
  * This is the class which should be extended for all
@@ -69,14 +72,25 @@ import diskCacheV111.util.FsPath;
  */
 public abstract class SingleTargetJob extends BulkJob
 {
-    protected FsPath path;
+    protected FsPath              path;
     protected Map<String, String> arguments;
+    protected ExecutorService     executorService;
+    protected Future<? extends Message>  waitable;
 
     protected SingleTargetJob(BulkJobKey key,
                               BulkJobKey parentKey,
                               String activity)
     {
         super(key, parentKey, activity);
+    }
+
+    public synchronized boolean cancel()
+    {
+        if (waitable != null) {
+            waitable.cancel(true);
+        }
+
+        return super.cancel();
     }
 
     public void setArguments(Map<String, String> arguments)
@@ -89,8 +103,29 @@ public abstract class SingleTargetJob extends BulkJob
         this.path = path;
     }
 
+    public void setExecutorService(ExecutorService executorService)
+    {
+        this.executorService = executorService;
+    }
+
+    protected synchronized void setWaitable(Future<? extends Message> waitable)
+    {
+        this.waitable = waitable;
+    }
+
     protected void postCompletion()
     {
         completionHandler.jobCompleted(this);
+    }
+
+    protected void setError(Object error)
+    {
+        if (error instanceof Throwable) {
+            errorObject = (Throwable)error;
+        } else {
+            errorObject = new Throwable(String.valueOf(error));
+        }
+
+        setState(State.FAILED);
     }
 }

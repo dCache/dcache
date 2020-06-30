@@ -171,6 +171,8 @@ public class BulkRequestJob extends MultipleTargetJob
             }
         }
 
+        setState(State.COMPLETED);
+
         LOGGER.trace("{}, RequestJob, doRun() exiting ...", target);
     }
 

@@ -156,6 +156,7 @@ public final class TargetExpansionJob extends MultipleTargetJob
 
         try {
             expand(target, key, parentKey, attributes);
+            setState(State.COMPLETED);
         } catch (CacheException | BulkServiceException e) {
             errorObject = e;
             completionHandler.jobFailed(this);
