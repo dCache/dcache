@@ -70,6 +70,9 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                     return inode.statCache().getAccessLatency();
                 }
                 dirInode = inode.getParent();
+                if (dirInode == null) {
+                    throw new FileNotFoundCacheException("File " + inode + " has been deleted.");
+                }
             }
 
             Optional<String> accessLatency = getFirstLine(dirInode.getTag("AccessLatency"));
@@ -109,6 +112,9 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                     return inode.statCache().getRetentionPolicy();
                 }
                 dirInode = inode.getParent();
+                if (dirInode == null) {
+                    throw new FileNotFoundCacheException("File " + inode + " has been deleted.");
+                }
             }
 
             Optional<String> retentionPolicy = getFirstLine(dirInode.getTag("RetentionPolicy"));
@@ -159,8 +165,11 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             info =  getDirStorageInfo(inode);
             dirInode = inode;
         } else {
-            info =  getFileStorageInfo(inode);
             dirInode = inode.getParent();
+            if (dirInode == null) {
+                throw new FileNotFoundCacheException("File " + inode + " has been deleted.");
+            }
+            info =  getFileStorageInfo(inode);
         }
 
         // overwrite hsm type with hsmInstance tag
