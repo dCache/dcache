@@ -32,7 +32,20 @@ dCache is a distributed mass storage system.
 This package contains the server components.
 
 %pre
-/sbin/service dcache-server stop >/dev/null 2>&1
+
+# stop service before upgrade
+if [ $1 -eq 2 ]; then
+    /sbin/service dcache-server stop >/dev/null 2>&1
+
+    # as we produce multi-platform RPM don't use RPMS native mechanisms to handle
+    # systemd services.
+    # REVISIT: remove in dCache 7.0.
+
+    if [ -x /usr/bin/systemctl ]; then
+        /usr/bin/systemctl stop dcache.service
+    fi
+fi
+
 
 # Make sure the system user and group exist, and that
 # the user is a member of the group.
@@ -82,13 +95,15 @@ fi
 if [ $1 -eq 0 ] ; then
     /sbin/service dcache-server stop >/dev/null 2>&1
     /sbin/chkconfig --del dcache-server
-fi
 
-# as we produce multi-platform RPM don't use RPMS native mechanisms to handle systemd services.
-# REVISIT: remove in dCache 7.0.
-if [ -x /usr/bin/systemctl ]; then
- /usr/bin/systemctl stop dcache.service
- fi
+    # as we produce multi-platform RPM don't use RPMS native mechanisms to handle
+    # systemd services.
+    # REVISIT: remove in dCache 7.0.
+    if [ -x /usr/bin/systemctl ]; then
+        /usr/bin/systemctl disable --now dcache.service
+        /usr/bin/systemctl daemon-reload
+    fi
+fi
 
 %clean
 rm -rf $RPM_BUILD_ROOT
