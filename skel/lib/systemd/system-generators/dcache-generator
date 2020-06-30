@@ -2,6 +2,10 @@
 
 set -e
 
+# under RHEL7 generator is executed without PATH bing exported.
+# as the rresult `which java` will return error
+export PATH
+
 @DCACHE_LOAD_CONFIG@
 
 
