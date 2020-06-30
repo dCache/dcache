@@ -84,8 +84,7 @@ public class BulkJobArgumentDescriptor
                         + "be null.");
         this.description = requireNonNull(description,"description "
                         + "cannot be null.");
-        this.valueSpec = requireNonNull(valueSpec,
-                                                    "possible values "
+        this.valueSpec = requireNonNull(valueSpec,"possible values "
                                                                     + "must be "
                                                                     + "specified");
         this.required = required;

@@ -59,40 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins;
 
-import java.util.Collections;
-import java.util.Set;
-
-import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
-import org.dcache.services.bulk.job.BulkJobKey;
-import org.dcache.services.bulk.job.BulkJobProvider;
 import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
 
 import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.BOTH;
 
-/**
- *  Provides a test activity for admin interface testing.
- */
-public class BFirstWalkJobProvider extends BulkJobProvider<BFirstWalkJob>
+public class BFirstWalkJobProvider extends TreeWalkJobProvider
 {
     public BFirstWalkJobProvider()
     {
         super("BREADTH-FIRST-WALK", BOTH, ExpansionType.BREADTH_FIRST);
-    }
-
-    @Override
-    public BFirstWalkJob createJob(BulkJobKey key, BulkJobKey parentKey)
-    {
-        return new BFirstWalkJob(key, parentKey, activity);
-    }
-
-    @Override
-    public Class<BFirstWalkJob> getJobClass()
-    {
-        return BFirstWalkJob.class;
-    }
-
-    public Set<BulkJobArgumentDescriptor> getArguments()
-    {
-        return Collections.EMPTY_SET;
     }
 }

@@ -59,44 +59,54 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.common.collect.ImmutableSet;
 
+import java.util.Set;
+
+import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
 import org.dcache.services.bulk.job.BulkJobKey;
-import org.dcache.services.bulk.job.SingleTargetJob;
+import org.dcache.services.bulk.job.BulkJobProvider;
+import org.dcache.services.bulk.job.MultipleTargetJob.TargetType;
+import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
 
 /**
- *  A test job that can be run through the admin interface.
+ *  Provides a test activity for admin interface testing.
  */
-public final class DFirstWalkJob extends SingleTargetJob
+abstract class TreeWalkJobProvider extends BulkJobProvider<TreeWalkJob>
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DFirstWalkJob.class);
+    static final BulkJobArgumentDescriptor USE_PING =
+                    new BulkJobArgumentDescriptor("simulate-wait",
+                                                  "send to ping service",
+                                                  "true|false",
+                                                  false, "false");
 
-    public DFirstWalkJob(BulkJobKey key,
-                         BulkJobKey parentKey,
-                         String activity)
+    static final BulkJobArgumentDescriptor SIMULATE_FAILURE =
+                    new BulkJobArgumentDescriptor("simulate-failure",
+                                                  "randomly fail jobs",
+                                                  "true|false",
+                                                  false, "false");
+
+    protected TreeWalkJobProvider(String activity,
+                                  TargetType targetType,
+                                  ExpansionType expansionType)
     {
-        super(key, parentKey, activity);
+        super(activity, targetType, expansionType);
     }
 
     @Override
-    protected void doRun()
+    public TreeWalkJob createJob(BulkJobKey key, BulkJobKey parentKey)
     {
-        Long duration = BFirstWalkJob.getDuration(arguments);
+        return new TreeWalkJob(key, parentKey, activity);
+    }
 
-        try {
-            if (duration != null) {
-                Thread.sleep(duration);
-            }
-        } catch (InterruptedException e) {
-            LOGGER.info("DFirstWalkJob interrupted, [{}] [{}] [{}]",
-                        attributes.getPnfsId(),
-                        attributes.getFileType(),
-                        path);
-        }
-        LOGGER.info("DFirstWalkJob [{}] [{}] [{}]",
-                    attributes.getPnfsId(),
-                    attributes.getFileType(),
-                    path);
+    @Override
+    public Class<TreeWalkJob> getJobClass()
+    {
+        return TreeWalkJob.class;
+    }
+
+    public Set<BulkJobArgumentDescriptor> getArguments()
+    {
+        return ImmutableSet.of(USE_PING, SIMULATE_FAILURE);
     }
 }
