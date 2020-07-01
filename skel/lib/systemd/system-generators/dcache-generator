@@ -23,7 +23,7 @@ for domain in $(getProperty dcache.domains); do
     cat <<-EOF > "$1/dcache@$domain.service"
 	[Unit]
 	Description=dCache $domain domain
-	After=network.target zookeeper.service
+	After=network.target
 	PartOf=dcache.service
 	ReloadPropagatedFrom=dcache.service
 	Before=dcache.service
