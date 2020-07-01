@@ -1,11 +1,6 @@
 package org.dcache.pinmanager;
 
-import com.google.common.base.Throwables;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
-import org.apache.curator.utils.CloseableUtils;
-import org.apache.curator.utils.ZKPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -20,15 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.zookeeper.CDCLeaderLatchListener;
-
 import org.dcache.cells.CellStub;
-import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NDC;
@@ -38,7 +26,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
 
 public class PinManager
-    implements CellMessageReceiver, CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware
+    implements CellMessageReceiver, LeaderLatchListener
 {
     private static final Logger _log =
         LoggerFactory.getLogger(PinManager.class);
@@ -51,22 +39,6 @@ public class PinManager
     private long expirationPeriod;
     private TimeUnit expirationPeriodUnit;
     private PoolMonitor poolMonitor;
-    private CuratorFramework client;
-    private CellAddressCore address;
-    private LeaderLatch leaderLatch;
-    private String zkPath;
-
-    @Override
-    public void setCuratorFramework(CuratorFramework client)
-    {
-        this.client = client;
-    }
-
-    @Override
-    public void setCellAddress(CellAddressCore address)
-    {
-        this.address = address;
-    }
 
     @Required
     public void setExecutor(ScheduledExecutorService executor)
@@ -114,42 +86,10 @@ public class PinManager
         return expirationPeriodUnit;
     }
 
-    @Required
-    public void setServiceName(String serviceName)
-    {
-        zkPath = getZooKeeperLeaderPath(serviceName);
-    }
-
-    @Override
-    public void afterStart()
-    {
-        try {
-            leaderLatch = new LeaderLatch(client, zkPath, address.toString());
-            leaderLatch.addListener(new CDCLeaderLatchListener(new LeaderListener()));
-            leaderLatch.start();
-        } catch (Exception e) {
-            Throwables.throwIfUnchecked(e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void beforeStop()
-    {
-        if (leaderLatch != null) {
-            CloseableUtils.closeQuietly(leaderLatch);
-        }
-    }
-
     public PnfsDeleteEntryNotificationMessage messageArrived(PnfsDeleteEntryNotificationMessage message)
     {
         dao.delete(dao.where().pnfsId(message.getPnfsId()));
         return message;
-    }
-
-    public static String getZooKeeperLeaderPath(String serviceName)
-    {
-        return ZKPaths.makePath("/dcache/pinmanager", serviceName, "leader");
     }
 
     private class ExpirationTask implements Runnable
@@ -177,37 +117,37 @@ public class PinManager
         }
     }
 
-    private class LeaderListener implements LeaderLatchListener
+    private FireAndForgetTask unpinTask;
+    private final ExpirationTask expirationTask = new ExpirationTask();
+    private ScheduledFuture<?> unpinFuture;
+    private ScheduledFuture<?> expirationFuture;
+
+    public void init() {
+        // Needs to be assigned after dao has been initialized
+        unpinTask = new FireAndForgetTask(new UnpinProcessor(dao, poolStub, poolMonitor));
+    }
+
+    @Override
+    public void isLeader()
     {
-        private final FireAndForgetTask unpinTask =
-                new FireAndForgetTask(new UnpinProcessor(dao, poolStub, poolMonitor));
-        private final ExpirationTask expirationTask =
-                new ExpirationTask();
-        private ScheduledFuture<?> unpinFuture;
-        private ScheduledFuture<?> expirationFuture;
+        _log.info("Scheduling Expiration and Unpin tasks.");
+        expirationFuture = executor.scheduleWithFixedDelay(
+                new FireAndForgetTask(expirationTask),
+                INITIAL_EXPIRATION_DELAY,
+                expirationPeriodUnit.toMillis(expirationPeriod),
+                MILLISECONDS);
+        unpinFuture = executor.scheduleWithFixedDelay(
+                unpinTask,
+                INITIAL_UNPIN_DELAY,
+                expirationPeriodUnit.toMillis(expirationPeriod),
+                MILLISECONDS);
+    }
 
-        @Override
-        public void isLeader()
-        {
-            _log.info("Assuming leader role. Scheduling Expiration and Unpin tasks.");
-            expirationFuture = executor.scheduleWithFixedDelay(
-                    new FireAndForgetTask(expirationTask),
-                    INITIAL_EXPIRATION_DELAY,
-                    expirationPeriodUnit.toMillis(expirationPeriod),
-                    MILLISECONDS);
-            unpinFuture = executor.scheduleWithFixedDelay(
-                    unpinTask,
-                    INITIAL_UNPIN_DELAY,
-                    expirationPeriodUnit.toMillis(expirationPeriod),
-                    MILLISECONDS);
-        }
-
-        @Override
-        public void notLeader()
-        {
-            _log.info("Dropping leader role. Cancelling Expiration and Unpin tasks.");
-            expirationFuture.cancel(false);
-            unpinFuture.cancel(true);
-        }
+    @Override
+    public void notLeader()
+    {
+        _log.info("Cancelling Expiration and Unpin tasks.");
+        expirationFuture.cancel(false);
+        unpinFuture.cancel(true);
     }
 }

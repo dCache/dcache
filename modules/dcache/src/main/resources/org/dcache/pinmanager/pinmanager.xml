@@ -57,7 +57,6 @@
       <property name="dao" ref="dao"/>
       <property name="executor" ref="scheduled-executor"/>
       <property name="poolMonitor" ref="pool-monitor"/>
-      <property name="serviceName" value="${pinmanager.cell.service}"/>
   </bean>
 
   <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
@@ -136,6 +135,24 @@
   <bean id="stage-permission" class="diskCacheV111.util.CheckStagePermission">
       <description>Stage permission checker</description>
       <constructor-arg value="${pinmanager.authz.staging}"/>
+  </bean>
+
+  <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
+        init-method="initZkLeaderListener" destroy-method="shutdown">
+      <description>Manages leadership coordination for HA services</description>
+      <constructor-arg value="pinmanager/PinManager"/>
+      <property name="leadershipListener">
+          <ref bean="leaderlistener-group"/>
+      </property>
+  </bean>
+
+  <bean id="leaderlistener-group" class="org.dcache.cells.LeadershipListenerGroup">
+      <description>Propagates leadership change notifications to managed listeners</description>
+      <property name="leaderElectionAwareComponents">
+          <set>
+              <ref bean="pinmanager"/>
+          </set>
+      </property>
   </bean>
 
   <!--  DATABASE BEANS
