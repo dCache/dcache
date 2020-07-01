@@ -94,7 +94,7 @@
         </property>
     </bean>
 
-    <bean id="ha-service-leadership-manager" class="org.dcache.chimera.namespace.HAServiceLeadershipManager"
+    <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
           init-method="initZkLeaderListener" destroy-method="shutdown">
         <description>Manages leadership coordination for HA services</description>
         <constructor-arg value="cleaner"/>

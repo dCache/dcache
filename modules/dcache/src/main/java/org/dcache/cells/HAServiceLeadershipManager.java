@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.chimera.namespace;
+package org.dcache.cells;
 
 import com.google.common.base.Throwables;
 import org.apache.curator.framework.CuratorFramework;
@@ -37,7 +37,6 @@ import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.zookeeper.CDCLeaderLatchListener;
 import dmg.util.command.Command;
-import org.dcache.cells.CuratorFrameworkAware;
 
 import static dmg.util.CommandException.checkCommand;
 
@@ -46,7 +45,7 @@ import static dmg.util.CommandException.checkCommand;
  */
 public class HAServiceLeadershipManager implements CellIdentityAware, CellCommandListener, CellInfoProvider, CuratorFrameworkAware {
 
-    protected static final String HA_NOT_LEADER_MSG = "This cell does not have leadership. Doing nothing.";
+    public static final String HA_NOT_LEADER_MSG = "This cell does not have leadership. Doing nothing.";
 
     private CellAddressCore cellAddress;
 
@@ -102,7 +101,7 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
         }
     }
 
-    protected boolean hasLeadership() {
+    public boolean hasLeadership() {
         return zkLeaderLatch.hasLeadership();
     }
 

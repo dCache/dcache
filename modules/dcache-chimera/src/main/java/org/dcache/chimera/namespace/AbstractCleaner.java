@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.HAServiceLeadershipManager;
 
 /**
  *
