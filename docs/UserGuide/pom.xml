@@ -192,7 +192,7 @@
                         <!-- Maven does not support defining more than one target -->
                         <ant antfile="${basedir}/src/main/antruns/substituteFilename.xml" />
 
-                        <replaceregexp byline="true">
+                        <replaceregexp flags="g">
                           <regexp pattern="href=&quot;([^/&quot;][^&quot;]*)\.html([^&quot;]*)&quot;" />
                           <substitution expression="href=&quot;\1.shtml\2&quot;" />
                           <fileset dir="${raw-html-target.path}" includes="**/*.html" />
