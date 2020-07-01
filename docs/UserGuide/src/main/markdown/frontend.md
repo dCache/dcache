@@ -1,4 +1,4 @@
-Chapter 2. Frontend
+Chapter 3. Frontend
 ===================
 
 **Table of Contents**

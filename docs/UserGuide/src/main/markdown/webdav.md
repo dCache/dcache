@@ -1,4 +1,4 @@
-Chapter 5. WebDAV
+Chapter 6. WebDAV
 =================
 
 **Table of Contents**

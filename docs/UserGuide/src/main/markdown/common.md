@@ -8,3 +8,6 @@ Table of Contents
 -----------------
 
 * [Chapter 1. Understanding macaroons](macaroons.md)
+
+* [Chapter 2. Extended attributes](xattr.md)
+

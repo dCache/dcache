@@ -1,4 +1,4 @@
-Chapter 3. FTP
+Chapter 4. FTP
 ==============
 
 The File Transfer Protocol (FTP) is a standard network protocol used

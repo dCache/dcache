@@ -10,13 +10,15 @@ Table of contents
 
     -   [Chapter 1. Understanding macaroons](macaroons.md)
 
+    -   [Chapter 2. Extended attributes](xattr.md)
+
 -   [Protocol-by-protocol](protocol.md)
 
-    -   [Chapter 2. Frontend](frontend.md)
+    -   [Chapter 3. Frontend](frontend.md)
     
-    -   [Chapter 3. FTP](ftp.md)
+    -   [Chapter 4. FTP](ftp.md)
     
-    -   [Chapter 4. NFS](nfs.md)
+    -   [Chapter 5. NFS](nfs.md)
     
-    -   [Chapter 5. WebDAV](webdav.md)
+    -   [Chapter 6. WebDAV](webdav.md)
 
