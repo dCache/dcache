@@ -20,6 +20,7 @@ Chapter 3. Frontend
     * [Creating directories](#creating-directories)
     * [Moving and renaming](#moving-and-renaming)
     * [Modifying QoS](#modifying-qos)
+    * [Managing extended attributes](#managing-extended-attributes)
 + [QoS Management](#qos-management)
 + [Space reservations](#space-reservations)
 + [Storage Events](#storage-events)
@@ -668,9 +669,10 @@ Additional information may be requested by specifying different query
 parameters in the GET request.  These additional fields are not
 included by default as fetching them would slow down the query.
 
-There are three additional fields: `locality`, `locations` and `qos`;
-for example, to enable fetching `locality` and `qos` information, the
-GET request would include `?locality=true&qos=true` in the URL.
+There are three additional fields: `locality`, `locations`, `qos` and
+`xattr`; for example, to enable fetching `locality` and `qos`
+information, the GET request would include `?locality=true&qos=true`
+in the URL.
 
 The `locality` flag adds information about whether data is currently
 available.  With this flag, the output includes the extra field
@@ -699,6 +701,50 @@ present, describing which QoS the file should have.  See [QoS
 Management](#qos-management) to understand more about these QoS
 values.  How to trigger QoS changes is described in [Modifying
 QoS](#modifying-qos).
+
+The `xattr` flag adds a list of all currently assigned extended
+attributes.  With this flag, the output includes the
+`extendedAttributes` field.  The value is a JSON object where the JSON
+object key is the extended attribute name and the corresponding JSON
+object value is a JSON string containing the attribute value.  For
+more details on extended attributes see the [chapter on extended
+attributes](xattr.md).
+
+The following example shows a typical response when querying a file
+contains no extended attributes
+
+```json
+{
+  "fileMimeType": "application/octet-stream",
+  "size": 1099016,
+  "creationTime": 1593622353030,
+  "pnfsId": "00008E3F09F356D747668CC518EFC61D6A5E",
+  "fileType": "REGULAR",
+  "nlink": 1,
+  "mtime": 1593622354113,
+  "extendedAttributes": {}
+}
+```
+
+The following example shows a typical response when querying a file
+with two extended attributes `attribute-1` and `attribute-2`, with
+values `Test value 1` and `Another test value` respectively:
+
+```json
+{
+  "fileMimeType": "application/octet-stream",
+  "size": 1099016,
+  "creationTime": 1593622453204,
+  "pnfsId": "00009599943268104B39B4624F5CC1F7E131",
+  "fileType": "REGULAR",
+  "nlink": 1,
+  "mtime": 1593622453352,
+  "extendedAttributes": {
+    "attribute-2": "Another test value",
+    "attribute-1": "Test value 1"
+  }
+}
+```
 
 If the path does not exist, then the HTTP response has a status code
 404, with the following JSON response:
@@ -888,6 +934,98 @@ metadata](#discovering-metadata) for more details.
 
 See [QoS Management](#qos-management) to understand more about the
 different QoS target values, including performance characteristics.
+
+### Managing extended attributes
+
+Each file and directory has zero or more multiple extended attributes.
+Extended attributes allow users and clients to assign arbitrary
+metadata and are described in the [extended attributes
+chapter](xattr.md).
+
+Extended attributes are mangaed by making a POST request to the
+resource representing the source file or directory; for example, to
+add new extended attributes to the file `/Users/paul/my-data`, the
+POST request would target a URL with the path
+`/api/v1/namespace/Users/paul/my-data`.
+
+
+#### Adding or modifying extended attributes
+
+To add or modify extended attributes, the POST request must contain a
+JSON object with the `action` property value `set-xattr`, and the
+`attributes` property set to a JSON object containing the new extended
+attributes.  The `mode` property may be specified with a value of
+`CREATE`, `MODIFY` or `EITHER`.  If the `mode` property is not
+specified then `EITHER` is used as a default value.
+
+If the `mode` value is `CREATE` then the new attributes are accepted
+only if they do not already exist: attempts to modify an existing
+extended attribute will fail.  If the `mode` is `MODIFY` then an
+existing extended attribute value is updated: attempts to create a new
+extended attribute will fail.  If the `mode` is `EITHER` then the
+extended attribute is assigned: creating a new extended attribute or
+updating an existing attribute as appropriate.
+
+The following example shows a POST request entity that creates two new
+extended attributes (with names `attr-1` and `attr-2`) but only if
+these extended attributes do not already exist:
+
+```json
+{
+    "action" : "set-xattr",
+    "mode" : "CREATE",
+    "attributes" : {
+        "attr-1": "First attribute",
+        "attr-2": "Second attribute"
+    }
+}
+```
+
+The following example shows a POST request entity that either creates
+a new extended attribute or modifies an existing extended attribute so
+that the file now has an extended attribute with name `catalogue-id`:
+
+```json
+{
+    "action" : "set-xattr",
+    "attributes" : {
+        "catalogue-id": "e163fb54-6d2e-4282-9f68-b6f97a707d0d"
+    }
+}
+```
+
+#### Removing extended attributes
+
+To remove extended attributes, the POST request must contain a JSON
+object with the `action` property value `rm-xattr`, and the `names`
+property set to either a JSON string or a JSON array of JSON strings.
+The JSON array values are the names of extended attributes to remove.
+As a special case, if only a single extended attribute is to be
+removed then the JSON array may be replaced with a JSON string.
+
+The following example shows a POST request entiy that removes the two
+extended attributes with names `attr-1` and `attr-2`:
+
+```json
+{
+    "action" : "rm-xattr",
+    "names" : [
+        "attr-1",
+        "attr-2"
+    ]
+}
+```
+
+The following example shows a POST request entity that removes a
+single extended attribute with name `catalogue-id`:
+
+```json
+{
+    "action" : "rm-xattr",
+    "names" : "catalogue-id"
+}
+```
+
 
 ## QoS Management
 
@@ -2178,7 +2316,7 @@ should deliver a single event and then unsubscribe itself.
 ```console-user
 curl -u paul -X POST -H 'Content-Type: application/json' \
 |        -d '{"delay":1,"count":1}' \
-|	https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome
+|       https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/metronome
 |Enter host password for user 'paul':
 ```
 
@@ -2260,7 +2398,7 @@ inotify subscription by issuing a POST request to
 ```console-user
 curl -u paul -X POST -H 'Content-Type: application/json' \
 |        -d '{"path": "/Users/paul"}' \
-|	https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify
+|       https://dcache.example.org:3880/api/v1/events/channels/MwcXzif2nF3NkHWcjk8sGw/subscriptions/inotify
 |Enter host password for user 'paul':
 ```
 
@@ -2292,7 +2430,7 @@ call.
 ```console-user
 curl -u paul -X POST -H 'Content-Type: application/json' \
 |        -d '{"action": "mkdir", "name": "new-directory"}' \
-|	https://dcache.example.org:3880/api/v1/namespace/Users/paul
+|       https://dcache.example.org:3880/api/v1/namespace/Users/paul
 |Enter host password for user 'paul':
 |{"status":"success"}
 ```
@@ -2338,7 +2476,7 @@ We can then rename this new directory from `new-directory` to
 ```console-user
 curl -u paul -X POST -H 'Content-Type: application/json' \
 |        -d '{"action": "mv", "destination": "/Users/paul/my-data"}' \
-|	https://dcache.example.org:3880/api/v1/namespace/Users/paul/new-directory
+|       https://dcache.example.org:3880/api/v1/namespace/Users/paul/new-directory
 |Enter host password for user 'paul':
 |{"status":"success"}
 ```

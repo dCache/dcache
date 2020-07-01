@@ -906,7 +906,8 @@ echo '<?xml version="1.0"?><propertyupdate xmlns="DAV:" xmlns:xa="http://www.dca
 ## Extended attributes
 
 Extended attributes are arbitrary key-value pairs that may be assigned
-to files and directories in dCache.
+to files and directories in dCache.  Read the [chapter on extended
+attributes](xattr.md) to learn more about them.
 
 ### Extended attributes when uploading
 

@@ -67,15 +67,30 @@ attribute also need to coordinate how the attribute value is assigned.
 ### Protocol support
 
 Support for querying and updating extended attributes are available
-through various protocols.  The NFS door supports an extension that
-allows clients (typically machines that have mounted dCache as an NFS
-server) to query and modify extended attributes; see [the NFS
-chapter](nfs.md) for more details.  The frontend door provides roughly
-similar extended attribute functionality to the NFS protocol but using
-HTTP; see [the frontend chapter](frontend.md) for more details.
-Finally, the WebDAV door limited support for extended attributes by
-mapping them to WebDAV properties; see [the WebDAV chapter](webdav.md)
-for more details.
+through various protocols supported by dCache.  The extended
+attributes are consistent across multiple protocols: metadata stored
+through one protocol is both visible and modifiable through all
+protocols.
+
+The NFS door supports RFC 8276, which describes an extension to NFSv4
+that allows clients to query and modify extended attributes.  The [NFS
+chapter](nfs.md) contains more details.
+
+The frontend door provides roughly similar extended attribute
+functionality to the NFS protocol but using an HTTP REST API.  The
+[frontend chapter](frontend.md) describes how to work with extended
+attributes through this API, with the [discovering
+metadata](frontend.md#discovering-metadata) section describing how to
+query currently assigned extended attributes and the [managing
+extended attributes](frontend.md#managing-extended-attributes) section
+describing how to create, modify or remove extended attributes.
+
+Finally, the WebDAV door supports extended attributes by mapping them
+to WebDAV properties.  This allows quering current extended
+attributes, assigning extended attributes, and removing existing
+extended attributes.  The [extended attributes
+section](webdav.md#extended-attributes) in the WebDAV chapter has more
+details on how this works.
 
 ### Operations
 
