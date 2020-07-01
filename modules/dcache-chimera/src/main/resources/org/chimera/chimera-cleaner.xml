@@ -118,7 +118,7 @@
         </property>
     </bean>
 
-    <bean id="baseleaderlistener-group" abstract="true" class="org.dcache.chimera.namespace.LeadershipListenerGroup">
+    <bean id="baseleaderlistener-group" abstract="true" class="org.dcache.cells.LeadershipListenerGroup">
         <description>Propagates leadership change notifications to managed listeners</description>
         <property name="leaderElectionAwareComponents">
             <set>
