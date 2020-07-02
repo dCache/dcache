@@ -18,10 +18,13 @@ import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.dcache.auth.AuthenticationOutput;
+
 /**
  * A Globus DN principal. The Globus DN is in the form: "/CN=foo/O=bar".
  * @since 2.14
  */
+@AuthenticationOutput
 public class GlobusPrincipal
         extends SimplePrincipal
 {

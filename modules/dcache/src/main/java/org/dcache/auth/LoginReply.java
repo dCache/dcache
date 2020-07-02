@@ -15,10 +15,9 @@ import static java.util.Objects.requireNonNull;
 import static com.google.common.collect.Iterables.filter;
 
 /**
- * Immutable encapsulation of a login result as provided by a
- * LoginStrategy. The LoginReply embeds a logged in Subject with all
- * mapped principals and login attributes associatated with the
- * current login.
+ * The result of a login request made through some LoginStrategy.  This
+ * contains a Subject that identifies the logged-in user along with a set of
+ * LoginAttribute values that qualify how this user may use dCache.
  */
 public class LoginReply
 {
@@ -38,7 +37,9 @@ public class LoginReply
     }
 
     /**
-     * Returns the Subject of this LoginReply.
+     * Returns the identity of a successfully logged in user.  This Subject
+     * contains no public or private credentials and all principals have been
+     * tagged @AuthenticationOutput.
      */
     @Nonnull
     public Subject getSubject()

@@ -12,6 +12,7 @@ import java.security.Principal;
  * @see LoginUidPrincipal
  * @since 2.1
  */
+@AuthenticationOutput
 public class UidPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 1489893133915358418L;

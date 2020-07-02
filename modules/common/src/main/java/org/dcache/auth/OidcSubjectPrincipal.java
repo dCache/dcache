@@ -10,6 +10,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * @since 2.16
  */
+@AuthenticationOutput
 public class OidcSubjectPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 1L;

@@ -25,6 +25,7 @@ import java.security.Principal;
  * This principal in no way specifies whether the user is entitled to have
  * this role.
  */
+@AuthenticationInput
 public class DesiredRole implements Principal, Serializable
 {
     private static final long serialVersionUID = 1L;

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,36 +17,18 @@
  */
 package org.dcache.auth;
 
-import java.io.Serializable;
-import java.security.Principal;
-
-import static java.util.Objects.requireNonNull;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Identifies the Macaroon used to authorise the activity.
- * @since 3.2
+ * A tagging annotation that indicates the class provides input material to
+ * support the login process.  This is typically material that the door has
+ * discovered about the client and represented using principals.
  */
-@AuthenticationOutput
-public class MacaroonPrincipal implements Principal, Serializable
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface AuthenticationInput
 {
-    private static final long serialVersionUID = 1L;
-
-    private final String _identifier;
-
-    public MacaroonPrincipal(String id)
-    {
-        _identifier = requireNonNull(id);
-    }
-
-    @Override
-    public String getName()
-    {
-        return _identifier;
-    }
-
-    @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + "[" + getName() + "]";
-    }
 }

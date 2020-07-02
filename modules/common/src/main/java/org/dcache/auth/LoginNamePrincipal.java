@@ -12,6 +12,7 @@ import java.security.Principal;
  * @see UserNamePrincipal
  * @since 2.1
  */
+@AuthenticationInput
 public class LoginNamePrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = -6665363415876118030L;

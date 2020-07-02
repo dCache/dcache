@@ -5,6 +5,7 @@ import java.io.Serializable;
 /**
  * @since 2.1
  */
+@AuthenticationOutput
 public class GroupNamePrincipal implements GroupPrincipal, Serializable
 {
     private static final long serialVersionUID = -9202753005930409597L;

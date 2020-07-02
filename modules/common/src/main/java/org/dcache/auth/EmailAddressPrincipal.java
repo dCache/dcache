@@ -9,6 +9,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * @since 2.16
  */
+@AuthenticationOutput
 public class EmailAddressPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = -5091924321331479809L;

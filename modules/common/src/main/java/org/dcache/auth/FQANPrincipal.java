@@ -9,6 +9,7 @@ import java.io.Serializable;
  * implement the Principal and Serializable interfaces.
  * @since 2.1
  */
+@AuthenticationOutput
 public class FQANPrincipal implements GroupPrincipal, Serializable
 {
     private static final long serialVersionUID = -4242349585261079835L;

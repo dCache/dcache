@@ -12,6 +12,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  * @see LoginNamePrincipal
  * @since 2.1
  */
+@AuthenticationOutput
 public class UserNamePrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 1447288627697571301L;

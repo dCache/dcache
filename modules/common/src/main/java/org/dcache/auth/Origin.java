@@ -24,6 +24,8 @@ import static java.util.Objects.requireNonNull;
  *
  * @author David Melkumyan, DESY Zeuthen
  */
+@AuthenticationInput
+@AuthenticationOutput
 public class Origin implements Principal, Serializable
 {
     private static final long serialVersionUID = -6791417439972410727L;

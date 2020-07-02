@@ -18,6 +18,7 @@ import java.security.Principal;
  * @see LoginGidPrincipal
  * @since 2.1
  */
+@AuthenticationOutput
 public class GidPrincipal implements GroupPrincipal, Serializable
 {
     private static final long serialVersionUID = 7812225739755920892L;
