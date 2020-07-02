@@ -200,13 +200,18 @@ parseOptions() # $1 = list of valid options
 # warn users about script deprecation
 deprecationWarning()
 {
-    script="$(printCanonicalPath $0)"
-    if [ $script = "/usr/bin/dcache" ]; then
-        echo ""
-        echo "WARNING:"
-        echo "  \"`basename $0` $1\" is deprecated and will be removed in the future."
-        echo "   Please consider switching to systemctl to manage dCache."
-        echo ""
+    #
+    # print warning only on systemd capable systems
+    #
+    if [ -x /usr/bin/systemctl ]; then
+        script="$(printCanonicalPath $0)"
+        if [ $script = "/usr/bin/dcache" ]; then
+            echo ""
+            echo "WARNING:"
+            echo "  \"`basename $0` $1\" is deprecated and will be removed in the future."
+            echo "   Please consider switching to systemctl to manage dCache."
+            echo ""
+        fi
     fi
 }
 
