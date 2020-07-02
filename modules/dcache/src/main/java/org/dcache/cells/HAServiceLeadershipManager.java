@@ -83,7 +83,7 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
 
     private void createZkLeadershipPath(String serviceName)
     {
-        zkLeaderPath = ZKPaths.makePath("/dcache", serviceName.toLowerCase(),"leader");
+        zkLeaderPath = ZKPaths.makePath("/dcache", serviceName,"leader");
     }
 
     /**
