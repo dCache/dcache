@@ -31,6 +31,7 @@ public class ColumnWriter
     private final List<Column> columns = new ArrayList<>();
     private final List<Row> rows = new ArrayList<>();
     private boolean headersAffectRowWidth;
+    private String renderedHeader;
 
     public enum DateStyle {
          /** ISO 8601. */
@@ -157,6 +158,11 @@ public class ColumnWriter
         rows.add(new LiteralRow(value));
     }
 
+    public void section(String title)
+    {
+        rows.add(new SectionRow(title));
+    }
+
     @Override
     public String toString()
     {
@@ -170,19 +176,25 @@ public class ColumnWriter
         }
         List<Integer> widths = calculateWidths();
         List<Integer> spaces = new ArrayList<>(this.spaces);
+        renderedHeader = renderHeader(spaces, widths);
 
         StringWriter result = new StringWriter();
         try (PrintWriter out = new NoTrailingWhitespacePrintWriter(result)) {
-            String header = renderHeader(spaces, widths);
-            if (!header.isEmpty()) {
-                out.print(header);
-                out.print(endOfLine);
-            }
+            Row previousRow = null;
             for (Row row: rows) {
-                row.render(columns, spaces, widths, out, endOfLine);
+                row.render(previousRow, columns, spaces, widths, out, endOfLine);
+                previousRow = row;
             }
         }
         return result.toString();
+    }
+
+    private void printHeader(PrintWriter out, String endOfLine)
+    {
+        if (!renderedHeader.isEmpty()) {
+            out.print(renderedHeader);
+            out.print(endOfLine);
+        }
     }
 
     private List<Integer> calculateWidths()
@@ -244,6 +256,7 @@ public class ColumnWriter
     public ColumnWriter header(String text)
     {
         headers.add(text);
+        renderedHeader = null;
         return this;
     }
 
@@ -596,11 +609,11 @@ public class ColumnWriter
     {
         int width(Column column);
 
-        void render(List<Column> columns, List<Integer> spaces, List<Integer> widths,
-                PrintWriter out, String endOfLine);
+        void render(Row previous, List<Column> columns, List<Integer> spaces,
+                List<Integer> widths, PrintWriter out, String endOfLine);
     }
 
-    public static class TabulatedRow implements Row
+    public class TabulatedRow implements Row
     {
         private final Map<String, Object> values = new HashMap<>();
         private final Map<String, String> fills = new HashMap<>();
@@ -624,9 +637,12 @@ public class ColumnWriter
         }
 
         @Override
-        public void render(List<Column> columns, List<Integer> spaces,
+        public void render(Row previous, List<Column> columns, List<Integer> spaces,
                 List<Integer> widths, PrintWriter out, String endOfLine)
         {
+            if (!(previous instanceof TabulatedRow || previous instanceof LiteralRow)) {
+                printHeader(out, endOfLine);
+            }
             int size = columns.size();
             for (int i = 0; i < size; i++) {
                 for (int c = spaces.get(i); c > 0; c--) {
@@ -648,7 +664,7 @@ public class ColumnWriter
         }
     }
 
-    private static class LiteralRow implements Row
+    private class LiteralRow implements Row
     {
         private final String value;
 
@@ -664,9 +680,39 @@ public class ColumnWriter
         }
 
         @Override
-        public void render(List<Column> columns, List<Integer> spaces, List<Integer> widths, PrintWriter out, String endOfLine)
+        public void render(Row previous, List<Column> columns, List<Integer> spaces, List<Integer> widths, PrintWriter out, String endOfLine)
         {
+            if (!(previous instanceof TabulatedRow || previous instanceof LiteralRow)) {
+                printHeader(out, endOfLine);
+            }
             out.print(value);
+            out.print(endOfLine);
+        }
+    }
+
+    private static class SectionRow implements Row
+    {
+        private final String title;
+
+        private SectionRow(String title)
+        {
+            this.title = title;
+        }
+
+        @Override
+        public int width(Column column)
+        {
+            return 0;
+        }
+
+        @Override
+        public void render(Row previous, List<Column> columns, List<Integer> spaces, List<Integer> widths, PrintWriter out, String endOfLine)
+        {
+            if (previous != null) {
+                out.print(endOfLine);
+            }
+            out.print(title);
+            out.print(endOfLine);
             out.print(endOfLine);
         }
     }
