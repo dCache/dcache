@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -74,6 +75,7 @@ import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
@@ -104,6 +106,8 @@ import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.ColumnWriter;
+import org.dcache.util.ColumnWriter.TabulatedRow;
+import org.dcache.util.TimeUtils;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -202,6 +206,8 @@ public class PnfsManagerV3
 
     private List<String> _flushNotificationTargets;
     private List<String> _cancelUploadNotificationTargets = Collections.emptyList();
+
+    private List<ProcessThread> _listProcessThreads = new ArrayList<>();
 
     private void populateRequestMap()
     {
@@ -348,7 +354,9 @@ public class PnfsManagerV3
          */
         _listQueue = new LinkedBlockingQueue<>();
         for (int j = 0; j < _listThreads; j++) {
-            executor.execute(new ProcessThread(_listQueue));
+            ProcessThread t = new ProcessThread(_listQueue);
+            _listProcessThreads.add(t);
+            executor.execute(t);
         }
     }
 
@@ -995,6 +1003,175 @@ public class PnfsManagerV3
 
     }
 
+    @Command(name="show list activity", hint="describe directory listing requests",
+            description="Show details of the directory list requests, both"
+                    + " those requests that are currently queued and and that"
+                    + " are currently being processed."
+                    + "\n\n"
+                    + "The output is organised into a table that is"
+                    + " separated into two sections: queued requests and"
+                    + " active requests.  If there are no requests in a"
+                    + " section then that section is omitted.  If there are no"
+                    + " requests at all then the table is replaced by a simple"
+                    + " statement confirming the lack of activity.\n"
+                    + "\n"
+                    + "The table has the following columns:\n"
+                    + "\n"
+                    + "  SOURCE    \tthe fully qualified cell name of the door\n"
+                    + "            \tmaking the request.\n"
+                    + "\n"
+                    + "  SESSION   \tthe ID of the client session within the\n"
+                    + "            \tdirectory listing was made.\n"
+                    + "\n"
+                    + "  USER      \tthe identity of the user if the session is\n"
+                    + "            \tauthenticated, or the IP address of the\n"
+                    + "            \tclient if the request was made anonymously.\n"
+                    + "\n"
+                    + "  ARRIVED   \tthe time when the request was received by\n"
+                    + "            \tPnfsManager, both as an absolute timestamp\n"
+                    + "            \tand relative to this command's invocation.\n"
+                    + "\n"
+                    + "  STARTED   \tthe time when PnfsManager started\n"
+                    + "            \tprocessing the request, both as an\n"
+                    + "            \tabsoluate timestamp and relative to this\n"
+                    + "            \tcommand's invocation.  If the request is\n"
+                    + "            \tqueued then this field is left blank.\n"
+                    + "\n"
+                    + "  FILTER    \tthe glob pattern used to select which\n"
+                    + "            \tcontents to return: the name of the file or\n"
+                    + "            \tdirectory must match the glob pattern.  All\n"
+                    + "            \tcontents are selected if the filter is\n"
+                    + "            \tempty.\n"
+                    + "\n"
+                    + "  RANGE     \tthe desired range of index values, with the\n"
+                    + "            \tfirst listed item having index 0.  Some \n"
+                    + "            \tRANGE values can result in a partial\n"
+                    + "            \tdirectory listing.  Note that, although the\n"
+                    + "            \tRANGE value may limit the number of items\n"
+                    + "            \tin the reply, the table shows the range in\n"
+                    + "            \tstandard maths notation, and not directly\n"
+                    + "            \tthe count limit.\n"
+                    + "\n"
+                    + "            \tTwo commonly seen RANGE values are the\n"
+                    + "            \tsemi-infinite range \"[0..+\u221e)\" and the\n"
+                    + "            \tinfinite range \"(-\u221e..+\u221e)\".  Both indicate\n"
+                    + "            \tthat a complete directory listing is\n"
+                    + "            \trequested.\n"
+                    + "\n"
+                    + "  ATTRIBUTES\tthe list of file attributes the door has\n"
+                    + "            \trequested about each listed file or\n"
+                    + "            \tdirectory.\n"
+                    + "\n"
+                    + "  PATH      \tthe path of the directory to be listed.\n"
+                    + "\n"
+                    + "There are several command-line options that control"
+                    + " whether various table columns are shown.  These options"
+                    + " are switched off by default to aid readability.")
+    public class ShowListActivityCommand implements Callable<String>
+    {
+        @Option(name="session", usage="whether to the SESSION column.")
+        private boolean includeSession;
+
+        @Option(name="attributes", usage="whether to show the ATTRIBUTES"
+                + " column.")
+        private boolean includeAttributes;
+
+        @Option(name="times", usage="whether to show the ARRIVED and STARTED"
+                + " columns.")
+        private boolean includeTimes;
+
+        @Option(name="selection", usage="whether to show the FILTER and RANGE"
+                + " columns.")
+        private boolean includeSelection;
+
+        @Override
+        public String call()
+        {
+            ColumnWriter writer = buildColumnWriter();
+
+            if (!_listQueue.isEmpty()) {
+                writer.section("QUEUED REQUESTS");
+                _listQueue.forEach(e -> addRow(writer.row(), e));
+            }
+
+            List<ActivityReport> activity = _listProcessThreads.stream()
+                    .map(ProcessThread::getCurrentActivity)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
+
+            if (!activity.isEmpty()) {
+                writer.section("ACTIVE REQUESTS");
+                activity.forEach(r -> addRow(writer.row(), r));
+            }
+
+            String report = writer.toString();
+            return report.isEmpty() ? "Currently no list activity" : report;
+        }
+
+        private ColumnWriter buildColumnWriter()
+        {
+            ColumnWriter writer = new ColumnWriter()
+                    .header("SOURCE").right("src-cell").fixed("@").left("src-domain").space();
+
+            if (includeSession) {
+                writer.header("SESSION").left("session").space();
+            }
+
+            writer.header("USER").left("user").space();
+
+            if (includeTimes) {
+                writer.header("ARRIVED").left("arrived").space()
+                        .header("STARTED").left("started").space();
+            }
+
+            if (includeSelection) {
+                writer.header("FILTER").left("filter").space()
+                        .header("RANGE").left("range").space();
+            }
+
+            if (includeAttributes) {
+                writer.header("ATTRIBUTES").left("attributes").space();
+            }
+
+            writer.header("PATH").left("path");
+
+            return writer;
+        }
+
+        private void addRow(TabulatedRow row, CellMessage envelope)
+        {
+            row.value("session", envelope.getSession());
+
+            CellAddressCore src = envelope.getDestinationPath().isFinalDestination() // has revertDirection been called?
+                    ? envelope.getSourceAddress() // not yet
+                    : envelope.getDestinationPath().getDestinationAddress(); // yes
+            row.value("src-cell", src.getCellName());
+            row.value("src-domain", src.getCellDomainName());
+
+            Instant arrived = Instant.now().minusMillis(envelope.getLocalAge());
+            row.value("arrived", TimeUtils.relativeTimestamp(arrived));
+
+            Object msgObject = envelope.getMessageObject();
+            if (!(msgObject instanceof PnfsListDirectoryMessage)) {
+                _log.warn("Found non PnfsListDirectoryMessage {} on _listQueue", msgObject);
+                return;
+            }
+            PnfsListDirectoryMessage message = (PnfsListDirectoryMessage) msgObject;
+            row.value("user", Subjects.getDisplayName(message.getSubject()))
+                    .value("filter", message.getPattern())
+                    .value("range", message.getRange())
+                    .value("attributes", message.getRequestedAttributes())
+                    .value("path", message.getPnfsPath());
+        }
+
+        private void addRow(TabulatedRow row, ActivityReport report)
+        {
+            addRow(row, report.message);
+            row.value("started", TimeUtils.relativeTimestamp(report.whenStarted));
+        }
+    }
+
     private void dumpThreadQueue(int queueId) {
         if (queueId < 0 || queueId >= _fifos.length) {
             throw new IllegalArgumentException(" illegal queue #" + queueId);
@@ -1596,13 +1773,50 @@ public class PnfsManagerV3
         }
     }
 
+    private static class ActivityReport
+    {
+        private final CellMessage message;
+        private final Instant whenStarted;
+
+        ActivityReport(CellMessage message, Instant whenStarted)
+        {
+            this.message = message;
+            this.whenStarted = whenStarted;
+        }
+    }
+
     private class ProcessThread implements Runnable
     {
         private final BlockingQueue<CellMessage> _fifo ;
 
+        private volatile CellMessage _activeMessage;
+        private volatile Instant _whenStarted;
+
         private ProcessThread(BlockingQueue<CellMessage> fifo)
         {
             _fifo = fifo;
+        }
+
+        public synchronized Optional<ActivityReport> getCurrentActivity()
+        {
+            if (_activeMessage == null) {
+                return Optional.empty();
+            } else {
+                ActivityReport report = new ActivityReport(_activeMessage, _whenStarted);
+                return Optional.of(report);
+            }
+        }
+
+        private synchronized void recordActivity(CellMessage message)
+        {
+            _activeMessage = message;
+            _whenStarted = Instant.now();
+        }
+
+        private synchronized void clearActivity()
+        {
+            _activeMessage = null;
+            _whenStarted = null;
         }
 
         @Override
@@ -1612,6 +1826,8 @@ public class PnfsManagerV3
                 for (CellMessage message = _fifo.take(); message != SHUTDOWN_SENTINEL; message = _fifo.take()) {
                     CDC.setMessageContext(message);
                     try {
+                        recordActivity(message);
+
                         /* Discard messages if we are close to their
                          * timeout (within 10% of the TTL or 10 seconds,
                          * whatever is smaller)
@@ -1629,6 +1845,7 @@ public class PnfsManagerV3
                     } catch (Throwable e) {
                         _log.warn("processPnfsMessage: {} : {}", Thread.currentThread().getName(), e);
                     } finally {
+                        clearActivity();
                         CDC.clearMessageContext();
                     }
                 }
