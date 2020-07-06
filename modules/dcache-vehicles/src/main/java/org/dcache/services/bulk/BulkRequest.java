@@ -75,16 +75,17 @@ public class BulkRequest implements Serializable
         NONE, TARGETS, ALL
     }
 
-    private String                    urlPrefix;
-    private String                    id;
-    private String                    target;
-    private String                    targetPrefix;
-    private String                    activity;
-    private boolean                   clearOnSuccess;
-    private boolean                   clearOnFailure;
-    private Integer                   delayClear;
-    private Map<String, String>       arguments;
-    private Depth                     expandDirectories;
+    private String              urlPrefix;
+    private String              id;
+    private String              target;
+    private String              targetPrefix;
+    private String              activity;
+    private boolean             clearOnSuccess;
+    private boolean             clearOnFailure;
+    private boolean             cancelOnFailure;
+    private Integer             delayClear;
+    private Map<String, String> arguments;
+    private Depth               expandDirectories;
 
     public String getActivity()
     {
@@ -94,16 +95,6 @@ public class BulkRequest implements Serializable
     public Map<String, String> getArguments()
     {
         return arguments;
-    }
-
-    public boolean getClearOnFailure()
-    {
-        return clearOnFailure;
-    }
-
-    public boolean getClearOnSuccess()
-    {
-        return clearOnSuccess;
     }
 
     public Integer getDelayClear()
@@ -136,6 +127,21 @@ public class BulkRequest implements Serializable
         return urlPrefix;
     }
 
+    public boolean isCancelOnFailure()
+    {
+        return cancelOnFailure;
+    }
+
+    public boolean isClearOnFailure()
+    {
+        return clearOnFailure;
+    }
+
+    public boolean isClearOnSuccess()
+    {
+        return clearOnSuccess;
+    }
+
     public void setActivity(String activity)
     {
         this.activity = activity;
@@ -144,6 +150,11 @@ public class BulkRequest implements Serializable
     public void setArguments(Map<String, String> arguments)
     {
         this.arguments = arguments;
+    }
+
+    public void setCancelOnFailure(boolean cancelOnFailure)
+    {
+        this.cancelOnFailure = cancelOnFailure;
     }
 
     public void setClearOnFailure(boolean clearOnFailure)

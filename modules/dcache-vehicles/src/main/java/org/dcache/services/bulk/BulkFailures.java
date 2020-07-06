@@ -64,9 +64,9 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *  Groups requests by failure type, which is the canonical name of the
@@ -93,7 +93,7 @@ public class BulkFailures implements Serializable
         Throwable cause = Throwables.getRootCause(e);
 
         if (failures == null) {
-            failures = new HashMap<>();
+            failures = new ConcurrentHashMap<>();
         }
 
         String clzz = cause.getClass().getCanonicalName();
@@ -113,7 +113,7 @@ public class BulkFailures implements Serializable
 
     public Map<String, List<String>> cloneFailures()
     {
-        Map<String, List<String>> map = new HashMap<>();
+        Map<String, List<String>> map = new ConcurrentHashMap<>();
         if (failures != null) {
             failures.entrySet().stream()
                     .forEach(entry -> {

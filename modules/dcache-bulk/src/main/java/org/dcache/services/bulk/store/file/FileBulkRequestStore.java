@@ -94,9 +94,13 @@ import static org.dcache.services.bulk.store.BulkRequestStore.uidGidKey;
 
 /**
  *  Delegates main storage to in-memory implementation.
- *
- *  On put or update, it writes out the data to a file.
- *
+ *  <p>
+ *  The file is written to disk only on store and on update of request
+ *  to its terminal state.  Intermediate states are not persisted
+ *  as the current implementation does not checkpoint and restore
+ *  incomplete requests (such a procedure would in any case require a
+ *  fully transactional database).
+ *  <p>
  *  At start-up, it reads back in the files and populates the in-memory store.
  */
 public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkRequestWrapper>
@@ -189,8 +193,8 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
             target = request.getTarget();
             targetPrefix = request.getTargetPrefix();
             activity = request.getActivity();
-            clearOnSuccess = request.getClearOnSuccess();
-            clearOnFailure = request.getClearOnFailure();
+            clearOnSuccess = request.isClearOnSuccess();
+            clearOnFailure = request.isClearOnFailure();
             delayClear = request.getDelayClear();
             Map<String, String> args = request.getArguments();
             if (args != null) {
@@ -258,10 +262,10 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
                                          + "caused the abort: {}.", requestId);
         }
 
-        if (request.getClearOnFailure()) {
+        delegate.abort(requestId, exception);
+
+        if (request.isClearOnFailure()) {
             clear(requestId);
-        } else {
-            delegate.abort(requestId, exception);
         }
     }
 
@@ -306,19 +310,31 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
             delegate.clear(requestId);
             deleteFromDisk(requestId);
         } else {
-            scheduler.scheduleWithFixedDelay(() -> {
+            scheduler.schedule(() -> {
                 delegate.clear(requestId);
                 deleteFromDisk(requestId);
-            }, 0, delay, TimeUnit.SECONDS);
+            }, delay, TimeUnit.SECONDS);
         }
+    }
+
+    @Override
+    public int countActive() throws BulkRequestStorageException
+    {
+        int count = delegate.countActive();
+
+        LOGGER.trace("count active requests returning {}.", count);
+
+        return count;
     }
 
     @Override
     public int countNonTerminated(String user)
     {
-        LOGGER.trace("count {}, {}.", user);
+        int count = delegate.countNonTerminated(user);
 
-        return delegate.countNonTerminated(user);
+        LOGGER.trace("count non terminated for {}: {}.", user, count);
+
+        return count;
     }
 
     @Override
@@ -452,7 +468,6 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
         LOGGER.trace("targetAborted {}, {}, {}.", requestId, target,
                      exception.toString());
         delegate.targetAborted(requestId, target, exception);
-        writeToDisk(requestId);
     }
 
     @Override
@@ -462,27 +477,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
                     throws BulkRequestStorageException
     {
         LOGGER.trace("targetCompleted {}, {}.", requestId, target);
-
-        if (exception != null) {
-            Optional<BulkRequest> optionalRequest
-                            = delegate.getRequest(requestId);
-            if (!optionalRequest.isPresent()) {
-                throw new BulkRequestStorageException("Request " + requestId
-                                                                 + " not found.");
-            }
-
-            BulkRequest request = optionalRequest.get();
-
-            if (request.getClearOnFailure()) {
-                LOGGER.trace("target failed, request is clear on failure: {}, {}.",
-                             requestId, target);
-                clear(requestId);
-                return;
-            }
-        }
-
         delegate.targetCompleted(requestId, target, exception);
-        writeToDisk(requestId);
     }
 
     @Override
@@ -498,21 +493,50 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
                                                              + " not found.");
         }
 
-        BulkRequest request = optionalRequest.get();
+        boolean checkStatus = false;
         switch (status)
         {
             case COMPLETED:
-                if (request.getClearOnSuccess()) {
-                    LOGGER.trace("request is clear on success: {}.", requestId);
-                    clear(requestId);
-                    break;
-                }
-                /*
-                 *  Fall through to update.
-                 */
-            default:
+                checkStatus = true;
+            case CANCELLED:
                 delegate.update(requestId, status);
                 writeToDisk(requestId);
+                break;
+            default:
+                delegate.update(requestId, status);
+                break;
+        }
+
+        if (checkStatus) {
+            BulkRequest request = optionalRequest.get();
+            Optional<BulkRequestStatus> optionalStatus
+                            = delegate.getStatus(requestId);
+            if (!optionalStatus.isPresent()) {
+                /*
+                 *  If the status object is missing, this probably indicates
+                 *  that request storage at some point was corrupted (partial
+                 *  write).  We only care about this if we are in the COMPLETED state.
+                 */
+                throw new BulkRequestStorageException("Request " + requestId
+                      + " has been corrupted and has no status object.");
+            }
+
+            BulkFailures failures = optionalStatus.get().getFailures();
+            if (failures != null) {
+                /*
+                 *  NB, this flag is interpreted as clear on failure, not
+                 *  pre-emptive cancel on failure, so we wait until the
+                 *  request has actually terminated.
+                 */
+                if (request.isClearOnFailure()) {
+                    LOGGER.trace("request is clear on failure: {}.",
+                                 requestId);
+                    clear(requestId);
+                }
+            } else if (request.isClearOnSuccess()) {
+                LOGGER.trace("request is clear on success: {}.", requestId);
+                clear(requestId);
+            }
         }
     }
 
@@ -540,6 +564,15 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
     protected void postProcessDeserialized(String id,
                                            FileBulkRequestWrapper wrapper)
     {
+        /*
+         *  Crashed or was saved in an incomplete state, jobs
+         *  (targets) were not all processed.  This is unrecoverable,
+         *  so we just set the status to CANCELLED.
+         */
+        if (wrapper.status.equals(Status.CANCELLING)) {
+            wrapper.status = Status.CANCELLED;
+        }
+
         delegate.store(wrapper.subject,
                        wrapper.restriction,
                        wrapper.getRequest(),

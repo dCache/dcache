@@ -134,6 +134,11 @@ public interface BulkRequestStore
     void clear(String requestId);
 
     /**
+     * @return the number of currently active requests.
+     */
+    int countActive() throws BulkRequestStorageException;
+
+    /**
      * @param user originator of the requests (=uidGidKey).
      * @return the number of (matching) requests owned by the owner
      * which have yet to be completed.

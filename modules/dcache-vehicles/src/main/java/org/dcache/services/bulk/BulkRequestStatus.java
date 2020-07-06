@@ -71,7 +71,7 @@ public class BulkRequestStatus implements Serializable
 
     public enum Status
     {
-        QUEUED, STARTED, COMPLETED, CANCELLED
+        QUEUED, STARTED, COMPLETED, CANCELLING, CANCELLED
     }
 
     private long         firstArrived;

@@ -70,6 +70,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -91,6 +92,8 @@ import org.dcache.services.bulk.BulkRequestStorageException;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkRequestStore;
 
+import static org.dcache.services.bulk.BulkRequestStatus.Status.CANCELLED;
+import static org.dcache.services.bulk.BulkRequestStatus.Status.QUEUED;
 import static org.dcache.services.bulk.store.BulkRequestStore.uidGidKey;
 
 /**
@@ -148,6 +151,11 @@ public class InMemoryBulkRequestStore extends InMemoryStore
      */
     private final Set<String> queued;
 
+    /**
+     * Requests currently being processed.
+     */
+    private final Set<String> active;
+
     public InMemoryBulkRequestStore()
     {
         requests = new HashMap<>();
@@ -157,6 +165,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
         uidGidRequests = HashMultimap.create();
         comparator = new StatusComparator();
         queued = new TreeSet<>(comparator);
+        active = new HashSet<>();
         notTerminated =
                         id -> {
                             BulkRequestStatus bstat = this.status.get(id);
@@ -178,6 +187,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
         write.lock();
         try {
             queued.remove(requestId);
+            active.remove(requestId);
             BulkRequestStatus status = this.status.get(requestId);
             BulkRequest request = requests.get(requestId);
             status.targetCompleted(request.getTarget(), exception);
@@ -205,12 +215,13 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     {
         write.lock();
         try {
+            queued.remove(requestId);
+            active.remove(requestId);
             Subject subject = requestSubject.remove(requestId);
             requests.remove(requestId);
             status.remove(requestId);
             requestRestriction.remove(requestId);
             uidGidRequests.remove(uidGidKey(subject), requestId);
-            queued.remove(requestId);
         } finally {
             write.unlock();
         }
@@ -225,6 +236,22 @@ public class InMemoryBulkRequestStore extends InMemoryStore
         }
 
         clear(requestId);
+    }
+
+    /**
+     *  Using the #find() method for this creates a bottleneck as the
+     *  store grows in size, since this method is called very frequently
+     *  and find is stream filtering, O(size of requests).
+     */
+    @Override
+    public int countActive()
+    {
+        read.lock();
+        try {
+            return active.size();
+        } finally {
+            read.unlock();
+        }
     }
 
     @Override
@@ -434,7 +461,8 @@ public class InMemoryBulkRequestStore extends InMemoryStore
             stored.setFailures(null);
             stored.setProcessed(0);
             stored.setTargets(0);
-            stored.setStatus(Status.QUEUED);
+            stored.setStatus(QUEUED);
+            active.remove(requestId);
             queued.add(requestId);
         } finally {
             write.unlock();
@@ -492,34 +520,46 @@ public class InMemoryBulkRequestStore extends InMemoryStore
             switch (status)
             {
                 case COMPLETED:
+                case CANCELLING:
                 case CANCELLED:
+                    queued.remove(requestId);
+                    active.remove(requestId);
+                    break;
                 case STARTED:
                     queued.remove(requestId);
-                default:
+                    active.add(requestId);
                     break;
             }
+
+            LOGGER.trace("update {} to {}, queued {}, active {}.",
+                         requestId, status, queued.size(), active.size());
 
             BulkRequestStatus current = getNonNullStatus(requestId);
             Status storedStatus = current.getStatus();
 
             if (storedStatus == null) {
                 current.setStatus(status);
+            } else if (storedStatus == status) {
+                return;
             } else {
                 switch (current.getStatus()) {
                     case COMPLETED:
                     case CANCELLED:
                         break;
+                    case CANCELLING:
+                        if (status == CANCELLED) {
+                            current.setStatus(status);
+                        }
+                        break;
                     case STARTED:
-                        switch (status) {
-                            case COMPLETED:
-                            case CANCELLED:
-                                current.setStatus(status);
-                                break;
+                        if (status != QUEUED) {
+                            current.setStatus(status);
                         }
                         break;
                     case QUEUED:
-                    default:
                         current.setStatus(status);
+                        break;
+                    default:
                         break;
                 }
             }
@@ -571,7 +611,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
             status = new BulkRequestStatus();
             long now = System.currentTimeMillis();
             status.setFirstArrived(now);
-            status.setStatus(Status.QUEUED);
+            status.setStatus(QUEUED);
         }
 
         /*
@@ -579,7 +619,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
          */
         this.status.put(requestId, status);
 
-        if (status.getStatus() == Status.QUEUED) {
+        if (status.getStatus() == QUEUED) {
             queued.add(requestId);
         }
     }

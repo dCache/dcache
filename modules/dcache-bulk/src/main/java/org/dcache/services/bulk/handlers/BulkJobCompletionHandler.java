@@ -141,7 +141,7 @@ public class BulkJobCompletionHandler
             Long childId = job.getKey().getJobId();
             descendants.put(parentId, childId);
             LOGGER.trace("addChild: parent {}, child {}; descendants {}.",
-                         parentId, childId, descendants);
+                         parentId, childId, descendants.size());
         }
     }
 
@@ -150,10 +150,10 @@ public class BulkJobCompletionHandler
      */
     public void clear()
     {
-        LOGGER.trace("clear called with descendants {}.", descendants);
+        LOGGER.trace("clear called with descendants {}.", descendants.size());
         synchronized (descendants) {
             descendants.clear();
-            LOGGER.trace("clear, descendants now {}.", descendants);
+            LOGGER.trace("clear, descendants now {}.", descendants.size());
         }
     }
 
@@ -162,7 +162,8 @@ public class BulkJobCompletionHandler
         synchronized (descendants)
         {
             boolean completed = descendants.isEmpty();
-            LOGGER.trace("request completed? {}.", completed);
+            LOGGER.trace("request completed? descendants {}.",
+                         descendants.size());
             return completed;
         }
     }
@@ -222,15 +223,15 @@ public class BulkJobCompletionHandler
         synchronized (descendants)
         {
             LOGGER.trace("waitForChildren of {} called; descendants {}.",
-                         parentId, descendants);
+                         parentId, descendants.size());
             while (!areChildrenAllTerminated(parentId)) {
                 LOGGER.trace("waitForChildren of {}; descendants {}, waiting ....",
-                             parentId, descendants);
+                             parentId, descendants.size());
                 descendants.wait(TimeUnit.SECONDS.toMillis(1));
             }
 
             LOGGER.trace("waitForChildren of {}, returning: descendants {}.",
-                         parentId, descendants);
+                         parentId, descendants.size());
         }
     }
 
