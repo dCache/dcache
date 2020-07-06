@@ -52,7 +52,6 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
     private String zkLeaderPath;
     private CuratorFramework zkClient;
     private LeaderLatch zkLeaderLatch;
-
     private LeaderLatchListener leadershipListener;
 
     public HAServiceLeadershipManager(String serviceName) {
@@ -74,23 +73,20 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
         this.leadershipListener = leadershipListener;
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         if (zkLeaderLatch != null) {
             CloseableUtils.closeQuietly(zkLeaderLatch);
         }
     }
 
-    private void createZkLeadershipPath(String serviceName)
-    {
+    private void createZkLeadershipPath(String serviceName) {
         zkLeaderPath = ZKPaths.makePath("/dcache", serviceName,"leader");
     }
 
     /**
      * Creates a ZooKeeper leader latch, attaches and starts a listener.
      */
-    private void initZkLeaderListener()
-    {
+    private void initZkLeaderListener() {
         zkLeaderLatch = new LeaderLatch(zkClient, zkLeaderPath, cellAddress.toString());
         zkLeaderLatch.addListener(new CDCLeaderLatchListener(leadershipListener));
         try {
@@ -123,11 +119,9 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
 
     @Command(name = "ha release leadership",
             description = "Starts a leader election.")
-    public class ZkStartLeaderElectionCommand implements Callable<String>
-    {
+    public class ZkStartLeaderElectionCommand implements Callable<String> {
         @Override
-        public String call() throws Exception
-        {
+        public String call() throws Exception {
             checkCommand(hasLeadership(), HA_NOT_LEADER_MSG);
             releaseLeadership();
             return "Releasing leadership, starting election. New leader: " + zkLeaderLatch.getLeader().getId();
@@ -136,11 +130,9 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
 
     @Command(name = "ha show participants",
             description = "Shows which cells are involved in the leader election.")
-    public class ZkShowParticipantsCommand implements Callable<String>
-    {
+    public class ZkShowParticipantsCommand implements Callable<String> {
         @Override
-        public String call() throws InterruptedException
-        {
+        public String call() throws InterruptedException {
             Collection<Participant> participants;
             try {
                 participants = zkLeaderLatch.getParticipants();
@@ -158,21 +150,15 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
 
     @Command(name = "ha get role",
             description = "Shows which leadership role the cell has.")
-    public class ZkIsLeaderCommand implements Callable<String>
-    {
+    public class ZkIsLeaderCommand implements Callable<String> {
         @Override
-        public String call() throws InterruptedException
-        {
+        public String call() throws InterruptedException {
             return getHighAvailabilityRole();
         }
     }
 
-    /*
-     * Cell specific
-     */
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.printf("HA role: %s\n", getHighAvailabilityRole());
     }
 
