@@ -1,5 +1,6 @@
 package diskCacheV111.doors;
 
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,8 +9,10 @@ import javax.security.auth.Subject;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -20,12 +23,12 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.CopyManagerMessage;
-import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
-import diskCacheV111.vehicles.DCapClientProtocolInfo;
-import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
@@ -41,9 +44,9 @@ import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicies;
+import org.dcache.util.URIs;
 
 import static java.util.stream.Collectors.joining;
-import static org.dcache.util.ByteUnit.KiB;
 
 public class CopyManager extends AbstractCellComponent
     implements CellMessageReceiver, CellCommandListener, CellInfoProvider
@@ -51,15 +54,14 @@ public class CopyManager extends AbstractCellComponent
     private static final Logger _log =
         LoggerFactory.getLogger(CopyManager.class);
 
-    private final Map<Long,CopyHandler> _activeTransfers =
+    private final Map<Integer, CopyHandler> _activeTransfers =
         new ConcurrentHashMap<>();
     private final Queue<CellMessage> _queue = new ArrayDeque<>();
 
     private InetSocketAddress _localAddr;
     private long _moverTimeout = 24;
     private TimeUnit _moverTimeoutUnit = TimeUnit.HOURS;
-    private static final int BUFFER_SIZE = KiB.toBytes(256);
-    private static final int TCP_BUFFER_SIZE = KiB.toBytes(256);
+
     private int _maxTransfers = 30;
     private int _numTransfers;
 
@@ -139,6 +141,7 @@ public class CopyManager extends AbstractCellComponent
         return sb.toString();
     }
 
+
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
@@ -152,19 +155,21 @@ public class CopyManager extends AbstractCellComponent
 
     public void messageArrived(DoorTransferFinishedMessage message)
     {
-        CopyHandler handler = _activeTransfers.get(message.getId());
+        CopyHandler handler = _activeTransfers.get((int) message.getId());
         if (handler != null) {
             handler.messageNotify(message);
         }
     }
 
-    public void messageArrived(DCapClientPortAvailableMessage message)
+    public void messageArrived(HttpDoorUrlInfoMessage message)
     {
-        CopyHandler handler = _activeTransfers.get(message.getId());
+        CopyHandler handler = _activeTransfers.get((int) message.getId());
+
         if (handler != null) {
             handler.messageNotify(message);
         }
     }
+
 
     public void messageArrived(CellMessage envelope, CopyManagerMessage message)
     {
@@ -189,8 +194,10 @@ public class CopyManager extends AbstractCellComponent
     private class CopyHandler implements Runnable
     {
         private CellMessage _envelope;
-        private Transfer _source;
-        private RedirectedTransfer<DCapClientPortAvailableMessage> _target;
+
+        private Transfer _target;
+        private RedirectedTransfer<HttpDoorUrlInfoMessage> _source;
+
 
         public synchronized void messageNotify(DoorTransferFinishedMessage message)
         {
@@ -202,10 +209,11 @@ public class CopyManager extends AbstractCellComponent
             }
         }
 
-        public synchronized void messageNotify(DCapClientPortAvailableMessage message)
+
+          public synchronized void messageNotify(HttpDoorUrlInfoMessage message)
         {
-            if (_target != null) {
-                _target.redirect(message);
+            if (_source != null) {
+                _source.redirect(message);
             }
         }
 
@@ -294,6 +302,7 @@ public class CopyManager extends AbstractCellComponent
                          FsPath.create(message.getDstPnfsPath()));
 
                     message.setReturnCode(0);
+
                     message.setDescription("file "+
                                            message.getDstPnfsPath() +
                                            " has been copied from " +
@@ -342,44 +351,43 @@ public class CopyManager extends AbstractCellComponent
             throws CacheException, InterruptedException
         {
             synchronized (this) {
-                _target = new RedirectedTransfer<>(_pnfsHandler, subject, restriction, dstPnfsFilePath);
-                _source = new Transfer(_pnfsHandler, subject, restriction, srcPnfsFilePath);
+                _source = new RedirectedTransfer<>(_pnfsHandler, subject, restriction, srcPnfsFilePath);
+                _target = new Transfer(_pnfsHandler, subject, restriction, dstPnfsFilePath);
             }
 
             _source.setPoolManagerStub(_poolManager);
             _source.setPoolStub(_poolStub);
             _source.setCellAddress(getCellAddress());
             _source.setIoQueue("p2p");
-            // _source.setClientAddress();
-            // _source.setBillingStub();
-            // _source.setCheckStagePermission();
 
             _target.setPoolManagerStub(_poolManager);
             _target.setPoolStub(_poolStub);
             _target.setCellAddress(getCellAddress());
             _target.setIoQueue("pp");
-            // _target.setClientAddress();
-            // _target.setBillingStub();
 
             boolean success = false;
             boolean targetCreated = false;
             String explanation = "copy failed";
-            _activeTransfers.put(_target.getId(), this);
-            _activeTransfers.put(_source.getId(), this);
+
+            // Avoid long to int cast issues, when calling get/setsessionID, we cast the ID into int
+            _activeTransfers.put( (int) _target.getId(), this);
+            _activeTransfers.put( (int) _source.getId(), this);
 
             long timeout = _moverTimeoutUnit.toMillis(_moverTimeout);
             try {
+
                 _source.readNameSpaceEntry(false);
                 _target.createNameSpaceEntry();
                 targetCreated = true;
 
-                _target.setProtocolInfo(createTargetProtocolInfo(_target));
+                _source.setProtocolInfo(createSourceProtocolInfo());
                 _target.setLength(_source.getLength());
-                _target.selectPoolAndStartMover(TransferRetryPolicies.tryOncePolicy());
-                _target.waitForRedirect(timeout);
 
-                _source.setProtocolInfo(createSourceProtocolInfo(_target.getRedirect(), _target.getId()));
                 _source.selectPoolAndStartMover(TransferRetryPolicies.tryOncePolicy());
+                _source.waitForRedirect(timeout);
+
+                _target.setProtocolInfo(createTargetProtocolInfo(_source.getRedirect().getUrl()));
+                _target.selectPoolAndStartMover(TransferRetryPolicies.tryOncePolicy());
 
                 if (!_source.waitForMover(timeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
@@ -391,12 +399,12 @@ public class CopyManager extends AbstractCellComponent
                 _log.info("transfer finished successfully");
                 success = true;
             } catch (CacheException e) {
-                _source.setStatus("Failed: " + e.toString());
+                _target.setStatus("Failed: " + e.toString());
                 _log.warn(e.toString());
                 explanation = "copy failed: " + e.getMessage();
                 throw e;
             } catch (InterruptedException e) {
-                _source.setStatus("Failed: " + e.toString());
+                _target.setStatus("Failed: " + e.toString());
                 explanation = "interrupted";
                 throw e;
             } finally {
@@ -412,33 +420,37 @@ public class CopyManager extends AbstractCellComponent
                 } else {
                     _source.setStatus("Success");
                 }
-                _activeTransfers.remove(_target.getId());
-                _activeTransfers.remove(_source.getId());
+                _activeTransfers.remove((int) _target.getId());
+                _activeTransfers.remove((int) _source.getId());
             }
         }
 
-        private ProtocolInfo createTargetProtocolInfo(RedirectedTransfer<DCapClientPortAvailableMessage> target)
-        {
-            return new DCapClientProtocolInfo("DCapClient",
-                                              1, 1, _localAddr,
-                                              getCellName(),
-                                              getCellDomainName(),
-                                              target.getId(),
-                                              BUFFER_SIZE,
-                                              TCP_BUFFER_SIZE);
+
+        private RemoteHttpDataTransferProtocolInfo createTargetProtocolInfo(String urlRemote) {
+
+            return new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
+                    1, 1,
+
+                    new InetSocketAddress(URI.create(urlRemote).getHost(),
+                            URIs.portWithDefault(URI.create(urlRemote))),
+                    urlRemote,
+                    false,
+                    ImmutableMap.of(),
+                    Optional.empty());
+
         }
 
-        private ProtocolInfo createSourceProtocolInfo(DCapClientPortAvailableMessage redirect, long id)
-        {
-            DCapProtocolInfo info =
-                new DCapProtocolInfo("DCap", 3, 0,
-                                     new InetSocketAddress(redirect.getHost(),
-                                     redirect.getPort()));
-            /* Casting to int will wrap the session id; however at the
-             * moment the target mover doesn't care about the session
-             * id anyway.
-             */
-            info.setSessionId((int) id);
+        private ProtocolInfo createSourceProtocolInfo() {
+            HttpProtocolInfo info =
+                    new HttpProtocolInfo("Http",
+                            1, 1,
+                            _localAddr,
+                            getCellName(),
+                            getCellDomainName(),
+                            "/" + _source.getPnfsId(),
+                            null);
+
+            info.setSessionId((int) _source.getId());
             return info;
         }
     }
