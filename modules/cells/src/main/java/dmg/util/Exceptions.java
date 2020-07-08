@@ -19,7 +19,7 @@ public class Exceptions
     {
     }
 
-    private static String meaningfulMessage(Throwable t)
+    public static String meaningfulMessage(Throwable t)
     {
         return t.getMessage() != null ? t.getMessage() : t.getClass().getName();
     }

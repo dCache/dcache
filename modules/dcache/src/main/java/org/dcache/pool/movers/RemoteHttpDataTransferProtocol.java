@@ -404,7 +404,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private void sendAndCheckFile(RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
-        sendFile(info, _channel.getFileAttributes().getSize());
+        sendFile(info);
 
         try {
             verifyRemoteFile(info);
@@ -415,7 +415,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
     }
 
-    private void sendFile(RemoteHttpDataTransferProtocolInfo info, long length)
+    private void sendFile(RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
         URI location = info.getUri();
@@ -423,7 +423,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
         try {
             for (int redirectionCount = 0; redirectionCount < MAX_REDIRECTIONS; redirectionCount++) {
-                HttpPut put = buildPutRequest(info, location, length,
+                HttpPut put = buildPutRequest(info, location,
                         redirectionCount > 0 ? REDIRECTED_REQUEST : INITIAL_REQUEST);
 
                 try (CloseableHttpResponse response = _client.execute(put)) {
@@ -511,7 +511,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
      * @return A corresponding PUT request.
      */
     private HttpPut buildPutRequest(RemoteHttpDataTransferProtocolInfo info,
-            URI location, long length, Set<HeaderFlags> flags)
+            URI location, Set<HeaderFlags> flags)
     {
         HttpPut put = new HttpPut(location);
         put.setConfig(RequestConfig.custom()
@@ -520,7 +520,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                                   .setSocketTimeout(0)
                                   .build());
         addHeadersToRequest(info, put, flags);
-        put.setEntity(new InputStreamEntity(Channels.newInputStream(_channel), length));
+        put.setEntity(new RepositoryChannelEntity(_channel));
 
         // FIXME add SO_KEEPALIVE setting
 
