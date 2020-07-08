@@ -519,6 +519,16 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         return _idMapping;
     }
 
+    @Override
+    public boolean getCaseInsensitive() {
+        return true;
+    }
+
+    @Override
+    public boolean getCasePreserving() {
+        return true;
+    }
+
     private int typeToChimera(Stat.Type type) {
         switch (type) {
             case SYMLINK:

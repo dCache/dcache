@@ -37,7 +37,7 @@ public class stateid4 implements  Serializable {
     }
 
     public stateid4(org.dcache.nfs.v4.xdr.stateid4 stateid) {
-        this(stateid.other, stateid.seqid.value);
+        this(stateid.other, stateid.seqid);
     }
 
     @Override
