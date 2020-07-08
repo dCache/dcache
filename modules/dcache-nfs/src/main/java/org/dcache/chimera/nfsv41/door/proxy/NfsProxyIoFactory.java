@@ -19,8 +19,6 @@ import org.dcache.nfs.v4.Layout;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
-import org.dcache.nfs.v4.client.GetDeviceListStub;
-import org.dcache.nfs.v4.client.LayoutgetStub;
 import org.dcache.nfs.v4.xdr.GETDEVICEINFO4args;
 import org.dcache.nfs.v4.xdr.LAYOUTGET4args;
 import org.dcache.nfs.v4.xdr.LAYOUTRETURN4args;
@@ -41,6 +39,8 @@ import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.nfs.v4.xdr.offset4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
+import org.dcache.oncrpc4j.xdr.Xdr;
+import org.dcache.oncrpc4j.xdr.XdrDecodingStream;
 import org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory;
 import org.dcache.util.backoff.IBackoffAlgorithm;
 import org.dcache.oncrpc4j.rpc.net.InetSocketAddresses;
@@ -120,7 +120,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         Layout layout = deviceManager.layoutGet(context, lgArgs);
 
         // we assume only one segment as dcache doesn't support striping
-        nfsv4_1_file_layout4 fileLayoutSegment = LayoutgetStub.decodeLayoutId(layout.getLayoutSegments()[0].lo_content.loc_body);
+        nfsv4_1_file_layout4 fileLayoutSegment = decodeLayoutId(layout.getLayoutSegments()[0].lo_content.loc_body);
         deviceid4 dsId = fileLayoutSegment.nfl_deviceid;
 
         GETDEVICEINFO4args gdiArgs = new GETDEVICEINFO4args();
@@ -130,7 +130,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         gdiArgs.gdia_notify_types = new bitmap4();
 
         device_addr4 deviceAddr = deviceManager.getDeviceInfo(context, gdiArgs);
-        nfsv4_1_file_layout_ds_addr4 nfs4DeviceAddr = GetDeviceListStub.decodeFileDevice(deviceAddr.da_addr_body);
+        nfsv4_1_file_layout_ds_addr4 nfs4DeviceAddr = decodeFileDevice(deviceAddr.da_addr_body);
 
         Stopwatch connectStopwatch = Stopwatch.createStarted();
         IBackoffAlgorithm backoff = backoffFactory.getAlgorithm();
@@ -221,5 +221,19 @@ retry:  while (true) {
     @Override
     public int getCount() {
         return (int)_proxyIO.size();
+    }
+
+    public static nfsv4_1_file_layout4 decodeLayoutId(byte[] data) throws IOException {
+        XdrDecodingStream xdr = new Xdr(data);
+        xdr.beginDecoding();
+
+        return new nfsv4_1_file_layout4(xdr);
+    }
+
+    public static nfsv4_1_file_layout_ds_addr4 decodeFileDevice(byte[] data) throws IOException {
+        XdrDecodingStream xdr = new Xdr(data);
+        xdr.beginDecoding();
+
+        return new nfsv4_1_file_layout_ds_addr4(xdr);
     }
 }

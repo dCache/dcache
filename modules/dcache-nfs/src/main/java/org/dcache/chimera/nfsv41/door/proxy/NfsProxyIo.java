@@ -14,7 +14,7 @@ import org.dcache.util.NetworkUtils;
 
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.DelayException;
-import org.dcache.nfs.v4.client.CompoundBuilder;
+import org.dcache.nfs.v4.CompoundBuilder;
 import org.dcache.nfs.v4.xdr.COMPOUND4args;
 import org.dcache.nfs.v4.xdr.COMPOUND4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
