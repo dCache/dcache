@@ -19,12 +19,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.SyncFailedException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import javax.net.ssl.SSLContext;
 import java.net.UnknownHostException;
 import java.nio.channels.Channels;
+import java.nio.channels.ClosedChannelException;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -326,7 +328,7 @@ class Companion
         }
     }
 
-    private Set<Checksum> copy(String uri, ReplicaDescriptor handle) throws IOException
+    private Set<Checksum> copy(String uri, ReplicaDescriptor handle) throws IOException, InterruptedException
     {
         EnumSet<ChecksumType> knownChecksumTypes = EnumSet.noneOf(ChecksumType.class);
         try {
@@ -335,7 +337,8 @@ class Companion
             _log.warn("Failed to fetch checksum information: {}", e.getMessage());
         }
 
-        try (RepositoryChannel channel = handle.createChannel()) {
+        RepositoryChannel channel = handle.createChannel();
+        try {
             HttpGet get = new HttpGet(uri);
             get.addHeader(HttpHeaders.CONNECTION, HTTP.CONN_CLOSE);
             get.setConfig(RequestConfig.custom()
@@ -382,6 +385,12 @@ class Companion
             return channel.optionallyAs(ChecksumChannel.class)
                     .map(ChecksumChannel::getChecksums)
                     .orElseThrow(() -> new IllegalStateException("Missing ChecksumChannel"));
+        } catch (ClosedChannelException | InterruptedIOException e) {
+            // clear interrupted status
+            Thread.interrupted();
+            throw new InterruptedException();
+        } finally {
+            channel.close();
         }
     }
 
