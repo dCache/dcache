@@ -42,7 +42,7 @@ if [ $1 -eq 2 ]; then
     # REVISIT: remove in dCache 7.0.
 
     if [ -x /usr/bin/systemctl ]; then
-        /usr/bin/systemctl stop dcache.service
+        /usr/bin/systemctl stop dcache.target
     fi
 fi
 
@@ -100,7 +100,7 @@ if [ $1 -eq 0 ] ; then
     # systemd services.
     # REVISIT: remove in dCache 7.0.
     if [ -x /usr/bin/systemctl ]; then
-        /usr/bin/systemctl disable --now dcache.service
+        /usr/bin/systemctl disable --now dcache.target
         /usr/bin/systemctl daemon-reload
     fi
 fi
@@ -111,7 +111,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 /lib/systemd/system-generators/dcache-generator
-/lib/systemd/system/dcache.service
+/lib/systemd/system/dcache.target
 /usr/sbin/dcache-storage-descriptor
 /usr/sbin/dcache-info-provider
 /usr/sbin/dcache-billing-indexer
