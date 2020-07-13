@@ -74,7 +74,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequest.Depth;
 import org.dcache.services.bulk.BulkServiceException;
-import org.dcache.services.bulk.NamespaceHandlerAware;
+import diskCacheV111.util.NamespaceHandlerAware;
 import org.dcache.vehicles.FileAttributes;
 
 /**

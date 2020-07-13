@@ -57,15 +57,8 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.bulk;
+package diskCacheV111.util;
 
-import diskCacheV111.util.PnfsHandler;
-
-public interface NamespaceHandlerAware
-{
-    /**
-     *  If a single-target job implements this interface, the handler
-     *  will inject the stub.
-     */
-    void setNamespaceHandler(PnfsHandler pnfsHandler);
+public interface NamespaceHandlerAware {
+  void setNamespaceHandler(PnfsHandler pnfsHandler);
 }
