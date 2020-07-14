@@ -317,6 +317,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     _logger.info("Connection from {} id idle; disconnecting.",
                                  ctx.channel().remoteAddress());
                 }
+                releaseAllFiles(uploadsSeeError(new FileCorruptedCacheException("Channel idle for too long during upload.")));
                 ctx.close();
             }
         }
