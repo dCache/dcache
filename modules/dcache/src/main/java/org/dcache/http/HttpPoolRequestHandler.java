@@ -64,6 +64,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static io.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Checksums.TO_RFC3230;
 import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.StringMarkup.quotedString;
@@ -112,6 +113,28 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private NettyTransferService<HttpProtocolInfo>.NettyMoverChannel _writeChannel;
 
     private Optional<ChecksumType> _wantedDigest;
+
+    /**
+     * A simple data class to encapsulate the errors to return by the mover to
+     * the pool for file uploads and downloads, should transfers be aborted.
+     */
+    private static class FileReleaseErrors
+    {
+        private Optional<? extends Exception> errorForDownload = Optional.empty();
+        private Optional<? extends Exception> errorForUpload = Optional.empty();
+
+        public FileReleaseErrors downloadsSeeError(Exception e)
+        {
+            errorForDownload = Optional.of(requireNonNull(e));
+            return this;
+        }
+
+        public FileReleaseErrors uploadsSeeError(Exception e)
+        {
+            errorForUpload = Optional.of(requireNonNull(e));
+            return this;
+        }
+    }
 
     public HttpPoolRequestHandler(NettyTransferService<HttpProtocolInfo> server, int chunkSize)
     {
@@ -238,13 +261,23 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         _logger.debug("HTTP connection from {} established", ctx.channel().remoteAddress());
     }
 
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception
+    private static FileReleaseErrors uploadsSeeError(Exception e)
     {
-        _logger.debug("HTTP connection from {} closed", ctx.channel().remoteAddress());
+        return new FileReleaseErrors().uploadsSeeError(e);
+    }
+
+    private static FileReleaseErrors downloadsSeeError(Exception e)
+    {
+        return new FileReleaseErrors().downloadsSeeError(e);
+    }
+
+    private void releaseAllFiles(FileReleaseErrors errors)
+    {
         for (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file: _files) {
-            if (file == _writeChannel) {
-                file.release(new FileCorruptedCacheException("Connection lost before end of file."));
+            Optional<? extends Exception> possibleError = file == _writeChannel
+                    ? errors.errorForUpload : errors.errorForDownload;
+            if (possibleError.isPresent()) {
+                file.release(possibleError.get());
             } else {
                 file.release();
             }
@@ -252,21 +285,20 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         _files.clear();
     }
 
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception
+    {
+        _logger.debug("HTTP connection from {} closed", ctx.channel().remoteAddress());
+        releaseAllFiles(uploadsSeeError(new FileCorruptedCacheException("Connection lost before end of file.")));
+    }
+
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable t)
     {
         if (t instanceof ClosedChannelException) {
             _logger.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
-            for (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file : _files) {
-                CacheException cause;
-                if (file == _writeChannel) {
-                    cause = new FileCorruptedCacheException("Connection lost before end of file: " + t, t);
-                } else {
-                    cause = new CacheException(t.toString(), t);
-                }
-                file.release(cause);
-            }
-            _files.clear();
+            releaseAllFiles(downloadsSeeError(new CacheException(t.toString(), t))
+                    .uploadsSeeError(new FileCorruptedCacheException("Connection lost before end of file: " + t, t)));
             ctx.close();
         } else {
             Thread me = Thread.currentThread();
