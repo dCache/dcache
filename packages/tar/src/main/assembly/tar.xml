@@ -85,6 +85,7 @@
             <outputDirectory></outputDirectory>
             <includes>
                 <include>var/alarms/**</include>
+                <include>var/bulk/**</include>
                 <include>var/credentials/**</include>
                 <include>var/httpd/**</include>
                 <include>var/log/**</include>

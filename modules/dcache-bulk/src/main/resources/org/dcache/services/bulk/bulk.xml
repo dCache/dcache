@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:property-placeholder/>
+  <context:annotation-config/>
+
+  <bean id="pnfs-manager-stub" class="org.dcache.cells.CellStub">
+    <description>PnfsManager communication stub</description>
+    <property name="destination" value="${bulk.service.pnfsmanager}"/>
+    <property name="timeout" value="${bulk.service.pnfsmanager.timeout}"/>
+    <property name="timeoutUnit" value="${bulk.service.pnfsmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pin-manager-stub" class="org.dcache.cells.CellStub">
+    <description>PinManager communication stub</description>
+    <property name="destination" value="${bulk.service.pinmanager}"/>
+    <property name="timeout" value="${bulk.service.pinmanager.timeout}"/>
+    <property name="timeoutUnit" value="${bulk.service.pinmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+    <description>PoolManager communication stub</description>
+    <property name="destination" value="${bulk.service.poolmanager}"/>
+    <property name="timeout" value="${bulk.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${bulk.service.poolmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="ping-service" class="org.dcache.cells.CellStub">
+    <description>Ping test service cell stub</description>
+    <property name="destination" value="${bulk.service.ping}"/>
+    <property name="timeout" value="${bulk.service.ping.timeout}"/>
+    <property name="timeoutUnit" value="${bulk.service.ping.timeout.unit}"/>
+  </bean>
+
+  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
+    <description>Maintains runtime information about all pools</description>
+    <property name="poolManagerStub" ref="pool-manager-stub"/>
+  </bean>
+
+  <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
+    <description>Client stub for directory listing</description>
+    <constructor-arg>
+      <bean class="diskCacheV111.util.PnfsHandler">
+        <constructor-arg ref="pnfs-manager-stub"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="incoming-thread-executor"
+        class="org.dcache.util.CDCExecutorServiceDecorator"
+        destroy-method="shutdownNow">
+    <description>Used to execute request message handling</description>
+    <constructor-arg>
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="${bulk.limits.message-handler-threads}"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="job-executor"
+        class="org.dcache.util.CDCExecutorServiceDecorator"
+        destroy-method="shutdownNow">
+    <description>Used to execute jobs.</description>
+    <constructor-arg>
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="${bulk.limits.job-execution-threads}"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="job-callback-executor"
+        class="org.dcache.util.CDCExecutorServiceDecorator"
+        destroy-method="shutdownNow">
+    <description>Used to the callbacks to jobs which send and wait for replies.</description>
+    <constructor-arg>
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="${bulk.limits.job-callback-threads}"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="cleanup-executor"
+        class="org.dcache.util.CDCExecutorServiceDecorator"
+        destroy-method="shutdownNow">
+    <description>Used to execute jobs.</description>
+    <constructor-arg>
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="${bulk.limits.job-cleanup-threads}"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="processor-executor"
+        class="org.dcache.util.CDCExecutorServiceDecorator"
+        destroy-method="shutdownNow">
+    <description>Used to execute jobs.</description>
+    <constructor-arg>
+      <bean class="org.dcache.util.BoundedCachedExecutor">
+        <constructor-arg value="3"/> <!-- three queue processors -->
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="delayed-clear-executor"
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
+        destroy-method="shutdownNow">
+    <description>Used to execute delayed clear requests.</description>
+    <constructor-arg>
+      <bean class="java.util.concurrent.ScheduledThreadPoolExecutor">
+        <constructor-arg value="${bulk.limits.request-store-clear-threads}"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="request-store" class="org.dcache.services.bulk.store.file.FileBulkRequestStore">
+    <description>In-memory storage with file back-up for requests</description>
+    <constructor-arg name="storageDir" value="${bulk.store.request-store-dir}"/>
+    <constructor-arg name="delegate">
+        <bean class="org.dcache.services.bulk.store.memory.InMemoryBulkRequestStore"/>
+    </constructor-arg>
+    <property name="scheduler" ref="delayed-clear-executor"/>
+  </bean>
+
+  <bean id="job-store" class="org.dcache.services.bulk.store.memory.InMemoryBulkJobStore">
+      <description>In-memory Storage for jobs</description>
+  </bean>
+
+  <bean id="job-factory" class="org.dcache.services.bulk.job.BulkJobFactory">
+    <description>Factory for creating various types of bulk jobs; uses SPI to load providers.</description>
+    <property name="pnfsManager" ref="pnfs-manager-stub"/>
+    <property name="pinManager" ref="pin-manager-stub"/>
+    <property name="poolManager" ref="pool-manager-stub"/>
+    <property name="poolMonitor" ref="pool-monitor"/>
+    <property name="pingService" ref="ping-service"/>
+  </bean>
+
+  <bean id="statistics" class="org.dcache.services.bulk.util.BulkServiceStatistics">
+    <description>Tracks request and jobs states (counts), sweeper state, etc.</description>
+  </bean>
+
+  <bean name="job-queue" class="org.dcache.services.bulk.queue.BulkServiceQueue">
+    <description>The central queuing mechanism for jobs from requests.</description>
+    <property name="requestStore" ref="request-store"/>
+    <property name="bulkJobExecutorService" ref="job-executor"/>
+    <property name="cleanupExecutorService" ref="cleanup-executor"/>
+    <property name="processorExecutorService" ref="processor-executor"/>
+    <property name="maxRunningJobs" value="${bulk.limits.max-running-jobs}"/>
+    <property name="maxQueuedJobs" value="${bulk.limits.max-queued-jobs}"/>
+    <property name="avgJobsPerRequest" value="${bulk.limits.avg-jobs-per-request}"/>
+    <property name="timeout" value="${bulk.limits.queue-sweep-interval}"/>
+    <property name="timeoutUnit" value="${bulk.limits.queue-sweep-interval.unit}"/>
+    <property name="completionHandler" ref="handler"/>
+    <property name="submissionHandler" ref="handler"/>
+    <property name="statistics" ref="statistics"/>
+  </bean>
+
+  <bean name="handler" class="org.dcache.services.bulk.handlers.BulkRequestHandler">
+    <description>Interacts with the queue, job factory and stores.</description>
+    <property name="requestStore" ref="request-store"/>
+    <property name="queue" ref="job-queue"/>
+    <property name="jobStore" ref="job-store"/>
+    <property name="jobFactory" ref="job-factory"/>
+    <property name="statistics" ref="statistics"/>
+    <property name="listHandler" ref="list-handler"/>
+    <property name="callbackExecutorService" ref="job-callback-executor"/>
+  </bean>
+
+  <bean id="bulk-service" class="org.dcache.services.bulk.BulkService">
+    <description>Initializes queue; handles incoming messages.</description>
+    <property name="incomingExecutorService" ref="incoming-thread-executor"/>
+    <property name="maxRequestsPerUser" value="${bulk.limits.max-requests-per-user}"/>
+    <property name="queue" ref="job-queue"/>
+    <property name="requestStore" ref="request-store"/>
+    <property name="submissionHandler" ref="handler"/>
+    <property name="statistics" ref="statistics"/>
+  </bean>
+
+  <bean id="admin-commands" class="org.dcache.services.bulk.admin.BulkServiceCommands">
+    <description>Holds the various commands for administrative purposes.</description>
+    <property name="service" ref="bulk-service"/>
+    <property name="jobFactory" ref="job-factory"/>
+    <property name="jobStore" ref="job-store"/>
+    <property name="requestHandler" ref="handler"/>
+    <property name="cancelExecutor" ref="incoming-thread-executor"/>
+  </bean>
+</beans>

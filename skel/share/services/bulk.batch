@@ -1,0 +1,38 @@
+# Starts bulk service
+
+onerror shutdown
+
+check -strong bulk.cell.name
+check -strong bulk.cell.consume
+check -strong bulk.cell.subscribe
+check -strong bulk.dir
+check -strong bulk.limits.avg-jobs-per-request
+check -strong bulk.limits.max-running-jobs
+check -strong bulk.limits.max-queued-jobs
+check -strong bulk.limits.max-cleanup-jobs
+check -strong bulk.limits.max-callbacks
+check -strong bulk.limits.queue-sweep-interval
+check -strong bulk.limits.queue-sweep-interval.unit
+check -strong bulk.limits.max-requests-per-user
+check -strong bulk.limits.message-handler-threads
+check -strong bulk.limits.request-store-clear-threads
+check -strong bulk.pool-monitor.topic
+check -strong bulk.store.request-store-dir
+check -strong bulk.service.pnfsmanager
+check -strong bulk.service.pnfsmanager.timeout
+check -strong bulk.service.pnfsmanager.timeout.unit
+check -strong bulk.service.pinmanager
+check -strong bulk.service.pinmanager.timeout
+check -strong bulk.service.pinmanager.timeout.unit
+check -strong bulk.service.poolmanager
+check -strong bulk.service.poolmanager.timeout
+check -strong bulk.service.poolmanager.timeout.unit
+check -strong bulk.service.ping
+check -strong bulk.service.ping.timeout
+check -strong bulk.service.ping.timeout.unit
+
+create org.dcache.cells.UniversalSpringCell ${bulk.cell.name} \
+    "classpath:org/dcache/services/bulk/bulk.xml \
+    -consume=${bulk.cell.consume} \
+    -subscribe=${bulk.cell.subscribe}"
+
