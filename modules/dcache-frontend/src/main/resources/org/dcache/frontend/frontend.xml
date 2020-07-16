@@ -236,6 +236,13 @@
     <property name="destination" value="${frontend.service.pinmanager}"/>
   </bean>
 
+  <bean id="bulk-service" class="org.dcache.cells.CellStub">
+    <description>Bulk request service cell stub</description>
+    <property name="timeout" value="${frontend.service.bulk-service.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.bulk-service.timeout.unit}"/>
+    <property name="destination" value="${frontend.service.bulk-service}"/>
+  </bean>
+
   <bean id="billing-info-collector" class="org.dcache.restful.util.billing.BillingInfoCollector">
         <description>Collects information from billing backend (database).</description>
         <property name="billingPath">
@@ -294,6 +301,10 @@
     <property name="timeoutUnit" value="${frontend.service.restores.timeout.unit}"/>
     <property name="collector" ref="restores-collector"/>
     <property name="executorService" ref="scheduling-service"/>
+  </bean>
+
+  <bean id="bulk-service-communicator" class="org.dcache.restful.util.bulk.BulkServiceCommunicator">
+    <property name="bulkService" ref="bulk-service"/>
   </bean>
 
     <bean class="org.springframework.beans.factory.config.CustomScopeConfigurer">
@@ -547,6 +558,7 @@
     <bean class="org.dcache.restful.resources.billing.BillingResources" scope="request">
       <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
     </bean>
+    <bean class="org.dcache.restful.resources.bulk.BulkResources" scope="request"/>
     <bean class="org.dcache.restful.resources.cells.CellInfoResources" scope="request"/>
     <bean class="org.dcache.restful.resources.doors.DoorsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.identity.UserResource" scope="request"/>
