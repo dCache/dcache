@@ -223,7 +223,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     private static final long NFS_REQUEST_BLOCKING = TimeUnit.SECONDS.toMillis(3);
 
     /**
-     * A time diration that Transfer class will wait before retrying a request to
+     * A time duration that Transfer class will wait before retrying a request to
      * a pool or pool manager.
      */
     private static final long NFS_RETRY_PERIOD = TimeUnit.SECONDS.toMillis(10);
@@ -326,7 +326,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     private boolean _manageGids;
 
     /**
-     * NFSv4 operation executer with requests statistics.
+     * NFSv4 operation executor with requests statistics.
      */
     private StatsDecoratedOperationExecutor _executor;
 
@@ -1485,7 +1485,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             /**
              * Redirect is lost
              */
-            // currently there are no possiblitilies to force too to re-send redirect.
+            // currently there are no possibilities to force too to re-send redirect.
 
             return "Lost redirect...";
         }
