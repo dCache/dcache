@@ -29,6 +29,7 @@ Chapter 3. Frontend
     * [Channel lifecycle](#channel-lifecycle)
     * [Subscriptions](#subscriptions)
     * [Receiving events: SSE](#receiving-events-sse)
++ [Bulk Requests](#bulk-requests)
 
 The frontend is an HTTP endpoint that provides a REST API.  In this
 chapter, we discuss how you can interact with dCache using this
@@ -2584,3 +2585,41 @@ the file's size.
 
 The order of the `IN_CLOSE_WRITE` and `IN_ATTRIB` events is not
 guaranteed.
+
+## Bulk Requests
+
+The following bulk requests are available through the frontend REST API:
+
+- `` GET https://<host>:3880/bulk-requests`` 
+   –– returns a list, optionally filtered by ``status``, of requests owned by the user.
+   
+- `` POST https://<host>:3880/bulk-requests`` 
+   –– submits a request on behalf of the user.
+   
+- `` GET https://<host>:3880/bulk-requests/<id>``
+   –– returns the status info for the request identified by the path.
+   
+-  ``PATCH https://<host>:3880/bulk-requests/<id>``
+   –– takes some action on the request identified by the path.  Currently,
+      only ``{'action':'cancel'}`` is available.
+      
+-  ``DELETE https://<host>:3880/bulk-requests/<id>``
+   –– clears the request metadata and resources from the the service.  If
+      the request is in a running state, it must be cancelled first or 
+      deletion will fail.
+
+A bulk request targets a list of files and/or directories.  The latter can 
+be targeted without expansion, with shallow expansion (immediate
+children), or recursively expanded.  The currently available request types
+include ``pin``, ``unpin``, ``qos`` (disk-tape transitioning), and ``delete``.  
+A request is for only one type of action (they cannot be combined).  
+
+As an example, here is the command-line ``curl`` for submitting a request to 
+pin all files in the target directory for one hour:
+
+```
+curl -X POST "https://fndcatemp1.fnal.gov:3880/api/v1/bulk-requests" -H  "accept: application/json" -H  "content-type: application/json" -d "{\"target\":\"/pnfs/fs/usr/arossi/test\",\"activity\":\"PIN\",\"expandDirectories\":\"ALL\",\"arguments\":{\"lifetime\":\"1\",\"lifetime-unit\":\"HOURS\"}}"```
+   
+Full specification of these commands can be obtained by inspecting the
+SWAGGER page which is available from the frontend 
+at ``https://<host>:3880/api/v1``.

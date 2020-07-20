@@ -164,6 +164,8 @@ This part contains descriptions of the components of dCache, their role, functio
 
 1. [dCache History Service](config-history.md)
 
+1. [dCache Bulk Service](config-bulk.md)
+
 1. [ACLs in dCache](config-acl.md)
     - [Introduction](config-acl.md#introduction)
     - [Configuring ACL support](config-acl.md#configuring-acl-support)

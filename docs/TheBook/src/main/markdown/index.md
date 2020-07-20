@@ -22,6 +22,8 @@ dCache Book
         -   [alarms service](config-alarms.md)
 
         -   [billing service](config-billing.md)
+        
+        -   [bulk service](config-bulk.md)
 
         -   cleaner service
 

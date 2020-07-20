@@ -1,4 +1,4 @@
-CHAPTER 17. dCache Frontend Service
+CHAPTER 15. dCache Frontend Service
 ===================================
 
 -----

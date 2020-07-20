@@ -1,4 +1,4 @@
-CHAPTER 18. dCache History Service
+CHAPTER 16. dCache History Service
 =====================================
 
 -----
