@@ -604,6 +604,23 @@ public class NFSv41Door extends AbstractCellComponent implements
         if (message.getPoolState() == PoolStatusChangedMessage.DOWN) {
             _log.info("Pool disabled: {}", message.getPoolName());
             recallLayouts(message.getPoolName());
+
+            PoolDS ds = _poolDeviceMap.remove(message.getPoolName());
+            if (ds != null) {
+                deviceid4 dev = ds.getDeviceId();
+                // no need to check is nfs4 null, as mapping can exist only in v4.1 is running.
+                _nfs4.getStateHandler().getClients()
+                        .stream()
+                        .map(NFS4Client::getCB)
+                        .filter(Objects::nonNull)
+                        .forEach(cb -> {
+                            try {
+                                cb.cbDeleteDevice(dev);
+                            } catch (IOException e) {
+                                _log.error("Failed to delete device by id: {}", e.getMessage());
+                            }
+                        });
+            }
         }
     }
 
