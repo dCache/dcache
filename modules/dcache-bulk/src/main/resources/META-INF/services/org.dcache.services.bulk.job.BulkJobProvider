@@ -1,2 +1,4 @@
 org.dcache.services.bulk.plugins.BFirstWalkJobProvider
 org.dcache.services.bulk.plugins.DFirstWalkJobProvider
+org.dcache.services.bulk.plugins.pinmanager.UnpinJobProvider
+org.dcache.services.bulk.plugins.pinmanager.PinJobProvider
