@@ -2618,8 +2618,9 @@ As an example, here is the command-line ``curl`` for submitting a request to
 pin all files in the target directory for one hour:
 
 ```
-curl -X POST "https://fndcatemp1.fnal.gov:3880/api/v1/bulk-requests" -H  "accept: application/json" -H  "content-type: application/json" -d "{\"target\":\"/pnfs/fs/usr/arossi/test\",\"activity\":\"PIN\",\"expandDirectories\":\"ALL\",\"arguments\":{\"lifetime\":\"1\",\"lifetime-unit\":\"HOURS\"}}"```
-   
+curl -X POST "https://fndcatemp1.fnal.gov:3880/api/v1/bulk-requests" -H  "accept: application/json" -H  "content-type: application/json" -d "{\"target\":\"/pnfs/fs/usr/arossi/test\",\"activity\":\"PIN\",\"expandDirectories\":\"ALL\",\"arguments\":{\"lifetime\":\"1\",\"lifetime-unit\":\"HOURS\"}}"
+```
+
 Full specification of these commands can be obtained by inspecting the
 SWAGGER page which is available from the frontend 
 at ``https://<host>:3880/api/v1``.
