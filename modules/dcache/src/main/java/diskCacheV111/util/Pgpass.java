@@ -58,6 +58,14 @@ public class Pgpass {
         return null;
     }
 
+    private String stripProperties(String s) {
+
+        int i = s.indexOf('?');
+        if (i != -1) {
+            return s.substring(0, i);
+        }
+        return s;
+    }
     private boolean parseUrl(String url) {
         // -jdbcUrl=jdbc:postgresql:database
         // -jdbcUrl=jdbc:postgresql://host/database
@@ -67,9 +75,9 @@ public class Pgpass {
         _port = "5432";
         if (r.length==1) {
             String[] r1 = r[0].split(":");
-            _database = r1[r1.length-1];
+            _database = stripProperties(r1[r1.length-1]);
         } else if (r.length==4) {
-            _database = r[r.length-1];
+            _database = stripProperties(r[r.length-1]);
             String[] r1 = r[2].split(":");
             _hostname = r1[0];
             if (r1.length==2) {
