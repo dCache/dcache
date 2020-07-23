@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -161,12 +162,17 @@ public class Checksums
      */
     public static Set<Checksum> decodeRfc3230(String digest)
     {
-        Map<String,String> parts = RFC3230_SPLITTER.split(nullToEmpty(digest));
+        try {
+            Map<String,String> parts = RFC3230_SPLITTER.split(nullToEmpty(digest));
 
-        Map<String,Checksum> checksums = transformEntries(parts,
-                RFC3230_TO_CHECKSUM);
+            Map<String,Checksum> checksums = transformEntries(parts,
+                    RFC3230_TO_CHECKSUM);
 
-        return checksums.values().stream().filter(Objects::nonNull).collect(Collectors.toSet());
+            return checksums.values().stream().filter(Objects::nonNull).collect(Collectors.toSet());
+        } catch (IllegalArgumentException e) {
+            _log.warn("Bad RFC3230 Digest value \"{}\": {}", digest, e.getMessage());
+            return Collections.emptySet();
+        }
     }
 
     /**
