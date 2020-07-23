@@ -56,7 +56,7 @@
                                     <map>
                                         <entry key="jdbcUrl" value="${cleaner.db.url}"/>
                                         <entry key="username" value="${cleaner.db.user}"/>
-                                        <entry key="password" value="${cleaner.db.password}"/>
+                                        <entry key="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${cleaner.db.password.file}', '${cleaner.db.url}', '${cleaner.db.user}', '${cleaner.db.password}') }"/>
                                         <entry key="minimumIdle" value="${cleaner.db.connections.idle}"/>
                                         <entry key="maximumPoolSize" value="${cleaner.db.connections.max}"/>
                                     </map>
