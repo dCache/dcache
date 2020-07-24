@@ -9,7 +9,7 @@ export PATH
 @DCACHE_LOAD_CONFIG@
 
 
-wantdir="$1/dcache.service.wants"
+wantdir="$1/dcache.target.wants"
 mkdir "$wantdir"
 
 for domain in $(getProperty dcache.domains); do
@@ -24,9 +24,7 @@ for domain in $(getProperty dcache.domains); do
 	[Unit]
 	Description=dCache $domain domain
 	After=network.target
-	PartOf=dcache.service
-	ReloadPropagatedFrom=dcache.service
-	Before=dcache.service
+	PartOf=dcache.target
 
 	[Service]
 	Type=simple
@@ -45,7 +43,7 @@ for domain in $(getProperty dcache.domains); do
 	LimitNPROC=infinity
 
 	[Install]
-	WantedBy=default.target
+	WantedBy=dcache.target
 	EOF
 
     ln -s "$1/dcache@$domain.service" "$wantdir/dcache@$domain.service"
