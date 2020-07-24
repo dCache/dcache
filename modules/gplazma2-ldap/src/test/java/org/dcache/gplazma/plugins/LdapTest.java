@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 - 2019 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2017 - 2020 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -210,6 +210,14 @@ public class LdapTest {
         assertThat("Expected principal not found", principals, hasItem(KERMIT_PRINCIPAL));
     }
 
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailLoginWithInvalidPassword() throws AuthenticationException {
+        Set<Principal> principals = new HashSet<>();
+
+        plugin.authenticate(Collections.emptySet(),
+                Collections.<Object>singleton(new PasswordCredential("kermit", "garbage")),
+                principals);
+    }
 
     @Test
     public void shouldNotGrowNumberOfThreadMoreThanOne() throws AuthenticationException, NoSuchPrincipalException {
@@ -218,24 +226,24 @@ public class LdapTest {
         Map<Thread, StackTraceElement[]> threadsBefore = Thread.getAllStackTraces();
 
         for (int i = 0; i < 1000; i++) {
-            plugin.map(principals);
 
+            plugin.authenticate(Collections.emptySet(),
+                    Collections.<Object>singleton(new PasswordCredential("kermit", "kermitTheFrog")),
+                    principals);
+
+            plugin.map(principals);
             Set<Object> attrs = new HashSet<>();
             plugin.session(principals, attrs);
-
             plugin.reverseMap(KERMIT_UID_PRINCIPAL);
-
             plugin.reverseMap(ACTOR_GID_PRINCIPAL);
-
             plugin.map(KERMIT_PRINCIPAL);
-
             plugin.map(ACTOR_GROUP_PRINCIPAL);
         }
 
         Map<Thread, StackTraceElement[]> threadsAfter = Thread.getAllStackTraces();
 
-        assertFalse("Thread leak detected", threadsAfter.size() > threadsBefore.size() + 1);
-
+        // one thread more as before due to connection pooling.
+        assertEquals("Thread leak detected",  threadsBefore.size() + 1, threadsAfter.size());
     }
 
     @After
