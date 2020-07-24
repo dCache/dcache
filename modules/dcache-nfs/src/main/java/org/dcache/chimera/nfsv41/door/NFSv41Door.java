@@ -1217,8 +1217,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 readNameSpaceEntry(false);
                 FileAttributes attr = getFileAttributes();
 
-                if (attr.getLocations().isEmpty()
-                        && !attr.getStorageInfo().isStored()) {
+                boolean expectedOnline = !attr.getLocations().isEmpty();
+                if (!(expectedOnline || attr.getStorageInfo().isStored())) {
                     throw new NfsIoException("lost file " + getPnfsId());
                 }
 
@@ -1227,9 +1227,13 @@ public class NFSv41Door extends AbstractCellComponent implements
                  * and can be directly accessed by the client, e.q. no stage
                  * or p2p is required.
                  */
-                setOnlineFilesOnly(true);
+                setOnlineFilesOnly(expectedOnline);
                 _log.debug("looking a read pool for {}", getPnfsId());
                 _redirectFuture = selectPoolAndStartMoverAsync(READ_POOL_SELECTION_RETRY_POLICY);
+                if (!expectedOnline) {
+                    // no reason to block the client as we have to get file back from HSM
+                    throw new LayoutTryLaterException("File is offline.");
+                }
             }
 
             try {
