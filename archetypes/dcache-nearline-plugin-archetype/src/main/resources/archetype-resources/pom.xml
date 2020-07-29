@@ -12,6 +12,7 @@
 
     <properties>
         <version.dcache>${dcache}</version.dcache>
+        <java.version>11</java.version>
     </properties>
 
     <licenses>
@@ -39,6 +40,18 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <showDeprecation>true</showDeprecation>
+                    <release>${java.version}</release>
+                    <!-- without forking compilation happens in the
+                    same process, so no arguments are applied -->
+                    <fork>true</fork>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
