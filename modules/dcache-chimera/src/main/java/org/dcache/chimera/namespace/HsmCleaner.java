@@ -50,33 +50,28 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * HSM, at most one request is sent at a time. The class defines an
  * upper limit on the size of a request.
  */
-public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, CellCommandListener, CellInfoProvider
-{
-    private static final Logger _log =
-        LoggerFactory.getLogger(HsmCleaner.class);
+public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, CellCommandListener, CellInfoProvider {
+
+    private static final Logger _log = LoggerFactory.getLogger(HsmCleaner.class);
 
     /**
      * Utility class to keep track of timeouts.
      */
-    class Timeout extends TimerTask
-    {
+    class Timeout extends TimerTask {
         final String _hsm;
         final String _pool;
 
-        Timeout(String hsm, String pool)
-        {
+        Timeout(String hsm, String pool) {
             _hsm = hsm;
             _pool = pool;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             timeout(_hsm, _pool);
         }
 
-        public String getPool()
-        {
+        public String getPool() {
             return _pool;
         }
     }
@@ -86,8 +81,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      *
      * For each HSM, we have at most one outstanding remove request.
      */
-    private final Map<String,Timeout> _requestTimeoutPerHsm =
-        new HashMap<>();
+    private final Map<String,Timeout> _requestTimeoutPerHsm = new HashMap<>();
 
     /**
      * A simple queue of locations to delete, grouped by HSM.
@@ -97,8 +91,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      * requests. For each HSM, there will be at most one outstanding
      * remove request; new entries during that period will be queued.
      */
-    private final Map<String,Set<URI>> _locationsToDelete =
-        new HashMap<>();
+    private final Map<String,Set<URI>> _locationsToDelete = new HashMap<>();
 
     /**
      * Locations that could not be deleted are pushed to this sink.
@@ -132,15 +125,13 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     /**
      * Set maximum number of files to include in a single request.
      */
-    public synchronized void setMaxFilesPerRequest(int value)
-    {
+    public synchronized void setMaxFilesPerRequest(int value) {
         _maxFilesPerRequest = value;
     }
     /**
      * Set timeout in milliseconds for delete requests send to pools.
      */
-    public synchronized void setTimeout(long timeout)
-    {
+    public synchronized void setTimeout(long timeout) {
         _timeout = timeout;
     }
 
@@ -148,26 +139,22 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      * Returns timeout in milliseconds for delete requests send to
      * pools.
      */
-    public synchronized long getTimeout()
-    {
+    public synchronized long getTimeout() {
         return _timeout;
     }
 
     @Required
-    public void setHsmCleanerRequest(int hsmCleanerRequest)
-    {
+    public void setHsmCleanerRequest(int hsmCleanerRequest) {
         _hsmCleanerRequest = hsmCleanerRequest;
     }
 
     @Required
-    public void setHsmTimeoutUnit(TimeUnit hsmTimeoutUnit)
-    {
+    public void setHsmTimeoutUnit(TimeUnit hsmTimeoutUnit) {
         _hsmTimeoutUnit = hsmTimeoutUnit;
     }
 
     @Required
-    public void setHsmTimeout(long hsmTimeout)
-    {
+    public void setHsmTimeout(long hsmTimeout) {
         _hsmTimeout = hsmTimeout;
     }
 
@@ -186,24 +173,21 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     /**
      * Sets the sink to which success to delete a file is reported.
      */
-    public synchronized void setSuccessSink(Consumer<URI> sink)
-    {
+    public synchronized void setSuccessSink(Consumer<URI> sink) {
         _successSink = sink ;
     }
 
     /**
      * Sets the sink to which failure to delete a file is reported.
      */
-    public synchronized void setFailureSink(Consumer<URI> sink)
-    {
+    public synchronized void setFailureSink(Consumer<URI> sink) {
         _failureSink = sink;
     }
 
     /**
      * Called when a file was successfully deleted from the HSM.
      */
-    protected void onSuccess(URI uri)
-    {
+    protected void onSuccess(URI uri) {
         try {
             _log.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}", uri);
             _db.update("DELETE FROM t_locationinfo_trash WHERE ilocation=? AND itype=0", uri.toString());
@@ -215,8 +199,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     /**
      * Called when a file could not be deleted from the HSM.
      */
-    protected void onFailure(URI uri)
-    {
+    protected void onFailure(URI uri) {
         _log.info("Failed to delete a file {} from HSM. Will try again later.", uri);
     }
 
@@ -229,8 +212,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      *
      * @param location the URI of the file to delete
      */
-    public synchronized void submit(URI location)
-    {
+    public synchronized void submit(URI location) {
         String hsm = location.getAuthority();
         Set<URI> locations = _locationsToDelete.get(hsm);
         if (locations == null) {
@@ -247,8 +229,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      *
      * @param hsm the name of an HSM instance
      */
-    private synchronized void flush(String hsm)
-    {
+    private synchronized void flush(String hsm) {
         // Don't allow flushing when not having leadership
         if (!_haServiceLeadershipManager.hasLeadership()) {
             return;
@@ -313,8 +294,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      * the first case we will end up trying another pool. In the
      * second case, we should simply fix the bug in the pool.
      */
-    private synchronized void timeout(String hsm, String pool)
-    {
+    private synchronized void timeout(String hsm, String pool) {
         _log.error("Timeout deleting files on HSM {} attached to {}", hsm, pool);
         removeHsmRequestTimeout(hsm);
         _pools.remove(pool);
@@ -324,8 +304,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     /**
      * Message handler for responses from pools.
      */
-    public synchronized void messageArrived(PoolRemoveFilesFromHSMMessage msg)
-    {
+    public synchronized void messageArrived(PoolRemoveFilesFromHSMMessage msg) {
         /* In case of failure we rely on the timeout to invalidate the
          * entries.
          */
@@ -374,8 +353,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      * Delete files stored on tape (HSM).
      */
     @Override
-    protected void runDelete() throws InterruptedException
-    {
+    protected void runDelete() throws InterruptedException {
         Timestamp graceTime = Timestamp.from(Instant.now().minusSeconds(_gracePeriod.getSeconds()));
         _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE itype=0 AND ictime<?",
                 rs -> {
@@ -415,8 +393,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     ////////////////////////////////////////////////////////////////////////////
 
     public static final String hh_requests_ls = "[hsm] # Lists delete requests";
-    public synchronized String ac_requests_ls_$_0_1(Args args)
-    {
+    public synchronized String ac_requests_ls_$_0_1(Args args) {
         StringBuilder sb = new StringBuilder();
         if (args.argc() == 0) {
             sb.append(String.format("%-15s %s %s\n",
@@ -449,8 +426,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     }
 
     public static final String hh_hsm_set_MaxFilesPerRequest = "<number> # maximal number of concurrent requests to a single HSM";
-    public String ac_hsm_set_MaxFilesPerRequest_$_1(Args args) throws NumberFormatException, CommandException
-    {
+    public String ac_hsm_set_MaxFilesPerRequest_$_1(Args args) throws NumberFormatException, CommandException {
         checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
         if (args.argc() > 0) {
             int maxFilesPerRequest = Integer.parseInt(args.argv(0));
@@ -465,8 +441,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     }
 
     public static final String hh_hsm_set_TimeOut = "<seconds> # cleaning request timeout in seconds (for HSM-pools)";
-    public String ac_hsm_set_TimeOut_$_1(Args args) throws NumberFormatException, CommandException
-    {
+    public String ac_hsm_set_TimeOut_$_1(Args args) throws NumberFormatException, CommandException {
         checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
         if (args.argc() > 0) {
             _hsmTimeout = Long.parseLong(args.argv(0));
@@ -478,18 +453,15 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     /////  HSM admin commands /////
 
     public static final String hh_rundelete_hsm = " # run HSM Cleaner";
-    public String ac_rundelete_hsm(Args args) throws InterruptedException, CommandException
-    {
+    public String ac_rundelete_hsm(Args args) throws InterruptedException, CommandException {
         checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
         runDelete();
         return "";
     }
 
     //explicitly clean HSM-file
-    public static final String hh_clean_file_hsm =
-            "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
-    public String ac_clean_file_hsm_$_1(Args args) throws CommandException
-    {
+    public static final String hh_clean_file_hsm = "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
+    public String ac_clean_file_hsm_$_1(Args args) throws CommandException {
         checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
         _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=0 ORDER BY iatime",
                 rs -> {
@@ -503,12 +475,8 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         return "";
     }
 
-    /*
-     * Cell specific
-     */
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.printf("HSM Cleaner Info : \n");
         pw.printf("Timeout for cleaning requests to HSM-pools: %s\n", _hsmTimeout);
         pw.printf("Timeout Unit for cleaning requests to HSM-pools: %s\n", _hsmTimeoutUnit);

@@ -42,11 +42,9 @@ import org.dcache.cells.HAServiceLeadershipManager;
  * Abstract base class representing common properties for DiskCleaner and HsmCleaner.
  *
  */
-public abstract class AbstractCleaner implements LeaderLatchListener
-{
+public abstract class AbstractCleaner implements LeaderLatchListener {
 
-    private static final Logger _log =
-            LoggerFactory.getLogger(DiskCleaner.class);
+    private static final Logger _log = LoggerFactory.getLogger(DiskCleaner.class);
 
     protected ScheduledExecutorService _executor;
     private ScheduledFuture<?> _cleanerTask;
@@ -82,33 +80,28 @@ public abstract class AbstractCleaner implements LeaderLatchListener
     }
 
     @Required
-    public void setExecutor(ScheduledExecutorService executor)
-    {
+    public void setExecutor(ScheduledExecutorService executor) {
         _executor = executor;
     }
 
     @Required
-    public void setPoolStub(CellStub stub)
-    {
+    public void setPoolStub(CellStub stub) {
         _poolStub = stub;
     }
 
     @Required
-    public void setPoolInformationBase(PoolInformationBase pools)
-    {
+    public void setPoolInformationBase(PoolInformationBase pools) {
         _pools = pools;
     }
 
     @Required
-    public void setDataSource(DataSource dataSource)
-    {
+    public void setDataSource(DataSource dataSource) {
         _dataSource = dataSource;
         _db = new JdbcTemplate(_dataSource);
     }
 
     @Required
-    public void setReportRemove(String[] reportRemove)
-    {
+    public void setReportRemove(String[] reportRemove) {
         _deleteNotificationTargets = Arrays.stream(reportRemove)
                 .filter(t -> !t.isEmpty())
                 .map(CellPath::new)
@@ -116,14 +109,12 @@ public abstract class AbstractCleaner implements LeaderLatchListener
     }
 
     @Required
-    public void setRefreshInterval(long refreshInterval)
-    {
+    public void setRefreshInterval(long refreshInterval) {
         _refreshInterval = refreshInterval;
     }
 
     @Required
-    public void setRefreshIntervalUnit(TimeUnit refreshIntervalUnit)
-    {
+    public void setRefreshIntervalUnit(TimeUnit refreshIntervalUnit) {
         _refreshIntervalUnit = refreshIntervalUnit;
     }
 
