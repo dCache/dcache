@@ -44,7 +44,6 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
 import org.dcache.cells.CellStub;
-import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.TimeUtils;
 
@@ -364,87 +363,97 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         }
     }
 
-    public static final String hh_clean_file = "<pnfsID> # clean this file (file will be deleted from DISK)";
-    public String ac_clean_file_$_1(Args args)
-            throws InterruptedException, CacheException, NoRouteToCellException, CommandException {
-        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-        try {
-            String pnfsid = args.argv(0);
-            List<String> removeFile = Collections.singletonList(pnfsid);
-            _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=1 ORDER BY iatime",
-                    rs -> {
-                        String pool = rs.getString("ilocation");
-                        try {
-                            sendRemoveToPoolCleaner(pool, removeFile);
-                        } catch (CacheException | InterruptedException | NoRouteToCellException e) {
-                            throw new UncheckedExecutionException(e);
-                        }
-                    },
-                    pnfsid);
-        } catch (UncheckedExecutionException e) {
-            throwIfInstanceOf(e.getCause(), InterruptedException.class);
-            throwIfInstanceOf(e.getCause(), CacheException.class);
-            throwIfInstanceOf(e.getCause(), NoRouteToCellException.class);
-            throw new RuntimeException(e.getCause());
-        }
-        return "";
-    }
+    @Command(name = "clean file",
+            hint = "clean this file (file will be deleted from DISK)")
+    public class CleanFileCommand implements Callable<String> {
+        @Argument(usage = "pnfsid of the file to clean")
+        String pnfsid;
 
-    public static final String hh_clean_pool = "<poolName> # clean this pool ";
-    public String ac_clean_pool_$_1(Args args)
-            throws CacheException, InterruptedException, NoRouteToCellException, CommandException {
-        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-        String poolName = args.argv(0);
-        if (_poolsBlackList.containsKey(poolName)) {
-            return "This pool is not available for the moment and therefore will not be cleaned.";
-        }
-        cleanPoolComplete(poolName);
-        return "";
-    }
-
-    public static final String hh_set_refresh = "[<refreshTimeInSeconds>]";
-    public static final String fh_set_refresh =
-            "Alters refresh rate and triggers a new run. Maximum rate is every 5 seconds.";
-    public String ac_set_refresh_$_0_1(Args args) throws CommandException {
-        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-        if (args.argc() > 0) {
-            long newRefresh = Long.parseLong(args.argv(0));
-            if (newRefresh < 5) {
-                throw new IllegalArgumentException("Time must be greater than 5 seconds");
+        @Override
+        public String call() throws InterruptedException, CacheException, NoRouteToCellException, CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            try {
+                List<String> removeFile = Collections.singletonList(pnfsid);
+                _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=1 ORDER BY iatime",
+                        rs -> {
+                            String pool = rs.getString("ilocation");
+                            try {
+                                sendRemoveToPoolCleaner(pool, removeFile);
+                            } catch (CacheException | InterruptedException | NoRouteToCellException e) {
+                                throw new UncheckedExecutionException(e);
+                            }
+                        },
+                        pnfsid);
+            } catch (UncheckedExecutionException e) {
+                throwIfInstanceOf(e.getCause(), InterruptedException.class);
+                throwIfInstanceOf(e.getCause(), CacheException.class);
+                throwIfInstanceOf(e.getCause(), NoRouteToCellException.class);
+                throw new RuntimeException(e.getCause());
             }
+            return "";
+        }
+    }
 
-            setRefreshInterval(newRefresh);
+    @Command(name = "clean pool",
+            hint = "clean this pool")
+    public class CleanPoolCommand implements Callable<String> {
+        @Argument(usage = "name of the pool to be cleaned")
+        String poolName;
+
+        @Override
+        public String call() throws CacheException, InterruptedException, NoRouteToCellException, CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            if (_poolsBlackList.containsKey(poolName)) {
+                return "This pool is not available for the moment and therefore will not be cleaned.";
+            }
+            cleanPoolComplete(poolName);
+            return "";
+        }
+    }
+
+    @Command(name = "set refresh",
+            hint = "Alters refresh rate and triggers a new run. Minimum rate is every 5 seconds." +
+                    "If no time is provided, the old one is kept.")
+    public class SetRefreshCommand implements Callable<String> {
+        @Argument(required = false, usage = "refresh time in seconds")
+        Long refreshInterval;
+
+        @Override
+        public String call() throws CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            if (refreshInterval == null) return "Refresh interval unchanged: " + _refreshInterval + " " + _refreshIntervalUnit;
+            if (refreshInterval < 5) throw new IllegalArgumentException("Time must be greater than 5 seconds");
+
+            setRefreshInterval(refreshInterval);
             setRecoverTimerUnit(SECONDS);
 
             if (_cleanerTask != null) {
                 _cleanerTask.cancel(true);
             }
-            _cleanerTask =
-                    _executor.scheduleWithFixedDelay(() -> {
-
+            _cleanerTask = _executor.scheduleWithFixedDelay(() -> {
                                 try {
-                                    this.runDelete();
+                                    runDelete();
                                 } catch (InterruptedException e) {
                                     _log.info("Cleaner was interrupted");
                                 }
-
-                            }, _refreshInterval, _refreshInterval,
-                            _refreshIntervalUnit);
+                            }, _refreshInterval, _refreshInterval, _refreshIntervalUnit);
+            return "Refresh set to " + _refreshInterval + " " + _refreshIntervalUnit;
         }
-        return "Refresh set to " + _refreshInterval + " " + _refreshIntervalUnit;
     }
 
-    public static final String hh_set_processedAtOnce = "<processedAtOnce> # max number of files sent to pool for processing at once ";
-    public String ac_set_processedAtOnce_$_1(Args args) throws CommandException {
-        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-        if (args.argc() > 0) {
-            int processAtOnce = Integer.parseInt(args.argv(0));
-            if (processAtOnce <= 0) {
-                throw new IllegalArgumentException("Number of files must be greater than 0 ");
-            }
+    @Command(name = "set processedAtOnce",
+            hint = "Changes the number of files sent to a pool for processing at once.")
+    public class SetProcessedAtOnceCommand implements Callable<String> {
+        @Argument(usage = "max number of files sent to a pool for processing at once")
+        int processAtOnce;
+
+        @Override
+        public String call() throws CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            if (processAtOnce <= 0) throw new IllegalArgumentException("Number of files must be greater than 0 ");
             _processAtOnce = processAtOnce;
+            return "Number of files processed at once set to " + _processAtOnce;
         }
-        return "Number of files processed at once set to " + _processAtOnce;
     }
 
     @Override

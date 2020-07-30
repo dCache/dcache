@@ -1,6 +1,7 @@
 package org.dcache.chimera.namespace;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.concurrent.TimeUnit;
 
@@ -33,8 +35,8 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
-
-import org.dcache.util.Args;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 
 import static dmg.util.CommandException.checkCommand;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -392,87 +394,110 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
     ////////////////////////////////////////////////////////////////////////////
 
-    public static final String hh_requests_ls = "[hsm] # Lists delete requests";
-    public synchronized String ac_requests_ls_$_0_1(Args args) {
-        StringBuilder sb = new StringBuilder();
-        if (args.argc() == 0) {
-            sb.append(String.format("%-15s %s %s\n",
-                                    "HSM Instance", "Files", "Pool"));
-            for (Map.Entry<String,Set<URI>> e: _locationsToDelete.entrySet()) {
-                Timeout timeout = _requestTimeoutPerHsm.get(e.getKey());
+    @Command(name = "requests ls",
+            hint = "Lists delete requests.")
+    public class RequestsLsCommand implements Callable<String> {
+        @Argument(required = false, usage = "HSM instance for which to list delete requests")
+        String hsm;
 
-                if (timeout == null) {
-                    sb.append(String.format("%-15s %5d\n",
-                                            e.getKey(),
-                                            e.getValue().size()));
-                } else {
-                    sb.append(String.format("%-15s %5d %s\n",
-                                            e.getKey(),
-                                            e.getValue().size(),
-                                            timeout.getPool()));
+        @Override
+        public String call() {
+            StringBuilder sb = new StringBuilder();
+            if (Strings.isNullOrEmpty(hsm)) {
+                sb.append(String.format("%-15s %s %s\n",
+                        "HSM Instance", "Files", "Pool"));
+                for (Map.Entry<String,Set<URI>> e: _locationsToDelete.entrySet()) {
+                    Timeout timeout = _requestTimeoutPerHsm.get(e.getKey());
+
+                    if (timeout == null) {
+                        sb.append(String.format("%-15s %5d\n",
+                                e.getKey(),
+                                e.getValue().size()));
+                    } else {
+                        sb.append(String.format("%-15s %5d %s\n",
+                                e.getKey(),
+                                e.getValue().size(),
+                                timeout.getPool()));
+                    }
+                }
+            } else {
+                Collection<URI> locations = _locationsToDelete.get(hsm);
+                if (locations != null) {
+                    for (URI location: locations) {
+                        sb.append(location).append('\n');
+                    }
                 }
             }
-        } else {
-            String hsm = args.argv(0);
-            Collection<URI> locations = _locationsToDelete.get(hsm);
-            if (locations != null) {
-                for (URI location: locations) {
-                    sb.append(location).append('\n');
-                }
-            }
+            return sb.toString();
         }
-
-        return sb.toString();
     }
 
-    public static final String hh_hsm_set_MaxFilesPerRequest = "<number> # maximal number of concurrent requests to a single HSM";
-    public String ac_hsm_set_MaxFilesPerRequest_$_1(Args args) throws NumberFormatException, CommandException {
-        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-        if (args.argc() > 0) {
-            int maxFilesPerRequest = Integer.parseInt(args.argv(0));
-            if (maxFilesPerRequest == 0) {
-                throw new
-                        IllegalArgumentException("The number must be greater than 0 ");
-            }
+    @Command(name = "hsm set MaxFilesPerRequest",
+            hint = "Changes the number of files sent to a HSM instance for processing at once.")
+    public class HsmSetMaxFilesPerRequestCommand implements Callable<String> {
+        @Argument(usage = "maximal number of concurrent requests to a single HSM")
+        int maxFilesPerRequest;
+
+        @Override
+        public String call() throws CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            if (maxFilesPerRequest <= 0) throw new IllegalArgumentException("The number must be greater than 0 ");
+
             _hsmCleanerRequest = maxFilesPerRequest;
+            return "Maximal number of concurrent requests to a single HSM is set to " + _hsmCleanerRequest;
         }
-
-        return "Maximal number of concurrent requests to a single HSM is set to " + _hsmCleanerRequest;
     }
 
-    public static final String hh_hsm_set_TimeOut = "<seconds> # cleaning request timeout in seconds (for HSM-pools)";
-    public String ac_hsm_set_TimeOut_$_1(Args args) throws NumberFormatException, CommandException {
-        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-        if (args.argc() > 0) {
-            _hsmTimeout = Long.parseLong(args.argv(0));
+    @Command(name = "hsm set TimeOut",
+            hint = "Changes the timeout for delete requests sent to an HSM pool.")
+    public class HsmSetTimeOutCommand implements Callable<String> {
+        @Argument(usage = "cleaning request timeout in seconds (for HSM-pools)")
+        long hsmTimeout;
+
+        @Override
+        public String call() throws CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            _hsmTimeout = hsmTimeout;
             _hsmTimeoutUnit = SECONDS;
+            return "Timeout for cleaning requests from HSM-pools is set to " + _hsmTimeout + " " + _hsmTimeoutUnit;
         }
-        return "Timeout for cleaning requests to HSM-pools is set to " + _hsmTimeout + " " + _hsmTimeoutUnit;
     }
 
     /////  HSM admin commands /////
 
-    public static final String hh_rundelete_hsm = " # run HSM Cleaner";
-    public String ac_rundelete_hsm(Args args) throws InterruptedException, CommandException {
-        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-        runDelete();
-        return "";
+    @Command(name = "rundelete hsm",
+            hint = "Runs the HSM Cleaner.")
+    public class RundeleteHsmCommand implements Callable<String> {
+
+        @Override
+        public String call() throws InterruptedException, CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            runDelete();
+            return "";
+        }
     }
 
-    //explicitly clean HSM-file
-    public static final String hh_clean_file_hsm = "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
-    public String ac_clean_file_hsm_$_1(Args args) throws CommandException {
-        checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-        _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=0 ORDER BY iatime",
-                rs -> {
-                    try {
-                        submit(new URI(rs.getString("ilocation")));
-                    } catch (URISyntaxException e) {
-                        throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);
-                    }
-                },
-                args.argv(0));
-        return "";
+    // explicitly clean HSM-file
+    @Command(name = "clean file hsm",
+            hint = "Clean this file on HSM (file will be deleted from HSM)")
+    public class CleanFileHsmCommand implements Callable<String> {
+        @Argument(usage = "pnfsid of the file to clean")
+        String pnfsId;
+
+        @Override
+        public String call() throws CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=0 ORDER BY iatime",
+                    rs -> {
+                        try {
+                            submit(new URI(rs.getString("ilocation")));
+                        } catch (URISyntaxException e) {
+                            throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);
+                        }
+                    },
+                    pnfsId);
+            return "";
+        }
     }
 
     @Override
