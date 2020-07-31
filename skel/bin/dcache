@@ -206,11 +206,20 @@ deprecationWarning()
     if [ -x /usr/bin/systemctl ]; then
         script="$(printCanonicalPath $0)"
         if [ $script = "/usr/bin/dcache" ]; then
-            echo ""
-            echo "WARNING:"
-            echo "  \"`basename $0` $1\" is deprecated and will be removed in the future."
-            echo "   Please consider switching to systemctl to manage dCache."
-            echo ""
+            strict="$(getProperty dcache.systemd.strict)"
+            if [ $strict = "true" ]; then
+              echo ""
+              echo "The dCache is managed by systemd."
+              echo "Please use 'systemctl' instead."
+              echo ""
+              exit 1
+            else
+              echo ""
+              echo "WARNING:"
+              echo "  \"`basename $0` $1\" is deprecated and will be removed in the future."
+              echo "   Please consider switching to systemctl to manage dCache."
+              echo ""
+            fi
         fi
     fi
 }
