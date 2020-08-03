@@ -1108,7 +1108,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         public String call() throws IOException {
             return _poolDeviceMap.getDevices()
                     .stream()
-                    .filter(p -> pool == null ? true : p.getName().equals(pool))
+                    .filter(p -> pool == null || p.getName().equals(pool))
                     .map(Object::toString)
                     .collect(Collectors.joining("\n"));
         }
@@ -1134,9 +1134,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             return _transfers.values()
                     .stream()
-                    .filter(d -> pool == null ? true : pool.matches(d.getPool() == null ? "" : d.getPool().getName()))
-                    .filter(d -> client == null ? true : client.matches(d.getClient().toString()))
-                    .filter(d -> pnfsid == null ? true : pnfsid.matches(d.getPnfsId().toString()))
+                    .filter(d -> pool == null || pool.matches(d.getPool() == null ? "" : d.getPool().getName()))
+                    .filter(d -> client == null || client.matches(d.getClient().toString()))
+                    .filter(d -> pnfsid == null || pnfsid.matches(d.getPnfsId().toString()))
                     .map(Object::toString)
                     .collect(Collectors.joining("\n"));
         }
