@@ -769,9 +769,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             layoutStateId.bumpSeqid();
             if (args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW) {
                 // in case of WRITE, invalidate vfs cache on close
-                layoutStateId.addDisposeListener(state -> {
-                    _vfsCache.invalidateStatCache(nfsInode);
-                });
+                layoutStateId.addDisposeListener(state -> _vfsCache.invalidateStatCache(nfsInode));
             }
 
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
@@ -1766,9 +1764,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 .filter(t -> t.getPool() != null)
                 .filter(t -> pool.equals(t.getPool().getName()))
                 .filter(t -> t.getClient().getMinorVersion() > 0)
-                .peek(t -> {
-                    t.recallLayout(_callbackExecutor);
-                })
+                .peek(t -> t.recallLayout(_callbackExecutor))
                 .count();
     }
 
