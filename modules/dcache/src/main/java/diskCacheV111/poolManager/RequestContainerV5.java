@@ -1416,10 +1416,10 @@ public class RequestContainerV5
         //
         private void stateEngine( Object inputObject ) {
            RequestStatusCode rc;
+           _log.debug( "stateEngine: for case {}", _state);
            switch( _state ){
 
               case ST_INIT :
-                 _log.debug( "stateEngine: case ST_INIT");
                  synchronized( _selections ){
 
                     CacheException ce = _selections.get(_pnfsId) ;
@@ -1521,7 +1521,6 @@ public class RequestContainerV5
 
               case ST_POOL_2_POOL :
               {
-                  _log.debug( "stateEngine: case ST_POOL_2_POOL");
                  if( inputObject == null ){
 
                     if( ( rc = askForPoolToPool( _overwriteCost ) ) == RequestStatusCode.FOUND ){
@@ -1612,9 +1611,6 @@ public class RequestContainerV5
               break ;
 
               case ST_STAGE :
-
-                  _log.debug("stateEngine: case ST_STAGE");
-
                  if( inputObject == null ){
 
                     if( _suspendStaging ){
@@ -1644,7 +1640,6 @@ public class RequestContainerV5
 
               break ;
               case ST_WAITING_FOR_POOL_2_POOL :
-                 _log.debug( "stateEngine: case ST_WAITING_FOR_POOL_2_POOL");
                  if( inputObject instanceof Pool2PoolTransferMsg ){
 
                     if( ( rc =  exercisePool2PoolReply((Pool2PoolTransferMsg)inputObject) ) == RequestStatusCode.OK ){
@@ -1683,7 +1678,6 @@ public class RequestContainerV5
 
               break ;
               case ST_WAITING_FOR_STAGING :
-                 _log.debug( "stateEngine: case ST_WAITING_FOR_STAGING" );
                  if( inputObject instanceof PoolFetchFileMessage ){
 
                     if( ( rc =  exerciseStageReply( (PoolFetchFileMessage)inputObject ) ) == RequestStatusCode.OK ){
@@ -1715,7 +1709,6 @@ public class RequestContainerV5
                 }
                 break;
             case ST_SUSPENDED:
-                _log.debug("stateEngine: case ST_SUSPENDED");
                 if (inputObject instanceof Object[]) {
 
                     handleCommandObject( (Object []) inputObject ) ;
@@ -1724,7 +1717,6 @@ public class RequestContainerV5
               return ;
 
               case ST_DONE :
-                 _log.debug( "stateEngine: case ST_DONE" );
                  if( inputObject == null ){
 
                     clearSteering();
