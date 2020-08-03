@@ -89,9 +89,24 @@ public class RequestContainerV5
     private static final Logger _log =
         LoggerFactory.getLogger(RequestContainerV5.class);
 
-    public enum RequestState { ST_INIT, ST_DONE, ST_POOL_2_POOL,
-            ST_STAGE, ST_WAITING, ST_WAITING_FOR_STAGING,
-            ST_WAITING_FOR_POOL_2_POOL, ST_SUSPENDED }
+    public enum RequestState {
+        /** initial request state */
+        ST_INIT,
+        /** selection complete (success or error) */
+        ST_DONE,
+        /** poop-to-pool copy required */
+        ST_POOL_2_POOL,
+        /** restore from HSM requured */
+        ST_STAGE,
+        /** waiting for pending restore to complete */
+        ST_WAITING_FOR_STAGING,
+        /** waiting for pending poo-to-pool copy to complete */
+        ST_WAITING_FOR_POOL_2_POOL,
+        /** request have to be suspended due to missing pool or HSM errors */
+        ST_SUSPENDED,
+        /** selection state machine exit point */
+        ST_OUT;
+    }
 
     private static final String POOL_UNKNOWN_STRING  = "<unknown>" ;
 
@@ -1148,14 +1163,8 @@ public class RequestContainerV5
         //
         // and the heart ...
         //
-
-
-        private static final int CONTINUE        = 0 ;
-        private static final int WAIT            = 1 ;
-
         private final Deque<Object> _fifo              = new LinkedList<>() ;
         private boolean    _stateEngineActive;
-        private boolean    _forceContinue;
         private boolean    _overwriteCost;
 
         public class RunEngine implements Runnable {
@@ -1199,19 +1208,30 @@ public class RequestContainerV5
 
            while( ! Thread.interrupted() ){
 
-              if( ! _forceContinue ){
+               inputObject = null;
+               switch (_state) {
+                   case ST_INIT:
+                   case ST_DONE:
+                   case ST_POOL_2_POOL:
+                   case ST_STAGE:
+                        // just carry on.
+                       break;
+                   case ST_WAITING_FOR_STAGING:
+                   case ST_WAITING_FOR_POOL_2_POOL:
+                   case ST_SUSPENDED:
+                       synchronized( _fifo ){
+                           inputObject = _fifo.pollLast();
+                           if (inputObject == null) {
+                               return;
+                           }
+                       }
+                       break;
+                   case ST_OUT:
+                       return;
+                   default:
+                       throw new RuntimeException("never get here");
+               }
 
-                 synchronized( _fifo ){
-                    if(_fifo.isEmpty()){
-                       _stateEngineActive = false ;
-                       return ;
-                    }
-                    inputObject = _fifo.removeLast() ;
-                 }
-              }else{
-                 inputObject = null ;
-              }
-              _forceContinue = false ;
               try{
                  _log.info("StageEngine called in mode {}  with object {}", _state,
                          (
@@ -1226,8 +1246,7 @@ public class RequestContainerV5
 
                  stateEngine( inputObject ) ;
 
-                 _log.info("StageEngine left with: {} ({})",
-                           _state, (_forceContinue ? "Continue" : "Wait"));
+                 _log.info("StageEngine left with: {}", _state);
               } catch (RuntimeException e) {
                   _log.error("Unexpected Exception in state loop for " + _pnfsId, e);
               }
@@ -1267,18 +1286,16 @@ public class RequestContainerV5
             return false;
         }
 
-        private void nextStep(RequestState state, int shouldContinue ){
+        private void nextStep(RequestState state){
             if (_currentRc == CacheException.NOT_IN_TRASH ||
                 _currentRc == CacheException.FILE_NOT_FOUND) {
                 _state = RequestState.ST_DONE;
-                _forceContinue = true;
                 _status = "Failed";
                 sendInfoMessage(
                         _currentRc , "Failed "+_currentRm);
             } else {
                 if (state == RequestState.ST_STAGE && !canStage()) {
                     _state = RequestState.ST_DONE;
-                    _forceContinue = true;
                     _status = "Failed";
                     _log.debug("Subject is not authorized to stage");
                     _currentRc = CacheException.PERMISSION_DENIED;
@@ -1287,7 +1304,6 @@ public class RequestContainerV5
                             _currentRc , "Permission denied." + _currentRm);
                 } else if (!_allowedStates.contains(state)) {
                     _state = RequestState.ST_DONE;
-                    _forceContinue = true;
                     _status = "Failed";
                     _log.debug("No permission to perform {}", state);
                     _currentRc = CacheException.PERMISSION_DENIED;
@@ -1296,7 +1312,6 @@ public class RequestContainerV5
                                     "Permission denied for " + state);
                 } else {
                     _state = state;
-                    _forceContinue = shouldContinue == CONTINUE ;
                     if( _state != RequestState.ST_DONE ){
                         _currentRc = 0 ;
                         _currentRm = "" ;
@@ -1425,7 +1440,7 @@ public class RequestContainerV5
                     CacheException ce = _selections.get(_pnfsId) ;
                     if( ce != null ){
                        setError(ce.getRc(),ce.getMessage());
-                       nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                       nextStep(RequestState.ST_DONE);
                        return ;
                     }
 
@@ -1445,14 +1460,14 @@ public class RequestContainerV5
                     //
                     if( _enforceP2P ){
                         setError(0,"");
-                        nextStep(RequestState.ST_POOL_2_POOL , CONTINUE) ;
+                        nextStep(RequestState.ST_POOL_2_POOL);
                         return ;
                     }
 
                     if( ( rc = askIfAvailable() ) == RequestStatusCode.FOUND ){
 
                        setError(0,"");
-                       nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                       nextStep(RequestState.ST_DONE) ;
                        _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo) {
                            sendHitMsg(_bestPool.info(), true);
@@ -1464,7 +1479,7 @@ public class RequestContainerV5
                         _log.debug(" stateEngine: RequestStatusCode.NOT_FOUND ");
                        if( _parameter._hasHsmBackend && _storageInfo.isStored()){
                            _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
-                          nextStep(RequestState.ST_STAGE , CONTINUE ) ;
+                          nextStep(RequestState.ST_STAGE);
                        }else{
                           _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
                           _poolCandidate = null ;
@@ -1486,27 +1501,27 @@ public class RequestContainerV5
                        //  if we don't have an hsm we overwrite the p2pAllowed
                        //
                        nextStep( _parameter._p2pAllowed || ! _parameter._hasHsmBackend
-                                ? RequestState.ST_POOL_2_POOL : RequestState.ST_STAGE , CONTINUE ) ;
+                                ? RequestState.ST_POOL_2_POOL : RequestState.ST_STAGE);
 
                     }else if( rc == RequestStatusCode.COST_EXCEEDED ){
 
                        if( _parameter._p2pOnCost ){
 
-                           nextStep(RequestState.ST_POOL_2_POOL , CONTINUE ) ;
+                           nextStep(RequestState.ST_POOL_2_POOL);
 
                        }else if( _parameter._hasHsmBackend &&  _parameter._stageOnCost ){
 
-                           nextStep(RequestState.ST_STAGE , CONTINUE ) ;
+                           nextStep(RequestState.ST_STAGE);
 
                        }else{
 
                            setError( 127 , "Cost exceeded (st,p2p not allowed)" ) ;
-                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                           nextStep(RequestState.ST_DONE);
 
                        }
                     }else if( rc == RequestStatusCode.ERROR ){
                        _log.debug( " stateEngine: RequestStatusCode.ERROR");
-                       nextStep(RequestState.ST_STAGE , CONTINUE ) ;
+                       nextStep(RequestState.ST_STAGE);
                        _log.info("AskIfAvailable returned an error, will continue with Staging");
 
                     }
@@ -1525,7 +1540,7 @@ public class RequestContainerV5
 
                     if( ( rc = askForPoolToPool( _overwriteCost ) ) == RequestStatusCode.FOUND ){
 
-                       nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL , WAIT ) ;
+                       nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
                        _status = "Pool2Pool "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
                        setError(0, "");
 
@@ -1537,10 +1552,10 @@ public class RequestContainerV5
 
                         if( _bestPool == null) {
                             if( _enforceP2P ){
-                               nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                               nextStep(RequestState.ST_DONE);
                             }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
                                _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
-                               nextStep(RequestState.ST_STAGE , CONTINUE ) ;
+                               nextStep(RequestState.ST_STAGE);
                             }else{
                                setError(265, "Pool to pool not permitted");
                                suspendIfEnabled("Suspended");
@@ -1550,7 +1565,7 @@ public class RequestContainerV5
                             _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
 
                           setError(0,"");
-                          nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                          nextStep(RequestState.ST_DONE);
                         }
 
                     }else if( rc == RequestStatusCode.S_COST_EXCEEDED ){
@@ -1560,10 +1575,10 @@ public class RequestContainerV5
                        if( _parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored() ){
 
                            if( _enforceP2P ){
-                              nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                              nextStep(RequestState.ST_DONE);
                            }else{
                               _log.info("ST_POOL_2_POOL : staging");
-                              nextStep(RequestState.ST_STAGE , CONTINUE ) ;
+                              nextStep(RequestState.ST_STAGE) ;
                            }
                        }else{
 
@@ -1577,7 +1592,7 @@ public class RequestContainerV5
                              //
                              setError(194,"PANIC : File not present in any reasonable pool");
                           }
-                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                           nextStep(RequestState.ST_DONE);
                        }
                     }else if( rc == RequestStatusCode.COST_EXCEEDED ){
                        //
@@ -1594,14 +1609,14 @@ public class RequestContainerV5
                            _log.info(" found high cost object");
                            setError(0,"");
                        }
-                       nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                       nextStep(RequestState.ST_DONE);
 
                     }else{
 
                        if( _enforceP2P ){
-                          nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                          nextStep(RequestState.ST_DONE);
                        }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
-                          nextStep(RequestState.ST_STAGE , CONTINUE ) ;
+                          nextStep(RequestState.ST_STAGE);
                        }else{
                           suspendIfEnabled("Suspended");
                        }
@@ -1621,7 +1636,7 @@ public class RequestContainerV5
 
                     if( ( rc = askForStaging() ) == RequestStatusCode.FOUND ){
 
-                       nextStep(RequestState.ST_WAITING_FOR_STAGING , WAIT ) ;
+                       nextStep(RequestState.ST_WAITING_FOR_STAGING);
                        _status = "Staging "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
                        setError(0, "");
 
@@ -1647,13 +1662,13 @@ public class RequestContainerV5
                             setError(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to p2p transfer");
                         }
-                        nextStep(RequestState.ST_DONE, CONTINUE);
+                        nextStep(RequestState.ST_DONE);
                     }else{
                         _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
                         if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
 
                             _log.info("ST_POOL_2_POOL : trying to stage the file");
-                            nextStep(RequestState.ST_STAGE , CONTINUE ) ;
+                            nextStep(RequestState.ST_STAGE);
 
                         }else{
                             errorHandler() ;
@@ -1685,7 +1700,7 @@ public class RequestContainerV5
                             setError(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to stage");
                         }
-                        nextStep(RequestState.ST_DONE, CONTINUE);
+                        nextStep(RequestState.ST_DONE);
                     }else if( rc == RequestStatusCode.DELAY ){
                         suspend("Suspended By HSM request");
                     }else{
@@ -1732,7 +1747,7 @@ public class RequestContainerV5
                                  "Request clumping limit reached");
                     }
                  }
-
+                 nextStep(RequestState.ST_OUT);
            }
         }
         private void handleCommandObject( Object [] c ){
@@ -1743,7 +1758,7 @@ public class RequestContainerV5
 
                 clearSteering();
                 setError((Integer) c[1], c[2].toString());
-                nextStep(RequestState.ST_DONE, CONTINUE);
+                nextStep(RequestState.ST_DONE);
 
                 break;
             case "retry":
@@ -1752,7 +1767,7 @@ public class RequestContainerV5
                 _retryCounter = -1;
                 clearSteering();
                 setError(CacheException.OUT_OF_DATE, "Operator asked for retry");
-                nextStep(RequestState.ST_DONE, CONTINUE);
+                nextStep(RequestState.ST_DONE);
                 break;
 
             case "alive":
@@ -1769,7 +1784,7 @@ public class RequestContainerV5
 
            clearSteering();
            setError(5,"Resource temporarily unavailable : "+detail);
-           nextStep(RequestState.ST_DONE , CONTINUE ) ;
+           nextStep(RequestState.ST_DONE) ;
            _status = "Failed" ;
            sendInfoMessage(
                    _currentRc , "Failed "+_currentRm );
@@ -1782,14 +1797,14 @@ public class RequestContainerV5
                 setError(CacheException.DEFAULT_ERROR_CODE,
                         "Pool selection failed");
             }
-            nextStep(RequestState.ST_DONE, CONTINUE);
+            nextStep(RequestState.ST_DONE);
         }
 
         private void suspend(String status)
         {
             _log.debug(" stateEngine: SUSPENDED/WAIT ");
             _status = status + " " + LocalDateTime.now().format(DATE_TIME_FORMAT);
-            nextStep(RequestState.ST_SUSPENDED, WAIT);
+            nextStep(RequestState.ST_SUSPENDED);
             sendInfoMessage(
                     _currentRc, "Suspended (" + _currentRm + ")");
         }
