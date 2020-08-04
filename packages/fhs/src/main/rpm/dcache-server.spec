@@ -14,7 +14,7 @@ Requires(preun): chkconfig
 # This is for /sbin/service
 Requires(preun): initscripts
 Requires: which
-Requires: java
+Requires: java-11
 
 License: Distributable
 Group: Applications/System
