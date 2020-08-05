@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -42,16 +42,16 @@ public class ContextExtractingCaveatVerifier implements GeneralCaveatVerifier
     {
         try {
             Caveat caveat = new Caveat(serialised);
-            acceptCaveat(caveat);
-            haveCaveats = true;
-            return true;
+            boolean accepted = acceptCaveat(caveat);
+            haveCaveats |= accepted;
+            return accepted;
         } catch (InvalidCaveatException e) {
             error = e.getMessage() + ": " + serialised;
             return false;
         }
     }
 
-    private void acceptCaveat(Caveat caveat) throws InvalidCaveatException
+    private boolean acceptCaveat(Caveat caveat) throws InvalidCaveatException
     {
         String value = caveat.getValue();
 
@@ -102,7 +102,12 @@ public class ContextExtractingCaveatVerifier implements GeneralCaveatVerifier
             checkCaveat(!haveCaveats, "%s not first caveat", CaveatType.ISSUE_ID.getLabel());
             context.updateIssueId(value);
             break;
+
+        default:
+            return false;
         }
+
+        return true;
     }
 
     public MacaroonContext getContext()
