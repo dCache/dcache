@@ -26,13 +26,14 @@ public class CacheEntryImpl implements CacheEntry
     public CacheEntryImpl(ReplicaRecord entry) throws CacheException
     {
         synchronized (entry) {
-            _size = entry.getReplicaSize();
+            _state = entry.getState();
+            //when status is NEW or FROM_STORE we know that file is not on a disk and the size is 0
+            _size = _state == ReplicaState.NEW || _state == ReplicaState.FROM_STORE ? 0 : entry.getReplicaSize();
             _created_at = entry.getCreationTime();
             _accessed_at = entry.getLastAccessTime();
             _linkCount = entry.getLinkCount();
             _isSticky = entry.isSticky();
             _sticky = entry.stickyRecords();
-            _state = entry.getState();
             _fileAttributes = entry.getFileAttributes();
         }
     }
