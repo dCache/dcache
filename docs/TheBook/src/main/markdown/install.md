@@ -793,6 +793,14 @@ possible to configure pools so they are limited.
 Finally, dCache can be started now.
 
 There are two ways to start dCache. These are as a classic `sysV` -like daemon or as a  `systemd` service.
+The latter one is preferred and enforced by default when the hosts operating system supports it. To change this
+be behavior set
+
+```
+dcache.systemd.strict=false
+```
+
+in *dcache.conf* or in the *layout* file.
 
 #### Using sysV -like daemon
 
