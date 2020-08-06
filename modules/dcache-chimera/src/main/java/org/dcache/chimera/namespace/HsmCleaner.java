@@ -120,7 +120,6 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     private final Timer _timer = new Timer("Request tracker timeout");
 
-    private int _hsmCleanerRequest;
     private long _hsmTimeout;
     private TimeUnit _hsmTimeoutUnit;
 
@@ -143,11 +142,6 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     public synchronized long getTimeout() {
         return _timeout;
-    }
-
-    @Required
-    public void setHsmCleanerRequest(int hsmCleanerRequest) {
-        _hsmCleanerRequest = hsmCleanerRequest;
     }
 
     @Required
@@ -443,8 +437,8 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
             if (maxFilesPerRequest <= 0) throw new IllegalArgumentException("The number must be greater than 0 ");
 
-            _hsmCleanerRequest = maxFilesPerRequest;
-            return "Maximal number of concurrent requests to a single HSM is set to " + _hsmCleanerRequest;
+            _maxFilesPerRequest = maxFilesPerRequest;
+            return "Maximal number of files per request to a single HSM is set to " + _maxFilesPerRequest;
         }
     }
 
@@ -505,7 +499,6 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         pw.printf("HSM Cleaner Info : \n");
         pw.printf("Timeout for cleaning requests to HSM-pools: %s\n", _hsmTimeout);
         pw.printf("Timeout Unit for cleaning requests to HSM-pools: %s\n", _hsmTimeoutUnit);
-        pw.printf("Maximal number of concurrent requests to a single HSM:   %d\n", _hsmCleanerRequest);
         pw.printf("Maximum number of files to include in a single request:   %d\n", _maxFilesPerRequest);
         pw.printf("Delete notification targets:  %s\n", Arrays.toString(_deleteNotificationTargets));
     }

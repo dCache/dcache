@@ -144,7 +144,6 @@
             <property name="timeout"
                       value="#{ T(java.util.concurrent.TimeUnit).SECONDS.toMillis('${cleaner.service.pool.hsm-timeout}') }"/>
             <property name="executor" ref="scheduled-thread-pool"/>
-            <property name="hsmCleanerRequest" value="${cleaner.limits.hsm-batch-size}"/>
             <property name="hsmTimeout" value="${cleaner.service.pool.hsm-timeout}"/>
             <property name="hsmTimeoutUnit" value="${cleaner.service.pool.hsm-timeout.unit}"/>
         </bean>
