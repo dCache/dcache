@@ -243,7 +243,7 @@ public class LdapTest {
         Map<Thread, StackTraceElement[]> threadsAfter = Thread.getAllStackTraces();
 
         // allow some connections to remain (issue on debian hosts)
-        assertFalse("Thread leak detected",  threadsAfter.size() < threadsBefore.size() + 4);
+        assertFalse("Thread leak detected",  threadsAfter.size() > threadsBefore.size() + 4);
     }
 
     @After
