@@ -15,13 +15,17 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoUnit;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -148,89 +152,51 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
     private static final String DEFAULT_AUTHOR = "&copy; dCache.org ";
 
-    private static final ThreadLocal<SimpleDateFormat> _pathFromDate =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat(
-                            "yyyy" + File.separator + "MM" + File.separator + "dd" + File.separator + "yyyy-MM-dd-HH'.raw'");
-                }
-            };
+    private static final DateTimeFormatter _pathFromDate = new DateTimeFormatterBuilder()
+            .appendPattern("yyyy")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("MM")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("dd")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("yyyy-MM-dd-HH")
+            .appendLiteral(".raw")
+            .toFormatter();
 
-    private static final ThreadLocal<SimpleDateFormat> _dayPathFromDate =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat(
-                            "yyyy" + File.separator + "MM" + File.separator + "dd" + File.separator + "yyyy-MM-dd-'day.raw'");
-                }
-            };
+    private static final DateTimeFormatter _dayPathFromDate =  new DateTimeFormatterBuilder()
+            .appendPattern("yyyy")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("MM")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("dd")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("yyyy-MM-dd-")
+            .appendLiteral("day.raw")
+            .toFormatter();
 
-    private static final ThreadLocal<SimpleDateFormat> _dayDiffPathFromDate =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat(
-                            "yyyy" + File.separator + "MM" + File.separator + "dd" + File.separator + "yyyy-MM-dd-'day.drw'");
-                }
-            };
+    private static final DateTimeFormatter _dayDiffPathFromDate = new DateTimeFormatterBuilder()
+            .appendPattern("yyyy")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("MM")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("dd")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("yyyy-MM-dd-")
+            .appendLiteral("day.drw")
+            .toFormatter();
 
-    private static final ThreadLocal<SimpleDateFormat> _htmlPathFromDate =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("yyyy" + File.separator + "MM" + File.separator + "dd");
-                }
-            };
+    private static final DateTimeFormatter _htmlPathFromDate = new DateTimeFormatterBuilder()
+            .appendPattern("yyyy")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("MM")
+            .appendLiteral(File.separatorChar)
+            .appendPattern("dd")
+            .toFormatter();
 
-
-    private static final ThreadLocal<SimpleDateFormat> _yearOfCalendar =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("yyyy");
-                }
-            };
-
-    private static final ThreadLocal<SimpleDateFormat> _monthOfCalendar =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("MMM MM yyyy");
-                }
-            };
-
-    private static final ThreadLocal<SimpleDateFormat> _dayOfCalendar =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("MM/dd yyyy (EEE)");
-                }
-            };
-
-    private static final ThreadLocal<SimpleDateFormat> _dayOfCalendarKey =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("EEE-MM/dd-yyyy");
-                }
-            };
+    private static final DateTimeFormatter _yearOfCalendar = DateTimeFormatter.ofPattern("yyyy");
+    private static final DateTimeFormatter _monthOfCalendar = DateTimeFormatter.ofPattern("MMM MM yyyy");
+    private static final DateTimeFormatter _dayOfCalendar = DateTimeFormatter.ofPattern("MM/dd yyyy (EEE)");
+    private static final DateTimeFormatter _dayOfCalendarKey = DateTimeFormatter.ofPattern("EEE-MM/dd-yyyy");
 
     private static String _domainName = "dCache.Unknown.Org";
     private static String _bodyString = "<body bgcolor=white>";
@@ -344,30 +310,28 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     @Override
     public void messageArrived(CellMessage message) {}
 
-    private String getNiceDayOfCalendar(Calendar calendar) {
-        return _dayOfCalendar.get().format(calendar.getTime());
+    private String getNiceDayOfCalendar(LocalDateTime dateTime) {
+        return _dayOfCalendar.format(dateTime);
     }
 
-    private File getCurrentPath(Calendar calendar) {
-        return new File(_dbBase, _pathFromDate.get().format(calendar.getTime()));
+    private File getCurrentPath(LocalDateTime dateTime) {
+        return new File(_dbBase, _pathFromDate.format(dateTime));
     }
 
-    private File getTodayPath(Calendar calendar) {
-        return new File(_dbBase, _dayPathFromDate.get().format(calendar.getTime()));
+    private File getTodayPath(LocalDateTime dateTime) {
+        return new File(_dbBase, _dayPathFromDate.format(dateTime));
     }
 
-    private File getTodayDiffPath(Calendar calendar) {
-        return new File(_dbBase, _dayDiffPathFromDate.get().format(calendar.getTime()));
+    private File getTodayDiffPath(LocalDateTime dateTime) {
+        return new File(_dbBase, _dayDiffPathFromDate.format(dateTime));
     }
 
-    private File getYesterdayPath(Calendar calendar) {
-        calendar = (Calendar)calendar.clone();
-        calendar.set(Calendar.DAY_OF_YEAR,calendar.get(Calendar.DAY_OF_YEAR)-1);
-        return getTodayPath(calendar);
+    private File getYesterdayPath(LocalDateTime dateTime) {
+        return getTodayPath(dateTime.minus(1, ChronoUnit.DAYS));
     }
 
-    private File getHtmlPath(Calendar calendar) {
-        return new File(_htmlBase, _htmlPathFromDate.get().format(calendar.getTime()));
+    private File getHtmlPath(LocalDateTime dateTime) {
+        return new File(_htmlBase, _htmlPathFromDate.format(dateTime));
     }
 
     public void createDiffFile(File today, File yesterday, File resultFile) throws IOException {
@@ -418,15 +382,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     }
 
     private class HourlyRunner implements Runnable {
-        private final Calendar _calendar;
         private HourlyRunner(Calendar calendar) {
-            _calendar = calendar;
             _nucleus.newThread(this,"FreeRunner").start();
         }
 
         @Override
         public void run() {
-            File path   = getCurrentPath(_calendar);
+            LocalDateTime dateTime = LocalDateTime.now();
+            File path   = getCurrentPath(dateTime);
             File parent = path.getParentFile();
             if (!parent.exists()) {
                 //noinspection ResultOfMethodCallIgnored
@@ -436,11 +399,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             try {
                 _log.info("Starting hourly run for : {}", path);
 
-                createHourlyRawFile(path, _calendar);
+                createHourlyRawFile(path, dateTime);
 
                 _log.info("Hourly run finished for : {}", path);
 
-                File today = getTodayPath(_calendar);
+                File today = getTodayPath(dateTime);
                 _log.info("Creating daily file : {}", today);
 
                 //noinspection ResultOfMethodCallIgnored
@@ -448,16 +411,16 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
                 _log.info("Daily file done : {}", today);
 
-                File yesterday = getYesterdayPath(_calendar);
+                File yesterday = getYesterdayPath(dateTime);
                 if (yesterday.exists()) {
-                    File diffFile  = getTodayDiffPath(_calendar);
+                    File diffFile  = getTodayDiffPath(dateTime);
                     _log.info("Starting diff run for : {}", yesterday);
 
                     createDiffFile(today, yesterday, diffFile);
 
                     _log.info("Finishing diff run for : {}", diffFile);
                 }
-                if (_calendar.get(Calendar.HOUR_OF_DAY) == 23) {
+                if (dateTime.getHour() == 23) {
                     resetBillingStatistics();
                 }
             } catch(Exception ee) {
@@ -471,10 +434,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             }
             try {
                 _log.info("Creating html tree");
-                prepareDailyHtmlFiles(_calendar);
-                if (_calendar.get(Calendar.HOUR_OF_DAY) == 23) {
-                    updateHtmlMonth(_calendar);
-                    updateHtmlYear(_calendar);
+                prepareDailyHtmlFiles(dateTime);
+                if (dateTime.getHour() == 23) {
+                    updateHtmlMonth(dateTime);
+                    updateHtmlYear(dateTime);
                     updateHtmlTop();
                 }
             } catch(Exception eee) {
@@ -493,8 +456,8 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         }
     }
 
-    private void updateHtmlMonth(Calendar calendar) throws IOException {
-        File    dir  = getHtmlPath(calendar).getParentFile();
+    private void updateHtmlMonth(LocalDateTime dateTime) throws IOException {
+        File    dir  = getHtmlPath(dateTime).getParentFile();
         //noinspection ResultOfMethodCallIgnored
         dir.mkdirs();
         File [] list = dir.listFiles(new MonthFileFilter());
@@ -507,7 +470,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
         BaseStatisticsHtml html = new BaseStatisticsHtml();
         html.setSorted(false);
-        html.setTitle(_monthOfCalendar.get().format(calendar.getTime()));
+        html.setTitle(_monthOfCalendar.format(dateTime));
         html.setKeyType("Date");
         html.setAuthor(DEFAULT_AUTHOR);
         html.setHeader(new MonthDirectoryHeader());
@@ -526,7 +489,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 StringTokenizer st = new StringTokenizer(line);
 
                 st.nextToken();
-                String key =  _dayOfCalendar.get().format(new Date(Long.parseLong(st.nextToken())));
+                String key =  _dayOfCalendar.format(
+                        Instant.ofEpochMilli(Long.parseLong(st.nextToken()))
+                );
                 counter = new long[12];
                 for(int  j = 0; j < counter.length; j++) {
                     counter[j] = Long.parseLong(st.nextToken());
@@ -552,11 +517,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         total[TODAY]       = lastInMonth[TODAY];
         total[TODAY+1]     = lastInMonth[TODAY+1];
 
-        printTotal(new File(dir, "total.raw"), total, calendar.getTime());
+        printTotal(new File(dir, "total.raw"), total, dateTime);
     }
 
-    private void updateHtmlYear(Calendar calendar) throws IOException {
-        File    dir  = getHtmlPath(calendar).getParentFile().getParentFile();
+    private void updateHtmlYear(LocalDateTime dateTime) throws IOException {
+        File    dir  = getHtmlPath(dateTime).getParentFile().getParentFile();
         //noinspection ResultOfMethodCallIgnored
         dir.mkdirs();
         File [] list = dir.listFiles(new MonthFileFilter());
@@ -569,7 +534,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
         BaseStatisticsHtml html = new BaseStatisticsHtml();
         html.setSorted(false);
-        html.setTitle(_yearOfCalendar.get().format(calendar.getTime()));
+        html.setTitle(_yearOfCalendar.format(dateTime));
         html.setKeyType("Date");
         html.setAuthor(DEFAULT_AUTHOR);
         html.setHeader(new YearDirectoryHeader());
@@ -588,7 +553,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 StringTokenizer st = new StringTokenizer(line);
 
                 st.nextToken();
-                String key =  _monthOfCalendar.get().format(new Date(Long.parseLong(st.nextToken())));
+                String key =  _monthOfCalendar.format(
+                        Instant.ofEpochMilli(Long.parseLong(st.nextToken()))
+                );
                 counter = new long[12];
                 for(int  j = 0; j < counter.length; j++) {
                     counter[j] = Long.parseLong(st.nextToken());
@@ -612,7 +579,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         total[TODAY]       = lastInMonth[TODAY];
         total[TODAY+1]     = lastInMonth[TODAY+1];
 
-        printTotal(new File(dir, "total.raw"), total, calendar.getTime());
+        printTotal(new File(dir, "total.raw"), total, dateTime);
     }
 
     private void updateHtmlTop() throws IOException {
@@ -648,7 +615,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 StringTokenizer st = new StringTokenizer(line);
 
                 st.nextToken();
-                String key =  _yearOfCalendar.get().format(new Date(Long.parseLong(st.nextToken())));
+                String key =  _yearOfCalendar.format(
+                        Instant.ofEpochMilli(Long.parseLong(st.nextToken()))
+                );
                 counter = new long[12];
                 for(int  j = 0; j < counter.length; j++) {
                     counter[j] = Long.parseLong(st.nextToken());
@@ -672,7 +641,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         total[TODAY]       = lastInYear[TODAY];
         total[TODAY+1]     = lastInYear[TODAY+1];
 
-        printTotal(new File(dir, "total.raw"), total, new Date());
+        printTotal(new File(dir, "total.raw"), total, LocalDateTime.now());
     }
 
     private File[] resortFileList(File[] list, int direction) {
@@ -712,31 +681,15 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             int month = Integer.parseInt(args.argv(1));
             int day   = Integer.parseInt(args.argv(2));
 
-            Calendar calendar = new GregorianCalendar();
-            calendar.set(Calendar.YEAR       , year);
-            calendar.set(Calendar.MONTH      , month  - 1);
-            calendar.set(Calendar.DAY_OF_MONTH, day);
-
-            prepareDailyHtmlFiles(calendar);
+            prepareDailyHtmlFiles(LocalDateTime.of(year, month, day, 0, 0));
         } else if (args.argc() == 2) {
             int year  = Integer.parseInt(args.argv(0));
             int month = Integer.parseInt(args.argv(1));
 
-            Calendar calendar = new GregorianCalendar();
-            calendar.set(Calendar.YEAR       , year);
-            calendar.set(Calendar.MONTH      , month  - 1);
-            calendar.set(Calendar.DAY_OF_MONTH, 1);
-
-            updateHtmlMonth(calendar);
+            updateHtmlMonth(LocalDateTime.of(year, month, 1, 0, 0));
         } else if (args.argc() == 1) {
             int year  = Integer.parseInt(args.argv(0));
-
-            Calendar calendar = new GregorianCalendar();
-            calendar.set(Calendar.YEAR       , year);
-            calendar.set(Calendar.MONTH      , 1);
-            calendar.set(Calendar.DAY_OF_MONTH, 1);
-
-            updateHtmlYear(calendar);
+            updateHtmlYear(LocalDateTime.of(year, 1, 1, 0, 0));
         } else if (args.argc() == 0) {
             updateHtmlTop();
         }
@@ -771,7 +724,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             _nucleus.newThread(() -> {
                 try {
                     _log.info("Starting Manual run for file : {}", file);
-                    createHourlyRawFile(file, new GregorianCalendar());
+                    createHourlyRawFile(file, LocalDateTime.now());
                     _log.info("Finishing Manual run for file : {}", file);
                 } catch(Exception e) {
                     _log.info("Aborting Manual run for file : {} {}", file, e.toString());
@@ -882,9 +835,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
         public Iterator<Map.Entry<String,Object>> iterator() { return _attributes.entrySet().iterator(); }
 
-        public void setTime(Date date) {
-            add("timestamp", date.getTime());
-            add("date"    , date);
+        public void setTime(LocalDateTime dateTime) {
+            add("timestamp", dateTime.atZone(ZoneId.systemDefault()).toEpochSecond());
+            add("date"    , dateTime);
         }
 
         private void add(String key, Object value) {
@@ -963,14 +916,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         }
     }
 
-    private void createHourlyRawFile(File outputFile, Calendar calendar)
+    private void createHourlyRawFile(File outputFile, LocalDateTime dateTime)
             throws InterruptedException, IOException, NoRouteToCellException {
 
         if (outputFile.exists() || !outputFile.getParentFile().canWrite()) {
             throw new IOException("File exists or directory not writable : " + outputFile);
         }
         DataStore store = new DataStore(createStatisticsMap());
-        store.setTime(calendar.getTime());
+        store.setTime(dateTime);
         store.store(outputFile);
     }
 
@@ -1015,14 +968,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         }
     }
 
-    private void prepareDailyHtmlFiles(Calendar calendar) {
+    private void prepareDailyHtmlFiles(LocalDateTime dateTime) {
 
-        File diffFile  = getTodayDiffPath(calendar);
+        File diffFile  = getTodayDiffPath(dateTime);
         if (! diffFile.exists()) {
             _log.warn("prepareDailyHtmlFiles : File not found : {}", diffFile);
             return;
         }
-        File dir = getHtmlPath(calendar);
+        File dir = getHtmlPath(dateTime);
         if (! dir.exists()) {
             //noinspection ResultOfMethodCallIgnored
             dir.mkdirs();
@@ -1034,9 +987,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             // load the raw data file
             Map<String,Map<String,long[]>> map = new DataStore(diffFile).getMap();
             // create todays html files
-            prepareDailyHtml(map, dir, calendar.getTime());
+            prepareDailyHtml(map, dir, dateTime);
             // prepare the daily index.html file
-            printIndex(new File(dir, "index.html"), getNiceDayOfCalendar(calendar));
+            printIndex(new File(dir, "index.html"), getNiceDayOfCalendar(dateTime));
 
         } catch(IOException ee) {
             _log.warn("Can't prepare Html directory : "+dir, ee);
@@ -1046,12 +999,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     private Map<String, Map<String, long[]>>[] prepareDailyHtml(
             Map<String, Map<String, long[]>> poolMap,
             File pathBase,
-            Date date
+            LocalDateTime dateTime
     ) throws IOException {
 
         Iterator<Map.Entry<String,Map<String,long[]>>> entries = poolMap.entrySet().iterator();
         Map<String,Map<String,long[]>> classMap2 = new HashMap<>();
-        DayDirectoryHeader header = new DayDirectoryHeader(date, _dayOfCalendar.get());
+        DayDirectoryHeader header = new DayDirectoryHeader(dateTime, _dayOfCalendar);
 
         BaseStatisticsHtml allPoolsHtml = new BaseStatisticsHtml();
         allPoolsHtml.setSorted(true);
@@ -1122,7 +1075,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         }
 
         if (total != null) {
-            printTotal(new File(pathBase, "total.raw"), total, date);
+            printTotal(new File(pathBase, "total.raw"), total, dateTime);
         }
 
         BaseStatisticsHtml allClassesHtml = new BaseStatisticsHtml();
@@ -1180,12 +1133,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         return new Map[] { poolMap, classMap2 };
     }
 
-    private void printTotal(File filename, long [] total, Date date) throws IOException {
+    private void printTotal(File filename, long [] total, LocalDateTime date) throws IOException {
         try (PrintWriter dayTotal = new PrintWriter(new FileWriter(filename))) {
-            String day = _dayOfCalendarKey.get().format(date);
+            String day = _dayOfCalendarKey.format(date);
             dayTotal.print(day);
             dayTotal.print(" ");
-            dayTotal.print(date.getTime());
+            dayTotal.print(date);
             for (long aTotal : total) {
                 dayTotal.print(" ");
                 dayTotal.print(aTotal);
@@ -1408,9 +1361,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     }
 
     private static class DayDirectoryHeader implements HtmlDrawable {
-        private final Date _date;
-        private final SimpleDateFormat _dayOfCalendar;
-        private DayDirectoryHeader(Date date,SimpleDateFormat  dayOfCalendar) {
+        private final LocalDateTime _date;
+        private final DateTimeFormatter _dayOfCalendar;
+        private DayDirectoryHeader(LocalDateTime date,DateTimeFormatter  dayOfCalendar) {
             _date = date;
             _dayOfCalendar = dayOfCalendar;
         }
