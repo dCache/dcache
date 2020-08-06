@@ -418,7 +418,7 @@ public final class FileOperation {
 
         lastUpdate = System.currentTimeMillis();
         if (task != null) {
-            task.cancel(null);
+            task.cancel("file operation cancelled (admin)");
         }
         retried = 0;
 
