@@ -71,7 +71,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
@@ -103,6 +102,9 @@ import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.RandomSelectionStrategy;
 import org.dcache.util.NonReindexableList;
 import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.util.NonReindexableList.safeGet;
+import static org.dcache.util.NonReindexableList.safeIndexOf;
 
 /**
  * <p>Serves as the central locus of pool-related information.</p>
@@ -144,11 +146,24 @@ import org.dcache.vehicles.FileAttributes;
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
 public class PoolInfoMap {
-    private static final Logger LOGGER = LoggerFactory.getLogger(
-                    PoolInfoMap.class);
-    private final List<String>                   pools              = new NonReindexableList<>();
-    private final List<String>                   groups             = new NonReindexableList<>();
-    private final List<String>                   sunits             = new NonReindexableList<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolInfoMap.class);
+
+    /**
+     *  The NonReindexableList semantics is different on get() and indexOf() in that the former
+     *  will throw a NoSuchElementException if the list is set not to reference any nulls
+     *  it may have as placeholders for invalidated indices, and to throw a NoSuchElementException
+     *  when the element is not in the list.
+     *
+     *  Referencing this map under lock does not, unfortunately, guarantee consistency in this
+     *  regard, as the FileOperationMap could carry stale references (e.g., after operation cancel).
+     *  Not catching the NoSuchElementException then becomes problematic.
+     *
+     *  In the interest of safety, all references to the three NonReindexableLists use the static
+     *  safe methods of the list so that these failures will not provoke uncaught exceptions.
+     */
+    private final NonReindexableList<String>     pools              = new NonReindexableList<>();
+    private final NonReindexableList<String>     groups             = new NonReindexableList<>();
+    private final NonReindexableList<String>     sunits             = new NonReindexableList<>();
     private final Map<Integer, ResilienceMarker> markers            = new HashMap<>();
     private final Map<Integer, ResilienceMarker> constraints        = new HashMap<>();
     private final Map<Integer, PoolInformation>  poolInfo           = new HashMap<>();
@@ -301,13 +316,12 @@ public class PoolInfoMap {
         return diff;
     }
 
-
     public int getCountableLocations(Collection<String> locations) {
         read.lock();
         int countable = 0;
         try {
             for (String location : locations) {
-                PoolInformation info = poolInfo.get(getPoolIndex(location));
+                PoolInformation info = poolInfo.get(safeIndexOf(location, pools));
                 if (info != null && info.isInitialized() && info.isCountable()) {
                     ++countable;
                 }
@@ -322,7 +336,7 @@ public class PoolInfoMap {
         read.lock();
         try {
             return members.stream()
-                          .map(l -> poolInfo.get(getPoolIndex(l)))
+                          .map(l -> poolInfo.get(safeIndexOf(l, pools)))
                           .filter(Objects::nonNull)
                           .filter(PoolInformation::isInitialized)
                           .filter(PoolInformation::isExcluded)
@@ -332,7 +346,6 @@ public class PoolInfoMap {
             read.unlock();
         }
     }
-
 
     public String getGroup(Integer group) {
         read.lock();
@@ -352,13 +365,14 @@ public class PoolInfoMap {
         }
     }
 
-    public Set<String> getMemberLocations(Integer gindex,
-                                          Collection<String> locations) {
+    public Set<String> getMemberLocations(Integer gindex, Collection<String> locations) {
         read.lock();
         try {
-            Set<String> pools = getPools(getPoolsOfGroup(gindex));
-            return locations.stream().filter(pools::contains)
-                            .collect(Collectors.toSet());
+            Set<String> ofGroup = poolGroupToPool.get(gindex)
+                                                 .stream()
+                                                 .map(i -> safeGet(i, pools))
+                                                 .collect(Collectors.toSet());
+            return locations.stream().filter(ofGroup::contains).collect(Collectors.toSet());
         } finally {
             read.unlock();
         }
@@ -371,9 +385,11 @@ public class PoolInfoMap {
     public Set<String> getMemberPools(Integer gindex, boolean writable) {
         read.lock();
         try {
-            Set<Integer> members = ImmutableSet.copyOf(poolGroupToPool.get(gindex));
-            members = getValidLocations(members, writable);
-            return getPools(members);
+            return ImmutableSet.copyOf(poolGroupToPool.get(gindex))
+                               .stream()
+                               .filter(p->viable(p, writable))
+                               .map(p->safeGet(p, pools))
+                               .collect(Collectors.toSet());
         } finally {
             read.unlock();
         }
@@ -382,24 +398,24 @@ public class PoolInfoMap {
     public String getPool(Integer pool) {
         read.lock();
         try {
-            return pools.get(pool);
+            return safeGet(pool, pools);
         } finally {
             read.unlock();
         }
     }
 
     public Stream<String> getResilientPoolGroupsFor(String storageUnit) {
-        Integer uindex = getUnitIndex(storageUnit);
-        if (uindex == null) {
-            return Stream.empty();
-        }
-
         read.lock();
         try {
+            Integer uindex = safeIndexOf(storageUnit, sunits);
+            if (uindex == null) {
+                return Stream.empty();
+            }
+
             return storageToPoolGroup.get(uindex)
                                      .stream()
-                                     .filter(this::isResilientGroup)
-                                     .map(this::getGroup)
+                                     .filter(g -> markers.get(g).isResilient())
+                                     .map(g -> safeGet(g, groups))
                                      .unordered();
         } finally {
             read.unlock();
@@ -409,7 +425,7 @@ public class PoolInfoMap {
     public Integer getPoolIndex(String name) {
         read.lock();
         try {
-            return pools.indexOf(name);
+            return safeIndexOf(name, pools);
         } finally {
             read.unlock();
         }
@@ -419,7 +435,7 @@ public class PoolInfoMap {
         read.lock();
         try {
             return locations.stream()
-                            .map(pools::indexOf)
+                            .map(p -> safeIndexOf(p, pools))
                             .collect(Collectors.toSet());
         } finally {
             read.unlock();
@@ -438,7 +454,7 @@ public class PoolInfoMap {
     public PoolManagerPoolInformation getPoolManagerInfo(Integer pool) {
         read.lock();
         try {
-            return new PoolManagerPoolInformation(pools.get(pool),
+            return new PoolManagerPoolInformation(safeGet(pool, pools),
                                                   poolInfo.get(pool).getCostInfo());
         } finally {
             read.unlock();
@@ -476,7 +492,7 @@ public class PoolInfoMap {
     public Set<String> getPools(Collection<Integer> indices) {
         read.lock();
         try {
-            return indices.stream().map(pools::get).collect(Collectors.toSet());
+            return indices.stream().map(i -> safeGet(i, pools)).collect(Collectors.toSet());
         } finally {
             read.unlock();
         }
@@ -495,7 +511,7 @@ public class PoolInfoMap {
         read.lock();
         try {
             return locations.stream()
-                            .filter((l) -> isPoolViable(getPoolIndex(l), false))
+                            .filter((l) -> viable(safeIndexOf(l, pools), false))
                             .collect(Collectors.toSet());
         } finally {
             read.unlock();
@@ -508,7 +524,7 @@ public class PoolInfoMap {
             Set<Integer> rgroups
                 = poolToPoolGroup.get(pool)
                                  .stream()
-                                 .filter(this::isResilientGroup)
+                                 .filter(g -> markers.get(g).isResilient())
                                  .collect(Collectors.toSet());
 
             if (rgroups.size() == 0) {
@@ -520,9 +536,9 @@ public class PoolInfoMap {
                                 "Pool map is inconsistent; pool %s belongs to "
                                                 + "more than one resilient "
                                                 + "group: %s.",
-                                pools.get(pool),
+                                safeGet(pool, pools),
                                 rgroups.stream()
-                                       .map(groups::get)
+                                       .map(g -> safeGet(g, groups))
                                        .collect(Collectors.toSet())));
             }
 
@@ -536,7 +552,7 @@ public class PoolInfoMap {
         read.lock();
         try {
             return pools.stream()
-                        .filter(this::isResilientPool)
+                        .filter(this::resilient)
                         .collect(Collectors.toSet());
         } finally {
             read.unlock();
@@ -562,10 +578,14 @@ public class PoolInfoMap {
         if (hsm != null) {
             unitKey += ("@" + hsm);
         }
+
+        read.lock();
         try {
-            return getUnitIndex(unitKey);
+            return sunits.indexOf(unitKey);
         } catch (NoSuchElementException e) {
             return resolveStorageUnitIndex(classKey, unitKey);
+        } finally {
+            read.unlock();
         }
     }
 
@@ -600,7 +620,7 @@ public class PoolInfoMap {
     public String getUnit(Integer index) {
         read.lock();
         try {
-            return sunits.get(index);
+            return safeGet(index, sunits);
         } finally {
             read.unlock();
         }
@@ -609,7 +629,7 @@ public class PoolInfoMap {
     public Integer getUnitIndex(String name) {
         read.lock();
         try {
-            return sunits.indexOf(name);
+            return safeIndexOf(name, sunits);
         } finally {
             read.unlock();
         }
@@ -620,7 +640,7 @@ public class PoolInfoMap {
         read.lock();
         try {
             return locations.stream()
-                            .filter((i) -> isPoolViable(i, writable))
+                            .filter((i) -> viable(i, writable))
                             .collect(Collectors.toSet());
         } finally {
             read.unlock();
@@ -637,21 +657,20 @@ public class PoolInfoMap {
     }
 
     public boolean isValidPoolIndex(Integer index) {
-        String pool = null;
+        read.lock();
         try {
-            pool = getPool(index);
+            return pools.get(index) != null;
         } catch (NoSuchElementException e) {
+            return false;
+        } finally {
+            read.unlock();
         }
-        return pool != null;
     }
 
     public boolean isPoolViable(Integer pool, boolean writable) {
         read.lock();
         try {
-            PoolInformation info = poolInfo.get(pool);
-            return info != null && info.isInitialized()
-                            && (writable ? info.canRead() && info.canWrite()
-                                : info.canRead());
+            return viable(pool, writable);
         } finally {
             read.unlock();
         }
@@ -667,19 +686,23 @@ public class PoolInfoMap {
     }
 
     public boolean isResilientPool(String pool) {
+        read.lock();
         try {
-            return getResilientPoolGroup(getPoolIndex(pool)) != null;
-        } catch (NoSuchElementException e) {
-            return false;
+            return resilient(pool);
+        } finally {
+            read.unlock();
         }
     }
 
     public boolean isInitialized(String pool) {
+        read.lock();
         try {
-            PoolInformation info = getPoolInformation(getPoolIndex(pool));
+            PoolInformation info = getPoolInformation(pools.indexOf(pool));
             return info != null && info.isInitialized();
         } catch (NoSuchElementException e) {
             return false;
+        } finally {
+            read.unlock();
         }
     }
 
@@ -688,7 +711,7 @@ public class PoolInfoMap {
         read.lock();
         try {
             pools.stream()
-                 .map(this::getPoolIndex)
+                 .map(i->safeIndexOf(i, pools))
                  .map(poolInfo::get)
                  .filter(poolInfoFilter::matches)
                  .forEach((i) -> builder.append(i).append("\n"));
@@ -712,7 +735,7 @@ public class PoolInfoMap {
     public void updatePoolStatus(PoolStateUpdate update) {
         read.lock();
         try {
-            poolInfo.get(pools.indexOf(update.pool)).updateState(update);
+            poolInfo.get(safeIndexOf(update.pool, pools)).updateState(update);
         } finally {
             read.unlock();
         }
@@ -740,8 +763,7 @@ public class PoolInfoMap {
                 StorageUnitConstraints unitConstraints
                                 = (StorageUnitConstraints) constraints.get(index);
                 int required = unitConstraints.getRequired();
-                extractor = new CopyLocationExtractor(unitConstraints.getOneCopyPer(),
-                                this);
+                extractor = new CopyLocationExtractor(unitConstraints.getOneCopyPer(),this);
                 verify(pgindex, extractor, required);
             }
         } finally {
@@ -749,12 +771,47 @@ public class PoolInfoMap {
         }
     }
 
+    @VisibleForTesting
+    /** Called under write lock **/
+    void removeGroup(String group) {
+        int index = safeIndexOf(group, groups);
+        groups.remove(index);
+        markers.remove(index);
+        poolGroupToPool.removeAll(index)
+            .stream()
+            .forEach((pindex) -> poolToPoolGroup.remove(pindex,
+                index));
+        poolGroupToStorage.removeAll(index)
+            .stream()
+            .forEach((gindex) -> storageToPoolGroup.remove(
+                gindex, index));
+    }
+
+    @VisibleForTesting
+    /** Called under write lock except during unit test**/
+    void removePool(String pool) {
+        int pindex = safeIndexOf(pool, pools);
+        pools.remove(pindex);
+        poolToPoolGroup.removeAll(pindex).stream()
+            .forEach((g) ->poolGroupToPool.remove(g, pindex));
+        poolInfo.remove(pindex);
+    }
+
+    @VisibleForTesting
+    /** Called under write lock except during unit test **/
+    void removeUnit(String unit) {
+        int index = safeIndexOf(unit, sunits);
+        sunits.remove(index);
+        constraints.remove(index);
+        storageToPoolGroup.removeAll(index).stream()
+            .forEach((gindex) -> poolGroupToStorage.remove(gindex, index));
+    }
+
     /** Called under write lock **/
     private void addPoolGroup(SelectionPoolGroup group) {
         String name = group.getName();
         groups.add(name);
-        markers.put(groups.indexOf(name),
-                        new ResilienceMarker(group.isResilient()));
+        markers.put(groups.indexOf(name), new ResilienceMarker(group.isResilient()));
     }
 
     /** Called under write lock **/
@@ -771,8 +828,8 @@ public class PoolInfoMap {
 
     /** Called under write lock **/
     private void addPoolToPoolGroups(Entry<String, String> entry) {
-        Integer pindex = pools.indexOf(entry.getKey());
-        Integer gindex = groups.indexOf(entry.getValue());
+        Integer pindex = safeIndexOf(entry.getKey(), pools);
+        Integer gindex = safeIndexOf(entry.getValue(), groups);
         poolGroupToPool.put(gindex, pindex);
         poolToPoolGroup.put(pindex, gindex);
     }
@@ -804,8 +861,8 @@ public class PoolInfoMap {
 
     /** Called under write lock **/
     private void addUnitToPoolGroup(Entry<String, String> entry) {
-        Integer gindex = groups.indexOf(entry.getKey());
-        Integer sindex = sunits.indexOf(entry.getValue());
+        Integer gindex = safeIndexOf(entry.getKey(), groups);
+        Integer sindex = safeIndexOf(entry.getValue(), sunits);
         storageToPoolGroup.put(sindex, gindex);
         poolGroupToStorage.put(gindex, sindex);
     }
@@ -899,9 +956,9 @@ public class PoolInfoMap {
                                   .stream()
                                   .map(SelectionPool::getName)
                                   .collect(Collectors.toSet());
-            Set<String> curr = poolGroupToPool.get(groups.indexOf(group))
+            Set<String> curr = poolGroupToPool.get(safeIndexOf(group, groups))
                                               .stream()
-                                              .map(this::getPool)
+                                              .map(i->safeGet(i, pools))
                                               .collect(Collectors.toSet());
             Sets.difference(next, curr)
                 .stream()
@@ -919,15 +976,13 @@ public class PoolInfoMap {
                                                        PoolSelectionUnit psu) {
         for (String unit : common) {
             StorageUnit storageUnit = psu.getStorageUnit(unit);
-            int index = sunits.indexOf(unit);
-            Set<String> next = ImmutableSet
-                            .copyOf(StorageUnitInfoExtractor
-                                                    .getPoolGroupsFor(unit,
-                                                                      psu,
-                                                                      false));
+            int index = safeIndexOf(unit, sunits);
+            Set<String> next
+                = ImmutableSet.copyOf(StorageUnitInfoExtractor.getPoolGroupsFor(unit, psu,
+                                                                    false));
             Set<String> curr = storageToPoolGroup.get(index)
                                                  .stream()
-                                                 .map(this::getGroup)
+                                                 .map(i->safeGet(i, groups))
                                                  .collect(Collectors.toSet());
             Sets.difference(next, curr)
                 .stream()
@@ -943,17 +998,12 @@ public class PoolInfoMap {
             StorageUnitConstraints constraints
                             = (StorageUnitConstraints) this.constraints.get(index);
 
-            int oldRequired = !constraints.isResilient() ? -1 :
-                            constraints.getRequired();
+            int oldRequired = !constraints.isResilient() ? -1 : constraints.getRequired();
 
-            Set<String> oneCopyPer
-                            = ImmutableSet.copyOf(storageUnit.getOnlyOneCopyPer());
+            Set<String> oneCopyPer = ImmutableSet.copyOf(storageUnit.getOnlyOneCopyPer());
 
-            if (newRequired != oldRequired ||
-                            !oneCopyPer.equals(constraints.getOneCopyPer())) {
-                diff.constraints.put(unit,
-                                     new StorageUnitConstraints(required,
-                                                                oneCopyPer));
+            if (newRequired != oldRequired || !oneCopyPer.equals(constraints.getOneCopyPer())) {
+                diff.constraints.put(unit, new StorageUnitConstraints(required, oneCopyPer));
             }
         }
     }
@@ -968,14 +1018,13 @@ public class PoolInfoMap {
                                 .collect(Collectors.toSet());
         Set<String> curr = storageToPoolGroup.keySet()
                                 .stream()
-                                .map(this::getUnit)
+                                .map(i->safeGet(i, sunits))
                                 .collect(Collectors.toSet());
         Sets.difference(next, curr)
                                 .stream()
                                 .map(psu::getStorageUnit)
                                 .forEach(diff.newUnits::add);
-        Sets.difference(curr, next)
-                                .stream().forEach( diff.oldUnits::add);
+        Sets.difference(curr, next).stream().forEach( diff.oldUnits::add);
         return Sets.intersection(next, curr);
     }
 
@@ -1010,53 +1059,26 @@ public class PoolInfoMap {
 
     /** Called under write lock **/
     private void removeFromPoolGroup(Entry<String, String> entry) {
-        Integer pindex = pools.indexOf(entry.getKey());
-        Integer gindex = groups.indexOf(entry.getValue());
+        Integer pindex = safeIndexOf(entry.getKey(), pools);
+        Integer gindex = safeIndexOf(entry.getValue(), groups);
         poolGroupToPool.remove(gindex, pindex);
         poolToPoolGroup.remove(pindex, gindex);
     }
 
-    /** Called under write lock **/
-    private void removeGroup(String group) {
-        int index = groups.indexOf(group);
-        groups.remove(index);
-        markers.remove(index);
-        poolGroupToPool.removeAll(index)
-                       .stream()
-                       .forEach((pindex) -> poolToPoolGroup.remove(pindex,
-                                                                   index));
-        poolGroupToStorage.removeAll(index)
-                          .stream()
-                          .forEach((gindex) -> storageToPoolGroup.remove(
-                                          gindex, index));
-    }
-
-    /** Called under write lock **/
-    private void removePool(String pool) {
-        int pindex = getPoolIndex(pool);
-        pools.remove(pindex);
-        poolToPoolGroup.removeAll(pindex).stream()
-                       .forEach((g) ->poolGroupToPool.remove(g, pindex));
-        poolInfo.remove(pindex);
-    }
-
-    /** Called under write lock **/
-    private void removeUnit(String unit) {
-        int index = sunits.indexOf(unit);
-        sunits.remove(index);
-        constraints.remove(index);
-        storageToPoolGroup.removeAll(index).stream()
-                          .forEach((gindex) -> poolGroupToStorage.remove(gindex, index));
-    }
-
-    /** Called under write lock **/
     private void removeStorageUnit(Entry<String, String> entry) {
-        Integer sindex = sunits.indexOf(entry.getValue());
-        Integer pindex = groups.indexOf(entry.getKey());
+        Integer sindex = safeIndexOf(entry.getValue(), sunits);
+        Integer pindex = safeIndexOf(entry.getKey(), groups);
         storageToPoolGroup.remove(sindex, pindex);
         poolGroupToStorage.remove(pindex, sindex);
     }
 
+    private boolean resilient(String pool) {
+        try {
+            return getResilientPoolGroup(pools.indexOf(pool)) != null;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
 
     /**
      * <p>This method is an alternate search for storage unit.
@@ -1112,7 +1134,7 @@ public class PoolInfoMap {
                              PoolV2Mode mode,
                              ImmutableMap<String, String> tags,
                              PoolCostInfo cost) {
-        Integer pindex = pools.indexOf(pool);
+        Integer pindex = safeIndexOf(pool, pools);
         PoolInformation entry = new PoolInformation(pool, pindex);
         entry.update(mode, tags, cost);
         poolInfo.put(pindex, entry);
@@ -1120,7 +1142,7 @@ public class PoolInfoMap {
 
     /** Called under write lock **/
     private void updateConstraints(Entry<String, StorageUnitConstraints> entry) {
-        constraints.put(sunits.indexOf(entry.getKey()), entry.getValue());
+        constraints.put(safeIndexOf(entry.getKey(), sunits), entry.getValue());
     }
 
     /**
@@ -1136,7 +1158,7 @@ public class PoolInfoMap {
                         CopyLocationExtractor extractor,
                         int required) throws IllegalStateException {
         Set<String> members = poolGroupToPool.get(index).stream()
-                                     .map(pools::get)
+                                     .map(i->safeGet(i, pools))
                                      .collect(Collectors.toSet());
         for (int i = 0; i < required; i++) {
             Collection<String> candidates
@@ -1148,5 +1170,12 @@ public class PoolInfoMap {
             members.remove(selected);
             extractor.addSeenTagsFor(selected);
         }
+    }
+
+    private boolean viable(Integer pool, boolean writable) {
+        PoolInformation info = poolInfo.get(pool);
+        return info != null && info.isInitialized()
+            && (writable ? info.canRead() && info.canWrite()
+            : info.canRead());
     }
 }
