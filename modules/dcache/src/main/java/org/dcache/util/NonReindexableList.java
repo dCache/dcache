@@ -104,8 +104,32 @@ import java.util.stream.Stream;
  * <p>Not thread-safe.</p>
  */
 public final class NonReindexableList<E> implements List<E> {
+    public static final int MISSING_INDEX = -1728;
+    public static final String MISSING = "missing_element";
+
+    public static int safeIndexOf(String key, NonReindexableList<String> list) {
+        try {
+            return list.indexOf(key);
+        } catch (NoSuchElementException e) {
+            return MISSING_INDEX;
+        }
+    }
+
+    public static String safeGet(int index, NonReindexableList<String> list) {
+        try {
+            if (index == MISSING_INDEX) {
+                return MISSING;
+            }
+            return list.get(index);
+        } catch (NoSuchElementException e) {
+            return MISSING;
+        }
+    }
+
     private static final String UNSUPPORTED_ERROR_MSG
                     = "This list can only be modified by appending or removing.";
+
+
 
     private final Map<E, Integer> index = new HashMap<>();
     private final Map<Integer, E> list = new HashMap<>();
