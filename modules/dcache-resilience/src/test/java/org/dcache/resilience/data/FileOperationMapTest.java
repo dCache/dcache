@@ -339,6 +339,74 @@ public final class FileOperationMapTest extends TestBase
         assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
+    @Test
+    public void shouldNotFailWhenPostProcessDiscoversRemovedPool()
+                    throws Exception {
+        givenANewPnfsId();
+        afterOperationAdded(1);
+        String source = attributes.getLocations().iterator().next();
+        afterSourceAndTargetAreUpdatedTo(source,"resilient_pool-12");
+        afterPoolIsRemoved(source);
+        whenScanIsRun();
+        whenOperationSucceedsFor(operation.getPnfsId());
+        /*
+         *  Should not throw an exception.
+         */
+        whenScanIsRun();
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
+    }
+
+    @Test
+    public void shouldNotFailWhenPostProcessDiscoversRemovedPoolGroup()
+        throws Exception {
+        givenANewPnfsId();
+        afterOperationAdded(1);
+        String source = attributes.getLocations().iterator().next();
+        afterSourceAndTargetAreUpdatedTo(source,"resilient_pool-12");
+        afterOperationGroupIsRemoved();
+        whenScanIsRun();
+        whenOperationSucceedsFor(operation.getPnfsId());
+        /*
+         *  Should not throw an exception.
+         */
+        whenScanIsRun();
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
+    }
+
+    @Test
+    public void shouldNotFailWhenPostProcessDiscoversRemovedStorageUnit()
+        throws Exception {
+        givenANewPnfsId();
+        afterOperationAdded(1);
+        afterSourceAndTargetAreUpdatedTo(attributes.getLocations().iterator().next(),
+                                  "resilient_pool-12");
+        afterOperationStorageUnitIsRemoved();
+        whenScanIsRun();
+        whenOperationSucceedsFor(operation.getPnfsId());
+        /*
+         *  Should not throw an exception.
+         */
+        whenScanIsRun();
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
+    }
+
+    @Test
+    public void shouldNotFailWhenOperationIsCancelledBecauseOfPoolRemoval()
+        throws Exception {
+        givenANewPnfsId();
+        afterOperationAdded(1);
+        String source = attributes.getLocations().iterator().next();
+        afterSourceAndTargetAreUpdatedTo(source,"resilient_pool-12");
+        afterPoolIsRemoved(source);
+        whenScanIsRun();
+        whenRunningOperationIsCancelled();
+        /*
+         *  Should not throw an exception.
+         */
+        whenScanIsRun();
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
+    }
+
     @After
     public void tearDown() {
         if (checkpoint.exists()) {
@@ -359,6 +427,20 @@ public final class FileOperationMapTest extends TestBase
         fileOperationMap.register(update);
         operation = new FileOperation(
                         fileOperationMap.getOperation(attributes.getPnfsId()));
+    }
+
+    private void afterPoolIsRemoved(String pool) throws Exception {
+        poolInfoMap.removePool(pool);
+    }
+
+    private void afterOperationGroupIsRemoved() throws Exception {
+        String group = poolInfoMap.getGroup(operation.getPoolGroup());
+        poolInfoMap.removeUnit(group);
+    }
+
+    private void afterOperationStorageUnitIsRemoved() throws Exception {
+        String unit = poolInfoMap.getUnit(operation.getStorageUnit());
+        poolInfoMap.removeUnit(unit);
     }
 
     private void afterSourceAndTargetAreUpdatedTo(String source,
