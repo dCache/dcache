@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.concurrent.TimeUnit;
 
@@ -79,6 +80,12 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     }
 
     /**
+     * The latest file creation time seen while iterating over the database, which is used
+     * to order the delete locations.
+     */
+    private Timestamp _dbLastSeenTimestamp = new Timestamp(0);
+
+    /**
      * Timeout for delete request per HSM.
      *
      * For each HSM, we have at most one outstanding remove request.
@@ -106,6 +113,11 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     private Consumer<URI> _successSink;
 
     /**
+     * Maximum number of cached locations to delete.
+     */
+    private int _maxCachedDeleteLocations = 12000;
+
+    /**
      * Maximum number of files to include in a single request.
      */
     private int _maxFilesPerRequest = 100;
@@ -123,6 +135,12 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     private long _hsmTimeout;
     private TimeUnit _hsmTimeoutUnit;
 
+    /**
+     * Set maximum number of cached locations to delete.
+     */
+    public synchronized void setMaxCachedDeleteLocations(int value) {
+        _maxCachedDeleteLocations = value;
+    }
     /**
      * Set maximum number of files to include in a single request.
      */
@@ -216,12 +234,11 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             _locationsToDelete.put(hsm, locations);
         }
         locations.add(location);
-
         flush(hsm);
     }
 
     /**
-     * Submits requests queued for a given HSM.
+     * Submits requests queued for a given HSM if there is not already a pending request registered for this HSM.
      *
      * @param hsm the name of an HSM instance
      */
@@ -244,8 +261,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
          * of files per request.
          */
         if (locations.size() > _maxFilesPerRequest) {
-            Collection<URI> subset =
-                new ArrayList<>(_maxFilesPerRequest);
+            Collection<URI> subset = new ArrayList<>(_maxFilesPerRequest);
             Iterator<URI> iterator = locations.iterator();
             for (int i = 0; i < _maxFilesPerRequest; i++) {
                 subset.add(iterator.next());
@@ -256,8 +272,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         PoolInformation pool = _pools.getPoolWithHSM(hsm);
         if (pool != null) {
             String name = pool.getName();
-            PoolRemoveFilesFromHSMMessage message =
-                new PoolRemoveFilesFromHSMMessage(name, hsm, locations);
+            PoolRemoveFilesFromHSMMessage message = new PoolRemoveFilesFromHSMMessage(name, hsm, locations);
 
             _poolStub.notify(new CellPath(name), message);
 
@@ -286,7 +301,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      *
      * One may worry that in case of problems we end up resubmit the
      * same requests over and over. A timeout will however only happen
-     * if either the pool crashed or in case of a bug in the pool.  In
+     * if either the pool crashed or in case of a bug in the pool. In
      * the first case we will end up trying another pool. In the
      * second case, we should simply fix the bug in the pool.
      */
@@ -350,19 +365,45 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     @Override
     protected void runDelete() throws InterruptedException {
+        int locationsCached = _locationsToDelete.values().stream().map(Set::size).reduce(0, Integer::sum);
+        int queryLimit = _maxCachedDeleteLocations - locationsCached;
+
+        _log.debug("Locations cached: {} (max cached: {}), query limit: {}, offset: {}", locationsCached, _maxCachedDeleteLocations, queryLimit, _dbLastSeenTimestamp);
+
+        if (queryLimit <= 0) {
+            _log.debug("The number of cached hsm locations is already the maximum permissible size. " +
+                    "Not adding further entries.");
+            _locationsToDelete.keySet().forEach(h -> flush(h)); // avoid not processing the remaining requests and being stuck
+            return;
+        }
+
+        AtomicInteger noRequestsCollected = new AtomicInteger();
         Timestamp graceTime = Timestamp.from(Instant.now().minusSeconds(_gracePeriod.getSeconds()));
-        _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE itype=0 AND ictime<?",
+
+        _db.query("SELECT ilocation, ictime FROM t_locationinfo_trash WHERE itype=0 AND ictime<? AND ictime>? ORDER BY ictime ASC LIMIT ?",
                 rs -> {
                     try {
-                        URI uri = new URI(rs.getString("ilocation"));
                         Preconditions.checkState(_haServiceLeadershipManager.hasLeadership(),
                                 "HA leadership was lost while reading from trashtable. Aborting operation.");
+
+                        URI uri = new URI(rs.getString("ilocation"));
                         submit(uri);
+
+                        Timestamp ctime = rs.getTimestamp("ictime");
+                        _dbLastSeenTimestamp = ctime;
+
+                        noRequestsCollected.getAndIncrement();
+
                     } catch (URISyntaxException e) {
                         throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);
                     }
                 },
-                graceTime);
+                graceTime, _dbLastSeenTimestamp, queryLimit);
+
+        if (_dbLastSeenTimestamp.getTime() != 0 && noRequestsCollected.get() < queryLimit) {
+            // We have reached the end of the database and should start at the beginning next run
+            _dbLastSeenTimestamp = new Timestamp(0);
+        }
     }
 
     public void init() {
@@ -377,6 +418,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     @Override
     public void notLeader() {
         super.notLeader();
+        // All not yet sent but cached requests can be cleared
         Iterator<String> keyIterator = _locationsToDelete.keySet().iterator();
         while(keyIterator.hasNext()) {
             String hsm = keyIterator.next();
@@ -384,6 +426,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
                 keyIterator.remove();
             }
         }
+        _dbLastSeenTimestamp =  new Timestamp(0);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -426,7 +469,23 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         }
     }
 
-    @Command(name = "hsm set MaxFilesPerRequest",
+    @Command(name = "hsm set maxCachedDeleteLocations",
+            hint = "Changes the maximum number of cached hsm delete locations.")
+    public class HsmSetMaxCachedDeleteLocationsCommand implements Callable<String> {
+        @Argument(usage = "maximal number of cached hsm delete locations")
+        int maxCachedDeleteLocations;
+
+        @Override
+        public String call() throws CommandException {
+            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            if (maxCachedDeleteLocations <= 0) throw new IllegalArgumentException("The number must be greater than 0 ");
+
+            _maxCachedDeleteLocations = maxCachedDeleteLocations;
+            return "Maximal number of cached hsm delete locations set to " + _maxCachedDeleteLocations;
+        }
+    }
+
+    @Command(name = "hsm set maxFilesPerRequest",
             hint = "Changes the number of files sent to a HSM instance for processing at once.")
     public class HsmSetMaxFilesPerRequestCommand implements Callable<String> {
         @Argument(usage = "maximal number of concurrent requests to a single HSM")
@@ -442,7 +501,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         }
     }
 
-    @Command(name = "hsm set TimeOut",
+    @Command(name = "hsm set timeOut",
             hint = "Changes the timeout for delete requests sent to an HSM pool.")
     public class HsmSetTimeOutCommand implements Callable<String> {
         @Argument(usage = "cleaning request timeout in seconds (for HSM-pools)")
@@ -499,6 +558,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         pw.printf("HSM Cleaner Info : \n");
         pw.printf("Timeout for cleaning requests to HSM-pools: %s\n", _hsmTimeout);
         pw.printf("Timeout Unit for cleaning requests to HSM-pools: %s\n", _hsmTimeoutUnit);
+        pw.printf("Maximum number of cached delete locations:   %d\n", _maxCachedDeleteLocations);
         pw.printf("Maximum number of files to include in a single request:   %d\n", _maxFilesPerRequest);
         pw.printf("Delete notification targets:  %s\n", Arrays.toString(_deleteNotificationTargets));
     }

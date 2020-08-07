@@ -18,6 +18,7 @@ check -strong cleaner.limits.period
 check -strong cleaner.limits.period.unit
 check -strong cleaner.limits.batch-size
 check -strong cleaner.limits.hsm-batch-size
+check -strong cleaner.limits.hsm-max-cached-locations
 check -strong cleaner.limits.threads
 check cleaner.destination.remove-notification
 check -strong cleaner.db.user
