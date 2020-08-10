@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -116,7 +116,7 @@ public class ZooKeeperCell extends AbstractCell
         zkServer.setMinSessionTimeout(minSessionTimeout == -1 ? -1 : (int) minSessionTimeoutUnit.toMillis(minSessionTimeout));
         zkServer.setMaxSessionTimeout(maxSessionTimeout == -1 ? -1 : (int) maxSessionTimeoutUnit.toMillis(maxSessionTimeout));
 
-        zkServer.setZKDatabase(new ZKDatabase(txnLog)); // Work-around https://issues.apache.org/jira/browse/ZOOKEEPER-2810
+        zkServer.startdata(); // Work-around https://issues.apache.org/jira/browse/ZOOKEEPER-2810
         zkServer.createSessionTracker(); // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2812
 
         ServerCnxnFactory cnxnFactory;
