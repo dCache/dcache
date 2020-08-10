@@ -1287,6 +1287,13 @@ public class RequestContainerV5
         }
 
         private void nextStep(RequestState state){
+
+            if (state == RequestState.ST_OUT) {
+                // end state
+                _state = RequestState.ST_OUT;
+                return;
+            }
+
             if (_currentRc == CacheException.NOT_IN_TRASH ||
                 _currentRc == CacheException.FILE_NOT_FOUND) {
                 _state = RequestState.ST_DONE;
