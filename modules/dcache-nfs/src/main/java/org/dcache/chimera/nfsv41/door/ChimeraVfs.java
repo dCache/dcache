@@ -21,6 +21,7 @@ package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.dcache.chimera.FileState;
+import org.dcache.chimera.UnixPermission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -333,6 +334,18 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
             // OperationSETATTR have already checked for a valid open stateid
             if (stat.isDefined(Stat.StatAttribute.SIZE)) {
+
+                int type = _fs.stat(fsInode).getMode()  & UnixPermission.F_TYPE;
+                switch (type) {
+                    case UnixPermission.S_IFREG:
+                        // ok
+                        break;
+                    case UnixPermission.S_IFDIR:
+                        throw new IsDirException("Can't update size of a directory");
+                    default:
+                        throw new InvalException("Can't update size of a non file object");
+                }
+
                 // allow set size only for newly created files
                 if (_fs.stat(fsInode).getState() != FileState.CREATED) {
                     throw new PermException("Can't change size of existing file");
