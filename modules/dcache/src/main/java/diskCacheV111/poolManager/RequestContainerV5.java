@@ -96,7 +96,7 @@ public class RequestContainerV5
         ST_DONE,
         /** poop-to-pool copy required */
         ST_POOL_2_POOL,
-        /** restore from HSM requured */
+        /** restore from HSM required */
         ST_STAGE,
         /** waiting for pending restore to complete */
         ST_WAITING_FOR_STAGING,
