@@ -20,6 +20,7 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.dcache.chimera.FileState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -329,7 +330,21 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             if (shouldRejectAttributeUpdates(fsInode, _fs)) {
                 throw new PermException("setStat not allowed.");
             }
-            fsInode.setStat(toChimeraStat(stat));
+
+            // OperationSETATTR have already checked for a valid open stateid
+            if (stat.isDefined(Stat.StatAttribute.SIZE)) {
+                // allow set size only for newly created files
+                if (_fs.stat(fsInode).getState() != FileState.CREATED) {
+                    throw new PermException("Can't change size of existing file");
+                }
+            }
+
+            org.dcache.chimera.posix.Stat chimeraStat = toChimeraStat(stat);
+            // convert empty setattr to noop
+            if (!chimeraStat.getDefinedAttributeses().isEmpty()) {
+                fsInode.setStat(chimeraStat);
+            }
+
         } catch (InvalidArgumentChimeraException e) {
             throw new InvalException(e.getMessage());
         } catch (IsDirChimeraException e) {
@@ -459,26 +474,11 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     }
 
     @VisibleForTesting
-    static boolean shouldRejectUpdates(FsInode fsInode, FileSystemProvider fs)
-                    throws ChimeraFsException {
-        switch (fsInode.type()) {
-            case SURI:
-                return !isRoot()
-                                && !fs.getInodeLocations(fsInode,
-                                                          StorageGenericLocation.TAPE)
-                                       .isEmpty();
-            case INODE:
-                return fsInode.getLevel() == 0
-                                && !fsInode.isDirectory()
-                                && (!fs.getInodeLocations(fsInode,
-                                                           StorageGenericLocation.TAPE)
-                                        .isEmpty()
-                                || !fs.getInodeLocations(fsInode,
-                                                          StorageGenericLocation.DISK)
-                                       .isEmpty());
-            default:
-                return false;
+    static boolean shouldRejectUpdates(FsInode fsInode, FileSystemProvider fs) throws ChimeraFsException {
+        if (!isRoot() && fsInode.type() == FsInodeType.SURI) {
+            return  !fs.getInodeLocations(fsInode, StorageGenericLocation.TAPE).isEmpty();
         }
+        return false;
     }
 
     @VisibleForTesting
