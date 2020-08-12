@@ -60,7 +60,8 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import com.google.common.annotations.VisibleForTesting;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
@@ -76,14 +77,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.FileTaskCompletionHandler;
 import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
-import org.dcache.resilience.util.BrokenFileTask;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 import org.dcache.resilience.util.CheckpointUtils;
@@ -328,26 +325,12 @@ public class FileOperationMap extends RunnableModule {
 
             boolean retry = false;
             boolean abort = false;
-            boolean broken = false;
 
             if (operation.getState() == FileOperation.FAILED) {
                 FailureType type =
                     CacheExceptionUtils.getFailureType(operation.getException(),
                                                        operation.getType());
                 switch (type) {
-                    case BROKEN:
-                        if (source != null) {
-                            broken = true;
-
-                            /*
-                             *  Remove this operation,  then let the
-                             *  broken file handling decide if the
-                             *  process should be retried.
-                             */
-                            operation.setOpCount(0);
-                            break;
-                        }
-                        // fall through, may be retriable
                     case NEWSOURCE:
                         operation.addSourceToTriedLocations();
                         operation.resetSourceAndTarget();
@@ -452,17 +435,6 @@ public class FileOperationMap extends RunnableModule {
                      *  removal.
                      */
                     remove(operation.getPnfsId(), abort);
-
-                    /*
-                     *  If the operation reported a broken source, pass it off
-                     *  to the handler.
-                     */
-                    if (broken) {
-                        pool = poolInfoMap.getPool(operation.getSource());
-                        new BrokenFileTask(operation.getPnfsId(), pool,
-                                           operationHandler)
-                                        .submit();
-                    }
                 }
             }
         }

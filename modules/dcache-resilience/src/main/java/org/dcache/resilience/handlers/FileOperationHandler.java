@@ -62,9 +62,18 @@ package org.dcache.resilience.handlers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.CellPath;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -80,21 +89,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.vehicles.HttpProtocolInfo;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageSender;
-import dmg.cells.nucleus.CellPath;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
@@ -108,7 +102,6 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
-import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.StorageUnitConstraints;
 import org.dcache.resilience.db.NamespaceAccess;
@@ -125,6 +118,8 @@ import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.dcache.resilience.data.MessageType.QOS_MODIFIED;
 
@@ -218,78 +213,6 @@ public class FileOperationHandler implements CellMessageSender {
 
     public TimeUnit getLaunchDelayUnit() {
         return launchDelayUnit;
-    }
-
-    public void handleBrokenFileLocation(PnfsId pnfsId, String pool) {
-        try {
-            FileAttributes attributes
-                            = FileUpdate.getAttributes(pnfsId, pool,
-                                                       MessageType.CORRUPT_FILE,
-                                                       namespace);
-            if (attributes == null) {
-                LOGGER.trace("{} not ONLINE.", pnfsId);
-                return;
-            }
-
-            if (!poolInfoMap.isResilientPool(pool)) {
-                LOGGER.trace("{} not in resilient group.", pool);
-                return;
-            }
-
-            Collection<String> locations = attributes.getLocations();
-            Collection verified = verifier.verifyLocations(pnfsId, locations, pools);
-
-            if (!verifier.exists(pool, verified)) {
-                LOGGER.trace("Broken replica of {} on {} has already been removed.",
-                             pnfsId, pool);
-                return;
-            }
-
-            /*
-             *  Get the sticky locations that have been verified.
-             */
-            Collection<String> sticky = verifier.getSticky(verified);
-
-            if (sticky.contains(pool) && sticky.size() == 1) {
-                /*
-                 * This is the only copy; do nothing.
-                 */
-                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
-                                                          pnfsId.toString()),
-                             "{}: Repair of broken replicas is not possible, "
-                                             + "file currently inaccessible", pnfsId);
-                return;
-            }
-
-            removeTarget(pnfsId, pool);
-
-            locations.remove(pool);
-
-            if (poolInfoMap.getCountableLocations(locations) > 0) {
-                FileUpdate update = new FileUpdate(pnfsId, pool,
-                                                   MessageType.CLEAR_CACHE_LOCATION,
-                                                   false);
-                /*
-                 * Bypass the message guard check of CDC session.
-                 */
-                handleLocationUpdate(update);
-            } else {
-                /*
-                 *  No alternate readable source; cannot attempt to make
-                 *  any further replicas.
-                 */
-                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
-                                                          pnfsId.toString()),
-                             "{}: Repair of broken replicas is not possible, "
-                                             + "file currently inaccessible", pnfsId);
-            }
-        } catch (CacheException e) {
-            LOGGER.error("Error during handling of broken file removal ({}, {}): {}",
-                         pnfsId, pool, new ExceptionMessage(e));
-        } catch (InterruptedException e) {
-            LOGGER.warn("Handling of broken file removal interrupted ({}, {})",
-                        pnfsId, pool);
-        }
     }
 
     /**
@@ -930,27 +853,6 @@ public class FileOperationHandler implements CellMessageSender {
                      pnfsId, responsesFromPools);
 
         /*
-         *  First, if there are broken replicas, remove the first one
-         *  and iterate.  As with the broken file handler routine, do
-         *  not remove the last sticky replica, whatever it is.
-         *
-         *  Since remove actually means removal of the sticky bit,
-         *  we ignore broken cached files (their repository state would not be
-         *  changed and we would get caught in an infinite loop of always trying
-         *  to remove this replica before making a new one).
-         */
-        Set<String> broken = verifier.getBroken(responsesFromPools);
-        if (!broken.isEmpty()) {
-            String target = broken.iterator().next();
-            if (verifier.isSticky(target, responsesFromPools)
-                            && verifier.getSticky(responsesFromPools).size() > 1) {
-                fileOpMap.updateOperation(pnfsId, null, target);
-                operation.incrementCount();
-                return Type.REMOVE;
-            }
-        }
-
-        /*
          *  Ensure that the readable locations from the namespace actually exist.
          *  This is crucial for the counts.
          */
@@ -979,6 +881,11 @@ public class FileOperationHandler implements CellMessageSender {
         }
 
         /*
+         * Do not include broken files as either valid locations or potential sources.
+         */
+        exist = Sets.difference(exist, verifier.getBroken(responsesFromPools));
+
+        /*
          *  While cached copies are excluded from the resilient count, we
          *  allow them to be included as readable sources.
          */
@@ -1003,7 +910,6 @@ public class FileOperationHandler implements CellMessageSender {
          *  one target and return REMOVE.
          */
         if (AccessLatency.NEARLINE.equals(attributes.getAccessLatency())) {
-
             if (sticky.size() > 0) {
                 String target = sticky.iterator().next();
                 LOGGER.trace("handleVerification, {}, access latency is NEARLINE, "
@@ -1055,7 +961,7 @@ public class FileOperationHandler implements CellMessageSender {
          *  Find the non-sticky locations (broken files are cached; exclude those too).
          *  Partition the sticky locations between usable and excluded.
          */
-        Set<String> nonSticky = Sets.difference(Sets.difference(exist, sticky), broken);
+        Set<String> nonSticky = Sets.difference(exist, sticky);
         Set<String> excluded
                         = verifier.areSticky(poolInfoMap.getExcludedLocationNames(members),
                                              responsesFromPools);

@@ -122,8 +122,7 @@ public final class CacheExceptionUtils {
 
         FailureType failureType = getFailureType(rc, type);
 
-        if (failureType != FailureType.FATAL
-                        && failureType != FailureType.BROKEN) {
+        if (failureType != FailureType.FATAL) {
             message += WILL_RETRY_LATER;
         }
 
@@ -145,9 +144,6 @@ public final class CacheExceptionUtils {
 
     private static FailureType getFailureType(int rc, Type type) {
         switch (rc) {
-            case CacheException.FILE_CORRUPTED:
-            case CacheException.BROKEN_ON_TAPE:
-                return FailureType.BROKEN;
             case CacheException.FILE_NOT_IN_REPOSITORY:
                 /*
                  *  Given that replicas can be made from cached copies by
@@ -203,6 +199,8 @@ public final class CacheExceptionUtils {
             case CacheException.TIMEOUT:
                 return FailureType.RETRIABLE;
 
+            case CacheException.FILE_CORRUPTED:
+            case CacheException.BROKEN_ON_TAPE:
             case CacheException.FILE_NOT_FOUND:
             default:
                 return FailureType.FATAL;
@@ -210,7 +208,7 @@ public final class CacheExceptionUtils {
     }
 
     public enum FailureType {
-        BROKEN, NEWTARGET, NEWSOURCE, FATAL, RETRIABLE
+        NEWTARGET, NEWSOURCE, FATAL, RETRIABLE
     }
 
     private CacheExceptionUtils() {

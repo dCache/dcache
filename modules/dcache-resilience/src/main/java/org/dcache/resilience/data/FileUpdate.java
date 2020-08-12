@@ -60,32 +60,31 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.NoSuchElementException;
-import java.util.Set;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import org.dcache.cells.CellStub;
-import org.dcache.resilience.db.LocalNamespaceAccess;
 import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.FileOperationHandler;
-import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.ReplicaVerifier;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.ReplicaStatusMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.dcache.resilience.data.MessageType.*;
+import static org.dcache.resilience.data.MessageType.ADD_CACHE_LOCATION;
+import static org.dcache.resilience.data.MessageType.CLEAR_CACHE_LOCATION;
+import static org.dcache.resilience.data.MessageType.CORRUPT_FILE;
+import static org.dcache.resilience.data.MessageType.POOL_STATUS_DOWN;
+import static org.dcache.resilience.data.MessageType.POOL_STATUS_UP;
+import static org.dcache.resilience.data.MessageType.QOS_MODIFIED;
 
 /**
  * <p>A transient encapsulation of pertinent configuration data regarding
@@ -96,8 +95,6 @@ import static org.dcache.resilience.data.MessageType.*;
  *
  * @see FileOperationMap#register(FileUpdate)
  * @see FileOperationHandler#handleLocationUpdate(FileUpdate)
- * @see ResilienceMessageHandler#updatePnfsLocation(FileUpdate)
- * @see LocalNamespaceAccess#handleQuery(Connection, ScanSummary)
  */
 public final class FileUpdate {
     private static final Logger LOGGER = LoggerFactory.getLogger(
@@ -431,18 +428,18 @@ public final class FileUpdate {
 
         count = required - valid.size();
 
+        int broken = verifier.getBroken(verified).size();
+
         LOGGER.debug("validateForAction ({} needs {} replicas, locations {}, "
-                                     + "{} valid; difference = {}.",
-                     pnfsId, required,
-                     locations, valid, count);
+                                     + "{} valid; {} broken; difference = {}.",
+                     pnfsId, required, locations, valid, broken, count);
 
         if (count == 0) {
-            Set<String> broken =  verifier.getBroken(verified);
-            if (broken.isEmpty()) {
+            if (broken == 0) {
                 LOGGER.debug("{}, requirements are already met.", pnfsId);
                 return false;
             }
-            count = broken.size();
+            count = broken;
         }
 
         /*

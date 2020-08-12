@@ -76,7 +76,6 @@ import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolStateUpdate;
-import org.dcache.resilience.util.BrokenFileTask;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.MessageGuard;
 import org.dcache.resilience.util.MessageGuard.Status;
@@ -231,8 +230,10 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
 
     private void handleBrokenFile(CorruptFileMessage message) {
         counters.incrementMessage(MessageType.CORRUPT_FILE.name());
-        new BrokenFileTask(message.getPnfsId(), message.getPool(),
-                           fileOperationHandler).submit();
+        updatePnfsLocation(new FileUpdate(message.getPnfsId(),
+                                          message.getPool(),
+                                          MessageType.CORRUPT_FILE,
+                                     true));
     }
 
     private void handleClearCacheLocation(PnfsClearCacheLocationMessage message) {

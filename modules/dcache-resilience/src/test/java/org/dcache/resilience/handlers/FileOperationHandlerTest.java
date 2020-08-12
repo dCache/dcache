@@ -60,21 +60,16 @@ documents or software obtained from this server.
 package org.dcache.resilience.handlers;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Iterator;
 import org.dcache.pool.migration.Task;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestMessageProcessor;
-import org.dcache.resilience.TestSynchronousExecutor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileUpdate;
@@ -86,8 +81,14 @@ import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 import org.dcache.vehicles.resilience.ReplicaStatusMessage;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public final class FileOperationHandlerTest extends TestBase
                 implements TestMessageProcessor {
@@ -245,18 +246,6 @@ public final class FileOperationHandlerTest extends TestBase
         whenVerifyIsRun();
         whenRemoveTargetIsSelected();
         assertNotEquals("resilient_pool-10", selected);
-    }
-
-    @Test
-    public void shouldPickBrokenReplica()
-                    throws CacheException, IOException, InterruptedException {
-        setUpTest(true);
-        givenAFileUpdateForAFileWithThreeReplicasInsteadOfTwo();
-        givenReplicaIsBrokenOn("resilient_pool-10");
-        whenHandleUpdateIsCalled();
-        whenVerifyIsRun();
-        whenRemoveTargetIsSelected();
-        assertEquals("resilient_pool-10", selected);
     }
 
     @Test
@@ -452,15 +441,13 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     @Test
-    public void shouldTryAnotherSourceOnBrokenFile()
-                    throws CacheException, IOException, InterruptedException {
+    public void shouldNotChooseBrokenFileAsSource()
+        throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAFileUpdateForAFileWithOneLocationOffline();
+        givenAFileUpdateForAFileWithOneLocationOfflineAndOneBrokenFile();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
-        afterInspectingSourceAndTarget();
-        whenOperationFailsWithBrokenFileError();
-        assertNotNull(repRmMessage);
+        assertTrue(theOperationFailed());
     }
 
     @Test
@@ -614,6 +601,14 @@ public final class FileOperationHandlerTest extends TestBase
         givenSourcePoolIsDown();
     }
 
+    private void givenAFileUpdateForAFileWithOneLocationOfflineAndOneBrokenFile()
+        throws CacheException {
+        loadFilesWithRequiredLocations();
+        setUpdate(aReplicaOnlineFileWithHostTag(), MessageType.POOL_STATUS_DOWN);
+        givenSourcePoolIsDown();
+        givenReplicaIsBrokenOnOther();
+    }
+
     private void givenAFileUpdateForAFileWithOneLocationExcluded()
                     throws CacheException {
         loadFilesWithRequiredLocations();
@@ -739,8 +734,10 @@ public final class FileOperationHandlerTest extends TestBase
         exists = false;
     }
 
-    private void givenReplicaIsBrokenOn(String pool) {
-        failurePool = pool;
+    private void givenReplicaIsBrokenOnOther() {
+        failurePool = attributes.getLocations().stream()
+                                .filter(l -> !l.equals(update.pool))
+                                .findFirst().get();
         broken = true;
     }
 
@@ -874,16 +871,6 @@ public final class FileOperationHandlerTest extends TestBase
                                          new CacheException(
                                                          CacheException.DEFAULT_ERROR_CODE,
                                                          FORCED_FAILURE.toString()));
-        fileOperationMap.scan();
-    }
-
-    private void whenOperationFailsWithBrokenFileError() throws IOException {
-        fileOperationHandler.setTaskService(new TestSynchronousExecutor(Mode.RUN));
-        fileOperationMap.scan();
-        fileOperationMap.updateOperation(update.pnfsId,
-                                         new CacheException(
-                                                         CacheException.FILE_CORRUPTED,
-                                                         "broken"));
         fileOperationMap.scan();
     }
 
