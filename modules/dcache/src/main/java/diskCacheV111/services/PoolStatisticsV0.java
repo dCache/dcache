@@ -11,15 +11,13 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -49,7 +47,6 @@ import org.dcache.util.Args;
 import org.dcache.util.Exceptions;
 
 import static java.util.Arrays.asList;
-import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.ByteUnit.BYTES;
 
 /**
@@ -373,18 +370,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         return new File(_htmlBase, _htmlPathFromDate.get().format(calendar.getTime()));
     }
 
-    private void copyFile(File from, File to) throws IOException {
-        try (InputStream in = new FileInputStream(from)) {
-            try (OutputStream out = new FileOutputStream(to)) {
-                byte [] buffer = new byte[KiB.toBytes(16)];
-
-                for (int rc = in.read(buffer, 0, buffer.length); rc > 0; rc = in.read(buffer, 0, buffer.length)) {
-                    out.write(buffer, 0, rc);
-                }
-            }
-        }
-    }
-
     public void createDiffFile(File today, File yesterday, File resultFile) throws IOException {
         DataStore todayStore = new DataStore(today);
 
@@ -459,8 +444,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 _log.info("Creating daily file : {}", today);
 
                 //noinspection ResultOfMethodCallIgnored
-                today.delete();
-                copyFile(path, today);
+                Files.copy(path.toPath(), today.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
                 _log.info("Daily file done : {}", today);
 
@@ -1046,7 +1030,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
         try {
             // copy the raw file into the html directory
-            copyFile(diffFile, new File(dir, "total.drw"));
+            Files.copy(diffFile.toPath(), new File(dir, "total.drw").toPath());
             // load the raw data file
             Map<String,Map<String,long[]>> map = new DataStore(diffFile).getMap();
             // create todays html files
