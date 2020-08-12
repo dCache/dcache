@@ -262,7 +262,7 @@ public class FileOperationHandler implements CellMessageSender {
 
             locations.remove(pool);
 
-            if (poolInfoMap.getCountableLocations(locations) > 1) {
+            if (poolInfoMap.getCountableLocations(locations) > 0) {
                 FileUpdate update = new FileUpdate(pnfsId, pool,
                                                    MessageType.CLEAR_CACHE_LOCATION,
                                                    false);
@@ -889,12 +889,17 @@ public class FileOperationHandler implements CellMessageSender {
          *  First, if there are broken replicas, remove the first one
          *  and iterate.  As with the broken file handler routine, do
          *  not remove the last sticky replica, whatever it is.
+         *
+         *  Since remove actually means removal of the sticky bit,
+         *  we ignore broken cached files (their repository state would not be
+         *  changed and we would get caught in an infinite loop of always trying
+         *  to remove this replica before making a new one).
          */
         Set<String> broken = verifier.getBroken(responsesFromPools);
         if (!broken.isEmpty()) {
             String target = broken.iterator().next();
-            if (!verifier.isSticky(target, responsesFromPools)
-                            || verifier.getSticky(responsesFromPools).size() > 1) {
+            if (verifier.isSticky(target, responsesFromPools)
+                            && verifier.getSticky(responsesFromPools).size() > 1) {
                 fileOpMap.updateOperation(pnfsId, null, target);
                 operation.incrementCount();
                 return Type.REMOVE;
@@ -981,10 +986,10 @@ public class FileOperationHandler implements CellMessageSender {
                         pnfsId, sticky);
 
         /*
-         *  Find the non-sticky locations.
+         *  Find the non-sticky locations (exclude broken files).
          *  Partition the sticky locations between usable and excluded.
          */
-        Set<String> nonSticky = Sets.difference(exist, sticky);
+        Set<String> nonSticky = Sets.difference(Sets.difference(exist, sticky), broken);
         Set<String> excluded
                         = verifier.areSticky(poolInfoMap.getExcludedLocationNames(members),
                                              responsesFromPools);

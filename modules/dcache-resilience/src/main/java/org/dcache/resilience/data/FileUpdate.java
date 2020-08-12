@@ -404,8 +404,12 @@ public final class FileUpdate {
                      locations, valid, count);
 
         if (count == 0) {
-            LOGGER.debug("{}, requirements are already met.", pnfsId);
-            return false;
+            Set<String> broken =  verifier.getBroken(verified);
+            if (broken.isEmpty()) {
+                LOGGER.debug("{}, requirements are already met.", pnfsId);
+                return false;
+            }
+            count = broken.size();
         }
 
         /*
