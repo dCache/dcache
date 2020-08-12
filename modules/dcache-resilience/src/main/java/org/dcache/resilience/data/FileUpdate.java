@@ -424,7 +424,7 @@ public final class FileUpdate {
          */
         if (AccessLatency.NEARLINE.equals(attributes.getAccessLatency())) {
             LOGGER.trace("validateForAction, access latency is NEARLINE, "
-                                         + "setting count for {} to 0.",
+                                         + "setting required for {} to 0.",
                          pnfsId);
             required = 0;
         }
@@ -437,8 +437,12 @@ public final class FileUpdate {
                      locations, valid, count);
 
         if (count == 0) {
-            LOGGER.debug("{}, requirements are already met.", pnfsId);
-            return false;
+            Set<String> broken =  verifier.getBroken(verified);
+            if (broken.isEmpty()) {
+                LOGGER.debug("{}, requirements are already met.", pnfsId);
+                return false;
+            }
+            count = broken.size();
         }
 
         /*
