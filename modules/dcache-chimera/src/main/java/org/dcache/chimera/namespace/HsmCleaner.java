@@ -2,6 +2,7 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import dmg.util.command.Option;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -40,6 +41,7 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
 import static dmg.util.CommandException.checkCommand;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -123,17 +125,15 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     private int _maxFilesPerRequest = 100;
 
     /**
-     * Timeout in milliseconds for delete requests sent to pools.
+     * Timeout for delete requests sent to HSM pools.
      */
-    private long _timeout = 60000;
+    private long _hsmTimeout;
+    private TimeUnit _hsmTimeoutUnit;
 
     /**
      * Timer used for implementing timeouts.
      */
     private final Timer _timer = new Timer("Request tracker timeout");
-
-    private long _hsmTimeout;
-    private TimeUnit _hsmTimeoutUnit;
 
     /**
      * Set maximum number of cached locations to delete.
@@ -146,20 +146,6 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     public synchronized void setMaxFilesPerRequest(int value) {
         _maxFilesPerRequest = value;
-    }
-    /**
-     * Set timeout in milliseconds for delete requests send to pools.
-     */
-    public synchronized void setTimeout(long timeout) {
-        _timeout = timeout;
-    }
-
-    /**
-     * Returns timeout in milliseconds for delete requests send to
-     * pools.
-     */
-    public synchronized long getTimeout() {
-        return _timeout;
     }
 
     @Required
@@ -277,7 +263,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
             _poolStub.notify(new CellPath(name), message);
 
             Timeout timeout = new Timeout(hsm, name);
-            _timer.schedule(timeout, _timeout);
+            _timer.schedule(timeout, _hsmTimeoutUnit.toMillis(_hsmTimeout));
             _requestTimeoutPerHsm.put(hsm, timeout);
         } else {
             /* If there is no available pool, then we report failure on
@@ -476,9 +462,9 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         int maxCachedDeleteLocations;
 
         @Override
-        public String call() throws CommandException {
+        public String call() throws CommandException, IllegalArgumentException {
             checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-            if (maxCachedDeleteLocations <= 0) throw new IllegalArgumentException("The number must be greater than 0 ");
+            if (maxCachedDeleteLocations <= 0) throw new IllegalArgumentException("The number must be greater than 0.");
 
             _maxCachedDeleteLocations = maxCachedDeleteLocations;
             return "Maximal number of cached hsm delete locations set to " + _maxCachedDeleteLocations;
@@ -492,9 +478,9 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         int maxFilesPerRequest;
 
         @Override
-        public String call() throws CommandException {
+        public String call() throws CommandException, IllegalArgumentException {
             checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
-            if (maxFilesPerRequest <= 0) throw new IllegalArgumentException("The number must be greater than 0 ");
+            if (maxFilesPerRequest <= 0) throw new IllegalArgumentException("The number must be greater than 0.");
 
             _maxFilesPerRequest = maxFilesPerRequest;
             return "Maximal number of files per request to a single HSM is set to " + _maxFilesPerRequest;
@@ -504,14 +490,21 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
     @Command(name = "hsm set timeOut",
             hint = "Changes the timeout for delete requests sent to an HSM pool.")
     public class HsmSetTimeOutCommand implements Callable<String> {
-        @Argument(usage = "cleaning request timeout in seconds (for HSM-pools)")
+        @Argument(usage = "cleaning request timeout for HSM pools")
         long hsmTimeout;
 
+        @Option(name = "unit",
+                valueSpec = "MILLISECONDS|SECONDS|MINUTES|HOURS|DAYS",
+                usage = "timeout unit (default is SECONDS)")
+        TimeUnit hsmTimeoutUnit = SECONDS;
+
         @Override
-        public String call() throws CommandException {
+        public String call() throws CommandException, IllegalArgumentException {
             checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            if (hsmTimeout <= 0) throw new IllegalArgumentException("The number must be greater than 0.");
+
             _hsmTimeout = hsmTimeout;
-            _hsmTimeoutUnit = SECONDS;
+            _hsmTimeoutUnit = hsmTimeoutUnit;
             return "Timeout for cleaning requests from HSM-pools is set to " + _hsmTimeout + " " + _hsmTimeoutUnit;
         }
     }
