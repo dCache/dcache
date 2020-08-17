@@ -615,6 +615,13 @@
       </bean>
   </beans>
 
+    <beans profile="backend-crypto">
+        <bean id="file-store" class="org.dcache.pool.repository.CryptoFileStore" destroy-method="close">
+            <description>Crypto-store for pool files</description>
+            <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
+        </bean>
+    </beans>
+
     <beans profile="kafka-true">
 
        <bean id="listener" class="org.dcache.kafka.LoggingProducerListener"/>

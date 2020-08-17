@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -101,7 +101,7 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
         if (path == null) {
             throw new InvalidMessageCacheException("Invalid nearline storage URI: " + location);
         }
-        stage(getExternalPath(path.substring(1)), request.getFile().toPath());
+        stage(getExternalPath(path.substring(1)), Paths.get(request.getReplicaUri()));
         return Collections.emptySet();
     }
 
