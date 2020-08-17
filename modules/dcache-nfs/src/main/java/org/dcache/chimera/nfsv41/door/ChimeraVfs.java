@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.stream.Stream;
@@ -115,6 +116,9 @@ import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
 public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
     private static final Logger _log = LoggerFactory.getLogger(ChimeraVfs.class);
+
+    private final String XATTR_TAG_PREFIX = "dcache.tag.";
+
     private final JdbcFs _fs;
     private final NfsIdMapping _idMapping;
 
@@ -619,6 +623,15 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public byte[] getXattr(Inode inode, String attr) throws IOException {
         FsInode fsInode = toFsInode(inode);
         try {
+            if (attr.startsWith(XATTR_TAG_PREFIX) && fsInode.isDirectory()) {
+                String tagName = attr.substring(XATTR_TAG_PREFIX.length());
+                byte[] buf = new byte[1024];
+                int n = _fs.getTag(fsInode, tagName, buf, 0, buf.length);
+                if (n == 0) {
+                    throw new NoXattrException("tag doesn't exist or empty");
+                }
+                return Arrays.copyOf(buf, n);
+            }
             return _fs.getXattr(fsInode, attr);
         } catch (NoXdataChimeraException e) {
             throw new NoXattrException(e.getMessage(), e);
@@ -656,7 +669,14 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     @Override
     public String[] listXattrs(Inode inode) throws IOException {
         FsInode fsInode = toFsInode(inode);
-        return _fs.listXattrs(fsInode).toArray(String[]::new);
+        String[] xattrs = _fs.listXattrs(fsInode).toArray(String[]::new);
+        if (fsInode.isDirectory()) {
+            String[] dirtags = Arrays.stream(_fs.tags(fsInode)).map(t -> XATTR_TAG_PREFIX + t).toArray(String[]::new);
+            String[] combined = Arrays.copyOf(xattrs, xattrs.length + dirtags.length);
+            System.arraycopy(dirtags, 0, combined, xattrs.length, dirtags.length);
+            xattrs = combined;
+        }
+        return xattrs;
     }
 
     @Override
