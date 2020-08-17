@@ -4,8 +4,6 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.util.concurrent.CheckedFuture;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import javax.security.auth.Subject;
@@ -17,7 +15,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
@@ -32,9 +29,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
 {
     private final LoginStrategy _inner;
 
-    private final LoadingCache<Principal,CheckedFuture<Principal, CacheException>> _forwardCache;
-    private final LoadingCache<Principal,CheckedFuture<Set<Principal>, CacheException>> _reverseCache;
-    private final LoadingCache<Subject, CheckedFuture<LoginReply, CacheException>> _loginCache;
+    private final LoadingCache<Principal, Principal> _forwardCache;
+    private final LoadingCache<Principal, Set<Principal>> _reverseCache;
+    private final LoadingCache<Subject, LoginReply> _loginCache;
 
     private final long _time;
     private final TimeUnit _unit;
@@ -81,9 +78,10 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     @Override
     public LoginReply login(Subject subject) throws CacheException {
         try {
-            return _loginCache.get(subject).checkedGet();
+            return _loginCache.get(subject);
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
+
             throw new RuntimeException(e.getCause());
         } catch (UncheckedExecutionException e) {
             Throwables.throwIfUnchecked(e.getCause());
@@ -94,7 +92,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     @Override
     public Principal map(Principal principal) throws CacheException {
         try {
-            return _forwardCache.get(principal).checkedGet();
+            return _forwardCache.get(principal);
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
@@ -107,7 +105,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     @Override
     public Set<Principal> reverseMap(Principal principal) throws CacheException {
         try {
-            return _reverseCache.get(principal).checkedGet();
+            return _reverseCache.get(principal);
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
@@ -117,51 +115,31 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         }
     }
 
-    private class ForwardFetcher extends CacheLoader<Principal, CheckedFuture<Principal, CacheException>> {
+    private class ForwardFetcher extends CacheLoader<Principal, Principal> {
 
         @Override
-        public CheckedFuture<Principal, CacheException> load(Principal f) throws TimeoutCacheException
+        public Principal load(Principal f) throws Exception
         {
-            try {
-                Principal p = _inner.map(f);
-                return Futures.immediateCheckedFuture(p);
-            } catch (TimeoutCacheException e) {
-                throw e;
-            } catch (CacheException e) {
-                return Futures.immediateFailedCheckedFuture(e);
-            }
+                return _inner.map(f);
         }
     }
 
-    private class ReverseFetcher extends CacheLoader<Principal, CheckedFuture<Set<Principal>, CacheException>> {
+    private class ReverseFetcher extends CacheLoader<Principal, Set<Principal>> {
 
         @Override
-        public CheckedFuture<Set<Principal>, CacheException> load(Principal f) throws TimeoutCacheException
+        public Set<Principal> load(Principal f) throws Exception
         {
-            try {
-                Set<Principal> s = _inner.reverseMap(f);
-                return  Futures.immediateCheckedFuture(s);
-            } catch (TimeoutCacheException e) {
-                throw e;
-            } catch (CacheException e) {
-                return Futures.immediateFailedCheckedFuture(e);
-            }
+                return _inner.reverseMap(f);
         }
     }
 
-    private class LoginFetcher extends CacheLoader<Subject, CheckedFuture<LoginReply, CacheException>> {
+    private class LoginFetcher extends CacheLoader<Subject, LoginReply> {
 
         @Override
-        public CheckedFuture<LoginReply, CacheException> load(Subject f) throws TimeoutCacheException
+        public LoginReply load(Subject f) throws Exception
         {
-            try {
-                LoginReply s = _inner.login(f);
-                return Futures.immediateCheckedFuture(s);
-            } catch (TimeoutCacheException e) {
-                throw e;
-            } catch (CacheException e) {
-                return Futures.immediateFailedCheckedFuture(e);
-            }
+
+                return _inner.login(f);
         }
     }
 
@@ -183,38 +161,26 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
                 .append(_unit.name().toLowerCase()).append("\n");
         sb.append("Login:\n");
         for (Subject s : _loginCache.asMap().keySet()) {
-            try {
-                CheckedFuture<LoginReply, CacheException> out = _loginCache.getIfPresent(s);
-                if (out != null) {
-                    sb.append("   ").append(s.getPrincipals()).append(" => ");
-                    sb.append(out.checkedGet()).append('\n');
-                }
-            } catch (CacheException e) {
-                sb.append(e.toString()).append('\n');
+            LoginReply out = _loginCache.getIfPresent(s);
+            if (out != null) {
+                sb.append("   ").append(s.getPrincipals()).append(" => ");
+                sb.append(out).append('\n');
             }
         }
         sb.append("Map:\n");
         for (Principal p : _forwardCache.asMap().keySet()) {
-            try {
-                CheckedFuture<Principal, CacheException> out = _forwardCache.getIfPresent(p);
-                if (out != null) {
-                    sb.append("   ").append(p).append(" => ");
-                    sb.append(out.checkedGet()).append('\n');
-                }
-            } catch (CacheException e) {
-                sb.append(e.toString()).append('\n');
+            Principal out = _forwardCache.getIfPresent(p);
+            if (out != null) {
+                sb.append("   ").append(p).append(" => ");
+                sb.append(out).append('\n');
             }
         }
         sb.append("ReverseMap:\n");
         for (Principal p : _reverseCache.asMap().keySet()) {
-            try {
-                CheckedFuture<Set<Principal>, CacheException> out = _reverseCache.getIfPresent(p);
-                if (out != null) {
-                    sb.append("   ").append(p).append(" => ");
-                    sb.append(out.checkedGet()).append('\n');
-                }
-            } catch (CacheException e) {
-                sb.append(e.toString()).append('\n');
+            Set<Principal> out = _reverseCache.getIfPresent(p);
+            if (out != null) {
+                sb.append("   ").append(p).append(" => ");
+                sb.append(out).append('\n');
             }
         }
         return sb.toString();
