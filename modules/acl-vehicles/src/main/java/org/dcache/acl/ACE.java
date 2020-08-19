@@ -119,20 +119,6 @@ public class ACE implements Serializable
         return _type.hashCode() ^ _flags ^ _accessMsk ^ _who.hashCode() ^ _whoID ;
     }
 
-    public String toNFSv4String(RsType rsType) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(_who.getAbbreviation());
-        if (_who == Who.USER || _who == Who.GROUP) {
-            sb.append(SEPARATOR).append(_whoID);
-        }
-        sb.append(SEPARATOR).append(AccessMask.asString(_accessMsk, rsType));
-        if (_flags != 0) {
-            sb.append(SEPARATOR).append(AceFlags.asString(_flags));
-        }
-        sb.append(SEPARATOR).append(_type.getAbbreviation());
-        return sb.toString();
-    }
-
     public String toOrgString() {
         StringBuilder sb = new StringBuilder();
         sb.append(_type.getValue()).append(SPACE_SEPARATOR);

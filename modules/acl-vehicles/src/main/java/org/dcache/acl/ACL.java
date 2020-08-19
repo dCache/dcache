@@ -68,18 +68,6 @@ public class ACL implements Serializable
         return _list.isEmpty();
     }
 
-    public String toNFSv4String() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(_rsType).append(SPACE_SEPARATOR);
-        for (int index = 0; index < _list.size(); index++) {
-            if (index > 0) {
-                sb.append(SPACE_SEPARATOR);
-            }
-            sb.append(_list.get(index).toNFSv4String(_rsType));
-        }
-        return sb.toString();
-    }
-
     public String toOrgString() {
         StringBuilder sb = new StringBuilder();
         sb.append(_rsType.getValue()).append(LINE_SEPARATOR);
