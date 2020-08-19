@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,17 +40,17 @@ public interface NearlineStorage
     /**
      * Flush all files in {@code requests} to nearline storage.
      */
-    void flush(Iterable<FlushRequest> requests);
+    void flush(Iterable<? extends FlushRequest> requests);
 
     /**
      * Stage all files in {@code requests} from nearline storage.
      */
-    void stage(Iterable<StageRequest> requests);
+    void stage(Iterable<? extends StageRequest> requests);
 
     /**
      * Delete all files in {@code requests} from nearline storage.
      */
-    void remove(Iterable<RemoveRequest> requests);
+    void remove(Iterable<? extends RemoveRequest> requests);
 
     /**
      * Cancel any flush, stage or remove request with the given id.

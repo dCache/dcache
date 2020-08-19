@@ -87,14 +87,14 @@ public class TarNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void flush(Iterable<FlushRequest> requests)
+    public void flush(Iterable<? extends FlushRequest> requests)
     {
         Iterables.addAll(flushQueue, requests);
         executor.execute(new FlushTask());
     }
 
     @Override
-    public void stage(Iterable<StageRequest> requests)
+    public void stage(Iterable<? extends StageRequest> requests)
     {
         for (StageRequest request : requests) {
             File tarFile;
@@ -122,7 +122,7 @@ public class TarNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void remove(Iterable<RemoveRequest> requests)
+    public void remove(Iterable<? extends RemoveRequest> requests)
     {
         for (RemoveRequest request : requests) {
             request.failed(new CacheException("Remove from tar nearline storage is not supported."));

@@ -17,7 +17,6 @@
  */
 package org.dcache.pool.nearline;
 
-import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.AsyncFunction;
@@ -120,7 +119,6 @@ import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.transform;
 import static com.google.common.util.concurrent.Futures.transformAsync;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.SIZE;
@@ -773,7 +771,7 @@ public class NearlineStorageHandler
         @Override
         protected void submit(NearlineStorage storage, Iterable<FlushRequestImpl> requests)
         {
-            storage.flush(transform(requests, Functions.<FlushRequest>identity()));
+            storage.flush(requests);
         }
     }
 
@@ -796,7 +794,7 @@ public class NearlineStorageHandler
         @Override
         protected void submit(NearlineStorage storage, Iterable<StageRequestImpl> requests)
         {
-            storage.stage(transform(requests, Functions.<StageRequest>identity()));
+            storage.stage(requests);
         }
     }
 
@@ -817,7 +815,7 @@ public class NearlineStorageHandler
         @Override
         protected void submit(NearlineStorage storage, Iterable<RemoveRequestImpl> requests)
         {
-            storage.remove(transform(requests, Functions.<RemoveRequest>identity()));
+            storage.remove(requests);
         }
     }
 

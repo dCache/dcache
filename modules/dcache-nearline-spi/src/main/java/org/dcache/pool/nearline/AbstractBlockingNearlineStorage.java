@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -78,7 +78,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void flush(Iterable<FlushRequest> requests)
+    public void flush(Iterable<? extends FlushRequest> requests)
     {
         for (FlushRequest request : requests) {
             Task<FlushRequest, Set<URI>> task =
@@ -107,7 +107,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void stage(Iterable<StageRequest> requests)
+    public void stage(Iterable<? extends StageRequest> requests)
     {
         for (StageRequest request : requests) {
             Task<StageRequest, Set<Checksum>> task =
@@ -137,7 +137,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void remove(Iterable<RemoveRequest> requests)
+    public void remove(Iterable<? extends RemoveRequest> requests)
     {
         for (RemoveRequest request : requests) {
             Task<RemoveRequest, Void> task =
