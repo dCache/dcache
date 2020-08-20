@@ -29,7 +29,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
     private final long _fileSize;
 
     /**
-     * Creates a {@link RepositortyChannel} to read from, and optionally to
+     * Creates a {@link RepositoryChannel} to read from, and optionally to
      * write to, the file specified by the {@link File} argument.
      *
      * @param      path   the file object
