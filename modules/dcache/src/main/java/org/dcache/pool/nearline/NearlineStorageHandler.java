@@ -42,7 +42,6 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -453,20 +452,6 @@ public class NearlineStorageHandler
     @Override
     public void stickyChanged(StickyChangeEvent event)
     {
-    }
-
-    private <T extends AbstractRequest> List<T> getRequests(Collection<T> queue, int limit) {
-        List<T> requests = new ArrayList<>();
-        int i = 0;
-        for (T request: queue) {
-            if (i >= limit) {
-                break;
-            }
-            requests.add(request);
-            ++i;
-        }
-
-        return requests;
     }
 
     /**
