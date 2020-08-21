@@ -135,13 +135,10 @@ public class NfsProxyIo implements ProxyIoAdapter {
     @Override
     public synchronized VirtualFileSystem.WriteResult write(ByteBuffer src, long position) throws IOException {
 
-        byte[] data = new byte[src.remaining()];
-        src.get(data);
-
         COMPOUND4args args = new CompoundBuilder()
                 .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
                 .withPutfh(fh)
-                .withWrite(position, data, stateid)
+                .withWrite(position, src, stateid)
                 .withTag("pNFS write")
                 .build();
 
