@@ -23,7 +23,6 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 
@@ -100,8 +99,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
             res.resok4 = new WRITE4resok();
             res.resok4.count = new count4(writeResult.getBytesWritten());
             res.resok4.committed = writeResult.getStabilityLevel().toStableHow();
-            res.resok4.writeverf = new verifier4();
-            res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
+            res.resok4.writeverf = context.getRebootVerifier();
 
             _log.debug("MOVER: {}@{} written.", writeResult.getBytesWritten(), offset);
 
