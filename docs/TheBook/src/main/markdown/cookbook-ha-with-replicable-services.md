@@ -35,7 +35,7 @@ least one write pool is available.
 
 The only way to avoid that files become inacessible when a pool is offline is to
 replicate the files onto a second pool. One common way to do this is using the
-resilience service. That service is described in a separate document.
+`resilience` service. That service is described in a separate document.
 
 The development team is working on means to expose the same pool storage through
 several pool cells, e.g. when using a cluster file system or a third party
@@ -107,7 +107,7 @@ suffix (although they internally are represented with an `@local` suffix). E.g.
 `PnfsManager@namespaceDomain` is a fully qualified cell address and identifies a
 specific cell instance, while `PnfsManager` is a logical address.
 
-In dCache 2.16, many -- although not all -- services are replicable. A
+In dCache 6.2, many -- although not all -- services are replicable. A
 replicable service is one that supports the above separation between a logical
 address and a physical address and which supports having several physical
 instances use the same logical address. One may recognize replicable services by
@@ -127,25 +127,25 @@ route delete PnfsManager PnfsManager@namespaceDomain
 After this, no new requests will reach that `pnfsmanager` instance and once the
 service is idle it may be shut down.
 
-The following is a list of critical replicable services in dCache 2.16.
+The following is a list of critical replicable services in dCache 6.2.
 
 ### `spacemanager`
 
-Space manager is fully replicable. Several instances must share the same
+Spacemanager is fully replicable. Several instances must share the same
 database as requests from doors will be load balanced over all physical
 instances. The configuration should be synchronized such that all instances are
 configured the same way.
 
 ### `pinmanager`
 
-Pin manager is fully replicable. Several instances must share the same database
+Pinmanager is fully replicable. Several instances must share the same database
 as requests from doors will be load balanced over all physical instances. The
 configuration should be synchronized such that all instances are configured the
 same way.
 
 ### `srmmanager`
 
-SRM manager is fully replicable. Several instance must have separate databases.
+Srmmanager is fully replicable. Several instance must have separate databases.
 The configuration should be synchronized such that with the exception of the
 database settings all instances are configured the same way.
 
@@ -171,7 +171,7 @@ specific `srm` frontends, each configured to talk to a specific logical backend
 
 ### `pnfsmanager`
 
-PNFS manager is fully replicable. Several instances must share the same database
+Pnfsmanager is fully replicable. Several instances must share the same database
 as requests from doors will be load balanced over all physical instances. The
 configuration should be synchronized such that all instances are configured the
 same way.
@@ -187,7 +187,14 @@ Non-critical services will not directly affect transfers in case of
 unavailabilty. As such, it may be unnecessary to replicate these services if the
 primary interest is rolling upgrades.
 
-The following is a list of non-critical replicable services in dCache 2.16.
+The following is a list of non-critical replicable services in dCache 6.2.
+
+### `cleaner`
+
+Cleaner is fully replicable. Several instances must share the same database
+as requests from doors will be load balanced over all physical instances. The
+configuration should be synchronized such that all instances are configured the
+same way.
 
 ### `admin`
 
