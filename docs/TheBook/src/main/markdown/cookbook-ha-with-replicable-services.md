@@ -191,8 +191,7 @@ The following is a list of non-critical replicable services in dCache 6.2.
 
 ### `cleaner`
 
-Cleaner is fully replicable. Several instances must share the same database
-as requests from doors will be load balanced over all physical instances. The
+Cleaner is fully replicable. Several instances must share the same database. The
 configuration should be synchronized such that all instances are configured the
 same way.
 
