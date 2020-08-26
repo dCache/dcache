@@ -17,6 +17,7 @@
  */
 package org.dcache.http;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.net.InetAddresses;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
@@ -62,12 +63,17 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
             throws IOException, ServletException
     {
         if (isStarted() && !baseRequest.isHandled()) {
+            Stopwatch processingTime = Stopwatch.createStarted();
+
             super.handle(target, baseRequest, request, response);
+
+            processingTime.stop();
 
             NetLoggerBuilder.Level logLevel = logLevel(request, response);
             NetLoggerBuilder log = new NetLoggerBuilder(logLevel, requestEventName())
                     .omitNullValues();
             describeOperation(log, request, response);
+            log.add("duration", processingTime.elapsed().toMillis());
             log.toLogger(accessLogger());
         }
     }
