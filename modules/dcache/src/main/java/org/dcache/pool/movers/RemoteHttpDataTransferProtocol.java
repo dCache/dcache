@@ -155,15 +155,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     /** Maximum time to wait when establishing a connection. */
     private static final int CONNECTION_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
 
-    /** Maximum time to wait for next packet from remote server. */
-    private static final int SOCKET_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
-
     /**
-     * Maximum time to wait for next packet from remote server for GET requests.
-     * This needs to be longer as DPM can block on GET requests while calculating
-     * the checksum.
+     * Minimum time to wait for next packet from remote server.  This is
+     * mostly used to allow for a server that accepts a request but takes a
+     * non-trivial amount of time to start its reply.  As we cannot easily
+     * create a check for how long the remote server takes to provide the
+     * first byte of its response, the socket timeout is used instead.
      */
-    private static final int GET_SOCKET_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(20);
+    private static final int SOCKET_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
 
     /**
      * Expected maximum delay all post-processing files will experience,
@@ -182,8 +181,12 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private static final long DELAY_BETWEEN_REQUESTS = 5_000;
 
     /**
-     * A guess on how long to retry a GET request.  Since the file size is
-     * unknown, this value may be insufficient if the file is larger.
+     * A guess on how long a GET request might take.
+     * <p>
+     * Note, we do not know the file size when making a GET request, so the
+     * file size here is a guess, based on a likely value.  Therefore, the
+     * duration may be insufficient if the remote server is loaded and the file
+     * is larger.
      */
     private static final long GET_RETRY_DURATION = maxRetryDuration(GiB.toBytes(2L));
     private static final String GET_RETRY_DURATION_DESCRIPTION = describeDuration(GET_RETRY_DURATION, MILLISECONDS);
@@ -303,9 +306,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private void receiveFile(final RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
+        long deadline = System.currentTimeMillis() + GET_RETRY_DURATION;
+
         HttpClientContext context = new HttpClientContext();
         try {
-            try (CloseableHttpResponse response = doGet(info, context)) {
+            try (CloseableHttpResponse response = doGet(info, context, deadline)) {
                 String rfc3230 = headerValue(response, "Digest");
                 Set<Checksum> checksums = Checksums.decodeRfc3230(rfc3230);
                 checksums.forEach(_integrityChecker);
@@ -350,26 +355,37 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
     }
 
-    private CloseableHttpResponse doGet(final RemoteHttpDataTransferProtocolInfo info,
-            HttpContext context) throws IOException, ThirdPartyTransferFailedCacheException, InterruptedException
+    private HttpGet buildGetRequest(RemoteHttpDataTransferProtocolInfo info,
+            long deadline)
     {
         HttpGet get = new HttpGet(info.getUri());
         get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
         addHeadersToRequest(info, get, INITIAL_REQUEST);
+
+        int timeLeftBeforeDeadline = (int)(deadline-System.currentTimeMillis());
+        int socketTimeout = Math.max(SOCKET_TIMEOUT, timeLeftBeforeDeadline);
+
         get.setConfig(RequestConfig.custom()
                               .setConnectTimeout(CONNECTION_TIMEOUT)
-                              .setSocketTimeout(GET_SOCKET_TIMEOUT)
+                              .setSocketTimeout(socketTimeout)
                               .build());
+        return get;
+    }
 
+    private CloseableHttpResponse doGet(final RemoteHttpDataTransferProtocolInfo info,
+            HttpContext context, long deadline) throws IOException,
+            ThirdPartyTransferFailedCacheException, InterruptedException
+    {
+        HttpGet get = buildGetRequest(info, deadline);
         CloseableHttpResponse response = _client.execute(get, context);
 
         boolean isSuccessful = false;
         try {
-            long deadline = System.currentTimeMillis() + GET_RETRY_DURATION;
             while (shouldRetry(response) && System.currentTimeMillis() < deadline) {
                 Thread.sleep(DELAY_BETWEEN_REQUESTS);
 
                 response.close();
+                get = buildGetRequest(info, deadline);
                 response = _client.execute(get);
             }
 
@@ -566,7 +582,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 isFirstAttempt = false;
 
                 HttpClientContext context = new HttpClientContext();
-                HttpHead head = buildHeadRequest(info);
+                HttpHead head = buildHeadRequest(info, deadline);
                 try {
                     try (CloseableHttpResponse response = _client.execute(head, context)) {
                         StatusLine status = response.getStatusLine();
@@ -625,9 +641,13 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 "to provide length after " + describeDuration(GET_RETRY_DURATION, MILLISECONDS));
     }
 
-    private HttpHead buildHeadRequest(RemoteHttpDataTransferProtocolInfo info)
+    private HttpHead buildHeadRequest(RemoteHttpDataTransferProtocolInfo info,
+            long deadline)
     {
         HttpHead head = new HttpHead(info.getUri());
+
+        int timeLeftBeforeDeadline = (int)(deadline-System.currentTimeMillis());
+        int socketTimeout = Math.max(SOCKET_TIMEOUT, timeLeftBeforeDeadline);
 
         _channel.getFileAttributes().getChecksumsIfPresent()
                 .map(v -> Checksums.asWantDigest(v))
@@ -637,7 +657,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
         head.setConfig(RequestConfig.custom()
                                   .setConnectTimeout(CONNECTION_TIMEOUT)
-                                  .setSocketTimeout(SOCKET_TIMEOUT)
+                                  .setSocketTimeout(socketTimeout)
                                   .build());
         addHeadersToRequest(info, head, INITIAL_REQUEST);
         return head;
