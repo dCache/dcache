@@ -176,7 +176,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
      * server, in bytes per millisecond.  This is used to estimate how long
      * any file post-processing (like checksum calculation) will take.
      */
-    private static final double POST_PROCESSING_BANDWIDTH = MiB.toBytes(100) / 1_000.0;
+    private static final double POST_PROCESSING_BANDWIDTH = MiB.toBytes(10) / 1_000.0;
 
     /** Number of milliseconds between successive requests. */
     private static final long DELAY_BETWEEN_REQUESTS = 5_000;
