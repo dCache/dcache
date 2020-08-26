@@ -23,6 +23,7 @@ import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpRequestExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,8 @@ import java.net.URI;
 import java.nio.channels.Channels;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -201,6 +204,12 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     // supports
     private static final String WANT_DIGEST_VALUE = "adler32;q=1, md5;q=0.8";
 
+    /**
+     * How long the client will wait for the "100 Continue" response when
+     * making a PUT request using expect-100.
+     */
+    private static final Duration EXPECT_100_TIMEOUT = Duration.of(5, ChronoUnit.MINUTES);
+
     private static final RedirectStrategy DROP_AUTHORIZATION_HEADER = new DefaultRedirectStrategy() {
 
                 @Override
@@ -297,6 +306,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     {
         return builder
                 .setUserAgent(USER_AGENT)
+                .setRequestExecutor(new HttpRequestExecutor((int)EXPECT_100_TIMEOUT.toMillis()))
                 .setRedirectStrategy(DROP_AUTHORIZATION_HEADER);
     }
 
