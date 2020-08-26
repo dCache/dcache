@@ -129,6 +129,7 @@ import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
+import org.dcache.webdav.MiltonHandler.DcacheServletRequest;
 
 import static java.util.Objects.requireNonNull;
 import static com.google.common.collect.Iterables.cycle;
@@ -220,6 +221,7 @@ public class DcacheResourceFactory
     private String _path;
     private boolean _doRedirectOnRead = true;
     private boolean _doRedirectOnWrite = true;
+    private boolean _impatientClientProxied = true;
     private boolean _isOverwriteAllowed;
     private boolean _isAnonymousListingAllowed;
 
@@ -463,6 +465,16 @@ public class DcacheResourceFactory
         return _doRedirectOnWrite;
     }
 
+    public void setImpatientClientProxied(boolean proxied)
+    {
+        _impatientClientProxied = proxied;
+    }
+
+    public boolean isImpatientClientProxied()
+    {
+        return _impatientClientProxied;
+    }
+
     /**
      * Sets whether existing files may be overwritten.
      */
@@ -700,7 +712,43 @@ public class DcacheResourceFactory
         case PUT:
             boolean expects100Continue =
                     Objects.equal(request.getExpectHeader(), HttpHeaders.Values.CONTINUE);
-            return isRedirectOnWriteEnabled() && expects100Continue;
+
+            /* Has the client started sending the entity for a PUT request that
+             * is using the expect-100 protocol.  RFC 7231 says:
+             *
+             *   o  A client that sends a 100-continue expectation is not required
+             *      to wait for any specific length of time; such a client MAY
+             *      proceed to send the message body even if it has not yet
+             *      received a response.  Furthermore, since 100 (Continue)
+             *      responses cannot be sent through an HTTP/1.0 intermediary, such
+             *      a client SHOULD NOT wait for an indefinite period before
+             *      sending the message body.
+             *
+             * By default, libcurl waits a maximum of one second for the
+             * "100 Continue" response before sending the content anyway,
+             * libwww-perl waits two seconds, Apache common httpclient waits
+             * three seconds.
+             *
+             * The redirection response could take longer than one second if
+             * the mover is queued on the pool, or the pool is busy and delays
+             * starting the mover, or ...
+             *
+             * If the client times out waiting for dCache's response and
+             * started sending the HTTP entity (the file's data) then the client
+             * will only notice the redirection after sending the entire fire.
+             * This forces the client to send the data twice.
+             *
+             * To avoid this, the door can proxy the data if the client has
+             * already started to send the entity.
+             */
+            boolean proxyImpatientClient = isImpatientClientProxied()
+                    && ((MiltonHandler.DcacheServletRequest)request).isClientSendingEntity();
+
+            if (proxyImpatientClient) {
+                LOGGER.warn("Proxying transfer because client has already started sending data.");
+            }
+
+            return isRedirectOnWriteEnabled() && expects100Continue && !proxyImpatientClient;
         default:
             return false;
         }

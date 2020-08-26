@@ -8,9 +8,12 @@ import io.milton.http.RequestParseException;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import org.apache.commons.fileupload.FileUploadException;
+import org.eclipse.jetty.server.HttpInput;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletContext;
@@ -38,6 +41,7 @@ public class MiltonHandler
     extends AbstractHandler
     implements CellIdentityAware
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MiltonHandler.class);
     private static final ImmutableList<String> ALLOWED_ORIGIN_PROTOCOL = ImmutableList.of("http", "https");
 
     private HttpManager _httpManager;
@@ -88,10 +92,13 @@ public class MiltonHandler
     /**
      * Dcache specific subclass to workaround various Jetty/Milton problems.
      */
-    private class DcacheServletRequest extends ServletRequest {
+    class DcacheServletRequest extends ServletRequest {
+        private final HttpServletRequest request;
+
         public DcacheServletRequest(HttpServletRequest request,
                                     ServletContext context) {
             super(request, context);
+            this.request = request;
         }
 
         @Override
@@ -119,6 +126,32 @@ public class MiltonHandler
                     ? e.getCause().getMessage()
                     : e.getMessage();
                 throw new UncheckedBadRequestException(message, e, null);
+            }
+        }
+
+        /**
+         * Is there content from the client that is unparsed by Jetty.
+         * This is equivalent to {@code getInputStream().available() > 0} with
+         * the distinction that it does not result in the "100 Continue"
+         * response that {@code getInputStream()} would normally by triggered.
+         */
+        public boolean isClientSendingEntity()
+        {
+            try {
+                /* This is a work-around for Jetty where calling getInputStream
+                 * results in Jetty immediately returning "100 Continue" to
+                 * the client.  The Jetty-specific getHttpInput method
+                 * provides a "back door" that returns the InputStream without
+                 * triggering this behaviour.
+                 */
+                InputStream in = request instanceof Request
+                        ? ((Request) request).getHttpInput()
+                        : getInputStream();
+
+                return in.available() > 0;
+            } catch (IOException e) {
+                LOGGER.warn("Got exception in hasContent: {}", e.toString());
+                return false;
             }
         }
 
