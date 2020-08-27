@@ -37,6 +37,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -313,17 +314,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private void receiveFile(final RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
+        Set<Checksum> checksums;
+
         HttpClientContext context = new HttpClientContext();
         try {
             try (CloseableHttpResponse response = doGet(info, context)) {
                 String rfc3230 = headerValue(response, "Digest");
-                Set<Checksum> checksums = Checksums.decodeRfc3230(rfc3230);
+                checksums = Checksums.decodeRfc3230(rfc3230);
                 checksums.forEach(_integrityChecker);
-
-                if (checksums.isEmpty() && info.isVerificationRequired()) {
-                    throw new ThirdPartyTransferFailedCacheException("no useful checksum in GET response: " +
-                                                      (rfc3230 == null ? "(none sent)" : rfc3230));
-                }
 
                 HttpEntity entity = response.getEntity();
                 if (entity == null) {
@@ -356,6 +354,34 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 throw new ThirdPartyTransferFailedCacheException(message.toString(), e.getCause());
             } else {
                 throw e;
+            }
+        }
+
+        // Work-around for Dynafed, which only supplies checksum information on
+        // HEAD requests.
+        if (checksums.isEmpty() && info.isVerificationRequired()) {
+            HttpHead head = buildHeadRequest(info);
+            head.addHeader("Want-Digest", WANT_DIGEST_VALUE);
+
+            try {
+                try (CloseableHttpResponse response = _client.execute(head)) {
+
+                    String rfc3230 = headerValue(response, "Digest");
+
+                    checkThirdPartyTransferSuccessful(rfc3230 != null,
+                            "no checksums in HEAD response");
+
+                    checksums = Checksums.decodeRfc3230(rfc3230);
+
+                    checkThirdPartyTransferSuccessful(!checksums.isEmpty(),
+                            "no useful checksums in HEAD response: %s", rfc3230);
+
+                    // Ensure integrety.  If we're lucky, this won't trigger
+                    // rescanning the uploaded file.
+                    checksums.forEach(_integrityChecker);
+                }
+            } catch (IOException e) {
+                throw new ThirdPartyTransferFailedCacheException("HEAD request failed: " + messageOrClassName(e), e);
             }
         }
     }
@@ -577,6 +603,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
                 HttpClientContext context = new HttpClientContext();
                 HttpHead head = buildHeadRequest(info);
+                buildWantDigest(info).ifPresent(v -> head.addHeader("Want-Digest", v));
+
                 try {
                     try (CloseableHttpResponse response = _client.execute(head, context)) {
                         StatusLine status = response.getStatusLine();
@@ -635,15 +663,18 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 "to provide length after " + describeDuration(GET_RETRY_DURATION, MILLISECONDS));
     }
 
+    private Optional<String> buildWantDigest(RemoteHttpDataTransferProtocolInfo info)
+    {
+        Optional<Set<Checksum>> checksums = _channel.getFileAttributes().getChecksumsIfPresent();
+
+        return checksums.map(v -> Checksums.asWantDigest(v))
+                .filter(Optional::isPresent)
+                .map(Optional::get);
+    }
+
     private HttpHead buildHeadRequest(RemoteHttpDataTransferProtocolInfo info)
     {
         HttpHead head = new HttpHead(info.getUri());
-
-        _channel.getFileAttributes().getChecksumsIfPresent()
-                .map(v -> Checksums.asWantDigest(v))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .ifPresent(v -> head.addHeader("Want-Digest", v));
 
         head.setConfig(RequestConfig.custom()
                                   .setConnectTimeout(CONNECTION_TIMEOUT)
