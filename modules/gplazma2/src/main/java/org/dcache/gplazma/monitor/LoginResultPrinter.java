@@ -83,6 +83,7 @@ public class LoginResultPrinter
                     .put("1.2.840.113549.1.1.4", "MD5 with RSA")
                     .put("1.2.840.113549.1.1.5", "SHA-1 with RSA")
                     .put("1.2.840.113549.1.1.11", "SHA-256 with RSA")
+                    .put("1.2.840.113549.1.1.12", "SHA-384 with RSA")
                     .put("1.2.840.113549.1.1.13", "SHA-512 with RSA")
                     .put("2.16.840.1.101.3.4.2.1", "SHA-256")
                     .put("2.16.840.1.101.3.4.2.2", "SHA-384")
