@@ -646,6 +646,37 @@ public class FileAttributes implements Serializable, Cloneable {
         guard(XATTR);
         return _xattr;
     }
+
+    /**
+     * Check whether an extended attribute is defined.  Unlike
+     * {@link #getXattrs()}, this method does not throw an exception if
+     * the extended attributes map is not set.
+     * @param name The extended attribute name to check.
+     * @return True iff there exists an extended attribute with this name.
+     */
+    public boolean hasXattr(String name)
+    {
+        return _xattr != null && _xattr.containsKey(name);
+    }
+
+    /**
+     * Update the extended attributes so that the supplied key-value pair are
+     * stored.  A subsequent call to getXattr will return a Map containing this
+     * association.  The previous value is returned.
+     * @param name The extended attribute name
+     * @param value The corresponding extended attribute value.
+     * @return The existing extended attribute value
+     */
+    public Optional<String> updateXattr(String name, String value)
+    {
+        Map<String,String> attrs = _xattr == null
+                ? new HashMap<String,String>()
+                : _xattr;
+        String oldValue = attrs.put(name, value);
+        setXattrs(attrs);
+        return Optional.ofNullable(oldValue);
+    }
+
     /**
      * Remove the {@link FileType} corresponding to the file.  The FileType
      * must be specified before this method is called.  Subsequent getFileType
