@@ -1,4 +1,4 @@
-Chapter 10. Authorization in dCache
+Chapter 9. Authorization in dCache
 ===================================
 
 To limit access to data, dCache comes with an authentication and authorization interface called `gPlazma2`. gPlazma is an acronym for Grid-aware PLuggable AuthorZation Management. Earlier versions of dCache worked with `gPlazma1` which has now been completely removed from dCache. So if you are upgrading, you have to reconfigure `gPlazma` if you used `gPlazma1` until now.

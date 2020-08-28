@@ -1,4 +1,4 @@
-CHAPTER 15. THE BILLING SERVICE
+CHAPTER 14. THE BILLING SERVICE
 ===============================
 
 dCache has built-in monitoring capabilities which provide an overview of the activity and performance of the installation’s doors and pools. There are two options for how this data can be represented and stored:

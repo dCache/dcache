@@ -1,4 +1,4 @@
-CHAPTER 16. THE ALARMS SERVICE
+CHAPTER 15. THE ALARMS SERVICE
 ==============================
 
 dCache has an `alarms` backend service which records failures (*alarms*)

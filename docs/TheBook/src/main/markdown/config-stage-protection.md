@@ -1,4 +1,4 @@
-CHAPTER 20.  STAGE PROTECTION
+CHAPTER 21.  STAGE PROTECTION
 =============================
 
 Access to tape is expensive. To avoid inefficient use of tape resources, or "stage mayhem" by random, chaotic  user

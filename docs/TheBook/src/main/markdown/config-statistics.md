@@ -1,4 +1,4 @@
-CHAPTER 14. THE STATISTICS SERVICE
+CHAPTER 13. THE STATISTICS SERVICE
 ==================================
 
 The `statistics` service collects information on the amount of data stored on all pools and the total data flow including streams from and to tertiary storage systems.

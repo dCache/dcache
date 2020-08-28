@@ -1,4 +1,4 @@
-CHAPTER 17. THE BULK SERVICE
+CHAPTER 18. THE BULK SERVICE
 ===============================
 
 The purpose of the bulk service is to manage mass file system operations involving lists of files

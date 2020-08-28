@@ -1,4 +1,4 @@
-CHAPTER 13. dCache STORAGE RESOURCE MANAGER
+CHAPTER 12. dCache STORAGE RESOURCE MANAGER
 ===========================================
 
 Storage Resource Managers (SRMs) are middleware components whose function is to

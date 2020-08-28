@@ -1,4 +1,4 @@
-CHAPTER 19. GLUE INFO PROVIDER
+CHAPTER 20. GLUE INFO PROVIDER
 ==============================
 
 The GLUE information provider supplied with dCache provides the information about the dCache instance in a standard format called GLUE. This is necessary so that WLCG infrastructure (such as FTS) and clients using WLCG tools can discover the dCache instance and use it correctly.

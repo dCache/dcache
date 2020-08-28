@@ -1,4 +1,4 @@
-Chapter 8: The dCache Tertiary Storage System Interface
+Chapter 6: The dCache Tertiary Storage System Interface
 ============================================
 
 One of the features dCache provides is the ability to migrate files from its disk repository to one or more connected Tertiary Storage Systems (TSS) and to move them back to disk when necessary. Although the interface between dCache and the TSS is kept simple, dCache assumes to interact with an intelligent TSS. dCache does not drive tape robots or tape drives by itself. More detailed requirements to the storage system are described in one of the subsequent paragraphs.

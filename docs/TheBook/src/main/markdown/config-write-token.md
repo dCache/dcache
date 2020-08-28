@@ -1,4 +1,4 @@
-Chapter 21.  Using Space Reservations without SRM
+Chapter 22.  Using Space Reservations without SRM
 =================================================
 
 If you are using space reservations, i.e. you set

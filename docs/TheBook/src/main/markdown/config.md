@@ -22,7 +22,7 @@ This part contains descriptions of the components of dCache, their role, functio
     - [Directory Tags for dCache](config-chimera.md#directory-tags-for-dcache)
     - [Storage Class and Directory Tags](config-chimera.md#storage-class-and-directory)
 
-1. [Cell Message passing](config-message-passing.md#the-cell-package)
+1. [Cell Message Passing](config-message-passing.md#the-cell-package)
 
 1. [The Resilience Service](config-resilience.md)
     - [Configuring the Resilience Service](config-resilience.md#configuring-the-resilience-service)
@@ -34,7 +34,7 @@ This part contains descriptions of the components of dCache, their role, functio
     - [Some typical scenarios part 1: what happens when ...?](config-resilience.md#some-typical-scenarios-part-1--what-happens-when-?)
     - [Some typical scenarios part 2: how do I ...?](config-resilience.md#some-typical-scenarios-part-2--how-do-i-?)
 
-1. [The poolmanager Service](config-PoolManager.md)
+1. [The PoolManager Service](config-PoolManager.md)
     - [The Pool Selection Mechanism](config-PoolManager.md#the-pool-selection-mechanism)
     - [Links](config-PoolManager.md#links)
     - [Examples](config-PoolManager.md#examples)
@@ -67,6 +67,8 @@ This part contains descriptions of the components of dCache, their role, functio
     - [Obtain information via the dCache Command Line Admin Interface](config-hsm.md#obtain-information-via-the-dcache-command-line-admin-interface)
     - [Example of an executable to simulate a tape backend](config-hsm.md#example-of-an-executable-to-simulate-a-tape-backend)
 
+1. [The PinManager Service](config-pinmanager.md)
+
 1. [File Hopping](config-hopping.md)
     - [File Hopping on arrival from outside dCache](config-hopping.md#file-hopping-on-arrival-from-outside-dcache)
     - [File mode of replicated files](config-hopping.md#file-mode-of-replicated-files)
@@ -92,7 +94,7 @@ This part contains descriptions of the components of dCache, their role, functio
     - [Enabling Username/Password Access for WebDAV](config-gplazma.md#enabling-usernamepassword-access-for-webdav)
     - [gPlazma config example to work with authenticated webadmin](config-gplazma.md#gplazma-config-example-to-work-with-authenticated-webadmin)
 
-1. [dCache as xRootd-Server](config-xrootd.md)
+1. [dCache as XRootd-Server](config-xrootd.md)
     - [Setting up](config-xrootd.md#setting-up)
     - [Parameters](config-xrootd.md#parameters)
     - [Quick tests](config-xrootd.md#quick-tests)
@@ -136,19 +138,19 @@ This part contains descriptions of the components of dCache, their role, functio
     - [Directory Functions](config-SRM.md#directory-functions)
     - [Permission functions](config-SRM.md#permission-functions)
 
-1. [The statistics Service](config-statistics.md)
+1. [The Statistics Service](config-statistics.md)
     - [The Basic Setup](config-statistics.md#the-basic-setup)
     - [The Statistics Web Page](config-statistics.md#the-statistics-web-page)
     - [Explanation of the File Format of the xxx.raw Files](config-statistics.md#explanation-of-the-file-format-of-the-xxxraw-files)
 
-1. [The billing Service](config-billing.md)
+1. [The Billing Service](config-billing.md)
     - [The billing log files](config-billing.md#the-billing-log-files)
     - [The billing database](config-billing.md#the-billing-database)
     - [Billing Histogram Data](config-billing.md#billing-histogram-data)
     - [Billing Records](config-billing.md#billing-records)
     - [Upgrading a Previous Installation](config-billing.md#upgrading-a-previous-installation)
 
-1. [The alarms Service](config-alarms.md)
+1. [The Alarms Service](config-alarms.md)
     - [The Basic Setup](config-alarms.md#the-basic-setup)
     - [Configure where the alarms service is Running](config-alarms.md#configure-where-the-alarms-service-is-running)
     - [Types of Alarms](config-alarms.md#types-of-alarms)

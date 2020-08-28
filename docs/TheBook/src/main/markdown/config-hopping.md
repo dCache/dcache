@@ -1,4 +1,4 @@
-CHAPTER 9. FILE HOPPING
+CHAPTER 8. FILE HOPPING
 =======================
 
 -----

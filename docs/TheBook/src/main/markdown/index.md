@@ -47,7 +47,7 @@ dCache Book
 
         -   [nfs service](config-nfs.md)
 
-        -   pinmanager service
+        -   [pinmanager service](config-pinmanager.md)
 
         -   pnfsmanager service
 
