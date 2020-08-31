@@ -1,6 +1,7 @@
 package org.dcache.webdav;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.net.MediaType;
 import io.milton.http.Auth;
 import io.milton.http.Range;
 import io.milton.http.Request;
@@ -152,6 +153,15 @@ public class DcacheFileResource
     @Override
     public String getContentType(String accepts)
     {
+        try {
+            if (_attributes.hasXattr("mime_type")) {
+                String mimeType = _attributes.getXattrs().get("mime_type");
+                return MediaType.parse(mimeType).toString();
+            }
+        } catch (IllegalArgumentException e) {
+            // Ignore badly formatted MIME Type.
+        }
+
         return MIME_TYPE_MAP.getContentTypeFor(_path.toString());
     }
 

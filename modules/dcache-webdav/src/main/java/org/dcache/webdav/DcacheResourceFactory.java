@@ -13,6 +13,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.net.InetAddresses;
+import com.google.common.net.MediaType;
 import io.milton.http.FileItem;
 import io.milton.http.HttpManager;
 import io.milton.http.Request;
@@ -156,7 +157,7 @@ public class DcacheResourceFactory
 
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
         EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
-                   MODE, OWNER, OWNER_GROUP);
+                   MODE, OWNER, OWNER_GROUP, XATTR);
 
     private static final String HTML_TEMPLATE_LISTING_NAME = "page";
     private static final String HTML_TEMPLATE_CLIENT_NAME = "client";
@@ -1760,7 +1761,26 @@ public class DcacheResourceFactory
                 attributes.setXattrs(xattr);
             }
 
+            requestContentType().ifPresent(mt -> attributes.updateXattr("mime_type", mt));
+
             return attributes;
+        }
+
+        private Optional<String> requestContentType()
+        {
+            String mimeType = HttpManager.request().getContentTypeHeader();
+
+            try {
+                if (mimeType != null) {
+                    String normalised = MediaType.parse(mimeType).toString();
+                    return Optional.of(normalised);
+                }
+            } catch (IllegalArgumentException e) {
+                // Badly formatted MIME type in Content-Type ... just ignore
+                // the value.
+            }
+
+            return Optional.empty();
         }
 
         @Override
