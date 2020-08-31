@@ -409,8 +409,12 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
                 case PULL:
                     PnfsCreateEntryMessage msg;
+                    FileAttributes attributes = FileAttributes.of()
+                            .fileType(FileType.REGULAR)
+                            .xattr("xdg.origin.url", _destination.toASCIIString())
+                            .build();
                     try {
-                        msg = _pnfs.createPnfsEntry(_path.toString(), FileAttributes.ofFileType(FileType.REGULAR));
+                        msg = _pnfs.createPnfsEntry(_path.toString(), attributes);
                     } catch (FileExistsCacheException e) {
                         /* REVISIT: This should be moved to PnfsManager with a
                          * flag in the PnfsCreateEntryMessage.
@@ -419,7 +423,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                             throw e;
                         }
                         _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(FileType.REGULAR));
-                        msg = _pnfs.createPnfsEntry(_path.toString(),  FileAttributes.ofFileType(FileType.REGULAR));
+                        msg = _pnfs.createPnfsEntry(_path.toString(),  attributes);
                     }
                     return msg.getFileAttributes();
 
