@@ -50,7 +50,7 @@
       <property name="poolManagerStub" ref="pool-manager-stub"/>
   </bean>
 
-  <bean id="pinmanager" class="org.dcache.pinmanager.PinManager">
+  <bean id="pinmanager" class="org.dcache.pinmanager.PinManager" init-method="init">
       <property name="expirationPeriod" value="${pinmanager.expiration-period}"/>
       <property name="expirationPeriodUnit" value="${pinmanager.expiration-period.unit}"/>
       <property name="poolStub" ref="pool-stub"/>
@@ -63,6 +63,7 @@
       <description>Pool manager client</description>
       <property name="poolManager" ref="pool-manager-stub"/>
   </bean>
+
   <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor">
       <description>Processes pin requests</description>
       <property name="poolManagerStub">
