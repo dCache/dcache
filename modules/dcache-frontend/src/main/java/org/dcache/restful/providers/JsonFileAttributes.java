@@ -35,9 +35,6 @@ import org.dcache.vehicles.FileAttributes;
 @ApiModel(description = "Specifies the attributes of a given file.")
 public class JsonFileAttributes
 {
-    private static final FileNameMap MIME_TYPE_MAP =
-            URLConnection.getFileNameMap();
-
     @ApiModelProperty("NFSv4 Access control list.")
     private ACL _acl;
 
@@ -322,25 +319,9 @@ public class JsonFileAttributes
         return fileMimeType;
     }
 
-    public void setFileMimeType(String fileName)
+    public void setFileMimeType(String type)
     {
-        switch (this._fileType) {
-            case DIR:
-                this.fileMimeType = "application/vnd.dcache.folder";
-                break;
-            case LINK:
-                this.fileMimeType = "application/vnd.dcache.link";
-                break;
-            case SPECIAL:
-                this.fileMimeType = "application/vnd.dcache.special";
-                break;
-            default:
-                if (MIME_TYPE_MAP.getContentTypeFor(fileName) == null) {
-                    this.fileMimeType = "application/octet-stream";
-                } else {
-                    this.fileMimeType = MIME_TYPE_MAP.getContentTypeFor(fileName);
-                }
-        }
+        fileMimeType = type;
     }
 
     public String getSourcePath() {

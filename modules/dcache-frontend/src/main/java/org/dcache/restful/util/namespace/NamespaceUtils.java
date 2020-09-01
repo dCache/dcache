@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableSet;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.net.FileNameMap;
+import java.net.URLConnection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +33,10 @@ import org.dcache.vehicles.FileAttributes;
  *    information.</p>
  */
 public final class NamespaceUtils {
+
+    private static final FileNameMap MIME_TYPE_MAP =
+            URLConnection.getFileNameMap();
+
     /**
      * <p>Add quality-of-service attributes (pinned, locality, etc.) </p>
      *
@@ -105,9 +111,25 @@ public final class NamespaceUtils {
         if (attributes.isDefined(FileAttribute.TYPE)) {
             fileType = attributes.getFileType();
             json.setFileType(fileType);
+
+            String mimeType;
+            switch (fileType) {
+            case DIR:
+                mimeType = "application/vnd.dcache.folder";
+                break;
+            case LINK:
+                mimeType = "application/vnd.dcache.link";
+                break;
+            case SPECIAL:
+                mimeType = "application/vnd.dcache.special";
+                break;
+            default:
+                String guess = MIME_TYPE_MAP.getContentTypeFor(name);
+                mimeType = guess != null ? guess : "application/octet-stream";
+            }
+            json.setFileMimeType(mimeType);
         }
 
-        json.setFileMimeType(name);
 
         // when user set locality param in the request,
         // the locality should be returned only for directories
