@@ -1045,13 +1045,21 @@ public class NFSv41Door extends AbstractCellComponent implements
             "continued use of it.")
     public class KillClientCmd implements Callable<String> {
 
-        @Argument(required = false, metaVar = "clientid")
-        long clientid;
+        @Argument(required = false, metaVar = "clientid", valueSpec = "hexadecimal client id string")
+        String clientidStr;
 
         @Override
-        public String call() throws IOException {
+        public String call() throws IOException, CommandException {
             if (_nfs4 == null) {
                 return "NFS4 server not running.";
+            }
+
+            long clientid;
+            try {
+                // the first 8 bytes (16 chars) of session id is the client id in hex.
+                clientid = Long.parseLong(clientidStr.substring(0,16), 16);
+            } catch (NumberFormatException e) {
+                throw new CommandException(2, "hexadecimal client id string is expected", e);
             }
 
             NFS4Client client = _nfs4.getStateHandler().getClient(new clientid4(clientid));
