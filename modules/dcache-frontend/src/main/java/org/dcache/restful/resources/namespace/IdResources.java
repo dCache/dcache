@@ -150,7 +150,6 @@ public class IdResources {
                         = NamespaceUtils.getRequestedAttributes(true,
                                                                 true,
                                                                 true,
-                                                                false,
                                                                 true);
         JsonFileAttributes result = new JsonFileAttributes();
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
@@ -183,6 +182,7 @@ public class IdResources {
                                                    true,
                                                    true,
                                                    true,
+                                                   false,
                                                    request,
                                                    poolMonitor);
 

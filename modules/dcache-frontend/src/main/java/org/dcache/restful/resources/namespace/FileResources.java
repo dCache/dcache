@@ -155,7 +155,6 @@ public class FileResources {
                         NamespaceUtils.getRequestedAttributes(isLocality,
                                                               isLocations,
                                                               isQos,
-                                                              isXattr,
                                                               false);
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
@@ -165,7 +164,7 @@ public class FileResources {
             NamespaceUtils.chimeraToJsonAttributes(path.name(), fileAttributes,
                                                    namespaceAttributes,
                                                    isLocality, isLocations,
-                                                   false,
+                                                   false, isXattr,
                                                    request, poolMonitor);
             if (isQos) {
                 NamespaceUtils.addQoSAttributes(fileAttributes,
@@ -207,7 +206,7 @@ public class FileResources {
                                                            childrenAttributes,
                                                            entry.getFileAttributes(),
                                                            isLocality, isLocations,
-                                                           false,
+                                                           false, isXattr,
                                                            request, poolMonitor);
                     childrenAttributes.setFileName(fName);
                     if (isQos) {

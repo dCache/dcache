@@ -1,6 +1,7 @@
 package org.dcache.restful.util.namespace;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.MediaType;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -86,6 +87,7 @@ public final class NamespaceUtils {
                                                boolean isLocality,
                                                boolean isLocations,
                                                boolean isOptional,
+                                               boolean isXattr,
                                                HttpServletRequest request,
                                                PoolMonitor poolMonitor) throws CacheException {
         json.setPnfsId(attributes.getPnfsId());
@@ -111,23 +113,7 @@ public final class NamespaceUtils {
         if (attributes.isDefined(FileAttribute.TYPE)) {
             fileType = attributes.getFileType();
             json.setFileType(fileType);
-
-            String mimeType;
-            switch (fileType) {
-            case DIR:
-                mimeType = "application/vnd.dcache.folder";
-                break;
-            case LINK:
-                mimeType = "application/vnd.dcache.link";
-                break;
-            case SPECIAL:
-                mimeType = "application/vnd.dcache.special";
-                break;
-            default:
-                String guess = MIME_TYPE_MAP.getContentTypeFor(name);
-                mimeType = guess != null ? guess : "application/octet-stream";
-            }
-            json.setFileMimeType(mimeType);
+            json.setFileMimeType(mimeTypeOf(name, attributes));
         }
 
 
@@ -151,9 +137,38 @@ public final class NamespaceUtils {
             addAllOptionalAttributes(json, attributes);
         }
 
-        if (attributes.isDefined(FileAttribute.XATTR)) {
+        if (isXattr) {
             Map<String,String> xattr = attributes.getXattrs();
             json.setExtendedAttributes(xattr);
+        }
+    }
+
+    private static String mimeTypeOf(String name, FileAttributes attributes)
+    {
+        switch (attributes.getFileType()) {
+        case DIR:
+            return "application/vnd.dcache.folder";
+
+        case LINK:
+            return "application/vnd.dcache.link";
+
+        case SPECIAL:
+            return "application/vnd.dcache.special";
+
+        case REGULAR:
+            if (attributes.hasXattr("mime_type")) {
+                try {
+                    String xattrMimeType = attributes.getXattrs().get("mime_type");
+                    return MediaType.parse(xattrMimeType).toString();
+                } catch (IllegalArgumentException e) {
+                    // ignore badly formed mimeType;
+                }
+            }
+            String guess = MIME_TYPE_MAP.getContentTypeFor(name);
+            return guess != null ? guess : "application/octet-stream";
+
+        default:
+            throw new RuntimeException("Unexpected file type " + attributes.getFileType());
         }
     }
 
@@ -228,7 +243,6 @@ public final class NamespaceUtils {
     public static Set<FileAttribute> getRequestedAttributes(boolean locality,
                                                             boolean locations,
                                                             boolean qos,
-                                                            boolean xattr,
                                                             boolean optional) {
         Set<FileAttribute> attributes = new HashSet<>();
         attributes.add(FileAttribute.PNFSID);
@@ -237,6 +251,7 @@ public final class NamespaceUtils {
         attributes.add(FileAttribute.CREATION_TIME);
         attributes.add(FileAttribute.SIZE);
         attributes.add(FileAttribute.TYPE);
+        attributes.add(FileAttribute.XATTR);
 
         if (locations || locality || qos || optional) {
             attributes.add(FileAttribute.LOCATIONS);
@@ -263,10 +278,6 @@ public final class NamespaceUtils {
             attributes.add(FileAttribute.MODE);
             attributes.add(FileAttribute.OWNER);
             attributes.add(FileAttribute.STORAGECLASS);
-        }
-
-        if (xattr) {
-            attributes.add(FileAttribute.XATTR);
         }
 
         return ImmutableSet.copyOf(attributes);
