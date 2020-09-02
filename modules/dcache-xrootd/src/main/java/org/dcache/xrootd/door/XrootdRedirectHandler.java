@@ -344,7 +344,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                                        persistOnSuccessfulClose,
                         ((sessionInfo.isLoggedIn()) ?
                                         sessionInfo.getUserRootPath() : _rootPath),
-                        req.getSession().getDelegatedCredential());
+                        req.getSession().getDelegatedCredential(),
+                        opaque);
             } else {
                 /*
                  * If this is a tpc transfer, then dCache is source here.
@@ -365,7 +366,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 }
 
                 transfer = _door.read(remoteAddress, path, triedHosts, ioQueue,
-                                uuid, localAddress, subject, sessionInfo.getRestriction());
+                                uuid, localAddress, subject,
+                                sessionInfo.getRestriction(), opaque);
 
                 /*
                  * Again, if this is a tpc transfer, then dCache is source here.

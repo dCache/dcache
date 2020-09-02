@@ -4,6 +4,7 @@ import javax.security.auth.Subject;
 
 import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.util.Map;
 import java.util.UUID;
 
 import diskCacheV111.util.FsPath;
@@ -14,8 +15,10 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.util.RedirectedTransfer;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.tpc.XrootdTpcInfo;
 
 public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
 {
@@ -23,9 +26,12 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     private InetSocketAddress _doorAddress;
     private int _fileHandle;
     private Serializable _delegatedCredential;
+    private final XrootdTpcInfo tpcInfo;
 
-    public XrootdTransfer(PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path) {
+    public XrootdTransfer(PnfsHandler pnfs, Subject subject,
+            Restriction restriction, FsPath path, Map<String,String> opaque) {
         super(pnfs, subject, restriction, path);
+        tpcInfo = new XrootdTpcInfo(opaque);
     }
 
     public synchronized void setFileHandle(int fileHandle) {
@@ -76,5 +82,37 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
                                       _fileHandle,
                                       _uuid,
                                       _doorAddress);
+    }
+
+    @Override
+    protected FileAttributes fileAttributesForNameSpace()
+    {
+        FileAttributes attributes = super.fileAttributesForNameSpace();
+
+        if (isTpcDestination()) {
+            attributes.updateXattr("xdg.origin.url", buildSourceUrl());
+        }
+
+        return attributes;
+    }
+
+    private boolean isTpcDestination()
+    {
+        return tpcInfo.getSrc() != null;
+    }
+
+    private String buildSourceUrl()
+    {
+        StringBuilder sb = new StringBuilder("xroot://").append(tpcInfo.getSrcHost());
+        Integer port = tpcInfo.getSrcPort();
+        if (port != null && port != XrootdProtocol.DEFAULT_PORT) {
+            sb.append(':').append(port);
+        }
+        String sourcePath = tpcInfo.getLfn() == null ? _path.toString() : tpcInfo.getLfn();
+        if (!sourcePath.startsWith("/")) {
+            sb.append('/');
+        }
+        sb.append(sourcePath);
+        return sb.toString();
     }
 }

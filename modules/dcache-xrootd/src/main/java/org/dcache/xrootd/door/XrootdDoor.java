@@ -410,10 +410,11 @@ public class XrootdDoor
             createUploadTransfer(InetSocketAddress client, FsPath path, Set<String> tried,
                     String ioQueue, UUID uuid, InetSocketAddress local,
                     Subject subject, Restriction restriction, boolean createDir,
-                    boolean overwrite, Long size, FsPath uploadPath) {
+                    boolean overwrite, Long size, FsPath uploadPath,
+                    Map<String,String> opaque) {
 
-        XrootdTransfer transfer
-                = new XrootdTransfer(_pnfs, subject, restriction, uploadPath) {
+        XrootdTransfer transfer = new XrootdTransfer(_pnfs, subject, restriction,
+                uploadPath, opaque) {
             @Override
             public synchronized void finished(CacheException error) {
                 try {
@@ -461,10 +462,11 @@ public class XrootdDoor
     private XrootdTransfer
         createTransfer(InetSocketAddress client, FsPath path, Set<String> tried,
                        String ioQueue, UUID uuid, InetSocketAddress local, Subject subject,
-                       Restriction restriction)
+                       Restriction restriction,
+                       Map<String,String> opaque)
     {
         XrootdTransfer transfer =
-            new XrootdTransfer(_pnfs, subject, restriction, path) {
+            new XrootdTransfer(_pnfs, subject, restriction, path, opaque) {
                 @Override
                 public synchronized void finished(CacheException error)
                 {
@@ -501,15 +503,15 @@ public class XrootdDoor
     public XrootdTransfer
         read(InetSocketAddress client, FsPath path, Set<String> tried,
              String ioQueue, UUID uuid, InetSocketAddress local,
-             Subject subject, Restriction restriction)
+             Subject subject, Restriction restriction, Map<String,String> opaque)
         throws CacheException, InterruptedException
     {
         if (!isReadAllowed(path)) {
             throw new PermissionDeniedCacheException("Read permission denied");
         }
 
-        XrootdTransfer transfer =
-            createTransfer(client, path, tried, ioQueue, uuid, local, subject, restriction);
+        XrootdTransfer transfer = createTransfer(client, path, tried, ioQueue,
+                uuid, local, subject, restriction, opaque);
         int handle = transfer.getFileHandle();
 
         InetSocketAddress address = null;
@@ -576,7 +578,7 @@ public class XrootdDoor
                   boolean overwrite, Long size, OptionalLong maxUploadSize,
                     InetSocketAddress local, Subject subject, Restriction restriction,
                     boolean persistOnSuccessfulClose, FsPath rootPath,
-                    Serializable delegatedProxy)
+                    Serializable delegatedProxy, Map<String,String> opaque)
                     throws CacheException, InterruptedException {
 
         if (!isWriteAllowed(path)) {
@@ -587,13 +589,13 @@ public class XrootdDoor
         if (persistOnSuccessfulClose) {
             FsPath uploadPath = getUploadPath(subject, restriction, createDir,
                                               overwrite, size, path, rootPath);
-            transfer = createUploadTransfer(client, path, tried, ioQueue, uuid, local,
-                                            subject, restriction, createDir,
-                                            overwrite, size,
-                                            uploadPath);
+            transfer = createUploadTransfer(client, path, tried, ioQueue, uuid,
+                                            local, subject, restriction,
+                                            createDir, overwrite, size,
+                                            uploadPath, opaque);
         } else {
             transfer = createTransfer(client, path, tried, ioQueue, uuid, local,
-                                      subject, restriction);
+                                      subject, restriction, opaque);
         }
         transfer.setOverwriteAllowed(overwrite);
         /*
