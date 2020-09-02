@@ -1089,10 +1089,17 @@ public class NFSv41Door extends AbstractCellComponent implements
                     .stream()
                     .filter(c -> clientMatcher.test(c.getRemoteAddress().getAddress()))
                     .forEach(c -> {
-                        sb.append("    ").append(c).append("\n");
+                        sb.append("    ")
+                                .append(c.getRemoteAddress())
+                                .append(":")
+                                .append(new String(c.getOwnerId(), StandardCharsets.UTF_8))
+                                .append(":")
+                                .append("v4.")
+                                .append(c.getMinorVersion())
+                                .append("\n");
                         for (NFSv41Session session : c.sessions()) {
                             sb.append("        ")
-                                    .append(session)
+                                    .append(session.id())
                                     .append(" max slot: ")
                                     .append(session.getHighestSlot())
                                     .append("/")
