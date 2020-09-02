@@ -742,7 +742,8 @@ public class DcacheResourceFactory
              * To avoid this, the door can proxy the data if the client has
              * already started to send the entity.
              */
-            boolean proxyImpatientClient = isImpatientClientProxied()
+            boolean proxyImpatientClient = expects100Continue
+                    && isImpatientClientProxied()
                     && ((MiltonHandler.DcacheServletRequest)request).isClientSendingEntity();
 
             if (proxyImpatientClient) {
