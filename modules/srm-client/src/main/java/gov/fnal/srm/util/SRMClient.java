@@ -75,6 +75,7 @@ import java.net.URI;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.util.Date;
+import java.util.Optional;
 
 import org.dcache.srm.Logger;
 import org.dcache.srm.client.SRMClientV2;
@@ -96,7 +97,7 @@ public abstract class SRMClient
     protected final Logger logger;
 
     protected Report report;
-    private X509Credential cred;
+    private Optional<X509Credential> cred;
     protected ISRM srm;
 
     public SRMClient(Configuration configuration)
@@ -147,6 +148,7 @@ public abstract class SRMClient
 
         srm = new SRMClientV2(uri,
                               getCredential(),
+                              getBearerToken(),
                               configuration.getRetry_timeout(),
                               configuration.getRetry_num(),
                               configuration.isDelegate(),
@@ -159,14 +161,18 @@ public abstract class SRMClient
 
     public abstract void start() throws Exception;
 
-    private X509Credential getCredential() throws IOException, KeyStoreException,
+    private Optional<X509Credential> getCredential() throws IOException, KeyStoreException,
             CertificateException
     {
         if (cred == null) {
             if (configuration.isUseproxy()) {
-                cred = new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+                cred = configuration.getX509_user_proxy() == null
+                        ? Optional.<X509Credential>empty()
+                        : Optional.of(new PEMCredential(configuration.getX509_user_proxy(), (char[]) null));
             } else {
-                cred = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
+                cred = configuration.getX509_user_key() == null || configuration.getX509_user_cert() == null
+                        ? Optional.<X509Credential>empty()
+                        : Optional.of(new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null));
             }
         }
 
@@ -180,6 +186,10 @@ public abstract class SRMClient
         }
     }
 
+    public Optional<String> getBearerToken()
+    {
+        return Optional.ofNullable(configuration.getBearerToken());
+    }
 
     private void setReportSuccessStatusBySource(URI url){
         if(report == null) {

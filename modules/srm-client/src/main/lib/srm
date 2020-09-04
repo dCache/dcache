@@ -96,12 +96,25 @@ else
 fi
 java_options="$java_options \"-Dlogback.configurationFile=$SRM_PATH/conf/$logback\""
 
-if [ -n "$X509_USER_PROXY" ]; then
-    enforced_srm_options="-use_proxy=true \"-x509_user_proxy=$X509_USER_PROXY\""
-elif [ -r /tmp/x509up_u$(id -u) ]; then
-    srm_options="-use_proxy=true -x509_user_proxy=/tmp/x509up_u$(id -u)"
-else
-    srm_options="-use_proxy=false \"-x509_user_cert=$HOME/.globus/usercert.pem\" \"-x509_user_key=$HOME/.globus/userkey.pem\""
+
+hasBearerToken=0
+for arg in "$@"; do
+    case "$arg" in
+        -bearer_token=*)
+            hasBearerToken=1
+            ;;
+    esac
+done
+
+if [ $hasBearerToken = 0 ]; then
+    # Auto-detect X.509
+    if [ -n "$X509_USER_PROXY" ]; then
+        enforced_srm_options="-use_proxy=true \"-x509_user_proxy=$X509_USER_PROXY\""
+    elif [ -r /tmp/x509up_u$(id -u) ]; then
+        srm_options="-use_proxy=true -x509_user_proxy=/tmp/x509up_u$(id -u)"
+    else
+        srm_options="-use_proxy=false \"-x509_user_cert=$HOME/.globus/usercert.pem\" \"-x509_user_key=$HOME/.globus/userkey.pem\""
+    fi
 fi
 
 if [ -n "$X509_CERT_DIR" ]; then

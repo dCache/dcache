@@ -30,6 +30,7 @@ import java.io.File;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMException;
@@ -98,7 +99,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
 
     private final ISRM srm;
     private final SrmTransferAgent srmAgent = new SrmTransferAgent();
-    private X509Credential credential;
+    private Optional<X509Credential> credential = Optional.empty();
 
     private boolean haveTunedLsSize;
     private int maxLsResponse = DEFAULT_MAX_LS_RESPONSE;
@@ -111,14 +112,14 @@ public class AxisSrmFileSystem implements SrmFileSystem
     @Override
     public void setCredential(X509Credential credential)
     {
-        this.credential = credential;
+        this.credential = Optional.of(credential);
     }
 
     @Override
     public void start()
     {
         ExtendableFileTransferAgent transferAgent = new ExtendableFileTransferAgent();
-        transferAgent.setCredential(credential);
+        credential.ifPresent(transferAgent::setCredential);
         transferAgent.start();
 
         srmAgent.setSrm(srm);

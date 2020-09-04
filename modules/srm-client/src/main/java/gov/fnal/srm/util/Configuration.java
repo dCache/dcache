@@ -1692,6 +1692,7 @@ public class Configuration extends ConnectionConfiguration {
                     "wsdl_url",
                     "webservice_path",
                     "webservice_protocol",
+                    "bearer_token",
                     "use_proxy",
                     "x509_user_proxy",
                     "x509_user_cert",

@@ -7,6 +7,7 @@ import org.apache.axis.types.URI;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 
 
@@ -23,12 +24,12 @@ public class ExtendableFileTransferAgent implements FileTransferAgent, Credentia
 
     private ImmutableMap<String,FileTransferAgent> _protocolAgent;
     private ImmutableMap<String,Integer> _protocolPriority;
-    private X509Credential _credential;
+    private Optional<X509Credential> _credential = Optional.empty();
 
     @Override
     public void setCredential(X509Credential credential)
     {
-        _credential = credential;
+        _credential = Optional.of(credential);
     }
 
     @Override
@@ -80,7 +81,12 @@ public class ExtendableFileTransferAgent implements FileTransferAgent, Credentia
     {
         for (FileTransferAgent agent : agents) {
             if (agent instanceof CredentialAware) {
-                ((CredentialAware)agent).setCredential(_credential);
+                CredentialAware credentialAgent = (CredentialAware)agent;
+                if (_credential.isPresent()) {
+                    credentialAgent.setCredential(_credential.get());
+                } else {
+                    continue;
+                }
             }
 
             agent.start();
@@ -95,6 +101,10 @@ public class ExtendableFileTransferAgent implements FileTransferAgent, Credentia
         Map<String,Integer> protocolPriority = new HashMap<>();
 
         for (FileTransferAgent agent : agents) {
+            if (agent instanceof CredentialAware && !_credential.isPresent()) {
+                continue;
+            }
+
             for (Map.Entry<String,Integer> e : agent.getSupportedProtocols().entrySet()) {
                 String protocol = e.getKey();
                 int priority = e.getValue();

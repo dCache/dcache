@@ -64,6 +64,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -348,12 +349,18 @@ public class SrmShell extends ShellApplication
 
         X509Credential credential;
         if (configuration.isUseproxy()) {
-            credential = new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+            credential = configuration.getX509_user_proxy() == null
+                    ? null
+                    : new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
         } else {
-            credential = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
+            credential = configuration.getX509_user_key() == null || configuration.getX509_user_cert() == null
+                    ? null
+                    : new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
         }
+
         fs = new AxisSrmFileSystem(decorateWithMonitoringProxy(new Class<?>[]{ISRM.class},
-                new SRMClientV2(srmUrl, credential,
+                new SRMClientV2(srmUrl, Optional.ofNullable(credential),
+                        Optional.ofNullable(configuration.getBearerToken()),
                         configuration.getRetry_timeout(),
                         configuration.getRetry_num(),
                         configuration.isDelegate(),
@@ -363,7 +370,9 @@ public class SrmShell extends ShellApplication
                         configuration.getX509_user_trusted_certificates(),
                         Transport.GSI),
                 counters, gauges));
-        fs.setCredential(credential);
+        if (credential != null) {
+            fs.setCredential(credential);
+        }
         fs.start();
         cd(srmUrl.toASCIIString());
         home = pwd;

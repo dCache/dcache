@@ -19,6 +19,19 @@ public class ConnectionConfiguration
         this.useproxy = useproxy;
     }
 
+    @Option(name="bearer_token", description="The bearer token to use for authentication")
+    private String bearerToken;
+
+    public String getBearerToken()
+    {
+        return bearerToken;
+    }
+
+    public void setBearerToken(String token)
+    {
+        bearerToken = token;
+    }
+
     @Option(name="x509_user_proxy", description="absolute path to user proxy",
             required=false, log=true, save=true)
     private String x509_user_proxy;

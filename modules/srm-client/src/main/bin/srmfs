@@ -11,17 +11,28 @@ else
     logbackDefn="-Dlogback.configurationFile=$conf_dir/logback.xml"
 fi
 
-if [ -n "$X509_USER_PROXY" ]; then
-    x509_user_proxy="$X509_USER_PROXY"
-elif [ -r /tmp/x509up_u$(id -u) ]; then
-    x509_user_proxy=/tmp/x509up_u$(id -u)
-else
-   (echo "Could not find X.509 proxy credential."
-    echo
-    echo "Either create a proxy credential if one does not already exist or"
-    echo "use the X509_USER_PROXY environment variable to specify the path"
-    echo "if the proxy is in a non-standard location.") >&2
-    exit 1
+hasBearerToken=0
+for arg in "$@"; do
+    case "$arg" in
+        -bearer_token=*)
+            hasBearerToken=1
+            ;;
+    esac
+done
+
+if [ $hasBearerToken = 0 ]; then
+    if [ -n "$X509_USER_PROXY" ]; then
+        x509_user_proxy="$X509_USER_PROXY"
+    elif [ -r /tmp/x509up_u$(id -u) ]; then
+        x509_user_proxy=/tmp/x509up_u$(id -u)
+    else
+        (echo "Could not find X.509 proxy credential."
+         echo
+         echo "Either create a proxy credential if one does not already exist or"
+         echo "use the X509_USER_PROXY environment variable to specify the path"
+         echo "if the proxy is in a non-standard location.") >&2
+        exit 1
+    fi
 fi
 
 if [ -n "$X509_CERT_DIR" ]; then
@@ -32,6 +43,10 @@ else
    x509_user_trusted_certs=/etc/grid-security/certificates
 fi
 
+if [ -n "$x509_user_proxy" ]; then
+    x509_user_proxy_arg="-x509_user_proxy=\"$x509_user_proxy\""
+fi
+
 CLASSPATH="$SRM_PATH/lib/*" exec java -Dlog=${DELEGATION_LOG:-warn} \
     -client \
     -Djava.awt.headless=true \
@@ -39,4 +54,4 @@ CLASSPATH="$SRM_PATH/lib/*" exec java -Dlog=${DELEGATION_LOG:-warn} \
     "$logbackDefn" \
     -XX:+TieredCompilation \
     -XX:TieredStopAtLevel=1 \
-    org.dcache.srm.shell.SrmShell -x509_user_proxy="$x509_user_proxy" -x509_user_trusted_certificates="$x509_user_trusted_certs" "$@"
+    org.dcache.srm.shell.SrmShell $x509_user_proxy_arg -x509_user_trusted_certificates="$x509_user_trusted_certs" "$@"
