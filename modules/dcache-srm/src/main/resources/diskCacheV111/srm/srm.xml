@@ -71,18 +71,6 @@
         <property name="writePaths" value="#{ T(java.util.Arrays).asList('/') }"/>
     </bean>
 
-    <bean id="loginStrategy" class="org.dcache.auth.CachingLoginStrategy">
-        <description>Caching gPlazma client</description>
-        <constructor-arg>
-            <bean class="org.dcache.services.login.RemoteLoginStrategy">
-                <property name="cellStub" ref="gPlazmaStub"/>
-            </bean>
-        </constructor-arg>
-        <constructor-arg value="${srm.service.gplazma.cache.size}"/> <!-- Cache size -->
-        <constructor-arg value="${srm.service.gplazma.cache.timeout}"/>
-        <constructor-arg value="${srm.service.gplazma.cache.timeout.unit}"/>
-    </bean>
-
     <bean id="srmHandler" class="diskCacheV111.srm.SrmHandler">
         <property name="pingExtraInfo">
             <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
@@ -90,7 +78,6 @@
             </bean>
         </property>
         <property name="srmManagerStub" ref="srmManagerStub"/>
-        <property name="loginStrategy" ref="loginStrategy"/>
         <property name="clientDNSLookup" value="${srm.enable.client-dns-lookup}"/>
     </bean>
 
@@ -98,7 +85,7 @@
         <constructor-arg>
           <bean class="org.dcache.gridsite.DelegationHandler">
             <property name="delegationServiceStub" ref="srmManagerStub"/>
-            <property name="loginStrategy" ref="loginStrategy"/>
+            <property name="loginStrategy" ref="cache-login-strategy"/>
           </bean>
         </constructor-arg>
     </bean>
@@ -118,7 +105,7 @@
         <property name="idleTimeoutUnit" value="${srm.limits.jetty-connector.idle-time.max.unit}"/>
         <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
 
-        <property name="needClientAuth" value="true"/>
+        <property name="needClientAuth" value="false"/>
         <property name="wantClientAuth" value="true"/>
         <property name="cipherFlags" value="${srm.authn.ciphers}"/>
 
@@ -187,40 +174,14 @@
         </property>
 
         <property name="handler">
-            <bean class="org.eclipse.jetty.server.handler.HandlerList">
-                <property name="handlers">
-                    <list>
-                        <bean class="org.eclipse.jetty.webapp.WebAppContext">
-                            <property name="contextPath" value="/srm"/>
-                            <property name="war" value="${dcache.paths.share}/srm-webapp"/>
-                            <property name="configurationClasses">
-                                <list>
-                                    <value>org.eclipse.jetty.webapp.WebInfConfiguration</value>
-                                    <value>org.eclipse.jetty.plus.webapp.EnvConfiguration</value>
-                                    <value>org.eclipse.jetty.plus.webapp.PlusConfiguration</value>
-                                    <value>org.eclipse.jetty.webapp.WebXmlConfiguration</value>
-                                </list>
-                            </property>
-                            <property name="attributes">
-                                <bean class="org.dcache.util.jetty.ImmutableAttributesMap">
-                                    <constructor-arg>
-                                        <map>
-                                            <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_SRM_SERVER_V2 }">
-                                                <bean class="diskCacheV111.srm.SrmHandlerAdapter">
-                                                    <constructor-arg ref="srmHandler"/>
-                                                </bean>
-                                            </entry>
-                                            <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_DELEGATION }"
-                                                   value-ref="delegationHandler"/>
-                                        </map>
-                                    </constructor-arg>
-                                </bean>
-                            </property>
-                        </bean>
-
-                        <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
-                    </list>
-                </property>
+            <bean id="authhandler" class="org.dcache.http.AuthenticationHandler">
+                <property name="handler" ref="authorised-handlers"/>
+                <property name="loginStrategy" ref="cache-login-strategy"/>
+                <property name="readOnly" value="false"/>
+                <property name="enableBasicAuthentication" value="false"/>
+                <property name="enableSpnegoAuthentication" value="false"/>
+                <property name="realm" value="${srm.authn.realm}"/>
+                <property name="acceptBearerTokenUnencrypted" value="false"/>
             </bean>
         </property>
 
@@ -234,6 +195,84 @@
                                  '${srm.limits.jetty-connector.low-resource.max.idle-time.unit}')}"/>
                     <property name="maxLowResourcesTime" value="180000"/>
                 </bean>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="cache-login-strategy" class="org.dcache.auth.CachingLoginStrategy">
+        <description>Processes mapping requests</description>
+	<constructor-arg index="0" ref="union-login-strategy" />
+	<constructor-arg index="1" value="${srm.service.gplazma.cache.size}" />
+	<constructor-arg index="2" value="${srm.service.gplazma.cache.timeout}" />
+	<constructor-arg index="3" value="${srm.service.gplazma.cache.timeout.unit}" />
+    </bean>
+
+    <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+        <description>Processes login requests</description>
+	<property name="loginStrategies">
+            <list>
+                <bean class="org.dcache.auth.MacaroonLoginStrategy">
+		    <constructor-arg index="0" ref="macaroon-processor"/>
+		</bean>
+		<bean class="org.dcache.services.login.RemoteLoginStrategy">
+		    <property name="cellStub" ref="gPlazmaStub"/>
+		</bean>
+            </list>
+	</property>
+	<property name="fallbackToAnonymous" value="false"/>
+	<property name="anonymousAccess" value="NONE"/>
+    </bean>
+
+
+    <bean id="macaroon-processor" class="org.dcache.macaroons.MacaroonProcessor">
+        <description>Facade for handling macaroon creation and verification</description>
+        <property name="secretHandler">
+            <bean id="macaroon-secret-handler" class="org.dcache.macaroons.ZookeeperSecretHandler">
+                <property name="executor" ref="scheduledExecutor"/>
+                <property name="zookeeperSecretStorage">
+                    <bean class="org.dcache.macaroons.ZookeeperSecretStorage"/>
+                </property>
+                <property name="expirationPeriod"
+                          value="${srm.macaroons.expired-removal-period}"/>
+                <property name="expirationPeriodUnit"
+                          value="${srm.macaroons.expired-removal-period.unit}"/>
+            </bean>
+        </property>
+    </bean>
+
+
+    <bean id="authorised-handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <property name="handlers">
+            <list>
+                <bean class="org.eclipse.jetty.webapp.WebAppContext">
+                    <property name="contextPath" value="/srm"/>
+                    <property name="war" value="${dcache.paths.share}/srm-webapp"/>
+                    <property name="configurationClasses">
+                        <list>
+                            <value>org.eclipse.jetty.webapp.WebInfConfiguration</value>
+                            <value>org.eclipse.jetty.plus.webapp.EnvConfiguration</value>
+                            <value>org.eclipse.jetty.plus.webapp.PlusConfiguration</value>
+                            <value>org.eclipse.jetty.webapp.WebXmlConfiguration</value>
+                        </list>
+                    </property>
+                    <property name="attributes">
+                        <bean class="org.dcache.util.jetty.ImmutableAttributesMap">
+                            <constructor-arg>
+                                <map>
+                                    <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_SRM_SERVER_V2 }">
+                                        <bean class="diskCacheV111.srm.SrmHandlerAdapter">
+                                            <constructor-arg ref="srmHandler"/>
+                                        </bean>
+                                    </entry>
+                                    <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_DELEGATION }"
+                                           value-ref="delegationHandler"/>
+                                </map>
+                            </constructor-arg>
+                        </bean>
+                    </property>
+                </bean>
+
+                <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
             </list>
         </property>
     </bean>

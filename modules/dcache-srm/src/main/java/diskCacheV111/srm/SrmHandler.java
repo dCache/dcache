@@ -51,9 +51,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
-import java.security.cert.CertificateException;
+import java.security.AccessController;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,13 +73,12 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.auth.LoginReply;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.Origin;
+import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.http.AuthenticationHandler;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
@@ -201,7 +199,6 @@ import org.dcache.util.NetLoggerBuilder;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
 import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 import static org.dcache.srm.v2_2.TStatusCode.*;
@@ -249,8 +246,6 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
 
     private boolean isClientDNSLookup;
 
-    private LoginStrategy loginStrategy;
-
     private CellStub srmManagerStub;
 
     private ArrayOfTExtraInfo pingExtraInfo;
@@ -271,12 +266,6 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
     public void setSrmManagerStub(CellStub srmManagerStub)
     {
         this.srmManagerStub = srmManagerStub;
-    }
-
-    @Required
-    public void setLoginStrategy(LoginStrategy loginStrategy)
-    {
-        this.loginStrategy = loginStrategy;
     }
 
     @Required
@@ -342,21 +331,14 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 logger.request(requestName, request);
             }
 
-            Subject user = null;
+            Subject user = Subject.getSubject(AccessController.getContext());
             Object response;
             if (requestName.equals("srmPing")) {
                 // Ping is special as it isn't authenticated and unable to return a failure
                 response = new SrmPingResponse("v2.2", pingExtraInfo);
             } else {
                 try {
-                    LoginReply login = login();
-                    user = login.getSubject();
-                    X509Credential credential = Axis.getDelegatedCredential().orElse(null);
-                    String remoteIP = Axis.getRemoteAddress();
-                    String remoteHost = isClientDNSLookup ?
-                                        InetAddresses.forString(remoteIP).getCanonicalHostName() : remoteIP;
-
-                    response = dispatch(login, credential, remoteHost, requestName, request);
+                    response = dispatch(user, requestName, request);
                 } catch (SRMInternalErrorException e) {
                     LOGGER.error(e.getMessage());
                     response = getFailedResponse(requestName, e.getStatusCode(),
@@ -390,26 +372,18 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         }
     }
 
-    private LoginReply login() throws SRMAuthenticationException, CacheException, SRMInternalErrorException
-    {
-        try {
-            Subject subject = new Subject();
-            X509Certificate[] chain = Axis.getCertificateChain().orElseThrow(
-                    () -> new SRMAuthenticationException("Client's certificate chain is missing from request"));
-            subject.getPublicCredentials().add(cf.generateCertPath(asList(chain)));
-            subject.getPrincipals().add(new Origin(InetAddresses.forString(Axis.getRemoteAddress())));
-            return loginStrategy.login(subject);
-        } catch (CertificateException e) {
-            throw new SRMInternalErrorException("Failed to process certificate chain.", e);
-        }
-    }
-
-    private Object dispatch(LoginReply login, X509Credential credential, String remoteHost,
-                            String requestName, Object request)
+    private Object dispatch(Subject subject, String requestName, Object request)
             throws CacheException, InterruptedException, SRMException, NoRouteToCellException
     {
+        X509Credential credential = Axis.getDelegatedCredential().orElse(null);
+        String remoteIP = Axis.getRemoteAddress();
+        String remoteHost = isClientDNSLookup ?
+                            InetAddresses.forString(remoteIP).getCanonicalHostName() : remoteIP;
+
+        Set<LoginAttribute> loginAttributes = AuthenticationHandler.getLoginAttributes(Axis.getHttpServletRequest());
+
         Function<Object,SrmRequest> toMessage =
-                req -> new SrmRequest(login.getSubject(), login.getLoginAttributes(), credential,
+                req -> new SrmRequest(subject, loginAttributes, credential,
                                       remoteHost, requestName, req);
         try {
             switch (requestName) {
