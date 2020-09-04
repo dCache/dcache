@@ -914,7 +914,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 log.add("session", JDC.getSession());
                 log.add("socket.remote", Axis.getRemoteSocketAddress());
                 log.add("request.method", requestName);
-                log.add("user.dn", Axis.getDN().orElse("-"));
+                log.add("user.dn", Axis.getDN().orElse(null));
                 if (user != null) {
                     log.add("user.mapped", user);
                 }
