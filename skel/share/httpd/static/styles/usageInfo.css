@@ -33,14 +33,14 @@ div.layout_precious
   height: 10px;
 }
 
-div.layout_rest
+div.layout_sticky
 {
   float: left;
   background: #ff00ff;
   height: 10px;
 }
 
-div.layout_used
+div.layout_cached
 {
   float: left;
   background: green;
