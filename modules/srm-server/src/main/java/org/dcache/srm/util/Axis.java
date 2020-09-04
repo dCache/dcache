@@ -78,43 +78,35 @@ public class Axis
      */
     public static <T> T getRequestAttribute(String key, Class<T> type)
     {
-        MessageContext msgContext = MessageContext.getCurrentContext();
-        HttpServletRequest request = (HttpServletRequest)
-                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
-        Object item = request.getAttribute(key);
+        Object item = getHttpServletRequest().getAttribute(key);
         return item == null ? null : castAttribute(key, item, type);
     }
 
     public static String getRemoteAddress()
     {
-        MessageContext msgContext = MessageContext.getCurrentContext();
-        HttpServletRequest request = (HttpServletRequest)
-                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
-        return request.getRemoteAddr();
+        return getHttpServletRequest().getRemoteAddr();
     }
 
     public static InetSocketAddress getRemoteSocketAddress()
     {
-        MessageContext msgContext = MessageContext.getCurrentContext();
-        HttpServletRequest r = (HttpServletRequest)
-                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
+        HttpServletRequest r = getHttpServletRequest();
         return new InetSocketAddress(InetAddresses.forString(r.getRemoteAddr()), r.getRemotePort());
     }
 
     public static String getRequestHeader(String name)
     {
-        MessageContext msgContext = MessageContext.getCurrentContext();
-        HttpServletRequest request = (HttpServletRequest)
-                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
-        return request.getHeader(name);
+        return getHttpServletRequest().getHeader(name);
     }
 
     public static String getUserAgent()
     {
+        return getHttpServletRequest().getHeader(HTTPConstants.HEADER_USER_AGENT);
+    }
+
+    public static HttpServletRequest getHttpServletRequest()
+    {
         MessageContext msgContext = MessageContext.getCurrentContext();
-        HttpServletRequest request = (HttpServletRequest)
-                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
-        return request.getHeader(HTTPConstants.HEADER_USER_AGENT);
+        return (HttpServletRequest) msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
     }
 
     private static <T> T castAttribute(String key, Object item, Class<T> type)
