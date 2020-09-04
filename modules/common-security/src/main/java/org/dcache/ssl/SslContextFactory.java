@@ -19,6 +19,7 @@ package org.dcache.ssl;
 
 import eu.emi.security.authn.x509.X509Credential;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 
 import java.security.GeneralSecurityException;
@@ -28,5 +29,12 @@ import java.security.GeneralSecurityException;
  */
 public interface SslContextFactory
 {
-    SSLContext getContext(X509Credential credential) throws GeneralSecurityException;
+    /**
+     * Provides an SSLContext that will use the supplied optional client
+     * credential for authentication.
+     * @param credential the credential to use, or null if no X.509 credential.
+     * @return an SSLContext to use with an SSLSocket.
+     * @throws GeneralSecurityException if there is a problem establishing the context.
+     */
+    SSLContext getContext(@Nullable X509Credential credential) throws GeneralSecurityException;
 }
