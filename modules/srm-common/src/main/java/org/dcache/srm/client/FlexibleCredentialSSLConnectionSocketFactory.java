@@ -28,9 +28,13 @@
 package org.dcache.srm.client;
 
 import eu.emi.security.authn.x509.X509Credential;
+import org.apache.axis.transport.http.HTTPConstants;
+import org.apache.http.Header;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
 import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.util.Args;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.dcache.ssl.SslContextFactory;
 
@@ -169,9 +174,7 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
             final HttpContext context) throws IOException {
 
         final X509Credential credential = (X509Credential) context.getAttribute(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS);
-        if (credential == null) {
-            throw new IOException("Client credentials are missing from context.");
-        }
+        verifyCredentials(context);
         final SSLContext sslContext;
         try {
             sslContext = contextProvider.getContext(credential);
@@ -212,6 +215,24 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
         sslsock.startHandshake();
         verifyHostname(sslsock, target);
         return sslsock;
+    }
+
+    private void verifyCredentials(HttpContext context) throws IOException
+    {
+        X509Credential credential = (X509Credential) context.getAttribute(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS);
+
+        boolean hasAuthorizationHeader;
+        if (context instanceof HttpCoreContext) {
+            HttpRequest request = ((HttpCoreContext)context).getRequest();
+            Header authorization = request.getFirstHeader(HTTPConstants.HEADER_AUTHORIZATION);
+            hasAuthorizationHeader =  authorization != null;
+        } else {
+            throw new IOException("Unknown HttpContext: " + context.getClass().getCanonicalName());
+        }
+
+        if (credential == null && !hasAuthorizationHeader) {
+            throw new IOException("Client credentials are missing from context.");
+        }
     }
 
     private void verifyHostname(final SSLSocket sslsock, final String hostname) throws IOException {

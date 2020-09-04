@@ -5,6 +5,7 @@ import eu.emi.security.authn.x509.X509Credential;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * Utility class with static methods to handle X.509 Credentials.
@@ -27,6 +28,16 @@ public class Credentials
 
         if (certificate.getNotBefore().after(now)) {
             throw new IOException("X.509 credential not yet valid");
+        }
+
+        return credential;
+    }
+
+    public static Optional<X509Credential> checkValid(Optional<X509Credential> credential)
+            throws IOException
+    {
+        if (credential.isPresent()) {
+            checkValid(credential.get());
         }
 
         return credential;

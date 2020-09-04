@@ -22,6 +22,7 @@ import org.apache.axis.AxisFault;
 import org.apache.axis.SimpleTargetedChain;
 import org.apache.axis.client.Call;
 import org.apache.axis.configuration.SimpleProvider;
+import org.apache.axis.transport.http.HTTPConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,12 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SRMServiceLocator;
@@ -126,6 +132,7 @@ import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
 import org.dcache.ssl.CanlContextFactory;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
+import static java.util.Objects.requireNonNull;
 import static javax.xml.rpc.Stub.ENDPOINT_ADDRESS_PROPERTY;
 import static org.apache.axis.Constants.NS_URI_AXIS;
 import static org.dcache.srm.util.Credentials.checkValid;
@@ -153,7 +160,8 @@ public class SRMClientV2 implements ISRM {
 
     private final long retrytimeout;
     private final int retries;
-    private final X509Credential user_cred;
+    private final Optional<X509Credential> x509Credential;
+    private final Optional<String> bearerToken;
     private final SRMServiceLocator sl;
     private final HttpClientTransport.Delegation delegation;
     private final URL serviceUrl;
@@ -161,6 +169,7 @@ public class SRMClientV2 implements ISRM {
     private SrmSoapBindingStub axis_isrm;
     private boolean haveSuccessfulCall;
     private int nextProbe;
+    private final List<AxisFault> probeFailures = new ArrayList<>();
 
     private static int[] uniquePorts(URI[] uris)
     {
@@ -189,7 +198,7 @@ public class SRMClientV2 implements ISRM {
         Call.setTransportForProtocol("https", HttpClientTransport.class);
     }
 
-    /** Creates a new instance of SRMClientV2 */
+    @Deprecated
     public SRMClientV2(URI srmurl,
                        X509Credential user_cred,
                        long retrytimeout,
@@ -199,30 +208,48 @@ public class SRMClientV2 implements ISRM {
                        String caPath,
                        Transport transport)
         throws IOException,InterruptedException,ServiceException {
-        this(srmurl,
-             user_cred,
-             retrytimeout,
-             numberofretries,
-             do_delegation,
-             full_delegation,
-             GSS_EXPECTED_NAME,
-             WEB_SERVICE_PATH, caPath,
-             transport);
+        this(srmurl, Optional.of(user_cred), Optional.empty(), retrytimeout,
+                numberofretries, do_delegation, full_delegation, caPath,
+                transport);
     }
 
+    /** Creates a new instance of SRMClientV2 */
+    public SRMClientV2(URI srmurl, Optional<X509Credential> x509Credential,
+            Optional<String> bearerToken, long retrytimeout, int numberofretries,
+            boolean do_delegation, boolean full_delegation, String caPath,
+            Transport transport)
+            throws IOException, InterruptedException, ServiceException
+    {
+        this(srmurl, x509Credential, bearerToken, retrytimeout, numberofretries,
+             do_delegation, full_delegation, GSS_EXPECTED_NAME, WEB_SERVICE_PATH,
+             caPath, transport);
+    }
+
+    @Deprecated
     public SRMClientV2(URI srmurl, X509Credential user_cred, long retrytimeout,
             int numberofretries, boolean do_delegation, boolean full_delegation,
             String gss_expected_name, String webservice_path, String caPath,
             Transport transport) throws IOException,InterruptedException
     {
-        this.retrytimeout = retrytimeout;
-        this.retries = numberofretries;
-        this.user_cred = user_cred;
-        this.delegation = TransportUtil.delegationModeFor(transport, do_delegation, full_delegation);
-        checkValid(user_cred);
+        this(srmurl, Optional.of(user_cred), Optional.empty(), retrytimeout,
+                numberofretries, do_delegation, full_delegation,
+                gss_expected_name, webservice_path, caPath, transport);
+    }
+
+    public SRMClientV2(URI srmurl, Optional<X509Credential> x509Credential,
+            Optional<String> bearerToken, long retryTimeout,
+            int numberOfRetries, boolean doDelegation, boolean fullDelegation,
+            String gssExpectedName, String webservicePath, String caPath,
+            Transport transport) throws IOException,InterruptedException
+    {
+        this.retrytimeout = retryTimeout;
+        this.retries = numberOfRetries;
+        this.x509Credential = checkValid(x509Credential);
+        this.bearerToken = requireNonNull(bearerToken);
+        this.delegation = TransportUtil.delegationModeFor(transport, doDelegation, fullDelegation);
 
         sl = buildServiceLocator(caPath);
-        serviceUrl = buildServiceURL(srmurl, transport, webservice_path);
+        serviceUrl = buildServiceURL(srmurl, transport, webservicePath);
         axis_isrm = buildStub(nextServiceURL());
     }
 
@@ -324,7 +351,8 @@ public class SRMClientV2 implements ISRM {
             SrmSoapBindingStub stub = (SrmSoapBindingStub) sl.getsrm(url);
 
             if (stub != null) {
-                stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, user_cred);
+                x509Credential.ifPresent(c -> stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, c));
+                bearerToken.ifPresent(t -> addRequestHeader(stub, HTTPConstants.HEADER_AUTHORIZATION, "Bearer " + t));
                 stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_DELEGATION, delegation);
                 stub._setProperty(Call.SESSION_MAINTAIN_PROPERTY, true);
                 stub._setProperty(Call.STREAMING_PROPERTY, true);
@@ -336,9 +364,32 @@ public class SRMClientV2 implements ISRM {
         }
     }
 
+    private void addRequestHeader(SrmSoapBindingStub stub, String key, String value)
+    {
+        Map<String,String> headers;
+
+        Object rawMap = stub._getProperty(HTTPConstants.REQUEST_HEADERS);
+        if (rawMap == null) {
+            headers = new HashMap<>();
+            stub._setProperty(HTTPConstants.REQUEST_HEADERS, headers);
+        } else {
+            headers = (Map<String,String>)rawMap;
+        }
+
+        headers.put(key, value);
+    }
+
     private boolean isWildServiceURL()
     {
         return serviceUrl.getPort() == -1 || serviceUrl.getPath().equals("/");
+    }
+
+    private OptionalInt statusCodeOf(AxisFault af)
+    {
+        return Arrays.stream(af.getFaultDetails())
+                .filter(e -> e.getTagName().equals("HttpErrorCode"))
+                .mapToInt(e -> Integer.parseInt(e.getTextContent()))
+                .findFirst();
     }
 
     public Object handleClientCall(String name, Object argument, boolean retry)
@@ -354,11 +405,26 @@ public class SRMClientV2 implements ISRM {
                     throw new RemoteException("Failed to connect to server: " + e.toString(), e);
                 }
 
+                if (e instanceof AxisFault) {
+                    AxisFault af = (AxisFault)e;
+                    OptionalInt statusCode = statusCodeOf(af);
+
+                    if (statusCode.isPresent() && !probeFailures.stream()
+                            .map(this::statusCodeOf)
+                            .anyMatch(statusCode::equals)) {
+                        probeFailures.add(af);
+                    }
+                }
+
                 logger.debug("SRM operation failed for {}: {}",
                         axis_isrm._getProperty(ENDPOINT_ADDRESS_PROPERTY), e.toString());
 
                 URL newServiceUrl = nextServiceURL();
                 if (newServiceUrl == null) {
+                    if (probeFailures.size() == 1) {
+                        throw probeFailures.get(0);
+                    }
+
                     StringBuilder message = new StringBuilder("No SRM endpoint found");
                     message.append(" at ").append(serviceUrl.getHost());
                     if (serviceUrl.getPort() != -1) {
@@ -387,7 +453,7 @@ public class SRMClientV2 implements ISRM {
         }
         int i = 0;
         while(true) {
-            checkValid(user_cred);
+            checkValid(x509Credential);
             try {
                 Class<?> clazz = argument.getClass();
                 Method call = axis_isrm.getClass().getMethod(name,new Class[]{clazz});

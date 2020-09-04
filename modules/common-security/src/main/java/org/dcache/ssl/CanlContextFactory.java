@@ -38,6 +38,7 @@ import eu.emi.security.authn.x509.impl.ValidatorParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -104,7 +105,13 @@ public class CanlContextFactory implements SslContextFactory
     public SSLContext getContext(X509Credential credential)
             throws GeneralSecurityException
     {
-        KeyManager[] keyManagers = { credential.getKeyManager() };
+        KeyManager[] keyManagers;
+        if (credential == null) {
+            keyManagers = null;
+        } else {
+            keyManagers = new KeyManager[1];
+            keyManagers [0] = credential.getKeyManager();
+        }
         SSLContext context = SSLContext.getInstance("TLS");
         context.init(keyManagers, trustManagers, secureRandom);
         return context;
