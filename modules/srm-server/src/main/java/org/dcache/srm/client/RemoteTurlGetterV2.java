@@ -80,6 +80,7 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
+import java.util.Optional;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -172,7 +173,8 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
         LOGGER.debug("SURLs[0] is {}", SURLs[0]);
         try {
             srmv2 = new SRMClientV2(URIs.createWithDefaultPort(SURLs[0]),
-                                    credential.getDelegatedCredential(),
+                                    Optional.of(credential.getDelegatedCredential()),
+                                    Optional.empty(),
                                     retry_timout,
                                     retry_num,
                                     false,
@@ -409,7 +411,8 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                                          String caCertificatePath, Transport transport) throws Exception
     {
         SRMClientV2 srmv2 = new SRMClientV2(URIs.createWithDefaultPort(surl),
-                                            credential.getDelegatedCredential(),
+                                            Optional.of(credential.getDelegatedCredential()),
+                                            Optional.empty(),
                                             retry_timeout,
                                             retry_num,
                                             false,

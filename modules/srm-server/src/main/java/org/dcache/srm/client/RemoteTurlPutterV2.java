@@ -84,6 +84,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
+import java.util.Optional;
 
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
@@ -200,7 +201,8 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         try {
             java.net.URI srmUrl = URIs.createWithDefaultPort(SURLs[0]);
             srmv2 = new SRMClientV2(srmUrl,
-                                    credential.getDelegatedCredential(),
+                                    Optional.of(credential.getDelegatedCredential()),
+                                    Optional.empty(),
                                     retry_timout,
                                     retry_num,
                                     false,
@@ -457,7 +459,8 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                                      String caCertificatePath, Transport transport) throws Exception
     {
         SRMClientV2 srmv2 = new SRMClientV2(URIs.createWithDefaultPort(surl),
-                                            credential.getDelegatedCredential(),
+                                            Optional.of(credential.getDelegatedCredential()),
+                                            Optional.empty(),
                                             retry_timeout,
                                             retry_num,
                                             false,
