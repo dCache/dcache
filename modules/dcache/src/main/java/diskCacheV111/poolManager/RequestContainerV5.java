@@ -1656,7 +1656,7 @@ public class RequestContainerV5
                        //
                        // we couldn't find a pool for staging
                        //
-                       errorHandler() ;
+                        suspendIfEnabled("Suspended");
                     }
                  }
 
