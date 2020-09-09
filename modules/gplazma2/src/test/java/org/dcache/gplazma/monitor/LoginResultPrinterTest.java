@@ -38,7 +38,7 @@ import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
 public class LoginResultPrinterTest
 {
     // Allow printing of resulting tree
-    private static final boolean IS_OUTPUT_STDOUT_ENABLED = true;
+    private static final boolean IS_OUTPUT_STDOUT_ENABLED = false;
 //            "true".equals(System.getenv("DCACHE_UNITTEST_PRINT_ENABLED"));
 
     private static final Set<Principal> NO_PRINCIPALS = Collections.emptySet();
@@ -140,6 +140,7 @@ public class LoginResultPrinterTest
     public void print()
     {
         String output = _printer.print();
+
         if(IS_OUTPUT_STDOUT_ENABLED) {
             System.out.println("\n\nFrom test " + name.getMethodName()+"\n");
             System.out.append(output);
