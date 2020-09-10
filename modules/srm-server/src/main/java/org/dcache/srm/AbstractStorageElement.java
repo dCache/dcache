@@ -559,26 +559,12 @@ public interface AbstractStorageElement {
     String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException;
 
-      /**
-     * @param user User ID
-     * @param spaceToken of a valid space reservation
-     * @param newReservationLifetime new lifetime in millis to assign to space reservation
-     * @return long lifetime of spacereservation left in milliseconds
-     *
-     */
-
-      long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime)
-    throws SRMException ;
-
     /**
-     *
      * @param newLifetime SURL lifetime in milliseconds
      *   -1 stands for infinite lifetime
      * @return long lifetime left in milliseconds
      *   -1 stands for infinite lifetime
      */
     long srmExtendSurlLifetime(SRMUser user, URI surl, long newLifetime)
-    throws SRMException;
-
-    String getStorageBackendVersion();
+            throws SRMException;
 }

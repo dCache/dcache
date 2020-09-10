@@ -58,7 +58,6 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.services.space.message.GetLinkGroupNamesMessage;
 import diskCacheV111.services.space.message.GetLinkGroupsMessage;
@@ -421,7 +420,6 @@ public final class SpaceManagerService
                || message instanceof Release
                || message instanceof GetSpaceMetaData
                || message instanceof GetSpaceTokens
-               || message instanceof ExtendLifetime
                || message instanceof GetFileSpaceTokensMessage;
     }
 
@@ -670,8 +668,6 @@ public final class SpaceManagerService
             getSpaceMetaData((GetSpaceMetaData) message);
         } else if (message instanceof GetSpaceTokens) {
             getSpaceTokens((GetSpaceTokens) message);
-        } else if (message instanceof ExtendLifetime) {
-            extendLifetime((ExtendLifetime) message);
         } else if (message instanceof PoolFileFlushedMessage) {
             fileFlushed((PoolFileFlushedMessage) message);
         } else if (message instanceof GetFileSpaceTokensMessage) {
@@ -1288,29 +1284,6 @@ public final class SpaceManagerService
         PnfsId pnfsId = getFileTokens.getPnfsId();
         List<File> files = db.get(db.files().wherePnfsIdIs(pnfsId), null);
         getFileTokens.setSpaceToken(Longs.toArray(transform(files, File::getSpaceId)));
-    }
-
-    private void extendLifetime(ExtendLifetime extendLifetime) throws DataAccessException
-    {
-        long token = extendLifetime.getSpaceToken();
-        long newLifetime = extendLifetime.getNewLifetime();
-        Space space = db.selectSpaceForUpdate(token);
-        if (space.getState().isFinal()) {
-            throw new DataIntegrityViolationException("Space reservation was already released.");
-        }
-        Long oldExpirationTime = space.getExpirationTime();
-        if (oldExpirationTime != null) {
-            if (newLifetime == -1) {
-                space.setExpirationTime(null);
-                db.updateSpace(space);
-                return;
-            }
-            long newExpirationTime = System.currentTimeMillis() + newLifetime;
-            if (newExpirationTime > oldExpirationTime) {
-                space.setExpirationTime(newExpirationTime);
-                db.updateSpace(space);
-            }
-        }
     }
 
     /**

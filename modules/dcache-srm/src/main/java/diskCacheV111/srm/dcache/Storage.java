@@ -126,7 +126,6 @@ import java.util.stream.Collectors;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceState;
-import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.Release;
@@ -267,8 +266,6 @@ public final class Storage
     private String[] srmPutNotSupportedProtocols;
     private String[] srmGetNotSupportedProtocols;
     private String[] srmPreferredProtocols;
-
-    private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
@@ -2374,45 +2371,6 @@ public final class Storage
      *
      *
      * @param user User ID
-     * @param spaceToken of a valid space reservation
-     * @param newReservationLifetime new lifetime
-     * in millis to assign to space reservation
-     * @return long lifetime of spacereservation left in milliseconds
-     */
-    @Override
-    public long srmExtendReservationLifetime(SRMUser user, String spaceToken,
-                                             long newReservationLifetime)
-        throws SRMException
-    {
-        guardSpaceManagerEnabled();
-        try {
-            long longSpaceToken = Long.parseLong(spaceToken);
-            ExtendLifetime extendLifetime =
-                new ExtendLifetime(longSpaceToken, newReservationLifetime);
-            extendLifetime = _spaceManagerStub.sendAndWait(extendLifetime);
-            spaces.invalidate(spaceToken);
-            return extendLifetime.getNewLifetime();
-        } catch (NumberFormatException e){
-            throw new SRMException("Cannot parse space token: " +
-                                   e.getMessage(), e);
-        } catch (NoRouteToCellException e) {
-            throw new SRMNotSupportedException("Space manager is unavailable.", e);
-        } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("Space manager timed out.", e);
-        } catch (CacheException e) {
-            throw new SRMException("srmExtendReservationLifetime failed, " +
-                                   "ExtendLifetime.returnCode="+
-                                   e.getRc()+" errorObject = "+
-                                   e.getMessage());
-        } catch (InterruptedException e) {
-            throw new SRMInternalErrorException("Request to space manager got interrupted", e);
-        }
-    }
-
-    /**
-     *
-     *
-     * @param user User ID
      * @param pinId Id of a valid pin
      * @param newPinLifetime new lifetime in millis to assign to pin
      * @return long lifetime left for pin in millis
@@ -2444,11 +2402,6 @@ public final class Storage
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Request to PinManager got interrupted", e);
         }
-    }
-
-    @Override
-    public String getStorageBackendVersion() {
-        return VERSION.getVersion();
     }
 
     /**
