@@ -77,6 +77,8 @@ import java.util.stream.Collectors;
 import org.dcache.srm.Logger;
 import org.dcache.util.URIs;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  *
  * @author  timur
@@ -443,61 +445,25 @@ public class SRMDispatcher {
         }
         else if (configuration.isReserveSpace()) {
             String[] surl_strings  = configuration.getReserveSpaceURLs();
-            if (  surl_strings == null ) {
-                throw new IllegalArgumentException("Must specify SRM URL" ) ;
-            }
-            int number_of_surls    = surl_strings.length;
-            if ( number_of_surls > 1  ) {
-                throw new IllegalArgumentException("Only one SRM SURL is  supported " ) ;
-            }
-            else if ( number_of_surls == 0  ) {
-                throw new IllegalArgumentException("No URL specified ");
-            }
-            java.net.URI[] surls      = new java.net.URI[number_of_surls];
-            for (int i=0;i<number_of_surls;++i) {
-                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
-                        "srm", configuration.getDefaultSrmPortNumber());
-            }
-            checkURLSUniformity(SRM_URL, surls, false);
-            srmclient              = new SRMReserveSpaceClientV2(configuration, surls[0]);
+            checkArgument(surl_strings != null, "Must specify SRM URL");
+            checkArgument(surl_strings.length <= 1, "Only one SRM SURL is supported");
+            checkArgument(surl_strings.length == 1, "No URL specified");
+            java.net.URI surl = new java.net.URI(surl_strings[0]);
+            srmclient = new SRMReserveSpaceClientV2(configuration, surl);
         }
         else if (configuration.isReleaseSpace()) {
             String[] surl_strings  = configuration.getReserveSpaceURLs();
-            if (  surl_strings == null ) {
-                throw new IllegalArgumentException("Must specify SRM URL" ) ;
-            }
-            int number_of_surls    = surl_strings.length;
-            if ( number_of_surls > 1  ) {
-                throw new IllegalArgumentException("Only one SRM SURL is  supported " ) ;
-            }
-            else if ( number_of_surls == 0  ) {
-                throw new IllegalArgumentException("No URL specified ");
-            }
-            java.net.URI[] surls      = new java.net.URI[number_of_surls];
-            for (int i=0;i<number_of_surls;++i) {
-                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
-                        "srm", configuration.getDefaultSrmPortNumber());
-            }
-            checkURLSUniformity(SRM_URL, surls, false);
-            srmclient              = new SRMReleaseSpaceClientV2(configuration, surls[0]);
+            checkArgument(surl_strings != null, "Must specify SRM URL");
+            checkArgument(surl_strings.length < 2, "Only one SRM SURL is supported");
+            checkArgument(surl_strings.length == 1, "No URL specified");
+            srmclient = new SRMReleaseSpaceClientV2(configuration,
+                    new java.net.URI(surl_strings[0]));
         }
         else if (configuration.isGetSpaceMetaData()) {
-            URI surl_string  = configuration.getSrmUrl();
-            if (  surl_string == null ) {
-                throw new IllegalArgumentException("Must specify SRM URL" ) ;
-            }
-            java.net.URI surl = URIs.withDefaultPort(surl_string,
-                    "srm", configuration.getDefaultSrmPortNumber());
-            srmclient              = new SRMGetSpaceMetaDataClientV2(configuration, surl);
+            srmclient = new SRMGetSpaceMetaDataClientV2(configuration);
         }
         else if (configuration.isGetSpaceTokens()) {
-            URI surl_string  = configuration.getSrmUrl();
-            if (  surl_string == null ) {
-                throw new IllegalArgumentException("Must specify SRM URL" ) ;
-            }
-            java.net.URI surl = URIs.withDefaultPort(surl_string,
-                    "srm", configuration.getDefaultSrmPortNumber());
-            srmclient              = new SRMGetSpaceTokensClientV2(configuration, surl);
+            srmclient = new SRMGetSpaceTokensClientV2(configuration);
         }
         else if (configuration.isRmdir()) {
             String[] surl_strings  = configuration.getRmURLs();
@@ -545,16 +511,12 @@ public class SRMDispatcher {
             srmclient = new SRMRmClientV2(configuration, surls, surl_strings);
         }
         else if(configuration.isGetRequestSummary()) {
-            String surl_string = configuration.getGetRequestStatusSurl();
-            java.net.URI surl = URIs.createWithDefaultPort(surl_string,
-                    "srm", configuration.getDefaultSrmPortNumber());
-            srmclient          = new SRMGetRequestSummaryClientV2(configuration, surl);
+            String surl = configuration.getGetRequestStatusSurl();
+            srmclient = new SRMGetRequestSummaryClientV2(configuration, new URI(surl));
         }
         else if(configuration.isGetRequestTokens()) {
-            String surl_string = configuration.getGetRequestStatusSurl();
-            java.net.URI surl = URIs.createWithDefaultPort(surl_string,
-                    "srm", configuration.getDefaultSrmPortNumber());
-            srmclient          = new SRMGetRequestTokensClientV2(configuration, surl);
+            String surl = configuration.getGetRequestStatusSurl();
+            srmclient = new SRMGetRequestTokensClientV2(configuration, new URI(surl));
         }
         else if (configuration.isMove()) {
             String from;
@@ -701,25 +663,16 @@ public class SRMDispatcher {
             srmclient              = new SRMBringOnlineClientV2(configuration, surls);
         }
         else if(configuration.isPing()) {
-            URI surl_string = configuration.getSrmUrl();
-            java.net.URI surl = URIs.withDefaultPort(surl_string,
-                    "srm", configuration.getDefaultSrmPortNumber());
-            srmclient  = new SRMPingClientV2(configuration,surl);
+            srmclient = new SRMPingClientV2(configuration);
         }
         else if (configuration.isAbortRequest()) {
-            URI surl_string  = configuration.getSrmUrl();
-            if (  surl_string == null ) {
-                throw new IllegalArgumentException("Must specify SRM URL" ) ;
-            }
-            java.net.URI surl = URIs.withDefaultPort(surl_string,
-                    "srm", configuration.getDefaultSrmPortNumber());
-            srmclient           = new SRMAbortRequestClientV2(configuration, surl);
+            srmclient = new SRMAbortRequestClientV2(configuration);
         }
         else if (configuration.isAbortFiles()) {
-            srmclient           = new SRMAbortFilesClientV2(configuration);
+            srmclient = new SRMAbortFilesClientV2(configuration);
         }
         else if (configuration.isReleaseFiles()) {
-            srmclient           = new SRMReleaseFilesClientV2(configuration);
+            srmclient = new SRMReleaseFilesClientV2(configuration);
         }
         else {
             System.err.println(" unknown action requested");

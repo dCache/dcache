@@ -10,67 +10,43 @@
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
-
 import java.io.IOException;
-import java.util.Date;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTRequestSummary;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmGetRequestSummaryRequest;
 import org.dcache.srm.v2_2.SrmGetRequestSummaryResponse;
 import org.dcache.srm.v2_2.TRequestSummary;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 
-import static org.dcache.srm.util.Credentials.checkValid;
-
-public class SRMGetRequestSummaryClientV2 extends SRMClient  {
-
-    private java.net.URI srmURL;
-    private X509Credential credential;
-    private ISRM srmv2;
+public class SRMGetRequestSummaryClientV2 extends SRMClient
+{
+    private final java.net.URI srmURL;
 
     public SRMGetRequestSummaryClientV2(Configuration configuration,
                                         java.net.URI url) {
         super(configuration);
         srmURL=url;
-        try {
-            credential = getCredential();
-        }
-        catch (Exception e) {
-            credential = null;
-            System.err.println("Couldn't getGssCredential.");
-        }
     }
 
     @Override
-    public void connect() throws Exception {
-        srmv2 = new SRMClientV2(srmURL,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
+    protected java.net.URI getServerUrl()
+    {
+        return srmURL;
     }
 
     @Override
     public void start() throws Exception {
-        checkValid(credential);
+        checkCredentialValid();
         try {
             String[] tokens = configuration.getArrayOfRequestTokens();
             SrmGetRequestSummaryRequest request = new SrmGetRequestSummaryRequest();
 
             request.setArrayOfRequestTokens(new ArrayOfString(tokens));
 
-            SrmGetRequestSummaryResponse response = srmv2.srmGetRequestSummary(request);
+            SrmGetRequestSummaryResponse response = srm.srmGetRequestSummary(request);
             if ( response == null ) {
                 throw new IOException(" null SrmGetRequestSummaryResponse ");
             }

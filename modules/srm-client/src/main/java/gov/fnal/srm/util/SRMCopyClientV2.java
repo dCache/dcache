@@ -100,14 +100,12 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.FileStorageType;
 import org.dcache.srm.request.OverwriteMode;
@@ -115,7 +113,6 @@ import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTCopyFileRequest;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 import org.dcache.srm.v2_2.SrmCopyRequest;
@@ -130,59 +127,33 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.util.URIs;
 
-import static org.dcache.srm.util.Credentials.checkValid;
+public class SRMCopyClientV2 extends SRMClient implements Runnable
+{
+    private final java.net.URI from[];
+    private final java.net.URI to[];
+    private final SrmCopyRequest req = new SrmCopyRequest();
+    private final HashMap<java.net.URI,Integer> pendingSurlsMap = new HashMap<>();
 
-
-public class SRMCopyClientV2 extends SRMClient implements Runnable {
-    private java.net.URI from[];
-    private java.net.URI to[];
-    private SrmCopyRequest req = new SrmCopyRequest();
-
-    private X509Credential cred;
-    private ISRM srmv2;
     private Thread hook;
-    private HashMap<java.net.URI,Integer> pendingSurlsMap = new HashMap<>();
     private String requestToken;
+
     public SRMCopyClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
-        report = new Report(from,to,configuration.getReport());
+        report = new Report(from, to, configuration.getReport());
         this.from = from;
         this.to = to;
-        try {
-            cred = getCredential();
-        } catch (Exception e) {
-            cred = null;
-            System.err.println("Couldn't getGssCredential.");
-        }
     }
 
     @Override
-    public void connect() throws Exception {
-        java.net.URI srmUrl;
-        if ( configuration.isPushmode()  ) {
-            srmUrl = URIs.withDefaultPort(from [0],
-                    "srm", configuration.getDefaultSrmPortNumber());
-        } else {
-            srmUrl = URIs.withDefaultPort(to [0],
-                    "srm", configuration.getDefaultSrmPortNumber());
-        }
-        srmv2 = new SRMClientV2(srmUrl,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
+    protected java.net.URI getServerUrl()
+    {
+        return configuration.isPushmode() ? from [0] : to [0];
     }
 
     @Override
     public void start() throws Exception {
-        checkValid(cred);
+        checkCredentialValid();
         try {
             //
             // form the request
@@ -236,7 +207,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 req.setTargetSpaceToken(configuration.getSpaceToken());
             }
             configuration.getStorageSystemInfo().ifPresent(req::setSourceStorageSystemInfo);
-            SrmCopyResponse resp = srmv2.srmCopy(req);
+            SrmCopyResponse resp = srm.srmCopy(req);
             if ( resp == null ) {
                 throw new IOException(" null SrmCopyResponse");
             }
@@ -356,7 +327,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                         new ArrayOfAnyURI(surlArrayOfFromSURLs));
                 request.setArrayOfTargetSURLs(
                         new ArrayOfAnyURI(surlArrayOfToSURLs));
-                SrmStatusOfCopyRequestResponse copyStatusRequestResponse = srmv2.srmStatusOfCopyRequest(request);
+                SrmStatusOfCopyRequestResponse copyStatusRequestResponse = srm.srmStatusOfCopyRequest(request);
                 if(copyStatusRequestResponse == null) {
                     throw new IOException(" null copyStatusRequestResponse");
                 }
@@ -449,7 +420,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
         srmAbortFilesRequest.setRequestToken(requestToken);
         srmAbortFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
-        SrmAbortFilesResponse srmAbortFilesResponse = srmv2.srmAbortFiles(srmAbortFilesRequest);
+        SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
         if(srmAbortFilesResponse == null) {
             logger.elog(" srmAbortFilesResponse is null");
         } else {
@@ -461,5 +432,4 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             say("srmAbortFiles status code="+returnStatus.getStatusCode());
         }
     }
-
 }

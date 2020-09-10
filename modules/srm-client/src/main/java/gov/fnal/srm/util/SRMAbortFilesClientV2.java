@@ -9,49 +9,28 @@
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
 import java.io.IOException;
-import java.util.Date;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 
-import static org.dcache.srm.util.Credentials.checkValid;
-
-public class SRMAbortFilesClientV2 extends SRMClient {
-    private ISRM isrm;
-    private X509Credential credential;
-
-    public SRMAbortFilesClientV2(Configuration configuration) {
+public class SRMAbortFilesClientV2 extends SRMClient
+{
+    public SRMAbortFilesClientV2(Configuration configuration)
+    {
         super(configuration);
     }
 
     @Override
-    public void connect() throws Exception {
-        credential= getCredential();
-        isrm = new SRMClientV2(configuration.getSrmUrl(),
-                               credential,
-                               configuration.getRetry_timeout(),
-                               configuration.getRetry_num(),
-                               doDelegation,
-                               fullDelegation,
-                               gss_expected_name,
-                               configuration.getWebservice_path(),
-                               configuration.getX509_user_trusted_certificates(),
-                               configuration.getTransport());
-    }
-
-    @Override
-    public void start() throws Exception{
-        checkValid(credential);
+    public void start() throws Exception
+    {
+        checkCredentialValid();
         StringBuilder sb = new StringBuilder();
         boolean failed=false;
         if (configuration.getArrayOfRequestTokens()!=null) {
@@ -63,7 +42,7 @@ public class SRMAbortFilesClientV2 extends SRMClient {
                 urlArray[0] =  new URI(configuration.getSrmUrl().toASCIIString());
                 arrayOfSURLs.setUrlArray(urlArray);
                 request.setArrayOfSURLs(arrayOfSURLs);
-                SrmAbortFilesResponse response = isrm.srmAbortFiles(request);
+                SrmAbortFilesResponse response = srm.srmAbortFiles(request);
                 if (response==null) {
                     throw new IOException(" null SrmAbortFilesRespinse for request token " +requestToken);
                 }
@@ -123,7 +102,7 @@ public class SRMAbortFilesClientV2 extends SRMClient {
             }
             arrayOfSURLs.setUrlArray(urlArray);
             request.setArrayOfSURLs(arrayOfSURLs);
-            SrmAbortFilesResponse response =  isrm.srmAbortFiles(request);
+            SrmAbortFilesResponse response =  srm.srmAbortFiles(request);
             if (response==null) {
                 throw new IOException(" null SrmAbortFilesResponse ");
             }

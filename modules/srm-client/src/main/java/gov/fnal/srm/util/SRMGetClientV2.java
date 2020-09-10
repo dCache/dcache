@@ -77,14 +77,12 @@ import org.apache.axis.types.URI;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTGetFileRequest;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
@@ -101,55 +99,40 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
-import org.dcache.util.URIs;
 
 /**
  *
  * @author  timur
  */
-public class SRMGetClientV2 extends SRMClient implements Runnable {
-    private String[] protocols;
-    java.net.URI from[];
-    java.net.URI to[];
-    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
+public class SRMGetClientV2 extends SRMClient implements Runnable
+{
+    private final java.net.URI from[];
+    private final java.net.URI to[];
+    private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
+
     private Copier copier;
     private String requestToken;
     private Thread hook;
-    private ISRM srmv2;
+
     /** Creates a new instance of SRMGetClient */
-    public SRMGetClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
+    public SRMGetClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to)
+    {
         super(configuration);
-        report = new Report(from,to,configuration.getReport());
-        this.protocols = configuration.getProtocols();
+        report = new Report(from, to, configuration.getReport());
         this.from = from;
         this.to = to;
     }
 
     @Override
-    public void connect() throws Exception {
-        java.net.URI srmUrl = URIs.withDefaultPort(from [0],
-                "srm", configuration.getDefaultSrmPortNumber());
-        srmv2 = new SRMClientV2(srmUrl,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
-    }
-
-    public void setProtocols(String[] protocols) {
-        this.protocols = protocols;
+    protected java.net.URI getServerUrl()
+    {
+        return from [0];
     }
 
     @Override
     public void start() throws Exception {
         try {
-            copier = new Copier(urlcopy,configuration);
-            copier.setDebug(debug);
+            copier = new Copier(configuration);
             new Thread(copier).start();
             int len = from.length;
             String SURLS[] = new String[len];
@@ -190,8 +173,8 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 ct = TConnectionType.fromString(configuration.getConnectionType());
             }
             ArrayOfString protocolArray = null;
-            if (protocols != null) {
-                protocolArray = new ArrayOfString(protocols);
+            if (configuration.getProtocols() != null) {
+                protocolArray = new ArrayOfString(configuration.getProtocols());
             }
             ArrayOfString arrayOfClientNetworks = null;
             if (configuration.getArrayOfClientNetworks()!=null) {
@@ -206,7 +189,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             configuration.getStorageSystemInfo().ifPresent(srmPrepareToGetRequest::setStorageSystemInfo);
             say("calling srmPrepareToGet");
 
-            SrmPrepareToGetResponse response = srmv2.srmPrepareToGet(srmPrepareToGetRequest);
+            SrmPrepareToGetResponse response = srm.srmPrepareToGet(srmPrepareToGetRequest);
             say("received response");
             if(response == null) {
                 throw new IOException(" null response");
@@ -277,7 +260,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx], to[indx], "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(globusTURL,
-                                                       to[indx], srmv2, requestToken, logger, from[indx], true, this);
+                                                       to[indx], srm, requestToken, logger, from[indx], true, this);
                         copier.addCopyJob(job);
                         continue;
                     }
@@ -326,7 +309,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(
                         new ArrayOfAnyURI(surlArray));
                 SrmStatusOfGetRequestResponse srmStatusOfGetRequestResponse =
-                    srmv2.srmStatusOfGetRequest(srmStatusOfGetRequestRequest);
+                    srm.srmStatusOfGetRequest(srmStatusOfGetRequestRequest);
                 if(srmStatusOfGetRequestResponse == null) {
                     throw new IOException(" null srmStatusOfGetRequestResponse");
                 }
@@ -441,7 +424,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             srmAbortFilesRequest.setRequestToken(requestToken);
             srmAbortFilesRequest.setArrayOfSURLs(
                     new ArrayOfAnyURI(surlArray));
-            SrmAbortFilesResponse srmAbortFilesResponse = srmv2.srmAbortFiles(srmAbortFilesRequest);
+            SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
             if(srmAbortFilesResponse == null) {
                 logger.elog(" srmAbortFilesResponse is null");
             } else {
@@ -454,6 +437,4 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             }
         }
     }
-
-
 }

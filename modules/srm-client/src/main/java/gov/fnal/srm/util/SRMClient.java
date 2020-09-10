@@ -70,49 +70,43 @@ package gov.fnal.srm.util;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
 
+import java.io.IOException;
 import java.net.URI;
+import java.security.KeyStoreException;
+import java.security.cert.CertificateException;
 import java.util.Date;
 
 import org.dcache.srm.Logger;
+import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.client.Transport;
 import org.dcache.srm.client.TransportUtil;
+import org.dcache.srm.v2_2.ISRM;
+import org.dcache.util.URIs;
+
+import static java.util.Objects.requireNonNull;
+import static org.dcache.srm.util.Credentials.checkValid;
 
 /**
  *
  * @author  timur
  */
-public abstract class SRMClient {
+public abstract class SRMClient
+{
+    protected final Configuration configuration;
+    protected final Logger logger;
 
-    protected boolean debug;
-    protected String urlcopy;
-    protected Configuration configuration;
-    protected Logger logger;
-    protected boolean doDelegation;
-    protected boolean fullDelegation;
-    protected String gss_expected_name;
     protected Report report;
+    private X509Credential cred;
+    protected ISRM srm;
 
-
-    public SRMClient(Configuration configuration) {
+    public SRMClient(Configuration configuration)
+    {
         this.configuration = configuration;
         logger = configuration.getLogger();
-        this.debug=configuration.isDebug();
-        this.urlcopy=configuration.getUrlcopy();
-        this.doDelegation = configuration.isDelegate();
-        this.fullDelegation = configuration.isFull_delegation();
-        this.gss_expected_name = configuration.getGss_expected_name();
 
         Transport transport = configuration.getTransport();
-        dsay("In SRMClient ExpectedName: "+gss_expected_name);
+        dsay("In SRMClient ExpectedName: "+configuration.getGss_expected_name());
         dsay("SRMClient("+TransportUtil.uriSchemaFor(transport)+","+transport.toString()+")");
-    }
-
-    public void setUrlcopy(String urlcopy) {
-        this.urlcopy = urlcopy;
-    }
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
     }
 
     public final void say(String msg) {
@@ -121,7 +115,7 @@ public abstract class SRMClient {
 
     //say if debug
     public  final void dsay(String msg) {
-        if(debug) {
+        if (configuration.isDebug()) {
             logger.log(new Date().toString() +": "+msg);
         }
     }
@@ -133,22 +127,59 @@ public abstract class SRMClient {
 
     //esay if debug
     public  final void edsay(String err) {
-        if(debug) {
+        if (configuration.isDebug()) {
             logger.elog(new Date().toString() +": "+err);
         }
     }
 
-    public abstract void connect() throws Exception;
+    /**
+     * Provide server URL: enforcing default port number is not necessary.
+     */
+    protected URI getServerUrl()
+    {
+        return requireNonNull(configuration.getSrmUrl(), "Must specify SRM URL");
+    }
+
+    public void connect() throws Exception
+    {
+        java.net.URI uri = URIs.withDefaultPort(getServerUrl(), "srm",
+                configuration.getDefaultSrmPortNumber());
+
+        srm = new SRMClientV2(uri,
+                              getCredential(),
+                              configuration.getRetry_timeout(),
+                              configuration.getRetry_num(),
+                              configuration.isDelegate(),
+                              configuration.isFull_delegation(),
+                              configuration.getGss_expected_name(),
+                              configuration.getWebservice_path(),
+                              configuration.getX509_user_trusted_certificates(),
+                              configuration.getTransport());
+    }
 
     public abstract void start() throws Exception;
 
-    public X509Credential getCredential() throws Exception {
-        if (configuration.isUseproxy()) {
-            return new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
-        } else {
-            return new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
+    private X509Credential getCredential() throws IOException, KeyStoreException,
+            CertificateException
+    {
+        if (cred == null) {
+            if (configuration.isUseproxy()) {
+                cred = new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+            } else {
+                cred = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
+            }
+        }
+
+        return cred;
+    }
+
+    protected void checkCredentialValid() throws IOException
+    {
+        if (cred != null) {
+            checkValid(cred);
         }
     }
+
 
     private void setReportSuccessStatusBySource(URI url){
         if(report == null) {

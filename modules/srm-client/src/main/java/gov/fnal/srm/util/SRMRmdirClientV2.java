@@ -81,55 +81,33 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
-import org.dcache.srm.client.SRMClientV2;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmRmdirRequest;
 import org.dcache.srm.v2_2.SrmRmdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static org.dcache.srm.util.Credentials.checkValid;
-
-public class SRMRmdirClientV2 extends SRMClient {
-    private X509Credential cred;
-    private java.net.URI surl;
-    private String surl_string;
-    private ISRM isrm;
+public class SRMRmdirClientV2 extends SRMClient
+{
+    private final java.net.URI surl;
+    private final String surl_string;
 
     public SRMRmdirClientV2(Configuration configuration, java.net.URI surl, String surl_string) {
         super(configuration);
         this.surl      = surl;
         this.surl_string=surl_string;
-        try {
-            cred = getCredential();
-        }
-        catch (Exception e) {
-            cred = null;
-            System.err.println("Couldn't getGssCredential.");
-        }
     }
 
     @Override
-    public void connect() throws Exception {
-        java.net.URI srmUrl = surl;
-        isrm = new SRMClientV2(srmUrl,
-                               getCredential(),
-                               configuration.getRetry_timeout(),
-                               configuration.getRetry_num(),
-                               doDelegation,
-                               fullDelegation,
-                               gss_expected_name,
-                               configuration.getWebservice_path(),
-                               configuration.getX509_user_trusted_certificates(),
-                               configuration.getTransport());
+    protected java.net.URI getServerUrl()
+    {
+        return surl;
     }
 
     @Override
     public void start() throws Exception {
-        checkValid(cred);
+        checkCredentialValid();
         SrmRmdirRequest req = new SrmRmdirRequest();
         if (configuration.isRecursive()) {
             req.setRecursive(Boolean.TRUE);
@@ -140,7 +118,7 @@ public class SRMRmdirClientV2 extends SRMClient {
         URI uri = new URI(surl_string);
         req.setSURL(uri);
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
-        SrmRmdirResponse resp = isrm.srmRmdir(req);
+        SrmRmdirResponse resp = srm.srmRmdir(req);
         TReturnStatus rs   = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
             TStatusCode rc  = rs.getStatusCode();
@@ -151,5 +129,4 @@ public class SRMRmdirClientV2 extends SRMClient {
             System.exit(1);
         }
     }
-
 }

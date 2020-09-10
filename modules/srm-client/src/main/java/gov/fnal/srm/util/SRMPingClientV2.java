@@ -74,65 +74,45 @@ package gov.fnal.srm.util;
 
 import java.io.IOException;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmPingRequest;
 import org.dcache.srm.v2_2.SrmPingResponse;
 import org.dcache.srm.v2_2.TExtraInfo;
+
 /**
  *
  * @author  timur
  */
-public class SRMPingClientV2 extends SRMClient  {
-    private ISRM srmv2;
-    java.net.URI srmurl;
+public class SRMPingClientV2 extends SRMClient
+{
     /** Creates a new instance of SRMGetClient */
-    public SRMPingClientV2(Configuration configuration, java.net.URI srmurl) {
+    public SRMPingClientV2(Configuration configuration)
+    {
         super(configuration);
-        this.srmurl = srmurl;
     }
 
     @Override
-    public void connect() throws Exception {
-        srmv2 = new SRMClientV2(srmurl,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
-    }
-
-    @Override
-    public void start() throws Exception {
-        try {
-            SrmPingRequest request = new SrmPingRequest();
-            SrmPingResponse response = srmv2.srmPing(request);
-            say("received response");
-            if(response == null) {
-                throw new IOException(" null response");
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append("VersionInfo : ").append(response.getVersionInfo())
-                    .append("\n");
+    public void start() throws IOException
+    {
+        SrmPingRequest request = new SrmPingRequest();
+        SrmPingResponse response = srm.srmPing(request);
+        say("received response");
+        if (response == null) {
+            throw new IOException(" null response");
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("VersionInfo : ").append(response.getVersionInfo())
+                .append("\n");
             if (response.getOtherInfo()!=null) {
-                ArrayOfTExtraInfo info = response.getOtherInfo();
-                if (info.getExtraInfoArray()!=null) {
-                    for (int i=0;i<info.getExtraInfoArray().length;i++) {
-                        TExtraInfo extraInfo = info.getExtraInfoArray()[i];
-                        sb.append(extraInfo.getKey()).append(":")
-                                .append(extraInfo.getValue()).append("\n");
-                    }
+            ArrayOfTExtraInfo info = response.getOtherInfo();
+            if (info.getExtraInfoArray()!=null) {
+                for (int i=0;i<info.getExtraInfoArray().length;i++) {
+                    TExtraInfo extraInfo = info.getExtraInfoArray()[i];
+                    sb.append(extraInfo.getKey()).append(":")
+                            .append(extraInfo.getValue()).append("\n");
                 }
             }
-            System.out.println(sb.toString());
         }
-        catch (Exception e){
-            throw e;
-        }
+        System.out.println(sb.toString());
     }
 }

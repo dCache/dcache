@@ -110,11 +110,12 @@ import static org.dcache.util.URIs.portWithDefault;
 
 public class Copier implements Runnable {
     private final Set<CopyJob> copy_jobs = new HashSet<>();
+    private final String urlcopy;
+    private final boolean debug;
+
     private boolean doneAddingJobs;
     private boolean stop;
     private Thread hook;
-    private String urlcopy;
-    private boolean debug;
     private Configuration configuration;
     private boolean completed;
     private boolean completed_successfully = true;
@@ -150,18 +151,16 @@ public class Copier implements Runnable {
         }
     }
 
-    public Copier(String urlcopy,Configuration configuration) {
-        this.urlcopy = urlcopy;
+    public Copier(Configuration configuration) {
+        this.urlcopy = configuration.getUrlcopy();
+        this.debug = configuration.isDebug();
+
         this.configuration = configuration;
         this.retry_num = configuration.getRetry_num();
         this.retry_timeout = configuration.getRetry_timeout();
         this.dryRun = configuration.isDryRun();
 
         logger = configuration.getLogger();
-    }
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
     }
 
     public void addCopyJob(CopyJob job) {

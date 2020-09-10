@@ -77,14 +77,12 @@ import org.apache.axis.types.URI;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTGetFileRequest;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 import org.dcache.srm.v2_2.SrmBringOnlineRequest;
@@ -106,38 +104,25 @@ import org.dcache.srm.v2_2.TTransferParameters;
  *
  * @author  timur
  */
-public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
-    private String[] protocols;
-    java.net.URI from[];
-    private HashMap<String,Integer>pendingSurlsToIndex = new HashMap<>();
+public class SRMBringOnlineClientV2 extends SRMClient implements Runnable
+{
+    private final java.net.URI from[];
+    private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
+
     private String requestToken;
     private Thread hook;
-    private ISRM srmv2;
+
     /** Creates a new instance of SRMBringOnlineClient */
     public SRMBringOnlineClientV2(Configuration configuration, java.net.URI[] from) {
         super(configuration);
-        report = new Report(from,from,configuration.getReport());
-        this.protocols = configuration.getProtocols();
+        report = new Report(from, from, configuration.getReport());
         this.from = from;
     }
 
     @Override
-    public void connect() throws Exception {
-        java.net.URI srmUrl = from[0];
-        srmv2 = new SRMClientV2(srmUrl,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
-    }
-
-    public void setProtocols(String[] protocols) {
-        this.protocols = protocols;
+    protected java.net.URI getServerUrl()
+    {
+        return from[0];
     }
 
     @Override
@@ -188,8 +173,8 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 ct = TConnectionType.fromString(configuration.getConnectionType());
             }
             ArrayOfString protocolArray = null;
-            if (protocols != null) {
-                protocolArray = new ArrayOfString(protocols);
+            if (configuration.getProtocols() != null) {
+                protocolArray = new ArrayOfString(configuration.getProtocols());
             }
             ArrayOfString arrayOfClientNetworks = null;
             if (configuration.getArrayOfClientNetworks()!=null) {
@@ -203,7 +188,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             }
             configuration.getStorageSystemInfo().ifPresent(srmBringOnlineRequest::setStorageSystemInfo);
             say("calling srmBringOnline");
-            SrmBringOnlineResponse response = srmv2.srmBringOnline(srmBringOnlineRequest);
+            SrmBringOnlineResponse response = srm.srmBringOnline(srmBringOnlineRequest);
             say("received response");
             if(response == null) {
                 throw new IOException(" null response");
@@ -309,7 +294,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 srmStatusOfBringOnlineRequestRequest.setArrayOfSourceSURLs(
                         new ArrayOfAnyURI(surlArray));
                 SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequestResponse =
-                    srmv2.srmStatusOfBringOnlineRequest(srmStatusOfBringOnlineRequestRequest);
+                    srm.srmStatusOfBringOnlineRequest(srmStatusOfBringOnlineRequestRequest);
                 if(srmStatusOfBringOnlineRequestResponse == null) {
                     throw new IOException(" null srmStatusOfBringOnlineRequestResponse");
                 }
@@ -397,7 +382,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             srmAbortFilesRequest.setRequestToken(requestToken);
             srmAbortFilesRequest.setArrayOfSURLs(
                     new ArrayOfAnyURI(surlArray));
-            SrmAbortFilesResponse srmAbortFilesResponse = srmv2.srmAbortFiles(srmAbortFilesRequest);
+            SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
             if(srmAbortFilesResponse == null) {
                 logger.elog(" srmAbortFilesResponse is null");
             } else {
@@ -410,6 +395,4 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             }
         }
     }
-
-
 }

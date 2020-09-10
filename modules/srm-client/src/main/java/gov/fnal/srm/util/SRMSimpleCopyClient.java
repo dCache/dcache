@@ -76,10 +76,13 @@ package gov.fnal.srm.util;
  *
  * @author  timur
  */
-public class SRMSimpleCopyClient extends SRMClient {
-    java.net.URI from[];
-    java.net.URI to[];
+public class SRMSimpleCopyClient extends SRMClient
+{
+    private final java.net.URI from[];
+    private final java.net.URI to[];
+
     private Copier copier;
+
     /** Creates a new instance of SRMGetClient */
     public SRMSimpleCopyClient(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
@@ -95,8 +98,7 @@ public class SRMSimpleCopyClient extends SRMClient {
 
     @Override
     public void start() throws Exception {
-        copier = new Copier(urlcopy,configuration);
-        copier.setDebug(debug);
+        copier = new Copier(configuration);
         new Thread(copier).start();
         int len = from.length;
 

@@ -82,61 +82,40 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
 
 import java.io.IOException;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmReleaseSpaceRequest;
 import org.dcache.srm.v2_2.SrmReleaseSpaceResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 
-import static org.dcache.srm.util.Credentials.checkValid;
 
-public class SRMReleaseSpaceClientV2 extends SRMClient  {
-    private java.net.URI srmURL;
-    SrmReleaseSpaceRequest request = new SrmReleaseSpaceRequest();
-    private X509Credential credential;
-    private ISRM srmv2;
+public class SRMReleaseSpaceClientV2 extends SRMClient
+{
+    private final java.net.URI srmURL;
+    private SrmReleaseSpaceRequest request = new SrmReleaseSpaceRequest();
 
     public SRMReleaseSpaceClientV2(Configuration configuration,
                                    java.net.URI url) {
         super(configuration);
         srmURL=url;
-        try {
-            credential = getCredential();
-        }
-        catch (Exception e) {
-            credential = null;
-            System.err.println("Couldn't getGssCredential.");
-        }
     }
 
     @Override
-    public void connect() throws Exception {
-
-        srmv2 = new SRMClientV2(srmURL,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
+    protected java.net.URI getServerUrl()
+    {
+        return srmURL;
     }
 
     @Override
     public void start() throws Exception {
-        checkValid(credential);
+        checkCredentialValid();
         try {
             request.setSpaceToken(configuration.getSpaceToken());
             request.setForceFileRelease(configuration.getForceFileRelease());
             configuration.getStorageSystemInfo().ifPresent(request::setStorageSystemInfo);
-            SrmReleaseSpaceResponse response = srmv2.srmReleaseSpace(request);
+            SrmReleaseSpaceResponse response = srm.srmReleaseSpace(request);
             if ( response == null ) {
                 throw new IOException(" null SrmReleaseSpace");
             }
@@ -154,5 +133,4 @@ public class SRMReleaseSpaceClientV2 extends SRMClient  {
             throw e;
         }
     }
-
 }

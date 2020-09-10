@@ -81,12 +81,9 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmSetPermissionRequest;
 import org.dcache.srm.v2_2.SrmSetPermissionResponse;
 import org.dcache.srm.v2_2.TGroupPermission;
@@ -95,9 +92,8 @@ import org.dcache.srm.v2_2.TPermissionType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static org.dcache.srm.util.Credentials.checkValid;
-
-public class SRMSetPermissionClientV2 extends SRMClient {
+public class SRMSetPermissionClientV2 extends SRMClient
+{
     //
     // SRM v2.2 WSDL srmSetPermission requires non-nullable groupid string
     // dCache SRM ignores this value and uses group id it retrieves from
@@ -105,43 +101,28 @@ public class SRMSetPermissionClientV2 extends SRMClient {
     // as "unspecified". No change of ownership happens.
     //
     private static final String DEFAULT_DUMMY_GROUP_ID = "-";
-    private X509Credential cred;
-    private java.net.URI surl;
-    private String surl_string;
-    private ISRM isrm;
+
+    private final java.net.URI surl;
+    private final String surl_string;
 
     public SRMSetPermissionClientV2(Configuration configuration,
-                                    java.net.URI surl, String surl_string) {
+                                    java.net.URI surl, String surl_string)
+    {
         super(configuration);
-        this.surl       = surl;
+        this.surl = surl;
         this.surl_string = surl_string;
-        try {
-            cred = getCredential();
-        }
-        catch (Exception e) {
-            cred = null;
-            System.err.println("Couldn't getGssCredential.");
-        }
     }
 
     @Override
-    public void connect() throws Exception {
-        java.net.URI srmUrl = surl;
-        isrm = new SRMClientV2(srmUrl,
-                               getCredential(),
-                               configuration.getRetry_timeout(),
-                               configuration.getRetry_num(),
-                               doDelegation,
-                               fullDelegation,
-                               gss_expected_name,
-                               configuration.getWebservice_path(),
-                               configuration.getX509_user_trusted_certificates(),
-                               configuration.getTransport());
+    protected java.net.URI getServerUrl()
+    {
+        return surl;
     }
 
     @Override
-    public void start() throws Exception {
-        checkValid(cred);
+    public void start() throws Exception
+    {
+        checkCredentialValid();
         URI uri = new URI(surl_string);
         SrmSetPermissionRequest req = new SrmSetPermissionRequest();
         req.setSURL(uri);
@@ -168,7 +149,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
         }
         req.setOtherPermission(other);
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
-        SrmSetPermissionResponse resp = isrm.srmSetPermission(req);
+        SrmSetPermissionResponse resp = srm.srmSetPermission(req);
         try {
             TReturnStatus rs   = resp.getReturnStatus();
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
@@ -188,5 +169,4 @@ public class SRMSetPermissionClientV2 extends SRMClient {
             throw e;
         }
     }
-
 }

@@ -82,15 +82,10 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
-
 import java.io.IOException;
-import java.util.Date;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfString;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmGetSpaceMetaDataRequest;
 import org.dcache.srm.v2_2.SrmGetSpaceMetaDataResponse;
 import org.dcache.srm.v2_2.TMetaDataSpace;
@@ -98,50 +93,23 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static org.dcache.srm.util.Credentials.checkValid;
 
-public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
-    private java.net.URI srmURL;
-    private X509Credential credential;
-    private ISRM srmv2;
-
-    public SRMGetSpaceMetaDataClientV2(Configuration configuration,
-                                       java.net.URI url) {
+public class SRMGetSpaceMetaDataClientV2 extends SRMClient
+{
+    public SRMGetSpaceMetaDataClientV2(Configuration configuration)
+    {
         super(configuration);
-        srmURL=url;
-        try {
-            credential = getCredential();
-        }
-        catch (Exception e) {
-            credential = null;
-            System.err.println("Couldn't getGssCredential.");
-        }
-    }
-
-    @Override
-    public void connect() throws Exception {
-
-        srmv2 = new SRMClientV2(srmURL,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
     }
 
     @Override
     public void start() throws Exception {
-        checkValid(credential);
+        checkCredentialValid();
         try {
             String[] tokens = configuration.getSpaceTokensList();
             SrmGetSpaceMetaDataRequest request = new SrmGetSpaceMetaDataRequest();
             request.setArrayOfSpaceTokens(new ArrayOfString(tokens));
 
-            SrmGetSpaceMetaDataResponse response = srmv2.srmGetSpaceMetaData(request);
+            SrmGetSpaceMetaDataResponse response = srm.srmGetSpaceMetaData(request);
 
 
             if ( response == null ) {

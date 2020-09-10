@@ -82,17 +82,15 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.UnsignedLong;
 
 import java.io.IOException;
+import java.net.URI;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfString;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.srm.v2_2.SrmReserveSpaceRequest;
@@ -108,47 +106,28 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 
-import static org.dcache.srm.util.Credentials.checkValid;
-
-
-public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
-    private java.net.URI srmURL;
-    SrmReserveSpaceRequest request = new SrmReserveSpaceRequest();
-    private X509Credential credential;
-    private ISRM srmv2;
+public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable
+{
+    private final java.net.URI srmURL;
+    private final SrmReserveSpaceRequest request = new SrmReserveSpaceRequest();
     private Thread hook;
     private String requestToken;
 
     public SRMReserveSpaceClientV2(Configuration configuration,
                                    java.net.URI url) {
         super(configuration);
-        srmURL=url;
-        try {
-            credential = getCredential();
-        } catch (Exception e) {
-            credential = null;
-            System.err.println("Couldn't getGssCredential.");
-        }
+        srmURL = url;
     }
 
     @Override
-    public void connect() throws Exception {
-
-        srmv2 = new SRMClientV2(srmURL,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
+    protected URI getServerUrl()
+    {
+        return srmURL;
     }
 
     @Override
     public void start() throws Exception {
-        checkValid(credential);
+        checkCredentialValid();
         try {
             TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?
                 RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
@@ -195,7 +174,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
 
-            SrmReserveSpaceResponse response = srmv2.srmReserveSpace(request);
+            SrmReserveSpaceResponse response = srm.srmReserveSpace(request);
 
             if ( response == null ) {
                 throw new IOException(" null SrmReserveSpace");
@@ -250,7 +229,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                     SrmStatusOfReserveSpaceRequestRequest req = new SrmStatusOfReserveSpaceRequestRequest();
                     req.setRequestToken(requestToken);
                     req.setAuthorizationID(request.getAuthorizationID());
-                    SrmStatusOfReserveSpaceRequestResponse statusOfReserveSpaceRequestResponse =  srmv2.srmStatusOfReserveSpaceRequest(req);
+                    SrmStatusOfReserveSpaceRequestResponse statusOfReserveSpaceRequestResponse = srm.srmStatusOfReserveSpaceRequest(req);
 
                     if( statusOfReserveSpaceRequestResponse == null) {
                         throw new IOException(" null statusOfReserveSpaceRequestResponse");
@@ -324,7 +303,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
     public void abortRequest() throws Exception {
         SrmAbortRequestRequest abortRequest = new SrmAbortRequestRequest();
         abortRequest.setRequestToken(requestToken);
-        SrmAbortRequestResponse abortResponse = srmv2.srmAbortRequest(abortRequest);
+        SrmAbortRequestResponse abortResponse = srm.srmAbortRequest(abortRequest);
         if (abortResponse == null) {
             logger.elog(" SrmAbort is null");
         } else {

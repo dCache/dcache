@@ -81,58 +81,39 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
 
-import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmRmRequest;
 import org.dcache.srm.v2_2.SrmRmResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static org.dcache.srm.util.Credentials.checkValid;
 
-public class SRMRmClientV2 extends SRMClient {
-    private X509Credential cred;
-    private java.net.URI surls[];
-    private String surl_strings[];
-    private ISRM isrm;
+public class SRMRmClientV2 extends SRMClient
+{
+    private final java.net.URI surls[];
+    private final String surl_strings[];
 
     /** Creates a new instance of SRMGetClient */
-    public SRMRmClientV2(Configuration configuration, java.net.URI[] surls, String[] surl_strings) {
+    public SRMRmClientV2(Configuration configuration, java.net.URI[] surls, String[] surl_strings)
+    {
         super(configuration);
-        this.surls      = surls;
-        this.surl_strings=surl_strings;
-        try {
-            cred = getCredential();
-        }
-        catch (Exception e) {
-            cred = null;
-            System.err.println("Couldn't getGssCredential.");
-        }
+        this.surls = surls;
+        this.surl_strings = surl_strings;
     }
 
     @Override
-    public void connect() throws Exception {
-        java.net.URI srmUrl = surls[0];
-        isrm = new SRMClientV2(srmUrl,
-                               getCredential(),
-                               configuration.getRetry_timeout(),
-                               configuration.getRetry_num(),
-                               doDelegation,
-                               fullDelegation,
-                               gss_expected_name,
-                               configuration.getWebservice_path(),
-                               configuration.getX509_user_trusted_certificates(),
-                               configuration.getTransport());
+    protected java.net.URI getServerUrl()
+    {
+        return surls[0];
     }
 
     @Override
-    public void start() throws Exception {
-        checkValid(cred);
+    public void start() throws Exception
+    {
+        checkCredentialValid();
         SrmRmRequest req = new SrmRmRequest();
         URI[] uris = new URI[surls.length];
         for(int i =0; i<surls.length; ++i) {
@@ -140,7 +121,7 @@ public class SRMRmClientV2 extends SRMClient {
         }
         req.setArrayOfSURLs(new ArrayOfAnyURI(uris));
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
-        SrmRmResponse resp = isrm.srmRm(req);
+        SrmRmResponse resp = srm.srmRm(req);
         TReturnStatus rs   = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
             TStatusCode rc  = rs.getStatusCode();
@@ -172,6 +153,4 @@ public class SRMRmClientV2 extends SRMClient {
             System.exit(1);
         }
     }
-
-
 }
