@@ -114,12 +114,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class Configuration extends ConnectionConfiguration {
 
     public static final String SRMCPCONFIGNAMESPACE="srmcp.srm.fnal.gov";
-    private static final String webservice_pathv1 = "srm/managerv1";
-    private static final String webservice_pathv2 = "srm/managerv2";
     private static final String HOME_DIRECTORY=System.getProperty("user.home");
     private static final String PATH_SEPARATOR=System.getProperty("file.separator");
     private static final String CONFIGURATION_DIRECTORY=".srmconfig";
-    private String DEFAULT_CONFIG_FILE=HOME_DIRECTORY+
+    private static final String DEFAULT_CONFIG_FILE=HOME_DIRECTORY+
     PATH_SEPARATOR+
     CONFIGURATION_DIRECTORY+
     PATH_SEPARATOR+"config.xml";
@@ -245,6 +243,7 @@ public class Configuration extends ConnectionConfiguration {
     @Option(
             name = "webservice_path",
             description = "path to wsdl in web service url",
+            defaultValue = "srm/managerv2",
             required=false,
             log=true,
             save=true
@@ -252,15 +251,7 @@ public class Configuration extends ConnectionConfiguration {
     private String webservice_path;
 
     public String getWebservice_path() {
-        String ws_path = webservice_path;
-        if(ws_path ==null) {
-            if(srm_protocol_version == 2) {
-                ws_path = webservice_pathv2;
-            } else {
-                ws_path = webservice_pathv1;
-            }
-        }
-        return ws_path;
+        return webservice_path;
     }
 
     public void setWebservice_path(String webservice_path) {
@@ -873,22 +864,6 @@ public class Configuration extends ConnectionConfiguration {
         this.use_urlcopy_script = use_urlcopy_script;
     }
 
-
-    @Option(
-            name = "getFileMetaData",
-            description = "gets srm meta data for specified surls",
-            defaultValue = "false",
-            required=false,
-            log=true
-    )
-    private boolean getFileMetaData;
-
-    public boolean isGetFileMetaData() { return getFileMetaData; }
-
-    public void setGetFileMetaData(boolean getFileMetaData) {
-        this.getFileMetaData = getFileMetaData;
-    }
-
     @Option(
             name = "ls",
             description = "list content of directory",
@@ -1243,50 +1218,7 @@ public class Configuration extends ConnectionConfiguration {
 
     public void setExtendFileLifetime(boolean x) { extendFileLifetime=x; }
 
-    @Option(
-            name = "advisoryDelete",
-            description =  "performs AdvisoryDelete",
-            defaultValue = "false",
-            required=false,
-            log=true
-    )
-    private boolean  advisoryDelete;
-
-    public boolean isAdvisoryDelete() { return advisoryDelete; }
-
-    public void setAdvisoryDelete(boolean x) { advisoryDelete=x; }
-
-    @Option(
-            name = "getRequestStatus",
-            description =  "gets Request Status",
-            defaultValue = "false",
-            required=false,
-            log=true
-    )
-    private boolean  getRequestStatus;
-
-    public boolean isGetRequestStatus() { return getRequestStatus; }
-
-    public void setGetRequestStatus(boolean x) { getRequestStatus=x; }
-
     private String getRequestStatusSurl;
-
-    @Option(
-            name = "request_id",
-            description =  "request token",
-            defaultValue = "0",
-            required=false,
-            log=true
-    )
-    private int getRequestStatusId;
-
-    public int getGetRequestStatusId() {
-        return getRequestStatusId;
-    }
-
-    public void setGetRequestStatusId(int getRequestStatusId) {
-        this.getRequestStatusId = getRequestStatusId;
-    }
 
     @Option(
             name = "connect_to_wsdl",
@@ -1384,23 +1316,6 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "stage",
-            description =  	"performs srm \"get\", without actual copy of the files with the hope that this will trigger staging in srm managed",
-            defaultValue = "false",
-            required=false,
-            log=true
-    )
-    private boolean stage;
-
-    public boolean isStage() {
-        return stage;
-    }
-
-    public void setStage(boolean stage) {
-        this.stage = stage;
-    }
-
-    @Option(
             name = "l",
             description = "long format mode",
             defaultValue = "false",
@@ -1488,42 +1403,6 @@ public class Configuration extends ConnectionConfiguration {
     public void setLsCount(Integer count) {
         lsCount=count;
     }
-
-    @Option(
-            name = "srm_protocol_version",
-            description = "srm protocol version",
-            defaultValue = "0",
-            required=false,
-            log=true,
-            save=true
-    )
-    private int srm_protocol_version;
-
-    public int getSrmProtocolVersion() {
-        return srm_protocol_version;
-    }
-
-    public void setSrmProtocolVersion(int srmProtocolVersion) {
-        this.srm_protocol_version = srmProtocolVersion;
-    }
-
-    @Option(
-            name = "1",
-            description = "srm protocol version 1",
-            defaultValue = "false",
-            required=false,
-            log=false
-    )
-    private boolean isSrmv1;
-
-    @Option(
-            name = "2",
-            description = "srm protocol version 2",
-            defaultValue = "false",
-            required=false,
-            log=false
-    )
-    private boolean isSrmv2;
 
     @Option(
             name = "request_lifetime",
@@ -1794,9 +1673,6 @@ public class Configuration extends ConnectionConfiguration {
         + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
         + "\t\t Applies to files only.\n";
 
-    private String stage_options =
-        " stage options: None \n";
-
     private String getPermission_options =
         " srm-get-permissions options: \n"
         + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
@@ -1823,9 +1699,6 @@ public class Configuration extends ConnectionConfiguration {
                     "x509_user_trusted_certificates",
                     "globus_tcp_port_range",
                     "gss_expected_name",
-                    "srm_protocol_version",
-                    "1",
-                    "2",
                     "conf",
                     "save_conf",
                     "retry_timeout",
@@ -1836,13 +1709,6 @@ public class Configuration extends ConnectionConfiguration {
                     "transport",
                     "h",
             "help");
-        if (getFileMetaData) {
-            return
-            "\nUsage:get-file-metadata [command line options]  srmurl\n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            general_options;
-        }
         if(getSpaceTokens) {
             String getSpaceTokensOptions="get-space-tokens options :\n"+
             OptionParser.printOptions(this,"space_desc");
@@ -1851,24 +1717,6 @@ public class Configuration extends ConnectionConfiguration {
             "       default options can be set in configuration file \n"+
             "       or overriden by the command line options\n\n"+
             (isHelp()==true?general_options+getSpaceTokensOptions:getSpaceTokensOptions);
-        }
-        if (advisoryDelete) {
-            return
-            "Usage:advisory-delete [command line options]  srmurl(s)\n"+
-            "     default options can be set in configuration file \n"+
-            "     or overriden by the command line options\n\n"+
-            general_options;
-        }
-        if (getRequestStatus) {
-            String getRequestStatusOptions=" get-request-status options :\n"+
-            OptionParser.printOptions(this,"request_id");
-            return
-            "\nUsage:get-request-status  [command line options]  srmurl \n\n"+
-            "       where srmurl is one of the surl specified in the original request\n" +
-            "       and is used for determening the srm endpoint location\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+getRequestStatusOptions:getRequestStatusOptions);
         }
         if (copy) {
             String copy_options=" srmcp options :\n"+
@@ -1888,11 +1736,7 @@ public class Configuration extends ConnectionConfiguration {
                     "connection_type",
                     "overwrite_mode",
                     "pushmode",
-                    "srmstage",
                     "use_urlcopy_script",
-                    "srm_protocol_version",
-                    "2",
-                    "1",
                     "priority",
                     "request_lifetime",
                     "copyjobfile",
@@ -1935,8 +1779,6 @@ public class Configuration extends ConnectionConfiguration {
                     "array_of_client_networks",
                     "retention_policy",
                     "access_latency",
-                    "srm_protocol_version",
-                    "2","1",
                     "request_lifetime",
                     "lifetime",
                     "priority",
@@ -2089,14 +1931,6 @@ public class Configuration extends ConnectionConfiguration {
             "       the command line options are one or more of the following:\n"+
             (isHelp()==true?general_options+mkdir_options:mkdir_options);
         }
-        if(stage) {
-            return
-            "\nUsage: srmstage [command line options] srmUrl [[srmUrl]...] \n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+stage_options:stage_options);
-
-        }
         if(getPermission) {
             return
             "\nUsage: srmgetpermission [command line options] srmUrl [[srmUrl]...] \n\n" +
@@ -2152,9 +1986,6 @@ public class Configuration extends ConnectionConfiguration {
         " -copy                   performs srm \"get\", \"put\", or \"copy\" depending \n"+
         "                         on arguments \n"+
         " -bringOnline            performs srmBringOnline \n"+
-        " -stage                  performs srm \"get\", without actual copy of the files \n"+
-        "                         with the hope that this will trigger staging in srm managed\n"+
-        "                         hierarchical storage system\n"+
         " -mv                     performs srm \"mv\" of files and directories \n"+
         " -ls                     list content of directory \n"+
         " -rm                     remove file(s) \n"+
@@ -2163,21 +1994,16 @@ public class Configuration extends ConnectionConfiguration {
         " -getPermissions	      get file(s) permissions \n"+
         " -checkPermissions	      check file permissions \n"+
         " -setPermissions	      set file permissions \n"+
-        " -extendFileLietime      extend lifetime of existing SURL(s) pf volatile and durable files \n"+
+        " -extendFileLifetime     extend lifetime of existing SURL(s) pf volatile and durable files \n"+
         "                         or pinned lifetime of TURL(s)\n"+
-        " -advisoryDelete         performs srm advisory delete \n"+
         " -abortRequest           to abort request.  \n"+
         " -abortFiles             to abort files.  \n"+
         " -releaseFiles           to unpin files.  \n"+
-        " -getRequestStatus       obtains and prints srm request status \n"+
         " -getRequestSummary      is to retrieve a summary of the previously submitted request.  \n"+
-        " -getGetRequestTokens    retrieves request tokens for the clients requests, given client provided request description.\n"+
+        " -getRequestTokens       retrieves request tokens for the clients requests, given client provided request description.\n"+
         "                         This is to accommodate lost request tokens. This can also be used for getting all request tokens.\n"+
-        " -getFileMetaData        gets srm meta data for specified surls\n"+
         " -getSpaceTokens         gets space tokens belonging to this user\n"+
         "                         which have a corresponding description (if provided)\n"+
-        " -getStorageElementInfo  prints storage element info, in particular\n"+
-        "                         it prints total, availabale and used space amount\n"+
         " -reserveSpace           performs explicit space reservation \n"+
         " -releaseSpace           performs release of explicit  space reservation \n"+
         " -getSpaceMetaData       retrieves and prints metadata for given space tokens\n"+
@@ -2399,26 +2225,6 @@ public class Configuration extends ConnectionConfiguration {
             throw new IllegalArgumentException("illegal number of retries : "+
                     getRetry_num());
         }
-        if (isSrmv1&&isSrmv2) {
-            throw new IllegalArgumentException(
-                    "only one option of -srm_protocol_version, -1 or -2 should be specified");
-        }
-        if ((isSrmv1||isSrmv2) && args.hasOption("srm_protocol_version")) {
-            throw new IllegalArgumentException(
-            "only one option of -srm_protocol_version, -1 or -2 should be specified");
-        }
-        if (isSrmv1) {
-            srm_protocol_version=1;
-        }
-        else if (isSrmv2) {
-            srm_protocol_version=2;
-        }
-        else if (srm_protocol_version==0) {
-            srm_protocol_version=2;
-        }
-        if(srm_protocol_version != 1 && srm_protocol_version != 2) {
-            throw new IllegalArgumentException("illegal srm protocol version "+ srm_protocol_version);
-        }
         if(request_lifetime <= 0 && request_lifetime != -1) {
             throw new IllegalArgumentException("illegal value for request lifetime"+
                     request_lifetime);
@@ -2441,10 +2247,6 @@ public class Configuration extends ConnectionConfiguration {
                 copy ^
                 bringOnline ^
                 ping ^
-                getFileMetaData ^
-                advisoryDelete ^
-                getRequestStatus ^
-                stage ^
                 getPermission ^
                 checkPermission ^
                 setPermission ^
@@ -2473,42 +2275,7 @@ public class Configuration extends ConnectionConfiguration {
         surls = args.getArguments().toArray(String[]::new);
         srmUrl = new URI(args.argv(0));
 
-        //
-        // take care of protocol version for srm v2.2 functions
-        // (override whatever user has specified)
-        //
-        if (is_AbortRequest||
-                reserveSpace ||
-                checkPermission ||
-                is_AbortFiles ||
-                is_rm ||
-                is_mv ||
-                setPermission ||
-                getSpaceTokens ||
-                is_ReleaseFiles ||
-                is_mkdir ||
-                getSpaceMetaData ||
-                ls ||
-                bringOnline ||
-                releaseSpace ||
-                extendFileLifetime ||
-                is_getRequestTokens ||
-                getPermission ||
-                is_getRequestSummary ||
-                is_rmdir) {
-            srm_protocol_version=2;
-        }
-        if (getRequestStatus) {
-            if (numberOfArguments == 1) {
-                getRequestStatusSurl = args.argv(0);
-            }
-            else {
-                throw new IllegalArgumentException(
-                        "one and only one storage element info server " +
-                "wsdl url should be specified");
-            }
-        }
-        else if (is_getRequestTokens) {
+        if (is_getRequestTokens) {
             getRequestStatusSurl =  args.argv(0);
         }
         else if (is_getRequestSummary) {
@@ -2591,9 +2358,6 @@ public class Configuration extends ConnectionConfiguration {
     {
         protocols = readListOfOptions(protocols_list,",");
         arrayOfClientNetworks = readListOfOptions(array_of_client_networks,",");
-        if (spaceToken!=null) {
-            srm_protocol_version = 2;
-        }
         readCksmOptions();
     }
 
@@ -2790,13 +2554,6 @@ public class Configuration extends ConnectionConfiguration {
                 catch (SecurityException | IllegalAccessException e) {
                     throw new RuntimeException("Bug detected while processing option " + option.name(), e);
                 }
-            }
-        }
-        if (getFileMetaData && surls != null) {
-            sb.append("\n\taction is getFileMetaData");
-            for (int i = 0; i<surls.length; ++i) {
-                sb.append("\n\tsurl[").append(i).append("]=")
-                        .append(this.surls[i]);
             }
         }
         if (getSpaceTokens && srmUrl != null) {
@@ -3017,22 +2774,6 @@ public class Configuration extends ConnectionConfiguration {
         surls = inURLs;
     }
 
-    /** Getter for property getFileMetaDataSurls.
-     * @return Value of property getFileMetaDataSurls.
-     *
-     */
-    public String[] getGetFileMetaDataSurls() {
-        return this.surls;
-    }
-
-    /** Setter for property getFileMetaDataSurls.
-     * @param getFileMetaDataSurls New value of property getFileMetaDataSurls.
-     *
-     */
-    public void setGetFileMetaDataSurls(String[] getFileMetaDataSurls) {
-        this.surls = getFileMetaDataSurls;
-    }
-
     /** Getter for property getPermissionSurls.
      * @return Value of property getPermissionSurls.
      *
@@ -3097,22 +2838,6 @@ public class Configuration extends ConnectionConfiguration {
         arrayOfClientNetworks=a;
     }
 
-
-    /** Getter for property advisoryDeleteSurls.
-     * @return Value of property advisoryDeleteSurls.
-     *
-     */
-    public String[] getAdvisoryDeleteSurls() {
-        return this.surls;
-    }
-
-    /** Setter for property advisoryDeleteSurls.
-     * @param advisoryDeleteSurls New value of property advisoryDeleteSurls.
-     *
-     */
-    public void setAdvisoryDeleteSurls(String[] advisoryDeleteSurls) {
-        this.surls = advisoryDeleteSurls;
-    }
 
     /**
      * Getter for property getRequestStatusSurl.

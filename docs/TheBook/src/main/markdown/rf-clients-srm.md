@@ -6,7 +6,6 @@ Chapter 27. dCache Clients
 + [The SRM Client Suite](#the-srm-client-suite)
 
   [srmcp](#srmcp) — Copy a file from or to an SRM or between two SRMs.
-  [srmstage](#srmstage) — Request staging of a file.
 
 + [dccp](#dccp)
   [dccp](#dccp) — Copy a file from or to a dCache server.
@@ -75,22 +74,6 @@ Example:
 ```console-user
 srmcp --streams_num=1 --server_mode=active sourceUrl destinationUrl
 ```
-
-### Description
-
-### srmstage
-srmstage - Request staging of a file.
-
-### synopsis
-srmstage[srmUrl]
-
-Arguments
-srmUrl
-The URL of the file which should be staged.
-
-### Description
-
-Provides an option to the user to stage files from HSM to dCache and not transfer them to the user right away. This case will be useful if files are not needed right away at user end, but its good to stage them to dcache for faster access later.
 
 ### dccp
 

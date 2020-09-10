@@ -133,7 +133,6 @@ ln -s ./adler32                  adler32sum
 ln -s ./gridftpcopy              gridftp-cp
 ln -s ./gridftplist              gridftp-ls
 ln -s ./srmcp                    srm-cp
-ln -s ./srm-storage-element-info srm-get-storage-element-info
 cd ../..
 #======================================================================
 # save original .rpmmacros and populate the new one

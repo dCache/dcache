@@ -94,8 +94,8 @@ public class SRMDispatcher {
     public static final int DIRECTORY_URL=0x80;
     public static final int UNKNOWN_URL=0x100;
     private SRMClient     srmclient;
-    private Configuration configuration;
-    private Logger        logger;
+    private final Configuration configuration;
+    private final Logger        logger;
 
     private SRMDispatcher(Configuration configuration)
     {
@@ -151,14 +151,6 @@ public class SRMDispatcher {
             if(conf.isHelp()) {
                 logger.elog(conf.usage());
                 System.exit(1);
-            }
-            if (conf.isGetFileMetaData()) {
-                if(conf.getGetFileMetaDataSurls() == null ||
-                        conf.getGetFileMetaDataSurls().length == 0 ) {
-                    System.err.println(
-                    "cannot get metadata - surls not specified");
-                    System.exit(1);
-                }
             }
             else if (conf.isGetPermission()){
                 if(conf.getGetPermissionSurls() == null ||
@@ -289,20 +281,6 @@ public class SRMDispatcher {
                     }
                 }
             }
-            else if (conf.isAdvisoryDelete()) {
-                if (conf.getAdvisoryDeleteSurls() == null ||
-                        conf.getAdvisoryDeleteSurls().length == 0 ) {
-                    System.err.println(
-                    "cannot perform advisory delete - surls not specified");
-                    System.exit(1);
-                }
-            }
-            else if (conf.isGetRequestStatus()) {
-                if (conf.getGetRequestStatusSurl() == null ) {
-                    System.err.println("surl, to be used for location of srm, is not specified");
-                    System.exit(1);
-                }
-            }
             else if (conf.isGetRequestSummary()) {
                 if (conf.getGetRequestStatusSurl() == null ) {
                     System.err.println("surl, to be used for location of srm, is not specified");
@@ -413,18 +391,7 @@ public class SRMDispatcher {
     }
 
     private void work() throws Exception {
-        if (configuration.isGetFileMetaData()) {
-            String[] surl_strings = configuration.getGetFileMetaDataSurls();
-            int number_of_surls   = surl_strings.length;
-            java.net.URI[] surls     = new java.net.URI[number_of_surls];
-            for(int i=0;i<number_of_surls;++i) {
-                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
-                        "srm", configuration.getDefaultSrmPortNumber());
-            }
-            checkURLSUniformity(SRM_URL, surls, false);
-            srmclient = new SRMGetFileMetaDataClientV1(configuration, surls, surl_strings);
-        }
-        else if (configuration.isGetPermission()) {
+        if (configuration.isGetPermission()) {
             String[] surl_strings = configuration.getGetPermissionSurls();
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls     = new java.net.URI[number_of_surls];
@@ -532,17 +499,6 @@ public class SRMDispatcher {
                     "srm", configuration.getDefaultSrmPortNumber());
             srmclient              = new SRMGetSpaceTokensClientV2(configuration, surl);
         }
-        else if (configuration.isStage()) {
-            String[] surl_strings  = configuration.getLsURLs();
-            int number_of_surls   = surl_strings.length;
-            java.net.URI[] surls      = new java.net.URI[number_of_surls];
-            for(int i=0;i<number_of_surls;++i) {
-                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
-                        "srm", configuration.getDefaultSrmPortNumber());
-            }
-            checkURLSUniformity(SRM_URL, surls, false);
-            srmclient              = new SRMStageClientV1(configuration, surls);
-        }
         else if (configuration.isRmdir()) {
             String[] surl_strings  = configuration.getRmURLs();
             int number_of_surls    = surl_strings.length;
@@ -587,25 +543,6 @@ public class SRMDispatcher {
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMRmClientV2(configuration, surls, surl_strings);
-        }
-        else if(configuration.isAdvisoryDelete()) {
-            String[] surl_strings = configuration.getAdvisoryDeleteSurls();
-            int number_of_surls   = surl_strings.length;
-            java.net.URI[] surls     = new java.net.URI[number_of_surls];
-            for (int i=0;i<number_of_surls;++i) {
-                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
-                        "srm", configuration.getDefaultSrmPortNumber());
-            }
-            checkURLSUniformity(SRM_URL, surls, false);
-            srmclient = new SRMAdvisoryDeleteClientV1(configuration, surls, surl_strings);
-        }
-        else if(configuration.isGetRequestStatus()) {
-            String surl_string = configuration.getGetRequestStatusSurl();
-            int requestId      = configuration.getGetRequestStatusId();
-            java.net.URI surl = URIs.createWithDefaultPort(surl_string,
-                    "srm", configuration.getDefaultSrmPortNumber());
-
-            srmclient          = new SRMGetRequestStatusClientV1(configuration, surl,requestId);
         }
         else if(configuration.isGetRequestSummary()) {
             String surl_string = configuration.getGetRequestStatusSurl();
@@ -705,22 +642,13 @@ public class SRMDispatcher {
             if (fromType == SRM_URL ) {
                 if ((toType & FILE_URL) == FILE_URL) {
                     dsay("starting SRMGetClient");
-                    if(configuration.getSrmProtocolVersion() == 1) {
-                        srmclient = new SRMGetClientV1(configuration,from_urls,to_urls);
-                    } else if(configuration.getSrmProtocolVersion() == 2) {
-                        srmclient = new SRMGetClientV2(configuration,from_urls,to_urls);
-                    }
+                    srmclient = new SRMGetClientV2(configuration,from_urls,to_urls);
                 }
                 else {
                     if (toType == SRM_URL) {
                         // both source(s) and destination(s) are srm urls
                         // we can either push or pull
-                        if (configuration.getSrmProtocolVersion() == 1) {
-                            srmclient = new SRMCopyClientV1(configuration,from_urls,to_urls);
-                        }
-                        else  if ( configuration.getSrmProtocolVersion() == 2 )  {
-                            srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
-                        }
+                        srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
                     }
                     else {
                         //
@@ -729,22 +657,13 @@ public class SRMDispatcher {
                         if (!configuration.isPushmode()) {
                             configuration.setPushmode(true);
                         }
-                        if (configuration.getSrmProtocolVersion() == 1) {
-                            srmclient = new SRMCopyClientV1(configuration,from_urls,to_urls);
-                        }
-                        else  if ( configuration.getSrmProtocolVersion() == 2 )  {
-                            srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
-                        }
+                        srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
                     }
                 }
             }
             else if(toType == SRM_URL) {
                 if ((fromType & FILE_URL) == FILE_URL) {
-                    if(configuration.getSrmProtocolVersion() == 1) {
-                        srmclient = new SRMPutClientV1(configuration,from_urls,to_urls);
-                    } else if(configuration.getSrmProtocolVersion() == 2) {
-                        srmclient = new SRMPutClientV2(configuration,from_urls,to_urls);
-                    }
+                    srmclient = new SRMPutClientV2(configuration,from_urls,to_urls);
                 }
                 else {
                     //
@@ -753,12 +672,7 @@ public class SRMDispatcher {
                     if (configuration.isPushmode()) {
                         configuration.setPushmode(false);
                     }
-                    if(configuration.getSrmProtocolVersion() == 1) {
-                        srmclient = new SRMCopyClientV1(configuration,from_urls,to_urls);
-                    }
-                    else  if ( configuration.getSrmProtocolVersion() == 2 )  {
-                        srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
-                    }
+                    srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
                 }
             }
             else if(((fromType & FILE_URL) == FILE_URL ||
@@ -790,12 +704,7 @@ public class SRMDispatcher {
             URI surl_string = configuration.getSrmUrl();
             java.net.URI surl = URIs.withDefaultPort(surl_string,
                     "srm", configuration.getDefaultSrmPortNumber());
-            if(configuration.getSrmProtocolVersion() == 1) {
-                srmclient  = new SRMPingClientV1(configuration,surl);
-            }
-            if(configuration.getSrmProtocolVersion() == 2) {
-                srmclient  = new SRMPingClientV2(configuration,surl);
-            }
+            srmclient  = new SRMPingClientV2(configuration,surl);
         }
         else if (configuration.isAbortRequest()) {
             URI surl_string  = configuration.getSrmUrl();
