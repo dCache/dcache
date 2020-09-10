@@ -317,7 +317,7 @@ Usage:
 Example 22.1. surveying the space tokens available in a directory.
 
 ```console-user
-srm-get-space-tokens srm://dcache.example.org -srm_protocol_version=2
+srm-get-space-tokens srm://dcache.example.org
 ```
 
 A successful result:
@@ -363,7 +363,6 @@ Example:
 ```console-user
 srm-reserve-space  \
 |-desired_size 2000 \
-|-srm_protocol_version=2 \
 |-retention_policy=REPLICA \
 |-access_latency=ONLINE \
 |-guaranteed_size 1024 \

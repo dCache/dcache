@@ -70,16 +70,10 @@ package gov.fnal.srm.util;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
 
-import diskCacheV111.srm.ISRM;
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.RequestStatus;
-
 import org.dcache.srm.Logger;
-import org.dcache.srm.client.SRMClientV1;
 import org.dcache.srm.client.Transport;
 import org.dcache.srm.client.TransportUtil;
 
@@ -89,24 +83,19 @@ import org.dcache.srm.client.TransportUtil;
  */
 public abstract class SRMClient {
 
-    private String gluepath;
     protected boolean debug;
-    protected ISRM srm;
     protected String urlcopy;
     protected Configuration configuration;
     protected Logger logger;
     protected boolean doDelegation;
     protected boolean fullDelegation;
-    protected String gss_expected_name ="host";
-    protected long retrytimeout=1000;
-    protected int retries = 10;
+    protected String gss_expected_name;
     protected Report report;
 
 
     public SRMClient(Configuration configuration) {
         this.configuration = configuration;
         logger = configuration.getLogger();
-        this.gluepath = configuration.getWebservice_path();
         this.debug=configuration.isDebug();
         this.urlcopy=configuration.getUrlcopy();
         this.doDelegation = configuration.isDelegate();
@@ -115,7 +104,7 @@ public abstract class SRMClient {
 
         Transport transport = configuration.getTransport();
         dsay("In SRMClient ExpectedName: "+gss_expected_name);
-        dsay("SRMClient("+TransportUtil.uriSchemaFor(transport)+","+gluepath+","+transport.toString()+")");
+        dsay("SRMClient("+TransportUtil.uriSchemaFor(transport)+","+transport.toString()+")");
     }
 
     public void setUrlcopy(String urlcopy) {
@@ -125,23 +114,6 @@ public abstract class SRMClient {
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
-
-    public static RequestFileStatus getFileRequest(RequestStatus rs,
-                                                   Integer nextID) {
-
-        RequestFileStatus[] frs = rs.fileStatuses;
-        if(frs == null ) {
-            return null;
-        }
-
-        for (RequestFileStatus fr : frs) {
-            if (fr.fileId == nextID) {
-                return fr;
-            }
-        }
-        return null;
-    }
-
 
     public final void say(String msg) {
         logger.log(new Date().toString() +": "+msg);
@@ -170,50 +142,11 @@ public abstract class SRMClient {
 
     public abstract void start() throws Exception;
 
-    protected void connect(java.net.URI srmUrl) throws Exception {
-        try {
-
-            SRMClientV1 client;
-            client = new SRMClientV1(srmUrl, getCredential(),
-                    configuration.getRetry_timeout(),
-                    configuration.getRetry_num(),
-                    doDelegation, fullDelegation, gss_expected_name,
-                    configuration.getWebservice_path(),
-                    configuration.getTransport());
-            dsay("connected to server, obtaining proxy");
-
-            srm = client;
-            dsay("got proxy of type "+srm.getClass());
-
-        } catch (Exception srme) {
-            throw new IOException(srme.toString());
-        }
-        if(srm == null) {
-            throw new IOException("can not get manager connection");
-        }
-
-    }
-
     public X509Credential getCredential() throws Exception {
         if (configuration.isUseproxy()) {
             return new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
         } else {
             return new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
-        }
-    }
-
-    public  void done(RequestStatus rs,ISRM srm) {
-        if(rs.fileStatuses != null) {
-            for(int i = 0; i< rs.fileStatuses.length;++i) {
-                RequestFileStatus rfs = rs.fileStatuses[i];
-                if(!rfs.state.equals("Done") &&
-                        !rfs.state.equals("Failed")) {
-                    say("rfs.state is " + rfs.state +
-                            " calling setFileStatus(" + rs.requestId + "," +
-                            rfs.fileId + ",\"Done\")");
-                    srm.setFileStatus(rs.requestId,rfs.fileId,"Done");
-                }
-            }
         }
     }
 
@@ -232,6 +165,7 @@ public abstract class SRMClient {
         report.setStatusByDestinationUrl(url, Report.OK_RC, null);
 
     }
+
     private void setReportSuccessStatusBySrcAndDest(URI srcurl, URI dsturl){
         if(srcurl == null ) {
             setReportSuccessStatusByDest(dsturl);
@@ -347,7 +281,5 @@ public abstract class SRMClient {
             }
         }
     }
-
-
 }
 

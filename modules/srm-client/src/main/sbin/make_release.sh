@@ -34,11 +34,8 @@ fi
 mkdir $SRM_PATH/ups_release
 mkdir $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/logback-all.xml $SRM_PATH/bin/srmcp  $SRM_PATH/ups_release/bin
-cp $SRM_PATH/bin/srm-advisory-delete  $SRM_PATH/bin/srm-storage-element-info $SRM_PATH/ups_release/bin
-cp $SRM_PATH/bin/srm-get-metadata  $SRM_PATH/bin/srm-get-request-status $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/gridftpcopy $SRM_PATH/bin/adler32  $SRM_PATH/bin/gridftplist $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/srmls $SRM_PATH/bin/srmmkdir $SRM_PATH/bin/srmrmdir  $SRM_PATH/ups_release/bin
-cp $SRM_PATH/bin/srmmv $SRM_PATH/bin/srmrm $SRM_PATH/bin/srmstage  $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/srm-release-space $SRM_PATH/bin/srm-reserve-space $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/srm-bring-online $SRM_PATH/bin/srmping $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/srm-get-space-metadata $SRM_PATH/bin/srm-get-space-tokens $SRM_PATH/ups_release/bin

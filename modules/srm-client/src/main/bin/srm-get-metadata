@@ -1,5 +1,0 @@
-#!@SHELL_PATH@
-
-@INIT_SCRIPT@
-
-exec "${SRM_PATH}/lib/srm" -getFileMetaData "$@"

@@ -15,9 +15,6 @@
   What are the tools available in this package?
   _____________________________________________
 
-  SRM V1.1 clients: srmcp, srm-get-metadata, srm-get-request-status, 
-  srm-advisory-delete, srmping, srmstage
-
   SRM V2.2 clients: srmcp, srm-reserve-space, srm-release-space, 
   srmrm, srmrmdir, srmls, srmmkdir, srmmv, srmping, srm-bring-online
   
@@ -26,7 +23,7 @@
   What is srmcp
   -------------
 
-  srmcp is the implementation of srm client as specified by srm spec v1.1 and srm spec v2.2
+  srmcp is the implementation of srm client as specified by srm spec v2.2
 
   What can I use srmcp for.
   _______________________
@@ -90,8 +87,6 @@ Usage: srmcp [command line options] source(s) destination
 	 a pair of positive integers separated by ":",
 	 not set by default 
 -gss_expected_name=<gss expected name in the srm server DN> default value is host
--srm_protocol_version=<srm protocol version>
-	 or just specify -1  or -2 
 -conf=<path to the configuration file> default value is config.xml
 -save_conf=<path to the file in which the new configuration will be saved>
 	 no transfer will be performed if this option is specified
@@ -130,13 +125,7 @@ Usage: srmcp [command line options] source(s) destination
 -pushmode=<true or false>  true to use the push mode in case
 	 of srm Mass Storage Systems (MSS) to MSS copy, 
 	 false to use the pull mode, the default mode is pull mode (false)
--srmstage=<true or false, false by default> 
-	 if set to true - the source files are staged only onto disk cache
-	 and not transferred to client right away> 
-	 if set to false - the source files are transferred to the client
 -use_urlcopy_script=<true or false> use java native copiers of use urcopy script
--srm_protocol_version=<1 or 2> 1 for srm 1.1 or 2 for srm 2.2, no other protocols are supported
-	 or just specify -1  or -2 
 -request_lifetime=<num of seconds> request lifetime in seconds
 -copyjobfile=<file> where <file> is the path to the text file containing 
 	 the list of sources and destination

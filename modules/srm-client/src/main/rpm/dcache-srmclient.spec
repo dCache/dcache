@@ -30,7 +30,6 @@ This package contains the client components.
 %defattr(-,root,root)
 %attr(0755,root,root) /usr/bin/adler32
 %attr(0755,root,root) /usr/bin/delegation
-%attr(0755,root,root) /usr/bin/srm-get-request-status
 %attr(0755,root,root) /usr/bin/srm-get-request-tokens
 %attr(0755,root,root) /usr/bin/srm-get-request-summary
 %attr(0755,root,root) /usr/bin/srmcp
@@ -39,10 +38,6 @@ This package contains the client components.
 %attr(0755,root,root) /usr/bin/srmmkdir
 %attr(0755,root,root) /usr/bin/srmmv
 %attr(0755,root,root) /usr/bin/srmrmdir
-%attr(0755,root,root) /usr/bin/srmstage
-%attr(0755,root,root) /usr/bin/srm-advisory-delete
-%attr(0755,root,root) /usr/bin/srm-storage-element-info
-%attr(0755,root,root) /usr/bin/srm-get-metadata
 %attr(0755,root,root) /usr/bin/srm-bring-online
 %attr(0755,root,root) /usr/bin/srm-extend-file-lifetime
 %attr(0755,root,root) /usr/bin/srm-get-permissions
