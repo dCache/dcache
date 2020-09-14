@@ -1939,6 +1939,8 @@ public class FsSqlDriver {
                 }
             }
         }
+        // trigger generation update
+        setInodeAttributes(inode, 0, new Stat());
     }
 
     /**
@@ -1971,6 +1973,8 @@ public class FsSqlDriver {
         if (n == 0) {
             throw new NoXdataChimeraException(attr);
         }
+        // trigger generation update
+        setInodeAttributes(inode, 0, new Stat());
     }
 
 }

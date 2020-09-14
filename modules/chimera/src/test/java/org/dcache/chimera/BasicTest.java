@@ -1357,7 +1357,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         String key = "attr1";
         byte[] value = "cat".getBytes(UTF_8);
+        Stat s0 = _fs.stat(inode);
         _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
+        assertThat("inode generate must be update on xattr create",
+                _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
         byte[] result = _fs.getXattr(inode, key);
 
         assertArrayEquals("Get xattr returns unexpected value", value, result);
@@ -1396,7 +1399,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
         byte[] value1 = "cat".getBytes(UTF_8);
         byte[] value2 = "cat2".getBytes(UTF_8);
         _fs.setXattr(inode, key, value1, SetXattrMode.CREATE);
+        Stat s0 = _fs.stat(inode);
         _fs.setXattr(inode, key, value2, SetXattrMode.REPLACE);
+        assertThat("inode generation must be update on xattr replace",
+                _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
+
         byte[] result = _fs.getXattr(inode, key);
 
         assertArrayEquals("Get xattr returns unexpected value", value2, result);
@@ -1416,7 +1423,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         assertArrayEquals("Get xattr returns unexpected value", value1, result);
 
+        Stat s0 = _fs.stat(inode);
         _fs.setXattr(inode, key, value2, SetXattrMode.EITHER);
+        assertThat("inode generation must be update on xattr create/replace",
+                _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
+
         result = _fs.getXattr(inode, key);
 
         assertArrayEquals("Get xattr returns unexpected value", value2, result);
@@ -1474,6 +1485,9 @@ public class BasicTest extends ChimeraTestCaseHelper {
         String key = "attr1";
         byte[] value = "cat".getBytes(UTF_8);
         _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
+        Stat s0 = _fs.stat(inode);
         _fs.removeXattr(inode, key);
+        assertThat("inode generation must be update on xattr remote",
+                _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
     }
 }
