@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -36,6 +36,7 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandExitException;
+import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
 
 import org.dcache.cells.AbstractCell;
@@ -55,7 +56,7 @@ import org.dcache.util.Transfer;
  * is processing a line.
  */
 public class LineBasedDoor
-    extends AbstractCell implements Runnable
+    extends AbstractCell implements Runnable, KeepAliveListener
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LineBasedDoor.class);
 
@@ -255,6 +256,13 @@ public class LineBasedDoor
         pw.println("     User Host  : " + engine.getInetAddress().getHostAddress());
         if (interpreter instanceof CellInfoProvider) {
             ((CellInfoProvider) interpreter).getInfo(pw);
+        }
+    }
+
+    @Override
+    public void keepAlive() {
+        if (interpreter instanceof KeepAliveListener) {
+            KeepAliveListener.class.cast(interpreter).keepAlive();
         }
     }
 
