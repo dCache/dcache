@@ -27,6 +27,7 @@ import diskCacheV111.util.FsPath;
 
 import java.io.Serializable;
 import java.util.EnumSet;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
@@ -219,6 +220,8 @@ public class MultiTargetedRestriction implements Restriction
     @Override
     public String toString()
     {
-        return "MultiTargetedRestriction["+authorisations.toString() + "]";
+        return authorisations.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(", ", "MultiTargetedRestriction[", "]"));
     }
 }
