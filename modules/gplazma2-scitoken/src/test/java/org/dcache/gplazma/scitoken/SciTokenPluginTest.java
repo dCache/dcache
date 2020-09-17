@@ -1076,6 +1076,57 @@ public class SciTokenPluginTest
         assertTrue(resultingRestriction.isRestricted(MANAGE, FsPath.create("/file.dat")));
     }
 
+    @Test
+    public void shouldSupportBriansToken() throws Exception
+    {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix/path uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("jti", jti)
+                .withClaim("sub", sub)
+                .withClaim("scope", "openid offline_access storage.read:/ storage.modify:/ wlcg") // example from Brian Bockelman
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
+                new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
+                new JwtJtiPrincipal("EXAMPLE", jti)));
+        assertFalse(resultingRestriction.isRestricted(UPLOAD,   FsPath.create("/prefix/path/my-data/my-file.dat")));
+        assertFalse(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/my-data/my-file.dat")));
+        assertFalse(resultingRestriction.isRestricted(MANAGE,   FsPath.create("/prefix/path/my-data/my-file.dat")));
+        assertFalse(resultingRestriction.isRestricted(DELETE,   FsPath.create("/prefix/path/my-data/my-file.dat")));
+
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path/my-data")));
+
+        assertFalse(resultingRestriction.isRestricted(UPLOAD,   FsPath.create("/prefix/path/my-file.dat")));
+        assertFalse(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/path/my-file.dat")));
+        assertFalse(resultingRestriction.isRestricted(MANAGE,   FsPath.create("/prefix/path/my-file.dat")));
+        assertFalse(resultingRestriction.isRestricted(DELETE,   FsPath.create("/prefix/path/my-file.dat")));
+
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/path")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix")));
+        assertFalse(resultingRestriction.isRestricted(LIST, FsPath.ROOT));
+
+        assertTrue(resultingRestriction.isRestricted(UPLOAD,   FsPath.create("/prefix/other-path/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/other-path/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE,   FsPath.create("/prefix/other-path/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE,   FsPath.create("/prefix/other-path/my-file.dat")));
+
+        assertTrue(resultingRestriction.isRestricted(LIST, FsPath.create("/prefix/other-path")));
+
+        assertTrue(resultingRestriction.isRestricted(UPLOAD,   FsPath.create("/prefix/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/prefix/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE,   FsPath.create("/prefix/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE,   FsPath.create("/prefix/my-file.dat")));
+
+        assertTrue(resultingRestriction.isRestricted(UPLOAD,   FsPath.create("/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(MANAGE,   FsPath.create("/my-file.dat")));
+        assertTrue(resultingRestriction.isRestricted(DELETE,   FsPath.create("/my-file.dat")));
+    }
+
     private void whenAuthenticatingWith(PrincipalSetMaker maker) throws AuthenticationException
     {
         identifiedPrincipals.addAll(maker.build());
