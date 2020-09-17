@@ -13,10 +13,12 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -323,6 +325,59 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
     }
 
+    private static String escapeNonASCII(String input)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for (byte b : input.getBytes()) {
+            int w = b & 0xFF;
+            if (b == '\\') {
+                sb.append("\\\\");
+            } else if (w <= 128) {
+                sb.append((char) (b & 0xFF));
+            } else {
+                sb.append(String.format("\\x%02X", w));
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private static boolean isBadRequest(HttpObject object)
+    {
+        DecoderResult dr = object.decoderResult();
+        if (dr.isSuccess()) {
+            return false;
+        }
+
+        String type = object instanceof HttpRequest
+                ? (((HttpRequest)object).method() + " request")
+                : "entity";
+
+        if (!dr.isFinished()) {
+            _logger.warn("Client sent incomplete {}", type);
+            return true;
+        }
+
+        String description;
+        Throwable cause = dr.cause();
+        if (cause == null) {
+            description = "<unknown reason>";
+        } else {
+            // netty has a habit of copying client input directly into the
+            // error message, which might be large and contain binary data.
+            String message = cause.getMessage();
+            description = message == null
+                    ? cause.getClass().getSimpleName()
+                    : (message.length() > 80
+                            ? escapeNonASCII(message.substring(0, 80)) + "[...]"
+                            : escapeNonASCII(message));
+        }
+
+        _logger.warn("Client sent malformed {}: {}", type, description);
+        return true;
+    }
+
     /**
      * Single GET operation.
      *
@@ -337,6 +392,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file;
         List<HttpByteRange> ranges;
         long fileSize;
+
+        if (isBadRequest(request)) {
+            return context.newSucceededFuture();
+        }
 
         try {
             file = open(request, false);
@@ -419,6 +478,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = null;
         Exception exception = null;
 
+        if (isBadRequest(request)) {
+            return context.newSucceededFuture();
+        }
+
         try {
             checkContentHeader(request.headers().names(), SUPPORTED_CONTENT_HEADERS);
 
@@ -474,6 +537,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     @Override
     protected ChannelFuture doOnContent(ChannelHandlerContext context, HttpContent content)
     {
+        if (isBadRequest(content)) {
+            return context.newSucceededFuture();
+        }
+
         if (_writeChannel != null) {
             try {
                 ByteBuf data = content.content();
@@ -548,6 +615,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     @Override
     protected ChannelFuture doOnHead(ChannelHandlerContext context, HttpRequest request) {
+
+        if (isBadRequest(request)) {
+            return context.newSucceededFuture();
+        }
 
         try {
             NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = open(request, false);
