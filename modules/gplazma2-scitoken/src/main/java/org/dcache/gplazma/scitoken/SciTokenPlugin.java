@@ -29,6 +29,8 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,6 +44,7 @@ import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.MultiTargetedRestriction;
 import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
 import org.dcache.auth.attributes.Restriction;
@@ -220,12 +223,23 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
 
     private Restriction buildRestriction(FsPath prefix, List<AuthorisationSupplier> scopes)
     {
-        List<Authorisation> authorisations = scopes.stream()
+        Map<FsPath,Authorisation> authorisations = new HashMap<>();
+
+        scopes.stream()
                 .map(s -> s.authorisation(prefix))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .collect(Collectors.toList());
+                .forEach(a -> {
+                            FsPath path = a.getPath();
+                            Authorisation existing = authorisations.get(path);
+                            if (existing != null) {
+                                Collection<Activity> combined = EnumSet.copyOf(existing.getActivity());
+                                combined.addAll(a.getActivity());
+                                a = new Authorisation(combined, path);
+                            }
+                            authorisations.put(path, a);
+                        });
 
-        return new MultiTargetedRestriction(authorisations);
+        return new MultiTargetedRestriction(authorisations.values());
     }
 }
