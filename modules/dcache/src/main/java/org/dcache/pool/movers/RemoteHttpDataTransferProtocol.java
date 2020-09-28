@@ -619,7 +619,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
                 HttpClientContext context = new HttpClientContext();
                 HttpHead head = buildHeadRequest(info, deadline);
-                buildWantDigest(info).ifPresent(v -> head.addHeader("Want-Digest", v));
+                buildWantDigest().ifPresent(v -> head.addHeader("Want-Digest", v));
 
                 try {
                     try (CloseableHttpResponse response = _client.execute(head, context)) {
@@ -679,11 +679,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 "to provide length after " + describeDuration(GET_RETRY_DURATION, MILLISECONDS));
     }
 
-    private Optional<String> buildWantDigest(RemoteHttpDataTransferProtocolInfo info)
+    private Optional<String> buildWantDigest()
     {
         Optional<Set<Checksum>> checksums = _channel.getFileAttributes().getChecksumsIfPresent();
 
-        return checksums.map(v -> Checksums.asWantDigest(v))
+        return checksums.map(Checksums::asWantDigest)
                 .filter(Optional::isPresent)
                 .map(Optional::get);
     }
