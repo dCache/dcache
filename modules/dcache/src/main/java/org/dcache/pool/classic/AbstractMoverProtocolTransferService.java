@@ -146,23 +146,22 @@ public abstract class AbstractMoverProtocolTransferService
                         runMoverForRead(fileIoChannel);
                     }
                 } catch (ClosedChannelException | InterruptedIOException e) {
-                    // clear interrupted state
-                    Thread.interrupted();
-                    throw new InterruptedException(e.getMessage());
+                    // InterruptedException doesn't have constructor that accepts cause
+                    throw  (InterruptedException)(new InterruptedException(e.getMessage()).initCause(e));
                 } finally {
+                    cleanThread();
                     fileIoChannel.close();
                 }
 
+                failIfInterrupted();
                 _completionHandler.completed(null, null);
 
             } catch (InterruptedException e) {
                 InterruptedException why = _explanation == null ? e :
-                        new InterruptedException(_explanation);
+                        (InterruptedException)(new InterruptedException(_explanation).initCause(e));
                 _completionHandler.failed(why, null);
             } catch (Throwable t) {
                 _completionHandler.failed(t, null);
-            } finally {
-                cleanThread();
             }
         }
 
@@ -176,16 +175,9 @@ public abstract class AbstractMoverProtocolTransferService
             }
         }
 
-        private void runMoverForRead(RepositoryChannel fileIoChannel) throws Exception {
-            try {
-                _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
-            } finally {
-                // if mover was interrupted outside of any blocking IO operation or a wait/sleep/join ... calls
-                if (Thread.interrupted()) {
-                    throw new InterruptedException("Mover thread was interrupted.");
-                }
-            }
-        }
+    private void runMoverForRead(RepositoryChannel fileIoChannel) throws Exception {
+            _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
+    }
 
         private void tryToSync(RepositoryChannel channel) throws IOException {
             if (channel.isOpen()) {
@@ -204,11 +196,6 @@ public abstract class AbstractMoverProtocolTransferService
                 _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
             } finally {
                 tryToSync(fileIoChannel);
-
-                // if mover was interrupted outside of any blocking IO operation or a wait/sleep/join ... calls
-                if (Thread.interrupted()) {
-                    throw new InterruptedException("Mover thread was interrupted.");
-                }
             }
         }
 
@@ -221,12 +208,14 @@ public abstract class AbstractMoverProtocolTransferService
 
         private synchronized void cleanThread() {
             // clear interrupt flag before returning to thread pool
-            boolean leftInterrupted = Thread.interrupted();
-            if (leftInterrupted) {
-                LOGGER.error("BUG detected: mover thread {} left in interrupted state." +
-                        " Please report to support@dcache.org", _thread.getName());
-            }
+            _needInterruption = Thread.interrupted();
             _thread = null;
+        }
+
+        private synchronized void failIfInterrupted() throws InterruptedException {
+            if (_needInterruption) {
+                throw new InterruptedException(_explanation);
+            }
         }
 
         @Override
