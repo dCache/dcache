@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Maps.transformEntries;
@@ -113,6 +115,21 @@ public class Checksums
     private Checksums()
     {
         // prevent instantiation
+    }
+
+    /**
+     * Build a RFC 3230 Want-Digest request header value that describes all
+     * checksums that dCache supports, in the preferred order.
+     */
+    public static String buildGenericWantDigest()
+    {
+        List<String> names = Arrays.stream(ChecksumType.values())
+                .sorted(PREFERRED_CHECKSUM_TYPE_ORDERING)
+                .map(CHECKSUMTYPE_TO_RFC3230_NAME::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return wantDigest(names);
     }
 
     /**
@@ -245,30 +262,32 @@ public class Checksums
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        if (names.isEmpty()) {
-            return Optional.empty();
-        }
+        return names.isEmpty()
+                ? Optional.<String>empty()
+                : Optional.of(wantDigest(names));
+    }
 
-        String value;
+    /** Build a Want-Digest string, with appropriate q values. */
+    private static String wantDigest(List<String> names)
+    {
+        checkArgument(!names.isEmpty());
 
         if (names.size() == 1) {
-            value = names.get(0);
-        } else {
-            double q = 1.0d;
-            double step = 1.0d / names.size();
-            StringBuilder sb = new StringBuilder();
-            for (String name : names) {
-                if (sb.length() == 0) {
-                    sb.append(name);
-                } else {
-                    // setting locale explicitely to deal with locales using decimal commas
-                    sb.append(',').append(name).append(String.format(Locale.US, ";q=%.1f", q));
-                }
-                q -= step;
-            }
-            value = sb.toString();
+            return names.get(0);
         }
 
-        return Optional.of(value);
+        double q = 1.0d;
+        double step = 1.0d / names.size();
+        StringBuilder sb = new StringBuilder();
+        for (String name : names) {
+            if (sb.length() == 0) {
+                sb.append(name);
+            } else {
+                // setting locale explicitely to deal with locales using decimal commas
+                sb.append(',').append(name).append(String.format(Locale.US, ";q=%.1f", q));
+            }
+            q -= step;
+        }
+        return sb.toString();
     }
 }

@@ -425,6 +425,14 @@ public class ChecksumsTests
         assertThat(wantDigest.get(), is(equalTo("md5,adler32;q=0.5")));
     }
 
+    @Test
+    public void shouldBuildExpectedGenericWantDigest()
+    {
+        String wantDigest = Checksums.buildGenericWantDigest();
+
+        assertThat(wantDigest, is(equalTo("md5,adler32;q=0.5")));
+    }
+
     private Checksum newMd4Checksum(String value)
     {
         return new Checksum(ChecksumType.MD4_TYPE, value);

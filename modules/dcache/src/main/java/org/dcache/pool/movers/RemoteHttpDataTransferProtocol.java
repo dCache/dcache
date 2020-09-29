@@ -204,9 +204,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     private static final String AUTH_BEARER = "Bearer ";
 
-    // REVISIT: we may wish to generate a value based on the algorithms dCache
-    // supports
-    private static final String WANT_DIGEST_VALUE = "adler32;q=1, md5;q=0.8";
+    private static final String WANT_DIGEST_VALUE = Checksums.buildGenericWantDigest();
 
     /**
      * How long the client will wait for the "100 Continue" response when
