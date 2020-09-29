@@ -91,7 +91,7 @@ public class CopyManager extends AbstractCellComponent
     {
         boolean long_format = args.hasOption("l");
         if (args.argc() > 0) {
-            long id = Long.parseLong(args.argv(0));
+            int id = Integer.parseInt(args.argv(0));
             CopyHandler handler = _activeTransfers.get(id);
             return id + ": " + (handler == null ? "no such ID" : handler.toString(long_format));
         }
