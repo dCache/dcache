@@ -64,7 +64,7 @@ public interface SpaceManagerDatabase
                          boolean replicaAllowed,
                          boolean outputAllowed,
                          boolean custodialAllowed,
-                         VOInfo[] linkGroupVOs) throws DataAccessException;
+                         @Nullable VOInfo[] linkGroupVOs) throws DataAccessException;
 
     LinkGroup getLinkGroup(long id) throws DataAccessException;
 
