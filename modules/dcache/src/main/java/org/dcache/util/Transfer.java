@@ -6,8 +6,6 @@ import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListenableScheduledFuture;
-import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
@@ -28,6 +26,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -150,10 +149,8 @@ public class Transfer implements Comparable<Transfer>
 
     private static final ThreadFactory RETRY_THREAD_FACTORY =
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("transfer-retry-timer-%d").build();
-    private static final ListeningScheduledExecutorService RETRY_EXECUTOR =
-            MoreExecutors.listeningDecorator(
-                    new CDCScheduledExecutorServiceDecorator<>(Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY))
-            );
+    private static final ScheduledExecutorService RETRY_EXECUTOR =
+                    new CDCScheduledExecutorServiceDecorator<>(Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY));
 
     /**
      * Which activities poolmanager is allowed to do.
@@ -1374,8 +1371,10 @@ public class Transfer implements Comparable<Transfer>
                             return immediateFailedFuture(t);
                         }
 
-                        ListenableScheduledFuture<Void> doneSleeping =
-                                RETRY_EXECUTOR.schedule(() -> null, timeToSleep, TimeUnit.MILLISECONDS);
+                        ListenableFuture<Void> doneSleeping = Futures.scheduleAsync(
+                                () -> Futures.immediateFuture(null),
+                                timeToSleep, TimeUnit.MILLISECONDS,
+                                RETRY_EXECUTOR);
 
                         setStatusUntil("Sleeping (" + t.getMessage() + ")", doneSleeping);
                         return retryWhen(doneSleeping);
