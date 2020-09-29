@@ -249,7 +249,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
             if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
                 setStorageInfo(StorageInfos.extractFrom(attributes));
             } else {
-                setStorageInfo(null);
+                removeStorageInfo();
             }
         } catch (IOException e) {
             throw new DiskErrorCacheException("Failed to set file attributes for " + pnfsId + ": " + messageOrClassName(e), e);
@@ -280,6 +280,11 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
         collection.updateOne(dbKey, new Document("$set", siDoc), UPSERT);
 
         this.storageInfo = si;
+    }
+
+    private synchronized void removeStorageInfo() throws IOException {
+        storageInfo = null;
+        collection.deleteOne(dbKey);
     }
 
     private void load() throws IOException {
