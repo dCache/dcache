@@ -1400,17 +1400,6 @@ public class NFSv41Door extends AbstractCellComponent implements
              * it's timed out or ready.
              */
             if (!isFirstAttempt() && !_redirectFuture.isDone()) {
-
-                /*
-                 * An attempt to re-active a mover when one is expected.
-                 * It safe to do so as pool can detect existing mover for a given
-                 * transfer.
-                 */
-
-                if (getPool() != null && !hasMover()) {
-                    _log.warn("Recovering from lost start-mover reply from pool {}", getPool());
-                    _redirectFuture = startMoverAsync(NFS_REQUEST_BLOCKING);
-                }
                 throw new LayoutTryLaterException("Waiting for pool to become ready.");
             }
 
