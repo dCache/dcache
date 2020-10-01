@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableList;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,32 +48,29 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                 info.setIsNew(false);
                 for(String location: locations) {
                     UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(location);
-                    try {
-                        URI uri = builder.build(isEncoded(location)).toUri();
-                        info.addLocation(uri);
-                        String queryString = uri.getQuery();
-                        if (!Strings.isNullOrEmpty(queryString)) {
-                            for (String part : uri.getQuery().split("&")) {
-                                String[] data = part.split("=");
-                                String key = data[0];
-                                String value = (data.length == 2 ? data[1] : "");
-                                switch (key) {
-                                    case "bfid":
-                                        info.setBitfileId(value);
-                                        break;
-                                    case "volume":
-                                        info.setVolume(value);
-                                        break;
-                                    case "location_cookie":
-                                        info.setLocation(value);
-                                        break;
-                                    case "original_name":
-                                        info.setPath(value);
-                                        break;
-                                }
+                    URI uri = builder.build(isEncoded(location)).toUri();
+                    info.addLocation(uri);
+                    String queryString = uri.getQuery();
+                    if (!Strings.isNullOrEmpty(queryString)) {
+                        for (String part : uri.getQuery().split("&")) {
+                            String[] data = part.split("=");
+                            String key = data[0];
+                            String value = (data.length == 2 ? data[1] : "");
+                            switch (key) {
+                                case "bfid":
+                                    info.setBitfileId(value);
+                                    break;
+                                case "volume":
+                                    info.setVolume(value);
+                                    break;
+                                case "location_cookie":
+                                    info.setLocation(value);
+                                    break;
+                                case "original_name":
+                                    info.setPath(value);
+                                    break;
                             }
                         }
-                    } catch (UnsupportedEncodingException ignore) {
                     }
                 }
             }
@@ -116,8 +113,8 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
         return info;
     }
 
-    private static boolean isEncoded(String s) throws UnsupportedEncodingException {
-        return !s.equals(UriUtils.decode(s,"UTF-8"));
+    private static boolean isEncoded(String s) {
+        return !s.equals(UriUtils.decode(s, StandardCharsets.UTF_8));
     }
 
 }
