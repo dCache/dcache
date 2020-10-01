@@ -2,6 +2,7 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import org.dcache.chimera.FileState;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 
@@ -34,48 +35,46 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
     @Override
     public StorageInfo getFileStorageInfo(ExtendedInode inode) throws CacheException {
         EnstoreStorageInfo info;
-        Stat stat;
-        ExtendedInode level2 = inode.getLevel(2);
+
         try {
-            List<String> locations = inode.getLocations(StorageGenericLocation.TAPE);
-            EnstoreStorageInfo parentStorageInfo = (EnstoreStorageInfo) getDirStorageInfo(inode);
-            if (locations.isEmpty()) {
-                info = parentStorageInfo;
-            }
-            else {
-                info = new EnstoreStorageInfo(parentStorageInfo.getStorageGroup(),
-                                              parentStorageInfo.getFileFamily());
-                info.setIsNew(false);
-                for(String location: locations) {
-                    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(location);
-                    URI uri = builder.build(isEncoded(location)).toUri();
-                    info.addLocation(uri);
-                    String queryString = uri.getQuery();
-                    if (!Strings.isNullOrEmpty(queryString)) {
-                        for (String part : uri.getQuery().split("&")) {
-                            String[] data = part.split("=");
-                            String key = data[0];
-                            String value = (data.length == 2 ? data[1] : "");
-                            switch (key) {
-                                case "bfid":
-                                    info.setBitfileId(value);
-                                    break;
-                                case "volume":
-                                    info.setVolume(value);
-                                    break;
-                                case "location_cookie":
-                                    info.setLocation(value);
-                                    break;
-                                case "original_name":
-                                    info.setPath(value);
-                                    break;
+            Stat stat = inode.stat();
+            boolean isNew = stat.getState() == FileState.CREATED || stat.getState() == FileState.LEGACY && stat.getSize() == 0 && !inode.getLevel(2).exists();
+
+            info = (EnstoreStorageInfo) getDirStorageInfo(inode);
+            if (!isNew) {
+                List<String> locations = inode.getLocations(StorageGenericLocation.TAPE);
+                if (!locations.isEmpty()) {
+                    info = new EnstoreStorageInfo(info.getStorageGroup(), info.getFileFamily());
+                    for (String location : locations) {
+                        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(location);
+                        URI uri = builder.build(isEncoded(location)).toUri();
+                        info.addLocation(uri);
+                        String queryString = uri.getQuery();
+                        if (!Strings.isNullOrEmpty(queryString)) {
+                            for (String part : uri.getQuery().split("&")) {
+                                String[] data = part.split("=");
+                                String key = data[0];
+                                String value = (data.length == 2 ? data[1] : "");
+                                switch (key) {
+                                    case "bfid":
+                                        info.setBitfileId(value);
+                                        break;
+                                    case "volume":
+                                        info.setVolume(value);
+                                        break;
+                                    case "location_cookie":
+                                        info.setLocation(value);
+                                        break;
+                                    case "original_name":
+                                        info.setPath(value);
+                                        break;
+                                }
                             }
                         }
                     }
                 }
             }
-            stat = inode.stat();
-            info.setIsNew((stat.getSize() == 0) && (!level2.exists()));
+            info.setIsNew(isNew);
         }
         catch (ChimeraFsException e) {
             throw new CacheException(e.getMessage());
