@@ -1,6 +1,5 @@
 package org.dcache.chimera.namespace;
 
-import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,6 +7,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import diskCacheV111.util.AccessLatency;
@@ -20,7 +20,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.StorageGenericLocation;
-import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 
 
@@ -37,12 +36,8 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
     public StorageInfo getFileStorageInfo(ExtendedInode inode)
             throws CacheException {
         try {
-            Stat stat = inode.statCache();
-
-            if (stat.getState() == FileState.CREATED) {
-                StorageInfo info = getDirStorageInfo(inode);
-                info.setIsNew(true);
-                return info;
+            if (inode.statCache().getState() == FileState.CREATED) {
+                return getDirStorageInfo(inode);
             }
 
             List<String> tapeLocations = inode.getLocations(StorageGenericLocation.TAPE);
@@ -74,39 +69,33 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
     }
 
     @Override
-    public StorageInfo getDirStorageInfo(ExtendedInode inode) throws CacheException {
-        ExtendedInode dirInode;
-        if (!inode.isDirectory()) {
-            dirInode = inode.getParent();
-            if (dirInode == null) {
-                throw new FileNotFoundCacheException("file unlinked");
-            }
-        }
-        else {
-            dirInode = inode;
-        }
-        HashMap<String, String> hash = new HashMap<>();
-        String store = null;
-        ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
-        if (!OSMTemplate.isEmpty()) {
-            for (String line: OSMTemplate) {
-                StringTokenizer st = new StringTokenizer(line);
-                if (st.countTokens() < 2) {
-                    continue;
-                }
-                hash.put(st.nextToken().intern(), st.nextToken());
-            }
-            store = hash.get("StoreName");
-            if (store == null) {
-                throw new CacheException(37, "StoreName not found in template");
-            }
+    public StorageInfo getDirStorageInfo(ExtendedInode inode)
+            throws CacheException {
+        ExtendedInode directory = inode.isDirectory() ? inode: inode.getParent();
+
+        if (directory == null) {
+            throw new FileNotFoundCacheException("file unlinked");
         }
 
-        ImmutableList<String> sGroup = dirInode.getTag("sGroup");
-        String group = getFirstLine(sGroup).map(String::intern).orElse(null);
+        List<String> osmTemplateTag = directory.getTag("OSMTemplate");
+
+        Map<String, String> hash = new HashMap<>();
+        osmTemplateTag.stream()
+                .map(StringTokenizer::new)
+                .filter(t -> t.countTokens() >= 2)
+                .forEach(t -> hash.setKey(t.nextToken().intern(), t.nextToken()));
+
+        String store = hash.get("StoreName");
+
+        if (store == null && !osmTemplateTag.isEmpty()) {
+            throw new CacheException(37, "StoreName not found in template");
+        }
+
+        List<String> sGroupTag = directory.getTag("sGroup");
+        String group = getFirstLine(sGroupTag).map(String::intern).orElse(null);
+
         OSMStorageInfo info = new OSMStorageInfo(store, group);
         info.addKeys(hash);
         return info;
     }
-
 }

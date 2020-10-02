@@ -237,7 +237,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         }
     }
 
-    protected static Optional<String> getFirstLine(ImmutableList<String> lines)
+    protected static Optional<String> getFirstLine(List<String> lines)
     {
         if (!lines.isEmpty()) {
             String line = lines.get(0).trim();

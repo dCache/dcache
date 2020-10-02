@@ -62,6 +62,10 @@ public class GenericStorageInfo
         _keyHash.putAll(keys);
     }
 
+    public void clearKeys() {
+        _keyHash.clear();
+    }
+
     @Override
     public void addLocation(URI newLocation) {
         _locations.add(newLocation);
