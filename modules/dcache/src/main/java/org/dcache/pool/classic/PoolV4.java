@@ -106,7 +106,6 @@ import org.dcache.pool.FaultListener;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.json.PoolDataDetails;
-import org.dcache.pool.json.PoolDataDetails.Duplicates;
 import org.dcache.pool.json.PoolDataDetails.Lsf;
 import org.dcache.pool.json.PoolDataDetails.P2PMode;
 import org.dcache.pool.movers.Mover;
@@ -138,9 +137,6 @@ public class PoolV4
     implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider,
                 PoolDataBeanProvider<PoolDataDetails>, ZoneAware, ThreadCreator
 {
-    private static final int DUP_REQ_NONE = 0;
-    private static final int DUP_REQ_IGNORE = 1;
-    private static final int DUP_REQ_REFRESH = 2;
 
     private static final int P2P_CACHED = 1;
     private static final int P2P_PRECIOUS = 2;
@@ -189,7 +185,6 @@ public class PoolV4
     private HsmSet _hsmSet;
     private NearlineStorageHandler _storageHandler;
     private int _p2pFileMode = P2P_CACHED;
-    private int _dupRequest = DUP_REQ_IGNORE;
     private P2PClient _p2pClient;
 
     private boolean _isVolatile;
@@ -315,19 +310,6 @@ public class PoolV4
             _p2pFileMode = P2P_CACHED;
         } else {
             throw new IllegalArgumentException("p2p=precious|cached");
-        }
-    }
-
-    public void setDuplicateRequestMode(String mode)
-    {
-        if (mode == null || mode.equals("none")) {
-            _dupRequest = DUP_REQ_NONE;
-        } else if (mode.equals("ignore")) {
-            _dupRequest = DUP_REQ_IGNORE;
-        } else if (mode.equals("refresh")) {
-            _dupRequest = DUP_REQ_REFRESH;
-        } else {
-            throw new IllegalArgumentException("Illegal 'dupRequest' value");
         }
     }
 
@@ -684,12 +666,6 @@ public class PoolV4
         if (_suppressHsmLoad) {
             pw.println("pool suppress hsmload on");
         }
-        pw.println("set duplicate request "
-                + ((_dupRequest == DUP_REQ_NONE)
-                ? "none"
-                : (_dupRequest == DUP_REQ_IGNORE)
-                ? "ignore"
-                      : "refresh"));
     }
 
     @Override
@@ -721,17 +697,6 @@ public class PoolV4
         info.setBaseDir(_baseDir);
         info.setBreakEven(getBreakEven());
         info.setPreciousFileCleaned(_cleanPreciousFiles);
-
-        Duplicates duplicates;
-        switch (_dupRequest) {
-            case DUP_REQ_IGNORE: duplicates = Duplicates.IGNORED; break;
-            case DUP_REQ_REFRESH: duplicates = Duplicates.REFRESHED; break;
-            case DUP_REQ_NONE:
-            default:
-                duplicates = Duplicates.NONE; break;
-        }
-
-        info.setDuplicateRequests(duplicates);
 
         if (_hybridInventoryActive) {
             info.setHybridInventory(_hybridCurrent);
@@ -1734,7 +1699,6 @@ public class PoolV4
         }
     }
 
-    @AffectsSetup
     @Command(name="set duplicate request")
     class SetDuplicateRequestCommand implements Callable<String> {
         @Argument(valueSpec = "none|ignore|refresh")
@@ -1743,21 +1707,17 @@ public class PoolV4
         @Override
         public String call() throws CommandSyntaxException
         {
+            // command remove. keep this for backward compatibility
             switch (mode) {
             case "none":
-                _dupRequest = DUP_REQ_NONE;
-                break;
             case "ignore":
-                _dupRequest = DUP_REQ_IGNORE;
-                break;
             case "refresh":
-                _dupRequest = DUP_REQ_REFRESH;
                 break;
             default:
                 throw new CommandSyntaxException("Not Found : ",
                                                  "Usage : pool duplicate request none|ignore|refresh");
             }
-            return "";
+            return "Support for 'set duplicate request' has been removed. If you see this command on pool startup, please update the pool configuration.";
         }
     }
 

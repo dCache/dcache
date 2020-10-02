@@ -88,10 +88,6 @@ public class PoolDataDetails implements Serializable {
         NONE, VOLATILE, PRECIOUS
     }
 
-    public enum Duplicates {
-        NONE, IGNORED, REFRESHED
-    }
-
     public enum P2PMode {
         CACHED, PRECIOUS
     }
@@ -120,7 +116,7 @@ public class PoolDataDetails implements Serializable {
     private Integer     pingHeartbeatInSecs;
     private Double      breakEven;
     private Lsf         largeFileStore;
-    private Duplicates  duplicateRequests;
+
     private P2PMode     p2pFileMode;
     private Integer     hybridInventory;
 
@@ -143,10 +139,6 @@ public class PoolDataDetails implements Serializable {
 
     public PoolCostData getCostData() {
         return costData;
-    }
-
-    public Duplicates getDuplicateRequests() {
-        return duplicateRequests;
     }
 
     public int getErrorCode() {
@@ -228,7 +220,6 @@ public class PoolDataDetails implements Serializable {
         pw.println("Ping Heartbeat    : " + pingHeartbeatInSecs + " seconds");
         pw.println("Breakeven         : " + breakEven);
         pw.println("LargeFileStore    : " + largeFileStore);
-        pw.println("DuplicateRequests : " + duplicateRequests);
         pw.println("P2P File Mode     : " + p2pFileMode);
 
         if (hybridInventory != null) {
@@ -262,11 +253,6 @@ public class PoolDataDetails implements Serializable {
 
     public void setCostData(PoolCostData costData) {
         this.costData = costData;
-    }
-
-    public void setDuplicateRequests(
-                    Duplicates duplicateRequests) {
-        this.duplicateRequests = duplicateRequests;
     }
 
     public void setErrorCode(int errorCode) {
