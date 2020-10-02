@@ -38,7 +38,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
 
         try {
             Stat stat = inode.stat();
-            boolean isNew = stat.getState() == FileState.CREATED || stat.getState() == FileState.LEGACY && stat.getSize() == 0 && !inode.getLevel(2).exists();
+            boolean isNew = stat.getState() == FileState.CREATED;
 
             info = (EnstoreStorageInfo) getDirStorageInfo(inode);
             if (!isNew) {
