@@ -83,7 +83,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         osmTemplateTag.stream()
                 .map(StringTokenizer::new)
                 .filter(t -> t.countTokens() >= 2)
-                .forEach(t -> hash.setKey(t.nextToken().intern(), t.nextToken()));
+                .forEach(t -> hash.put(t.nextToken().intern(), t.nextToken()));
 
         String store = hash.get("StoreName");
 
