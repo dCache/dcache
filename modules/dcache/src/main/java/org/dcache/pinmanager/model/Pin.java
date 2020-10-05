@@ -11,7 +11,7 @@ public final class Pin
 {
     public enum State
     {
-        PINNING, PINNED, UNPINNING
+        PINNING, PINNED, UNPINNING, READY_TO_UNPIN, FAILED_TO_UNPIN
     }
 
     private final long id;

@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -39,7 +39,7 @@ public class PinManagerListPinsMessage extends Message
 {
     public enum State
     {
-        PINNING, PINNED, UNPINNING
+        PINNING, PINNED, UNPINNING, READY_TO_UNPIN, FAILED_TO_UNPIN
     }
 
     public static class Info implements Serializable
@@ -97,7 +97,10 @@ public class PinManagerListPinsMessage extends Message
     private static final ImmutableMap<Pin.State,State> TO_MESSAGE_STATE = ImmutableMap.of(
             Pin.State.PINNING, State.PINNING,
             Pin.State.PINNED, State.PINNED,
-            Pin.State.UNPINNING, State.UNPINNING);
+            Pin.State.UNPINNING, State.UNPINNING,
+            Pin.State.READY_TO_UNPIN, State.READY_TO_UNPIN,
+            Pin.State.FAILED_TO_UNPIN, State.FAILED_TO_UNPIN
+    );
     private static final long serialVersionUID = 1L;
     private final PnfsId _pnfsId;
     private List<Info> _info;

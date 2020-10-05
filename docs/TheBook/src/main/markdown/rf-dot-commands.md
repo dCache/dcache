@@ -132,14 +132,15 @@ by the tab character:
     '-' character.
   * Whether you can remove this pin: `REMOVABLE` if you can,
     `NONREMOVABLE` otherwise.
-  * The current status of this pin: either `PINNING`, `PINNED` or
-    `UNPINNING`.
+  * The current status of this pin: either `PINNING`, `PINNED`, `READY_TO_UNPIN`, `UNPINNING` or `FAILED_TO_UNPIN`.
 
 The PINNING status indicates the pin request was accepted but the file
-is not yet guaranteed with ONLINE latency.  The PINNED state indicates
-the file has ONLINE latency.  The UNPINNING state indicates this pin
+is not yet guaranteed with ONLINE latency. The PINNED state indicates
+the file has ONLINE latency. The READY_TO_UNPIN state indicates this pin
 no longer guarantees ONLINE latency, but additional clean-up
-processing is ongoing.
+processing is ongoing. The UNPINNING state indicates that the pin removal
+is ongoing, while state FAILED_TO_UNPIN denotes that the last unpinning
+attempt failed. It will be retried later on.
 
 ##### EXAMPLES:
 
@@ -236,8 +237,10 @@ You may use a zero duration to remove all pins for which you are
 authorised.  You can remove all pins you created and pins created by
 someone with a primary group of which you are also a member.
 
-Immediately after removing a pin, it has state UNPINNING.  Once all
-processing has completed, the pin will disappear from the pin list.
+Immediately after removing a pin, it has state READY_TO_UNPIN. When the
+ pin removal starts, it transitions to state UNPINNING. Once all
+processing has completed, the pin will disappear from the pin list. If
+the pin removal fails, the pin ends up in state FAILED_TO_UNPIN; it will be retried later on.
 
 ##### EXAMPLES:
 

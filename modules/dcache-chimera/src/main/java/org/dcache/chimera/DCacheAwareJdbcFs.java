@@ -175,7 +175,9 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
     private static final Map<PinManagerListPinsMessage.State, PinState> TO_PIN_STATE = ImmutableMap.of(
             PinManagerListPinsMessage.State.PINNING, PinState.PINNING,
             PinManagerListPinsMessage.State.PINNED, PinState.PINNED,
-            PinManagerListPinsMessage.State.UNPINNING, PinState.UNPINNING);
+            PinManagerListPinsMessage.State.UNPINNING, PinState.UNPINNING,
+            PinManagerListPinsMessage.State.READY_TO_UNPIN, PinState.READY_TO_UNPIN,
+            PinManagerListPinsMessage.State.FAILED_TO_UNPIN, PinState.FAILED_TO_UNPIN);
 
     private CellStub poolManagerStub;
     private CellStub pinManagerStub;
