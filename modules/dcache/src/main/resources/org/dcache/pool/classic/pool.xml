@@ -155,6 +155,7 @@
   <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
     <description>Repository user interface</description>
     <property name="repository" ref="rep"/>
+    <property name="statisticsListener" ref="pool-info-statistics-listener"/>
   </bean>
 
   <bean id="scanner" class="org.dcache.pool.classic.ChecksumScanner">
@@ -546,6 +547,11 @@
     </property>
   </bean>
 
+  <bean id="pool-info-statistics-listener" class="org.dcache.pool.statistics.StatisticsListener"
+        init-method="initialize">
+    <property name="repository" ref="rep"/>
+  </bean>
+
   <bean id="pool-info-request-handler" class="org.dcache.pool.PoolInfoRequestHandler">
     <description>Handles requests from frontend services for pool data.</description>
     <property name="executor">
@@ -568,6 +574,7 @@
     <property name="storageHandler" ref="storagehandler"/>
     <property name="sweeper" ref="sweeper"/>
     <property name="transferServices" ref="transfer-services"/>
+    <property name="statisticsListener" ref="pool-info-statistics-listener"/>
   </bean>
 
   <beans profile="healthcheck-true">

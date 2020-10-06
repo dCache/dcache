@@ -61,10 +61,11 @@ package org.dcache.pool.json;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
 import org.dcache.cells.json.CellData;
 import org.dcache.pool.PoolInfoRequestHandler;
 import org.dcache.pool.classic.json.ChecksumModuleData;
@@ -77,6 +78,7 @@ import org.dcache.pool.migration.json.MigrationData;
 import org.dcache.pool.nearline.json.StorageHandlerData;
 import org.dcache.pool.p2p.json.P2PData;
 import org.dcache.pool.repository.json.RepositoryData;
+import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
 
 /**
  * <p>Top level container for data concerning the pool, processed by
@@ -99,6 +101,8 @@ public class PoolData implements Serializable {
     private StorageHandlerData    storageHandlerData = new StorageHandlerData();
     private TransferServicesData  transferServicesData = new TransferServicesData();
     private SweeperData           sweeperData = new SweeperData();
+
+    private Map<String, StorageUnitSpaceStatistics> spaceByStorageUnit = new HashMap<>();
 
     public CellData getCellData() {
         return cellData;
@@ -142,6 +146,10 @@ public class PoolData implements Serializable {
 
     public RepositoryData getRepositoryData() {
         return repositoryData;
+    }
+
+    public Map<String, StorageUnitSpaceStatistics> getSpaceByStorageUnit() {
+        return spaceByStorageUnit;
     }
 
     public StorageHandlerData getStorageHandlerData() {
@@ -198,13 +206,15 @@ public class PoolData implements Serializable {
         this.ppData = ppData;
     }
 
-    public void setRepositoryData(
-                    RepositoryData repositoryData) {
+    public void setRepositoryData(RepositoryData repositoryData) {
         this.repositoryData = repositoryData;
     }
 
-    public void setStorageHandlerData(
-                    StorageHandlerData storageHandlerData) {
+    public void setSpaceByStorageUnit(Map<String, StorageUnitSpaceStatistics> spaceByStorageUnit) {
+        this.spaceByStorageUnit = spaceByStorageUnit;
+    }
+
+    public void setStorageHandlerData(StorageHandlerData storageHandlerData) {
         this.storageHandlerData = storageHandlerData;
     }
 
@@ -212,8 +222,7 @@ public class PoolData implements Serializable {
         this.sweeperData = sweeperData;
     }
 
-    public void setTransferServicesData(
-                    TransferServicesData transferServicesData) {
+    public void setTransferServicesData(TransferServicesData transferServicesData) {
         this.transferServicesData = transferServicesData;
     }
 }

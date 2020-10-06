@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.pool;
 
+import org.dcache.pool.statistics.StatisticsListener;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -213,6 +214,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         };
     }
 
+    private StatisticsListener                          statisticsListener;
     private PoolDataBeanProvider<ChecksumModuleData>    checksumModule;
     private PoolDataBeanProvider<FlushControllerData>   flushController;
     private PoolDataBeanProvider<HSMFlushQManagerData>  hsmFlushQueueManager;
@@ -254,7 +256,7 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 request.setRepositoryData(repositoryProvider.getDataObject());
                 request.setStorageHandlerData(storageHandler.getDataObject());
                 request.setTransferServicesData(transferServices.getDataObject());
-
+                request.setSpaceByStorageUnit(statisticsListener.toJson());
                 message.setData(request);
                 reply.reply(message);
             } catch (Exception e) {
@@ -536,6 +538,11 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
     @Required
     public void setRepository(Repository repository) {
         this.repository = repository;
+    }
+
+    @Required
+    public void setStatisticsListener(StatisticsListener statisticsListener) {
+        this.statisticsListener = statisticsListener;
     }
 
     @Required

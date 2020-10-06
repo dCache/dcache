@@ -1,42 +1,39 @@
 package org.dcache.pool.repository;
 
 import com.google.common.base.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.function.LongFunction;
-import java.util.regex.Pattern;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
-
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.function.LongFunction;
+import java.util.regex.Pattern;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.statistics.StatisticsListener;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
-import static java.util.stream.Collectors.joining;
-import static org.dcache.util.ByteUnit.*;
-import static org.dcache.util.ByteUnits.jedecPrefix;
 import static dmg.util.CommandException.checkCommand;
+import static java.util.stream.Collectors.joining;
+import static org.dcache.util.ByteUnit.BYTES;
 import static org.dcache.util.ByteUnit.Type.BINARY;
+import static org.dcache.util.ByteUnits.jedecPrefix;
 import static org.dcache.util.Strings.toThreeSigFig;
 
 public class RepositoryInterpreter
@@ -46,13 +43,18 @@ public class RepositoryInterpreter
             LoggerFactory.getLogger(RepositoryInterpreter.class);
 
     private Repository _repository;
+    private StatisticsListener _statisticsListener;
 
-    private final StatisticsListener _statisticsListener = new StatisticsListener();
-
+    @Required
     public void setRepository(Repository repository)
     {
         _repository = repository;
-        _repository.addListener(_statisticsListener);
+    }
+
+    @Required
+    public void setStatisticsListener(StatisticsListener statisticsListener)
+    {
+        _statisticsListener = statisticsListener;
     }
 
     @Command(name = "rep set sticky", hint = "change sticky flags",
@@ -494,135 +496,5 @@ public class RepositoryInterpreter
             counter[2] = _statisticsListener.getOtherBytes();
         }
         return map;
-    }
-
-    private static class Statistics
-    {
-        long bytes;
-        int entries;
-
-        long preciousBytes;
-        int preciousEntries;
-
-        long stickyBytes;
-        int stickyEntries;
-
-        long otherBytes;
-        int otherEntries;
-
-        long[] toArray()
-        {
-            return new long[] { bytes, entries, preciousBytes, preciousEntries, stickyBytes, stickyEntries, otherBytes, otherEntries };
-        }
-    }
-
-    private static class StatisticsListener implements StateChangeListener
-    {
-        private final Map<String, Statistics> statistics = new HashMap<>();
-
-        @Override
-        public void stateChanged(StateChangeEvent event)
-        {
-            updateStatistics(event, event.getOldState(), event.getNewState());
-        }
-
-        @Override
-        public void accessTimeChanged(EntryChangeEvent event)
-        {
-        }
-
-        @Override
-        public void stickyChanged(StickyChangeEvent event)
-        {
-            updateStatistics(event, event.getOldEntry().getState(), event.getNewEntry().getState());
-        }
-
-        private boolean isPrecious(CacheEntry entry)
-        {
-            return entry.getState() == ReplicaState.PRECIOUS;
-        }
-
-        private boolean isSticky(CacheEntry entry)
-        {
-            return entry.isSticky();
-        }
-
-        private boolean isOther(CacheEntry entry)
-        {
-            return !isPrecious(entry) && !isSticky(entry);
-        }
-
-        private Statistics getStatistics(FileAttributes fileAttributes)
-        {
-            String store = fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm();
-            return statistics.computeIfAbsent(store, s -> new Statistics());
-        }
-
-        private void removeStatistics(FileAttributes fileAttributes)
-        {
-            String store = fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm();
-            statistics.remove(store);
-        }
-
-        private synchronized void updateStatistics(EntryChangeEvent event, ReplicaState oldState, ReplicaState newState)
-        {
-            if (oldState == ReplicaState.CACHED || oldState == ReplicaState.PRECIOUS) {
-                CacheEntry oldEntry = event.getOldEntry();
-                Statistics stats = getStatistics(oldEntry.getFileAttributes());
-                stats.bytes -= oldEntry.getReplicaSize();
-                stats.entries--;
-                if (isPrecious(oldEntry)) {
-                    stats.preciousBytes -= oldEntry.getReplicaSize();
-                    stats.preciousEntries--;
-                }
-                if (isSticky(oldEntry)) {
-                    stats.stickyBytes -= oldEntry.getReplicaSize();
-                    stats.stickyEntries--;
-                }
-                if (isOther(oldEntry)) {
-                    stats.otherBytes -= oldEntry.getReplicaSize();
-                    stats.otherEntries--;
-                }
-                if (stats.entries == 0) {
-                    removeStatistics(oldEntry.getFileAttributes());
-                }
-            }
-            if (newState == ReplicaState.CACHED || newState == ReplicaState.PRECIOUS) {
-                CacheEntry newEntry = event.getNewEntry();
-                Statistics stats = getStatistics(newEntry.getFileAttributes());
-                stats.bytes += newEntry.getReplicaSize();
-                stats.entries++;
-                if (isPrecious(newEntry)) {
-                    stats.preciousBytes += newEntry.getReplicaSize();
-                    stats.preciousEntries++;
-                }
-                if (isSticky(newEntry)) {
-                    stats.stickyBytes += newEntry.getReplicaSize();
-                    stats.stickyEntries++;
-                }
-                if (isOther(newEntry)) {
-                    stats.otherBytes += newEntry.getReplicaSize();
-                    stats.otherEntries++;
-                }
-            }
-        }
-
-        public synchronized Map<String,long[]> toMap()
-        {
-            Map<String,long[]> map = new HashMap<>();
-            for (Map.Entry<String, Statistics> entry : statistics.entrySet()) {
-                map.put(entry.getKey(), entry.getValue().toArray());
-            }
-            return map;
-        }
-
-        public synchronized long getOtherBytes()
-        {
-            long sum = 0;
-            for (Statistics stats : statistics.values()) {
-                sum += stats.otherBytes;
-            }
-            return sum;
-        }
     }
 }
