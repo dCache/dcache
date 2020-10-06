@@ -59,28 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.pool;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
-
 import dmg.cells.nucleus.NoRouteToCellException;
-
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolInfoWrapper;
+import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
 import org.dcache.restful.services.pool.PoolInfoServiceImpl;
 import org.dcache.services.history.pools.PoolTimeseriesService;
 import org.dcache.util.collector.pools.PoolInfoAggregator;
@@ -90,6 +85,9 @@ import org.dcache.util.histograms.TimeseriesHistogram;
 import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Called during the collection gathering in order to obtain
@@ -252,7 +250,16 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
              .filter(Objects::nonNull)
              .forEach(groupSpace::aggregateData);
 
+        Map<String, StorageUnitSpaceStatistics> byStorageUnit = new HashMap<>();
+        pools.stream()
+            .map(PoolInfoWrapper::getInfo)
+            .filter(Objects::nonNull)
+            .map(PoolData::getSpaceByStorageUnit)
+            .filter(Objects::nonNull)
+            .forEach(map -> StorageUnitSpaceStatistics.aggregate(byStorageUnit, map));
+
         PoolData poolData = new PoolData();
+        poolData.setSpaceByStorageUnit(byStorageUnit);
         PoolDataDetails details = new PoolDataDetails();
         poolData.setDetailsData(details);
         details.setCostData(groupCost);

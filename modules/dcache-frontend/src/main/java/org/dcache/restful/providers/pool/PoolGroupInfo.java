@@ -59,16 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.pool;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.io.Serializable;
-import java.util.Map;
-
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
-
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import java.io.Serializable;
+import java.util.Map;
 import org.dcache.cells.json.CellData;
+import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
 import org.dcache.util.histograms.Histogram;
 
 /**
@@ -93,6 +91,8 @@ public class PoolGroupInfo implements Serializable {
     @ApiModelProperty("Pool cost information for the pools in the group.")
     private Map<String, PoolCostData> costDataForPools;
 
+    private Map<String, StorageUnitSpaceStatistics> spaceDataByStorageUnit;
+
     @ApiModelProperty("Cell data for each of the pools in the group.")
     private Map<String, CellData> cellDataForPools;
 
@@ -116,6 +116,10 @@ public class PoolGroupInfo implements Serializable {
         return groupSpaceData;
     }
 
+    public Map<String, StorageUnitSpaceStatistics> getSpaceDataByStorageUnit() {
+        return spaceDataByStorageUnit;
+    }
+
     public void setCellDataForPools(
                     Map<String, CellData> cellDataForPools) {
         this.cellDataForPools = cellDataForPools;
@@ -134,8 +138,11 @@ public class PoolGroupInfo implements Serializable {
         this.groupQueueStat = groupQueueStat;
     }
 
-    public void setGroupSpaceData(
-                    PoolSpaceData groupSpaceData) {
+    public void setGroupSpaceData(PoolSpaceData groupSpaceData) {
         this.groupSpaceData = groupSpaceData;
+    }
+
+    public void setSpaceDataByStorageUnit(Map<String, StorageUnitSpaceStatistics> spaceDataByStorageUnit) {
+        this.spaceDataByStorageUnit = spaceDataByStorageUnit;
     }
 }

@@ -59,30 +59,33 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.pool;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import org.springframework.stereotype.Component;
-
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-
+import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.selection.PoolGroup;
 import org.dcache.restful.services.pool.PoolInfoService;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link PoolInfoService} service.</p>
@@ -112,7 +115,6 @@ public final class PoolGroupInfoResources {
                   .map((g) -> new PoolGroup(g.getName(), psu))
                   .collect(Collectors.toList());
     }
-
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -180,6 +182,58 @@ public final class PoolGroupInfoResources {
         return info;
     }
 
+    @ApiResponses({@ApiResponse(code = 404, message = "Not Found")})
+    @GET
+    @ApiOperation("Get the storage units linked to pools of a specific poolgroup.")
+    @Path("/{group}/storageunits")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> getStorageGroups(@ApiParam("The poolgroup to be described.")
+                                         @PathParam("group") String group,
+                                         @ApiParam("Return full storage unit string; "
+                                             + "otherwise, just the storage class")
+                                         @DefaultValue("false")
+                                         @QueryParam("useUnits") boolean useUnits) {
+        Map<String, StorageUnitSpaceStatistics> map = getSpaceByStorageUnits(group, useUnits);
+        if (map == null) {
+            throw new NotFoundException("no such group: " + group);
+        }
+
+        return map.keySet().stream().collect(Collectors.toList());
+    }
+
+    @ApiResponses({@ApiResponse(code = 404, message = "Not Found")})
+    @GET
+    @ApiOperation("Get space information about the storage units linked to pools of a specific poolgroup.")
+    @Path("/{group}/storageunits/space")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, StorageUnitSpaceStatistics> getStorageGroupSpaceInfo(@ApiParam("The poolgroup to be described.")
+                                                                            @PathParam("group") String group,
+                                                                            @ApiParam("Return full storage unit string as keys; "
+                                                                                + "otherwise, just the storage class")
+                                                                            @DefaultValue("false")
+                                                                            @QueryParam("useUnits") boolean useUnits) {
+        return getSpaceByStorageUnits(group, useUnits);
+    }
+
+    @ApiResponses({@ApiResponse(code = 404, message = "Not Found")})
+    @GET
+    @ApiOperation("Get space information about a given storage unit linked to pools of a specific poolgroup.")
+    @Path("/{group}/storageunits/{key}/space")
+    @Produces(MediaType.APPLICATION_JSON)
+    public StorageUnitSpaceStatistics getStorageGroupSpaceInfo(@ApiParam("The poolgroup to be described.")
+                                                        @PathParam("group") String group,
+                                                        @ApiParam("The storage unit to be described.")
+                                                        @PathParam("key") String key,
+                                                        @ApiParam("Key expresses full storage unit string; "
+                                                            + "otherwise, just the storage class")
+                                                        @DefaultValue("false")
+                                                        @QueryParam("useUnits") boolean useUnits) {
+        StorageUnitSpaceStatistics statistics = getSpaceByStorageUnits(group, useUnits).get(key);
+        if (statistics == null) {
+            throw new NotFoundException("no such storage key: " + key);
+        }
+        return statistics;
+    }
 
     @GET
     @ApiOperation("Get aggregated pool activity histogram information from pools in a specific poolgroup.")
@@ -206,5 +260,18 @@ public final class PoolGroupInfoResources {
         service.getFileStat(group, info);
 
         return info;
+    }
+
+    private Map<String, StorageUnitSpaceStatistics> getSpaceByStorageUnits(String group, boolean units) {
+        PoolGroupInfo info = new PoolGroupInfo();
+        service.getStorageGroupSpaceInfosOfPoolGroup(group, info);
+        Map<String, StorageUnitSpaceStatistics> map = info.getSpaceDataByStorageUnit();
+        if (map == null) {
+            throw new NotFoundException("no such group: " + group);
+        }
+        if (!units) {
+            map = service.mapToStorageClass(map);
+        }
+        return map;
     }
 }

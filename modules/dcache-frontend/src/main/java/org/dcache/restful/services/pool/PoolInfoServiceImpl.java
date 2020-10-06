@@ -60,15 +60,6 @@ documents or software obtained from this server.
 package org.dcache.restful.services.pool;
 
 import com.google.common.base.Strings;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
@@ -76,16 +67,21 @@ import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Command;
-
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import org.dcache.cells.json.CellData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.pool.nearline.json.NearlineData;
+import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.pool.MoverData;
@@ -107,6 +103,7 @@ import org.dcache.vehicles.pool.PoolNearlineListingMessage;
 import org.dcache.vehicles.pool.PoolP2PListingMessage;
 import org.dcache.vehicles.pool.PoolRemoveListingMessage;
 import org.dcache.vehicles.pool.PoolStageListingMessage;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Responsible for serving up data from the cache.</p>
@@ -370,6 +367,11 @@ public class PoolInfoServiceImpl extends
         info.setGroupSpaceData(getPoolSpaceData(name));
     }
 
+    @Override
+    public void getStorageGroupSpaceInfosOfPoolGroup(String name, PoolGroupInfo info) {
+        info.setSpaceDataByStorageUnit(getPoolSpaceDataForStorageUnits(name));
+    }
+
     /**
      * <p>Synchronous.  Delivers fresh data.</p>
      */
@@ -547,6 +549,16 @@ public class PoolInfoServiceImpl extends
     }
 
     @Override
+    public Map<String, StorageUnitSpaceStatistics>
+    mapToStorageClass(Map<String, StorageUnitSpaceStatistics> byUnit) {
+        Map<String, StorageUnitSpaceStatistics> byGroup = new HashMap<>();
+        byUnit.entrySet().stream()
+                         .forEach(entry ->byGroup.put(entry.getKey().split("[@]")[0],
+                                                      entry.getValue()));
+        return byGroup;
+    }
+
+    @Override
     public String[] listGroups() {
         return PoolInfoCollectorUtils.listGroups(getSelectionUnit());
     }
@@ -626,6 +638,11 @@ public class PoolInfoServiceImpl extends
     private PoolSpaceData getPoolSpaceData(String key) {
         PoolCostData costData = getPoolCostData(key);
         return costData == null ? null : costData.getSpace();
+    }
+
+    private Map<String, StorageUnitSpaceStatistics> getPoolSpaceDataForStorageUnits(String key) {
+        PoolInfoWrapper cached = cache.read(key);
+        return cached == null ? null : cached.getInfo().getSpaceByStorageUnit();
     }
 
     /**

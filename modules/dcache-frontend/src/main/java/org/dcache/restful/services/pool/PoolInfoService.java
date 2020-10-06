@@ -61,10 +61,10 @@ package org.dcache.restful.services.pool;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
 import dmg.cells.nucleus.NoRouteToCellException;
-
+import java.util.Map;
 import org.dcache.pool.nearline.json.NearlineData;
+import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
 import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.pool.MoverData;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
@@ -164,6 +164,15 @@ public interface PoolInfoService extends PoolListingService {
      * @param info data should be added to this instance
      */
     void getGroupSpaceInfos(String name, PoolGroupInfo info);
+
+    /**
+     * <p>Request space info for storage units linked to this pool group,
+     *    aggregated over the pools in the group.</p>
+     *
+     * @param name of the pool group
+     * @param info info data should be added to this instance
+     */
+    void getStorageGroupSpaceInfosOfPoolGroup(String name, PoolGroupInfo info);
 
     /**
      * <p>Request for a list of all the MOVER processes on the pool.</p>
@@ -283,4 +292,13 @@ public interface PoolInfoService extends PoolListingService {
                                      String storageClass,
                                      String sort) throws InterruptedException,
                     NoRouteToCellException, CacheException;
+
+    /**
+     * <p>Remap by parsing the storage unit keys for the storage group segment and
+     *    rebuilding the map with those.</p>
+     *
+     * @param byUnit original map
+     * @return new map
+     */
+    Map<String, StorageUnitSpaceStatistics> mapToStorageClass(Map<String, StorageUnitSpaceStatistics> byUnit);
 }
