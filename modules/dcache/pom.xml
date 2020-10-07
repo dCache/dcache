@@ -461,6 +461,16 @@
                     </lifecycleMappingMetadata>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <configuration>
+                    <excludeRoots>
+                        <!-- Don't check SMC generated source code. -->
+                        <excludeRoot>target/generated-sources/smc/smc</excludeRoot>
+                    </excludeRoots>
+                </configuration>
+            </plugin>
         </plugins>
       </pluginManagement>
   </build>

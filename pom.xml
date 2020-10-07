@@ -1202,11 +1202,6 @@
                         <targetJdk>${source.version}</targetJdk>
                         <!-- Rely on Jenkins plugin to do source-code cross-referencing -->
                         <linkXRef>false</linkXRef>
-
-			<excludeRoots>
-			    <!-- Don't check any generated source code. -->
-			    <excludeRoot>target/generated-sources</excludeRoot>
-			</excludeRoots>
                     </configuration>
                 </plugin>
                 <plugin>
