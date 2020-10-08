@@ -81,7 +81,6 @@ define context PoolDefaults endDefine
    set heartbeat 30
    set report remove on
    set breakeven 0.7
-   set duplicate request none
 
    flush set max active 1000
    flush set interval 60
