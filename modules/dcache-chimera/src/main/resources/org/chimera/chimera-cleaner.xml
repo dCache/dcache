@@ -113,9 +113,6 @@
         <property name="refreshIntervalUnit" value="${cleaner.limits.period.unit}"/>
         <property name="gracePeriod"
                   value="#{ T(org.dcache.util.TimeUtils).durationOf('${cleaner.service.grace-period}', '${cleaner.service.grace-period.unit}')}"/>
-        <property name="haServiceLeadershipManager">
-            <ref bean="ha-service-leadership-manager"/>
-        </property>
     </bean>
 
     <bean id="baseleaderlistener-group" abstract="true" class="org.dcache.cells.LeadershipListenerGroup">

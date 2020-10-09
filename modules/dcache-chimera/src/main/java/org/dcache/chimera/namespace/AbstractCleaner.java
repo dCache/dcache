@@ -29,13 +29,11 @@ import javax.sql.DataSource;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.HAServiceLeadershipManager;
 
 /**
  *
@@ -71,13 +69,7 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
      */
     protected Duration _gracePeriod;
 
-    /** Manager for a Cleaner's HA group membership and leadership state changes */
-    protected HAServiceLeadershipManager _haServiceLeadershipManager;
-
-    @Required
-    public void setHaServiceLeadershipManager(HAServiceLeadershipManager manager) {
-        _haServiceLeadershipManager = Objects.requireNonNull(manager);
-    }
+    protected boolean _hasHaLeadership = false;
 
     @Required
     public void setExecutor(ScheduledExecutorService executor) {
@@ -149,11 +141,13 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
 
     @Override
     public void isLeader() {
+        _hasHaLeadership = true;
         scheduleCleanerTask();
     }
 
     @Override
     public void notLeader() {
+        _hasHaLeadership = false;
         cancelCleanerTask();
     }
 

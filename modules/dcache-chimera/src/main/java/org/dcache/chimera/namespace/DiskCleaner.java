@@ -53,6 +53,7 @@ import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
+import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
 
 /**
  * @author Irina Kozlova
@@ -327,7 +328,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
     public class RundeleteCommand implements Callable<String> {
         @Override
         public String call() throws InterruptedException, CommandException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             runDelete(getPoolList());
             return "";
         }
@@ -355,7 +356,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
         @Override
         public String call() throws CommandException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             if (_poolsBlackList.remove(poolName) != null) {
                 return "Pool " + poolName + " is removed from the Black List ";
             }
@@ -371,7 +372,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
         @Override
         public String call() throws InterruptedException, CacheException, NoRouteToCellException, CommandException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             try {
                 List<String> removeFile = Collections.singletonList(pnfsid);
                 _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=1 ORDER BY iatime",
@@ -402,7 +403,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
         @Override
         public String call() throws CacheException, InterruptedException, NoRouteToCellException, CommandException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             if (_poolsBlackList.containsKey(poolName)) {
                 return "This pool is not available for the moment and therefore will not be cleaned.";
             }
@@ -420,7 +421,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
         @Override
         public String call() throws CommandException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             if (refreshInterval == null) return "Refresh interval unchanged: " + _refreshInterval + " " + _refreshIntervalUnit;
             if (refreshInterval < 5) throw new IllegalArgumentException("Time must be greater than 5 seconds");
 
@@ -449,7 +450,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
         @Override
         public String call() throws CommandException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             if (processAtOnce <= 0) throw new IllegalArgumentException("Number of files must be greater than 0 ");
             _processAtOnce = processAtOnce;
             return "Number of files processed at once set to " + _processAtOnce;

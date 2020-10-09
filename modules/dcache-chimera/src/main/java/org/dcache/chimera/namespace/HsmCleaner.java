@@ -41,8 +41,8 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
 import static dmg.util.CommandException.checkCommand;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
 
 /**
  * This class encapsulates the interaction with pools.
@@ -163,7 +163,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         if (timeout != null) {
             timeout.cancel();
         }
-        if(!_haServiceLeadershipManager.hasLeadership()) {
+        if(!_hasHaLeadership) {
             // Remove all remaining cached requests for this HSM from
             // the cache, which may be outdated after regaining leadership.
             _locationsToDelete.remove(hsm);
@@ -230,7 +230,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
      */
     private synchronized void flush(String hsm) {
         // Don't allow flushing when not having leadership
-        if (!_haServiceLeadershipManager.hasLeadership()) {
+        if (!_hasHaLeadership) {
             return;
         }
 
@@ -369,7 +369,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
         _db.query("SELECT ilocation, ictime FROM t_locationinfo_trash WHERE itype=0 AND ictime<? AND ictime>? ORDER BY ictime ASC LIMIT ?",
                 rs -> {
                     try {
-                        Preconditions.checkState(_haServiceLeadershipManager.hasLeadership(),
+                        Preconditions.checkState(_hasHaLeadership,
                                 "HA leadership was lost while reading from trashtable. Aborting operation.");
 
                         URI uri = new URI(rs.getString("ilocation"));
@@ -463,7 +463,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
         @Override
         public String call() throws CommandException, IllegalArgumentException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             if (maxCachedDeleteLocations <= 0) throw new IllegalArgumentException("The number must be greater than 0.");
 
             _maxCachedDeleteLocations = maxCachedDeleteLocations;
@@ -479,7 +479,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
         @Override
         public String call() throws CommandException, IllegalArgumentException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             if (maxFilesPerRequest <= 0) throw new IllegalArgumentException("The number must be greater than 0.");
 
             _maxFilesPerRequest = maxFilesPerRequest;
@@ -500,7 +500,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
         @Override
         public String call() throws CommandException, IllegalArgumentException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             if (hsmTimeout <= 0) throw new IllegalArgumentException("The number must be greater than 0.");
 
             _hsmTimeout = hsmTimeout;
@@ -517,7 +517,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
         @Override
         public String call() throws InterruptedException, CommandException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             runDelete();
             return "";
         }
@@ -532,7 +532,7 @@ public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, 
 
         @Override
         public String call() throws CommandException {
-            checkCommand(_haServiceLeadershipManager.hasLeadership(), _haServiceLeadershipManager.HA_NOT_LEADER_MSG);
+            checkCommand(_hasHaLeadership, HA_NOT_LEADER_MSG);
             _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=0 ORDER BY iatime",
                     rs -> {
                         try {
