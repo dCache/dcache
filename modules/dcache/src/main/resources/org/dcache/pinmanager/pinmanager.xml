@@ -140,7 +140,7 @@
 
   <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
         init-method="initZkLeaderListener" destroy-method="shutdown">
-      <description>Manages leadership coordination for HA services</description>
+      <description>Coordinates which pinmanager handles pin expiry and removal</description>
       <constructor-arg value="pinmanager/PinManager"/>
       <property name="leadershipListener">
           <ref bean="leaderlistener-group"/>

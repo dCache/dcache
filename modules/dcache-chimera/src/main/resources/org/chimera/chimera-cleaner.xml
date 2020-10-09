@@ -96,7 +96,7 @@
 
     <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
           init-method="initZkLeaderListener" destroy-method="shutdown">
-        <description>Manages leadership coordination for HA services</description>
+        <description>Coordinates which cleaner is active</description>
         <constructor-arg value="cleaner"/>
         <property name="leadershipListener">
             <ref bean="leaderlistener-group"/>
