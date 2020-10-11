@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,13 +17,6 @@
  */
 package org.dcache.pool.classic;
 
-import eu.emi.security.authn.x509.CrlCheckingMode;
-import eu.emi.security.authn.x509.NamespaceCheckingMode;
-import eu.emi.security.authn.x509.OCSPCheckingMode;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.util.concurrent.TimeUnit;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
@@ -36,14 +29,8 @@ import org.dcache.ssl.CanlContextFactory;
 import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.PortRange;
 
-public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferService
+public class RemoteGsiftpTransferService extends SecureRemoteTransferService
 {
-    private String caPath;
-    private OCSPCheckingMode ocspCheckingMode;
-    private CrlCheckingMode crlCheckingMode;
-    private NamespaceCheckingMode namespaceMode;
-    private long certificateAuthorityUpdateInterval;
-    private TimeUnit certificateAuthorityUpdateIntervalUnit;
     private CanlContextFactory sslContextFactory;
     private String[] bannedCiphers;
     private PortRange portRange;
@@ -68,72 +55,6 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
         this.portRange = portRange;
     }
 
-    public String getCertificateAuthorityPath()
-    {
-        return caPath;
-    }
-
-    @Required
-    public void setCertificateAuthorityPath(String certificateAuthorityPath)
-    {
-        this.caPath = certificateAuthorityPath;
-    }
-
-    public OCSPCheckingMode getOcspCheckingMode()
-    {
-        return ocspCheckingMode;
-    }
-
-    @Required
-    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-    {
-        this.ocspCheckingMode = ocspCheckingMode;
-    }
-
-    public CrlCheckingMode getCrlCheckingMode()
-    {
-        return crlCheckingMode;
-    }
-
-    @Required
-    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-    {
-        this.crlCheckingMode = crlCheckingMode;
-    }
-
-    public NamespaceCheckingMode getNamespaceMode()
-    {
-        return namespaceMode;
-    }
-
-    @Required
-    public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
-    {
-        this.namespaceMode = namespaceMode;
-    }
-
-    public long getCertificateAuthorityUpdateInterval()
-    {
-        return certificateAuthorityUpdateInterval;
-    }
-
-    @Required
-    public void setCertificateAuthorityUpdateInterval(long certificateAuthorityUpdateInterval)
-    {
-        this.certificateAuthorityUpdateInterval = certificateAuthorityUpdateInterval;
-    }
-
-    public TimeUnit getCertificateAuthorityUpdateIntervalUnit()
-    {
-        return certificateAuthorityUpdateIntervalUnit;
-    }
-
-    @Required
-    public void setCertificateAuthorityUpdateIntervalUnit(TimeUnit unit)
-    {
-        this.certificateAuthorityUpdateIntervalUnit = unit;
-    }
-
     @Override
     protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception
     {
@@ -152,12 +73,12 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
         if (sslContextFactory == null) {
             sslContextFactory =
                     CanlContextFactory.custom()
-                            .withCertificateAuthorityPath(caPath)
-                            .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval,
-                                                                    certificateAuthorityUpdateIntervalUnit)
-                            .withCrlCheckingMode(crlCheckingMode)
-                            .withOcspCheckingMode(ocspCheckingMode)
-                            .withNamespaceMode(namespaceMode)
+                            .withCertificateAuthorityPath(getCertificateAuthorityPath())
+                            .withCertificateAuthorityUpdateInterval(getCertificateAuthorityUpdateInterval(),
+                                                                    getCertificateAuthorityUpdateIntervalUnit())
+                            .withCrlCheckingMode(getCrlCheckingMode())
+                            .withOcspCheckingMode(getOcspCheckingMode())
+                            .withNamespaceMode(getNamespaceMode())
                             .withLazy(false)
                             .withLoggingContext(new CDC()::restore)
                             .build();
