@@ -459,7 +459,6 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
 
     @Override
     public void getInfo(PrintWriter pw) {
-        pw.printf("Disk Cleaner Info : \n");
         pw.printf("Refresh Interval: %s\n", _refreshInterval);
         pw.printf("Refresh Interval Unit: %s\n", _refreshIntervalUnit);
         pw.printf("Cleanup grace period: %s\n", TimeUtils.describe(_gracePeriod).orElse("-"));
