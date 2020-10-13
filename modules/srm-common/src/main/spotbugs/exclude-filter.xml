@@ -1,0 +1,10 @@
+<FindBugsFilter>
+  <Match>
+    <Or>
+      <Package name="org.dcache.srm.v2_2" />
+      <Package name="org.dcache.delegation.gridsite1" />
+      <Package name="org.dcache.delegation.gridsite2" />
+    </Or>
+  </Match>
+</FindBugsFilter>
+

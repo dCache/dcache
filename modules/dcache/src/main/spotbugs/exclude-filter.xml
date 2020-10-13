@@ -1,0 +1,8 @@
+<FindBugsFilter>
+  <Match>
+    <Or>
+      <Class name="org.dcache.pool.migration.TaskContext" />
+      <Class name="org.dcache.pool.p2p.CompanionContext" />
+    </Or>
+  </Match>
+</FindBugsFilter>

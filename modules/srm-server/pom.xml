@@ -109,16 +109,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>com.github.spotbugs</groupId>
-        <artifactId>spotbugs-maven-plugin</artifactId>
-        <configuration>
-            <excludeFilterFile>src/main/findbugs/exclude-filter.xml</excludeFilterFile>
-        </configuration>
-      </plugin>
-    </plugins>
-  </reporting>
 </project>

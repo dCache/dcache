@@ -75,6 +75,14 @@
          </execution>
        </executions>
       </plugin>
+
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <configuration>
+          <excludeFilterFile>src/main/spotbugs/exclude-filter.xml</excludeFilterFile>
+        </configuration>
+      </plugin>
     </plugins>
 
     <pluginManagement>
