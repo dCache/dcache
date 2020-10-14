@@ -456,8 +456,6 @@ public class BulkServiceQueue implements SignalAware {
 
   abstract class JobProcessor implements Runnable {
 
-    protected Logger LOGGER = LoggerFactory.getLogger(JobProcessor.class);
-
     /*
      *  For reporting operations terminated or cancelled while the
      *  consumer thread is doing work outside the wait monitor.
@@ -528,8 +526,6 @@ public class BulkServiceQueue implements SignalAware {
    */
   @VisibleForTesting
   class NextJobProcessor extends JobProcessor {
-
-    protected Logger LOGGER = LoggerFactory.getLogger(NextJobProcessor.class);
 
     protected void doRun() throws InterruptedException {
       LOGGER.trace("NextJobProcessor, starting doRun().");
@@ -781,7 +777,6 @@ public class BulkServiceQueue implements SignalAware {
   @VisibleForTesting
   class TerminalSweeper extends JobProcessor {
 
-    protected Logger LOGGER = LoggerFactory.getLogger(TerminalSweeper.class);
     private AtomicInteger swept = new AtomicInteger(0);
 
     @Override
@@ -892,8 +887,6 @@ public class BulkServiceQueue implements SignalAware {
    */
   @VisibleForTesting
   class JobPostProcessor implements Runnable {
-
-    private final Logger LOGGER = LoggerFactory.getLogger(JobPostProcessor.class);
 
     private final Queue<BulkJob> queue = new LinkedBlockingQueue<>();
 
