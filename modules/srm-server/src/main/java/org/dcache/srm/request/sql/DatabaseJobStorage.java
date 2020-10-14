@@ -66,7 +66,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 
-import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -100,11 +99,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>, Runnable {
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(DatabaseJobStorage.class);
-
-    @SuppressWarnings("unchecked")
-    private final Class<J> jobType = (Class<J>) new TypeToken<J>(getClass()) {}.getRawType();
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseJobStorage.class);
 
     private final Configuration.DatabaseParameters configuration;
     private final ScheduledExecutorService executor;
@@ -122,7 +117,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         this.transactionTemplate = new TransactionTemplate(configuration.getTransactionManager());
     }
 
-    //this should always reflect the number of field definde in the
+    // this should always reflect the number of fields defined in the
     // prefix above
     public abstract String getTableName();
 

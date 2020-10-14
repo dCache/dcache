@@ -135,7 +135,6 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     protected final String[] SURLs;
     private final String caCertificatePath;
     protected final int number_of_file_reqs;
-    protected boolean createdMap;
     final long[] sizes;
     final long retry_timout;
     final long requestLifetime;

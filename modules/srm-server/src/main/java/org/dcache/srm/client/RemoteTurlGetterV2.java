@@ -117,7 +117,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     private final String caCertificatePath;
     private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
     protected final int number_of_file_reqs;
-    protected boolean createdMap;
     private String requestToken;
     private final long lifetime;
     SrmPrepareToGetResponse srmPrepareToGetResponse;
