@@ -906,12 +906,12 @@ public class BulkServiceQueue implements SignalAware {
     protected void doRun(boolean noWait) throws InterruptedException {
       List<BulkJob> jobs;
 
-      synchronized (queue) {
+      synchronized (this) {
         while (queue.isEmpty()) {
           if (noWait) {
             break;
           }
-          queue.wait();
+          wait();
         }
 
         jobs = queue.stream().limit(maxRunningJobs).collect(Collectors.toList());
@@ -930,8 +930,7 @@ public class BulkServiceQueue implements SignalAware {
     /*
      *  For intercommunication with processor instances.
      */
-    void offer(BulkJob bulkJob) {
-      synchronized (queue) {
+    synchronized void offer(BulkJob bulkJob) {
         if (!queue.offer(bulkJob)) {
           /*
            *  Queue is unbounded, so this means something
@@ -941,8 +940,7 @@ public class BulkServiceQueue implements SignalAware {
               "Job post processor is refusing " + "new jobs; " + "this is a bug.");
         }
 
-        queue.notifyAll();
-      }
+        notifyAll();
     }
 
     private void postProcessJob(BulkJob job) {
