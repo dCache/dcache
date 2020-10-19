@@ -8,6 +8,8 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
@@ -23,9 +25,10 @@ import org.dcache.util.LineIndentingPrintWriter;
 /**
  * This class decorates any RepositoryChannel and updates statistics for
  * monitored per-request quantities: requested bytes, transferred bytes,
- * duration, instantaneous bandwidth, and concurrency (number of concurrent
- * in-flight requests).  It also keeps track of how much time is spent with at
- * least one IO request.
+ * various durations, instantaneous bandwidth, and concurrency (number of
+ * concurrent in-flight requests).  It also keeps track of how much time is
+ * spent with at least one IO request (i.e., when blocking) and the different
+ * phases of a transfer: pre-transfer, transfer, post-transfer.
  * <p>
  * Hint: It might be interesting for further developments to have a closer look
  * at return values from read and write methods, when they equal 0
@@ -44,18 +47,20 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     private final LiveStatistics reads = new LiveStatistics();
     private final LiveStatistics writes = new LiveStatistics();
 
-    private final Stopwatch readIdle = Stopwatch.createStarted();
+    private final Stopwatch readIdle = Stopwatch.createUnstarted();
     private final Stopwatch readActive = Stopwatch.createUnstarted();
-    private final Stopwatch writeIdle = Stopwatch.createStarted();
+    private final Stopwatch writeIdle = Stopwatch.createUnstarted();
     private final Stopwatch writeActive = Stopwatch.createUnstarted();
 
     private int concurrentReads;
     private int concurrentWrites;
-    private boolean isClosed;
+
+    private final Instant whenOpened = Instant.now(); // assuming created when channel is opened.
     private Instant firstRead;
     private Instant latestRead;
     private Instant firstWrite;
     private Instant latestWrite;
+    private Instant whenClosed;
 
     public IoStatisticsChannel(RepositoryChannel channel)
     {
@@ -77,19 +82,44 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
         Duration readActiveNow;
         Duration writeIdleNow;
         Duration writeActiveNow;
+        Duration preReadActivityWait;
+        Duration preWriteActivityWait;
+        Duration postReadActivityWait;
+        Duration postWriteActivityWait;
 
         synchronized (this) {
-            readIdleNow = Duration.ofNanos(readIdle.elapsed(TimeUnit.NANOSECONDS));
+            Instant now = Instant.now();
+
+            Instant firstReadOrNow = firstRead == null ? now : firstRead;
+            Instant firstWriteOrNow = firstWrite == null ? now : firstWrite;
+            Instant lastestReadOrNow = latestRead == null ? now : latestRead;
+            Instant lastestWriteOrNow = latestWrite == null ? now : latestWrite;
+            Instant whenClosedOrNow = whenClosed == null ? now : whenClosed;
+
+            preReadActivityWait = Duration.between(whenOpened, firstReadOrNow);
+            preWriteActivityWait = Duration.between(whenOpened, firstWriteOrNow);
+            postReadActivityWait = Duration.between(lastestReadOrNow, whenClosedOrNow);
+            postWriteActivityWait = Duration.between(lastestWriteOrNow, whenClosedOrNow);
+
+            readIdleNow = Duration.ofNanos(readIdle.elapsed(TimeUnit.NANOSECONDS)).minus(postReadActivityWait);
             readActiveNow = Duration.ofNanos(readActive.elapsed(TimeUnit.NANOSECONDS));
-            writeIdleNow = Duration.ofNanos(writeIdle.elapsed(TimeUnit.NANOSECONDS));
+            writeIdleNow = Duration.ofNanos(writeIdle.elapsed(TimeUnit.NANOSECONDS)).minus(postWriteActivityWait);
             writeActiveNow = Duration.ofNanos(writeActive.elapsed(TimeUnit.NANOSECONDS));
         }
 
         return new IoStatistics(
-                new DirectedIoStatistics(readIdleNow, readActiveNow,
-                        firstRead, latestRead, reads),
-                new DirectedIoStatistics(writeIdleNow, writeActiveNow,
-                        firstWrite, latestWrite, writes));
+                new DirectedIoStatistics(preReadActivityWait, readIdleNow,
+                        readActiveNow, firstRead, latestRead,
+                        postReadActivityWait, reads),
+                new DirectedIoStatistics(preWriteActivityWait, writeIdleNow,
+                        writeActiveNow, firstWrite, latestWrite,
+                        postWriteActivityWait, writes));
+    }
+
+    @GuardedBy("this")
+    private boolean isClosed()
+    {
+        return whenClosed != null;
     }
 
     private synchronized int writeStarted()
@@ -105,7 +135,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
                 writeIdle.stop();
             }
 
-            if (!isClosed) {
+            if (!isClosed()) {
                 writeActive.start();
             }
         }
@@ -119,7 +149,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
                 writeActive.stop();
             }
 
-            if (!isClosed) {
+            if (!isClosed()) {
                 writeIdle.start();
             }
         }
@@ -138,7 +168,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
                 readIdle.stop();
             }
 
-            if (!isClosed) {
+            if (!isClosed()) {
                 readActive.start();
             }
         }
@@ -152,7 +182,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
                 readActive.stop();
             }
 
-            if (!isClosed) {
+            if (!isClosed()) {
                 readIdle.start();
             }
         }
@@ -322,18 +352,22 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     public void close() throws IOException
     {
         synchronized (this) {
-            if (!isClosed) {
-                isClosed = true;
+            if (!isClosed()) {
+                whenClosed = Instant.now();
 
                 if (concurrentReads == 0) {
-                    readIdle.stop();
+                    if (readIdle.isRunning()) {
+                        readIdle.stop();
+                    }
                 } else {
                     LOGGER.warn("close called with in-flight read request");
                     // allow in-flight read request(s) to stop readActive stopwatch.
                 }
 
                 if (concurrentWrites == 0) {
-                    writeIdle.stop();
+                    if (writeIdle.isRunning()) {
+                        writeIdle.stop();
+                    }
                 } else {
                     LOGGER.warn("close called with in-flight write request");
                     // allow in-flight write request(s) to stop writeActive stopwatch.
