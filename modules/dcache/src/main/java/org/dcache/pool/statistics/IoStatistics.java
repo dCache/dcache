@@ -33,12 +33,6 @@ public class IoStatistics
     private final DirectedIoStatistics reads;
     private final DirectedIoStatistics writes;
 
-    public IoStatistics()
-    {
-        reads = new DirectedIoStatistics();
-        writes = new DirectedIoStatistics();
-    }
-
     public IoStatistics(DirectedIoStatistics reads, DirectedIoStatistics writes)
     {
         this.reads = reads;

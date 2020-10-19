@@ -37,15 +37,6 @@ public class DirectedIoStatistics
     private final Instant _firstAccess;
     private final Instant _latestAccess;
 
-    public DirectedIoStatistics()
-    {
-        _idle = Duration.ZERO;
-        _active = Duration.ZERO;
-        _firstAccess = null;
-        _latestAccess = null;
-        _statistics = new SnapshotStatistics();
-    }
-
     public DirectedIoStatistics(Duration idle, Duration active,
             Instant firstAccess, Instant latestAccess,
             LiveStatistics statistics)
