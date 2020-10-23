@@ -355,8 +355,8 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         boolean hasDeletedSomething = false;
         boolean failedToDelete = false;
 
+        File dir = new File(credentialsDirectory);
         for (long id : idsMatching(name, role)) {
-            File dir = new File(credentialsDirectory);
             File credentialFile = new File(dir, String.valueOf(id));
 
             if (!credentialFile.exists()) {
