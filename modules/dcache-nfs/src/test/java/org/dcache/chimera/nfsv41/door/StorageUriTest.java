@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.chimera.nfsv41.door;
 
+import org.dcache.nfs.util.UnixSubjects;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,7 +76,6 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
@@ -348,12 +348,12 @@ public class StorageUriTest {
     }
 
     private void runTestAsNonRootUser(PrivilegedAction<Void> action) {
-        Subject subject = Subjects.of(500, 500, new int[] { 0, 500 });
+        Subject subject = UnixSubjects.toSubject(500, 500, 0, 500);
         runTestWithSubject(subject, action);
     }
 
     private void runTestAsRoot(PrivilegedAction<Void> action) {
-        Subject subject = Subjects.of(0, 0, new int[] { 0, 0 });
+        Subject subject = UnixSubjects.toSubject(0, 0);
         runTestWithSubject(subject, action);
     }
 
