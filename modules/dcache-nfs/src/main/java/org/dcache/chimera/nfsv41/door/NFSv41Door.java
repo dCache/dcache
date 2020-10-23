@@ -8,6 +8,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.dcache.util.ByteUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -497,6 +498,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         _supportedDrivers.put(layouttype4.LAYOUT4_FLEX_FILES,
                 new FlexFileLayoutDriver(4, 1,
                         flex_files_prot.FF_FLAGS_NO_IO_THRU_MDS,
+                        ByteUnit.MiB.toBytes(1),
                         new utf8str_mixed("17"), new utf8str_mixed("17"), this::logLayoutErrors));
         _supportedDrivers.put(layouttype4.LAYOUT4_NFSV4_1_FILES, new NfsV41FileLayoutDriver());
 

@@ -22,6 +22,7 @@ package org.dcache.chimera.nfsv41.door;
 import com.google.common.annotations.VisibleForTesting;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.UnixPermission;
+import org.dcache.nfs.util.UnixSubjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,6 @@ import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Who;
-import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirNotEmptyHimeraFsException;
 import org.dcache.chimera.DirectoryStreamHelper;
@@ -150,8 +150,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
     @Override
     public Inode create(Inode parent, Stat.Type type, String path, Subject subject, int mode) throws IOException {
-        int uid = (int)Subjects.getUid(subject);
-        int gid = (int)Subjects.getPrimaryGid(subject);
+        int uid = (int)UnixSubjects.getUid(subject);
+        int gid = (int)UnixSubjects.getPrimaryGid(subject);
         try {
             FsInode parentFsInode = toFsInode(parent);
             FsInode fsInode = _fs.createFile(parentFsInode, path, uid, gid, mode | typeToChimera(type), typeToChimera(type));
@@ -163,8 +163,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
     @Override
     public Inode mkdir(Inode parent, String path, Subject subject, int mode) throws IOException {
-        int uid = (int) Subjects.getUid(subject);
-        int gid = (int) Subjects.getPrimaryGid(subject);
+        int uid = (int)UnixSubjects.getUid(subject);
+        int gid = (int)UnixSubjects.getPrimaryGid(subject);
         try {
             FsInode parentFsInode = toFsInode(parent);
             FsInode fsInode = parentFsInode.mkdir(path, uid, gid, mode);
@@ -190,8 +190,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
     @Override
     public Inode symlink(Inode parent, String path, String link, Subject subject, int mode) throws IOException {
-        int uid = (int) Subjects.getUid(subject);
-        int gid = (int) Subjects.getPrimaryGid(subject);
+        int uid = (int)UnixSubjects.getUid(subject);
+        int gid = (int)UnixSubjects.getPrimaryGid(subject);
         try {
             FsInode parentFsInode = toFsInode(parent);
             FsInode fsInode = _fs.createLink(parentFsInode, path, uid, gid, mode, link.getBytes(StandardCharsets.UTF_8));
@@ -517,7 +517,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     }
 
     private static boolean isRoot() {
-        return Subjects.isRoot(Subject.getSubject(AccessController.getContext()));
+        return UnixSubjects.isRootSubject(Subject.getSubject(AccessController.getContext()));
     }
 
     @Override
@@ -710,10 +710,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             Who who = ace.getWho();
 
             if ((who == Who.EVERYONE)
-                    || (who == Who.OWNER && Subjects.hasUid(subject, owner))
-                    || (who == Who.OWNER_GROUP && Subjects.hasGid(subject, group))
-                    || (who == Who.GROUP && Subjects.hasGid(subject, ace.getWhoID()))
-                    || (who == Who.USER && Subjects.hasUid(subject, ace.getWhoID()))) {
+                    || (who == Who.OWNER && UnixSubjects.hasUid(subject, owner))
+                    || (who == Who.OWNER_GROUP && UnixSubjects.hasGid(subject, group))
+                    || (who == Who.GROUP && UnixSubjects.hasGid(subject, ace.getWhoID()))
+                    || (who == Who.USER && UnixSubjects.hasUid(subject, ace.getWhoID()))) {
 
                 if (ace.getType() == AceType.ACCESS_DENIED_ACE_TYPE) {
                     return Access.DENY;

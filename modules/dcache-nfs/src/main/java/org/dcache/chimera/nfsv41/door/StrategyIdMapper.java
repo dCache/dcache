@@ -3,6 +3,7 @@ package org.dcache.chimera.nfsv41.door;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.net.InternetDomainName;
+import org.dcache.nfs.util.UnixSubjects;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
@@ -182,7 +183,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
             in.getPrincipals().add(new Origin(xt.getRemoteSocketAddress().getAddress()));
             in.setReadOnly();
 
-            return _remoteLoginStrategy.login(in).getSubject();
+            return populateWithUnixPrincipals(_remoteLoginStrategy.login(in).getSubject());
         }catch(GSSException | CacheException e) {
             LOGGER.debug("Failed to login for : {} : {}", gssc, e.toString());
         }
@@ -192,7 +193,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
     public Subject login(Subject in) {
 
         try {
-            return _remoteLoginStrategy.login(in).getSubject();
+            return populateWithUnixPrincipals(_remoteLoginStrategy.login(in).getSubject());
         } catch (CacheException e) {
             LOGGER.debug("Failed to login for : {} : {}", new SubjectHolder(in),  e.toString());
         }
@@ -264,5 +265,31 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         // The DNS hasn't corresponding TXT record. Use domain name.
         LOGGER.info("Using DNS domain as nfs4domain: {}", domain);
         return domain.toString();
+    }
+
+    /**
+     * Populate dCache generated subject to NFS4J compatible principals.
+     * @param subject
+     * @return
+     */
+    private Subject populateWithUnixPrincipals(Subject subject) {
+
+        if (subject.isReadOnly()) {
+
+            Subject copy = new Subject(
+                    false,
+                    subject.getPrincipals(),
+                    subject.getPublicCredentials(),
+                    subject.getPrivateCredentials()
+            );
+
+            subject = copy;
+        }
+
+        // with this construction we don't expose which Principals used by nfs4j code as we never crate an instance in dCahce code.
+        Subject unixSubject = UnixSubjects.toSubject(Subjects.getUid(subject), Subjects.getPrimaryGid(subject), Subjects.getGids(subject));
+        subject.getPrincipals().addAll(unixSubject.getPrincipals());
+
+        return subject;
     }
 }
