@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import org.dcache.nfs.util.UnixSubjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +61,6 @@ import java.security.PrivilegedAction;
 import java.util.Optional;
 import javax.security.auth.Subject;
 import org.dcache.auth.Origin;
-import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoREAD;
@@ -217,9 +217,9 @@ public class DoorOperationFactory extends MDSOperationExecutor {
                         if (!subject.isReadOnly()) {
 
                             if (_subjectCache.isPresent() && context.getRpcCall().getCredential().type() == RpcAuthType.UNIX) {
-                                long[] gids = Subjects.getGids(subject);
+                                long[] gids = UnixSubjects.getSecondaryGids(subject);
                                 if (gids.length >= 16) {
-                                    long uid = Subjects.getUid(subject);
+                                    long uid = UnixSubjects.getUid(subject);
                                     UidPrincipal uidPrincipal = new UidPrincipal(uid);
                                     subject = _subjectCache.get().getUnchecked(uidPrincipal);
                                     context.getSubject().getPrincipals().addAll(subject.getPrincipals());
