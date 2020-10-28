@@ -92,7 +92,7 @@ support.
 | [nfs](config-nfs.md)                    |  Allows clients to mount dCache and perform POSIX IO using standard NFSv4.1 clients.   |
 | [history](config-history.md)                      | A 'collector' service responsible for gathering and caching monitoring and state information from various dCache backend services and pools. |
 | transfermanager                      | -     |
-| pinmanager                      | -     |
+| [pinmanager](config-pinmanager.md)            |  Ensures the presence of specific file replicas on disk by preventing them from being garbage-collected.     |
 
 
 
@@ -128,7 +128,7 @@ Most cells communicate in such a way that they don't rely on in which domain the
 | username/password            | +    | +    | -    | -     | +      | -   |
 | Control Connection Encrypted | +    | +    | +    | +     | +      | +   |
 | Data Connection Encrypted    | -    | -    | -    | +     | +      | +   |
-| passiv                       | +    | +    | +    | +     | +      | -   |
+| passive                      | +    | +    | +    | +     | +      | -   |
 | active                       | +    | +    | -    | -     | -      | -   |
 
 
