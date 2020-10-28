@@ -785,7 +785,7 @@ public class XrootdDoor
 
     /**
      * List the contents of a path, usually a directory. In order to make
-     * fragmented responses, as supported by the xrootd protocol, possible and
+     * fragmented responses, as supported by the xroot protocol, possible and
      * not block the processing thread in the door, this will register the
      * passed callback along with the UUID of the message that is sent to
      * PNFS-manager.

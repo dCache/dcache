@@ -1387,7 +1387,7 @@ with `.access`.  In our case, the file is
 
 Each line in this file describes a low-level protocol request make by
 a client along with the corresponding response from dCache.  Some
-protocols (such as FTP, xrootd and NFS) may involve many such
+protocols (such as FTP, xroot and NFS) may involve many such
 interactions even if the client is simply transferring the contents of
 a file.  A HTTP/WebDAV client, by comparsion, typically makes a single
 request to transfer data.
@@ -2197,9 +2197,9 @@ ls -ln /dcache/public/tester
 > any account.  There are various strategies to keep the identities in
 > sync.  However, describing them is beyond the scope of this chapter.
 
-### Supporting xrootd access
+### Supporting xroot access
 
-xrootd is a proprietary protocol mostly used within the particle
+xroot is a proprietary protocol mostly used within the particle
 physics community.  To enable support, update the layout file to
 include an xrootd service:
 
@@ -2232,7 +2232,7 @@ include an xrootd service:
 [doorsDomain/xrootd]
 ```
 
-As usual, we restart doorsDomain to ensure the xrootd endpoint is
+As usual, we restart doorsDomain to ensure the xroot endpoint is
 started:
 
 ```console-root
@@ -2241,7 +2241,7 @@ dcache restart doorsDomain
 |Starting doorsDomain done
 ```
 
-The xrootd clients can now interact with dCache.
+The xroot clients can now interact with dCache.
 
 ```console-user
 xrdfs root://dcache.example.org

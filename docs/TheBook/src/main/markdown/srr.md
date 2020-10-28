@@ -29,7 +29,7 @@ file is stored on the local filesystem, as
 Once the file is written, it must be imported into dCache.  This could
 be achieved by NFS-mounting dCache and configuring the script to write
 into dCache directly.  Alternatively, it may be uploaded using any of
-the supported protocols (HTTP, FTP, dcap, xrootd) with any of the
+the supported protocols (HTTP, FTP, dcap, xroot) with any of the
 supported authentication schemes (username+password, X.509, Kerberos,
 OIDC, macaroons).  Note that the `dcache-storage-descriptor` script
 does not upload the file itself (unless it writes into a mounted

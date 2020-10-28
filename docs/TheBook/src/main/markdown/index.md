@@ -87,7 +87,7 @@ dCache Book
 
         -   [Authorization in dCache](config-gplazma.md)
 
-        -   [dCache as an xrootd Server](config-xrootd.md)
+        -   [dCache as an xroot Server](config-xrootd.md)
 
         -   [dCache as an NFS 4.1 Server](config-nfs.md)
 

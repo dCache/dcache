@@ -9,7 +9,7 @@ This section is a guide for exploring a newly installed dCache system. The confi
 
 ## CHECKING THE FUNCTIONALITY
 
-Reading and writing data to and from a dCache instance can be done with a number of protocols. After a standard installation, these protocols are **WebDav**, **xrootd**, **GSIdCap**, and **GridFTP**. In addition dCache comes with an implementation of the **SRM** protocol which negotiates the actual data transfer protocol.
+Reading and writing data to and from a dCache instance can be done with a number of protocols. After a standard installation, these protocols are **WebDav**, **xroot**, **GSIdCap**, and **GridFTP**. In addition dCache comes with an implementation of the **SRM** protocol which negotiates the actual data transfer protocol.
 
 ### dCache WITHOUT MOUNTED NAMESPACE
 

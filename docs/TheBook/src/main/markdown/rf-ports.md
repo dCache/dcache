@@ -13,7 +13,7 @@ about which ports may be deprecated.
 | Port number | Description                                                                                     | Component                                                                         |
 |-------------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | 111         | is used by portmapper for NFS                                                                   | portmap                                                                           |
-| 1094        | is the **xrootd** port                                                                          | In- and outbound traffic on **xrootd** doors                                      |
+| 1094        | is the **xroot** port                                                                           | In- and outbound traffic on **xrootd** doors                                      |
 | 2049        | is the **NFS** port                                                                             | In- and outbound traffic on **nfs** doors                                         |
 | 2181        | Communication between dCache domains and a (standalone) Zookeeper cluster                       | zookeeper                                                                         |
 | 2288        | used to access dCache's legacy web interface (via http)                                         | Inbound for httpdDomain                                                           |

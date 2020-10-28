@@ -172,7 +172,7 @@
   </bean>
 
   <bean id="door" class="org.dcache.xrootd.door.XrootdDoor">
-    <description>Gateway between xrootd protocol handler and dCache</description>
+    <description>Gateway between xroot protocol handler and dCache</description>
     <property name="pnfsStub" ref="pnfs-stub"/>
     <property name="poolStub" ref="pool-stub"/>
     <property name="poolManagerStub">

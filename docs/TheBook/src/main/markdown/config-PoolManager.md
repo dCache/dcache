@@ -555,7 +555,9 @@ For the subsequent examples we assume a basic poolmanager setup :
 
 ##### Disallowing pool to pool transfers for special pool groups based on the access protocol
 
-For a special set of pools, where we only allow the xrootd protocol, we don't want the datasets to be replicated on high load while for the rest of the pools we allow replication on hot spot detection.
+For a special set of pools, where we only allow the xroot protocol, we
+don't want the datasets to be replicated on high load while for the
+rest of the pools we allow replication on hot spot detection.
 
     #
     pm create xrootd-section

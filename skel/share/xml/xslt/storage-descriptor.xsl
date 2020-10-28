@@ -169,7 +169,7 @@
   <xsl:variable name="name">
     <xsl:choose>
       <xsl:when test="$type = 'root'">
-        <xsl:value-of select="concat('xrootd endpoint on ',$hostname)"/>
+        <xsl:value-of select="concat('xroot endpoint on ',$hostname)"/>
       </xsl:when>
       <xsl:when test="$type = 'http'">
         <xsl:value-of select="concat('HTTP and WebDAV endpoint on ',$hostname)"/>

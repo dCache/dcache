@@ -1,7 +1,11 @@
-Chapter 10. dCache as xRootd-Server
+Chapter 10. dCache as xroot-Server
 ===================================
 
-This chapter explains how to configure dCache in order to access it via the `xrootd` protocol, allowing `xrootd`-Clients like ROOT’s TXNetfile and xrdcp to do file operations against a dCache instance in a transparent manner. dCache implements version 2.1.6 of `xrootd` protocol.
+This chapter explains how to configure dCache in order to access it
+via the `xroot` protocol, allowing `xroot`-Clients like ROOT’s
+TXNetfile and xrdcp to do file operations against a dCache instance in
+a transparent manner. dCache implements version 2.1.6 of `xroot`
+protocol.
 
 -----
 [TOC bullet hierarchy]
@@ -9,9 +13,15 @@ This chapter explains how to configure dCache in order to access it via the `xro
 
 ## Setting up
 
-To allow file transfers in and out of dCache using xrootd, a new `xrootd door` must be started. This door acts then as the entry point to all xrootd requests. Compared to the native xrootd server-implementation (produced by SLAC), the `xrootd door` corresponds to the `redirector node`.
+To allow file transfers in and out of dCache using xroot, a new
+`xrootd door` must be started. This door acts then as the entry point
+to all xroot requests. Compared to the native xrootd
+server-implementation (produced by SLAC), the `xrootd door`
+corresponds to the `redirector node`.
 
-To enable the `xrootd door`, you have to change the layout file corresponding to your dCache-instance. Enable the xrootd-service within the domain that you want to run it by adding the following line
+To enable the `xrootd door`, you have to change the layout file
+corresponding to your dCache-instance. Enable the xrootd-service
+within the domain that you want to run it by adding the following line
 
 ```ini
 [<domainName>/xrootd]
@@ -73,11 +83,13 @@ dcache.net.lan.port.max=30200
 
 ## QUICK TESTS
 
-The subsequent paragraphs describe a quick guide on how to test `xrootd` using the **xrdcp** and **ROOT** clients.
+The subsequent paragraphs describe a quick guide on how to test
+`xroot` using the **xrdcp** and **ROOT** clients.
 
 ### Copying files with xrdcp
 
-A simple way to get files in and out of dCache via `xrootd` is the command xrdcp. It is included in every xrootd and ROOT distribution.
+A simple way to get files in and out of dCache via `xroot` is the
+command xrdcp. It is included in every xrootd and ROOT distribution.
 
 To transfer a single file in and out of dCache, just issue
 
@@ -100,7 +112,11 @@ This simple ROOT example shows how to write a randomly filled histogram to a fil
     root [6] 061101 15:57:42 14991 Xrd: XrdClientSock::RecvRaw: Error reading from socket: Success
     061101 15:57:42 14991 Xrd: XrdClientMessage::ReadRaw: Error reading header (8 bytes)
 
- Closing remote `xrootd` files that live in dCache produces this warning, but has absolutely no effect on subsequent ROOT commands. It happens because dCache closes all `TCP` connections after finishing a file transfer, while xrootd expects to keep them open for later reuse.
+Closing remote `xroot` files that live in dCache produces this
+warning, but has absolutely no effect on subsequent ROOT commands. It
+happens because dCache closes all `TCP` connections after finishing a
+file transfer, while the SLAC xroot client expects to keep them open
+for later reuse.
 
 To read it back into ROOT from dCache:
 
@@ -110,11 +126,13 @@ To read it back into ROOT from dCache:
    	TXNetFile*             //pnfs/<example.org>/data/test.root
   	 KEY: TH1F     testhisto;1     test
 
-## XROOTD security
+## XROOT security
 
 ### Read-Write access
 
- Per default dCache xrootd is restricted to read-only, because plain xrootd is completely unauthenticated. A typical error message on the clientside if the server is read-only looks like:
+Per default dCache xroot is restricted to read-only, because plain
+xroot is completely unauthenticated. A typical error message on the
+clientside if the server is read-only looks like:
 
 ```console-user
 xrdcp -d 1 /bin/sh root://ford.desy.de//pnfs/desy.de/data/xrd_test2
@@ -141,11 +159,20 @@ xrootdIsReadOnly=false
 
 and restart any domain(s) running a `xrootd door`.
 
-Please note that due to the unauthenticated nature of this access mode, files can be written and read to/from any subdirectory in the pnfs namespace (including the automatic creation of parent directories). If there is no user information at the time of request, new files/subdirectories generated through `xrootd` will inherit UID/GID from its parent directory. The user used for this can be configured via the `xrootd.authz.user` property.
+Please note that due to the unauthenticated nature of this access
+mode, files can be written and read to/from any subdirectory in the
+pnfs namespace (including the automatic creation of parent
+directories). If there is no user information at the time of request,
+new files/subdirectories generated through `xroot` will inherit
+UID/GID from its parent directory. The user used for this can be
+configured via the `xrootd.authz.user` property.
 
 ### Permitting read/write access on selected directories
 
- To overcome the security issue of uncontrolled `xrootd` read and write access mentioned in the previous section, it is possible to restrict read and write access on a per-directory basis (including subdirectories).
+To overcome the security issue of uncontrolled `xroot` read and write
+access mentioned in the previous section, it is possible to restrict
+read and write access on a per-directory basis (including
+subdirectories).
 
 To activate this feature, a colon-seperated list containing the full
 paths of authorized directories must be added to
@@ -162,15 +189,16 @@ A restart of the `xrootd` door is required to make the changes take effect. As s
 ### TLS
 
 As of 6.2, dCache supports TLS according to the protocol requirements
-specified by the XrootD Protocol 5.0.
+specified by the xroot Protocol 5.0.
 
-XrootD allows a negotiation between the client and server as to when to initiate
-the TLS handshake.  The server-side options are explained in the _xrootd.properties_
-file.  Currently supported is the ability to require TLS on all connections to
-the door and pool, or to make TLS optional, depending on the client.  One
-can also specify whether to begin TLS before login or after.  The latter option
-is useful in the case of TLS being used with a strong authentication protocol
-such as GSI, in which case it would make sense not to protect the login as GSI
+xroot allows a negotiation between the client and server as to when to
+initiate the TLS handshake.  The server-side options are explained in
+the _xrootd.properties_ file.  Currently supported is the ability to
+require TLS on all connections to the door and pool, or to make TLS
+optional, depending on the client.  One can also specify whether to
+begin TLS before login or after.  The latter option is useful in the
+case of TLS being used with a strong authentication protocol such as
+GSI, in which case it would make sense not to protect the login as GSI
 already requires a Diffie-Hellman handshake to protect the passing of
 credential information.
 
@@ -186,11 +214,11 @@ stay tuned for further developments in those areas.
 
 ### Token-based authorization
 
-The `xrootd` dCache implementation includes a generic mechanism to plug in different authorization handlers. 
+The `xroot` dCache implementation includes a generic mechanism to plug in different authorization handlers.
 
 #### SciTokens
 
-As of 6.2, xrootd authorization has been integrated with gPlazma SciToken support.
+As of 6.2, xroot authorization has been integrated with gPlazma SciToken support.
 
 Add
 
@@ -200,7 +228,7 @@ auth    sufficient	scitoken
 
 to the _gplazma.conf_ configuration file in order to enable authorization.
 
-The token for xrootd is passed as an 'authz' query element on paths.
+The token for xroot is passed as an 'authz' query element on paths.
 For example,
 
 ```
@@ -210,8 +238,8 @@ xrdcp500 -f xroots://dmsdca15.fnal.gov:1095//pnfs/fs/usr/test/arossi/volatile/tl
 dCache will support different tokens during the same client session, as well as
 different tokens on source and destination endpoints in a third-party transfer.
 
-To enable scitoken authorization on an xrootd door, use "authz:scitokens"
-to load the authorization plugin.
+To enable scitoken authorization on an xroot door, use
+"authz:scitokens" to load the authorization plugin.
 
 Here is an example layout configuration:
 
@@ -239,10 +267,10 @@ is not passed until a request involving a path, in this case, 'open') ––
 would have been sufficient –– the extra protection on login of course will not
 hurt.
 
-The xrootd protocol states that the server can specify supporting
-different authentication protocols via a list which the client
-should try in order.  While our library code allows for the chaining
-of multiple such handlers, dCache currently only supports one protocol,
+The xroot protocol states that the server can specify supporting
+different authentication protocols via a list which the client should
+try in order.  While our library code allows for the chaining of
+multiple such handlers, dCache currently only supports one protocol,
 either GSI or none, at a time.
 
 Authorization, on the other hand, takes place after the authentication
@@ -315,11 +343,14 @@ If both tokenbased authorization and read-only access are activated, the read-on
 
 ### Strong authentication
 
-The `xrootd`-implementation in dCache includes a pluggable authentication framework. To control which authentication mechanism is used by `xrootd`, add the `xrootdAuthNPlugin` option to your dCache configuration and set it to the desired value.
+The `xroot`-implementation in dCache includes a pluggable
+authentication framework. To control which authentication mechanism is
+used by `xroot`, add the `xrootdAuthNPlugin` option to your dCache
+configuration and set it to the desired value.
 
 Example:
 
-For instance, to enable `GSI` authentication in `xrootd`, add the
+For instance, to enable `GSI` authentication in `xroot`, add the
 following line to `/etc/dcache/dcache.conf`:
 
 ```ini
@@ -336,11 +367,13 @@ dcache.authn.hostcert.verify=true
 
 > **SECURITY CONSIDERATION**
 >
-> In general `GSI` on `xrootd` is not secure. It does not provide confidentiality and integrity guarantees and hence does not protect against man-in-the-middle attacks.
+> In general `GSI` on `xroot` is not secure. It does not provide confidentiality and integrity guarantees and hence does not protect against man-in-the-middle attacks.
 
 ### Precedence of security mechanisms
 
-The previously explained methods to restrict access via `xrootd` can also be used together. The precedence applied in that case is as following:
+The previously explained methods to restrict access via `xroot` can
+also be used together. The precedence applied in that case is as
+following:
 
 > **NOTE**
 >
@@ -350,23 +383,26 @@ The previously explained methods to restrict access via `xrootd` can also be use
 
 The same argument holds for many strong authentication mechanisms - for example, both the `GSI` protocol as well as the `Kerberos` protocols require trust in remote authorities. However, this only affects user *authentication*, while authorization decisions can be adjusted by local site administrators by adapting the `gPlazma` configuration.
 
-To allow local site’s administrators to override remote security settings, write access can be further restricted to few directories (based on the local namespace, the `pnfs`). Setting `xrootd access to read-only has the highest priority, overriding all other settings.
+To allow local site’s administrators to override remote security
+settings, write access can be further restricted to few directories
+(based on the local namespace, the `pnfs`). Setting xroot access to
+read-only has the highest priority, overriding all other settings.
 
 ### Other configuration options
 
 The `xrootd-door` has several other configuration properties. You can
 configure various timeout parameters, the thread pool sizes on pools,
-queue buffer sizes on pools, the `xrootd` root path, the xrootd user
-and the `xrootd` IO queue. Full descriptions on the effect of those
-can be found in `/usr/share/dcache/defaults/xrootd.properties`.
+queue buffer sizes on pools, the xroot root path, the xroot user and
+the xroot IO queue. Full descriptions on the effect of those can be
+found in `/usr/share/dcache/defaults/xrootd.properties`.
 
 
 ## XROOTD Third-party Transfer
 
-Starting with dCache 4.2, native third-party transfers between dCache and another
-xrootd server (including another dCache door) are possible.  These can be done
-either in unauthenticated mode, or with GSI (X509) authentication,
-using the client provided by SLAC (xrdcp or xrdcopy).
+Starting with dCache 4.2, native third-party transfers between dCache
+and another xroot server (including another dCache door) are possible.
+These can be done either in unauthenticated mode, or with GSI (X509)
+authentication, using the client provided by SLAC (xrdcp or xrdcopy).
 
 To enforce third-party copy, one must execute the transfer using
 
@@ -376,13 +412,13 @@ One can also try third party and fail over to one-hop two-party (through the cli
 
     xrdcp --tpc first <source> <destination>
 
-#### TPC from dCache to another xrootd server
+#### TPC from dCache to another xroot server
 
 Very few changes in the dCache door were needed to accomplish this.
 If dCache is merely to serve as file source, then all that is needed
 is to update to version 4.2+ on the nodes running the xrootd doors.
 
-#### TPC from another xrootd server to dCache, or between dCache instances
+#### TPC from another xroot server to dCache, or between dCache instances
 
 As per the protocol, the destination pulls/reads the file from the source and
 writes it locally to a selected pool. This is achieved by an embedded third-party
@@ -403,8 +439,9 @@ will be reported if `--tpc only` is specified.
 
 To use dCache as TPC destination, some additional steps need to be taken.
 
-First, for all pools that will receive files through xrootd TPC, the GSI service
-provider plugin must be loaded by including this in the configuration or layout:
+First, for all pools that will receive files through xroot TPC, the
+GSI service provider plugin must be loaded by including this in the
+configuration or layout:
 
 ```ini
 pool.mover.xrootd.tpc-authn-plugins=gsi
@@ -420,7 +457,7 @@ If both endpoints support delegation (dCache 5.2+, XrootD 4.9+), nothing further
 need be done by way of configuration.  dCache keeps the proxy in memory and
 discards it when the session is disconnected.
 
-To indicate that you wish delegation, the xrootd client requires:
+To indicate that you wish delegation, the xroot client requires:
 
     xrdcp --tpc delegate only <source> <destination>
 
@@ -428,13 +465,13 @@ or
 
     xrdcp --tpc delegate first <source> <destination>
 
-Like the XrootD server and client, dCache can determine whether the endpoint
+Like the xrootd server and client, dCache can determine whether the endpoint
 with which it is communicating supports delegation, and fail over to the
 pre-delegation protocol if not.
 
-In the case of communication with pre-4.9 XrootD or pre-5.2 dCache instances,
-or when using a pre-4.9 XrootD client, one can still make use of third-party
-copy with a few extra configuration steps.
+In the case of communication with pre-4.9 xrootd or pre-5.2 dCache
+instances, or when using a pre-4.9 xroot client, one can still make
+use of third-party copy with a few extra configuration steps.
 
 There are two ways of providing authentication capability to the pools in
 this case:
@@ -508,10 +545,10 @@ dcache.xrootd.security.level={0-4}
 dcache.xrootd.security.force-signing={true,false}
 ```
 
-In the case that the latter is set to true, and one anticipates there will be
-xrootd TPC transfers between two dCache instances or two dCache doors, one
-also would need to include the unix service provider plugin in all the relevant
-pool configurations:
+In the case that the latter is set to true, and one anticipates there
+will be xroot TPC transfers between two dCache instances or two dCache
+doors, one also would need to include the unix service provider plugin
+in all the relevant pool configurations:
 
 ```ini
 pool.mover.xrootd.tpc-authn-plugins=gsi,unix

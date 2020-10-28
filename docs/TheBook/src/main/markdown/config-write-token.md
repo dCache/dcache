@@ -7,7 +7,12 @@ If you are using space reservations, i.e. you set
 dcache.enable.space-reservation=true
 ```
 
-in your configuration file and all of your pools are in [link groups](config-PoolManager.md#link-groups), then you can only write into dCache if a link group is available for your transfer. Using the `SRM` you can specify the link group to write into. If you want to use another protocol like `curl` or `xrootd` you cannot specify a link group. In this case you need to use the `WriteToken` directory tag.
+in your configuration file and all of your pools are in [link
+groups](config-PoolManager.md#link-groups), then you can only write
+into dCache if a link group is available for your transfer. Using the
+`SRM` you can specify the link group to write into. If you want to use
+another protocol like `http` or `xroot` you cannot specify a link
+group. In this case you need to use the `WriteToken` directory tag.
 
 -----
 [TOC bullet hierarchy]

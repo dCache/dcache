@@ -128,7 +128,7 @@ public class XrootdSciTokenAuthzHandler implements AuthorizationHandler
     private final LoginStrategy loginStrategy;
 
     /*
-     * The xrootd protocol states that the server can specify supporting
+     * The xroot protocol states that the server can specify supporting
      * different authentication protocols via a list which the client
      * should try in order.  The xrootd4j library allows for the chaining
      * of multiple such handlers on the Netty pipeline (though currently
