@@ -42,6 +42,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -634,22 +635,16 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                             continue;
                         }
 
-                        Long length = getContentLength(response);
+                        OptionalLong contentLengthHeader = contentLength(response);
 
-                        // REVISIT This is to support pre-2.12 dCache, which could
-                        // give a '201 Created' response to a PUT request before
-                        // post-processing (including checksum calculation) was
-                        // completed and the final details registered in the
-                        // namespace.  This problem is fixed with dCache v2.12 or
-                        // later.
-                        if (length == null || (attributes.getSize() != 0 && length == 0)) {
-                            continue;
-                        }
-
-                        if (attributes.getSize() != length) {
-                            throw new ThirdPartyTransferFailedCacheException(
-                                    String.format("wrong Content-Length in HEAD response (%d != %d)",
-                                    length, attributes.getSize()));
+                        if (contentLengthHeader.isPresent()) {
+                            long contentLength = contentLengthHeader.getAsLong();
+                            long fileSize = attributes.getSize();
+                            checkThirdPartyTransferSuccessful(contentLength == fileSize,
+                                    "HEAD Content-Length (%d) does not match file size (%d)",
+                                    contentLength, fileSize);
+                        } else {
+                            _log.debug("HEAD response did not contain Content-Length");
                         }
 
                         String rfc3230 = headerValue(response, "Digest");
@@ -741,17 +736,17 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         return header != null ? header.getValue() : null;
     }
 
-    private static Long getContentLength(HttpResponse response)
+    private static OptionalLong contentLength(HttpResponse response)
             throws ThirdPartyTransferFailedCacheException
     {
         Header header = response.getLastHeader("Content-Length");
 
         if (header == null) {
-            return null;
+            return OptionalLong.empty();
         }
 
         try {
-            return Long.parseLong(header.getValue());
+            return OptionalLong.of(Long.parseLong(header.getValue()));
         } catch (NumberFormatException e) {
             throw new ThirdPartyTransferFailedCacheException("server sent malformed Content-Length header", e);
         }
