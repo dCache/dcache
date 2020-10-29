@@ -95,6 +95,7 @@ public class LineBasedDoorFactory extends StreamEngineLoginCellFactory
     @Override
     protected void doStop()
     {
+        factory.destroy();
         poolManagerHandler.beforeStop();
         executor.shutdown();
         notifyStopped();

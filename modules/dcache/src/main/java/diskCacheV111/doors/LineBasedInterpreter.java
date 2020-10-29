@@ -55,6 +55,7 @@ public interface LineBasedInterpreter
      * the client has not yet been closed, but the client might not accept any
      * more data.
      */
+    //TODO not clear why do we need this method, kafka Producer is not closed anymore in this methods implementation
     default void messagingClosed()
     {
         // do nothing.

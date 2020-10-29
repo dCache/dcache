@@ -61,4 +61,11 @@ public interface LineBasedInterpreterFactory
      */
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
                                 StreamEngine engine, Executor executor, PoolManagerHandler poolManager) throws Exception;
+
+
+    /**
+    * Free allocated  resources
+     */
+    void destroy();
+
 }

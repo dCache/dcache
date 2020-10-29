@@ -108,7 +108,7 @@ public class DcapLineBasedInterpreterAdapter
     @Override
     public void messagingClosed()
     {
-        shutdownKafka();
+        //TODO delete
     }
 
     @Override

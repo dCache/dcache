@@ -166,6 +166,9 @@ public class DcapDoorSettings
 
     private CheckStagePermission checkStagePermission;
 
+    private KafkaProducer _kafkaProducer;
+
+
     public void init()
     {
         isAuthorizationStrong = (auth != null) && auth.equals("strong");
@@ -198,6 +201,10 @@ public class DcapDoorSettings
 
         checkStagePermission = new CheckStagePermission(stageConfigurationFilePath);
         checkStagePermission.setAllowAnonymousStaging(allowAnonymousStaging);
+        if (isKafkaEnabled) {
+            _kafkaProducer = createKafkaProducer(kafkaBootstrapServer, String.valueOf(kafkaMaxBlock), kafkaRetries);
+            _log.warn("Creating KafkaProducer" + _kafkaProducer.hashCode());
+        }
     }
 
     public CellPath getPnfsManager()
@@ -221,17 +228,17 @@ public class DcapDoorSettings
         return isKafkaEnabled;
     }
 
-    /**
-     * Returns a list of host/port pairs (brokers) to use for establishing the initial connection to the Kafka cluster.
-     * This list is just used to discover the rest of the brokers in the cluster and should be in the form
-     * host1:port1,host2:port2,....
-     *
-     * @return    the list of  of host/port pairs
-     */
-    public String getKafkaBootstrapServer() {
-        return kafkaBootstrapServer;
+
+    public KafkaProducer getKafkaProducer() {
+        return _kafkaProducer;
     }
 
+    public void destroy() {
+        if (isKafkaEnabled){
+            _log.warn("Shutting down kafka");
+            _kafkaProducer.close();
+        }
+    }
     /**
      * Returns the name of kafka topic
      *
@@ -239,16 +246,6 @@ public class DcapDoorSettings
      */
     public String getKafkaTopic() {
         return kafkaTopic;
-    }
-
-    /**
-     * Returns the parameter that controls how long
-     * how long the producer will block when calling send().
-     *
-     * @retrun a timeframe during which producer will block sending messages, by default set to 60000
-     */
-    public String getKafkaMaxBlockMs() {
-        return String.valueOf(TimeUnit.MILLISECONDS.convert(kafkaMaxBlock, kafkaMaxBlockUnits));
     }
 
     /**
@@ -344,15 +341,15 @@ public class DcapDoorSettings
         return stub;
     }
 
+
+
     public KafkaProducer createKafkaProducer(String bootstrap_server,
-                                             String client_id,
                                              String max_block_ms,
                                              String retries)
     {
         Properties props = new Properties();
-
+        //TODO check client_id
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_server);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, client_id);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.dcache.notification.DoorRequestMessageSerializer");
         props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, max_block_ms);

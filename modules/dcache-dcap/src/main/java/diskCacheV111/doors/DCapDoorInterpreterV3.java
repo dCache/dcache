@@ -233,12 +233,8 @@ public class DCapDoorInterpreterV3
         _loginStrategy = settings.createLoginStrategy(cell);
 
         if ( _settings.isKafkaEnabled() ){
-            _kafkaProducer = settings.createKafkaProducer(_settings.getKafkaBootstrapServer(),
-                    address.toString(),
-                    _settings.getKafkaMaxBlockMs(),
-                    _settings.getKafkaRetries());
+            _kafkaProducer = settings.getKafkaProducer();
         }
-
         _startedTS = new Date();
     }
 
@@ -2468,18 +2464,6 @@ public class DCapDoorInterpreterV3
                  */
                 _log.error("failed to removed session: " + sh, e);
             }
-        }
-    }
-
-    protected void shutdownKafka() {
-        /*The producer consists of a pool of buffer space that holds records that haven't yet been
-          transmitted to the server as well as a background I/O thread
-          that is responsible for turning these records into requests and transmitting them to the cluster.
-          Failure to close the producer after use will leak these resources. Hence we need to  close Kafka Producer
-         */
-        if (_settings.isKafkaEnabled()) {
-            _log.debug("Shutting down kafka");
-            _kafkaProducer.close();
         }
     }
 

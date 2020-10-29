@@ -21,7 +21,6 @@ package diskCacheV111.doors;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.ConfigurationException;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
@@ -42,6 +41,7 @@ public class DcapInterpreterFactory implements LineBasedInterpreterFactory
     @Override
     public void configure(Args args) throws ConfigurationException
     {
+        //TODO this is called three times on start to be check
         new OptionParser(args).inject(settings).init();
     }
 
@@ -50,5 +50,11 @@ public class DcapInterpreterFactory implements LineBasedInterpreterFactory
                                        Executor executor, PoolManagerHandler poolManagerHandler)
     {
         return new DcapLineBasedInterpreterAdapter(endpoint, myAddress, engine, settings, poolManagerHandler);
+    }
+
+    @Override
+    public void destroy()  {
+         settings.destroy();
+
     }
 }
