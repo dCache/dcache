@@ -658,6 +658,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         head.setConfig(RequestConfig.custom()
                                   .setConnectTimeout(CONNECTION_TIMEOUT)
                                   .setSocketTimeout(socketTimeout)
+
+                                   /* When making a HEAD request, we want to use
+                                    * the 'Content-Length' response header to
+                                    * learn of the file's size.  This only works
+                                    * if the remote server does not compress the
+                                    * content or otherwise encode it.
+                                    */
+                                  .setContentCompressionEnabled(false)
                                   .build());
         addHeadersToRequest(info, head, INITIAL_REQUEST);
         return head;
