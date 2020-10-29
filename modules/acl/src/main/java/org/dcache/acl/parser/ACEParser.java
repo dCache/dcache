@@ -26,18 +26,7 @@ public class ACEParser {
 
     private static final int ACE_MIN_ADM = 2, ACE_MAX_ADM = 5;
 
-    private static ACEParser _SINGLETON;
-    static {
-        _SINGLETON = new ACEParser();
-    }
-
-    private ACEParser() {
-        super();
-    }
-
-    public static ACEParser instance() {
-        return _SINGLETON;
-    }
+    private ACEParser() {}
 
     /**
      * ace_spec format:

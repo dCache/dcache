@@ -15,18 +15,7 @@ public class ACLParser {
 
     private static final String SEPARATOR = ":";
 
-    private static ACLParser _SINGLETON;
-    static {
-        _SINGLETON = new ACLParser();
-    }
-
-    private ACLParser() {
-        super();
-    }
-
-    public static ACLParser instance() {
-        return _SINGLETON;
-    }
+    private ACLParser() {}
 
     /**
      * format:

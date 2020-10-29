@@ -27,18 +27,7 @@ public class AclUnixMapper {
 
     private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclUnixMapper.class.getName());
 
-    private static AclUnixMapper _SINGLETON;
-    static {
-        _SINGLETON = new AclUnixMapper();
-    }
-
-    private AclUnixMapper() {
-        super();
-    }
-
-    public static AclUnixMapper instance() {
-        return _SINGLETON;
-    }
+    private AclUnixMapper() {}
 
     public static ACLUnix map(ACL acl) {
 
