@@ -301,7 +301,15 @@ public class FileResources {
                                              + "where the JSON Object's key is "
                                              + "the attribute name and the "
                                              + "corresponding JSON Object's "
-                                             + "value is this attribute's value.",
+                                             + "value is this attribute's value."
+                                             + "\n"
+                                             + "If action is 'chgrp' then the "
+                                             + "command requests the change of "
+                                             + "group-owner of the target file "
+                                             + "or directory.  The value of the "
+                                             + "JSON object 'gid' item is the "
+                                             + "numerical value of the desired "
+                                             + "new group-owner.",
                                          required = true,
                                          examples = @Example({
                                              @ExampleProperty(mediaType = "MV",
@@ -335,7 +343,12 @@ public class FileResources {
                                                          + "        \"attr-1\",\n"
                                                          + "        \"attr-2\"\n"
                                                          + "    ]\n"
-                                                         + "}")}))
+                                                         + "}"),
+                                             @ExampleProperty(mediaType = "CHGRP",
+                                                         value = "{\n"
+                                                             + "    \"action\" : \"chgrp\"\n"
+                                                             + "    \"gid\" : 1000\n"
+                                                             + "}")}))
                                  String requestPayload)
     {
         try {
@@ -390,6 +403,10 @@ public class FileResources {
                         attributes.put(key, value.getBytes(StandardCharsets.UTF_8));
                     }
                     pnfsHandler.writeExtendedAttribute(path, attributes, mode);
+                    break;
+                case "chgrp":
+                    int gid = reqPayload.getInt("gid");
+                    pnfsHandler.setFileAttributes(path, FileAttributes.ofGid(gid));
                     break;
             }
         } catch (FileNotFoundCacheException e) {

@@ -19,6 +19,7 @@ Chapter 3. Frontend
     * [Deleting files and directories](#deleting-files-and-directories)
     * [Creating directories](#creating-directories)
     * [Moving and renaming](#moving-and-renaming)
+    * [Changing group-ownership](#changing-group-ownership)
     * [Modifying QoS](#modifying-qos)
     * [Managing extended attributes](#managing-extended-attributes)
 + [QoS Management](#qos-management)
@@ -904,6 +905,50 @@ code, and the response entity is the JSON object:
 ```json
 {
   "status": "success"
+}
+```
+
+### Changing group-ownership
+
+The POSIX permission model describes how a file or directory has two
+ownerships: a personal (or user) owner and a group owner.  These two
+identities are used to determine which operations any individual is
+allowed to make.
+
+A common goal is to grant specific access to a file or directory to a
+group of people the people outside this group are denied; for example,
+making a file readable only to members of a group.  This is possible
+by establishing a group (within dCache) that represents the target
+group of people, and assign the corresponding gid as group-owner of
+the file or directory.  The desired access may then be specified for
+the group-owner.
+
+Sometimes a file or directory has the wrong group-owner: either
+because of changing permissions policy or the file was uploaded using
+a client that does not allow specifying the desired group-owner.  In
+these circumstances, the group-owner must be changed.
+
+You are only allowed to change the group-ownership of files or
+directories you own (as the personal- or user owner).  You are also
+only allowed to change group-ownership to a group of which you are
+already a member.
+
+Changing group-ownership is done by making a POST request to the
+resource representing the file or directory; for example, to change
+the group-ownership of the file `/Users/paul/my-data`, the POST
+request would target `/api/v1/namespace/Users/paul/my-data`.
+
+The POST request must contain a JSON object with the `action` property
+set to `chgrp`, and the `gid` property containing an integer value,
+which is the desired group owner.
+
+The following example requests the target have gid 1000 as the new
+group-owner:
+
+```json
+{
+    "action": "chgrp",
+    "gid": 1000
 }
 ```
 
