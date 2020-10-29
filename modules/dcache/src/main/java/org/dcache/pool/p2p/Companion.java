@@ -3,6 +3,7 @@ package org.dcache.pool.p2p;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import dmg.cells.nucleus.CDC;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.StatusLine;
@@ -567,10 +568,12 @@ class Companion
      */
     void beginTransfer(final String uri)
     {
+        final CDC cdc = new CDC();
         new Thread("P2P Transfer - " + _pnfsId + " " + _sourcePoolName) {
             @Override
             public void run()
             {
+                cdc.restore();
                 transfer(uri);
             }
         }.start();
