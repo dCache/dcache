@@ -106,17 +106,6 @@
         <property name="prompt" value="${admin.prompt}"/>
     </bean>
 
-    <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory">
-        <property name="pnfsManager" ref="pnfsmanager"/>
-        <property name="poolManager" ref="poolmanager"/>
-        <property name="spaceManager" ref="spacemanager"/>
-        <property name="loginBrokerSource">
-            <bean class="dmg.cells.services.login.LoginBrokerSubscriber">
-                <property name="topic" value="${webdav.loginbroker.request-topic}"/>
-            </bean>
-        </property>
-    </bean>
-
     <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
         <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${admin.net.listen}') }"/>
         <property name="port"               value="${admin.net.port}"/>
@@ -128,7 +117,6 @@
         <property name="commandFactory"     ref="command-factory"/>
         <property name="subsystemFactories">
             <list>
-                <ref bean="pcells-factory"/>
                 <ref bean="legacy-factory"/>
             </list>
         </property>
