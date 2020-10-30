@@ -342,7 +342,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                         callback.run();
                     }
                 });
-        new Thread(reportShutdownCompleted, name + "-async-shutdown").run();
+        new Thread(reportShutdownCompleted, name + "-async-shutdown").start();
     }
 
     protected void initialiseShutdown()
