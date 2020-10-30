@@ -789,6 +789,7 @@ public class DcacheResourceFactory
 
         String uri = null;
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
+        transfer.setSSL(_redirectToHttps && ServletRequest.getRequest().isSecure());
         _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.createNameSpaceEntry();
