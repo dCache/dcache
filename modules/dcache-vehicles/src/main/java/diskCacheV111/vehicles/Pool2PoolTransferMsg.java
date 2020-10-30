@@ -21,7 +21,7 @@ public class Pool2PoolTransferMsg extends PoolMessage {
 
     public static final ImmutableSet<FileAttribute> NEEDED_ATTRIBUTES =
             Sets.immutableEnumSet(PNFSID, STORAGEINFO, CHECKSUM, SIZE, ACCESS_LATENCY, RETENTION_POLICY,
-                                  STORAGECLASS, CACHECLASS, HSM, FLAGS);
+                                  STORAGECLASS, CACHECLASS, HSM);
 
     public static final int   UNDETERMINED = 0 ;
     public static final int   PRECIOUS     = 1 ;
