@@ -131,17 +131,15 @@ public class LocationMgrTunnel
         _log.info("Closing tunnel to {}", getRemoteDomainName());
         _tunnels.remove(this);
         try {
-            try {
-                _socket.shutdownOutput();
-                if (_thread != null) {
-                    _thread.join(2_000);
-                }
-            } catch (IOException e) {
-                _log.debug("Failed to shutdown socket: {}", e.getMessage());
-            } catch (UnsupportedOperationException ignored) {
-                // SSLSocket does not support shutdown.
-            }  catch (InterruptedException ignored) {
+            _socket.shutdownOutput();
+            if (_thread != null) {
+                _thread.join(2_000);
             }
+        } catch (IOException e) {
+            _log.debug("Failed to shutdown socket: {}", e.getMessage());
+        } catch (UnsupportedOperationException | InterruptedException ignored) {
+            // SSLSocket does not support shutdown.
+            // the interrupts on shutdown are ignored
         } finally {
             try {
                 _socket.close();
