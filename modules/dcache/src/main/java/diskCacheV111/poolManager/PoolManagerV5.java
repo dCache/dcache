@@ -226,8 +226,8 @@ public class PoolManagerV5
     }
 
     private class WatchdogThread extends Thread {
-        private long _deathDetected = 10L * 60L * 1000L; // 10 minutes
-        private long _sleepTimer = 1L * 60L * 1000L; // 1 minute
+        private long _deathDetected = TimeUnit.MINUTES.toMillis(10);
+        private long _sleepTimer = TimeUnit.MINUTES.toMillis(1);
         private long _watchdogSequenceCounter;
 
         public WatchdogThread() {
