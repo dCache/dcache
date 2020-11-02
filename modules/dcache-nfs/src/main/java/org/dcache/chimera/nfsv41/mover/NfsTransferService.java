@@ -1,6 +1,5 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import com.google.common.collect.Sets;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -210,7 +209,7 @@ public class NfsTransferService
     @Override
     @SuppressWarnings("unchecked")
     public Set<? extends OpenOption> getChannelCreateOptions() {
-        return Sets.newHashSet(StandardOpenOption.CREATE, Repository.OpenFlags.NONBLOCK_SPACE_ALLOCATION);
+        return Set.of(StandardOpenOption.CREATE, Repository.OpenFlags.NONBLOCK_SPACE_ALLOCATION);
     }
 
     @Override
