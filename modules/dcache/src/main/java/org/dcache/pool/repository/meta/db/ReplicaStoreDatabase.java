@@ -8,9 +8,11 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DiskOrderedCursor;
 import com.sleepycat.je.DiskOrderedCursorConfig;
+import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
+import com.sleepycat.je.TransactionConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +81,7 @@ public class ReplicaStoreDatabase
         accessInfoStore = env.openDatabase(null, ACCESS_INFO_STORE, dbConfig);
 
         transactionRunner = new TransactionRunner(env);
+        transactionRunner.setTransactionConfig(new TransactionConfig().setDurability(Durability.COMMIT_WRITE_NO_SYNC));
     }
 
     private synchronized void setFailed()
