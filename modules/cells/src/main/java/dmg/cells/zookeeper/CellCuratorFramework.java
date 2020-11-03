@@ -66,6 +66,7 @@ import org.apache.curator.framework.api.SyncBuilder;
 import org.apache.curator.framework.api.UnhandledErrorListener;
 import org.apache.curator.framework.api.VersionPathAndBytesable;
 import org.apache.curator.framework.api.WatchPathable;
+import org.apache.curator.framework.api.WatchesBuilder;
 import org.apache.curator.framework.api.transaction.CuratorMultiTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransactionBridge;
@@ -281,6 +282,7 @@ public class CellCuratorFramework implements CuratorFramework
     }
 
     @Override
+    @Deprecated
     public CuratorTransaction inTransaction()
     {
         return new CuratorTransactionDecorator(inner.inTransaction());
@@ -330,6 +332,11 @@ public class CellCuratorFramework implements CuratorFramework
     public RemoveWatchesBuilder watches()
     {
         return inner.watches();
+    }
+
+    @Override
+    public WatchesBuilder watchers() {
+        return inner.watchers();
     }
 
     @Override
@@ -429,9 +436,8 @@ public class CellCuratorFramework implements CuratorFramework
     }
 
     @Override
-    public boolean isZk34CompatibilityMode()
-    {
-        return inner.isZk34CompatibilityMode();
+    public CompletableFuture<Void> postSafeNotify(Object monitorHolder) {
+        return inner.postSafeNotify(monitorHolder);
     }
 
     @Override
@@ -493,6 +499,7 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
+        @Deprecated
         public ACLPathAndBytesable<String> withProtectedEphemeralSequential()
         {
             return new ACLPathAndBytesableDecorator<>(inner.withProtectedEphemeralSequential());
@@ -1075,6 +1082,7 @@ public class CellCuratorFramework implements CuratorFramework
         }
     }
 
+    @Deprecated
     private class CuratorTransactionDecorator implements CuratorTransaction
     {
         private final CuratorTransaction inner;

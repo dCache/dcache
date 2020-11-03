@@ -18,14 +18,10 @@
  */
 package diskCacheV111.namespace;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.listen.Listenable;
-import org.apache.curator.framework.listen.ListenerContainer;
+import org.apache.curator.framework.listen.StandardListenerManager;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.utils.ZKPaths;
-import org.apache.zookeeper.data.Stat;
 import org.junit.After;
 
 import org.dcache.cells.CellStub;
@@ -55,7 +51,6 @@ import org.dcache.events.NotificationMessage;
 
 import static java.util.Collections.singletonList;
 import static org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type.CHILD_ADDED;
-import static org.apache.curator.utils.ZKPaths.makePath;
 import static org.dcache.namespace.events.EventType.IN_MOVE_SELF;
 import static org.dcache.namespace.FileType.REGULAR;
 import static org.junit.Assert.*;
@@ -79,7 +74,7 @@ public class EventNotifierTest
         senderExecutor = mock(Executor.class);
 
         PathChildrenCache cache = mock(PathChildrenCache.class);
-        given(cache.getListenable()).willReturn(mock(ListenerContainer.class));
+        given(cache.getListenable()).willReturn(mock(StandardListenerManager.class));
         notifier.setPathChildrenCache(cache);
         notifier.setCellStub(cellStub);
         notifier.setDispatchExecutor(dispatchExecutor);
