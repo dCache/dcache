@@ -75,8 +75,7 @@ import org.dcache.util.FireAndForgetTask;
  * <p>Periodically publishes a list of the restore requests for this
  *  given PoolManager/RequestContainer on the restore requests topic.</p>
  */
-public final class RestoreRequestsNotifier implements Runnable,
-                CellLifeCycleAware, CellIdentityAware {
+public final class RestoreRequestsNotifier implements  CellLifeCycleAware, CellIdentityAware {
     private long     timeout     = 1;
     private TimeUnit timeoutUnit = TimeUnit.MINUTES;
 
@@ -87,20 +86,17 @@ public final class RestoreRequestsNotifier implements Runnable,
 
     @Override
     public void afterStart() {
-        executorService.schedule(new FireAndForgetTask(this),
+        executorService.scheduleAtFixedRate(new FireAndForgetTask(this::runNotify),
+                                 timeout,
                                  timeout,
                                  timeoutUnit);
     }
 
-    @Override
-    public void run() {
+    private void runNotify() {
         PoolManagerGetRestoreHandlerInfo message
                         = new PoolManagerGetRestoreHandlerInfo(address);
         message.setResult(requestContainer.getRestoreHandlerInfo());
         restoreRequests.notify(message);
-        executorService.schedule(new FireAndForgetTask(this),
-                                 timeout,
-                                 timeoutUnit);
     }
 
     @Override
