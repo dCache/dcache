@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -85,6 +85,7 @@ import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.utils.EnsurePath;
 import org.apache.curator.utils.ThreadUtils;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
@@ -307,7 +308,16 @@ public class CellCuratorFramework implements CuratorFramework
     @Override
     public void createContainers(String path) throws Exception
     {
-        inner.createContainers(path);
+        try {
+            inner.createContainers(path);
+
+            // As one of the first critical operations that is performed when
+            // establishing a ZooKeeper connection, a failure to connect will be
+            // registered here in the majority of cases
+            // TODO: generalize handling this exception
+        } catch (KeeperException.ConnectionLossException e) {
+            LOGGER.warn("Connection to ZooKeeper could not be established: {}", e.getMessage());
+        }
     }
 
     @Override

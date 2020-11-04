@@ -19,6 +19,7 @@
 package org.dcache.cells;
 
 import com.google.common.base.Throwables;
+import dmg.util.CommandException;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
@@ -132,13 +133,13 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
             description = "Shows which cells are involved in the leader election.")
     public class ZkShowParticipantsCommand implements Callable<String> {
         @Override
-        public String call() throws InterruptedException {
+        public String call() throws InterruptedException, CommandException {
             Collection<Participant> participants;
             try {
                 participants = zkLeaderLatch.getParticipants();
             } catch (Exception e) {
                 Throwables.throwIfUnchecked(e);
-                throw new RuntimeException(e);
+                throw new CommandException("Failed to list HA participants: " + e.getMessage(), e);
             }
             StringBuilder sb = new StringBuilder();
             for(Participant p : participants) {
