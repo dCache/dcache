@@ -62,11 +62,24 @@
        runtime through the dCache admin shell.
   -->
 
-  <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>${dcache.log.format.file}</pattern>
-    </encoder>
-  </appender>
+  <if condition='"${dcache.log.destination}".equals("file")'>
+    <then>
+      <appender name="stdout" class="ch.qos.logback.core.FileAppender">
+        <file>${dcache.log.file}</file>
+        <encoder>
+            <pattern>${dcache.log.format.file}</pattern>
+        </encoder>
+      </appender>
+    </then>
+    <else>
+      <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+          <pattern>${dcache.log.format.file}</pattern>
+        </encoder>
+      </appender>
+    </else>
+  </if>
+
 
   <appender name="pinboard" class="dmg.util.PinboardAppender">
     <layout>
