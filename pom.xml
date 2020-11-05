@@ -67,7 +67,7 @@
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.4.18.v20190429</version.jetty>
-        <version.xrootd4j>3.5.7</version.xrootd4j>
+        <version.xrootd4j>3.5.8</version.xrootd4j>
         <version.jersey>2.28</version.jersey>
         <version.dcache-view>1.5.7</version.dcache-view>
         <version.netty>4.1.10.Final</version.netty>
