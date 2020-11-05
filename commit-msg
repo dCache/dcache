@@ -1,0 +1,27 @@
+%(component)s:%(title)s
+
+   Motivation: 
+   Atlas-plugin needs to be patched from 6.2.7 version 
+   
+   msg:Uncaught exception in thread xrootd-net-1 java.lang.AbstractMethodError: 
+   Receiver class org.dcache.xrootd.plugins.alice.TokenAuthorization1Factory does not define or inherit an implementation of the resolved method 'abstract 
+
+   %(motivation)s
+
+   Modification:
+
+   The version tag for xrootd4j-authz-plugin-alice in pom.xml needs to be updated to 1.2.0
+
+   %(modification)s
+
+   Result:
+
+   %(result)s
+
+   Target: master, 7.0, 6.2
+   Require-notes: yes
+   Require-book: no
+   Request: 6.2
+   Request: 7.0
+   Patch: https://rb.dcache.org/r/xxxx
+   Pull-request: https://github.com/dCache/dcache/pull/xxx
