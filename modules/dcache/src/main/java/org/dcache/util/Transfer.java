@@ -1113,7 +1113,15 @@ public class Transfer implements Comparable<Transfer>
         message.setId(_id);
         message.setSubject(_subject);
 
-        ListenableFuture<PoolIoFileMessage> reply = _poolManager.startAsync(pool.getAddress(), message, timeout);
+        /*
+         * SpaceManager needs to spy mover shutdown to adjust the space reservation. for this reason we have to
+         * proxy mover start messages through SpaceManager. However, reads can be sent directly to pools.
+         *
+         * REVISIT: this should happen only when space manager is enabled.
+         */
+        ListenableFuture<PoolIoFileMessage> reply = isWrite() ?
+                _poolManager.startAsync(pool.getAddress(), message, timeout) :
+                _poolStub.send(new CellPath(pool.getAddress()), message, timeout);
 
         reply = catchingAsync(reply, NoRouteToCellException.class, x -> {
             // invalidate pool selection to let the door to start over
