@@ -168,11 +168,11 @@ public abstract class SRMClient
             if (configuration.isUseproxy()) {
                 cred = configuration.getX509_user_proxy() == null
                         ? Optional.<X509Credential>empty()
-                        : Optional.of(new PEMCredential(configuration.getX509_user_proxy(), (char[]) null));
+                        : Optional.of(new PEMCredential(configuration.getX509_user_proxy(), new char[]{}));
             } else {
                 cred = configuration.getX509_user_key() == null || configuration.getX509_user_cert() == null
                         ? Optional.<X509Credential>empty()
-                        : Optional.of(new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null));
+                        : Optional.of(new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), new char[]{}));
             }
         }
 
