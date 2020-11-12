@@ -1036,10 +1036,8 @@ public class DCapDoorInterpreterV3
         {
             super.doLogin();
             _pnfs = new PnfsHandler(_cell, _settings.getPnfsManager());
-            if (_isUrl || _settings.isAuthorizationRequired()) {
-                _pnfs.setSubject(_subject);
-                _pnfs.setRestriction(_authz);
-            }
+            _pnfs.setSubject(_subject);
+            _pnfs.setRestriction(_authz);
         }
 
         @Override
