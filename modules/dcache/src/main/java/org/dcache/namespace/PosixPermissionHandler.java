@@ -213,30 +213,37 @@ public class PosixPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canSetAttributes(Subject subject,
-                                       FileAttributes attr,
-                                       Set<FileAttribute> attributes)
+                                       FileAttributes currentAttributes,
+                                       FileAttributes desiredAttributes)
     {
-        /* Some flags can only be changed by the owner of the file.
-        */
-        if (attributes.contains(OWNER) ||
-            attributes.contains(OWNER_GROUP) ||
-            attributes.contains(MODE) ||
-            attributes.contains(ACL)    ) {
+        /* Some attributes can only be changed by the owner of the file. */
+        if (desiredAttributes.isDefined(OWNER) ||
+            desiredAttributes.isDefined(OWNER_GROUP) ||
+            desiredAttributes.isDefined(MODE) ||
+            desiredAttributes.isDefined(ACL)) {
 
-            if (!Subjects.hasUid(subject, attr.getOwner())) {
+            if (!Subjects.hasUid(subject, currentAttributes.getOwner())) {
                 return AccessType.ACCESS_DENIED;
             }
         }
 
-        /* Other flags can be changed by whoever got write permission.
-         */
-        int mode = attr.getMode();
-        if (Subjects.hasUid(subject, attr.getOwner())) {
+        /* Only change group-owner to a group of which owner is a member. */
+        if (desiredAttributes.isDefined(OWNER_GROUP)) {
+            int updatedGid = desiredAttributes.getGroup();
+
+            if (!Subjects.hasGid(subject, updatedGid)) {
+                return AccessType.ACCESS_DENIED;
+            }
+        }
+
+        /* Other flags can be changed by whoever got write permission. */
+        int mode = currentAttributes.getMode();
+        if (Subjects.hasUid(subject, currentAttributes.getOwner())) {
             // posix allows owner of file to set any attribute.
             return AccessType.ACCESS_ALLOWED;
         }
 
-        if (Subjects.hasGid(subject, attr.getGroup())) {
+        if (Subjects.hasGid(subject, currentAttributes.getGroup())) {
             return AccessType.valueOf(isSet(mode, S_IWGRP));
         }
 
