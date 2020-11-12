@@ -1050,7 +1050,7 @@ public class ChimeraNameSpaceProvider
                     getFileAttributesForPermissionHandler(inode);
 
                 if (_permissionHandler.canSetAttributes(subject, attributes,
-                                                        attr.getDefinedAttributes()) != ACCESS_ALLOWED) {
+                                                        attr) != ACCESS_ALLOWED) {
                     throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
                 }
             }

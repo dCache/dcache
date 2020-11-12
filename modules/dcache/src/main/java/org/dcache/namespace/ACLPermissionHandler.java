@@ -162,11 +162,11 @@ public class ACLPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canSetAttributes(Subject subject,
-                                       FileAttributes attr,
-                                       Set<FileAttribute> attributes)
+                                       FileAttributes currentAttributes,
+                                       FileAttributes desiredAttributes)
     {
-        Permission permission = getPermission(subject, attr);
-        return canSetAttributes(permission, attributes);
+        Permission permission = getPermission(subject, currentAttributes);
+        return canSetAttributes(permission, desiredAttributes);
     }
 
     @Override
@@ -200,8 +200,8 @@ public class ACLPermissionHandler implements PermissionHandler
      * attributes. Returns ACCESS_ALLOWED if the action is allowed for all
      * attributes. Returns ACCESS_UNDEFINED otherwise.
      */
-    private AccessType canSetAttributes(Permission permission, Set<FileAttribute> attributes) {
-        if (attributes.contains(ACL)) {
+    private AccessType canSetAttributes(Permission permission, FileAttributes desiredAttributes) {
+        if (desiredAttributes.isDefined(ACL)) {
             return AclMatcher.isAllowed(permission, WRITE_ACL);
         }
 

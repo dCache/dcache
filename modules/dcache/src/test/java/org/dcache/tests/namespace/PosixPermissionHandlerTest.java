@@ -120,4 +120,37 @@ public class PosixPermissionHandlerTest {
         assertTrue("Negative owner not allowed to create a new directory in a parent with mode 0077", //
                 pdp.canCreateSubDir(subject_owner, attr) == AccessType.ACCESS_DENIED);
     }
+
+    @Test
+    public void shouldDenyChgrpWhenNotFileOwner() {
+        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0077).build();
+        FileAttributes desiredAttributes = FileAttributes.ofGid(OTHER_GID);
+
+        assertTrue("non-owner should not be able to change group-ownership",
+                pdp.canSetAttributes(subject_groupMember, currentAttributes, desiredAttributes) == AccessType.ACCESS_DENIED);
+        assertTrue("non-owner should not be able to change group-ownership",
+                pdp.canSetAttributes(subject_other, currentAttributes, desiredAttributes) == AccessType.ACCESS_DENIED);
+    }
+
+    @Test
+    public void shouldDenyChgrpWhenFileOwnerButNotMemberOfTargetGroup() {
+        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0077).build();
+        FileAttributes desiredAttributes = FileAttributes.ofGid(OTHER_GID);
+
+        assertTrue("owner should not be able to change group-ownership to group not a member",
+                pdp.canSetAttributes(subject_owner, currentAttributes, desiredAttributes) == AccessType.ACCESS_DENIED);
+    }
+
+    @Test
+    public void shouldAllowChgrpWhenFileOwnerAndMemberOfTargetGroup() {
+        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0077).build();
+        FileAttributes desiredAttributes = FileAttributes.ofGid(OTHER_GID);
+
+        Subject ownerWithTargetGid = new Subject();
+        ownerWithTargetGid.getPrincipals().addAll(subject_owner.getPrincipals());
+        ownerWithTargetGid.getPrincipals().add(new GidPrincipal(OTHER_GID, false));
+
+        assertTrue("owner should be able to change group-ownership to membership group",
+                pdp.canSetAttributes(ownerWithTargetGid, currentAttributes, desiredAttributes) == AccessType.ACCESS_ALLOWED);
+    }
 }
