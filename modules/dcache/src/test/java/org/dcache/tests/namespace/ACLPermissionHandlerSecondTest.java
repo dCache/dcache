@@ -10,7 +10,6 @@ import java.util.EnumSet;
 
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.acl.ACL;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACLParser;
@@ -132,18 +131,19 @@ public class ACLPermissionHandlerSecondTest {
 
     @Test
     public void testSetAttributes() {
-        FileAttributes attr = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
+        FileAttributes currentAttributes = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
+        FileAttributes updatedAttributes = FileAttributes.of().acl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+rlx:o:FFFF")).build();
 
         assertTrue("Set attributes should be undefined!", //
-                pdp.canSetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);
+                pdp.canSetAttributes(subject, currentAttributes, updatedAttributes) == AccessType.ACCESS_UNDEFINED);
 
-        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+C"));
+        currentAttributes.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+C"));
         assertTrue("Set attributes should be allowed!", //
-                pdp.canSetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_ALLOWED);
+                pdp.canSetAttributes(subject, currentAttributes, updatedAttributes) == AccessType.ACCESS_ALLOWED);
 
-        attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-C"));
+        currentAttributes.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-C"));
         assertTrue("Set attributes should be denied!", //
-                pdp.canSetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_DENIED);
+                pdp.canSetAttributes(subject, currentAttributes, updatedAttributes) == AccessType.ACCESS_DENIED);
     }
 
     @Test

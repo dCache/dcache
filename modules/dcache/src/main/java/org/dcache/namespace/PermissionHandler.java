@@ -163,21 +163,21 @@ public interface PermissionHandler
     AccessType canLookup(Subject subject, FileAttributes attr);
 
     /**
-     * checks whether the user can set attributes of a file/directory
+     * Checks whether the user can set attributes of a file or directory.  The
+     * currentAttributes argument is the result of acquiring the information
+     * needed to make the authorisation decision, as returned by
+     * {@link #getRequiredAttributes()}.
      *
-     * @param subject
-     *            identifies the subject that is trying to access a resource
-     * @param attr
-     *            Attributes of the file for which to modify an attribute
-     * @param attributes
-     *            Attributes to modify
-     *
-     * @return Returns the access type granted
+     * @param subject the user trying to modify the resource.
+     * @param currentAttributes the current attributes of the resource.
+     * @param desiredAttributes the proposed new values for the resource.
+     * @return the authorisation decision.
+     * @see #getRequiredAttributes()
      */
     @Nonnull
     AccessType canSetAttributes(Subject subject,
-                                FileAttributes attr,
-                                Set<FileAttribute> attributes);
+                                FileAttributes currentAttributes,
+                                FileAttributes desiredAttributes);
 
     /**
      * checks whether the user can get attributes of a file/directory
