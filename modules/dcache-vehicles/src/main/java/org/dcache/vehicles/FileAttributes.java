@@ -302,6 +302,18 @@ public class FileAttributes implements Serializable, Cloneable {
         _definedAttributes.removeAll(asList(attributes));
     }
 
+    /**
+     * Update the set of defined attributes so that only those FileAttribute
+     * values in the argument are kept.  Any other defined FileAttribute values
+     * become undefined.  Any FileAttribute argument that is not defined is
+     * silently ignored.
+     * @param attributes the only FileAttribute values that may be defined.
+     */
+    public void retain(FileAttribute... attributes)
+    {
+        _definedAttributes.retainAll(asList(attributes));
+    }
+
     public boolean isUndefined(FileAttribute attribute)
     {
         return !_definedAttributes.contains(attribute);
