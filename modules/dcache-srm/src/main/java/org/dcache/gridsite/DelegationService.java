@@ -21,15 +21,11 @@ package org.dcache.gridsite;
 
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-import org.italiangrid.voms.ac.VOMSACValidator;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
 
 import java.security.cert.CertPath;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.Collection;
 import java.util.Map;
 
 import dmg.cells.nucleus.CellMessageReceiver;
@@ -78,7 +74,7 @@ public class DelegationService implements CellMessageReceiver
         this.credentials = credentials;
     }
 
-    public GetServiceMetaDataResponse mesageArrived(GetServiceMetaDataRequest request)
+    public GetServiceMetaDataResponse messageArrived(GetServiceMetaDataRequest request)
             throws DelegationException
     {
         String value = serviceMetadata.get(request.getKey());
