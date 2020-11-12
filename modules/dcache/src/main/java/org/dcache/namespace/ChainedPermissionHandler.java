@@ -177,14 +177,15 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     private AccessType canSetAttribute(Subject subject,
-                                       FileAttributes attrs,
-                                       FileAttribute attribute)
+                                       FileAttributes currentAttributes,
+                                       FileAttributes desiredAttributes)
     {
-        Set<FileAttribute> set = Collections.singleton(attribute);
+        assert desiredAttributes.getDefinedAttributes().size() == 1;
+
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canSetAttributes(subject,
-                                                      attrs,
-                                                      set);
+                                                      currentAttributes,
+                                                      desiredAttributes);
             switch (res) {
             case ACCESS_DENIED:
                 return ACCESS_DENIED;
@@ -220,13 +221,15 @@ public class ChainedPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canSetAttributes(Subject subject,
-                                       FileAttributes attrs,
-                                       Set<FileAttribute> attributes)
+                                       FileAttributes currentAttributes,
+                                       FileAttributes desiredAttributes)
     {
         boolean allAllowed = true;
-        for (FileAttribute attribute: attributes) {
-            AccessType res =
-                canSetAttribute(subject, attrs, attribute);
+        for (FileAttribute attribute: desiredAttributes.getDefinedAttributes()) {
+            FileAttributes singleAttribute = desiredAttributes.clone();
+            singleAttribute.retain(attribute);
+            AccessType res = canSetAttribute(subject, currentAttributes,
+                    singleAttribute);
             switch (res) {
             case ACCESS_DENIED:
                 return ACCESS_DENIED;
