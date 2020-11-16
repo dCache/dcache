@@ -87,7 +87,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
         log.add("response.code", response.getStatus());
         log.add("response.reason", getReason(response));
         log.add("location", response.getHeader("Location"));
-        InetAddress addr = InetAddresses.forString(request.getRemoteAddr());
+        InetAddress addr = InetAddresses.forUriString(request.getRemoteAddr());
         log.add("socket.remote", new InetSocketAddress(addr, request.getRemotePort()));
         log.add("user-agent", request.getHeader("User-Agent"));
 
