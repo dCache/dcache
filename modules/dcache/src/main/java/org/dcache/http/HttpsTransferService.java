@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017-2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -50,7 +50,6 @@ public class HttpsTransferService extends HttpTransferService
 
     private static final String PROTOCOL_HTTPS = "https";
 
-    private volatile SSLEngine _sslEngine;
     private SSLContext _sslContext;
 
     public void setSslContext(SSLContext sslContext)
@@ -102,23 +101,12 @@ public class HttpsTransferService extends HttpTransferService
     }
 
     @Override
-    protected synchronized void startServer() throws IOException {
-        super.startServer();
-        try {
-            _sslEngine = _sslContext.createSSLEngine();
-            _sslEngine.setUseClientMode(false);
-            _sslEngine.setWantClientAuth(false);
-        } catch (Exception e) {
-            throw new IOException("Failed to create SSL engine: " + e, e);
-        }
-
-    }
-
-    @Override
     protected void addChannelHandlers(ChannelPipeline pipeline)
     {
-        pipeline.addLast("ssl", new SslHandler(_sslEngine));
+        SSLEngine engine = _sslContext.createSSLEngine();
+        engine.setUseClientMode(false);
+        engine.setWantClientAuth(false);
+        pipeline.addLast("ssl", new SslHandler(engine));
         super.addChannelHandlers(pipeline);
     }
-
 }
