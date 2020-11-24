@@ -1,6 +1,7 @@
 package org.dcache.pinmanager;
 
 import com.google.common.primitives.Longs;
+import dmg.util.CommandException;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.BufferedReader;
@@ -22,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -36,7 +38,14 @@ import dmg.util.command.Command;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.vehicles.FileAttributes;
+
+import static dmg.util.CommandException.checkCommand;
+import static org.dcache.pinmanager.model.Pin.State.FAILED_TO_UNPIN;
+import static org.dcache.pinmanager.model.Pin.State.PINNED;
+import static org.dcache.pinmanager.model.Pin.State.PINNING;
+import static org.dcache.pinmanager.model.Pin.State.READY_TO_UNPIN;
 
 public class PinManagerCLI
     implements CellCommandListener, CellInfoProvider
@@ -48,6 +57,7 @@ public class PinManagerCLI
         new ConcurrentHashMap<>();
 
     private PnfsHandler _pnfs;
+    private PoolMonitor _poolMonitor;
     private PinManager _pinManager;
     private PinDao _dao;
     private PinRequestProcessor _pinProcessor;
@@ -58,6 +68,12 @@ public class PinManagerCLI
     public void setPnfsStub(CellStub stub)
     {
         _pnfs = new PnfsHandler(stub);
+    }
+
+    @Required
+    public void setPoolMonitor(PoolMonitor poolMonitor)
+    {
+        _poolMonitor = poolMonitor;
     }
 
     @Required
@@ -224,6 +240,124 @@ public class PinManagerCLI
             out.append("total ").append(pins.size());
             return out.toString();
 
+        }
+    }
+
+    @Command(name="count pins", hint="count the number of pins per pool",
+            description = "Counts the number of pins per pool per pin state. " +
+                    "The output may be limited to a specific pool and filtered by " +
+                    "pin state categories. Note that pins in state PINNING are " +
+                    "not yet associated with a pool.")
+    public class CountPinsCommand implements Callable<String>
+    {
+        @Argument(index = 0, required = true,
+                valueSpec="all|expired|live|unpin-failed",
+                usage="Allows to filter for pins in specific states.\n" +
+                        "all: PINNING, PINNED, READY_TO_UNPIN, UNPINNING,\n" +
+                        "    FAILED_TO_UNPIN\n" +
+                        "expired: READY_TO_UNPIN, UNPINNING, FAILED_TO_UNPIN\n" +
+                        "live: PINNING, PINNED\n" +
+                        "unpin-failed:  FAILED_TO_UNPIN")
+        String mode;
+
+        @Argument(index = 1, required = false)
+        String pool;
+
+        @Override
+        public String call() throws CommandException
+        {
+            checkCommand(!"".equals(pool), "The pool argument must not be an empty string!");
+
+            PinDao.PinCriterion criterion = _dao.where();
+            boolean requirePinning = false; // Pins in state PINNING have not yet been assigned a pool
+            switch(mode.toLowerCase()) {
+                case "expired":
+                    criterion.stateIsNot(PINNING)
+                            .stateIsNot(PINNED);
+                    break;
+                case "live":
+                    criterion.state(PINNED);
+                    requirePinning = true;
+                    break;
+                case "unpin-failed":
+                    criterion.state(FAILED_TO_UNPIN);
+                case "all":
+                    criterion.stateIsNot(PINNING);
+                    requirePinning = true;
+                    break;
+                default:
+                    throw new CommandException("Mode '" + mode + "' is not supported!");
+            }
+
+            if (pool != null) {
+                criterion.pool(pool);
+                requirePinning = false;
+            }
+
+            StringBuilder out = new StringBuilder();
+            AtomicInteger total = new AtomicInteger();
+            _dao.get(criterion)
+                    .stream().collect(Collectors.groupingBy(Pin::getPool)).forEach(
+                    (name, poolpins) ->
+                    {
+                        int count = poolpins.size();
+                        total.addAndGet(count);
+                        out.append(name).append(":\n");
+                        poolpins.stream().collect(Collectors.groupingBy(Pin::getState)).forEach(
+                                (state, pins) ->
+                                {
+                                    out.append("    ").append(state).append(": ").append(pins.size()).append("\n");
+                                }
+                        );
+                        out.append("\n");
+                    }
+            );
+
+            if (pool != null && total.get() == 0 && _poolMonitor.getPoolSelectionUnit().getPool(pool) == null) {
+                throw new CommandException("Pool '" + pool + "' does not exist.");
+            }
+
+            if (requirePinning) {
+                int totalPinning = _dao.count(_dao.where().state(PINNING));
+                if (totalPinning > 0) {
+                    out.append("PINNING: ").append(totalPinning).append("\n");
+                    total.addAndGet(totalPinning);
+                }
+            }
+
+            out.append("total: ").append(total.get()).append("\n");
+            return out.toString();
+        }
+    }
+
+    @Command(name="retry unpinning", hint="allows pins that failed to unpin previously to be retried sooner",
+            description = "Allows pins that failed to unpin previously to be retried sooner.")
+    public class SetFailedToReadyCommand implements Callable<String>
+    {
+        @Argument(required = false)
+        String pool;
+
+        @Override
+        public String call() throws CommandException
+        {
+            checkCommand(!"".equals(pool), "The pool argument must not be an empty string!");
+
+            PinDao.PinCriterion criterion = _dao.where().state(FAILED_TO_UNPIN);
+            if (pool != null) {
+                criterion.pool(pool);
+            }
+            int total = _dao.update(criterion, _dao.set().state(READY_TO_UNPIN));
+
+            if (pool != null && total == 0 && _poolMonitor.getPoolSelectionUnit().getPool(pool) == null) {
+                throw new CommandException("Pool '" + pool + "' does not exist.");
+            }
+
+            StringBuilder out = new StringBuilder().append("Removal of ").append(total).append(" pins");
+            if (pool != null) {
+                out.append(" on pool '").append(pool).append("'");
+            }
+            out.append(" has been expedited.");
+            return out.toString();
         }
     }
 
