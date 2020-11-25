@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -154,7 +154,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
         addChannelHandlers(ch.pipeline());
     }
 
-    protected void addChannelHandlers(ChannelPipeline pipeline)
+    protected void addChannelHandlers(ChannelPipeline pipeline) throws Exception
     {
         // construct HttpRequestDecoder as netty defaults, except configurable chunk size
         pipeline.addLast("decoder", new HttpRequestDecoder(4096, 8192, getChunkSize(), true));
