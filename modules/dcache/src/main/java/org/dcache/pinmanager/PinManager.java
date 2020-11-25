@@ -30,6 +30,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.pinmanager.model.Pin.State.FAILED_TO_UNPIN;
+import static org.dcache.pinmanager.model.Pin.State.PINNED;
+import static org.dcache.pinmanager.model.Pin.State.PINNING;
 import static org.dcache.pinmanager.model.Pin.State.READY_TO_UNPIN;
 import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
 
@@ -102,11 +104,13 @@ public class PinManager implements CellMessageReceiver, LeaderLatchListener, Cel
     }
 
     /**
-     * Resets all pins in state FAILED_TO_UNPIN to READY_TO_UNPIN.
+     * Resets all pins in state UNPINNING and FAILED_TO_UNPIN to READY_TO_UNPIN.
      */
     private void markAllExpiredPinsReadyToUnpin() {
         dao.update(dao.where()
-                        .state(FAILED_TO_UNPIN),
+                        .stateIsNot(PINNING)
+                        .stateIsNot(PINNED)
+                        .stateIsNot(READY_TO_UNPIN),
                 dao.set().
                         state(READY_TO_UNPIN));
     }
