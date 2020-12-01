@@ -2,6 +2,7 @@ package org.dcache.pool.movers;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -17,18 +18,23 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.ConnectionShutdownException;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpRequestExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.channels.Channels;
@@ -37,7 +43,6 @@ import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +51,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
@@ -65,6 +71,7 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static diskCacheV111.util.ThirdPartyTransferFailedCacheException.checkThirdPartyTransferSuccessful;
 import static dmg.util.Exceptions.getMessageWithCauses;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.util.ByteUnit.GiB;
@@ -248,6 +255,9 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     private CloseableHttpClient _client;
 
+    @GuardedBy("this")
+    private HttpClientContext _context;
+
     public RemoteHttpDataTransferProtocol(CellEndpoint cell)
     {
         // constructor needed by Pool mover contract.
@@ -313,6 +323,17 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 .setRedirectStrategy(DROP_AUTHORIZATION_HEADER);
     }
 
+    private synchronized HttpClientContext storeContext(HttpClientContext context)
+    {
+        _context = context;
+        return context;
+    }
+
+    private synchronized HttpClientContext getContext()
+    {
+        return _context;
+    }
+
     private void receiveFile(final RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
@@ -320,7 +341,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
         long deadline = System.currentTimeMillis() + GET_RETRY_DURATION;
 
-        HttpClientContext context = new HttpClientContext();
+        HttpClientContext context = storeContext(new HttpClientContext());
         try {
             try (CloseableHttpResponse response = doGet(info, context, deadline)) {
                 String rfc3230 = headerValue(response, "Digest");
@@ -387,6 +408,43 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             } catch (IOException e) {
                 throw new ThirdPartyTransferFailedCacheException("HEAD request failed: " + messageOrClassName(e), e);
             }
+        }
+    }
+
+    private Optional<InetSocketAddress> remoteAddress()
+    {
+        HttpContext context = getContext();
+        if (context == null) {
+            _log.debug("No HttpContext value");
+            return Optional.empty();
+        }
+
+        Object conn = context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
+        if (conn == null) {
+            _log.debug("HTTP_CONNECTION is null");
+            return Optional.empty();
+        }
+
+        if (!(conn instanceof HttpInetConnection)) {
+            throw new RuntimeException("HTTP_CONNECTION has unexpected type: "
+                    + conn.getClass().getCanonicalName());
+        }
+
+        HttpInetConnection inetConn = (HttpInetConnection)conn;
+        if (!inetConn.isOpen()) {
+            _log.debug("HttpConnection is no longer open");
+            return Optional.empty();
+        }
+
+        try {
+            InetAddress addr = requireNonNull(inetConn.getRemoteAddress());
+            int port = inetConn.getRemotePort();
+            InetSocketAddress sockAddr = new InetSocketAddress(addr, port);
+            return Optional.of(sockAddr);
+        } catch (ConnectionShutdownException e) {
+            _log.warn("HTTP_CONNECTION is unexpectedly unconnected");
+            // Perhaps a race condition here?  Hey ho.
+            return Optional.empty();
         }
     }
 
@@ -471,13 +529,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     {
         URI location = info.getUri();
         List<URI> redirections = null;
+        HttpClientContext context = storeContext(new HttpClientContext());
 
         try {
             for (int redirectionCount = 0; redirectionCount < MAX_REDIRECTIONS; redirectionCount++) {
                 HttpPut put = buildPutRequest(info, location,
                         redirectionCount > 0 ? REDIRECTED_REQUEST : INITIAL_REQUEST);
 
-                try (CloseableHttpResponse response = _client.execute(put)) {
+                try (CloseableHttpResponse response = _client.execute(put, context)) {
                     StatusLine status = response.getStatusLine();
                     switch (status.getStatusCode()) {
                     case 200: /* OK (not actually a valid response from PUT) */
@@ -616,7 +675,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 }
                 isFirstAttempt = false;
 
-                HttpClientContext context = new HttpClientContext();
+                HttpClientContext context = storeContext(new HttpClientContext());
                 HttpHead head = buildHeadRequest(info, deadline);
                 buildWantDigest().ifPresent(v -> head.addHeader("Want-Digest", v));
 
@@ -837,5 +896,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     {
         MoverChannel<RemoteHttpDataTransferProtocolInfo> channel = _channel;
         return channel == null ? 0 : channel.getTransferTime();
+    }
+
+    @Override
+    public List<InetSocketAddress> remoteConnections()
+    {
+        return remoteAddress().stream().collect(Collectors.toList());
     }
 }

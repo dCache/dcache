@@ -18,6 +18,7 @@
 package org.dcache.webdav.transfer;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
 import eu.emi.security.authn.x509.X509Credential;
 import io.milton.http.Response;
@@ -39,15 +40,18 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.services.TransferManagerHandler;
 import diskCacheV111.util.CacheException;
@@ -771,6 +775,14 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 _out.println("    Stripe Status: " + info.getStatus());
             }
             _out.println("    Total Stripe Count: 1");
+            if (info != null) {
+                List<InetSocketAddress> connections = info.remoteConnections();
+                if (connections != null) {
+                    _out.println("    RemoteConnections: " + connections.stream()
+                            .map(conn -> "tcp:" + InetAddresses.toUriString(conn.getAddress()) + ":" + conn.getPort())
+                            .collect(Collectors.joining(",")));
+                }
+            }
             _out.println("End");
             _out.flush();
         }
