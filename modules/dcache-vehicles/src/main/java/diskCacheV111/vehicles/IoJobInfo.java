@@ -1,5 +1,10 @@
 package diskCacheV111.vehicles;
 
+import javax.annotation.Nullable;
+
+import java.net.InetSocketAddress;
+import java.util.List;
+
 import diskCacheV111.util.PnfsId;
 
 public class IoJobInfo extends JobInfo  {
@@ -7,18 +12,21 @@ public class IoJobInfo extends JobInfo  {
    private final long _bytesTransferred;
    private final long _transferTime;
    private final long _lastTransferred;
+   private final List<InetSocketAddress> _remoteConnections;
    private final PnfsId _pnfsId;
 
    private static final long serialVersionUID = -7987228538353684951L;
 
    public IoJobInfo(long submitTime, long startTime, String state, int id, String clientName, long clientId,
-                    PnfsId pnfsId, long bytesTransferred, long transferTime, long lastTransferred)
+                    PnfsId pnfsId, long bytesTransferred, long transferTime, long lastTransferred,
+                    @Nullable List<InetSocketAddress> remoteConnections)
    {
       super(submitTime, startTime, state, id, clientName, clientId);
       _pnfsId           = pnfsId;
       _bytesTransferred = bytesTransferred;
       _transferTime     = transferTime;
       _lastTransferred  = lastTransferred;
+      _remoteConnections = remoteConnections;
    }
    public long getTransferTime(){ return _transferTime ; }
    public long getBytesTransferred(){ return _bytesTransferred ; }
@@ -30,5 +38,15 @@ public class IoJobInfo extends JobInfo  {
              ";B=" + _bytesTransferred +
              ";T=" + _transferTime +
              ";L=" + ((System.currentTimeMillis()-_lastTransferred)/1000) + ';';
+   }
+
+   /**
+    * A list of remote TCP endpoints to which the mover is connected.  Returns
+    * null if this information is not available.
+    */
+   @Nullable
+   public List<InetSocketAddress> remoteConnections()
+   {
+       return _remoteConnections;
    }
 }
