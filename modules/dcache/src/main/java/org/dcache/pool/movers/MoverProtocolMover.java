@@ -17,6 +17,9 @@
  */
 package org.dcache.pool.movers;
 
+import java.net.InetSocketAddress;
+import java.util.List;
+
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
@@ -70,5 +73,11 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     protected String getStatus()
     {
         return _moverProtocol.toString();
+    }
+
+    @Override
+    public List<InetSocketAddress> remoteConnections()
+    {
+        return _moverProtocol.remoteConnections();
     }
 }

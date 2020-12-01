@@ -24,6 +24,8 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
+import java.net.InetSocketAddress;
+
 import dmg.cells.nucleus.CDC;
 
 import diskCacheV111.util.CacheException;
@@ -739,7 +741,8 @@ public class MoverRequestScheduler
             return new IoJobInfo(_submitTime, _startTime, _state.toString(), _id,
                                  _mover.getPathToDoor().getDestinationAddress().toString(), _mover.getClientId(),
                                  _mover.getFileAttributes().getPnfsId(), _mover.getBytesTransferred(),
-                                 _mover.getTransferTime(), _mover.getLastTransferred());
+                                 _mover.getTransferTime(), _mover.getLastTransferred(),
+                                 _mover.remoteConnections());
         }
 
         public synchronized MoverData toMoverData()
