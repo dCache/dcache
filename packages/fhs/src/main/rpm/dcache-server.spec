@@ -85,6 +85,11 @@ chown dcache:dcache /var/lib/dcache
 %postun
 %systemd_postun dcache.target
 
+%posttrans
+if [ ! -f /usr/share/dcache/lib/services.sh ]; then
+    ln -s /usr/share/dcache/lib/services-systemd.sh /usr/share/dcache/lib/services.sh
+fi
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
