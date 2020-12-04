@@ -216,6 +216,10 @@ public class BulkJobCompletionHandler
         }
     }
 
+    public void signalWaiting() {
+        queue.signal();
+    }
+
     /**
      *  Used during depth-first expansions.
      */

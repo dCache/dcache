@@ -59,8 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.queue;
 
-import static org.dcache.services.bulk.BulkRequestStatus.Status.STARTED;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -98,6 +96,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import static org.dcache.services.bulk.BulkRequestStatus.Status.STARTED;
+
 /**
  * The heart of the bulk service, encapsulating its queueing logic.
  *
@@ -122,12 +122,12 @@ public class BulkServiceQueue implements SignalAware {
    */
   private static final Comparator<BulkJob> SINGLE_TARGET_PRIORITY =
       (j1, j2) -> {
-        if (!(j1 instanceof SingleTargetJob)) {
-          if (j2 instanceof SingleTargetJob) {
-            return 1;
-          }
-        } else if (!(j2 instanceof SingleTargetJob)) {
-          return -1;
+        if (j1 instanceof SingleTargetJob) {
+          return (j2 instanceof SingleTargetJob) ? j1.compareTo(j2) : -1;
+        }
+
+        if (j2 instanceof SingleTargetJob) {
+          return 1;
         }
 
         return j1.compareTo(j2);
@@ -372,7 +372,6 @@ public class BulkServiceQueue implements SignalAware {
         submitted.put(job.getKey().getKey(), job);
       }
     }
-
     jobProcessor.signal();
   }
 
@@ -527,6 +526,8 @@ public class BulkServiceQueue implements SignalAware {
   @VisibleForTesting
   class NextJobProcessor extends JobProcessor {
 
+    int lastIndex;
+
     protected void doRun() throws InterruptedException {
       LOGGER.trace("NextJobProcessor, starting doRun().");
 
@@ -644,14 +645,45 @@ public class BulkServiceQueue implements SignalAware {
        *
        *  As noted, the jobs are ordered on the ready queue such
        *  that expansion/multiple target jobs go last.
+       *
+       *  We track the last index into the set of requests in order to begin there
+       *  on the next call of this method.
        */
       synchronized (readyQueue) {
+        int requests = readyQueue.asMap().keySet().size();
+
+        lastIndex = requests == 0 ? 0 : lastIndex % requests;
+
+        /*
+         *  Pointer as to where to begin the first pass through the while loop.
+         *  After the first pass, it will be equal to lastIndex.
+         */
+        int startingIndex = 0;
+
+        /*
+         *  The running index into the key set (request ids).
+         */
+        int currentIndex = 0;
         while (available > 0 && lastAvailable != available) {
           lastAvailable = available;
+
           for (Iterator<Entry<String, Collection<BulkJob>>> i =
               readyQueue.asMap().entrySet().iterator();
               i.hasNext() && available > 0; ) {
+
+            /*
+             *  Find the last slot in the ordered set of requests we selected from.
+             *  Will occur at most once on the first pass of the outer while loop.
+             *  Since we checked the last index against the size of the set, we
+             *  do not need to call hasNext() in this loop.
+             */
+            while (startingIndex < lastIndex) {
+              i.next();
+              ++startingIndex;
+            }
+
             Entry<String, Collection<BulkJob>> entry = i.next();
+
             for (Iterator<BulkJob> j = entry.getValue().iterator(); j.hasNext(); ) {
               BulkJob job = j.next();
               if (job.isReady()) {
@@ -661,6 +693,7 @@ public class BulkServiceQueue implements SignalAware {
                 job.initialize();
                 toRun.add(job);
                 --available;
+
                 /*
                  *  Maximum of one job per request per
                  *  iteration.
@@ -671,6 +704,8 @@ public class BulkServiceQueue implements SignalAware {
                 break;
               }
             }
+
+            currentIndex = (currentIndex + 1) % requests;
           }
 
           /*
@@ -679,6 +714,8 @@ public class BulkServiceQueue implements SignalAware {
            *  try again from the beginning.
            */
         }
+
+        lastIndex = currentIndex;
       }
 
       /*
@@ -692,11 +729,14 @@ public class BulkServiceQueue implements SignalAware {
        *  Synchronize on the running queue, again only to avoid
        *  ConcurrentModificationExceptions, as only this thread touches it.
        */
-
       synchronized (runningQueue) {
         toRun.stream().forEach(BulkServiceQueue.this::startJob);
         statistics.currentlyRunningJobs(runningQueue.size());
       }
+
+      LOGGER.trace("processNextReady(), ready queue keys {}, size {}",
+          readyQueue.keySet().size(),
+          readyQueue.size());
     }
 
     /**
