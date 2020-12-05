@@ -41,9 +41,9 @@ public class ResponseEngineHandler extends AbstractHandler
             engine.queryUrl(proxy);
             proxy.getPrintWriter().flush();
         } catch (HttpException e) {
-            response.sendError(e.getErrorCode(), e.getMessage());
+            response.setStatus(e.getErrorCode(), e.getMessage());
         } catch (URISyntaxException e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     e.getMessage());
         }
     }

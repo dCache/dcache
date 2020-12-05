@@ -66,17 +66,13 @@ public class HandlerDelegator extends AbstractHandler {
 
     private static void printHttpException(HttpException exception,
                     HttpServletResponse response) {
-        try {
-            if (exception instanceof HttpBasicAuthenticationException) {
-                final String realm
-                    = ((HttpBasicAuthenticationException) exception).getRealm();
-                response.setHeader("WWW-Authenticate", "Basic realm=\""
-                                    + realm + "\"");
-            }
-            response.sendError(exception.getErrorCode(), exception.getMessage());
-        } catch (final IOException e) {
-            logger.warn("Failed to send reply: {}", e.getMessage());
+        if (exception instanceof HttpBasicAuthenticationException) {
+            final String realm
+                = ((HttpBasicAuthenticationException) exception).getRealm();
+            response.setHeader("WWW-Authenticate", "Basic realm=\""
+                                + realm + "\"");
         }
+        response.setStatus(exception.getErrorCode(), exception.getMessage());
     }
 
     private final Map<String, AliasEntry> aliases = new ConcurrentHashMap<>();

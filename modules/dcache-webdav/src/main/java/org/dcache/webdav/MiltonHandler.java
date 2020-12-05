@@ -68,7 +68,7 @@ public class MiltonHandler
             ServletContext context = ContextHandler.getCurrentContext();
 
             if ("USERINFO".equals(request.getMethod())) {
-                response.sendError(501, "Not implemented");
+                response.sendError(501);
             } else {
                 Subject subject = Subject.getSubject(AccessController.getContext());
                 ServletRequest req = new DcacheServletRequest(request, context);
