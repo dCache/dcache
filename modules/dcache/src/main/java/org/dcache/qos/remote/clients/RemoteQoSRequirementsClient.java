@@ -57,38 +57,71 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms;
+package org.dcache.qos.remote.clients;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import diskCacheV111.util.PnfsId;
+import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
+import org.dcache.cells.CellStub;
+import org.dcache.qos.QoSException;
+import org.dcache.qos.data.FileQoSRequirements;
+import org.dcache.qos.data.FileQoSUpdate;
+import org.dcache.qos.listeners.QoSRequirementsListener;
+import org.dcache.qos.util.CacheExceptionUtils;
+import org.dcache.vehicles.qos.QoSCancelRequirementsModifiedMessage;
+import org.dcache.vehicles.qos.QoSRequirementsModifiedMessage;
+import org.dcache.vehicles.qos.QoSRequirementsRequestMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * All internally marked alarm types must be defined via this enum.
- *
- * @author arossi
+ *  Use this client when communicating with a remote requirements engine.
  */
-public enum PredefinedAlarm implements Alarm {
-   GENERIC,
-   FATAL_JVM_ERROR,
-   DOMAIN_STARTUP_FAILURE,
-   OUT_OF_FILE_DESCRIPTORS,
-   LOCATION_MANAGER_FAILURE,
-   DB_CONNECTION_FAILURE,
-   HSM_SCRIPT_FAILURE,
-   POOL_DOWN,
-   POOL_DISABLED,
-   POOL_DEAD,
-   POOL_SIZE,
-   POOL_FREE_SPACE,
-   BROKEN_FILE,
-   CHECKSUM,
-   INACCESSIBLE_FILE,
-   LOST_RESILIENT_FILE,
-   FAILED_REPLICATION,
-   RESILIENCE_PM_SYNC_FAILURE,
-   RESILIENCE_LOC_SYNC_ISSUE,
-   RESILIENCE_PGROUP_ISSUE,
-   CLIENT_CONNECTION_REJECTED;
+public final class RemoteQoSRequirementsClient implements QoSRequirementsListener {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RemoteQoSRequirementsClient.class);
 
-   @Override
-   public String getType() {
-       return toString();
+  private CellStub requirementsService;
+
+  @Override
+  public FileQoSRequirements fileQoSRequirementsRequested(FileQoSUpdate update) throws QoSException {
+    QoSRequirementsRequestMessage message = new QoSRequirementsRequestMessage(update);
+    ListenableFuture<QoSRequirementsRequestMessage> future = requirementsService.send(message);
+
+    try {
+      message = future.get();
+      LOGGER.trace("Received reply for requirements request {}.", message);
+    } catch (InterruptedException | ExecutionException e) {
+      throw new QoSException("Failed to request requirements for " + update, e);
     }
+
+    Serializable error = message.getErrorObject();
+
+    if (error != null) {
+      throw new QoSException("Failed to request requirements for " + update,
+                              CacheExceptionUtils.getCacheExceptionFrom(error));
+    }
+
+    return message.getRequirements();
+  }
+
+  @Override
+  public void fileQoSRequirementsModified(FileQoSRequirements newRequirements) {
+    /*
+     *  Fire and forget. The sender will need to listen for a response.
+     */
+    requirementsService.send(new QoSRequirementsModifiedMessage(newRequirements));
+  }
+
+  @Override
+  public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) throws QoSException {
+    /*
+     *  Fire and forget. The sender will need to listen for a response.
+     */
+    requirementsService.send(new QoSCancelRequirementsModifiedMessage(pnfsid));
+  }
+
+  public void setRequirementsService(CellStub requirementsService) {
+    this.requirementsService = requirementsService;
+  }
 }
