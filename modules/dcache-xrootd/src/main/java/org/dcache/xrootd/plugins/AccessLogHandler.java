@@ -48,6 +48,7 @@ import org.dcache.xrootd.protocol.messages.OpenRequest;
 import org.dcache.xrootd.protocol.messages.OpenResponse;
 import org.dcache.xrootd.protocol.messages.PathRequest;
 import org.dcache.xrootd.protocol.messages.PrepareRequest;
+import org.dcache.xrootd.protocol.messages.QueryRequest;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.dcache.xrootd.protocol.messages.RedirectResponse;
@@ -174,6 +175,13 @@ public class AccessLogHandler extends ChannelDuplexHandler
                     } else {
                         log.add("files", ((PrepareRequest) request).getPathList().length);
                     }
+                } else if (request instanceof QueryRequest) {
+                    log.add("reqcode", getQueryReqCode(request));
+                    int fhandle = ((QueryRequest) request).getFhandle();
+                    if (fhandle != 0) {
+                        log.add("fhandle", fhandle);
+                    }
+                    log.add("args", Strings.emptyToNull(((QueryRequest) request).getArgs()));
                 } else if (request instanceof StatxRequest) {
                     if (((StatxRequest) request).getPaths().length == 1) {
                         log.add("path", ((StatxRequest) request).getPaths()[0]);
@@ -301,6 +309,37 @@ public class AccessLogHandler extends ChannelDuplexHandler
             return "waitresp";
         default:
             return String.valueOf(status);
+        }
+    }
+
+    private static String getQueryReqCode(XrootdRequest request)
+    {
+        int reqcode = ((QueryRequest)request).getReqcode();
+        switch (reqcode) {
+        case kXR_QStats:
+            return "QStats";
+        case kXR_QPrep:
+            return "QPrep";
+        case kXR_Qcksum:
+            return "QCksum";
+        case kXR_Qxattr:
+            return "QXattr";
+        case kXR_Qspace:
+            return "QSpace";
+        case kXR_Qckscan:
+            return "QCksCan";
+        case kXR_Qconfig:
+            return "QConfig";
+        case kXR_Qvisa:
+            return "QVisa";
+        case kXR_Qopaque:
+            return "QOpaque";
+        case kXR_Qopaquf:
+            return "QOpaquf";
+        case kXR_Qopaqug:
+            return "QOpaqug";
+        default:
+            return String.valueOf(reqcode);
         }
     }
 
