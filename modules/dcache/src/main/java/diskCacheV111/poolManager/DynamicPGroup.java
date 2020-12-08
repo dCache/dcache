@@ -7,8 +7,8 @@ class DynamicPGroup extends PGroup {
     private static final long serialVersionUID = 3725185696861231668L;
     private final Map<String, String> tags;
 
-    DynamicPGroup(String name, boolean primary, Map<String, String> tags) {
-        super(name, primary);
+    DynamicPGroup(String name, boolean resilient, Map<String, String> tags) {
+        super(name, resilient);
         this.tags = tags;
     }
 

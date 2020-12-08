@@ -292,7 +292,7 @@ public class PoolSelectionUnitV2
             _pGroups.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
                     group -> {
                         pw.append("psu create pgroup ").append(group.getName());
-                        if (group.isPrimary()) {
+                        if (group.isResilient()) {
                             pw.append(" -resilient");
                         }
 
@@ -1121,10 +1121,10 @@ public class PoolSelectionUnitV2
     // the create's
     //
 
-    public void createDynamicPoolGroup(String name, boolean isPrimary, Map<String, String> tags) {
+    public void createDynamicPoolGroup(String name, boolean isResilient, Map<String, String> tags) {
         wlock();
         try {
-            DynamicPGroup group = new DynamicPGroup(name, isPrimary, tags);
+            DynamicPGroup group = new DynamicPGroup(name, isResilient, tags);
 
             if (_pGroups.putIfAbsent(group.getName(), group) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
@@ -1136,10 +1136,10 @@ public class PoolSelectionUnitV2
         }
     }
 
-    public void createPoolGroup(String name, boolean isPrimary) {
+    public void createPoolGroup(String name, boolean isResilient) {
             wlock();
         try {
-            PGroup group = new PGroup(name, isPrimary);
+            PGroup group = new PGroup(name, isResilient);
 
             if (_pGroups.putIfAbsent(group.getName(), group) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
@@ -1419,7 +1419,7 @@ public class PoolSelectionUnitV2
                 result[0] = groupName;
                 result[1] = group._poolList.keySet().toArray();
                 result[2] = group._linkList.keySet().toArray();
-                result[3] = group.isPrimary();
+                result[3] = group.isResilient();
                 xlsResult = result;
             }
         } finally {
@@ -1672,7 +1672,7 @@ public class PoolSelectionUnitV2
                 sb.append(group.getName()).append("\n");
                 if (detail) {
                     sb.append(" dynamic   = ").append(group instanceof DynamicPGroup).append("\n")
-                                    .append(" resilient = ").append(group.isPrimary())
+                                    .append(" resilient = ").append(group.isResilient())
                                     .append("\n")
                                     .append(" linkList :\n");
                     group._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
@@ -2585,21 +2585,21 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public static final String hh_psu_create_pgroup = "<pool group> [-resilient (deprecated) || -primary]";
+    public static final String hh_psu_create_pgroup = "<pool group> [-resilient]";
 
     @AffectsSetup
     public String ac_psu_create_pgroup_$_1(Args args)
     {
-        boolean primary = args.hasOption("resilient") || args.hasOption("primary");
         if (args.hasOption("dynamic")) {
             Map<String, String> tags = Splitter.on(',')
                     .omitEmptyStrings()
                     .trimResults()
                     .withKeyValueSeparator('=')
                     .split(args.getOption("tags", ""));
-            createDynamicPoolGroup(args.argv(0), primary, tags);
+
+            createDynamicPoolGroup(args.argv(0), args.hasOption("resilient"), tags);
         } else {
-            createPoolGroup(args.argv(0), primary);
+            createPoolGroup(args.argv(0), args.hasOption("resilient"));
         }
         return "";
     }

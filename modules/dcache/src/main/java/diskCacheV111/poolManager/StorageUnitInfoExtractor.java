@@ -74,32 +74,25 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 public final class StorageUnitInfoExtractor
 {
     /**
-     * For backward compatibility.
-     */
-    public static Collection<String> getResilientGroupsFor(String unitName,
-                                                           PoolSelectionUnit psu) {
-        return getPrimaryGroupsFor(unitName, psu);
-    }
-
-    /**
-     * @param primaryOnly return only primary groups.
+     * @param resilientOnly return only resilient groups.
      * @return all the pool groups to which this storage unit is linked.
      */
     public static Collection<String> getPoolGroupsFor(String unitName,
                                                       PoolSelectionUnit psu,
-                                                      boolean primaryOnly)
+                                                      boolean resilientOnly)
     {
         return psu.getPoolGroups().values().stream()
-                  .filter((g) -> (primaryOnly ? g.isPrimary() : true) &&
+                  .filter((g) -> (resilientOnly ? g.isResilient() : true) &&
                                   hasStorageUnit(g.getName(), unitName, psu))
                   .map(SelectionPoolGroup::getName)
                   .collect(Collectors.toList());
     }
 
     /**
-     * @return all the primary pool groups to which this storage unit is linked.
+     * @return all the resilient pool groups to which this storage unit is linked.
      */
-    public static Collection<String> getPrimaryGroupsFor(String unitName, PoolSelectionUnit psu)
+    public static Collection<String> getResilientGroupsFor(String unitName,
+                                                           PoolSelectionUnit psu)
     {
         return getPoolGroupsFor(unitName, psu, true);
     }
@@ -123,17 +116,11 @@ public final class StorageUnitInfoExtractor
     }
 
     /**
-     * For backward compatibility.
-     */
-    public static boolean hasResilientStorageUnit(String poolGroup, PoolSelectionUnit psu) {
-        return hasPrimaryStorageUnit(poolGroup, psu);
-    }
-
-    /**
      * @return true if the pool group has at least one storage group
-     * associated with it via a link, and the storage group is primary.
+     * associated with it via a link, and the storage group is resilient.
      */
-    public static boolean hasPrimaryStorageUnit(String poolGroup, PoolSelectionUnit psu)
+    public static boolean hasResilientStorageUnit(String poolGroup,
+                                                  PoolSelectionUnit psu)
     {
         return getStorageUnitsInGroup(poolGroup, psu)
                         .stream()
