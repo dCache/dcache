@@ -186,6 +186,7 @@ public interface PoolSelectionUnit  {
     }
 
     interface SelectionPoolGroup extends SelectionEntity {
+        boolean isPrimary();
         boolean isResilient();
     }
 

@@ -22,6 +22,11 @@ class PGroup extends PoolCore implements SelectionPoolGroup {
     }
 
     @Override
+    public boolean isPrimary() {
+        return resilient;
+    }
+
+    @Override
     public String toString() {
         return getName() + "(links=" + _linkList.size()
             + "; pools=" + _poolList.size() + "; resilient=" +  resilient + ")";
