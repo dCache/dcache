@@ -430,16 +430,6 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         return _storageClass;
     }
 
-    public synchronized void setTime(long time)
-    {
-        _time = time;
-    }
-
-    public synchronized long getTime()
-    {
-        return _time;
-    }
-
     public synchronized void setDefined(boolean d)
     {
         _isDefined = d;
