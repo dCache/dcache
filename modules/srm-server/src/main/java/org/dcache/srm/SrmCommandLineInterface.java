@@ -95,8 +95,6 @@ import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.util.Args;
 
-import static java.util.Arrays.asList;
-
 public class SrmCommandLineInterface
         implements CellCommandListener
 {
