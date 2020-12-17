@@ -57,38 +57,35 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms;
+package org.dcache.qos.listeners;
 
-/**
- * All internally marked alarm types must be defined via this enum.
- *
- * @author arossi
- */
-public enum PredefinedAlarm implements Alarm {
-   GENERIC,
-   FATAL_JVM_ERROR,
-   DOMAIN_STARTUP_FAILURE,
-   OUT_OF_FILE_DESCRIPTORS,
-   LOCATION_MANAGER_FAILURE,
-   DB_CONNECTION_FAILURE,
-   HSM_SCRIPT_FAILURE,
-   POOL_DOWN,
-   POOL_DISABLED,
-   POOL_DEAD,
-   POOL_SIZE,
-   POOL_FREE_SPACE,
-   BROKEN_FILE,
-   CHECKSUM,
-   INACCESSIBLE_FILE,
-   LOST_RESILIENT_FILE,
-   FAILED_REPLICATION,
-   RESILIENCE_PM_SYNC_FAILURE,
-   RESILIENCE_LOC_SYNC_ISSUE,
-   RESILIENCE_PGROUP_ISSUE,
-   CLIENT_CONNECTION_REJECTED;
+import diskCacheV111.util.PnfsId;
+import org.dcache.qos.QoSException;
+import org.dcache.qos.data.FileQoSRequirements;
+import org.dcache.qos.data.FileQoSUpdate;
 
-   @Override
-   public String getType() {
-       return toString();
-    }
+public interface QoSRequirementsListener {
+    /**
+     *  Request to the provider for the QoS requirements for a given file.
+     *
+     *  @param update containing file id, pool (if any) and the type of message which triggered
+     *                the request.
+     *  @return disk and tape requirements for the file.
+     */
+    FileQoSRequirements fileQoSRequirementsRequested(FileQoSUpdate update) throws QoSException;
+
+    /**
+     *  A client sends this when it wishes to change a file's QoS requirements.
+     *
+     *  @param newRequirements describing principally how many peristent disk and tape copies
+     *                         are required.
+     */
+    void fileQoSRequirementsModified(FileQoSRequirements newRequirements) throws QoSException;
+
+    /**
+     *  A client sends this when it wishes to cancel a modification requirement.
+     *
+     *  @param pnfsid of the file for which the modification was requested.
+     */
+    void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) throws QoSException;
 }

@@ -57,38 +57,24 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms;
+package org.dcache.qos;
 
-/**
- * All internally marked alarm types must be defined via this enum.
- *
- * @author arossi
- */
-public enum PredefinedAlarm implements Alarm {
-   GENERIC,
-   FATAL_JVM_ERROR,
-   DOMAIN_STARTUP_FAILURE,
-   OUT_OF_FILE_DESCRIPTORS,
-   LOCATION_MANAGER_FAILURE,
-   DB_CONNECTION_FAILURE,
-   HSM_SCRIPT_FAILURE,
-   POOL_DOWN,
-   POOL_DISABLED,
-   POOL_DEAD,
-   POOL_SIZE,
-   POOL_FREE_SPACE,
-   BROKEN_FILE,
-   CHECKSUM,
-   INACCESSIBLE_FILE,
-   LOST_RESILIENT_FILE,
-   FAILED_REPLICATION,
-   RESILIENCE_PM_SYNC_FAILURE,
-   RESILIENCE_LOC_SYNC_ISSUE,
-   RESILIENCE_PGROUP_ISSUE,
-   CLIENT_CONNECTION_REJECTED;
+public class QoSException extends Exception {
 
-   @Override
-   public String getType() {
-       return toString();
-    }
+  public QoSException(String message) {
+    super(message);
+  }
+
+  public QoSException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public QoSException(Throwable cause) {
+    super(cause);
+  }
+
+  protected QoSException(String message, Throwable cause, boolean enableSuppression,
+      boolean writableStackTrace) {
+    super(message, cause, enableSuppression, writableStackTrace);
+  }
 }
