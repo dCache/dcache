@@ -68,8 +68,6 @@
               value="4"/>
     <property name="poolUpDestination"
               value="${pool.destination.heartbeat}"/>
-    <property name="allowCleaningPreciousFiles"
-              value="${pool.enable.remove-precious-files-on-delete}"/>
     <property name="replicationNotificationDestination"
               value="${pool.destination.replicate}"/>
     <property name="replicationIp"

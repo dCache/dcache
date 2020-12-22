@@ -105,10 +105,6 @@ public class PoolDataDetails implements Serializable {
     private Integer     poolStatusCode;
     private String      poolStatusMessage;
 
-    @Deprecated // Remove cleanPreciousFiles after 4.2 is branched.
-    private OnOff       cleanPreciousFiles;
-    private boolean     isPreciousFileCleaned;
-
     @Deprecated // Remove suppressHsmLoad after 4.2 is branched.
     private OnOff       suppressHsmLoad;
     private boolean     isHsmLoadSuppressed;
@@ -131,10 +127,6 @@ public class PoolDataDetails implements Serializable {
 
     public Double getBreakEven() {
         return breakEven;
-    }
-
-    public boolean isPreciousFileCleaned() {
-        return isPreciousFileCleaned;
     }
 
     public PoolCostData getCostData() {
@@ -215,7 +207,6 @@ public class PoolDataDetails implements Serializable {
             pw.println("Detail            : [" + poolStatusCode + "] "
                                        + poolStatusMessage);
         }
-        pw.println("Clean prec. files : " + asOnOff(isPreciousFileCleaned));
         pw.println("Hsm Load Suppr.   : " + asOnOff(isHsmLoadSuppressed));
         pw.println("Ping Heartbeat    : " + pingHeartbeatInSecs + " seconds");
         pw.println("Breakeven         : " + breakEven);
@@ -245,10 +236,6 @@ public class PoolDataDetails implements Serializable {
 
     public void setBreakEven(Double breakEven) {
         this.breakEven = breakEven;
-    }
-
-    public void setPreciousFileCleaned(boolean isCleaned) {
-        isPreciousFileCleaned = isCleaned;
     }
 
     public void setCostData(PoolCostData costData) {
@@ -322,9 +309,6 @@ public class PoolDataDetails implements Serializable {
         aInputStream.defaultReadObject();
         if (reportRemovals != null) {
             isRemovalReported = reportRemovals == OnOff.ON;
-        }
-        if (cleanPreciousFiles != null) {
-            isPreciousFileCleaned = cleanPreciousFiles == OnOff.ON;
         }
         if (suppressHsmLoad != null) {
             isHsmLoadSuppressed = suppressHsmLoad == OnOff.ON;

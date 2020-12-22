@@ -162,7 +162,6 @@ public class PoolV4
     private PoolV2Mode _poolMode;
     private volatile boolean _reportOnRemovals;
     private volatile boolean _suppressHsmLoad;
-    private boolean _cleanPreciousFiles;
     private String     _poolStatusMessage = "OK";
     private int        _poolStatusCode;
 
@@ -270,12 +269,6 @@ public class PoolV4
 
             }
         }
-    }
-
-    @Required
-    public void setAllowCleaningPreciousFiles(boolean allow)
-    {
-        _cleanPreciousFiles = allow;
     }
 
     @Required
@@ -696,7 +689,6 @@ public class PoolV4
 
         info.setBaseDir(_baseDir);
         info.setBreakEven(getBreakEven());
-        info.setPreciousFileCleaned(_cleanPreciousFiles);
 
         if (_hybridInventoryActive) {
             info.setHybridInventory(_hybridCurrent);
@@ -1177,14 +1169,8 @@ public class PoolV4
     {
         try {
             PnfsId pnfsId = new PnfsId(file);
-            if (!_cleanPreciousFiles && _hasTapeBackend
-                && (_repository.getState(pnfsId) == ReplicaState.PRECIOUS)) {
-                LOGGER.error("Replica {} kept (precious)", file);
-                return file;
-            } else {
-                _repository.setState(pnfsId, ReplicaState.REMOVED, why);
-                return null;
-            }
+            _repository.setState(pnfsId, ReplicaState.REMOVED, why);
+            return null;
         } catch (IllegalTransitionException e) {
             LOGGER.error("Replica {} not removed: {}", file, e.getMessage());
             return file;
