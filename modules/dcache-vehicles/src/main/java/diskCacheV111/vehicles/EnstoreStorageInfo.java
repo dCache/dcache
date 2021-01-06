@@ -2,6 +2,7 @@ package diskCacheV111.vehicles ;
 
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 
 /**
@@ -10,8 +11,8 @@ import java.io.ObjectInputStream;
   * attributes.
   */
 public class EnstoreStorageInfo extends GenericStorageInfo {
-   private final String _family;
-   private final String _group;
+   private String _family;
+   private String _group;
    private String _volume   = "<unknown>" ;
    private String _location = "<unknown>" ;
    private String _path;
@@ -69,6 +70,19 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
             return _family;
          default:
             return super.getKey(key);
+      }
+   }
+
+   private void readObject(java.io.ObjectInputStream stream)
+           throws IOException, ClassNotFoundException
+   {
+      stream.defaultReadObject();
+      if (_group != null) {
+         _group = _group.intern();
+      }
+
+      if (_family != null) {
+         _family = _family.intern();
       }
    }
 
