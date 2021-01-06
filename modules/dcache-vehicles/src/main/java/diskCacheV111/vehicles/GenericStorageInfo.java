@@ -342,29 +342,6 @@ public class GenericStorageInfo
         return true;
     }
 
-
-    /**
-     * Allow pre 1.8 storage info to be read. Allows old persistent storage info
-     * objects on pools to be read.
-     */
-    Object readResolve() {
-
-        if(_accessLatency == null ) {
-            _accessLatency =  AccessLatency.NEARLINE;
-        }
-
-        if(_retentionPolicy == null ) {
-            _retentionPolicy = RetentionPolicy.CUSTODIAL;
-        }
-
-        if(_locations == null ) {
-            _locations = new ArrayList<>();
-        }
-
-        return this;
-
-    }
-
     @Override
     public GenericStorageInfo clone()
     {
@@ -456,6 +433,18 @@ public class GenericStorageInfo
         }
         if (_hsm != null) {
             _hsm = _hsm.intern();
+        }
+        if(_accessLatency == null ) {
+            _accessLatency =  AccessLatency.NEARLINE;
+        }
+
+        if(_retentionPolicy == null ) {
+            _retentionPolicy = RetentionPolicy.CUSTODIAL;
+        }
+
+        if(_locations == null || _locations.isEmpty()) {
+            // immutable list is ok as only PnfsManager initially populates the locations.
+            _locations = List.of();
         }
     }
 }
