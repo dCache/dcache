@@ -18,6 +18,7 @@ import dmg.util.CommandSyntaxException;
 import org.dcache.util.Args;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 

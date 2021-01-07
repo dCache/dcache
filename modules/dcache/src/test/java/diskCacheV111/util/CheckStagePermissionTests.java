@@ -2,8 +2,6 @@ package diskCacheV111.util;
 
 import org.junit.After;
 
-import static org.junit.Assert.*;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,6 +19,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class CheckStagePermissionTests

@@ -45,10 +45,9 @@ import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.hamcrest.text.IsEmptyString.emptyOrNullString;
 import static org.mockito.hamcrest.MockitoHamcrest.*;
 

@@ -11,9 +11,9 @@ import org.dcache.pool.classic.IoQueueManager;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 public class WeightedAvailableSpaceSelectionTest
 {

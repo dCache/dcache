@@ -17,9 +17,9 @@ import java.util.Properties;
 import org.dcache.util.configuration.ConfigurationProperties;
 
 import static org.dcache.boot.Properties.PROPERTY_CELL_NAME_SUFFIX;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 
 /**
  *  Tests for the Python Oracle

@@ -41,6 +41,7 @@ import org.dcache.util.OptionParser;
 
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static com.google.common.net.InetAddresses.forString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;

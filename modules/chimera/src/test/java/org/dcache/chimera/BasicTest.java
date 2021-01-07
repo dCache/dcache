@@ -38,6 +38,7 @@ import org.dcache.util.ChecksumType;
 
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static java.nio.charset.StandardCharsets.UTF_8;

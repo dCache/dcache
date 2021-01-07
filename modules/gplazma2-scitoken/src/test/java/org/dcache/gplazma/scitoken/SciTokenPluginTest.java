@@ -78,6 +78,7 @@ import org.dcache.util.PrincipalSetMaker;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.auth.attributes.Activity.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;

@@ -17,9 +17,9 @@ import dmg.cells.nucleus.CellMessage;
 import org.dcache.cells.FutureCellMessageAnswerable;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;

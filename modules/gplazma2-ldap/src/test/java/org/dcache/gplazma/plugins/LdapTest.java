@@ -47,8 +47,9 @@ import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.ldap4testing.EmbeddedServer;
 
 import static org.dcache.gplazma.plugins.Ldap.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 /**
  *

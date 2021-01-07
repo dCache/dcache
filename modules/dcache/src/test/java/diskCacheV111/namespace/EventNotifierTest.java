@@ -53,7 +53,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent.Type.CHILD_ADDED;
 import static org.dcache.namespace.events.EventType.IN_MOVE_SELF;
 import static org.dcache.namespace.FileType.REGULAR;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.hamcrest.CoreMatchers.*;

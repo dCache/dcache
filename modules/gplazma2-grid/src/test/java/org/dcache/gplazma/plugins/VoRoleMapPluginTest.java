@@ -20,9 +20,9 @@ import org.dcache.gplazma.util.NameRolePair;
 import org.dcache.util.PrincipalSetMaker;
 
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 
 
 public class VoRoleMapPluginTest

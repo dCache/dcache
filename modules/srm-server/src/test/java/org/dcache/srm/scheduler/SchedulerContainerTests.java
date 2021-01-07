@@ -27,8 +27,8 @@ import org.dcache.srm.request.ReserveSpaceRequest;
 
 import static org.dcache.srm.scheduler.State.INPROGRESS;
 import static org.dcache.srm.scheduler.State.UNSCHEDULED;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.*;
 
 @RunWith(PowerMockRunner.class)

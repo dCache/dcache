@@ -8,14 +8,13 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.vehicles.FileAttributes;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;
-import static org.junit.Assert.assertThat;
 
 public class ScriptNearlineStorageTest {
 

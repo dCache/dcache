@@ -26,6 +26,7 @@ import diskCacheV111.util.FsPath;
 import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
 
 import static org.dcache.auth.attributes.Activity.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 

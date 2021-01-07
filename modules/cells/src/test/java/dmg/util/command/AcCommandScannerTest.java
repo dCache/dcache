@@ -12,8 +12,8 @@ import org.dcache.util.cli.CommandExecutor;
 
 import static java.util.Arrays.asList;
 import static dmg.util.command.HelpFormat.PLAIN;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class AcCommandScannerTest
