@@ -1345,9 +1345,7 @@ public class Transfer implements Comparable<Transfer>
 
                         switch (t.getRc()) {
                         case CacheException.TIMEOUT:
-                            if (getPool() != null && isWrite()) {
-                                return immediateFailedFuture(t);
-                            }
+                            _log.info("Retrying request due to timeout: {}", t.getMessage());
                             break;
                         case CacheException.OUT_OF_DATE:
                         case CacheException.POOL_DISABLED:
