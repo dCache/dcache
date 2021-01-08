@@ -255,7 +255,8 @@ public abstract class TransferManager extends AbstractCellComponent
             return message;
         }
 
-        return handler.appendInfo(message);
+        long poolQueryTimeout = Math.min(envelope.getAdjustedTtl(), 30_000);
+        return handler.appendInfo(message, poolQueryTimeout);
     }
 
     public int getMaxTransfers()
