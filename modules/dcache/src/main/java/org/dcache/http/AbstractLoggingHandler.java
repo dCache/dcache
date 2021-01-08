@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletException;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 import dmg.cells.nucleus.CDC;
 
@@ -49,6 +51,9 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
 {
     private static final String X509_CERTIFICATE_ATTRIBUTE =
             "javax.servlet.request.X509Certificate";
+    private static final String REMOTE_ADDRESS = "org.dcache.remote-address";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLoggingHandler.class);
 
     /** The SLF4J Logger to which we send access log entries. */
     protected abstract Logger accessLogger();
@@ -62,6 +67,11 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
             throws IOException, ServletException
     {
         if (isStarted() && !baseRequest.isHandled()) {
+            // Cache the remote client address because the client may disconnect
+            // while dCache is processing the request, in which case Jetty
+            // "forgets".
+            request.setAttribute(REMOTE_ADDRESS, remoteAddress(request).orElse(null));
+
             super.handle(target, baseRequest, request, response);
 
             NetLoggerBuilder.Level logLevel = logLevel(request, response);
@@ -81,12 +91,36 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
         log.add("response.code", response.getStatus());
         log.add("response.reason", getReason(response));
         log.add("location", response.getHeader("Location"));
-        InetAddress addr = InetAddresses.forString(request.getRemoteAddr());
-        log.add("socket.remote", new InetSocketAddress(addr, request.getRemotePort()));
+        log.add("socket.remote", (InetSocketAddress) request.getAttribute(REMOTE_ADDRESS));
         log.add("user-agent", request.getHeader("User-Agent"));
 
         log.add("user.dn", getCertificateName(request));
         log.add("user.mapped", getSubject(request));
+    }
+
+    /**
+     * Provide this connection's remote address; that is, the address of the
+     * client.  The method returns Optional.empty if this cannot be determined,
+     * for whatever reason.
+     */
+    private static Optional<InetSocketAddress> remoteAddress(HttpServletRequest request)
+    {
+        String addrString = request.getRemoteAddr();
+        int port = request.getRemotePort();
+
+        if (addrString.isEmpty() || port == 0) { // Sometimes Jetty just doesn't know (!)
+            return Optional.empty();
+        }
+
+        InetAddress addr;
+        try {
+            addr = InetAddresses.forUriString(addrString);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Cannot build internet address: {}", e.getMessage());
+            return Optional.empty();
+        }
+
+        return Optional.of(new InetSocketAddress(addr, port));
     }
 
     private static String getReason(HttpServletResponse response)
