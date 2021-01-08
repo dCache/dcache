@@ -1,14 +1,12 @@
 package org.dcache.pool.classic;
 
-import com.google.common.collect.ComparisonChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
 
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -37,21 +35,13 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     private static class Entry implements Comparable<Entry>
     {
-        final PnfsId pnfsId;
         final long timeStamp;
         final long size;
 
         Entry(CacheEntry entry)
         {
-            pnfsId = requireNonNull(entry.getPnfsId());
             timeStamp = entry.getCreationTime();
             size = entry.getReplicaSize();
-        }
-
-        @Nonnull
-        PnfsId pnfsId()
-        {
-            return pnfsId;
         }
 
         long getTimeStamp()
@@ -62,10 +52,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         @Override
         public int compareTo(Entry entry)
         {
-            return ComparisonChain.start()
-                    .compare(timeStamp, entry.timeStamp)
-                    .compare(pnfsId, entry.pnfsId)
-                    .result();
+            return Long.compare(timeStamp, entry.timeStamp);
         }
     }
 
@@ -158,7 +145,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
             if (ce.getRc() >= 30 && ce.getRc() < 40) {
                 Entry entry = removeRequest(pnfsId);
                 if (entry != null) {
-                    _failedRequests.put(entry.pnfsId(), entry);
+                    _failedRequests.put(pnfsId, entry);
                 }
                 _errorCounter--;
             }
@@ -239,10 +226,16 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         if (maxCount != 0) {
             _callback = callback;
             _callbackExecutor = executor;
+
+            // REVISIT: why Map.Entry.comparingByValue().thenComparing(Map.Entry.comparingByKey()) doesn't work?!
+            Comparator<Map.Entry<PnfsId,Entry>> byPnfsId = Map.Entry.comparingByKey();
+            Comparator<Map.Entry<PnfsId,Entry>> byTimeStamp = Map.Entry.comparingByValue();
+            Comparator<Map.Entry<PnfsId,Entry>> entryComparator = byTimeStamp.thenComparing(byPnfsId);
+
             _storageHandler.flush(_hsmName,
-                    _requests.values().stream()
-                            .sorted()
-                            .map(Entry::pnfsId)
+                    _requests.entrySet().stream()
+                            .sorted(entryComparator)
+                            .map(Map.Entry::getKey)
                             .limit(maxCount)
                             .collect(Collectors.toList()),
                     this);
@@ -289,9 +282,9 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         return info._storageClass.equals(_storageClass) && info._hsmName.equals(_hsmName);
     }
 
-    private synchronized void addRequest(Entry entry)
+    private synchronized void addRequest(PnfsId pnfsId, Entry entry)
     {
-        _requests.put(entry.pnfsId(), entry);
+        _requests.put(pnfsId, entry);
         if (_time == 0L || entry.timeStamp < _time) {
             _time = entry.timeStamp;
         }
@@ -300,7 +293,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         if (_isOpen && !_isDraining && _activeCounter > 0 && _requestsSubmitted < _maxRequests) {
             _requestsSubmitted++;
             _activeCounter++;
-            _storageHandler.flush(_hsmName, singleton(entry.pnfsId()), this);
+            _storageHandler.flush(_hsmName, singleton(pnfsId), this);
         }
     }
 
@@ -323,7 +316,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         if (_failedRequests.containsKey(pnfsId) || _requests.containsKey(pnfsId)) {
             throw new CacheException(44, "Request already added : " + pnfsId);
         }
-        addRequest(new Entry(entry));
+        addRequest(pnfsId, new Entry(entry));
     }
 
     public synchronized void activate(PnfsId pnfsId) throws CacheException
@@ -332,14 +325,12 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         if (entry == null) {
             throw new CacheException("Not a deactivated Request : " + pnfsId);
         }
-        addRequest(entry);
+        addRequest(pnfsId, entry);
     }
 
     public synchronized void activateAll()
     {
-        for (Entry entry : _failedRequests.values()) {
-            addRequest(entry);
-        }
+        _failedRequests.forEach(this::addRequest);
         _failedRequests.clear();
     }
 
