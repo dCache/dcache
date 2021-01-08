@@ -22,6 +22,12 @@ public class CellLock
         _message = msg;
     }
 
+    public CellLock withDelayedTimeout(long delay)
+    {
+        return new CellLock(_message, _callback, _executor,
+                addWithInfinity(_timeout, delay));
+    }
+
     public CellMessageAnswerable getCallback() {
         return _callback;
     }

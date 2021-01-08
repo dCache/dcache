@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
 
 import java.io.FileNotFoundException;
 import java.io.Reader;
@@ -26,6 +27,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -40,6 +43,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -53,11 +57,13 @@ import dmg.util.logback.RootFilterThresholds;
 
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.BoundedExecutor;
+import org.dcache.util.FireAndForgetTask;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+import static java.util.Comparator.comparingLong;
 import static org.dcache.util.CompletableFutures.fromListenableFuture;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
@@ -125,6 +131,11 @@ public class CellNucleus implements ThreadFactory
 
     private volatile State _state = State.NEW;
 
+    private ScheduledFuture _scheduledTimeoutRun;
+    private boolean _processingTimedOutCallbacks;
+
+    private final Queue<CellLock> _callbackExpiry
+            = new PriorityQueue<>(comparingLong(CellLock::getTimeout));
     private final ConcurrentMap<UOID, CellLock> _waitHash = new ConcurrentHashMap<>();
     private String _cellClass;
     private String _cellSimpleClass;
@@ -485,11 +496,6 @@ public class CellNucleus implements ThreadFactory
 
     private void executeMaintenanceTasks()
     {
-        long now = System.currentTimeMillis();
-        _waitHash.entrySet().stream()
-                .filter(e -> e.getValue().getTimeout() < now)
-                .forEach(e -> timeOutMessage(e.getKey(), e.getValue(), this::reregisterCallback));
-
         // Execute delayed tasks; since those tasks may themselves add new deferred
         // tasks we limit the operation to the number of tasks we started out with
         // to avoid an infinite loop.
@@ -549,6 +555,7 @@ public class CellNucleus implements ThreadFactory
          * to avoid a race with shutdown.
          */
         _waitHash.put(uoid, lock);
+        addCallbackTimeout(lock);
 
         if (!_state.areCallbacksGuaranteed) {
             /* Cell is shutting down so timeout the message.
@@ -560,11 +567,13 @@ public class CellNucleus implements ThreadFactory
         try {
             __cellGlue.sendMessage(msg, local, remote);
         } catch (SerializationException e) {
+            removeCallbackTimeout(lock);
             if (_waitHash.remove(uoid, lock)) {
                 EventLogger.sendEnd(msg);
             }
             throw e;
         } catch (RuntimeException e) {
+            removeCallbackTimeout(lock);
             if (_waitHash.remove(uoid, lock)) {
                 try {
                     executor.execute(() -> {
@@ -843,6 +852,7 @@ public class CellNucleus implements ThreadFactory
 
         CellLock lock = _waitHash.remove(msg.getLastUOID());
         if (lock != null) {
+            removeCallbackTimeout(lock);
             //
             // we were waiting for you (sync or async)
             //
@@ -949,6 +959,78 @@ public class CellNucleus implements ThreadFactory
         return null;
     }
 
+    private void addCallbackTimeout(CellLock lock)
+    {
+        synchronized (_callbackExpiry) {
+            _callbackExpiry.add(lock);
+
+            if (!_processingTimedOutCallbacks) {
+                rescheduleCallbackTimeout();
+            }
+        }
+    }
+
+    private void removeCallbackTimeout(CellLock lock)
+    {
+        synchronized (_callbackExpiry) {
+            boolean callbackRemoved = _callbackExpiry.remove(lock);
+
+            if (callbackRemoved && !_processingTimedOutCallbacks) {
+                if (_callbackExpiry.isEmpty()) {
+                    if (_scheduledTimeoutRun != null) {
+                        _scheduledTimeoutRun.cancel(false);
+                        _scheduledTimeoutRun = null;
+                    }
+                } else {
+                    rescheduleCallbackTimeout();
+                }
+            }
+        }
+    }
+
+    @GuardedBy("_callbackExpiry")
+    private void rescheduleCallbackTimeout()
+    {
+        CellLock earliestExpiringCallback = _callbackExpiry.peek();
+
+        if (earliestExpiringCallback != null) {
+            long delayUntilFirstTimeout = earliestExpiringCallback.getTimeout() - System.currentTimeMillis();
+
+            if (_scheduledTimeoutRun != null) {
+                long delayUntilNextTimeoutRun = _scheduledTimeoutRun.getDelay(TimeUnit.MILLISECONDS);
+
+                if (delayUntilNextTimeoutRun <= delayUntilFirstTimeout) {
+                    return; // Do nothing: the next scheduled run is soon enough.
+                }
+
+                _scheduledTimeoutRun.cancel(false);
+            }
+
+            _scheduledTimeoutRun = _timer.schedule(new FireAndForgetTask(this::processTimedOutMessages),
+                    delayUntilFirstTimeout, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void processTimedOutMessages()
+    {
+        synchronized (_callbackExpiry) {
+            _processingTimedOutCallbacks = true;
+            try {
+                long now = System.currentTimeMillis();
+                _waitHash.entrySet().stream()
+                        .filter(e -> e.getValue().getTimeout() < now)
+                        .forEach(e -> {
+                                    _callbackExpiry.remove(e.getValue());
+                                    timeOutMessage(e.getKey(), e.getValue(), this::reregisterCallback);
+                                });
+            } finally {
+                _processingTimedOutCallbacks = false;
+                _scheduledTimeoutRun = null;
+                rescheduleCallbackTimeout();
+            }
+        }
+    }
+
     void shutdown(KillEvent event)
     {
         try (CDC ignored = CDC.reset(CellNucleus.this)) {
@@ -1001,6 +1083,13 @@ public class CellNucleus implements ThreadFactory
             /* Cancel callbacks.
              */
             _waitHash.forEach((uoid, lock) -> timeOutMessage(uoid, lock, (u, l) -> {}));
+            synchronized (_callbackExpiry) {
+                _callbackExpiry.clear();
+                if (_scheduledTimeoutRun != null) {
+                    _scheduledTimeoutRun.cancel(false);
+                    _scheduledTimeoutRun = null;
+                }
+            }
 
             /* Shut down message executor.
              */
@@ -1050,12 +1139,16 @@ public class CellNucleus implements ThreadFactory
     /**
      * Registers a callback, considering that the cell may have already shut down.
      */
-    private void reregisterCallback(UOID uoid, CellLock lock)
+    private void reregisterCallback(UOID uoid, CellLock oldLock)
     {
+        /* Schedule reprocessing some time in the future. */
+        CellLock lock = oldLock.withDelayedTimeout(20_000);
+
         /* Ordering here is important - need to insert into waitHash before checking the state
          * to avoid a race with shutdown.
          */
         _waitHash.put(uoid, lock);
+        addCallbackTimeout(lock);
 
         if (!_state.areCallbacksGuaranteed) {
             /* The cell is shutting down so we time out the message right away.
