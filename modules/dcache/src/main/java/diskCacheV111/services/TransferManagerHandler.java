@@ -791,7 +791,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         return state == RECEIVED_FIRST_POOL_REPLY_STATE;
     }
 
-    public Object appendInfo(final TransferStatusQueryMessage message)
+    public Object appendInfo(final TransferStatusQueryMessage message,
+            long poolQueryTimeout)
     {
         message.setState(state);
 
@@ -803,7 +804,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
         final ListenableFuture<IoJobInfo> future = manager.getPoolStub().
                 send(new CellPath(pool.getAddress()), "mover ls -binary " + moverId,
-                IoJobInfo.class, 30_000);
+                IoJobInfo.class, poolQueryTimeout);
         Futures.addCallback(future, new FutureCallback<IoJobInfo>()
         {
             @Override
