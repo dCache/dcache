@@ -1322,7 +1322,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     }
                     String location = locations.iterator().next();
                     _log.debug("Using pre-existing WRITE pool {} for {}", location, getPnfsId());
-                    // REVISIT: here we knoe that pool name and address are the same thing
+                    // REVISIT: here we know that pool name and address are the same thing
                     setPool(new Pool(location, new CellAddressCore(location), Assumptions.none()));
                     _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
                 } else {
@@ -1510,7 +1510,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     return;
                 }
 
-                _log.debug("Shuting down transfer: {}", this);
+                _log.debug("Shutting down transfer: {}", this);
                 killMover(0, "killed by door: returning layout");
                 // wait for clean mover shutdown only for writes only
                 if (isWrite() && !waitForMover(NFS_REQUEST_BLOCKING)) {
@@ -1531,7 +1531,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         /**
          * Set a {@link ChimeraNFSException} which will be thrown when
-         * {@link #getPoolDataServer(long)} is called. An existing object will
+         * {@link #getPoolDataServers(long)} is called. An existing object will
          * not be replaced. This method is used to enforce error condition on an
          * attempt to select a pool.
          * @param e exception to be thrown.
@@ -1560,7 +1560,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             ChimeraNFSException e = isWrite() ? POISON : DELAY;
             if (!enforceErrorIfRunning(e)) {
-                // alredy recalled
+                // already recalled
                 return;
             }
 
@@ -1568,7 +1568,7 @@ public class NFSv41Door extends AbstractCellComponent implements
              * pool selection complete, but no mover or redirect. Forget transfer.
              */
             if (getMoverId() == null || getRedirect() == null) {
-                _log.info("Forgeting transfer {}", this);
+                _log.info("Forgetting transfer {}", this);
                 cleanup();
                 return;
             }
@@ -1643,7 +1643,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    @Command(name="stats", hint = "Show nfs requests statstics.")
+    @Command(name="stats", hint = "Show nfs requests statistics.")
     public class NfsStatsCmd implements Callable<String> {
 
         @Option(name = "c", usage = "clear current statistics values")
@@ -1679,7 +1679,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             deviceid4 dev = ds.getDeviceId();
 
-            // FIXME: we should wait for all inuse layouts being released
+            // FIXME: we should wait for all in use layouts being released
             if (recall) {
                 _transfers.values().stream()
                         .filter(t -> t.getRedirect() != null)
@@ -1717,7 +1717,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Command(name = "transfer retry", hint = "retry transfer for given open state.",
         description = "Retry pool selection or mover creation for a given transfer. "
                 + "this can be necessary if components involved in selection "
-                + "process were restarted before a reply was deliverd to the door.")
+                + "process were restarted before a reply was delivered to the door.")
     public class TransferRetryCmd implements Callable<String> {
 
         @Argument(metaVar = "stateid")
@@ -1739,7 +1739,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             + "request, then a new transfer will be created.")
     public class TransferForgetCmd implements Callable<String> {
 
-        @Argument(metaVar = "stateid", usage = "nfs open state id assosiated with the transfer.")
+        @Argument(metaVar = "stateid", usage = "nfs open state id associated with the transfer.")
         String os;
 
         @Option(name = "kill-mover", usage = "try to kill mover, if exists.")
