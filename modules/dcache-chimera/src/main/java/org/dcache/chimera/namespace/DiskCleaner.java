@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
 import diskCacheV111.util.CacheException;
@@ -221,9 +222,10 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
      *
      * @param poolName name of the pool
      * @param removeList list of files to be removed from this pool
+     * @return number of successful removes
      * @throws InterruptedException
      */
-    private void sendRemoveToPoolCleaner(String poolName, List<String> removeList)
+    private int sendRemoveToPoolCleaner(String poolName, List<String> removeList)
             throws InterruptedException, CacheException, NoRouteToCellException {
         _log.trace("sendRemoveToPoolCleaner: poolName={} removeList={}", poolName, removeList);
 
@@ -233,12 +235,14 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                             new PoolRemoveFilesMessage(poolName, removeList)));
             if (msg.getReturnCode() == 0) {
                 removeFiles(poolName, removeList);
+                return removeList.size();
             } else if (msg.getReturnCode() == 1 && msg.getErrorObject() instanceof String[]) {
                 Set<String> notRemoved =
                         new HashSet<>(Arrays.asList((String[]) msg.getErrorObject()));
                 List<String> removed = new ArrayList<>(removeList);
                 removed.removeAll(notRemoved);
                 removeFiles(poolName, removed);
+                return removed.size();
             } else {
                 throw CacheExceptionFactory.exceptionOf(msg);
             }
@@ -297,21 +301,27 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         try {
             List<String> files = new ArrayList<>(_processAtOnce);
             Timestamp graceTime = Timestamp.from(Instant.now().minusSeconds(_gracePeriod.getSeconds()));
-            _log.info("Removing files deleted before {} from pool {}", graceTime, poolName);
-            _db.query("SELECT ipnfsid FROM t_locationinfo_trash WHERE ilocation=? AND itype=1 AND ictime<?",
-                    rs -> {
-                        try {
+
+            String lastSeenIpnfsid = "";
+            int removed = 0;
+            while (true) {
+                _db.query("SELECT ipnfsid FROM t_locationinfo_trash WHERE ilocation=? AND itype=1 AND ictime<? AND ipnfsid>? ORDER BY ipnfsid ASC LIMIT ?",
+                        rs -> {
                             files.add(rs.getString("ipnfsid"));
-                            if (files.size() >= _processAtOnce || rs.isLast()) {
-                                sendRemoveToPoolCleaner(poolName, files);
-                                files.clear();
-                            }
-                        } catch (InterruptedException | CacheException | NoRouteToCellException e) {
-                            throw new UncheckedExecutionException(e);
-                        }
-                    },
-                    poolName,
-                    graceTime);
+                        },
+                        poolName,
+                        graceTime,
+                        lastSeenIpnfsid,
+                        _processAtOnce
+                );
+                if(files.isEmpty()) {
+                    break;
+                }
+                lastSeenIpnfsid = files.get(files.size() - 1);
+                removed += sendRemoveToPoolCleaner(poolName, files);
+                files.clear();
+            }
+            _log.info("Removed {} files from pool {} deleted before {}", removed, poolName, graceTime);
         } catch (UncheckedExecutionException e) {
             throwIfInstanceOf(e.getCause(), InterruptedException.class);
             throwIfInstanceOf(e.getCause(), CacheException.class);
