@@ -1,11 +1,13 @@
 package diskCacheV111.vehicles;
 
+import java.io.IOException;
+
 public class OSMStorageInfo extends GenericStorageInfo {
 
    private static final long serialVersionUID = 4260226401319935542L;
 
-   private final String _store;
-   private final String _group;
+   private String _store;
+   private String _group;
 
    public OSMStorageInfo( String store , String group ){
 	   super();
@@ -49,5 +51,18 @@ public class OSMStorageInfo extends GenericStorageInfo {
              ';';
 
    }
+
+    private void readObject(java.io.ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_group != null) {
+            _group = _group.intern();
+        }
+
+        if (_store != null) {
+            _store = _store.intern();
+        }
+    }
 }
 

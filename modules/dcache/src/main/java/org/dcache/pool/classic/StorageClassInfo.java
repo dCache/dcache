@@ -1,7 +1,6 @@
 package org.dcache.pool.classic;
 
 import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,11 +10,11 @@ import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.util.CacheException;
@@ -24,7 +23,6 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 
-import static com.google.common.collect.Iterables.transform;
 import static java.util.Collections.min;
 import static java.util.Collections.singleton;
 import static java.util.Comparator.comparingLong;
@@ -230,8 +228,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
         _maxRequests = maxCount;
 
-        List<Entry> entries = Ordering.natural().sortedCopy(_requests.values());
-        maxCount = Math.min(entries.size(), maxCount);
+        maxCount = Math.min(_requests.size(), maxCount);
 
         _isDraining = false;
         _errorCounter = 0;
@@ -242,7 +239,13 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         if (maxCount != 0) {
             _callback = callback;
             _callbackExecutor = executor;
-            _storageHandler.flush(_hsmName, transform(entries.subList(0, maxCount), Entry::pnfsId), this);
+            _storageHandler.flush(_hsmName,
+                    _requests.values().stream()
+                            .sorted()
+                            .map(Entry::pnfsId)
+                            .limit(maxCount)
+                            .collect(Collectors.toList()),
+                    this);
         } else if (callback != null) {
             CallbackTask task = new CallbackTask(_hsmName, _storageClass, 0, id, 0, callback);
             return () -> executor.execute(task);
