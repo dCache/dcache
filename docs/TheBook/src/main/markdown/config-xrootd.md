@@ -365,6 +365,40 @@ as TPC source), the third-party server needs only a valid certificate issued
 by a recognized CA; anonymous read access is granted to files (even privately
 owned) on the basis of the rendezvous token submitted with the request.
 
+##### Proxy delegation and host aliasing
+
+A feature of the xrootd client is that it will refuse to delegate a proxy to
+a server endpoint if the hostname of the host credential is unverified.
+
+This can occur if hostname aliasing is used but the host certificate was not
+issued with the proper SAN extensions.  This is because the xrootd client by
+default does not trust the DNS service to resolve the alias.
+
+In the case where dCache is the destination of a third-party transfer and
+the client does not delegate a proxy to the door, one may thus see
+an error on the pool due to the missing proxy.  It is possible to
+configure dCache to attempt to generate a proxy from the pool host certificate
+in this case, but one may similarly see an error response from the
+source if the host DN is not mapped there.
+
+Short of having the host certificate reissued with a SAN extension for the alias,
+DNS lookup can be forced in the client by setting this environment variable:
+
+```
+XrdSecGSITRUSTDNS
+      0    do not use DNS to aide in certificate hostname validation.
+      1    use DNS, if needed, to validate certificate hostnames.
+      Default is 0.
+```
+
+WARNING: this is considered to be a security hole.  The recommended
+solution is to issue the certificate with SAN extensions.
+
+Please consult the xrootd.org document for further information; this policy
+may be subject to change in the future.
+
+https://xrootd.slac.stanford.edu/doc/dev50/sec_config.htm
+
 #### Client timeout control
 
 The Third-party embedded client has a timer which will interrupt and return
