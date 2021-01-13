@@ -32,6 +32,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
 
+import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 
@@ -122,7 +123,6 @@ import org.dcache.util.Exceptions;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.Xattrs;
 import org.dcache.util.list.DirectoryEntry;
@@ -132,6 +132,8 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.owncloud.OwncloudClients;
 import org.dcache.webdav.MiltonHandler.DcacheServletRequest;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static com.google.common.collect.Iterables.cycle;
 import static com.google.common.collect.Iterables.limit;
@@ -140,6 +142,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.TransferRetryPolicy.tryOnce;
 import static org.dcache.webdav.InsufficientStorageException.checkStorageSufficient;
 
 /**
@@ -203,8 +206,8 @@ public class DcacheResourceFactory
 
     private ScheduledExecutorService _executor;
 
-    private int _moverTimeout = 180000;
-    private TimeUnit _moverTimeoutUnit = MILLISECONDS;
+    private int _moverTimeout;
+    private TimeUnit _moverTimeoutUnit;
     private long _killTimeout = 1500;
     private TimeUnit _killTimeoutUnit = MILLISECONDS;
     private long _transferConfirmationTimeout = 60000;
@@ -230,8 +233,7 @@ public class DcacheResourceFactory
     private ReloadableTemplate _template;
     private ImmutableMap<String,String> _templateConfig;
 
-    private TransferRetryPolicy _retryPolicy =
-        TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
+    private TransferRetryPolicy _retryPolicy;
 
     private MissingFileStrategy _missingFileStrategy =
         new AlwaysFailMissingFileStrategy();
@@ -321,19 +323,19 @@ public class DcacheResourceFactory
      *
      * @param timeout The mover timeout in milliseconds
      */
+    @Required
     public void setMoverTimeout(int timeout)
     {
-        if (timeout <= 0) {
-            throw new IllegalArgumentException("Timeout must be positive");
-        }
+        checkState(_moverTimeout == 0, "mover timeout already set");
+        checkArgument(timeout > 0, "mover timeout must be positive");
         _moverTimeout = timeout;
-        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
     }
 
+    @Required
     public void setMoverTimeoutUnit(TimeUnit unit)
     {
+        checkState(_moverTimeoutUnit == null, "mover timeout unit already set");
         _moverTimeoutUnit = requireNonNull(unit);
-        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
     }
 
     public TimeUnit getMoverTimeoutUnit()
@@ -611,6 +613,14 @@ public class DcacheResourceFactory
     public String getInternalAddress()
     {
         return _internalAddress.getHostAddress();
+    }
+
+    @PostConstruct
+    public void init()
+    {
+        checkState(_moverTimeout > 0, "Mover timeout not specified");
+        checkState(_moverTimeoutUnit != null, "Mover timeout units not specified");
+        _retryPolicy = tryOnce().timeoutAfter(_moverTimeout, _moverTimeoutUnit);
     }
 
     public boolean isDoorRoot(FsPath path)

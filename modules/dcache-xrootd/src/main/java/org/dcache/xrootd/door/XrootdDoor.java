@@ -95,7 +95,6 @@ import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
@@ -109,6 +108,7 @@ import org.dcache.xrootd.util.FileStatus;
 import static java.util.Objects.requireNonNull;
 import static diskCacheV111.util.MissingResourceCacheException.checkResourceNotMissing;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.util.TransferRetryPolicy.tryOnce;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 /**
@@ -141,8 +141,7 @@ public class XrootdDoor
     private static final long PING_DELAY = 300000;
     private static final long TPC_EVICT_DELAY = TimeUnit.MINUTES.toMillis(2);
 
-    private static final TransferRetryPolicy RETRY_POLICY =
-        TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE);
+    private static final TransferRetryPolicy RETRY_POLICY = tryOnce().doNotTimeout();
 
     private List<FsPath> _readPaths = Collections.singletonList(FsPath.ROOT);
     private List<FsPath> _writePaths = Collections.singletonList(FsPath.ROOT);

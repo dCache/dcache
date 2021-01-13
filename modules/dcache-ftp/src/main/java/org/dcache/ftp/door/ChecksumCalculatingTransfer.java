@@ -28,9 +28,9 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.util.PortRange;
 import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicies;
 
 import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.TransferRetryPolicy.tryOnce;
 
 /**
  * A transfer that calculates a new checksum value of a file.
@@ -67,7 +67,7 @@ public class ChecksumCalculatingTransfer extends Transfer
                 MiB.toBytes(1), 0, getFileAttributes().getSize()));
         Checksum existingChecksum = Checksums.preferrredOrder().max(getFileAttributes().getChecksums());
         try {
-            selectPoolAndStartMover(TransferRetryPolicies.tryOncePolicy());
+            selectPoolAndStartMover(tryOnce().doNotTimeout());
             SocketChannel s = ssc.accept();
             ByteBuffer buffer = ByteBuffer.allocate(MiB.toBytes(1));
             MessageDigest desiredDigest = desiredType.createMessageDigest();

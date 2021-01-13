@@ -256,6 +256,8 @@ import static org.dcache.util.Exceptions.genericCheck;
 import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 import static org.dcache.util.Strings.describe;
 import static org.dcache.util.Strings.describeSize;
+import static org.dcache.util.TransferRetryPolicy.tryOnce;
+import static org.dcache.util.TransferRetryPolicy.maximumTries;
 
 @Inherited
 @Retention(RUNTIME)
@@ -802,12 +804,6 @@ public abstract class AbstractFtpDoorV1
     };
 
     private static final int DEFAULT_DATA_PORT = 20;
-
-    /**
-     * The maximum number of retries done on write. Must be one to
-     * avoid that empty replicas are left on pools.
-     */
-    private static final int MAX_RETRIES_WRITE = 1;
 
     /**
      * Time stamp format as defined in RFC 3659.
@@ -1590,10 +1586,10 @@ public abstract class AbstractFtpDoorV1
 
         _origin = new Origin(_remoteSocketAddress.getAddress());
 
-        _readRetryPolicy =
-            new TransferRetryPolicy(_settings.getMaxRetries(), _settings.getRetryWait() * 1000, Long.MAX_VALUE);
-        _writeRetryPolicy =
-            new TransferRetryPolicy(MAX_RETRIES_WRITE, 0, Long.MAX_VALUE);
+        _readRetryPolicy = maximumTries(_settings.getMaxRetries())
+                .pauseBeforeRetrying(_settings.getRetryWait(), TimeUnit.SECONDS)
+                .doNotTimeout();
+        _writeRetryPolicy = tryOnce().doNotTimeout();
 
         _checkStagePermission = new CheckStagePermission(_settings.getStageConfigurationFilePath());
         _checkStagePermission.setAllowAnonymousStaging(_settings.isAnonymousStagingAllowed());

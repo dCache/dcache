@@ -8,7 +8,9 @@ import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.dcache.util.ByteUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -177,7 +179,6 @@ import org.dcache.oncrpc4j.rpc.gss.GssSessionManager;
 
 import static java.util.stream.Collectors.toList;
 
-
 import javax.annotation.concurrent.GuardedBy;
 
 import diskCacheV111.namespace.EventNotifier;
@@ -187,6 +188,8 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 
 import static dmg.util.CommandException.checkCommand;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
+import static org.dcache.util.TransferRetryPolicy.alwaysRetry;
+import static org.dcache.util.TransferRetryPolicy.tryOnce;
 
 public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
@@ -294,14 +297,14 @@ public class NFSv41Door extends AbstractCellComponent implements
      * Retry policy used for accessing files.
      */
     private static final TransferRetryPolicy READ_POOL_SELECTION_RETRY_POLICY =
-        new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, STAGE_REQUEST_TIMEOUT);
+            alwaysRetry().pauseBeforeRetrying(NFS_RETRY_PERIOD).timeoutAfter(STAGE_REQUEST_TIMEOUT);
 
     /**
      * Retry policy used selecting write pools. Effectively, we don't retry
      * write request and propagate error to the clients, who decide retry of fail.
      */
-    private static final TransferRetryPolicy WRITE_POOL_SELECTION_RETRY_POLICY
-            = new TransferRetryPolicy(1, NFS_REQUEST_BLOCKING, NFS_REQUEST_BLOCKING);
+    private static final TransferRetryPolicy WRITE_POOL_SELECTION_RETRY_POLICY =
+            tryOnce().timeoutAfter(NFS_REQUEST_BLOCKING);
 
     private VfsCacheConfig _vfsCacheConfig;
 

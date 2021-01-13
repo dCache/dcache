@@ -43,10 +43,10 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.URIs;
 
 import static java.util.stream.Collectors.joining;
+import static org.dcache.util.TransferRetryPolicy.tryOnce;
 
 public class CopyManager extends AbstractCellComponent
     implements CellMessageReceiver, CellCommandListener, CellInfoProvider
@@ -383,11 +383,11 @@ public class CopyManager extends AbstractCellComponent
                 _source.setProtocolInfo(createSourceProtocolInfo());
                 _target.setLength(_source.getLength());
 
-                _source.selectPoolAndStartMover(TransferRetryPolicies.tryOncePolicy());
+                _source.selectPoolAndStartMover(tryOnce().doNotTimeout());
                 _source.waitForRedirect(timeout);
 
                 _target.setProtocolInfo(createTargetProtocolInfo(_source.getRedirect().getUrl()));
-                _target.selectPoolAndStartMover(TransferRetryPolicies.tryOncePolicy());
+                _target.selectPoolAndStartMover(tryOnce().doNotTimeout());
 
                 if (!_source.waitForMover(timeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");

@@ -1312,6 +1312,8 @@ public class Transfer implements Comparable<Transfer>
     public void selectPoolAndStartMover(TransferRetryPolicy policy)
             throws CacheException, InterruptedException
     {
+        policy.checkValid();
+
         try {
             getCancellable(selectPoolAndStartMoverAsync(policy));
         } catch (NoRouteToCellException e) {
@@ -1322,7 +1324,7 @@ public class Transfer implements Comparable<Transfer>
     public ListenableFuture<Void> selectPoolAndStartMoverAsync(TransferRetryPolicy policy)
     {
 
-        long deadLine = addWithInfinity(System.currentTimeMillis(), policy.getTotalTimeOut());
+        long deadLine = addWithInfinity(System.currentTimeMillis(), policy.getTimeout());
 
         AsyncFunction<Void, Void> selectPool =
                 ignored -> selectPoolAsync(getTimeoutFor(deadLine));
@@ -1373,7 +1375,7 @@ public class Transfer implements Comparable<Transfer>
                             break;
                         }
 
-                        if (count >= policy.getRetryCount()) {
+                        if (count >= policy.getMaximumTries()) {
                             return immediateFailedFuture(t);
                         }
 
@@ -1381,7 +1383,7 @@ public class Transfer implements Comparable<Transfer>
                          * iterations are separated by at least retryPeriod.
                          */
                         long now = System.currentTimeMillis();
-                        long timeToSleep = Math.max(0, policy.getRetryPeriod() - (now - start));
+                        long timeToSleep = Math.max(0, policy.getRetryPause() - (now - start));
 
                         if (subWithInfinity(deadLine, now) <= timeToSleep) {
                             return immediateFailedFuture(t);
