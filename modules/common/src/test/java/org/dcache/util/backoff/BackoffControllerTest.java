@@ -68,14 +68,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 
 import static org.dcache.util.backoff.IBackoffAlgorithm.Status.FAILURE;
 import static org.dcache.util.backoff.IBackoffAlgorithm.Status.SUCCESS;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
 
 /**
  * Test the BackoffController behaves correctly.

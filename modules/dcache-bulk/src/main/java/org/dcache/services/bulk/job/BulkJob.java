@@ -333,9 +333,12 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
                     case CANCELLED:
                     case COMPLETED:
                     case FAILED:
+                        this.state = state;
                         postCompletion();
+                        break;
                     case WAITING:
                         this.state = state;
+                        completionHandler.signalWaiting();
                         break;
                     default:
                         throw new IllegalStateException(

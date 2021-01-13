@@ -19,7 +19,6 @@ package org.dcache.gplazma.scitoken;
 
 import org.junit.Test;
 
-import java.util.List;
 import java.util.Optional;
 
 import diskCacheV111.util.FsPath;
@@ -28,6 +27,7 @@ import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
 
 import static org.dcache.auth.attributes.Activity.*;
 import static org.dcache.gplazma.scitoken.SciTokenScope.Operation.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 

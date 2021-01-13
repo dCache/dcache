@@ -560,7 +560,7 @@ public class PinRequestProcessor
                     return null;
                 }
 
-                _dao.update(pin, _dao.set().state(UNPINNING).requestId(null));
+                _dao.update(pin, _dao.set().state(READY_TO_UNPIN).requestId(null));
             }
         }
 
@@ -617,13 +617,13 @@ public class PinRequestProcessor
              * unlikely, if it would happen then we have a race
              * between the set sticky and clear sticky messages. To
              * cover this case we delete the old record and create a
-             * fresh one in UNPINNING.
+             * fresh one in READY_TO_UNPIN.
              */
             _dao.delete(task.getPin());
             _dao.create(_dao.set()
                                 .subject(task.getSubject())
                                 .pnfsId(task.getPnfsId())
-                                .state(UNPINNING));
+                                .state(READY_TO_UNPIN));
         } else {
             /* We didn't create a sticky flag yet, so there is no
              * reason to keep the record. It will expire by itself,

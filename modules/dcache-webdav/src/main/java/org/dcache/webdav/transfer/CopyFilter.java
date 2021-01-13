@@ -28,6 +28,7 @@ import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.servlet.ServletRequest;
+import io.milton.servlet.ServletResponse;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Required;
 import javax.annotation.PostConstruct;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -297,11 +299,13 @@ public class CopyFilter implements Filter
                 chain.process(request, response);
             }
         } catch (ErrorResponseException e) {
-            response.sendError(e.getStatus(), e.getMessage());
+            ServletResponse.getResponse().setStatus(e.getStatus().code,
+                    e.getMessage());
         } catch (BadRequestException e) {
-            response.sendError(Status.SC_BAD_REQUEST, e.getMessage());
+            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_BAD_REQUEST,
+                    e.getMessage());
         } catch (InterruptedException ignored) {
-            response.sendError(Response.Status.SC_SERVICE_UNAVAILABLE,
+            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
                     "dCache is shutting down");
         }
     }
@@ -412,7 +416,7 @@ public class CopyFilter implements Filter
                 redirectWithDelegation(response);
             } else {
                 LOGGER.error("Error performing OpenId Connect Token Exchange");
-                response.sendError(Status.SC_INTERNAL_SERVER_ERROR,
+                ServletResponse.getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                                    "Error performing OpenId Connect Token Exchange");
             }
         } else {
@@ -557,7 +561,7 @@ public class CopyFilter implements Filter
 
         if (hasClientAlreadyBeenRedirected(request)) {
             LOGGER.debug("client failed to delegate a credential before re-requesting the COPY");
-            response.sendError(Response.Status.SC_UNAUTHORIZED,
+            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED,
                     "client failed to delegate a credential");
             return;
         }
@@ -569,7 +573,7 @@ public class CopyFilter implements Filter
             response.sendRedirect(buildRedirectUrl(request));
         } catch (IllegalArgumentException e) {
             LOGGER.debug(e.getMessage());
-            response.sendError(Response.Status.SC_INTERNAL_SERVER_ERROR,
+            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     e.getMessage());
         }
     }

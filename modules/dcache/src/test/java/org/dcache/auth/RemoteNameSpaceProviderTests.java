@@ -5,7 +5,6 @@ import com.google.common.collect.Range;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.net.URI;
@@ -63,10 +62,9 @@ import static diskCacheV111.util.CacheException.*;
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.TYPE;
-import static org.dcache.namespace.FileType.DIR;
 import static org.dcache.namespace.FileType.REGULAR;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.*;
 

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,16 +17,15 @@
  */
 package org.dcache.auth.attributes;
 
-import static org.hamcrest.CoreMatchers.*;
-
 import org.junit.Test;
 
 import java.util.EnumSet;
 
 import diskCacheV111.util.FsPath;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.*;
 import static org.dcache.auth.attributes.Activity.*;
-import static org.junit.Assert.assertThat;
 
 public class RestrictionsTests
 {

@@ -27,31 +27,40 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.NDC;
 
+import static org.dcache.pinmanager.model.Pin.State.FAILED_TO_UNPIN;
+import static org.dcache.pinmanager.model.Pin.State.READY_TO_UNPIN;
+import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
+
 /**
  * Performs the work of unpinning files.
  *
  * When an unpin request is received a pin is put into state
- * UNPINNING. The actual work to unpin a file is performed
+ * READY_TO_UNPIN. The actual work of unpinning a file is performed
  * independently of the unpin request.
+ *
+ * This class attempts to unpin a limited number of files
+ * per run which are in state READY_TO_UNPIN.
  */
 public class UnpinProcessor implements Runnable
 {
-    private static final Logger _logger =
-        LoggerFactory.getLogger(UnpinProcessor.class);
+    private static final Logger _logger = LoggerFactory.getLogger(UnpinProcessor.class);
 
     private static final int MAX_RUNNING = 1000;
+    private static final int NO_UNPIN_LIMIT_PER_RUN = -1;
 
     private final PinDao _dao;
     private final CellStub _poolStub;
     private final PoolMonitor _poolMonitor;
     private final AtomicInteger _count = new AtomicInteger();
+    private final int _maxUnpinsPerRun;
 
-    public UnpinProcessor(PinDao dao, CellStub poolStub,
-                          PoolMonitor poolMonitor)
+
+    public UnpinProcessor(PinDao dao, CellStub poolStub, PoolMonitor poolMonitor, int maxUnpinsPerRun)
     {
         _dao = dao;
         _poolStub = poolStub;
         _poolMonitor = poolMonitor;
+        _maxUnpinsPerRun = maxUnpinsPerRun;
     }
 
     @Override
@@ -81,7 +90,11 @@ public class UnpinProcessor implements Runnable
     @Transactional
     protected void unpin(final Semaphore idle, final Executor executor) throws InterruptedException
     {
-        _dao.foreach(_dao.where().state(Pin.State.UNPINNING), pin -> upin(idle, executor, pin));
+        if (_maxUnpinsPerRun == NO_UNPIN_LIMIT_PER_RUN) {
+            _dao.foreach(_dao.where().state(READY_TO_UNPIN), pin -> upin(idle, executor, pin));
+        } else {
+            _dao.foreach(_dao.where().state(READY_TO_UNPIN), pin -> upin(idle, executor, pin), _maxUnpinsPerRun);
+        }
     }
 
     private void upin(Semaphore idle, Executor executor, Pin pin) throws InterruptedException
@@ -91,16 +104,22 @@ public class UnpinProcessor implements Runnable
             _dao.delete(pin);
         } else {
             _logger.debug("Clearing sticky flag for pin {}, pnfsid {} on pool {}", pin.getPinId(), pin.getPnfsId(), pin.getPool());
+            _dao.update(pin, _dao.set().state(UNPINNING));
             clearStickyFlag(idle, pin, executor);
         }
     }
 
-    private void clearStickyFlag(final Semaphore idle, final Pin pin, Executor executor)
-        throws InterruptedException
+    private void failedToUnpin(Pin pin)
+    {
+        _dao.update(pin, _dao.set().state(FAILED_TO_UNPIN));
+    }
+
+    private void clearStickyFlag(final Semaphore idle, final Pin pin, Executor executor) throws InterruptedException
     {
         PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(pin.getPool());
         if (pool == null || !pool.isActive()) {
             _logger.warn("Unable to clear sticky flag for pin {} on pnfsid {} because pool {} is unavailable", pin.getPinId(), pin.getPnfsId(), pin.getPool());
+            failedToUnpin(pin);
             return;
         }
 
@@ -131,6 +150,7 @@ public class UnpinProcessor implements Runnable
                                          break;
                                      default:
                                          _logger.warn("Failed to clear sticky flag: {} [{}]", error, rc);
+                                         failedToUnpin(pin);
                                          break;
                                      }
                                  }

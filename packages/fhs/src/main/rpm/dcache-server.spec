@@ -8,13 +8,13 @@ Prefix: /
 Packager: dCache.org <support@dcache.org>.
 
 AutoReqProv: no
+
 Requires(pre): shadow-utils
-Requires(post): chkconfig
-Requires(preun): chkconfig
-# This is for /sbin/service
-Requires(preun): initscripts
 Requires: which
 Requires: java-11
+
+%{?systemd_requires}
+BuildRequires: systemd
 
 License: Distributable
 Group: Applications/System
@@ -32,20 +32,13 @@ dCache is a distributed mass storage system.
 This package contains the server components.
 
 %pre
-
 # stop service before upgrade
 if [ $1 -eq 2 ]; then
-    /sbin/service dcache-server stop >/dev/null 2>&1
-
-    # as we produce multi-platform RPM don't use RPMS native mechanisms to handle
-    # systemd services.
-    # REVISIT: remove in dCache 7.0.
-
-    if [ -x /usr/bin/systemctl ]; then
-        /usr/bin/systemctl stop dcache.target
+    if [ -f /etc/rc.d/init.d/dcache-server ]; then
+        /sbin/service dcache-server stop >/dev/null 2>&1
     fi
+    /usr/bin/systemctl stop dcache.target
 fi
-
 
 # Make sure the system user and group exist, and that
 # the user is a member of the group.
@@ -74,6 +67,8 @@ fi
 exit 0
 
 %post
+%systemd_post dcache.target
+
 # generate admin door ssh2 server key
 if [ ! -f /etc/dcache/admin/ssh_host_rsa_key ]; then
     ssh-keygen -q -t rsa -f /etc/dcache/admin/ssh_host_rsa_key -N ""
@@ -84,25 +79,15 @@ fi
 # fix file /var/lib/dcache directory ownership
 chown dcache:dcache /var/lib/dcache
 
+%preun
+%systemd_preun dcache.target
+
+%postun
+%systemd_postun dcache.target
+
 %posttrans
 if [ ! -f /usr/share/dcache/lib/services.sh ]; then
-    ln -s /usr/share/dcache/lib/services-daemon.sh /usr/share/dcache/lib/services.sh
-fi
-
-%preun
-
-# as sysV and systemd are allowed try to stop both
-if [ $1 -eq 0 ] ; then
-    /sbin/service dcache-server stop >/dev/null 2>&1
-    /sbin/chkconfig --del dcache-server
-
-    # as we produce multi-platform RPM don't use RPMS native mechanisms to handle
-    # systemd services.
-    # REVISIT: remove in dCache 7.0.
-    if [ -x /usr/bin/systemctl ]; then
-        /usr/bin/systemctl disable --now dcache.target
-        /usr/bin/systemctl daemon-reload
-    fi
+    ln -s /usr/share/dcache/lib/services-systemd.sh /usr/share/dcache/lib/services.sh
 fi
 
 %clean
@@ -139,7 +124,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(770,dcache,dcache) /var/lib/dcache/star
 %attr(755,dcache,dcache) /var/spool/dcache/star
 
-%attr(0755,root,root) /etc/rc.d/init.d/dcache-server
 %attr(0755,root,root) /etc/bash_completion.d/dcache
 %config(noreplace) %attr(0644,root,root) /etc/security/limits.d/92-dcache.conf
 %config(noreplace) %attr(0644,root,root) /etc/logrotate.d/dcache

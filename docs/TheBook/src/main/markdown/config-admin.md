@@ -163,7 +163,7 @@ To allow other users access to the admin interface add them to the `/etc/dcache/
 
 Just adding a user in the `dcache.kpwd` file is not sufficient. The generated user also needs access priileges that can only be set within the admin interface itself.
 
-See [the section called “Create a new user”](#create-a-new-user) to learn how to create the user in the admin interface and set the rights.
+See [the section called “Creating a new user”](#creating-a-new-user) to learn how to create the user in the admin interface and set the rights.
 
 
 ## Hot to use the Admin Interface

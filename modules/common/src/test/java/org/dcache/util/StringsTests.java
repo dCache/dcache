@@ -4,9 +4,9 @@ import org.junit.Test;
 
 import static org.dcache.util.Strings.plainLength;
 import static org.dcache.util.Strings.wrap;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
-
 /**
  *
  * @author timur

@@ -147,7 +147,7 @@ public class MovePinRequestProcessor
                                 .pnfsId(tmpPin.getPnfsId())
                                 .pool(tmpPin.getPool())
                                 .sticky(tmpPin.getSticky())
-                                .state(UNPINNING));
+                                .state(READY_TO_UNPIN));
             throw new TimeoutCacheException("Move expired");
         }
 
@@ -171,7 +171,7 @@ public class MovePinRequestProcessor
                     _dao.set()
                             .pool(pin.getPool())
                             .sticky(pin.getSticky())
-                            .state(UNPINNING));
+                            .state(READY_TO_UNPIN));
     }
 
     private void setSticky(String poolName, PnfsId pnfsId, boolean sticky, String owner, long validTill)
@@ -261,7 +261,9 @@ public class MovePinRequestProcessor
                 throw new PermissionDeniedCacheException("Access denied");
             } else if (pin.getState() == PINNING) {
                 throw new InvalidMessageCacheException("File is not pinned yet");
-            } else if (pin.getState() == UNPINNING) {
+            } else if (pin.getState() == READY_TO_UNPIN
+                        || pin.getState() == UNPINNING
+                        || pin.getState() == FAILED_TO_UNPIN) {
                 throw new InvalidMessageCacheException("Pin is no longer valid");
             }
 

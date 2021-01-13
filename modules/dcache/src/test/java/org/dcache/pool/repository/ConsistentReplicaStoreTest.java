@@ -9,17 +9,14 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -31,8 +28,8 @@ import org.dcache.vehicles.FileAttributes;
 import static diskCacheV111.util.AccessLatency.NEARLINE;
 import static diskCacheV111.util.RetentionPolicy.CUSTODIAL;
 import static org.dcache.pool.repository.ReplicaState.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.*;
 
 public class ConsistentReplicaStoreTest

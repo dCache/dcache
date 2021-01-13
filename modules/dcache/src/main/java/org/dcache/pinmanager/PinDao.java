@@ -108,6 +108,13 @@ public interface PinDao
     void foreach(PinCriterion c, InterruptibleConsumer<Pin> f) throws InterruptedException;
 
     /**
+     * Performs the given action for pins matching the selection criterion
+     * with an upper limit on the number of pins processed.
+     * The limit must be a positive value.
+     */
+    void foreach(PinCriterion c, InterruptibleConsumer<Pin> f, int limit) throws InterruptedException;
+
+    /**
      * Fluent interface to construct selection criteria.
      */
     interface PinCriterion

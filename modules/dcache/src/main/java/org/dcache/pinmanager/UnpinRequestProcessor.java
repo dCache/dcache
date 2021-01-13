@@ -16,7 +16,7 @@ import org.dcache.pinmanager.model.Pin;
  * Processes unpin requests.
  *
  * When an unpin request is received a pin is put into state
- * UNPINNING. The actual work to unpin a file is performed
+ * READY_TO_UNPIN. The actual work to unpin a file is performed
  * by the UnpinProcessor.
  */
 public class UnpinRequestProcessor
@@ -52,7 +52,7 @@ public class UnpinRequestProcessor
         } else {
             for (Pin pin: _dao.get(_dao.where().pnfsId(pnfsId))) {
                 if (_pdp.canUnpin(message.getSubject(), pin)) {
-                    _dao.update(pin, _dao.set().state(Pin.State.UNPINNING));
+                    _dao.update(pin, _dao.set().state(Pin.State.READY_TO_UNPIN));
                 }
             }
         }
@@ -66,7 +66,7 @@ public class UnpinRequestProcessor
             if (!_pdp.canUnpin(message.getSubject(), pin)) {
                 throw new PermissionDeniedCacheException("Access denied");
             }
-            pin = _dao.update(pin, _dao.set().state(Pin.State.UNPINNING));
+            pin = _dao.update(pin, _dao.set().state(Pin.State.READY_TO_UNPIN));
             if (pin != null) {
                 message.setPinId(pin.getPinId());
                 message.setRequestId(pin.getRequestId());

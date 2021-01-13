@@ -39,8 +39,14 @@ public interface FileSystemProvider extends Closeable {
         /** Pin established. */
         PINNED,
 
+        /** Pin is in the process of being removed. */
+        UNPINNING,
+
         /** Pin is to be removed. */
-        UNPINNING;
+        READY_TO_UNPIN,
+
+        /** Pin removal attempt failed. */
+        FAILED_TO_UNPIN;
     }
 
     /** Information about an individual pin. */

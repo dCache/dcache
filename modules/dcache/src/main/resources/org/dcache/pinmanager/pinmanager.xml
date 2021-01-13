@@ -53,6 +53,10 @@
   <bean id="pinmanager" class="org.dcache.pinmanager.PinManager" init-method="init">
       <property name="expirationPeriod" value="${pinmanager.expiration-period}"/>
       <property name="expirationPeriodUnit" value="${pinmanager.expiration-period.unit}"/>
+      <property name="maxUnpinsPerRun" value="${pinmanager.max-unpins-per-run}"/>
+      <property name="resetFailedUnpinsPeriod"
+                value="#{ T(org.dcache.util.TimeUtils).durationOf('${pinmanager.reset-failed-unpins-period}',
+                '${pinmanager.reset-failed-unpins-period.unit}')}"/>
       <property name="poolStub" ref="pool-stub"/>
       <property name="dao" ref="dao"/>
       <property name="executor" ref="scheduled-executor"/>

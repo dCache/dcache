@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,13 +20,9 @@ package org.dcache.gplazma.util;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-
-import static org.hamcrest.Matchers.*;
 
 import org.junit.Before;
 
@@ -44,6 +40,8 @@ import org.dcache.gplazma.util.IGTFInfo.Version;
 
 import static org.dcache.gplazma.util.IGTFInfo.Type.POLICY;
 import static org.dcache.gplazma.util.IGTFInfo.Type.TRUST_ANCHOR;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 
 public class IGTFInfoFileTest

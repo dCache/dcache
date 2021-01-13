@@ -40,7 +40,7 @@ class Link implements SelectionLink, Serializable {
             if (pcore instanceof PGroup) {
                 PGroup original = (PGroup)pcore;
                 PGroup newPGroup = new PGroup(original.getName(),
-                                              original.isResilient());
+                                              original.isPrimary());
                 pGroups.add(newPGroup);
             }
         }

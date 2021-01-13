@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -48,12 +48,15 @@ import org.dcache.auth.Subjects;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.util.SqlGlob;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
 
 @ParametersAreNonnullByDefault
 public class JdbcDao extends JdbcDaoSupport implements PinDao
 {
+    private static final int NO_QUERY_LIMIT = -1;
+
     @Override
     public PinCriterion where()
     {
@@ -130,7 +133,6 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(sql, 1, n);
         }
         return get(where().sameIdAs(criterion));
-
     }
 
     @Override
@@ -141,13 +143,25 @@ public class JdbcDao extends JdbcDaoSupport implements PinDao
     }
 
     @Override
-    public void foreach(PinCriterion criterion, InterruptibleConsumer<Pin> f)
-            throws InterruptedException
+    public void foreach(PinCriterion criterion, InterruptibleConsumer<Pin> f) throws InterruptedException
     {
+        doChunkedForeach(criterion, f, NO_QUERY_LIMIT);
+    }
+
+    @Override
+    public void foreach(PinCriterion criterion, InterruptibleConsumer<Pin> f, int limit) throws InterruptedException, IllegalArgumentException
+    {
+        checkArgument(limit > 0, "The chunked pin iteration must not be called with a negative or 0 limit value.");
+        doChunkedForeach(criterion, f, limit);
+    }
+
+    private void doChunkedForeach(PinCriterion criterion, InterruptibleConsumer<Pin> f, int limit) throws InterruptedException {
+        String limitQueryPart = limit == NO_QUERY_LIMIT ? "" : " LIMIT " + limit;
         JdbcCriterion c = (JdbcCriterion) criterion;
+
         InterruptedException exception =
                 getJdbcTemplate().query(
-                        "SELECT * FROM pins WHERE " + c.getPredicate(), c.getArgumentsAsArray(),
+                        "SELECT * FROM pins WHERE " + c.getPredicate() + limitQueryPart, c.getArgumentsAsArray(),
                         rs -> {
                             try {
                                 while (rs.next()) {

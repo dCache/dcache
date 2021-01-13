@@ -183,13 +183,10 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
                     w.println(json.toString(JSON_RESPONSE_INDENTATION));
                 }
             } catch (ErrorResponseException e) {
-                response.sendError(e.getStatus(), e.getMessage());
+                response.setStatus(e.getStatus(), e.getMessage());
             } catch (RuntimeException e) {
                 LOGGER.error("Bug detected", e);
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                try (PrintWriter w = response.getWriter()) {
-                    w.println("Internal error: " + e.toString());
-                }
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (IOException e) {
             LOGGER.error("Failed to send output: {}", e.toString());

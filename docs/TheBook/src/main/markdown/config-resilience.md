@@ -49,7 +49,7 @@ Resilient replicas (belonging to **resilient storage unit**s) will, for this
 reason, only be found on **resilient pools** (belonging to a **resilient pool
 group**), though not all files on resilient pools are necessarily resilient (see
 below concerning [shared
-pools](https://github.com/dCache/dcache/wiki/Resilience#pool-sharing)).
+pools](#pool-sharing)).
 
 Note that a file's `RetentionPolicy` is not limited to `REPLICA` in order for it
 to qualify as resilient; one may have `CUSTODIAL` files which are also given
@@ -301,7 +301,7 @@ Pools so marked are recorded to this file after each pool monitor state update
 that previously excluded pools will continue to be treated as such.
 
 For pool exclusion, see the [section
-below](https://github.com/dCache/dcache/wiki/Resilience#exclude-a-pool-from-resilience-handling)
+below](#exclude-a-pool-from-resilience-handling)
 under typical scenarios.
 
 ## Admin Commands

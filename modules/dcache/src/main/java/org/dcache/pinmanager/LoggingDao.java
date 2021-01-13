@@ -78,7 +78,6 @@ public class LoggingDao implements PinDao
         }
     }
 
-
     /** Record pin selection criterion. */
     private static class LoggingPinCriterion
             extends LoggingWrappingBuilder<PinCriterion, LoggingPinCriterion>
@@ -410,6 +409,28 @@ public class LoggingDao implements PinDao
 
         try {
             inner.foreach(c.inner, f);
+        } finally {
+            if (LOG.isDebugEnabled()) {
+                NDC.pop();
+            }
+        }    }
+
+    @Override
+    public void foreach(PinCriterion criterion, InterruptibleConsumer<Pin> f, int limit)
+            throws InterruptedException
+    {
+        LoggingPinCriterion c = (LoggingPinCriterion) criterion;
+
+        if (LOG.isDebugEnabled()) {
+            String limitString = " (limit: " + limit + ")";
+            String id = "FOREACH-" + foreachCounter.incrementAndGet();
+            LOG.debug("Operating on {}{} as {}{}.", c.getTarget(),
+                    c.getDescription(), id, limitString);
+            NDC.push(id);
+        }
+
+        try {
+            inner.foreach(c.inner, f, limit);
         } finally {
             if (LOG.isDebugEnabled()) {
                 NDC.pop();

@@ -82,9 +82,9 @@ import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
 import org.dcache.alarms.spi.LogEntryListenerFactory;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests filtering and storing of logging events.<br>

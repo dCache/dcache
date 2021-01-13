@@ -56,10 +56,10 @@ public class PathHandler extends AbstractHandler
         } catch (HttpException e) {
             LOGGER.debug("Failing request {}: {} {}", request, e.getErrorCode(),
                     e.getMessage());
-            response.sendError(e.getErrorCode(), e.getMessage());
+            response.setStatus(e.getErrorCode(), e.getMessage());
         } catch (URISyntaxException e) {
             LOGGER.debug("Failing request {}: {}", request, e.getMessage());
-            response.sendError(SC_INTERNAL_SERVER_ERROR, "Bad URI: " + e.getMessage());
+            response.setStatus(SC_INTERNAL_SERVER_ERROR, "Bad URI: " + e.getMessage());
         }
     }
 

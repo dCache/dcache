@@ -23,9 +23,9 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.*;
-
 public class LimitedTeeOutputStreamTest
 {
     private ByteArrayOutputStream out;

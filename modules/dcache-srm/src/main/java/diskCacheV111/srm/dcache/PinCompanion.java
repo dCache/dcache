@@ -197,13 +197,6 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
             return _attributes.getAccessLatency() == AccessLatency.ONLINE;
         }
 
-        private boolean isOnline(FileAttributes attributes)
-        {
-            FileLocality locality =
-                _poolMonitor.getFileLocality(_attributes, _clientHost);
-            return locality == FileLocality.ONLINE;
-        }
-
         @Override
         public void success(PnfsGetFileAttributes message)
         {

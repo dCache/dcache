@@ -115,8 +115,11 @@ public final class NonReindexableList<E> implements List<E> {
         }
     }
 
-    public static String safeGet(int index, NonReindexableList<String> list) {
+    public static String safeGet(Integer index, NonReindexableList<String> list) {
         try {
+            if (index == null) {
+                return null;
+            }
             if (index == MISSING_INDEX) {
                 return MISSING;
             }

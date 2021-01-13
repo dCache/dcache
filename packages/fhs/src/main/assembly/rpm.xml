@@ -8,11 +8,6 @@
 	<destName>dcache</destName>
       </file>
       <file>
-	<source>src/main/rpm/dcache-server.init</source>
-	<outputDirectory>etc/rc.d/init.d</outputDirectory>
-	<destName>dcache-server</destName>
-      </file>
-      <file>
         <source>src/main/scripts/dcache-limits.conf</source>
         <outputDirectory>etc/security/limits.d</outputDirectory>
         <destName>92-dcache.conf</destName>

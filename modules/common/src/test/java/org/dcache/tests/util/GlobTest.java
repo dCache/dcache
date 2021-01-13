@@ -2,10 +2,9 @@ package org.dcache.tests.util;
 
 import org.junit.Test;
 
-import java.util.regex.PatternSyntaxException;
-
 import org.dcache.util.Glob;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 

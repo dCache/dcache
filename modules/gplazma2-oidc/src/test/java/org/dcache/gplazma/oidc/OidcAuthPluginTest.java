@@ -27,9 +27,9 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.exceptions.OidcException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 
 public class OidcAuthPluginTest {
     private static final String OIDC_PROPERTY_NAME = "gplazma.oidc.hostnames";

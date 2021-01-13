@@ -14,8 +14,8 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertThat;
 
 public class HtpasswdPluginTest
 {

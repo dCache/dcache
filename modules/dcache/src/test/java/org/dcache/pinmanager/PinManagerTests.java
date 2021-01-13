@@ -74,7 +74,7 @@ import org.dcache.vehicles.FileAttributes;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.pinmanager.model.Pin.State.PINNED;
-import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
+import static org.dcache.pinmanager.model.Pin.State.READY_TO_UNPIN;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -268,7 +268,7 @@ public class PinManagerTests
         Pin newPin = dao.get(dao.where().id(pin.getPinId()));
         assertEquals(PNFS_ID1, newPin.getPnfsId());
         assertEquals(pin.getPool(), newPin.getPool());
-        assertEquals(UNPINNING, newPin.getState());
+        assertEquals(READY_TO_UNPIN, newPin.getState());
         assertEquals(pin.getSticky(), newPin.getSticky());
     }
 
@@ -302,7 +302,7 @@ public class PinManagerTests
         Pin newPin = dao.get(dao.where().id(pin.getPinId()));
         assertEquals(PNFS_ID1, newPin.getPnfsId());
         assertEquals(pin.getPool(), newPin.getPool());
-        assertEquals(UNPINNING, newPin.getState());
+        assertEquals(READY_TO_UNPIN, newPin.getState());
         assertEquals(pin.getSticky(), newPin.getSticky());
     }
 
@@ -332,6 +332,8 @@ public class PinManagerTests
 @ParametersAreNonnullByDefault
 class TestDao implements PinDao
 {
+    final static int NO_QUERY_LIMIT = -1;
+
     long _counter;
     Map<Long,Pin> _pins = new HashMap<>();
 
@@ -422,9 +424,29 @@ class TestDao implements PinDao
     @Override
     public void foreach(PinCriterion criterion, InterruptibleConsumer<Pin> f) throws InterruptedException
     {
+        doChunkedForeach(criterion, f, NO_QUERY_LIMIT);
+    }
+
+    @Override
+    public void foreach(PinCriterion criterion, InterruptibleConsumer<Pin> f, int limit) throws InterruptedException
+    {
+        if (limit < 0) {
+            throw new IllegalArgumentException("The chunked pin iteration must not be called with a negative limit value.");
+        }
+        doChunkedForeach(criterion, f, limit);
+    }
+
+    private void doChunkedForeach(PinCriterion criterion, InterruptibleConsumer<Pin> f, int limit) throws InterruptedException
+    {
+        boolean limited = limit != NO_QUERY_LIMIT;
+        int counter = limit;
         for (Pin pin : _pins.values()) {
+            if(limited && counter <= 0) {
+                break;
+            }
             if (((TestCriterion) criterion).matches(pin)) {
                 f.accept(pin);
+                counter--;
             }
         }
     }
