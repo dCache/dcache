@@ -738,7 +738,7 @@
             <dependency>
                 <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-authz-plugin-alice</artifactId>
-                <version>1.1.0</version>
+                <version>1.2.0</version>
             </dependency>
 
             <dependency>
@@ -789,7 +789,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.22.0</version>
+            <version>0.22.2</version>
         </dependency>
         <dependency>
             <groupId>com.github.nitram509</groupId>
