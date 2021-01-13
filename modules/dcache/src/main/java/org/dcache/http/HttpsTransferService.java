@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2017-2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2017-2020 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -33,10 +33,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.PostConstruct;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.URI;
@@ -44,6 +44,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 
 
 public class HttpsTransferService extends HttpTransferService
@@ -57,7 +58,7 @@ public class HttpsTransferService extends HttpTransferService
     private Path _serverCaPath;
     private CrlCheckingMode _crlCheckingMode;
     private OCSPCheckingMode _ocspCheckingMode;
-    private volatile SSLEngine _sslEngine;
+    private Callable<SSLContext> _sslContextProvider;
 
 
     @Required
@@ -85,6 +86,26 @@ public class HttpsTransferService extends HttpTransferService
     public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
     {
         _ocspCheckingMode = ocspCheckingMode;
+    }
+
+    @PostConstruct
+    public void buildSSLContextProvider() throws Exception
+    {
+        _sslContextProvider = org.dcache.ssl.CanlContextFactory.custom()
+                .withCertificateAuthorityPath(_serverCaPath)
+                .withCrlCheckingMode(_crlCheckingMode)
+                .withOcspCheckingMode(_ocspCheckingMode)
+                .withCertificatePath(_serverCertificatePath)
+                .withKeyPath(_serverKeyPath)
+                .withLazy(false)
+                .withLoggingContext(new CDC()::restore)
+                .buildWithCaching();
+
+        /*
+         * Fail-fast: try to build an SSLContext (and discard result) so that
+         * bad deployment / configuration causes the pool to die on startup.
+         */
+        _sslContextProvider.call();
     }
 
     /**
@@ -131,36 +152,13 @@ public class HttpsTransferService extends HttpTransferService
     }
 
     @Override
-    protected synchronized void startServer() throws IOException {
-        super.startServer();
-        try {
-            _sslEngine = createContext().createSSLEngine();
-            _sslEngine.setUseClientMode(false);
-            _sslEngine.setWantClientAuth(false);
-        } catch (Exception e) {
-            throw new IOException("Failed to create SSL engine: " + e, e);
-        }
-
-    }
-
-    @Override
-    protected void addChannelHandlers(ChannelPipeline pipeline)
+    protected void addChannelHandlers(ChannelPipeline pipeline) throws Exception
     {
-        pipeline.addLast("ssl", new SslHandler(_sslEngine));
+        SSLEngine engine = _sslContextProvider.call().createSSLEngine();
+        engine.setUseClientMode(false);
+        engine.setWantClientAuth(false);
+
+        pipeline.addLast("ssl", new SslHandler(engine));
         super.addChannelHandlers(pipeline);
-    }
-
-    private synchronized SSLContext createContext() throws Exception {
-
-        return org.dcache.ssl.CanlContextFactory.custom()
-                .withCertificateAuthorityPath(_serverCaPath)
-                .withCrlCheckingMode(_crlCheckingMode)
-                .withOcspCheckingMode(_ocspCheckingMode)
-                .withCertificatePath(_serverCertificatePath)
-                .withKeyPath(_serverKeyPath)
-                .withLazy(false)
-                .withLoggingContext(new CDC()::restore)
-                .buildWithCaching()
-                .call();
     }
 }
