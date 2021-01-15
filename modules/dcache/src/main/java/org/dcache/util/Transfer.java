@@ -18,6 +18,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -1347,7 +1348,7 @@ public class Transfer implements Comparable<Transfer>
 
                         switch (t.getRc()) {
                         case CacheException.TIMEOUT:
-                            _log.info("Retrying request due to timeout: {}", t.getMessage());
+                            _log.warn("Retrying request due to timeout: {}", t.getMessage());
                             break;
                         case CacheException.OUT_OF_DATE:
                         case CacheException.POOL_DISABLED:
@@ -1376,6 +1377,7 @@ public class Transfer implements Comparable<Transfer>
                         }
 
                         if (count >= policy.getMaximumTries()) {
+                            _log.warn("Maximum number of attempts ({}) is reached", policy.getRetryCount());
                             return immediateFailedFuture(t);
                         }
 
@@ -1386,6 +1388,7 @@ public class Transfer implements Comparable<Transfer>
                         long timeToSleep = Math.max(0, policy.getRetryPause() - (now - start));
 
                         if (subWithInfinity(deadLine, now) <= timeToSleep) {
+                            _log.warn("Maximum request lifetime ({}) is reached", Duration.ofMillis(policy.getTotalTimeOut()));
                             return immediateFailedFuture(t);
                         }
 
