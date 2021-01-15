@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
@@ -41,16 +42,18 @@ public class ChecksumCalculatingTransfer extends Transfer
 
     private final ChecksumType desiredType;
     private final PortRange portRange;
+    private final InetAddress localAddress;
 
     private long calculated;
 
     public ChecksumCalculatingTransfer(PnfsHandler pnfs, Subject subject,
             Restriction namespaceRestriction, FsPath path, ChecksumType type,
-            PortRange range)
+            InetAddress localAddress, PortRange range)
     {
         super(pnfs, subject, namespaceRestriction, path);
         desiredType = type;
         portRange = range;
+        this.localAddress = localAddress;
     }
 
     public Checksum calculateChecksum() throws CacheException,
@@ -58,7 +61,7 @@ public class ChecksumCalculatingTransfer extends Transfer
     {
         boolean success = false;
         ServerSocketChannel ssc = ServerSocketChannel.open();
-        portRange.bind(ssc.socket());
+        portRange.bind(ssc.socket(), localAddress);
         setAdditionalAttributes(EnumSet.of(FileAttribute.CHECKSUM));
         readNameSpaceEntry(false);
         LOGGER.debug("calculating checksum using port {}", ssc.getLocalAddress());
