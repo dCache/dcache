@@ -2943,7 +2943,9 @@ public abstract class AbstractFtpDoorV1
                     .orElse(null);
 
             if (checksum == null) {
-                ChecksumCalculatingTransfer cct = new ChecksumCalculatingTransfer(_pnfs, _subject, _authz, absPath, type, new PortRange(0,0));
+                ChecksumCalculatingTransfer cct = new ChecksumCalculatingTransfer(_pnfs,
+                        _subject, _authz, absPath, type, _internalInetAddress,
+                        new PortRange(0,0));
                 setTransfer(cct);
                 TimerTask sendProgress = null;
                 try {
