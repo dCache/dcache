@@ -1377,7 +1377,7 @@ public class Transfer implements Comparable<Transfer>
                         }
 
                         if (count >= policy.getMaximumTries()) {
-                            _log.warn("Maximum number of attempts ({}) is reached", policy.getRetryCount());
+                            _log.warn("Maximum number of attempts ({}) is reached", policy.getMaximumTries());
                             return immediateFailedFuture(t);
                         }
 
@@ -1388,7 +1388,7 @@ public class Transfer implements Comparable<Transfer>
                         long timeToSleep = Math.max(0, policy.getRetryPause() - (now - start));
 
                         if (subWithInfinity(deadLine, now) <= timeToSleep) {
-                            _log.warn("Maximum request lifetime ({}) is reached", Duration.ofMillis(policy.getTotalTimeOut()));
+                            _log.warn("Maximum request lifetime ({}) is reached", Duration.ofMillis(policy.getTimeout()));
                             return immediateFailedFuture(t);
                         }
 
