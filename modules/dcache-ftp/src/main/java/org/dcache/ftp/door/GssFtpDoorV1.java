@@ -101,9 +101,15 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
                 wrapAndSend(code, ' ', allData);
             } else {
                 List<String> lines = Splitter.on("\r\n").splitToList(answer);
+                LOGGER.debug("Command \"{}\" response is too large, splitting it into {} lines",
+                        request, lines.size());
                 for (int i = 0; i < lines.size(); i++) {
                     boolean isLastLine = i == lines.size()-1;
                     byte[] lineData = (lines.get(i) + "\r\n").getBytes(UTF_8);
+                    if (lineData.length > context.maxApplicationSize()) {
+                        LOGGER.error("Line {} of {} is too large ({} > {})", i+1,
+                                lines.size(), lineData.length, context.maxApplicationSize());
+                    }
                     wrapAndSend(code, isLastLine ? ' ' : '-', lineData);
                 }
             }
