@@ -17,6 +17,9 @@
  */
 package org.dcache.dss;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -40,6 +43,7 @@ import static java.util.Collections.singleton;
 
 public class SslEngineDssContext implements DssContext
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SslEngineDssContext.class);
     private static final ByteBuffer EMPTY = ByteBuffer.wrap(new byte[0]);
 
     private final SSLEngine engine;
@@ -116,9 +120,16 @@ public class SslEngineDssContext implements DssContext
 
     private void wrap(ByteBuffer data) throws IOException
     {
+        int count=0;
         SSLEngineResult result;
         do {
+            count++;
+            LOGGER.debug("Wrapping: buffer posn={}, limit={}, capacity={}, remaining={}",
+                    data.position(), data.limit(), data.capacity(), data.remaining());
             result = engine.wrap(data, outToken);
+            LOGGER.debug("Result: status={}, seq={}, consumed={}, produced={}, remaining={}",
+                    result.getStatus(), result.sequenceNumber(), result.bytesConsumed(),
+                    result.bytesProduced(), data.remaining());
             switch (result.getStatus()) {
             case BUFFER_UNDERFLOW:
                 throw new RuntimeException();
@@ -137,8 +148,11 @@ public class SslEngineDssContext implements DssContext
                 throw new EOFException();
             }
         } while (result.getStatus() != SSLEngineResult.Status.OK);
+
         if (data.hasRemaining()) {
-            throw new RuntimeException("SSLEngine did not wrap all data.");
+            throw new RuntimeException("SSLEngine did not wrap all data:"
+                    + " c=" + count + ", in=" + data.limit() + " r=" + data.remaining()
+                    + " out=" + outToken.position());
         }
     }
 
