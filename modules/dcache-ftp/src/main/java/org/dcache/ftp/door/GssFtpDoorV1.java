@@ -14,6 +14,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashSet;
@@ -82,48 +83,22 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     @Override
     protected void secure_reply(CommandRequest request, String answer, String code)
     {
-        byte[] allData = (answer + "\r\n").getBytes(UTF_8);
+        ByteBuffer applicationData = ByteBuffer.wrap((answer + "\r\n").getBytes(UTF_8));
 
         try {
-            /*
-             * If the response exceeds 16.5 KiB then the encrypted output no
-             * longer fits in a single TLS token and must be split into multiple
-             * partial responses.  At the current time, the only place where
-             * this can happen is the MLSC command for directories with more
-             * than ~80 entries; the exact number depends on the file names.
-             *
-             * Only Globus (globus.org) uses the MLSC command and its client has
-             * the peculiarity that the TLS record must match a complete number
-             * of directory entries.  The Globus server code sends a TLS record
-             * for each directory item when generating an MLSC response.
-             */
-            if (allData.length <= context.maxApplicationSize()) {
-                wrapAndSend(code, ' ', allData);
-            } else {
-                List<String> lines = Splitter.on("\r\n").splitToList(answer);
-                LOGGER.debug("Command \"{}\" response is too large, splitting it into {} lines",
-                        request, lines.size());
-                for (int i = 0; i < lines.size(); i++) {
-                    boolean isLastLine = i == lines.size()-1;
-                    byte[] lineData = (lines.get(i) + "\r\n").getBytes(UTF_8);
-                    if (lineData.length > context.maxApplicationSize()) {
-                        LOGGER.error("Line {} of {} is too large ({} > {})", i+1,
-                                lines.size(), lineData.length, context.maxApplicationSize());
-                    }
-                    wrapAndSend(code, isLastLine ? ' ' : '-', lineData);
+            do {
+                byte[] wrapped = context.wrap(applicationData);
+                char separator = applicationData.hasRemaining() ? '-' : ' ';
+                println(code + separator + Base64.getEncoder().encodeToString(wrapped));
+                if (applicationData.hasRemaining()) {
+                    LOGGER.warn("Sending partial response! {} bytes remaining",
+                            applicationData.remaining());
                 }
-            }
+            } while (applicationData.hasRemaining());
         } catch (IOException e) {
             LOGGER.error("Failed to encrypt reply '{}': {}", answer, e.toString());
             reply(request.getOriginalRequest(), "500 Reply encryption error: " + e);
         }
-    }
-
-    private void wrapAndSend(String code, char separator, byte[] applicationData)
-            throws IOException
-    {
-        byte[] wrapped = context.wrap(applicationData, 0, applicationData.length);
-        println(code + separator + Base64.getEncoder().encodeToString(wrapped));
     }
 
     @Help("AUTH <SP> <arg> - Initiate secure context negotiation.")

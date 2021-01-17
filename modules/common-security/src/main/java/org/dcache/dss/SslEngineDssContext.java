@@ -107,7 +107,7 @@ public class SslEngineDssContext implements DssContext
                 }
                 break;
             case NEED_WRAP:
-                wrap(EMPTY);
+                wrapAppData(EMPTY);
                 break;
             case NEED_UNWRAP:
                 if (!unwrap()) {
@@ -118,7 +118,7 @@ public class SslEngineDssContext implements DssContext
         }
     }
 
-    private void wrap(ByteBuffer data) throws IOException
+    private void wrapAppData(ByteBuffer data) throws IOException
     {
         int count=0;
         SSLEngineResult result;
@@ -148,18 +148,6 @@ public class SslEngineDssContext implements DssContext
                 throw new EOFException();
             }
         } while (result.getStatus() != SSLEngineResult.Status.OK);
-
-        if (data.hasRemaining()) {
-            throw new RuntimeException("SSLEngine did not wrap all data:"
-                    + " c=" + count + ", in=" + data.limit() + " r=" + data.remaining()
-                    + " out=" + outToken.position());
-        }
-    }
-
-    @Override
-    public long maxApplicationSize()
-    {
-        return engine.getSession().getApplicationBufferSize();
     }
 
     private boolean unwrap() throws IOException
@@ -240,7 +228,15 @@ public class SslEngineDssContext implements DssContext
     public byte[] wrap(byte[] data, int offset, int len) throws IOException
     {
         checkState(isEstablished());
-        wrap(ByteBuffer.wrap(data, offset, len));
+        wrapAppData(ByteBuffer.wrap(data, offset, len));
+        return getOutToken();
+    }
+
+    @Override
+    public byte[] wrap(ByteBuffer data) throws IOException
+    {
+        checkState(isEstablished());
+        wrapAppData(data);
         return getOutToken();
     }
 

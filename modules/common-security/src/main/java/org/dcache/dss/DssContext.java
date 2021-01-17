@@ -20,6 +20,7 @@ package org.dcache.dss;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * The dCache Security Services API.
@@ -44,12 +45,11 @@ public interface DssContext
     byte[] wrap(byte[] data, int offset, int len) throws IOException;
 
     /**
-     * Maximum number of bytes (of application data) that may be send to a
-     * single invocation of {@link #wrap}.  This represents a limitation due
-     * to the encrypted token having a maximum size.  Returns Long.MAX_VALUE
-     * if no such limit.
+     * Wraps application data to be sent as a token to the peer.  The position
+     * of the ByteBuffer is updated.  On return, if the ByteBuffer has nonzero
+     * remaining data then there was too much data for a single token.
      */
-    long maxApplicationSize();
+    byte[] wrap(ByteBuffer data) throws IOException;
 
     /**
      * Unwraps a token received from a peer.

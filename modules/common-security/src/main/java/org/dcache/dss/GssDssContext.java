@@ -25,6 +25,7 @@ import org.ietf.jgss.MessageProp;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -95,6 +96,19 @@ public abstract class GssDssContext implements DssContext
     }
 
     @Override
+    public byte[] wrap(ByteBuffer data) throws IOException
+    {
+        checkState(isEstablished());
+        try {
+            byte[] token = context.wrap(data.array(), data.position(), data.remaining(), prop);
+            data.position(data.limit()); // Mark all data consumed.
+            return token;
+        } catch (GSSException e) {
+            throw new IOException("Failed to wrap message: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public byte[] unwrap(byte[] token) throws IOException
     {
         checkState(isEstablished());
@@ -103,15 +117,6 @@ public abstract class GssDssContext implements DssContext
         } catch (GSSException e) {
             throw new IOException("Failed to unwrap message: " + e.getMessage(), e);
         }
-    }
-
-
-    @Override
-    public long maxApplicationSize()
-    {
-        // REVISIT: currently, we do not place any limits on how long an
-        // encrypted token may be.
-        return Long.MAX_VALUE;
     }
 
 
