@@ -396,7 +396,12 @@ public abstract class AbstractFtpDoorV1
          * close our end of the TCP connection once any pending transfers have
          * completed.
          */
-        NO_REPLY_ON_QUIT
+        NO_REPLY_ON_QUIT,
+
+        /**
+         * Use a place-holder value for incomplete files.
+         */
+        USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES,
     }
 
 
@@ -3187,6 +3192,9 @@ public abstract class AbstractFtpDoorV1
         case "globus-url-copy":
             _activeWorkarounds.add(WorkAround.NO_REPLY_ON_QUIT);
             break;
+        case "globusonline-dirlist":
+            _activeWorkarounds.add(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES);
+            break;
         }
         reply("250 OK");
     }
@@ -4855,17 +4863,30 @@ public abstract class AbstractFtpDoorV1
                     break;
                 }
             }
+
+            if (_activeWorkarounds.contains(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES)
+                    && attributes.contains(SIZE)) {
+                attributes.add(SIMPLE_TYPE);
+            }
+
             return attributes;
         }
 
         @Override
         public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
+            FileAttributes attr = entry.getFileAttributes();
+
+            if (_activeWorkarounds.contains(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES)
+                    && attr.isDefined(TYPE) && attr.getFileType() == FileType.REGULAR
+                    && attr.isUndefined(SIZE)) {
+                attr.setSize(0L);
+            }
+
             FsPath path = (dir == null) ? FsPath.ROOT : dir.child(entry.getName());
 
             if (!_currentFacts.isEmpty()) {
                 AccessType access;
-                FileAttributes attr = entry.getFileAttributes();
 
                 for (Fact fact: _currentFacts) {
                     switch (fact) {
