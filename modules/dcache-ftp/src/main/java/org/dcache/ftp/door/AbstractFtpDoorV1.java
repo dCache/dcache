@@ -396,7 +396,18 @@ public abstract class AbstractFtpDoorV1
          * close our end of the TCP connection once any pending transfers have
          * completed.
          */
-        NO_REPLY_ON_QUIT
+        NO_REPLY_ON_QUIT,
+
+        /**
+         * Some clients (e.g., Globus) require that files returned during
+         * directory listing have a definite size.  When dCache is accepting a
+         * new file, the namespace does not know the final file's size so no
+         * file size is returned to the door.  Normally, dCache simply omits the
+         * file size information when building the response; however, this
+         * work-around results in such incomplete files being reported as having
+         * zero length.
+         */
+        USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES,
     }
 
 
@@ -3187,6 +3198,21 @@ public abstract class AbstractFtpDoorV1
         case "globus-url-copy":
             _activeWorkarounds.add(WorkAround.NO_REPLY_ON_QUIT);
             break;
+
+        // Globus (Online) agent for:
+        //     Providing web-portal with directory listing,
+        //     Deleting contents.
+        // Observed commands: MLST, MLSC, DELE, RMD
+        case "globusonline-dirlist":
+            _activeWorkarounds.add(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES);
+            break;
+
+        // Globus (Online) agent that seems to do a recursive directory listing
+        // in preparation of data transfer.
+        // Observed commands: MLSC, MLST
+        case "gshtest":
+            _activeWorkarounds.add(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES);
+            break;
         }
         reply("250 OK");
     }
@@ -4855,17 +4881,30 @@ public abstract class AbstractFtpDoorV1
                     break;
                 }
             }
+
+            if (_activeWorkarounds.contains(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES)
+                    && _currentFacts.contains(Fact.SIZE)) {
+                attributes.add(SIMPLE_TYPE);
+            }
+
             return attributes;
         }
 
         @Override
         public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
+            FileAttributes attr = entry.getFileAttributes();
+
+            if (_activeWorkarounds.contains(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES)
+                    && attr.isDefined(TYPE) && attr.getFileType() == FileType.REGULAR
+                    && attr.isUndefined(SIZE)) {
+                attr.setSize(0L);
+            }
+
             FsPath path = (dir == null) ? FsPath.ROOT : dir.child(entry.getName());
 
             if (!_currentFacts.isEmpty()) {
                 AccessType access;
-                FileAttributes attr = entry.getFileAttributes();
 
                 for (Fact fact: _currentFacts) {
                     switch (fact) {
