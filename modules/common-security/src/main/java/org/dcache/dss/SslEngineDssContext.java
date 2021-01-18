@@ -156,12 +156,6 @@ public class SslEngineDssContext implements DssContext
         }
     }
 
-    @Override
-    public long maxApplicationSize()
-    {
-        return engine.getSession().getApplicationBufferSize();
-    }
-
     private boolean unwrap() throws IOException
     {
         while (true) {

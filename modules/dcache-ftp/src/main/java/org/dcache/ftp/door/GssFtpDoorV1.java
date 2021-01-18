@@ -31,6 +31,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.dcache.util.ByteUnit.KiB;
 
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {
@@ -38,6 +39,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     private static final GssCommandContext SECURE_COMMAND_CONTEXT = new GssCommandContext();
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
             ":globus-mapping:";
+    private static final int MAX_APP_DATA = KiB.toBytes(16);
 
     protected Subject subject;
     // GSS general
@@ -97,18 +99,18 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
              * of directory entries.  The Globus server code sends a TLS record
              * for each directory item when generating an MLSC response.
              */
-            if (allData.length <= context.maxApplicationSize()) {
+            if (allData.length <= MAX_APP_DATA) {
                 wrapAndSend(code, ' ', allData);
             } else {
                 List<String> lines = Splitter.on("\r\n").splitToList(answer);
-                LOGGER.debug("Command \"{}\" response is too large, splitting it into {} lines",
+                LOGGER.warn("Command \"{}\" response is too large, splitting it into {} lines",
                         request, lines.size());
                 for (int i = 0; i < lines.size(); i++) {
                     boolean isLastLine = i == lines.size()-1;
                     byte[] lineData = (lines.get(i) + "\r\n").getBytes(UTF_8);
-                    if (lineData.length > context.maxApplicationSize()) {
+                    if (lineData.length > MAX_APP_DATA) {
                         LOGGER.error("Line {} of {} is too large ({} > {})", i+1,
-                                lines.size(), lineData.length, context.maxApplicationSize());
+                                lines.size(), lineData.length, MAX_APP_DATA);
                     }
                     wrapAndSend(code, isLastLine ? ' ' : '-', lineData);
                 }

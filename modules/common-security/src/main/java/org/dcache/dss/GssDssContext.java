@@ -107,15 +107,6 @@ public abstract class GssDssContext implements DssContext
 
 
     @Override
-    public long maxApplicationSize()
-    {
-        // REVISIT: currently, we do not place any limits on how long an
-        // encrypted token may be.
-        return Long.MAX_VALUE;
-    }
-
-
-    @Override
     public Subject getSubject()
     {
         return subject;
