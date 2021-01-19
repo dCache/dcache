@@ -407,6 +407,25 @@ public abstract class AbstractFtpDoorV1
          * zero length.
          */
         USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES,
+
+        /**
+         * Some clients (e.g., Globus) will always request an MD5 checksum
+         * after uploading data, but do no let dCache know this via the
+         * OPTS CKSM command.  Without such a hint, the pool will calculate a
+         * default set of checksum values.  Historically, this does not include
+         * MD5.
+         * <p>
+         * The door will calculate the MD5 checksum dynamically if the client
+         * requests the MD5 checksum and the pool didn't calculated the value.
+         * However, this on-demand checksum calculation slows down the transfers
+         * and places unnecessary load on dCache.
+         * <p>
+         * This work-around informs the pool to calculate the MD5 checksum for
+         * any uploaded files.  The OPT CKSM command, SITE CHKSUM command and
+         * SCKS command continue to be supported.  Any specified algorithm
+         * specified through these commands will be calculated instead of MD5.
+         */
+        REQUEST_MD5_WHEN_UPLOADING_FILES
     }
 
 
@@ -1168,6 +1187,10 @@ public abstract class AbstractFtpDoorV1
             protocolInfo.setPassive(usePassivePool);
             protocolInfo.setMode(_xferMode);
             protocolInfo.setProtocolFamily(_protocolFamily);
+
+            if (_activeWorkarounds.contains(WorkAround.REQUEST_MD5_WHEN_UPLOADING_FILES)) {
+                protocolInfo.setChecksumType("MD5");
+            }
 
             if (_optCheckSumType != null) {
                 protocolInfo.setChecksumType(_optCheckSumType.getName());
@@ -3210,6 +3233,13 @@ public abstract class AbstractFtpDoorV1
         // Observed commands: MLSC, MLST
         case "gshtest":
             _activeWorkarounds.add(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES);
+
+        // Globus (Online) transfer management agent, responsible for initiating
+        // third-party copy.
+        // Observed commands: RETR, STOR, ALLO, CKSM MD5, NOOP, MLST, MODE E,
+        //     PASV, MLST, MKD, PBSZ, TYPE I, DCAU N, PBSZ, OPTS RETR
+        case "globusonline-fxp":
+            _activeWorkarounds.add(WorkAround.REQUEST_MD5_WHEN_UPLOADING_FILES);
             break;
         }
         reply("250 OK");
