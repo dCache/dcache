@@ -13,7 +13,6 @@ import java.net.BindException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -72,7 +71,6 @@ public class NfsTransferService
     private CellStub _door;
     private PostTransferService _postTransferService;
     private final long _bootVerifier = System.currentTimeMillis();
-    private boolean _sortMultipathList;
     private PnfsHandler _pnfsHandler;
     private int _minTcpPort;
     private int _maxTcpPort;
@@ -144,18 +142,6 @@ public class NfsTransferService
             byte[] outputBytes = Integer.toString(_nfsIO.getLocalAddress().getPort()).getBytes(StandardCharsets.US_ASCII);
             Files.write(_tcpPortFile.toPath(), outputBytes);
         }
-
-        /*
-         * we assume, that client's can't handle multipath list correctly
-         * if data server has multiple IPv4 addresses. (RHEL6 and clones)
-         */
-        int ipv4Count = 0;
-        for (InetSocketAddress addr : _localSocketAddresses) {
-            if (addr.getAddress() instanceof Inet4Address) {
-                ipv4Count++;
-            }
-        }
-        _sortMultipathList = ipv4Count > 1;
     }
 
     @Required
@@ -221,16 +207,15 @@ public class NfsTransferService
 
             CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
             final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
-            final InetSocketAddress[] localSocketAddresses = localSocketAddresses(mover);
             _door.notify(directDoorPath,
-                         new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), localSocketAddresses, legacyStateId,
+                         new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses, legacyStateId,
                                                         _bootVerifier));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).
              */
             return cancellableMover;
-        } catch (DiskErrorCacheException | InterruptedIOException | SocketException | RuntimeException e) {
+        } catch (DiskErrorCacheException | InterruptedIOException | RuntimeException e) {
             completionHandler.failed(e, null);
         }
         return null;
@@ -252,36 +237,6 @@ public class NfsTransferService
 
     private InetSocketAddress[] localSocketAddresses(Collection<InetAddress> addresses, int port) {
         return addresses.stream().map(address -> new InetSocketAddress(address, port)).toArray(InetSocketAddress[]::new);
-    }
-
-    // REVISIT: remove when RHEL6 is dead (November 30, 2020)
-    private InetSocketAddress[] localSocketAddresses(NfsMover mover) throws SocketException {
-
-        InetSocketAddress[] addressesToUse;
-        if (_sortMultipathList) {
-
-            InetSocketAddress preferredInterface = new InetSocketAddress(
-                    NetworkUtils.getLocalAddress(mover.getProtocolInfo().getSocketAddress().getAddress()),
-                    _nfsIO.getLocalAddress().getPort());
-
-            addressesToUse = _localSocketAddresses.clone();
-            // go through all addresses and swap preferred address with the first entry.
-            for (int i = 0; i < addressesToUse.length; i++) {
-                InetSocketAddress currentAddress = addressesToUse[i];
-                if (currentAddress.equals(preferredInterface)) {
-                    // If the first one nothing to do, otherwise - swap.
-                    if (i != 0) {
-                        addressesToUse[i] = addressesToUse[0];
-                        addressesToUse[0] = currentAddress;
-                    }
-                    break;
-                }
-            }
-        } else {
-            addressesToUse = _localSocketAddresses;
-        }
-
-        return addressesToUse;
     }
 
     @Command(name = "nfs stats",
