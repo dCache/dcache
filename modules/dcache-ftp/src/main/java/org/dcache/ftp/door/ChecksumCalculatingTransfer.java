@@ -60,49 +60,54 @@ public class ChecksumCalculatingTransfer extends Transfer
             InterruptedException, IOException, NoSuchAlgorithmException
     {
         boolean success = false;
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        portRange.bind(ssc.socket(), localAddress);
+
         setAdditionalAttributes(EnumSet.of(FileAttribute.CHECKSUM));
         readNameSpaceEntry(false);
-        LOGGER.debug("calculating checksum using port {}", ssc.getLocalAddress());
-        setProtocolInfo(new GFtpProtocolInfo("GFtp", 1, 0,
-                (InetSocketAddress) ssc.getLocalAddress(), 1, 1, 1,
-                MiB.toBytes(1), 0, getFileAttributes().getSize()));
         Checksum existingChecksum = Checksums.preferrredOrder().max(getFileAttributes().getChecksums());
-        try {
-            selectPoolAndStartMover(tryOnce().doNotTimeout());
-            SocketChannel s = ssc.accept();
-            ByteBuffer buffer = ByteBuffer.allocate(MiB.toBytes(1));
-            MessageDigest desiredDigest = desiredType.createMessageDigest();
-            MessageDigest verifyingDigest = existingChecksum.getType().createMessageDigest();
+        MessageDigest verifyingDigest = existingChecksum.getType().createMessageDigest();
+        MessageDigest desiredDigest = desiredType.createMessageDigest();
 
-            while (s.read(buffer) > -1) {
-                advanceCalculated(buffer.position());
-                buffer.flip();
-                desiredDigest.update(buffer);
-                buffer.rewind();
-                verifyingDigest.update(buffer);
-                buffer.clear();
-            }
+        try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+            portRange.bind(ssc.socket(), localAddress);
+            LOGGER.debug("calculating checksum using port {}", ssc.getLocalAddress());
+            setProtocolInfo(new GFtpProtocolInfo("GFtp", 1, 0,
+                    (InetSocketAddress) ssc.getLocalAddress(), 1, 1, 1,
+                    MiB.toBytes(1), 0, getFileAttributes().getSize()));
+            try {
+                selectPoolAndStartMover(tryOnce().doNotTimeout());
 
-            if (!waitForMover(30_000)) {
-                throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
-            }
+                try (SocketChannel s = ssc.accept()) {
+                    ByteBuffer buffer = ByteBuffer.allocate(MiB.toBytes(1));
 
-            success = true;
+                    while (s.read(buffer) > -1) {
+                        advanceCalculated(buffer.position());
+                        buffer.flip();
+                        desiredDigest.update(buffer);
+                        buffer.rewind();
+                        verifyingDigest.update(buffer);
+                        buffer.clear();
+                    }
+                }
 
-            if (getCalculated() != getFileAttributes().getSize()) {
-                throw new CacheException("File size mismatch: " + getCalculated() + " != " + getFileAttributes().getSize());
-            }
+                if (!waitForMover(30_000)) {
+                    throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
+                }
 
-            Checksum verifyingChecksum = new Checksum(verifyingDigest);
-            if (!existingChecksum.equals(verifyingChecksum)) {
-                throw new CacheException("Corrupt data: " + verifyingChecksum + " != " + existingChecksum);
-            }
-            return new Checksum(desiredDigest);
-        } finally {
-            if (!success) {
-                killMover(0, "killed by failure");
+                success = true;
+
+                if (getCalculated() != getFileAttributes().getSize()) {
+                    throw new CacheException("File size mismatch: " + getCalculated() + " != " + getFileAttributes().getSize());
+                }
+
+                Checksum verifyingChecksum = new Checksum(verifyingDigest);
+                if (!existingChecksum.equals(verifyingChecksum)) {
+                    throw new CacheException("Corrupt data: " + verifyingChecksum + " != " + existingChecksum);
+                }
+                return new Checksum(desiredDigest);
+            } finally {
+                if (!success) {
+                    killMover(0, "killed by failure");
+                }
             }
         }
     }
