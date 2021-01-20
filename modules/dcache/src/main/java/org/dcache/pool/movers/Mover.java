@@ -60,6 +60,10 @@ public interface Mover<T extends ProtocolInfo>
      */
     T getProtocolInfo();
 
+    /**
+     * Returns transfer duration time in milliseconds.
+     * @return transfer time in milliseconds.
+     */
     long getTransferTime();
 
     /**
