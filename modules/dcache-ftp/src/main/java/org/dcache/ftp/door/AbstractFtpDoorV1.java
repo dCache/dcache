@@ -83,6 +83,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.BufferedOutputStream;
@@ -114,6 +115,7 @@ import java.security.Principal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -499,6 +501,53 @@ public abstract class AbstractFtpDoorV1
         CLEAR, MIC, ENC, CONF, TLS
     }
 
+    /**
+     * A mutable object that holds the current execution status of the FTP door.
+     */
+    private class CommandProcessingState
+    {
+        private CommandRequest currentRequest;
+        private Instant idleSince = Instant.now();
+
+        public synchronized void startProcessing(CommandRequest request)
+        {
+            currentRequest = request;
+            idleSince = null;
+        }
+
+        public synchronized void finishedProcessing()
+        {
+            currentRequest = null;
+            idleSince = Instant.now();
+        }
+
+        @Nullable
+        public synchronized CommandRequest currentRequest()
+        {
+            return currentRequest;
+        }
+
+        @Override
+        public synchronized String toString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            Duration howLong;
+            if (currentRequest == null) {
+                howLong = Duration.between(idleSince, Instant.now());
+                sb.append("IDLE");
+            } else {
+                howLong = currentRequest.processingDuration();
+                sb.append("ACTIVE");
+            }
+            sb.append(TimeUtils.describe(howLong)
+                    .map(t -> " for " + t)
+                    .orElse(", just switched."));
+
+            return sb.toString();
+        }
+    }
+
     protected class CommandRequest
     {
         private final String commandLine;
@@ -508,10 +557,12 @@ public abstract class AbstractFtpDoorV1
         private final Method method;
         private final Object commandContext;
         private final ReplyType replyType;
-        private final CommandRequest originalRequest = _currentRequest;
+        private final CommandRequest originalRequest = _commandState.currentRequest();
+        private final Instant whenCreated = Instant.now();
         private boolean captureReply;
         private List<String> delayedReplies;
         private boolean hasProxyRequest;
+        private Instant whenStarted;
 
         public CommandRequest(String commandLine, ReplyType replyType, Object commandContext)
         {
@@ -631,6 +682,7 @@ public abstract class AbstractFtpDoorV1
 
         private void runCommand() throws CommandExitException
         {
+            whenStarted = Instant.now();
             _lastCommand = commandLine;
             _commandCounter++;
 
@@ -638,7 +690,7 @@ public abstract class AbstractFtpDoorV1
                 checkFTPCommand(method != null, 500, "'%s': command not understood", commandLine);
 
                 try {
-                    _currentRequest = this;
+                    _commandState.startProcessing(this);
                     checkCommandAllowed(this, commandContext);
                     method.invoke(AbstractFtpDoorV1.this, new Object[]{arg});
                 } catch (InvocationTargetException ite) {
@@ -656,7 +708,9 @@ public abstract class AbstractFtpDoorV1
                     LOGGER.error("This is a bug. Please report it.", e);
                     throw new FTPCommandException(500, "Operation failed due to internal error: " + e.getMessage());
                 } finally {
-                    _currentRequest = null;
+                    if (!isTransferring()) { // transfers are processed asynchronously.
+                        _commandState.finishedProcessing();
+                    }
                 }
             } catch (FTPCommandException e) {
                 reply(this, e.getCode() + " " + e.getMessage());
@@ -671,6 +725,29 @@ public abstract class AbstractFtpDoorV1
         public String toString()
         {
             return commandLine;
+        }
+
+        /**
+         * The time spend from the client issuing the command until processing
+         * the command started.  If the command hasn't been started yet then
+         * the returned duration is the queued time so far.
+         */
+        public Duration queuedDuration()
+        {
+            Instant whenStartedOrNow = whenStarted == null ? Instant.now()
+                    : whenStarted;
+            return Duration.between(whenCreated, whenStartedOrNow);
+        }
+
+        /**
+         * Provides the duration for which the command has been processing.
+         * If processing of the command has not been started then returns
+         * Duration.ZERO.
+         */
+        public Duration processingDuration()
+        {
+            return whenStarted == null ? Duration.ZERO
+                    : Duration.between(whenStarted, Instant.now());
         }
     }
 
@@ -896,7 +973,7 @@ public abstract class AbstractFtpDoorV1
 
     protected int            _commandCounter;
     protected String         _lastCommand    = "<init>";
-    protected CommandRequest _currentRequest;
+    private final CommandProcessingState _commandState = new CommandProcessingState();
     private boolean _isHello = true;
 
     protected InetSocketAddress _clientDataAddress;
@@ -1004,7 +1081,7 @@ public abstract class AbstractFtpDoorV1
         private final DelayedPassiveReply _delayedPassive;
         private final ProtocolFamily _protocolFamily;
         private final int _version;
-        private final CommandRequest _request = AbstractFtpDoorV1.this._currentRequest;
+        private final CommandRequest _request = AbstractFtpDoorV1.this._commandState.currentRequest();
         private final Instant whenCreated = Instant.now();
 
         private Optional<Instant> whenMoverStarted = Optional.empty();
@@ -1320,6 +1397,8 @@ public abstract class AbstractFtpDoorV1
                 _executor.execute(AbstractFtpDoorV1.this::runPendingCommands);
             } catch (InterruptedException e) {
                 throw new FTPCommandException(451, "FTP proxy was interrupted", e);
+            } finally {
+                _commandState.finishedProcessing();
             }
         }
 
@@ -1858,6 +1937,7 @@ public abstract class AbstractFtpDoorV1
             pw.println("   Client info  : " + _clientInfo);
         }
         pw.println("    Local Host  : " + _internalInetAddress);
+        pw.println("Command Status  : " + _commandState);
         pw.println("  Last Command  : " + _lastCommand);
         pw.println(" Command Count  : " + _commandCounter);
         pw.println("     I/O Queue  : " + _settings.getIoQueueName());
@@ -1867,6 +1947,21 @@ public abstract class AbstractFtpDoorV1
             ((FtpTransfer)transfer).getInfo(pw);
         }
         pw.println(ac_get_door_info(new Args("")));
+    }
+
+    private String describeCommandStatus()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        CommandRequest currentRequest = _commandState.currentRequest();
+        if (currentRequest == null) {
+            sb.append("IDLE");
+        } else {
+            Duration processing = currentRequest.processingDuration();
+            sb.append("ACTIVE for ").append(TimeUtils.describe(processing));
+        }
+
+        return sb.toString();
     }
 
     @Override
@@ -1964,6 +2059,9 @@ public abstract class AbstractFtpDoorV1
                     response = request.getReplyType().name() + "{" + response + "}";
                 }
                 log.addInQuotes("command", request.getCommandLineDescription());
+                long queued = request.queuedDuration().toMillis();
+                long processed = request.processingDuration().toMillis();
+                log.add("duration", queued == 0 ? Long.toString(processed) : (queued + ":" + processed));
             }
             if (_subject != null && !_subjectLogged) {
                 logSubject(log, _subject);
@@ -1979,7 +2077,7 @@ public abstract class AbstractFtpDoorV1
 
     protected void reply(String answer)
     {
-        reply(_currentRequest, answer);
+        reply(_commandState.currentRequest(), answer);
     }
 
     protected abstract void secure_reply(CommandRequest request, String answer, String code);
@@ -4522,7 +4620,7 @@ public abstract class AbstractFtpDoorV1
      */
     protected void replyDelayedPassive(DelayedPassiveReply format, InetSocketAddress socketAddress)
     {
-        replyDelayedPassive(_currentRequest, format, socketAddress);
+        replyDelayedPassive(_commandState.currentRequest(), format, socketAddress);
     }
 
     protected void replyDelayedPassive(CommandRequest request, DelayedPassiveReply format, InetSocketAddress socketAddress)
