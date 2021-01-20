@@ -367,6 +367,7 @@ public abstract class AbstractFtpDoorV1
     private EnumSet<WorkAround> _activeWorkarounds = EnumSet.noneOf(WorkAround.class);
     private String _clientInfo;
     private boolean _logAbortedTransfers;
+    private int _maxPipelineDepth;
 
     private enum WorkAround
     {
@@ -563,6 +564,7 @@ public abstract class AbstractFtpDoorV1
         private List<String> delayedReplies;
         private boolean hasProxyRequest;
         private Instant whenStarted;
+        private int pipelineDepth;
 
         public CommandRequest(String commandLine, ReplyType replyType, Object commandContext)
         {
@@ -596,6 +598,16 @@ public abstract class AbstractFtpDoorV1
             if (originalRequest != null) {
                 originalRequest.setHasProxyRequest();
             }
+        }
+
+        public void setPipelineDepth(int depth)
+        {
+            pipelineDepth = depth;
+        }
+
+        public int getPipelineDepth()
+        {
+            return pipelineDepth;
         }
 
         public void setHasProxyRequest()
@@ -1825,11 +1837,17 @@ public abstract class AbstractFtpDoorV1
 
         synchronized (_pendingCommands) {
             if (isTransferring() || !_pendingCommands.isEmpty()) {
+
                 if (request.isConcurrentCommand()) {
                     request.runCapturingReply();
                 }
 
                 _pendingCommands.add(request);
+                int depth = _pendingCommands.size();
+                request.setPipelineDepth(depth);
+                if (depth > _maxPipelineDepth) {
+                    _maxPipelineDepth = depth;
+                }
                 return;
             }
         }
@@ -1939,6 +1957,9 @@ public abstract class AbstractFtpDoorV1
         pw.println("    Local Host  : " + _internalInetAddress);
         pw.println("Command Status  : " + _commandState);
         pw.println("  Last Command  : " + _lastCommand);
+        synchronized (_pendingCommands) {
+            pw.println(" Max pipelined  : " + _maxPipelineDepth);
+        }
         pw.println(" Command Count  : " + _commandCounter);
         pw.println("     I/O Queue  : " + _settings.getIoQueueName());
         pw.println("  Work-arounds  : " + _activeWorkarounds);
@@ -2062,6 +2083,7 @@ public abstract class AbstractFtpDoorV1
                 long queued = request.queuedDuration().toMillis();
                 long processed = request.processingDuration().toMillis();
                 log.add("duration", queued == 0 ? Long.toString(processed) : (queued + ":" + processed));
+                log.add("pipeline", request.getPipelineDepth());
             }
             if (_subject != null && !_subjectLogged) {
                 logSubject(log, _subject);
