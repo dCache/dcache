@@ -91,7 +91,7 @@ if [ ! -f /usr/share/dcache/lib/services.sh ]; then
 fi
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf "$RPM_BUILD_ROOT"
 
 %files
 %defattr(-,root,root)
