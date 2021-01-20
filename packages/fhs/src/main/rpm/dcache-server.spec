@@ -106,7 +106,7 @@ if [ $1 -eq 0 ] ; then
 fi
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf "$RPM_BUILD_ROOT"
 
 %files
 %defattr(-,root,root)
