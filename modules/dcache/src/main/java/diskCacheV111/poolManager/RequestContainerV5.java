@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -283,11 +282,7 @@ public class RequestContainerV5
                 synchronized (_handlerHash) {
                     list = new ArrayList<>(_handlerHash.values());
                 }
-                for (PoolRequestHandler handler: list) {
-                    if (handler != null) {
-                        handler.checkExpiredRequests();
-                    }
-                }
+                list.forEach(PoolRequestHandler::checkExpiredRequests);
             } catch (InterruptedException e) {
                 break;
             } catch (Throwable t) {
@@ -309,12 +304,6 @@ public class RequestContainerV5
             }
 
             for (PoolRequestHandler rph : list) {
-
-                if (rph == null) {
-                    continue;
-                }
-
-
                 switch( poolStatus ) {
                     case PoolStatusChangedMessage.UP:
                         /*
@@ -553,11 +542,9 @@ public class RequestContainerV5
           synchronized( _handlerHash ){
              all = new ArrayList<>( _handlerHash.values() ) ;
           }
-          for (PoolRequestHandler rph : all) {
-              if( forceAll || ( rph._currentRc != 0 ) ) {
-                  rph.retry();
-              }
-          }
+          all.stream()
+                  .filter(h -> forceAll || h._currentRc != 0)
+                  .forEach(PoolRequestHandler::retry);
        }else{
           PoolRequestHandler rph;
           synchronized( _handlerHash ){
@@ -674,8 +661,9 @@ public class RequestContainerV5
     public List<RestoreHandlerInfo> getRestoreHandlerInfo() {
         List<RestoreHandlerInfo> requests;
         synchronized (_handlerHash) {
-            requests = _handlerHash.values().stream().filter(Objects::nonNull).map(
-                            PoolRequestHandler::getRestoreHandlerInfo).collect(toList());
+            requests = _handlerHash.values().stream()
+                    .map(PoolRequestHandler::getRestoreHandlerInfo)
+                    .collect(toList());
         }
         return requests;
     }
@@ -683,20 +671,14 @@ public class RequestContainerV5
     public static final String hh_xrc_ls = " # lists pending requests (binary)" ;
     public Object ac_xrc_ls( Args args ){
 
-       List<PoolRequestHandler> all;
-       synchronized( _handlerHash ){
-          all = new ArrayList<>( _handlerHash.values() ) ;
-       }
+        List<PoolRequestHandler> all;
+        synchronized (_handlerHash) {
+            all = new ArrayList<>(_handlerHash.values());
+        }
 
-       List<RestoreHandlerInfo>          list = new ArrayList<>() ;
-
-       for( PoolRequestHandler h: all  ){
-          if( h  == null ) {
-              continue;
-          }
-          list.add( h.getRestoreHandlerInfo() ) ;
-       }
-       return list.toArray(RestoreHandlerInfo[]::new) ;
+        return all.stream()
+                .map(PoolRequestHandler::getRestoreHandlerInfo)
+                .toArray(RestoreHandlerInfo[]::new);
     }
 
     public void messageArrived(CellMessage envelope,
