@@ -79,6 +79,7 @@ import org.dcache.util.Args;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.toList;
 
@@ -284,7 +285,7 @@ public class RequestContainerV5
                 }
                 for (PoolRequestHandler handler: list) {
                     if (handler != null) {
-                        handler.alive();
+                        handler.checkExpiredRequests();
                     }
                 }
             } catch (InterruptedException e) {
@@ -605,7 +606,7 @@ public class RequestContainerV5
 
             checkCommand(rph != null, "Not found : %s", id);
 
-            rph.failed(errorNumber, errorString);
+            rph.fail(errorNumber, errorString);
             return "";
         }
     }
@@ -1008,40 +1009,26 @@ public class RequestContainerV5
            //}
            add( message ) ;
         }
-        private void alive(){
 
-           Object [] command = new Object[1] ;
-           command[0] = "alive" ;
-
-           add( command ) ;
-
+        private void checkExpiredRequests()
+        {
+            add((Runnable)this::expireRequests);
         }
+
         private void retry()
         {
-           Object [] command = new Object[1];
-           command[0] = "retry" ;
-           add(command);
+            add((Runnable)this::retryRequest);
         }
-        private void failed( int errorNumber , String errorMessage )
+
+        private void fail(int errorCode, String errorMessage)
         {
+            checkArgument(errorCode > 0, "Error number must be > 0");
 
-           if( errorNumber > 0 ){
-              Object [] command = new Object[3] ;
-              command[0] = "failed" ;
-              command[1] = errorNumber;
-              command[2] = errorMessage == null ?
-                           ( "Error-"+_currentRc ) :
-                           errorMessage ;
+            String message = errorMessage == null ? ("Error-" + _currentRc)
+                            : errorMessage;
 
-
-              add( command ) ;
-              return ;
-           }
-           throw new
-           IllegalArgumentException("Error number must be > 0");
-
+            add((Runnable)() -> failRequest(errorCode, message));
         }
-
         //...................................................................
         //
         // from now on, methods can only be called from within
@@ -1104,6 +1091,22 @@ public class RequestContainerV5
             }
         }
 
+        private void retryRequest()
+        {
+            _status = "Retry enforced";
+            _retryCounter = -1;
+            clearSteering();
+            setError(CacheException.OUT_OF_DATE, "Operator asked for retry");
+            nextStep(RequestState.ST_DONE);
+        }
+
+        private void failRequest(int code, String message)
+        {
+            clearSteering();
+            setError(code, message);
+            nextStep(RequestState.ST_DONE);
+        }
+
         /**
          * Removes request messages who's time to live has been
          * exceeded. Messages are dropped; no reply is sent to the
@@ -1117,6 +1120,11 @@ public class RequestContainerV5
              */
             synchronized (_handlerHash) {
                 long now = System.currentTimeMillis();
+
+                if (now < _nextTtlTimeout) {
+                    return;
+                }
+
                 _nextTtlTimeout = Long.MAX_VALUE;
 
                 Iterator<CellMessage> i = _messages.iterator();
@@ -1233,16 +1241,7 @@ public class RequestContainerV5
                }
 
               try{
-                 _log.info("StageEngine called in mode {}  with object {}", _state,
-                         (
-                         inputObject == null ? "(NULL)":
-                                 (
-                                         inputObject instanceof Object [] ?
-                                                 ((Object[])inputObject)[0].toString()
-                                                 : inputObject.getClass().getName()
-                                 )
-                         )
-                 );
+                 _log.info("StageEngine called in mode {}", _state);
 
                  stateEngine( inputObject ) ;
 
@@ -1532,10 +1531,8 @@ public class RequestContainerV5
 
                     }
 
-                 }else if( inputObject instanceof Object [] ){
-
-                      handleCommandObject( (Object [] ) inputObject ) ;
-
+                 } else if( inputObject instanceof Runnable) {
+                     ((Runnable)inputObject).run();
                  }
 
               break ;
@@ -1682,10 +1679,8 @@ public class RequestContainerV5
 
                     }
 
-                 }else if( inputObject instanceof Object [] ){
-
-                    handleCommandObject( (Object []) inputObject ) ;
-
+                } else if (inputObject instanceof Runnable) {
+                     ((Runnable)inputObject).run();
                 } else if (inputObject instanceof PingFailure &&
                         _p2pDestinationPool.address().equals(((PingFailure) inputObject).getPool())) {
                     _log.info("Ping reported that request died.");
@@ -1714,10 +1709,8 @@ public class RequestContainerV5
                        errorHandler() ;
 
                     }
-                 }else if( inputObject instanceof Object [] ){
-
-                    handleCommandObject( (Object []) inputObject ) ;
-
+                } else if (inputObject instanceof Runnable) {
+                     ((Runnable)inputObject).run();
                 } else if (inputObject instanceof PingFailure &&
                         _poolCandidate.address().equals(((PingFailure) inputObject).getPool())) {
                     _log.info("Ping reported that request died.");
@@ -1729,13 +1722,12 @@ public class RequestContainerV5
                      errorHandler() ;
                 }
                 break;
+
             case ST_SUSPENDED:
-                if (inputObject instanceof Object[]) {
-
-                    handleCommandObject( (Object []) inputObject ) ;
-
-                 }
-              return ;
+                if (inputObject instanceof Runnable) {
+                    ((Runnable)inputObject).run();
+                }
+                break;
 
               case ST_DONE :
                  if( inputObject == null ){
@@ -1755,35 +1747,6 @@ public class RequestContainerV5
                  }
                  nextStep(RequestState.ST_OUT);
            }
-        }
-        private void handleCommandObject( Object [] c ){
-
-           String command = c[0].toString() ;
-            switch (command) {
-            case "failed":
-
-                clearSteering();
-                setError((Integer) c[1], c[2].toString());
-                nextStep(RequestState.ST_DONE);
-
-                break;
-            case "retry":
-
-                _status = "Retry enforced";
-                _retryCounter = -1;
-                clearSteering();
-                setError(CacheException.OUT_OF_DATE, "Operator asked for retry");
-                nextStep(RequestState.ST_DONE);
-                break;
-
-            case "alive":
-                long now = System.currentTimeMillis();
-                if (now > _nextTtlTimeout) {
-                    expireRequests();
-                }
-                break;
-            }
-
         }
 
         private void outOfResources( String detail ){
