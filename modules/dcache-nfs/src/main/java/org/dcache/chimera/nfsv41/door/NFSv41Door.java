@@ -189,7 +189,6 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 import static dmg.util.CommandException.checkCommand;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 import static org.dcache.util.TransferRetryPolicy.alwaysRetry;
-import static org.dcache.util.TransferRetryPolicy.tryOnce;
 
 public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
@@ -233,12 +232,11 @@ public class NFSv41Door extends AbstractCellComponent implements
     private static final long NFS_RETRY_PERIOD = TimeUnit.SECONDS.toMillis(10);
 
     /**
-     * How long stage request can hang around. As the tape system can be broken,
-     * stage request may stay in a restore queue for a number of days.
+     * How long a pool selection request can hang around.
      *
      * One week (7 days) is good enough to cover most of the public holidays.
      */
-    private static final long STAGE_REQUEST_TIMEOUT = TimeUnit.DAYS.toMillis(7);
+    private static final long MAX_REQUEST_LIFETIME = TimeUnit.DAYS.toMillis(7);
 
     /**
      * Amount of information logged by access logger.
@@ -296,15 +294,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     /**
      * Retry policy used for accessing files.
      */
-    private static final TransferRetryPolicy READ_POOL_SELECTION_RETRY_POLICY =
-            alwaysRetry().pauseBeforeRetrying(NFS_RETRY_PERIOD).timeoutAfter(STAGE_REQUEST_TIMEOUT);
-
-    /**
-     * Retry policy used selecting write pools. Effectively, we don't retry
-     * write request and propagate error to the clients, who decide retry of fail.
-     */
-    private static final TransferRetryPolicy WRITE_POOL_SELECTION_RETRY_POLICY =
-            tryOnce().timeoutAfter(NFS_REQUEST_BLOCKING);
+    private static final TransferRetryPolicy POOL_SELECTION_RETRY_POLICY = alwaysRetry()
+            .pauseBeforeRetrying(NFS_RETRY_PERIOD)
+            .timeoutAfter(MAX_REQUEST_LIFETIME);
 
     private VfsCacheConfig _vfsCacheConfig;
 
@@ -1247,7 +1239,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                  */
                 setOnlineFilesOnly(expectedOnline);
                 _log.debug("looking a read pool for {}", getPnfsId());
-                _redirectFuture = selectPoolAndStartMoverAsync(READ_POOL_SELECTION_RETRY_POLICY);
+                _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
                 if (!expectedOnline) {
                     // no reason to block the client as we have to get file back from HSM
                     throw new LayoutTryLaterException("File is offline.");
@@ -1273,7 +1265,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 // kick stage/ p2p
                 setOnlineFilesOnly(false);
-                _redirectFuture = selectPoolAndStartMoverAsync(READ_POOL_SELECTION_RETRY_POLICY);
+                _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
                 throw new LayoutTryLaterException("File is not online: stage or p2p required");
             }
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
@@ -1327,10 +1319,10 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _log.debug("Using pre-existing WRITE pool {} for {}", location, getPnfsId());
                     // REVISIT: here we know that pool name and address are the same thing
                     setPool(new Pool(location, new CellAddressCore(location), Assumptions.none()));
-                    _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
+                    _redirectFuture = startMoverAsync(MAX_REQUEST_LIFETIME);
                 } else {
                     _log.debug("looking a write pool for {}", getPnfsId());
-                    _redirectFuture = selectPoolAndStartMoverAsync(WRITE_POOL_SELECTION_RETRY_POLICY);
+                    _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
                 }
             }
 
