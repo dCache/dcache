@@ -247,6 +247,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.ftp.door.AnonymousPermission.ALLOW_ANONYMOUS_USER;
@@ -3348,6 +3349,10 @@ public abstract class AbstractFtpDoorV1
         //     PASV, MLST, MKD, PBSZ, TYPE I, DCAU N, PBSZ, OPTS RETR
         case "globusonline-fxp":
             _activeWorkarounds.add(WorkAround.REQUEST_MD5_WHEN_UPLOADING_FILES);
+            // Globus has a four minute timeout for transfers.  If there's a
+            // problem communicating with cells (or cells are slow to respond)
+            // then try to make sure we return an error before this.
+            transferSetupTimeout(Duration.of(3, MINUTES));
             break;
 
         // Globus (Online) agent for:
@@ -3604,6 +3609,22 @@ public abstract class AbstractFtpDoorV1
         while (_transfer != null) {
             wait();
         }
+    }
+
+    // Try to ensure any subsequent transfer will start before the given
+    // duration has elapsed.
+    private void transferSetupTimeout(Duration timeout)
+    {
+        long timeoutMillis = timeout.toMillis();
+
+        if (_pnfs.getPnfsTimeout() > timeoutMillis) {
+            _pnfs.setPnfsTimeout(timeoutMillis);
+        }
+
+        _readRetryPolicy = new TransferRetryPolicy(_settings.getMaxRetries(),
+                _settings.getRetryWait() * 1000, timeoutMillis);
+        _writeRetryPolicy = new TransferRetryPolicy(MAX_RETRIES_WRITE, 0,
+                timeoutMillis);
     }
 
     /**
