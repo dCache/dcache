@@ -1150,9 +1150,7 @@ public class RequestContainerV5
         {
             _status = "Retry enforced";
             _retryCounter = -1;
-            clearSteering();
-            setError(CacheException.OUT_OF_DATE, "Operator asked for retry");
-            nextStep(RequestState.ST_DONE);
+            failRequest(CacheException.OUT_OF_DATE, "Operator asked for retry");
         }
 
         private void failRequest(int code, String message)
@@ -1501,8 +1499,7 @@ public class RequestContainerV5
 
                     CacheException ce = _selections.get(_pnfsId) ;
                     if( ce != null ){
-                       setError(ce.getRc(),ce.getMessage());
-                       nextStep(RequestState.ST_DONE);
+                        failRequest(ce.getRc(), ce.getMessage());
                        return ;
                     }
 
@@ -1569,10 +1566,7 @@ public class RequestContainerV5
                            nextStep(RequestState.ST_STAGE);
 
                        }else{
-
-                           setError( 127 , "Cost exceeded (st,p2p not allowed)" ) ;
-                           nextStep(RequestState.ST_DONE);
-
+                           failRequest(127, "Cost exceeded (st,p2p not allowed)");
                        }
                     }else if( rc == RequestStatusCode.ERROR ){
                        _log.debug( " stateEngine: RequestStatusCode.ERROR");
@@ -1599,7 +1593,7 @@ public class RequestContainerV5
 
                         if( _bestPool == null) {
                             if( _enforceP2P ){
-                               nextStep(RequestState.ST_DONE);
+                                failRequest(_currentRc, _currentRm);
                             }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
                                _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
                                nextStep(RequestState.ST_STAGE);
@@ -1618,11 +1612,11 @@ public class RequestContainerV5
                        if( _parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored() ){
 
                            if( _enforceP2P ){
-                              nextStep(RequestState.ST_DONE);
-                           }else{
-                              _log.info("ST_POOL_2_POOL : staging");
-                              nextStep(RequestState.ST_STAGE) ;
-                           }
+                               failRequest(_currentRc, _currentRm);
+                            } else {
+                                _log.info("ST_POOL_2_POOL : staging");
+                                nextStep(RequestState.ST_STAGE) ;
+                            }
                        }else{
 
                           if( _bestPool != null ){
@@ -1632,8 +1626,7 @@ public class RequestContainerV5
                              //
                              // this can't possibly happen
                              //
-                             setError(194,"PANIC : File not present in any reasonable pool");
-                             nextStep(RequestState.ST_DONE);
+                             failRequest(194,"PANIC : File not present in any reasonable pool");
                           }
                        }
                     }else if( rc == RequestStatusCode.COST_EXCEEDED ){
@@ -1644,9 +1637,10 @@ public class RequestContainerV5
                           // this can't possibly happen
                           //
                            if (!_enforceP2P) {
-                               setError(192, "PANIC : File not present in any reasonable pool");
+                               failRequest(192, "PANIC : File not present in any reasonable pool");
+                           } else {
+                               failRequest(_currentRc, _currentRm);
                            }
-                           nextStep(RequestState.ST_DONE);
                        }else{
                            success(_bestPool);
                            _log.info(" found high cost object");
@@ -1655,9 +1649,9 @@ public class RequestContainerV5
                     }else{
 
                        if( _enforceP2P ){
-                          nextStep(RequestState.ST_DONE);
+                            failRequest(_currentRc, _currentRm);
                        }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
-                          nextStep(RequestState.ST_STAGE);
+                            nextStep(RequestState.ST_STAGE);
                         } else {
                             // FIXME refactor askForPoolToPool to avoid
                             // side-effects to avoid this.
@@ -1698,9 +1692,8 @@ public class RequestContainerV5
 
                     if( ( rc =  exercisePool2PoolReply((Pool2PoolTransferMsg)inputObject) ) == RequestStatusCode.OK ){
                         if (_parameter._p2pForTransfer && ! _enforceP2P) {
-                            setError(CacheException.OUT_OF_DATE,
+                            failRequest(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to p2p transfer");
-                            nextStep(RequestState.ST_DONE);
                         } else {
                             success(_p2pDestinationPool);
                         }
@@ -1737,9 +1730,8 @@ public class RequestContainerV5
 
                     if( ( rc =  exerciseStageReply( (PoolFetchFileMessage)inputObject ) ) == RequestStatusCode.OK ){
                         if (_parameter._p2pForTransfer) {
-                            setError(CacheException.OUT_OF_DATE,
+                            failRequest(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to stage");
-                            nextStep(RequestState.ST_DONE);
                         } else {
                             success(_stageCandidate.orElseThrow(() -> new RuntimeException("Stage successful without candidate pool")));
                         }
