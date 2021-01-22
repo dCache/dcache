@@ -81,6 +81,7 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.toList;
+import static diskCacheV111.poolManager.RequestContainerV5.StateType.*;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -89,23 +90,83 @@ public class RequestContainerV5
     private static final Logger _log =
         LoggerFactory.getLogger(RequestContainerV5.class);
 
+    protected enum StateType {
+        /**
+         * A TRANSITORY state is one in which a call to stateEngine method is
+         * guaranteed to change the state.  Such states require no (external)
+         * stimulus.
+         */
+        TRANSITORY,
+
+        /**
+         * A WAITING state is one in which the request is waiting asynchronously
+         * for some external event.  Such states require some (external)
+         * stimulus to trigger a change in state.
+         */
+        WAITING
+    }
+
+    /**
+     * The various states that a request can adopt as it is being processed.
+     */
     public enum RequestState {
-        /** initial request state */
-        ST_INIT,
-        /** selection complete (success or error) */
-        ST_DONE,
-        /** poop-to-pool copy required */
-        ST_POOL_2_POOL,
-        /** restore from HSM required */
-        ST_STAGE,
-        /** waiting for pending restore to complete */
-        ST_WAITING_FOR_STAGING,
-        /** waiting for pending poo-to-pool copy to complete */
-        ST_WAITING_FOR_POOL_2_POOL,
-        /** request have to be suspended due to missing pool or HSM errors */
-        ST_SUSPENDED,
-        /** selection state machine exit point */
-        ST_OUT;
+        /** The initial request state. */
+        ST_INIT(TRANSITORY),
+
+        /**
+         * Processing is complete and the outcome of the request has been
+         * determined.  Some final steps are still needed; for example, sending
+         * cell messages to inform the doors of the result.
+         */
+        ST_DONE(TRANSITORY),
+
+        /**
+         * It has been determined that the request cannot be satisfied as-is and
+         * a pool-to-pool copy is required.  The pool-to-pool copy is to be
+         * initiated.
+         */
+        ST_POOL_2_POOL(TRANSITORY),
+
+        /**
+         * It has been determined that the request cannot be satisfied as-is and
+         * the file should be staged back from tape.  The staging request is to
+         * be initiated.
+         */
+        ST_STAGE(TRANSITORY),
+
+        /**
+         * A pool has been requested to stage a file.  Waiting for that stage
+         * request to complete.
+         */
+        ST_WAITING_FOR_STAGING(WAITING),
+
+        /**
+         * A pool has been requested to create a replica: a pool-to-pool copy.
+         * Waiting for that pool-to-pool request to complete.
+         */
+        ST_WAITING_FOR_POOL_2_POOL(WAITING),
+
+        /**
+         * No further processing is currently possible.  External changes (such
+         * as pools becoming available or manual intervention) may trigger a
+         * change in state.
+         */
+        ST_SUSPENDED(WAITING),
+
+        /** All processing is now completed.  Nothing further to do. */
+        ST_OUT(TRANSITORY);
+
+        private final StateType type;
+
+        public boolean is(StateType type)
+        {
+            return this.type == type;
+        }
+
+        RequestState(StateType type)
+        {
+            this.type = type;
+        }
     }
 
     private static final String POOL_UNKNOWN_STRING  = "<unknown>" ;
@@ -1191,46 +1252,44 @@ public class RequestContainerV5
                }
            }
         }
-        private void stateLoop(){
 
+        private void stateLoop() {
            _log.info( "ACTIVATING STATE ENGINE {} {}", _pnfsId, (System.currentTimeMillis()-_started)) ;
 
-           while( ! Thread.interrupted() ){
+            while (!Thread.interrupted() && _state != RequestState.ST_OUT) {
 
-               Object inputObject;
-               switch (_state) {
-                   case ST_INIT:
-                   case ST_DONE:
-                   case ST_POOL_2_POOL:
-                   case ST_STAGE:
-                       inputObject = null; // just carry on.
-                       break;
-                   case ST_WAITING_FOR_STAGING:
-                   case ST_WAITING_FOR_POOL_2_POOL:
-                   case ST_SUSPENDED:
-                       synchronized( _fifo ){
-                           inputObject = _fifo.pollLast();
-                           if (inputObject == null) {
-                               return;
-                           }
-                       }
-                       break;
-                   case ST_OUT:
-                       return;
-                   default:
-                       throw new RuntimeException("never get here");
-               }
+                Object inputObject;
 
-              try{
-                 _log.info("StageEngine called in mode {}", _state);
+                if (_state.is(TRANSITORY)) {
+                    inputObject = null;
+                } else {
+                    synchronized (_fifo) {
+                        inputObject = _fifo.pollLast();
+                    }
 
-                 stateEngine( inputObject ) ;
+                    if (inputObject == null) {
+                        return;
+                    }
+                }
 
-                 _log.info("StageEngine left with: {}", _state);
-              } catch (RuntimeException e) {
-                  _log.error("Unexpected Exception in state loop for " + _pnfsId, e);
-              }
-           }
+                try {
+                    _log.info("StageEngine called in mode {}", _state);
+
+                    RequestState formerState = _state;
+
+                    stateEngine(inputObject);
+
+                    if (_state.is(TRANSITORY) && _state == formerState) {
+                        throw new RuntimeException("Loop detected in state " + _state);
+                    }
+
+                    _log.info("StageEngine left with: {}", _state);
+                } catch (RuntimeException e) {
+                    _log.error("Bug in state loop for {}", _pnfsId, e);
+                    failRequest(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                            "Bug detected: " + e);
+                }
+            }
         }
 
         private boolean canStage()
