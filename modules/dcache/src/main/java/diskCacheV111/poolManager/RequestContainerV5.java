@@ -1193,18 +1193,17 @@ public class RequestContainerV5
         }
         private void stateLoop(){
 
-           Object inputObject ;
            _log.info( "ACTIVATING STATE ENGINE {} {}", _pnfsId, (System.currentTimeMillis()-_started)) ;
 
            while( ! Thread.interrupted() ){
 
-               inputObject = null;
+               Object inputObject;
                switch (_state) {
                    case ST_INIT:
                    case ST_DONE:
                    case ST_POOL_2_POOL:
                    case ST_STAGE:
-                        // just carry on.
+                       inputObject = null; // just carry on.
                        break;
                    case ST_WAITING_FOR_STAGING:
                    case ST_WAITING_FOR_POOL_2_POOL:
@@ -1434,9 +1433,6 @@ public class RequestContainerV5
                  }
 
 
-                 if( inputObject == null ){
-
-
                     if( _suspendIncoming ){
                         setError(1005, "Suspend enforced");
                         suspend("Suspended (forced)");
@@ -1513,16 +1509,10 @@ public class RequestContainerV5
 
                     }
 
-                 } else if( inputObject instanceof Runnable) {
-                     ((Runnable)inputObject).run();
-                 }
-
               break ;
 
               case ST_POOL_2_POOL :
               {
-                 if( inputObject == null ){
-
                     if( ( rc = askForPoolToPool( _overwriteCost ) ) == RequestStatusCode.FOUND ){
 
                        nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
@@ -1606,13 +1596,10 @@ public class RequestContainerV5
                           suspendIfEnabled("Suspended");
                        }
                     }
-                 }
               }
               break ;
 
               case ST_STAGE :
-                 if( inputObject == null ){
-
                     if( _suspendStaging ){
                          setError(1005, "Suspend enforced");
                          suspend("Suspended Stage (forced)");
@@ -1636,9 +1623,8 @@ public class RequestContainerV5
                        //
                        errorHandler() ;
                     }
-                 }
-
               break ;
+
               case ST_WAITING_FOR_POOL_2_POOL :
                  if( inputObject instanceof Pool2PoolTransferMsg ){
 
@@ -1712,8 +1698,6 @@ public class RequestContainerV5
                 break;
 
               case ST_DONE :
-                 if( inputObject == null ){
-
                     clearSteering();
                     //
                     // it is essential that we are not within any other
@@ -1726,7 +1710,6 @@ public class RequestContainerV5
                         setError(CacheException.OUT_OF_DATE,
                                  "Request clumping limit reached");
                     }
-                 }
                  nextStep(RequestState.ST_OUT);
            }
         }
