@@ -82,6 +82,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.toList;
 import static diskCacheV111.poolManager.RequestContainerV5.StateType.*;
+import static java.util.Objects.requireNonNull;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -1090,6 +1091,13 @@ public class RequestContainerV5
             _currentRc = 0;
             _currentRm = "";
         }
+        private void success(SelectedPool pool)
+        {
+            _poolCandidate = requireNonNull(pool);
+            _currentRc = 0;
+            _currentRm = "";
+            nextStep(RequestState.ST_DONE);
+        }
         private void setError( int errorCode , String errorMessage ){
            _currentRc = errorCode ;
            _currentRm = errorMessage ;
@@ -1515,8 +1523,7 @@ public class RequestContainerV5
                     }
 
                     if ((rc = askIfAvailable()) == RequestStatusCode.FOUND) {
-                       clearError();
-                       nextStep(RequestState.ST_DONE) ;
+                        success(_bestPool);
                        _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo) {
                            sendHitMsg(_bestPool.info(), true);
@@ -1600,11 +1607,8 @@ public class RequestContainerV5
                                 suspendIfEnabled(265, "Pool to pool not permitted");
                             }
                         }else{
-                            _poolCandidate = _bestPool;
+                            success(_bestPool);
                             _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
-
-                            clearError();
-                            nextStep(RequestState.ST_DONE);
                         }
 
                     }else if( rc == RequestStatusCode.S_COST_EXCEEDED ){
@@ -1622,16 +1626,15 @@ public class RequestContainerV5
                        }else{
 
                           if( _bestPool != null ){
-                              _poolCandidate = _bestPool;
+                              success(_bestPool);
                               _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
-                             clearError();
                           }else{
                              //
                              // this can't possibly happen
                              //
                              setError(194,"PANIC : File not present in any reasonable pool");
+                             nextStep(RequestState.ST_DONE);
                           }
-                           nextStep(RequestState.ST_DONE);
                        }
                     }else if( rc == RequestStatusCode.COST_EXCEEDED ){
                        //
@@ -1643,12 +1646,11 @@ public class RequestContainerV5
                            if (!_enforceP2P) {
                                setError(192, "PANIC : File not present in any reasonable pool");
                            }
+                           nextStep(RequestState.ST_DONE);
                        }else{
-                           _poolCandidate = _bestPool;
+                           success(_bestPool);
                            _log.info(" found high cost object");
-                           clearError();
                        }
-                       nextStep(RequestState.ST_DONE);
 
                     }else{
 
@@ -1698,8 +1700,10 @@ public class RequestContainerV5
                         if (_parameter._p2pForTransfer && ! _enforceP2P) {
                             setError(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to p2p transfer");
+                            nextStep(RequestState.ST_DONE);
+                        } else {
+                            success(_p2pDestinationPool);
                         }
-                        nextStep(RequestState.ST_DONE);
                     }else{
                         _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
                         if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
@@ -1735,8 +1739,10 @@ public class RequestContainerV5
                         if (_parameter._p2pForTransfer) {
                             setError(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to stage");
+                            nextStep(RequestState.ST_DONE);
+                        } else {
+                            success(_stageCandidate.orElseThrow(() -> new RuntimeException("Stage successful without candidate pool")));
                         }
-                        nextStep(RequestState.ST_DONE);
                     } else if (rc == RequestStatusCode.DELAY) {
                         // FIXME, avoid this by refactoring exerciseStageReply
                         // so it doesn't have side-effects.
@@ -1834,7 +1840,6 @@ public class RequestContainerV5
 
             _log.info("Pool2PoolTransferMsg replied with : {}", reply);
             if ((_currentRc = reply.getReturnCode()) == 0) {
-                _poolCandidate = _p2pDestinationPool;
                 return RequestStatusCode.OK;
 
             } else {
@@ -1929,7 +1934,6 @@ public class RequestContainerV5
                          (System.currentTimeMillis() - _started));
            }
 
-           _poolCandidate = _bestPool;
            return RequestStatusCode.FOUND;
         }
         //
@@ -2005,19 +2009,17 @@ public class RequestContainerV5
         {
             try {
                 SelectedPool pool =  _poolSelector.selectStagePool(_stageCandidate.map(SelectedPool::info));
-                _poolCandidate = pool;
                 _stageCandidate = Optional.of(pool);
 
-                _log.info("[staging] poolCandidate -> {}", _poolCandidate.info());
-                if (!sendFetchRequest(_poolCandidate)) {
+                _log.info("[staging] poolCandidate -> {}", pool.info());
+                if (!sendFetchRequest(pool)) {
                     return RequestStatusCode.OUT_OF_RESOURCES;
                 }
 
                 return RequestStatusCode.FOUND;
             } catch (CostException e) {
                if (e.getPool() != null) {
-                   _poolCandidate = e.getPool();
-                   _stageCandidate = Optional.of(_poolCandidate);
+                   _stageCandidate = Optional.of(e.getPool());
                    return RequestStatusCode.FOUND;
                }
                _log.info("[stage] {}", e.getMessage());
