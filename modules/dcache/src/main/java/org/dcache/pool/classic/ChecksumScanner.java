@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellCommandListener;
@@ -132,7 +131,7 @@ public class ChecksumScanner
                         } finally {
                             handle.close();
                         }
-                    } catch (FileNotInCacheException | NotInTrashCacheException e) {
+                    } catch (FileNotInCacheException e) {
                         /* It was removed before we could get it. No problem.
                          */
                     } catch (FileCorruptedCacheException e) {
@@ -474,7 +473,7 @@ public class ChecksumScanner
                 } catch (IOException e) {
                     _unableCount++;
                     throw new IOException("Unable to read " + id + ": " + messageOrClassName(e), e);
-                } catch (FileNotInCacheException | NotInTrashCacheException e) {
+                } catch (FileNotInCacheException e) {
                     /* It was removed before we could get it. No problem.
                      */
                 } catch (CacheException e) {

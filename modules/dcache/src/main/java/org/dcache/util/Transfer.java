@@ -42,7 +42,6 @@ import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotFileCacheException;
-import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -743,7 +742,7 @@ public class Transfer implements Comparable<Transfer>
     {
         try {
             createNameSpaceEntry();
-        } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
+        } catch (FileNotFoundCacheException e) {
             _pnfs.createDirectories(_path.parent());
             createNameSpaceEntry();
         }

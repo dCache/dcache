@@ -15,7 +15,6 @@ import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
-import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.ServiceUnavailableException;
@@ -64,8 +63,6 @@ public class CacheExceptionFactory {
                 return new PermissionDeniedCacheException(message, cause);
             case LOCKED:
                 return new LockedCacheException(message, cause);
-            case NOT_IN_TRASH:
-                return new NotInTrashCacheException(message, cause);
             case TIMEOUT:
                 return new TimeoutCacheException(message, cause);
             case OUT_OF_DATE:

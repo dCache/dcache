@@ -81,9 +81,6 @@ public class CacheException extends Exception
     /** indicates that request contains invalid value */
     public static final int INVALID_ARGS = 10015;
 
-    /** Pnfsid is not in trash directory */
-    public static final int NOT_IN_TRASH = 10016;
-
     /**
      * There are no sufficient resources to process current request. Typically
      * returned if some limits excided.

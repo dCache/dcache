@@ -140,7 +140,6 @@ import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -1299,7 +1298,7 @@ public final class Storage
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("PnfsManager is unavailable: "
                                                 + e.getMessage(), e);
-        } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
+        } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied");
@@ -1493,7 +1492,7 @@ public final class Storage
             }
         } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException(dir + " (not a directory)", e);
-        } catch (FileNotFoundCacheException | NotInTrashCacheException ignored) {
+        } catch (FileNotFoundCacheException ignored) {
             // Somebody removed the directory before we could.
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException(dir + " (permission denied)", e);
@@ -1526,7 +1525,7 @@ public final class Storage
             throw new SRMInternalErrorException("Name space timeout", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied", e);
-        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
+        } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (CacheException e) {
             throw new SRMException("Name space failure (" + e.getMessage() + ")");
@@ -1544,7 +1543,7 @@ public final class Storage
                 pnfs.deletePnfsEntry(directory.toString(), EnumSet.of(FileType.DIR));
             } catch (TimeoutCacheException e) {
                 throw new SRMInternalErrorException("Name space timeout", e);
-            } catch (FileNotFoundCacheException | NotInTrashCacheException ignored) {
+            } catch (FileNotFoundCacheException ignored) {
                 // Somebody removed the directory before we could.
             } catch (PermissionDeniedCacheException | NotDirCacheException e) {
                 // Only directories are included in the list output, and we checked that we
@@ -1580,7 +1579,7 @@ public final class Storage
             pnfs.deletePnfsEntry(path.toString(), EnumSet.of(FileType.DIR));
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Name space timeout");
-        } catch (FileNotFoundCacheException | NotInTrashCacheException ignored) {
+        } catch (FileNotFoundCacheException ignored) {
             throw new SRMInvalidPathException("No such file or directory");
         } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException("Not a directory");
@@ -1615,7 +1614,7 @@ public final class Storage
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException("Parent path is not a directory", e);
-        } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
+        } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("Parent path does not exist", e);
         } catch (FileExistsCacheException e) {
             throw new SRMDuplicationException("File exists");
@@ -1937,7 +1936,7 @@ public final class Storage
             throw new SRMInternalErrorException("List aborted by administrator", e);
         } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException("Not a directory", e);
-        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
+        } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied", e);
@@ -1969,7 +1968,7 @@ public final class Storage
             throw new SRMInternalErrorException("List aborted by administrator", e);
         } catch (NotDirCacheException e) {
             throw new SRMInvalidPathException("Not a directory", e);
-        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
+        } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied", e);
@@ -2339,7 +2338,7 @@ public final class Storage
                                       EnumSet.of(AccessMask.WRITE_DATA), false);
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
-        } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
+        } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("Parent path does not exist", e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied");

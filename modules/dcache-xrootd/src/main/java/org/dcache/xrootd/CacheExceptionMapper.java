@@ -67,7 +67,6 @@ public class CacheExceptionMapper
             case FILESIZE_UNKNOWN:
             case FILE_IN_CACHE:
             case HSM_DELAY_ERROR:
-            case NOT_IN_TRASH:
             case OUT_OF_DATE:
                 return kXR_FSError;
 

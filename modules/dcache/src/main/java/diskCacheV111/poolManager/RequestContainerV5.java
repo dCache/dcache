@@ -1294,8 +1294,7 @@ public class RequestContainerV5
                 return;
             }
 
-            if (_currentRc == CacheException.NOT_IN_TRASH ||
-                _currentRc == CacheException.FILE_NOT_FOUND) {
+            if (_currentRc == CacheException.FILE_NOT_FOUND) {
                 _state = RequestState.ST_DONE;
                 _status = "Failed";
                 sendInfoMessage(

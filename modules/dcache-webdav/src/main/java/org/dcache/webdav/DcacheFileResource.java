@@ -38,7 +38,6 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.HttpProtocolInfo;
@@ -133,7 +132,7 @@ public class DcacheFileResource
             throw new WebDavException("Failed to send entity: client closed connection", e, this);
         } catch (PermissionDeniedCacheException e) {
             throw WebDavExceptions.permissionDenied(this);
-        } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
+        } catch (FileNotFoundCacheException e) {
             throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);

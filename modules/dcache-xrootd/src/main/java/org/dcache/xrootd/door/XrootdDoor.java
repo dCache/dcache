@@ -1140,8 +1140,7 @@ public class XrootdDoor
                         pnfsHandler.getFileAttributes(allPaths[i].toString(), requestedAttributes);
                 flags[i] = getFileStatusFlags(subject, restriction, allPaths[i], attributes);
             } catch (CacheException e) {
-                if (e.getRc() != CacheException.FILE_NOT_FOUND &&
-                        e.getRc() != CacheException.NOT_IN_TRASH) {
+                if (e.getRc() != CacheException.FILE_NOT_FOUND) {
                     throw e;
                 }
                 flags[i] = kXR_other;

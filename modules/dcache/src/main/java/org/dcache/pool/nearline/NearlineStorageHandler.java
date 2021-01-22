@@ -962,8 +962,7 @@ public class NearlineStorageHandler
                     pnfs.fileFlushed(pnfsid, fileAttributes);
                     break;
                 } catch (CacheException e) {
-                    if (e.getRc() == CacheException.FILE_NOT_FOUND ||
-                            e.getRc() == CacheException.NOT_IN_TRASH) {
+                    if (e.getRc() == CacheException.FILE_NOT_FOUND) {
                         /* In case the file was deleted, we are presented
                          * with the problem that the file is now on tape,
                          * however the location has not been registered
