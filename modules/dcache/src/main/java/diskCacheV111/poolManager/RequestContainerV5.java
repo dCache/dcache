@@ -1086,6 +1086,10 @@ public class RequestContainerV5
                 _waitingFor = null;
             }
         }
+        private void clearError() {
+            _currentRc = 0;
+            _currentRm = "";
+        }
         private void setError( int errorCode , String errorMessage ){
            _currentRc = errorCode ;
            _currentRm = errorMessage ;
@@ -1504,15 +1508,14 @@ public class RequestContainerV5
 
                     //
                     //
-                    if( _enforceP2P ){
-                        setError(0,"");
+                    if (_enforceP2P) {
+                        clearError();
                         nextStep(RequestState.ST_POOL_2_POOL);
                         return ;
                     }
 
-                    if( ( rc = askIfAvailable() ) == RequestStatusCode.FOUND ){
-
-                       setError(0,"");
+                    if ((rc = askIfAvailable()) == RequestStatusCode.FOUND) {
+                       clearError();
                        nextStep(RequestState.ST_DONE) ;
                        _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo) {
@@ -1577,9 +1580,9 @@ public class RequestContainerV5
               {
                     if( ( rc = askForPoolToPool( _overwriteCost ) ) == RequestStatusCode.FOUND ){
 
+                       clearError();
                        nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
                        _status = "Pool2Pool "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
-                       setError(0, "");
 
                        if (_sendHitInfo) {
                            sendHitMsg(_p2pSourcePool.info(), true);   //VP
@@ -1600,8 +1603,8 @@ public class RequestContainerV5
                             _poolCandidate = _bestPool;
                             _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
 
-                          setError(0,"");
-                          nextStep(RequestState.ST_DONE);
+                            clearError();
+                            nextStep(RequestState.ST_DONE);
                         }
 
                     }else if( rc == RequestStatusCode.S_COST_EXCEEDED ){
@@ -1621,7 +1624,7 @@ public class RequestContainerV5
                           if( _bestPool != null ){
                               _poolCandidate = _bestPool;
                               _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
-                             setError(0,"");
+                             clearError();
                           }else{
                              //
                              // this can't possibly happen
@@ -1643,7 +1646,7 @@ public class RequestContainerV5
                        }else{
                            _poolCandidate = _bestPool;
                            _log.info(" found high cost object");
-                           setError(0,"");
+                           clearError();
                        }
                        nextStep(RequestState.ST_DONE);
 
@@ -1669,10 +1672,9 @@ public class RequestContainerV5
                     }
 
                     if( ( rc = askForStaging() ) == RequestStatusCode.FOUND ){
-
+                       clearError();
                        nextStep(RequestState.ST_WAITING_FOR_STAGING);
                        _status = "Staging "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
-                       setError(0, "");
 
                     } else if (rc == RequestStatusCode.OUT_OF_RESOURCES) {
                         _restoreExceeded++;
@@ -1928,7 +1930,6 @@ public class RequestContainerV5
            }
 
            _poolCandidate = _bestPool;
-           setError(0,"");
            return RequestStatusCode.FOUND;
         }
         //
@@ -2011,8 +2012,6 @@ public class RequestContainerV5
                 if (!sendFetchRequest(_poolCandidate)) {
                     return RequestStatusCode.OUT_OF_RESOURCES;
                 }
-
-                setError(0,"");
 
                 return RequestStatusCode.FOUND;
             } catch (CostException e) {
