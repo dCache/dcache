@@ -1287,17 +1287,21 @@ public class RequestContainerV5
                 }
 
                 try {
-                    _log.info("StageEngine called in mode {}", _state);
+                    if (inputObject instanceof Runnable) {
+                        ((Runnable)inputObject).run();
+                    } else {
+                        _log.info("StageEngine called in mode {}", _state);
 
-                    RequestState formerState = _state;
+                        RequestState formerState = _state;
 
-                    stateEngine(inputObject);
+                        stateEngine(inputObject);
 
-                    if (_state.is(TRANSITORY) && _state == formerState) {
-                        throw new RuntimeException("Loop detected in state " + _state);
+                        if (_state.is(TRANSITORY) && _state == formerState) {
+                            throw new RuntimeException("Loop detected in state " + _state);
+                        }
+
+                        _log.info("StageEngine left with: {}", _state);
                     }
-
-                    _log.info("StageEngine left with: {}", _state);
                 } catch (RuntimeException e) {
                     _log.error("Bug in state loop for {}", _pnfsId, e);
                     failRequest(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -1711,9 +1715,6 @@ public class RequestContainerV5
                         }
 
                     }
-
-                } else if (inputObject instanceof Runnable) {
-                    ((Runnable)inputObject).run();
                 } else if (inputObject instanceof PingFailure &&
                         _p2pDestinationPool.address().equals(((PingFailure) inputObject).getPool())) {
                     _log.info("Ping reported that request died.");
@@ -1743,8 +1744,6 @@ public class RequestContainerV5
                         // so it doesn't have side-effects.
                         errorHandler(_currentRc, _currentRm);
                     }
-                } else if (inputObject instanceof Runnable) {
-                    ((Runnable)inputObject).run();
                 } else if (inputObject instanceof PingFailure &&
                         _poolCandidate.address().equals(((PingFailure) inputObject).getPool())) {
                     _log.info("Ping reported that request died.");
@@ -1756,9 +1755,7 @@ public class RequestContainerV5
                 break;
 
             case ST_SUSPENDED:
-                if (inputObject instanceof Runnable) {
-                    ((Runnable)inputObject).run();
-                }
+                // Nothing to do.
                 break;
 
             case ST_DONE :
