@@ -1199,33 +1199,32 @@ public class RequestContainerV5
             }
         }
 
-        private boolean answerRequest(int count) {
-            //
-            // if there is an error we won't continue ;
-            //
-            if (_currentRc != 0) {
-                count = 100000;
-            }
-            //
-
+        private boolean answerRequests(int limit)
+        {
             Iterator<CellMessage> messages = _messages.iterator();
-            for (int i = 0; (i < count) && messages.hasNext(); i++) {
-                CellMessage m =  messages.next();
-                PoolMgrSelectReadPoolMsg rpm =
-                    (PoolMgrSelectReadPoolMsg) m.getMessageObject();
-                rpm.setContext(_retryCounter + 1, _stageCandidate.orElse(null));
-                if (_currentRc == 0) {
-                    rpm.setPool( new diskCacheV111.vehicles.Pool(_poolCandidate.name(), _poolCandidate.info().getAddress(), _poolCandidate.assumption()));
-                    rpm.setSucceeded();
-                } else {
-                    rpm.setFailed(_currentRc, _currentRm);
-                }
-                m.revertDirection();
-                sendMessage(m);
+            for (int i = 0; i < limit && messages.hasNext(); i++) {
+                CellMessage message =  messages.next();
+                answerRequest(message);
                 messages.remove();
             }
             return messages.hasNext();
         }
+
+        private void answerRequest(CellMessage message)
+        {
+            PoolMgrSelectReadPoolMsg rpm =
+                (PoolMgrSelectReadPoolMsg) message.getMessageObject();
+            rpm.setContext(_retryCounter + 1, _stageCandidate.orElse(null));
+            if (_currentRc == 0) {
+                rpm.setPool( new diskCacheV111.vehicles.Pool(_poolCandidate.name(), _poolCandidate.info().getAddress(), _poolCandidate.assumption()));
+                rpm.setSucceeded();
+            } else {
+                rpm.setFailed(_currentRc, _currentRm);
+            }
+            message.revertDirection();
+            sendMessage(message);
+        }
+
         //
         // and the heart ...
         //
@@ -1771,7 +1770,10 @@ public class RequestContainerV5
                     synchronized (_handlerHash) {
                         _handlerHash.remove(_name);
                     }
-                    while (answerRequest(MAX_REQUEST_CLUMPING)) {
+
+                    int limit = _currentRc == 0 ? MAX_REQUEST_CLUMPING
+                            : Integer.MAX_VALUE;
+                    while (answerRequests(limit)) {
                         setError(CacheException.OUT_OF_DATE,
                                  "Request clumping limit reached");
                     }
