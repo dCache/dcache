@@ -1674,11 +1674,11 @@ public class RequestContainerV5
                        _status = "Staging "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
                        setError(0, "");
 
-                    }else if( rc == RequestStatusCode.OUT_OF_RESOURCES ){
-
-                       _restoreExceeded ++ ;
-                       outOfResources("Restore") ;
-
+                    } else if (rc == RequestStatusCode.OUT_OF_RESOURCES) {
+                        _restoreExceeded++;
+                        _status = "Failed";
+                        failRequest(5, "Resource temporarily unavailable : Restore");
+                        sendInfoMessage(_currentRc , "Failed "+_currentRm);
                     } else {
                         //
                         // we couldn't find a pool for staging
@@ -1777,16 +1777,6 @@ public class RequestContainerV5
                     }
                  nextStep(RequestState.ST_OUT);
            }
-        }
-
-        private void outOfResources( String detail ){
-
-           clearSteering();
-           setError(5,"Resource temporarily unavailable : "+detail);
-           nextStep(RequestState.ST_DONE) ;
-           _status = "Failed" ;
-           sendInfoMessage(
-                   _currentRc , "Failed "+_currentRm );
         }
 
         private void suspend(int code, String reason)
