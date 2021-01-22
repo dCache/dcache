@@ -1676,11 +1676,13 @@ public class RequestContainerV5
                        _restoreExceeded ++ ;
                        outOfResources("Restore") ;
 
-                    }else{
-                       //
-                       // we couldn't find a pool for staging
-                       //
-                       errorHandler() ;
+                    } else {
+                        //
+                        // we couldn't find a pool for staging
+                        //
+                        // FIXME avoid this by refactoring askForStaging so it
+                        // doesn't have side-effects.
+                        errorHandler(_currentRc, _currentRm);
                     }
               break ;
 
@@ -1700,8 +1702,11 @@ public class RequestContainerV5
                             _log.info("ST_POOL_2_POOL : trying to stage the file");
                             nextStep(RequestState.ST_STAGE);
 
-                        }else{
-                            errorHandler() ;
+                        } else {
+                            // FIXME avoid this by refactoring
+                            // exercisePool2PoolReply so it doesn't have
+                            // side-effects.
+                            errorHandler(_currentRc, _currentRm);
                         }
 
                     }
@@ -1711,12 +1716,10 @@ public class RequestContainerV5
                 } else if (inputObject instanceof PingFailure &&
                         _p2pDestinationPool.address().equals(((PingFailure) inputObject).getPool())) {
                     _log.info("Ping reported that request died.");
-                    setError(CacheException.TIMEOUT, "Replication timed out");
-                    errorHandler();
+                    errorHandler(CacheException.TIMEOUT, "Replication timed out");
                 } else if (inputObject != null) {
                     _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
-                    setError(102,"Unexpected message type " + inputObject.getClass());
-                    errorHandler() ;
+                    errorHandler(102, "Unexpected message type " + inputObject.getClass());
                 }
 
               break ;
@@ -1731,22 +1734,20 @@ public class RequestContainerV5
                         nextStep(RequestState.ST_DONE);
                     }else if( rc == RequestStatusCode.DELAY ){
                         suspend("Suspended By HSM request");
-                    }else{
-
-                       errorHandler() ;
-
+                    } else {
+                        // FIXME, avoid this by refactoring exerciseStageReply
+                        // so it doesn't have side-effects.
+                        errorHandler(_currentRc, _currentRm);
                     }
                 } else if (inputObject instanceof Runnable) {
                      ((Runnable)inputObject).run();
                 } else if (inputObject instanceof PingFailure &&
                         _poolCandidate.address().equals(((PingFailure) inputObject).getPool())) {
                     _log.info("Ping reported that request died.");
-                    setError(CacheException.TIMEOUT, "Staging timed out");
-                    errorHandler();
+                    errorHandler(CacheException.TIMEOUT, "Staging timed out");
                 } else if (inputObject != null) {
-                     _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
-                     setError(102,"Unexpected message type " + inputObject.getClass());
-                     errorHandler() ;
+                    _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
+                    errorHandler(102, "Unexpected message type " + inputObject.getClass());
                 }
                 break;
 
@@ -1811,8 +1812,11 @@ public class RequestContainerV5
             }
         }
 
-        private void errorHandler()
+        private void errorHandler(int code, String message)
         {
+            _currentRc = code;
+            _currentRm = message;
+
             if (_retryCounter >= _maxRetries) {
                 suspendIfEnabled("Suspended");
             } else {
