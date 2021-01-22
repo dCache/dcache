@@ -1145,8 +1145,13 @@ public class RequestContainerV5
 
         private void failRequest(int code, String message)
         {
+            checkArgument(code != 0, "failRequest called with zero error");
+
             clearSteering();
-            setError(code, message);
+
+           _currentRc = code;
+           _currentRm = message;
+
             nextStep(RequestState.ST_DONE);
         }
 
@@ -1493,8 +1498,7 @@ public class RequestContainerV5
 
 
                     if( _suspendIncoming ){
-                        setError(1005, "Suspend enforced");
-                        suspend("Suspended (forced)");
+                        suspend(1005, "Incoming request");
                         return ;
                     }
 
@@ -1522,11 +1526,10 @@ public class RequestContainerV5
                        if( _parameter._hasHsmBackend && _storageInfo.isStored()){
                            _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
                           nextStep(RequestState.ST_STAGE);
-                       }else{
-                          _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
-                          _poolCandidate = null ;
-                          setError(CacheException.POOL_UNAVAILABLE, "Pool unavailable");
-                          suspendIfEnabled("Suspended (pool unavailable)");
+                       } else {
+                            _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
+                            _poolCandidate = null ;
+                            suspendIfEnabled(CacheException.POOL_UNAVAILABLE, "Pool unavailable");
                        }
                        if (_sendHitInfo && _poolCandidate == null) {
                            sendHitMsg(_bestPool == null ? null : _bestPool.info(), false);   //VP
@@ -1590,9 +1593,8 @@ public class RequestContainerV5
                             }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
                                _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
                                nextStep(RequestState.ST_STAGE);
-                            }else{
-                               setError(265, "Pool to pool not permitted");
-                               suspendIfEnabled("Suspended");
+                            } else {
+                                suspendIfEnabled(265, "Pool to pool not permitted");
                             }
                         }else{
                             _poolCandidate = _bestPool;
@@ -1651,17 +1653,18 @@ public class RequestContainerV5
                           nextStep(RequestState.ST_DONE);
                        }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
                           nextStep(RequestState.ST_STAGE);
-                       }else{
-                          suspendIfEnabled("Suspended");
-                       }
+                        } else {
+                            // FIXME refactor askForPoolToPool to avoid
+                            // side-effects to avoid this.
+                            suspendIfEnabled(_currentRc, _currentRm);
+                        }
                     }
               }
               break ;
 
               case ST_STAGE :
                     if( _suspendStaging ){
-                         setError(1005, "Suspend enforced");
-                         suspend("Suspended Stage (forced)");
+                         suspend(1005, "Would trigger stage");
                          return ;
                     }
 
@@ -1732,8 +1735,10 @@ public class RequestContainerV5
                                      "Pool locations changed due to stage");
                         }
                         nextStep(RequestState.ST_DONE);
-                    }else if( rc == RequestStatusCode.DELAY ){
-                        suspend("Suspended By HSM request");
+                    } else if (rc == RequestStatusCode.DELAY) {
+                        // FIXME, avoid this by refactoring exerciseStageReply
+                        // so it doesn't have side-effects.
+                        suspend(_currentRc, _currentRm);
                     } else {
                         // FIXME, avoid this by refactoring exerciseStageReply
                         // so it doesn't have side-effects.
@@ -1784,43 +1789,33 @@ public class RequestContainerV5
                    _currentRc , "Failed "+_currentRm );
         }
 
-        private void fail()
+        private void suspend(int code, String reason)
         {
-            if (_currentRc == 0) {
-                _log.error("Error handler called without an error");
-                setError(CacheException.DEFAULT_ERROR_CODE,
-                        "Pool selection failed");
-            }
-            nextStep(RequestState.ST_DONE);
-        }
+            String message = "Suspended: " + reason;
+            _currentRc = code;
+            _currentRm = message;
 
-        private void suspend(String status)
-        {
-            _log.debug(" stateEngine: SUSPENDED/WAIT ");
-            _status = status + " " + LocalDateTime.now().format(DATE_TIME_FORMAT);
+            _log.debug(" stateEngine: {}", message);
+            _status = message + " " + LocalDateTime.now().format(DATE_TIME_FORMAT);
             nextStep(RequestState.ST_SUSPENDED);
-            sendInfoMessage(
-                    _currentRc, "Suspended (" + _currentRm + ")");
+            sendInfoMessage(code, message);
         }
 
-        private void suspendIfEnabled(String status)
+        private void suspendIfEnabled(int code, String message)
         {
             if (_onError.equals("suspend") && !_failOnExcluded) {
-                suspend(status);
+                suspend(code, message);
             } else {
-                fail();
+                failRequest(code, message);
             }
         }
 
         private void errorHandler(int code, String message)
         {
-            _currentRc = code;
-            _currentRm = message;
-
             if (_retryCounter >= _maxRetries) {
-                suspendIfEnabled("Suspended");
+                suspendIfEnabled(code, message);
             } else {
-                fail();
+                failRequest(code, message);
             }
         }
 
