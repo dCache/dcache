@@ -850,7 +850,7 @@ public class RequestContainerV5
 
         private UOID _waitingFor;
 
-        private String _status = "[<idle>]";
+        private String _status = "Idle";
         private volatile RequestState _state = RequestState.ST_INIT;
         private final Collection<RequestState> _allowedStates;
         private boolean _stagingDenied;
@@ -1119,7 +1119,6 @@ public class RequestContainerV5
                 _waitingFor = cellMessage.getUOID();
                 _messageHash.put(_waitingFor, this);
                 sendMessage(cellMessage);
-                _status = "Staging " + LocalDateTime.now().format(DATE_TIME_FORMAT);
             }
             return true;
         }
@@ -1141,13 +1140,11 @@ public class RequestContainerV5
                 _waitingFor = cellMessage.getUOID();
                 _messageHash.put(_waitingFor, this);
                 sendMessage(cellMessage);
-                _status = "[P2P " + LocalDateTime.now().format(DATE_TIME_FORMAT) + "]";
             }
         }
 
         private void retryRequest()
         {
-            _status = "Retry enforced";
             _retryCounter = -1;
             failRequest(CacheException.OUT_OF_DATE, "Operator asked for retry");
         }
@@ -1160,6 +1157,7 @@ public class RequestContainerV5
 
            _currentRc = code;
            _currentRm = message;
+            updateStatus("Failed: " + message);
 
             nextStep(RequestState.ST_DONE);
         }
@@ -1353,13 +1351,13 @@ public class RequestContainerV5
 
             if (_currentRc == CacheException.FILE_NOT_FOUND) {
                 _state = RequestState.ST_DONE;
-                _status = "Failed";
+                updateStatus("Failed: file not found");
                 sendInfoMessage(
                         _currentRc, "Failed " + _currentRm);
             } else {
                 if (state == RequestState.ST_STAGE && !canStage()) {
                     _state = RequestState.ST_DONE;
-                    _status = "Failed";
+                    updateStatus("Failed: stage not allowed");
                     _log.debug("Subject is not authorized to stage");
                     _currentRc = CacheException.PERMISSION_DENIED;
                     _currentRm = "File not online. Staging not allowed.";
@@ -1367,7 +1365,7 @@ public class RequestContainerV5
                             _currentRc , "Permission denied." + _currentRm);
                 } else if (!_allowedStates.contains(state)) {
                     _state = RequestState.ST_DONE;
-                    _status = "Failed";
+                    updateStatus("Failed: transition to " + state + " not allowed");
                     _log.debug("No permission to perform {}", state);
                     _currentRc = CacheException.PERMISSION_DENIED;
                     _currentRm = "Permission denied.";
@@ -1568,7 +1566,8 @@ public class RequestContainerV5
                 if ((rc = askForPoolToPool(_overwriteCost)) == RequestStatusCode.FOUND) {
                     clearError();
                     nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
-                    _status = "Pool2Pool " + LocalDateTime.now().format(DATE_TIME_FORMAT);
+                    updateStatus("Waiting for pool-to-pool transfer: "
+                            + _p2pSourcePool + " to " + _p2pDestinationPool);
 
                     if (_sendHitInfo) {
                         sendHitMsg(_p2pSourcePool.info(), true); //VP
@@ -1646,10 +1645,10 @@ public class RequestContainerV5
                 if ((rc = askForStaging()) == RequestStatusCode.FOUND) {
                     clearError();
                     nextStep(RequestState.ST_WAITING_FOR_STAGING);
-                    _status = "Staging " + LocalDateTime.now().format(DATE_TIME_FORMAT);
+                    String poolName = _stageCandidate.map(Object::toString).orElse("<unknown pool>");
+                    updateStatus("Waiting for stage: " + poolName);
                 } else if (rc == RequestStatusCode.OUT_OF_RESOURCES) {
                     _restoreExceeded++;
-                    _status = "Failed";
                     failRequest(5, "Resource temporarily unavailable : Restore");
                     sendInfoMessage(_currentRc , "Failed "+_currentRm);
                 } else {
@@ -1745,6 +1744,11 @@ public class RequestContainerV5
             }
         }
 
+        private void updateStatus(String newStatus)
+        {
+            _status = newStatus + " " + LocalDateTime.now().format(DATE_TIME_FORMAT);
+        }
+
         private void suspend(int code, String reason)
         {
             String message = "Suspended: " + reason;
@@ -1752,7 +1756,7 @@ public class RequestContainerV5
             _currentRm = message;
 
             _log.debug(" stateEngine: {}", message);
-            _status = message + " " + LocalDateTime.now().format(DATE_TIME_FORMAT);
+            updateStatus(message);
             nextStep(RequestState.ST_SUSPENDED);
             sendInfoMessage(code, message);
         }
