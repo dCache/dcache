@@ -543,7 +543,6 @@ public class RequestContainerV5
             }
             _suspendStaging = true;
         } else {
-
             String mode = args.argv(0);
             switch (mode) {
             case "on":
@@ -674,7 +673,6 @@ public class RequestContainerV5
             }
 
             for (PoolRequestHandler h : allRequestHandlers) {
-
                 if (h == null) {
                     continue;
                 }
@@ -691,14 +689,12 @@ public class RequestContainerV5
                 }
             }
         } else {
-
             Map<UOID, PoolRequestHandler>  allPendingRequestHandlers   = new HashMap<>();
             synchronized (_messageHash) {
                 allPendingRequestHandlers.putAll(_messageHash);
             }
 
             for (Map.Entry<UOID, PoolRequestHandler> requestHandler : allPendingRequestHandlers.entrySet()) {
-
                 UOID uoid = requestHandler.getKey();
                 PoolRequestHandler h = requestHandler.getValue();
 
@@ -803,7 +799,6 @@ public class RequestContainerV5
         String commandReply = "Replication initiated...";
 
         try {
-
             FileAttributes fileAttributes =
                     _pnfsHandler.getFileAttributes(new PnfsId(args.argv(0)),
                             PoolMgrReplicateFileMsg.getRequiredAttributes());
@@ -839,6 +834,7 @@ public class RequestContainerV5
         S_COST_EXCEEDED,
         DELAY
     }
+
     ///////////////////////////////////////////////////////////////
     //
     // the read io request handler
@@ -947,7 +943,6 @@ public class RequestContainerV5
             // fail-fast if state is not allowed
             if (!request.getAllowedStates().contains(_state)) {
                 request.setFailed(CacheException.PERMISSION_DENIED, "Pool manager state not allowed");
-
                 message.revertDirection();
                 sendMessage(message);
                 return;
@@ -1035,14 +1030,14 @@ public class RequestContainerV5
                     _currentRc,
                     _currentRm);
 	}
+
         @Override
         public String toString() {
             return _name + " m=" + _messages.size() + " r=" +
                     _retryCounter + " [" + getPoolCandidateState() + "] [" + _status + "] " +
                     "{" + _currentRc + "," + _currentRm + "}";
         }
-        //
-        //
+
         private void mailForYou(Object message) {
             //
             // !!!!!!!!! remove this
@@ -1073,6 +1068,7 @@ public class RequestContainerV5
 
             add((Runnable)() -> failRequest(errorCode, message));
         }
+
         //...................................................................
         //
         // from now on, methods can only be called from within
@@ -1087,10 +1083,12 @@ public class RequestContainerV5
                 _waitingFor = null;
             }
         }
+
         private void clearError() {
             _currentRc = 0;
             _currentRm = "";
         }
+
         private void success(SelectedPool pool)
         {
             _poolCandidate = requireNonNull(pool);
@@ -1098,6 +1096,7 @@ public class RequestContainerV5
             _currentRm = "";
             nextStep(RequestState.ST_DONE);
         }
+
         private void setError(int errorCode, String errorMessage) {
             _currentRc = errorCode;
             _currentRm = errorMessage;
@@ -1249,6 +1248,7 @@ public class RequestContainerV5
                 return PoolRequestHandler.this.toString();
             }
         }
+
         private void add(Object obj) {
             synchronized (_fifo) {
                 _log.info("Adding Object : {}", obj);
@@ -1495,27 +1495,22 @@ public class RequestContainerV5
         private void stateEngine(Object inputObject) {
             RequestStatusCode rc;
             _log.debug("stateEngine: for case {}", _state);
-            switch (_state) {
 
+            switch (_state) {
             case ST_INIT:
                 synchronized (_selections) {
-
                     CacheException ce = _selections.get(_pnfsId);
                     if (ce != null) {
                         failRequest(ce.getRc(), ce.getMessage());
                         return;
                     }
-
                 }
-
 
                 if (_suspendIncoming) {
                     suspend(1005, "Incoming request");
                     return;
                 }
 
-                //
-                //
                 if (_enforceP2P) {
                     clearError();
                     nextStep(RequestState.ST_POOL_2_POOL);
@@ -1528,10 +1523,7 @@ public class RequestContainerV5
                     if (_sendHitInfo) {
                         sendHitMsg(_bestPool.info(), true);
                     }
-
                 } else if (rc == RequestStatusCode.NOT_FOUND) {
-                    //
-                    //
                     _log.debug(" stateEngine: RequestStatusCode.NOT_FOUND ");
                     if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
                         _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
@@ -1544,7 +1536,6 @@ public class RequestContainerV5
                     if (_sendHitInfo && _poolCandidate == null) {
                         sendHitMsg(_bestPool == null ? null : _bestPool.info(), false); //VP
                     }
-                    //
                 } else if (rc == RequestStatusCode.NOT_PERMITTED) {
                     //
                     //  if we can't read the file because 'read is prohibited'
@@ -1559,15 +1550,10 @@ public class RequestContainerV5
                             ? RequestState.ST_POOL_2_POOL : RequestState.ST_STAGE);
 
                 } else if (rc == RequestStatusCode.COST_EXCEEDED) {
-
                     if (_parameter._p2pOnCost) {
-
                         nextStep(RequestState.ST_POOL_2_POOL);
-
                     } else if (_parameter._hasHsmBackend &&  _parameter._stageOnCost) {
-
                         nextStep(RequestState.ST_STAGE);
-
                     } else {
                         failRequest(127, "Cost exceeded (st,p2p not allowed)");
                     }
@@ -1575,15 +1561,11 @@ public class RequestContainerV5
                     _log.debug(" stateEngine: RequestStatusCode.ERROR");
                     nextStep(RequestState.ST_STAGE);
                     _log.info("AskIfAvailable returned an error, will continue with Staging");
-
                 }
-
                 break;
 
-            case ST_POOL_2_POOL:
-                {
+            case ST_POOL_2_POOL: {
                 if ((rc = askForPoolToPool(_overwriteCost)) == RequestStatusCode.FOUND) {
-
                     clearError();
                     nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
                     _status = "Pool2Pool " + LocalDateTime.now().format(DATE_TIME_FORMAT);
@@ -1593,7 +1575,6 @@ public class RequestContainerV5
                     }
 
                 } else if (rc == RequestStatusCode.NOT_PERMITTED) {
-
                     if (_bestPool == null) {
                         if (_enforceP2P) {
                             failRequest(_currentRc, _currentRm);
@@ -1607,13 +1588,10 @@ public class RequestContainerV5
                         success(_bestPool);
                         _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
                     }
-
                 } else if (rc == RequestStatusCode.S_COST_EXCEEDED) {
-
                     _log.info("ST_POOL_2_POOL : RequestStatusCode.S_COST_EXCEEDED");
 
                     if (_parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored()) {
-
                         if (_enforceP2P) {
                             failRequest(_currentRc, _currentRm);
                         } else {
@@ -1621,7 +1599,6 @@ public class RequestContainerV5
                             nextStep(RequestState.ST_STAGE);
                         }
                     } else {
-
                         if (_bestPool != null) {
                             success(_bestPool);
                             _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
@@ -1633,8 +1610,6 @@ public class RequestContainerV5
                         }
                     }
                 } else if (rc == RequestStatusCode.COST_EXCEEDED) {
-                    //
-                    //
                     if (_bestPool == null) {
                         //
                         // this can't possibly happen
@@ -1648,9 +1623,7 @@ public class RequestContainerV5
                         success(_bestPool);
                         _log.info(" found high cost object");
                     }
-
                 } else {
-
                     if (_enforceP2P) {
                         failRequest(_currentRc, _currentRm);
                     } else if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
@@ -1664,7 +1637,7 @@ public class RequestContainerV5
                 }
                 break;
 
-            case ST_STAGE :
+            case ST_STAGE:
                 if (_suspendStaging) {
                     suspend(1005, "Would trigger stage");
                     return;
@@ -1674,7 +1647,6 @@ public class RequestContainerV5
                     clearError();
                     nextStep(RequestState.ST_WAITING_FOR_STAGING);
                     _status = "Staging " + LocalDateTime.now().format(DATE_TIME_FORMAT);
-
                 } else if (rc == RequestStatusCode.OUT_OF_RESOURCES) {
                     _restoreExceeded++;
                     _status = "Failed";
@@ -1692,7 +1664,6 @@ public class RequestContainerV5
 
             case ST_WAITING_FOR_POOL_2_POOL:
                 if (inputObject instanceof Pool2PoolTransferMsg) {
-
                     if ((rc = exercisePool2PoolReply((Pool2PoolTransferMsg)inputObject)) == RequestStatusCode.OK) {
                         if (_parameter._p2pForTransfer && ! _enforceP2P) {
                             failRequest(CacheException.OUT_OF_DATE,
@@ -1703,17 +1674,14 @@ public class RequestContainerV5
                     } else {
                         _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
                         if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
-
                             _log.info("ST_POOL_2_POOL : trying to stage the file");
                             nextStep(RequestState.ST_STAGE);
-
                         } else {
                             // FIXME avoid this by refactoring
                             // exercisePool2PoolReply so it doesn't have
                             // side-effects.
                             errorHandler(_currentRc, _currentRm);
                         }
-
                     }
                 } else if (inputObject instanceof PingFailure &&
                         _p2pDestinationPool.address().equals(((PingFailure) inputObject).getPool())) {
@@ -1723,11 +1691,10 @@ public class RequestContainerV5
                     _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
                     errorHandler(102, "Unexpected message type " + inputObject.getClass());
                 }
-
                 break;
-            case ST_WAITING_FOR_STAGING :
-                if (inputObject instanceof PoolFetchFileMessage) {
 
+            case ST_WAITING_FOR_STAGING:
+                if (inputObject instanceof PoolFetchFileMessage) {
                     if ((rc = exerciseStageReply((PoolFetchFileMessage) inputObject)) == RequestStatusCode.OK) {
                         if (_parameter._p2pForTransfer) {
                             failRequest(CacheException.OUT_OF_DATE,
@@ -1758,7 +1725,7 @@ public class RequestContainerV5
                 // Nothing to do.
                 break;
 
-            case ST_DONE :
+            case ST_DONE:
                 clearSteering();
                 //
                 // it is essential that we are not within any other
@@ -1832,7 +1799,6 @@ public class RequestContainerV5
             _log.info("Pool2PoolTransferMsg replied with : {}", reply);
             if ((_currentRc = reply.getReturnCode()) == 0) {
                 return RequestStatusCode.OK;
-
             } else {
                 _currentRm = reply.getErrorObject() == null
                         ? ("Error=" + _currentRc) : reply.getErrorObject().toString();
@@ -1921,8 +1887,7 @@ public class RequestContainerV5
                 setError(130, "Read pool selection failed: " + e.toString());
                 return RequestStatusCode.ERROR;
             } finally {
-                _log.info("[read] Took  {} ms",
-                        (System.currentTimeMillis() - _started));
+                _log.info("[read] Took  {} ms", (System.currentTimeMillis() - _started));
             }
 
             return RequestStatusCode.FOUND;
@@ -1946,8 +1911,8 @@ public class RequestContainerV5
         private RequestStatusCode askForPoolToPool(boolean overwriteCost)
         {
             try {
-                Partition.P2pPair pools =
-                        _poolSelector.selectPool2Pool(_poolGroup, overwriteCost);
+                Partition.P2pPair pools = _poolSelector.selectPool2Pool(_poolGroup,
+                        overwriteCost);
 
                 _p2pSourcePool = pools.source;
                 _p2pDestinationPool = pools.destination;
@@ -1981,8 +1946,7 @@ public class RequestContainerV5
                 _log.error("[p2p] contact support@dcache.org", e);
                 return RequestStatusCode.ERROR;
             } finally {
-                _log.info("[p2p] Selection took {} ms",
-                        (System.currentTimeMillis() - _started));
+                _log.info("[p2p] Selection took {} ms", (System.currentTimeMillis() - _started));
             }
         }
 
@@ -2029,15 +1993,14 @@ public class RequestContainerV5
                 _log.error("[stage] contact support@dcache.org", e);
                 return RequestStatusCode.ERROR;
             } finally {
-                _log.info("[stage] Selection took {} ms",
-                        (System.currentTimeMillis() - _started));
+                _log.info("[stage] Selection took {} ms", (System.currentTimeMillis() - _started));
             }
         }
 
         private void sendInfoMessage(int rc, String infoMessage)
         {
-            WarningPnfsFileInfoMessage info =
-                    new WarningPnfsFileInfoMessage("PoolManager", getCellAddress(), _pnfsId, rc, infoMessage);
+            WarningPnfsFileInfoMessage info = new WarningPnfsFileInfoMessage("PoolManager",
+                    getCellAddress(), _pnfsId, rc, infoMessage);
             info.setStorageInfo(_fileAttributes.getStorageInfo());
             info.setFileSize(_fileAttributes.getSize());
             info.setBillingPath(_billingPath);
@@ -2047,7 +2010,8 @@ public class RequestContainerV5
 
         private void sendHitMsg(PoolInfo pool, boolean cached)
         {
-            PoolHitInfoMessage msg = new PoolHitInfoMessage(pool == null ? null : pool.getAddress(), _pnfsId);
+            PoolHitInfoMessage msg = new PoolHitInfoMessage(pool == null ? null : pool.getAddress(),
+                    _pnfsId);
             msg.setBillingPath(_billingPath);
             msg.setTransferPath(_transferPath);
             msg.setFileCached(cached);
@@ -2107,6 +2071,7 @@ public class RequestContainerV5
                                         p2pRequests.put(pool.address(), handler);
                                     }
                                     break;
+
                                 case ST_WAITING_FOR_STAGING:
                                     pool = handler._poolCandidate;
                                     if (pool != null) {
