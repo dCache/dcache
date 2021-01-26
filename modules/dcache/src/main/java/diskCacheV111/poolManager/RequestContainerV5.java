@@ -1515,13 +1515,16 @@ public class RequestContainerV5
                     return;
                 }
 
-                if ((rc = askIfAvailable()) == RequestStatusCode.FOUND) {
+                switch (askIfAvailable()) {
+                case FOUND:
                     success(_bestPool);
                     _log.info("AskIfAvailable found the object");
                     if (_sendHitInfo) {
                         sendHitMsg(_bestPool.info(), true);
                     }
-                } else if (rc == RequestStatusCode.NOT_FOUND) {
+                    break;
+
+                case NOT_FOUND:
                     _log.debug(" stateEngine: RequestStatusCode.NOT_FOUND ");
                     if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
                         _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
@@ -1534,7 +1537,9 @@ public class RequestContainerV5
                     if (_sendHitInfo && _poolCandidate == null) {
                         sendHitMsg(_bestPool == null ? null : _bestPool.info(), false); //VP
                     }
-                } else if (rc == RequestStatusCode.NOT_PERMITTED) {
+                    break;
+
+                case NOT_PERMITTED:
                     //
                     //  if we can't read the file because 'read is prohibited'
                     //  we at least must give dCache the chance to copy it
@@ -1546,8 +1551,9 @@ public class RequestContainerV5
                     //
                     nextStep(_parameter._p2pAllowed || ! _parameter._hasHsmBackend
                             ? RequestState.ST_POOL_2_POOL : RequestState.ST_STAGE);
+                    break;
 
-                } else if (rc == RequestStatusCode.COST_EXCEEDED) {
+                case COST_EXCEEDED:
                     if (_parameter._p2pOnCost) {
                         nextStep(RequestState.ST_POOL_2_POOL);
                     } else if (_parameter._hasHsmBackend &&  _parameter._stageOnCost) {
@@ -1555,15 +1561,19 @@ public class RequestContainerV5
                     } else {
                         failRequest(127, "Cost exceeded (st,p2p not allowed)");
                     }
-                } else if (rc == RequestStatusCode.ERROR) {
+                    break;
+
+                case ERROR:
                     _log.debug(" stateEngine: RequestStatusCode.ERROR");
                     nextStep(RequestState.ST_STAGE);
                     _log.info("AskIfAvailable returned an error, will continue with Staging");
+                    break;
                 }
                 break;
 
-            case ST_POOL_2_POOL: {
-                if ((rc = askForPoolToPool(_overwriteCost)) == RequestStatusCode.FOUND) {
+            case ST_POOL_2_POOL:
+                switch (askForPoolToPool(_overwriteCost)) {
+                case FOUND:
                     clearError();
                     nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
                     updateStatus("Waiting for pool-to-pool transfer: "
@@ -1572,8 +1582,9 @@ public class RequestContainerV5
                     if (_sendHitInfo) {
                         sendHitMsg(_p2pSourcePool.info(), true); //VP
                     }
+                    break;
 
-                } else if (rc == RequestStatusCode.NOT_PERMITTED) {
+                case NOT_PERMITTED:
                     if (_bestPool == null) {
                         if (_enforceP2P) {
                             failRequest(_currentRc, _currentRm);
@@ -1587,7 +1598,9 @@ public class RequestContainerV5
                         success(_bestPool);
                         _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
                     }
-                } else if (rc == RequestStatusCode.S_COST_EXCEEDED) {
+                    break;
+
+                case S_COST_EXCEEDED:
                     _log.info("ST_POOL_2_POOL : RequestStatusCode.S_COST_EXCEEDED");
 
                     if (_parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored()) {
@@ -1608,7 +1621,9 @@ public class RequestContainerV5
                             failRequest(194,"PANIC : File not present in any reasonable pool");
                         }
                     }
-                } else if (rc == RequestStatusCode.COST_EXCEEDED) {
+                    break;
+
+                case COST_EXCEEDED:
                     if (_bestPool == null) {
                         //
                         // this can't possibly happen
@@ -1622,7 +1637,9 @@ public class RequestContainerV5
                         success(_bestPool);
                         _log.info(" found high cost object");
                     }
-                } else {
+                    break;
+
+                default:
                     if (_enforceP2P) {
                         failRequest(_currentRc, _currentRm);
                     } else if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
@@ -1632,7 +1649,7 @@ public class RequestContainerV5
                         // side-effects to avoid this.
                         suspendIfEnabled(_currentRc, _currentRm);
                     }
-                }
+                    break;
                 }
                 break;
 
@@ -1642,35 +1659,46 @@ public class RequestContainerV5
                     return;
                 }
 
-                if ((rc = askForStaging()) == RequestStatusCode.FOUND) {
+                switch (askForStaging()) {
+                case FOUND:
                     clearError();
                     nextStep(RequestState.ST_WAITING_FOR_STAGING);
                     String poolName = _stageCandidate.map(Object::toString).orElse("<unknown pool>");
                     updateStatus("Waiting for stage: " + poolName);
-                } else if (rc == RequestStatusCode.OUT_OF_RESOURCES) {
+                    break;
+
+                case OUT_OF_RESOURCES:
                     _restoreExceeded++;
                     failRequest(5, "Resource temporarily unavailable : Restore");
                     sendInfoMessage(_currentRc , "Failed "+_currentRm);
-                } else {
+                    break;
+
+                default:
                     //
                     // we couldn't find a pool for staging
                     //
                     // FIXME avoid this by refactoring askForStaging so it
                     // doesn't have side-effects.
                     errorHandler(_currentRc, _currentRm);
+                    break;
                 }
                 break;
 
             case ST_WAITING_FOR_POOL_2_POOL:
                 if (inputObject instanceof Pool2PoolTransferMsg) {
-                    if ((rc = exercisePool2PoolReply((Pool2PoolTransferMsg)inputObject)) == RequestStatusCode.OK) {
+                    Pool2PoolTransferMsg message = (Pool2PoolTransferMsg)inputObject;
+
+                    switch (exercisePool2PoolReply(message)) {
+                    case OK:
                         if (_parameter._p2pForTransfer && ! _enforceP2P) {
                             failRequest(CacheException.OUT_OF_DATE,
                                     "Pool locations changed due to p2p transfer");
                         } else {
                             success(_p2pDestinationPool);
                         }
-                    } else {
+                        break;
+
+                    default:
                         _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
                         if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
                             _log.info("ST_POOL_2_POOL : trying to stage the file");
@@ -1694,21 +1722,28 @@ public class RequestContainerV5
 
             case ST_WAITING_FOR_STAGING:
                 if (inputObject instanceof PoolFetchFileMessage) {
-                    if ((rc = exerciseStageReply((PoolFetchFileMessage) inputObject)) == RequestStatusCode.OK) {
+                    PoolFetchFileMessage message = (PoolFetchFileMessage)inputObject;
+                    switch (exerciseStageReply(message)) {
+                    case OK:
                         if (_parameter._p2pForTransfer) {
                             failRequest(CacheException.OUT_OF_DATE,
                                     "Pool locations changed due to stage");
                         } else {
                             success(_stageCandidate.orElseThrow(() -> new RuntimeException("Stage successful without candidate pool")));
                         }
-                    } else if (rc == RequestStatusCode.DELAY) {
+                        break;
+
+                    case DELAY:
                         // FIXME, avoid this by refactoring exerciseStageReply
                         // so it doesn't have side-effects.
                         suspend(_currentRc, _currentRm);
-                    } else {
+                        break;
+
+                    default:
                         // FIXME, avoid this by refactoring exerciseStageReply
                         // so it doesn't have side-effects.
                         errorHandler(_currentRc, _currentRm);
+                        break;
                     }
                 } else if (inputObject instanceof PingFailure &&
                         _poolCandidate.address().equals(((PingFailure) inputObject).getPool())) {
