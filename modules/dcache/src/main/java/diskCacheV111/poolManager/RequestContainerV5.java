@@ -41,6 +41,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SourceCostException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
@@ -1688,26 +1689,20 @@ public class RequestContainerV5
                 if (inputObject instanceof Pool2PoolTransferMsg) {
                     Pool2PoolTransferMsg message = (Pool2PoolTransferMsg)inputObject;
 
-                    switch (exercisePool2PoolReply(message)) {
-                    case OK:
+                    if (message.getReturnCode() == 0) {
                         if (_parameter._p2pForTransfer && ! _enforceP2P) {
                             failRequest(CacheException.OUT_OF_DATE,
                                     "Pool locations changed due to p2p transfer");
                         } else {
                             success(_p2pDestinationPool);
                         }
-                        break;
-
-                    default:
+                    } else {
                         _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
                         if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
                             _log.info("ST_POOL_2_POOL : trying to stage the file");
                             nextStep(RequestState.ST_STAGE);
                         } else {
-                            // FIXME avoid this by refactoring
-                            // exercisePool2PoolReply so it doesn't have
-                            // side-effects.
-                            errorHandler(_currentRc, _currentRm);
+                            errorHandler(message);
                         }
                     }
                 } else if (inputObject instanceof PingFailure) {
@@ -1809,6 +1804,13 @@ public class RequestContainerV5
             }
         }
 
+        private void errorHandler(Message reply)
+        {
+            String message = reply.getErrorObject() == null
+                        ? ("Error=" + _currentRc) : reply.getErrorObject().toString();
+            errorHandler(reply.getReturnCode(), message);
+        }
+
         private void errorHandler(int code, String message)
         {
             if (_retryCounter >= _maxRetries) {
@@ -1837,18 +1839,6 @@ public class RequestContainerV5
             }
         }
 
-        private RequestStatusCode exercisePool2PoolReply(Pool2PoolTransferMsg reply) {
-
-            _log.info("Pool2PoolTransferMsg replied with : {}", reply);
-            if ((_currentRc = reply.getReturnCode()) == 0) {
-                return RequestStatusCode.OK;
-            } else {
-                _currentRm = reply.getErrorObject() == null
-                        ? ("Error=" + _currentRc) : reply.getErrorObject().toString();
-
-                return RequestStatusCode.ERROR;
-            }
-        }
         //
         //  calculate :
         //       matrix = list of list of active
