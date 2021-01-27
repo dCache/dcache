@@ -84,6 +84,7 @@ import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.toList;
 import static diskCacheV111.poolManager.RequestContainerV5.StateType.*;
 import static java.util.Objects.requireNonNull;
+import static org.dcache.util.MathUtils.addWithInfinity;
 
 public class RequestContainerV5
         extends AbstractCellComponent
@@ -952,11 +953,8 @@ public class RequestContainerV5
             _messages.add(message);
             _stagingDenied = false;
 
-            long ttl = message.getTtl();
-            if (ttl < Long.MAX_VALUE) {
-                long timeout = System.currentTimeMillis() + ttl;
-                _nextTtlTimeout = Math.min(_nextTtlTimeout, timeout);
-            }
+            _nextTtlTimeout = Math.min(_nextTtlTimeout,
+                    addWithInfinity(System.currentTimeMillis(), message.getTtl()));
 
             if (_poolSelector != null) {
                 return;
@@ -1190,8 +1188,8 @@ public class RequestContainerV5
                     if (message.getLocalAge() >= ttl) {
                         _log.info("Discarding request from {} because its time to live has been exceeded.", message.getSourcePath().getCellName());
                         i.remove();
-                    } else if (ttl < Long.MAX_VALUE) {
-                        _nextTtlTimeout = Math.min(_nextTtlTimeout, now + ttl);
+                        _nextTtlTimeout = Math.min(_nextTtlTimeout,
+                                addWithInfinity(now, ttl));
                     }
                 }
             }
