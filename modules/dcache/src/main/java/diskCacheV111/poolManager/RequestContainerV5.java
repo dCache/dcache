@@ -1710,10 +1710,12 @@ public class RequestContainerV5
                             errorHandler(_currentRc, _currentRm);
                         }
                     }
-                } else if (inputObject instanceof PingFailure &&
-                        _p2pDestinationPool.address().equals(((PingFailure) inputObject).getPool())) {
-                    _log.info("Ping reported that request died.");
-                    errorHandler(CacheException.TIMEOUT, "Replication timed out");
+                } else if (inputObject instanceof PingFailure) {
+                    PingFailure message = (PingFailure)inputObject;
+                    if (_p2pDestinationPool.address().equals(message.getPool())) {
+                        _log.info("Ping reported that request died.");
+                        errorHandler(CacheException.TIMEOUT, "Replication timed out");
+                    }
                 } else if (inputObject != null) {
                     _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
                     errorHandler(102, "Unexpected message type " + inputObject.getClass());
@@ -1745,10 +1747,12 @@ public class RequestContainerV5
                         errorHandler(_currentRc, _currentRm);
                         break;
                     }
-                } else if (inputObject instanceof PingFailure &&
-                        _poolCandidate.address().equals(((PingFailure) inputObject).getPool())) {
-                    _log.info("Ping reported that request died.");
-                    errorHandler(CacheException.TIMEOUT, "Staging timed out");
+                } else if (inputObject instanceof PingFailure) {
+                    PingFailure message = (PingFailure)inputObject;
+                    if (_poolCandidate.address().equals(message.getPool())) {
+                        _log.info("Ping reported that request died.");
+                        errorHandler(CacheException.TIMEOUT, "Staging timed out");
+                    }
                 } else if (inputObject != null) {
                     _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
                     errorHandler(102, "Unexpected message type " + inputObject.getClass());
