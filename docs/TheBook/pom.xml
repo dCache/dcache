@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>documentation</artifactId>
-    <version>6.1.20-SNAPSHOT</version>
+    <version>6.1.20</version>
   </parent>
 
   <artifactId>TheBook</artifactId>
