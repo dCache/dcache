@@ -1720,8 +1720,9 @@ public class RequestContainerV5
             case ST_WAITING_FOR_STAGING:
                 if (inputObject instanceof PoolFetchFileMessage) {
                     PoolFetchFileMessage message = (PoolFetchFileMessage)inputObject;
-                    switch (exerciseStageReply(message)) {
-                    case OK:
+
+                    switch (message.getReturnCode()) {
+                    case 0:
                         if (_parameter._p2pForTransfer) {
                             failRequest(CacheException.OUT_OF_DATE,
                                     "Pool locations changed due to stage");
@@ -1730,16 +1731,12 @@ public class RequestContainerV5
                         }
                         break;
 
-                    case DELAY:
-                        // FIXME, avoid this by refactoring exerciseStageReply
-                        // so it doesn't have side-effects.
-                        suspend(_currentRc, _currentRm);
+                    case CacheException.HSM_DELAY_ERROR:
+                        suspend(message);
                         break;
 
                     default:
-                        // FIXME, avoid this by refactoring exerciseStageReply
-                        // so it doesn't have side-effects.
-                        errorHandler(_currentRc, _currentRm);
+                        errorHandler(message);
                         break;
                     }
                 } else if (inputObject instanceof PingFailure) {
@@ -1783,6 +1780,13 @@ public class RequestContainerV5
             _status = newStatus + " " + LocalDateTime.now().format(DATE_TIME_FORMAT);
         }
 
+        private void suspend(Message reply)
+        {
+            String message = reply.getErrorObject() == null
+                    ? "No info" : reply.getErrorObject().toString();
+            suspend(reply.getReturnCode(), message);
+        }
+
         private void suspend(int code, String reason)
         {
             String message = "Suspended: " + reason;
@@ -1817,25 +1821,6 @@ public class RequestContainerV5
                 suspendIfEnabled(code, message);
             } else {
                 failRequest(code, message);
-            }
-        }
-
-        private RequestStatusCode exerciseStageReply(PoolFetchFileMessage reply) {
-
-            _currentRc = reply.getReturnCode();
-
-            switch (_currentRc) {
-            case 0:
-                // best candidate is the right one
-                return RequestStatusCode.OK;
-            case CacheException.HSM_DELAY_ERROR:
-                _currentRm = "Suspend by HSM request : " + reply.getErrorObject() == null
-                        ? "No info" : reply.getErrorObject().toString();
-                return RequestStatusCode.DELAY;
-            default:
-                _currentRm = reply.getErrorObject() == null
-                        ? ("Error=" + _currentRc) : reply.getErrorObject().toString();
-                return RequestStatusCode.ERROR;
             }
         }
 
