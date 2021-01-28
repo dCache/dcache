@@ -65,6 +65,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
@@ -82,6 +84,8 @@ import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
 
+import dmg.util.Exceptions;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
@@ -96,6 +100,8 @@ import org.dcache.restful.util.RequestUser;
 @Api(value = "pools", authorizations = {@Authorization("basicAuth")})
 @Path("/restores")
 public final class RestoreResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestoreResources.class);
+
     @Inject
     private RestoresInfoService service;
 
@@ -159,6 +165,7 @@ public final class RestoreResources {
                                status,
                                sort);
         } catch (CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
     }

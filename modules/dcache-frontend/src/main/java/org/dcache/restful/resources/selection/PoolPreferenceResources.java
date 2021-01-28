@@ -66,6 +66,8 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.json.JSONException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -88,6 +90,7 @@ import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
@@ -103,6 +106,8 @@ import org.dcache.restful.providers.selection.PreferenceResult;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/pool-preferences")
 public final class PoolPreferenceResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolPreferenceResources.class);
+
     @Inject
     private PoolMonitor poolMonitor;
 
@@ -156,6 +161,7 @@ public final class PoolPreferenceResources {
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
     }

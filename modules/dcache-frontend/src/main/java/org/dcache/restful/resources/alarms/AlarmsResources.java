@@ -70,6 +70,8 @@ import io.swagger.annotations.ExampleProperty;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -97,6 +99,8 @@ import java.util.Map;
 
 import diskCacheV111.util.CacheException;
 
+import dmg.util.Exceptions;
+
 import org.dcache.alarms.LogEntry;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.util.HttpServletRequests;
@@ -113,6 +117,8 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Api(value = "alarms", authorizations = {@Authorization("basicAuth")})
 @Path("/alarms")
 public final class AlarmsResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlarmsResources.class);
+
     @Context
     private HttpServletRequest request;
 
@@ -178,6 +184,7 @@ public final class AlarmsResources {
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
     }
@@ -254,6 +261,7 @@ public final class AlarmsResources {
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
 
@@ -305,6 +313,7 @@ public final class AlarmsResources {
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
 
@@ -336,6 +345,7 @@ public final class AlarmsResources {
         } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
 

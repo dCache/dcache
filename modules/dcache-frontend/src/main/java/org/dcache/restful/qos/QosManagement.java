@@ -8,6 +8,8 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -42,6 +44,7 @@ import static org.dcache.qos.QoSTransitionEngine.Qos.*;
 @Api(value = "qos", authorizations = {@Authorization("basicAuth")})
 @Path("/qos-management/qos/")
 public class QosManagement {
+    private static final Logger LOGGER = LoggerFactory.getLogger(QosManagement.class);
 
     @Inject
     @Named("geographic-placement")
@@ -60,44 +63,32 @@ public class QosManagement {
     @Produces(MediaType.APPLICATION_JSON)
     public String getQosList(@ApiParam(value = "The kind of object to query.",
                                      allowableValues="file,directory")
-                             @PathParam("type") String qosValue) throws CacheException {
+                             @PathParam("type") String qosValue) {
 
         JSONObject json = new JSONObject();
 
-
-        try {
-            if (RequestUser.isAnonymous()) {
-                throw new PermissionDeniedCacheException("Permission denied");
-            }
-
-            if ("file".equals(qosValue)) {
-                JSONArray list = new JSONArray(Arrays.asList(DISK.displayName(),
-                                                             TAPE.displayName(),
-                                                             DISK_TAPE.displayName(),
-                                                             VOLATILE.displayName()));
-                json.put("name", list);
-            } else if ("directory".equals(qosValue.trim())) {
-                JSONArray list = new JSONArray(Arrays.asList(DISK.displayName(),
-                                                             TAPE.displayName(),
-                                                             DISK_TAPE.displayName(),
-                                                             VOLATILE.displayName()));
-                json.put("name", list);
-            } else {
-                throw new NotFoundException();
-            }
-
-            json.put("status", "200");
-            json.put("message", "successful");
-
-        } catch (PermissionDeniedCacheException e) {
-            if (RequestUser.isAnonymous()) {
-                throw new NotAuthorizedException(e);
-            } else {
-                throw new ForbiddenException(e);
-            }
-        } catch (CacheException e) {
-            throw new InternalServerErrorException(e);
+        if (RequestUser.isAnonymous()) {
+            throw new NotAuthorizedException("Permission denied");
         }
+
+        if ("file".equals(qosValue)) {
+            JSONArray list = new JSONArray(Arrays.asList(DISK.displayName(),
+                                                         TAPE.displayName(),
+                                                         DISK_TAPE.displayName(),
+                                                         VOLATILE.displayName()));
+            json.put("name", list);
+        } else if ("directory".equals(qosValue.trim())) {
+            JSONArray list = new JSONArray(Arrays.asList(DISK.displayName(),
+                                                         TAPE.displayName(),
+                                                         DISK_TAPE.displayName(),
+                                                         VOLATILE.displayName()));
+            json.put("name", list);
+        } else {
+            throw new NotFoundException();
+        }
+
+        json.put("status", "200");
+        json.put("message", "successful");
 
         return json.toString();
     }

@@ -65,6 +65,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
@@ -92,6 +94,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 
 import org.dcache.restful.providers.PagedList;
 import org.dcache.restful.providers.billing.BillingDataGrid;
@@ -112,6 +115,8 @@ import static org.dcache.restful.providers.PagedList.TOTAL_COUNT_HEADER;
 @Api(value = "billing", authorizations = {@Authorization("basicAuth")})
 @Path("/billing")
 public class BillingResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BillingResources.class);
+
     @Inject
     private BillingInfoService service;
 
@@ -168,6 +173,7 @@ public class BillingResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         } catch (IllegalArgumentException | ParseException e) {
             throw new BadRequestException(e.getMessage(), e);
@@ -224,6 +230,7 @@ public class BillingResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         } catch (IllegalArgumentException | ParseException e) {
             throw new BadRequestException(e.getMessage(), e);
@@ -283,6 +290,7 @@ public class BillingResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         } catch (IllegalArgumentException | ParseException e ) {
             throw new BadRequestException(e.getMessage(), e);
@@ -335,6 +343,7 @@ public class BillingResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         } catch (IllegalArgumentException | ParseException e) {
             throw new BadRequestException(e.getMessage(), e);
@@ -387,6 +396,7 @@ public class BillingResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (NoRouteToCellException | InterruptedException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         } catch (IllegalArgumentException | ParseException e) {
             throw new BadRequestException(e.getMessage(), e);
@@ -414,10 +424,12 @@ public class BillingResources {
                        try {
                            gridData.add(service.getHistogram(key));
                        } catch (CacheException e1) {
+                           LOGGER.warn(e1.getMessage());
                            throw new InternalServerErrorException(e1);
                        }
                    });
         } catch (CacheException e) {
+            LOGGER.warn(e.getMessage());
             throw new InternalServerErrorException(e);
         }
 
@@ -455,6 +467,7 @@ public class BillingResources {
         try {
             return service.getHistogram(key);
         } catch (CacheException e) {
+            LOGGER.warn(e.getMessage());
             throw new InternalServerErrorException(e);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
@@ -477,6 +490,7 @@ public class BillingResources {
         try {
             return service.getGrid();
         } catch (CacheException e) {
+            LOGGER.warn(e.getMessage());
             throw new InternalServerErrorException(e);
         }
     }
