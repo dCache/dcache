@@ -59,22 +59,29 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.bulk;
 
+import com.google.common.base.Throwables;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
+
 import org.dcache.cells.CellStub;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
 import org.dcache.services.bulk.BulkQuotaExceededException;
 import org.dcache.services.bulk.BulkRequestNotFoundException;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.BulkServiceMessage;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+
+import dmg.util.Exceptions;
 
 import static javax.ws.rs.core.Response.Status.TOO_MANY_REQUESTS;
 
@@ -117,6 +124,8 @@ public class BulkServiceCommunicator {
 
     LOGGER.trace("check error, received {}.", error.toString());
 
+    Throwables.throwIfUnchecked(error);
+
     if (error instanceof BulkPermissionDeniedException) {
       throw new ForbiddenException(error);
     } else if (error instanceof BulkQuotaExceededException) {
@@ -126,6 +135,7 @@ public class BulkServiceCommunicator {
     } else if (error instanceof BulkServiceException) {
       throw new BadRequestException(error);
     } else {
+        LOGGER.warn(Exceptions.meaningfulMessage(error));
       throw new InternalServerErrorException(error);
     }
   }

@@ -30,6 +30,8 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.ResponseHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
@@ -162,6 +164,7 @@ public class EventResources
         public long timeout;
     }
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventResources.class);
     private static final int MINIMUM_DISCONNECT_TIMEOUT = 1;
     private static final int MAX_CLIENT_ID_LENGTH = 256;
 
@@ -551,7 +554,9 @@ public class EventResources
             throw new BadRequestException("Failed condition: " + result.getMessage());
 
         default:
-            throw new InternalServerErrorException("Unexpected status: " + result.getStatus());
+            String message = "Unexpected status: " + result.getStatus();
+            LOGGER.warn(message);
+            throw new InternalServerErrorException(message);
         }
     }
 
