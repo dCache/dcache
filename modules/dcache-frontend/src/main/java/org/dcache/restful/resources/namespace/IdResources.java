@@ -65,6 +65,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -92,6 +94,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
@@ -112,6 +115,8 @@ import org.dcache.vehicles.FileAttributes;
 @Api(value = "namespace", authorizations = {@Authorization("basicAuth")})
 @Path("/id")
 public class IdResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IdResources.class);
+
     @Context
     private HttpServletRequest request;
 
@@ -198,6 +203,7 @@ public class IdResources {
                 throw new ForbiddenException(e);
             }
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
 
