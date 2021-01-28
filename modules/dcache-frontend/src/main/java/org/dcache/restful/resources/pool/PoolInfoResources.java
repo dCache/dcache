@@ -68,6 +68,8 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.ResponseHeader;
 import org.json.JSONException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Component;
 
@@ -110,6 +112,7 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.nearline.json.NearlineData;
@@ -136,6 +139,8 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Api(value = "pools", authorizations = {@Authorization("basicAuth")})
 @Path("/pools")
 public final class PoolInfoResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolInfoResources.class);
+
     private static final String TYPE_ERROR =
                     "type specification %s not supported; please indicate all "
                                     + "door-initiated movers by an undefined "
@@ -344,6 +349,7 @@ public final class PoolInfoResources {
                 }
             }
         } catch (InterruptedException | NoRouteToCellException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
 
@@ -439,6 +445,7 @@ public final class PoolInfoResources {
             response.addIntHeader(TOTAL_COUNT_HEADER, count);
             return list;
         } catch (InterruptedException | NoRouteToCellException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
     }
@@ -473,9 +480,11 @@ public final class PoolInfoResources {
             if (e.getRc() == CacheException.MOVER_NOT_FOUND) {
                 transferInfoService.setCancelled(pool, id);
             } else {
+                LOGGER.warn(Exceptions.meaningfulMessage(e));
                 throw new InternalServerErrorException(e);
             }
         } catch (InterruptedException | NoRouteToCellException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
 
@@ -520,6 +529,7 @@ public final class PoolInfoResources {
         } catch (JSONException | IllegalArgumentException | IOException e) {
             throw new BadRequestException(e);
         } catch (InterruptedException | NoRouteToCellException | CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
 
