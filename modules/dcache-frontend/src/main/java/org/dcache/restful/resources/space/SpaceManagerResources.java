@@ -65,6 +65,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -94,6 +96,7 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 
 import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.space.LinkGroupInfo;
@@ -108,6 +111,7 @@ import org.dcache.restful.providers.space.SpaceToken;
 @Api(value = "spacemanager", authorizations = {@Authorization("basicAuth")})
 @Path("/space")
 public final class SpaceManagerResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpaceManagerResources.class);
     private final static String FORBIDDEN = "Spacemanager info only accessible to "
                                                 + "admin users.";
     @Inject
@@ -172,6 +176,7 @@ public final class SpaceManagerResources {
                         .map(LinkGroupInfo::new)
                         .collect(Collectors.toList());
         } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
         }
     }
@@ -228,6 +233,7 @@ public final class SpaceManagerResources {
                         .map(SpaceToken::new)
                         .collect(Collectors.toList());
         } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
+            LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
         }
     }
