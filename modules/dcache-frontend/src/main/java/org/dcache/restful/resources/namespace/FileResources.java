@@ -60,6 +60,7 @@ import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage.Mode;
 
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
@@ -229,6 +230,7 @@ public class FileResources {
                 throw new ForbiddenException(e);
             }
         } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
+            LOG.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
         }
         return fileAttributes;
@@ -475,6 +477,7 @@ public class FileResources {
         } catch (JSONException | IllegalArgumentException | CacheException e) {
             throw new BadRequestException(e);
         } catch (Exception e) {
+            LOG.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
         return successfulResponse(Response.Status.OK);

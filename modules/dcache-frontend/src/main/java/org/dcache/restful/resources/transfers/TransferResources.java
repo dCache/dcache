@@ -65,6 +65,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -81,6 +83,8 @@ import java.util.UUID;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TransferInfo;
 
+import dmg.util.Exceptions;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
@@ -94,6 +98,8 @@ import org.dcache.restful.util.RequestUser;
 @Api(value = "transfers", authorizations = { @Authorization("basicAuth") })
 @Path("/transfers")
 public final class TransferResources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransferResources.class);
+
     @Inject
     private TransferInfoService service;
     private boolean unlimitedOperationVisibility;
@@ -171,6 +177,7 @@ public final class TransferResources {
                                client,
                                sort);
         } catch (CacheException e) {
+            LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);
         }
     }
