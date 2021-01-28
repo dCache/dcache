@@ -145,8 +145,9 @@ public class Metronome implements EventStream
             String msg = index == -1 ? e.getMessage() : e.getMessage().substring(0, index);
             throw new BadRequestException("Bad selector value: " + msg);
         } catch (IOException e) {
-            throw new InternalServerErrorException("Unable to process selector: "
-                    + e.getMessage());
+            String message = "Unable to process selector: " + e.getMessage();
+            LOGGER.warn(message);
+            throw new InternalServerErrorException(message);
         }
     }
 }
