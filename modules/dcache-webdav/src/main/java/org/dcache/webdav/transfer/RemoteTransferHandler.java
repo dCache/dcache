@@ -40,7 +40,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.PrivateKey;
@@ -493,6 +492,15 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 message.setExplanation("client went away");
                 try {
                     _transferManager.sendAndWait(message);
+                } catch (MissingResourceCacheException e) {
+                    /* Tried to cancel a transfer, but the transfer-manager
+                     * reported there is no such transfer.  Either the transfer
+                     * complete message was lost or the transfer-service was
+                     * restarted.  As the client has cancelled the transfer and
+                     * there is no transfer, we have nothing further to do.
+                     */
+                    failure("client went away, but failed to cancel transfer: "
+                            + e.getMessage());
                 } catch (NoRouteToCellException | CacheException e) {
                     LOGGER.error("Failed to cancel transfer id={}: {}", _id, e.toString());
 
