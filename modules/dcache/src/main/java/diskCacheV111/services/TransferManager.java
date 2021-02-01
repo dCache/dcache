@@ -217,6 +217,7 @@ public abstract class TransferManager extends AbstractCellComponent
     }
 
     public CancelTransferMessage messageArrived(CancelTransferMessage message)
+            throws MissingResourceCacheException
     {
         long id = message.getId();
         TransferManagerHandler h = getHandler(id);
@@ -224,8 +225,7 @@ public abstract class TransferManager extends AbstractCellComponent
             String explanation = message.getExplanation();
             h.cancel(explanation != null ? explanation : "at the request of door");
         } else {
-            // FIXME: shouldn't this throw an exception?
-            log.error("cannot find handler with id={} for CancelTransferMessage", id);
+            throw new MissingResourceCacheException("No transfer with id " + id);
         }
         return message;
     }
