@@ -600,9 +600,24 @@ public class TransferObserverV1
             } else {
                 page.td("transferred", "-");
             }
-            page.td("speed", transfer.getTransferRate());
+            page.td("speed", getTransferRate(transfer));
         }
         page.endRow();
+    }
+
+    private Long getTransferRate(TransferInfo info) {
+        Long bytes = info.getBytesTransferred();
+        if (bytes == null) {
+            return 0L;
+        }
+
+        Long time = info.getTransferTime();
+        if (time == null) {
+            return 0L;
+        }
+
+        long secs = time / 1000;
+        return secs > 0.0 ? BYTES.toKiB(bytes) / secs : 0L;
     }
 
     private String createHtmlTable(List<TransferBean> transfers) {
