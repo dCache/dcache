@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -247,12 +248,13 @@ public abstract class TransferManager extends AbstractCellComponent
     // of this method is required because two-argument methods are
     // called preferentially.
     public Object messageArrived(CellMessage envelope, TransferStatusQueryMessage message)
+            throws MissingResourceCacheException
     {
-        TransferManagerHandler handler = getHandler(message.getId());
+        long id = message.getId();
+        TransferManagerHandler handler = getHandler(id);
 
         if (handler == null) {
-            message.setState(TransferManagerHandler.UNKNOWN_ID);
-            return message;
+            throw new MissingResourceCacheException("No transfer with id " + id);
         }
 
         long poolQueryTimeout = Math.min(envelope.getAdjustedTtl(), 30_000);
