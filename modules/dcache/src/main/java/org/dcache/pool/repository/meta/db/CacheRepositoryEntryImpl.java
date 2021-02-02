@@ -8,6 +8,7 @@ import com.sleepycat.je.OperationFailureException;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.net.URI;
 import java.nio.file.OpenOption;
 import java.util.Collection;
@@ -66,7 +67,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     private long _size;
     private  FileStore _fileStore;
     // cached storage info
-    private StorageInfo _storageInfo;
+    private SoftReference<StorageInfo> _storageInfoCache = new SoftReference<>(null);
 
 
     public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId, FileStore fileStore)
@@ -225,10 +226,12 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
 
     private synchronized StorageInfo getStorageInfo()
     {
-        if (_storageInfo == null){
-            _storageInfo = _repository.getStorageInfoMap().get(_pnfsId.toString());
+        StorageInfo si = _storageInfoCache.get();
+        if (si == null) {
+            si = _repository.getStorageInfoMap().get(_pnfsId.toString());
+            _storageInfoCache = new SoftReference<>(si);
         }
-        return _storageInfo;
+        return si;
     }
 
     @Override
@@ -257,7 +260,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         try {
             String id = _pnfsId.toString();
             // invalidate cached value
-            _storageInfo = null;
+            _storageInfoCache.clear();
 
             //TODO to check the case when STORAGEINFO size=0
             if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
