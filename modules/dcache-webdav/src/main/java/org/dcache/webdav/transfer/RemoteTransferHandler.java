@@ -54,6 +54,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -341,6 +342,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private PnfsId _pnfsId;
         private boolean _finished;
         private Optional<String> _digestValue;
+        private boolean _transferReportedAsUnknown;
 
         public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
                 FsPath path, URI destination, @Nullable Object credential,
@@ -700,6 +702,24 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 TransferStatusQueryMessage reply = CellStub.getMessage(future);
                 state = reply.getState();
                 info = reply.getMoverInfo();
+            } catch (MissingResourceCacheException e) {
+                /*  RemoteTransferManager claims not to know about this
+                 *  transfer.  The most likely explanation is that the service
+                 *  has been restarted.  If the pool has already accepted the
+                 *  mover then the transfer will not be affected by this
+                 *  restart; however, we now have no way to monitor the
+                 *  progress or cancel it.  The best we can do is to tell the
+                 *  client the transfer has failed.
+                 */
+
+                /* We wait for two failures as a work-around for the race
+                 * between WebDAV processing a TransferCompleteMessage and the
+                 * progress marker query.
+                 */
+                if (_transferReportedAsUnknown) {
+                    failure("RemoteTransferManager restarted");
+                }
+                _transferReportedAsUnknown = true;
             } catch (NoRouteToCellException | CacheException e) {
                 LOGGER.warn("Failed to fetch information for progress marker: {}",
                         e.getMessage());
