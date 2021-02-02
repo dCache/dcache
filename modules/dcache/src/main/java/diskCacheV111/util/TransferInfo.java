@@ -241,7 +241,7 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
         }
 
         long secs = transferTime / 1000;
-        return secs > 0.0 ? BYTES.toKiB(bytesTransferred) / secs : 0L;
+        return secs > 0.0 ? BYTES.toMiB(bytesTransferred) / secs : 0L;
     }
 
     public Long getTransferTime() {
