@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -406,32 +406,32 @@ public class NearlineStorageHandler
 
     public int getActiveFetchJobs()
     {
-        return stageRequests.getCount(AbstractRequest.State.ACTIVE) + stageRequests.getCount(AbstractRequest.State.CANCELED);
+        return stageRequests.getCount(r -> (r.state.get() == AbstractRequest.State.ACTIVE || r.state.get() == AbstractRequest.State.CANCELED));
     }
 
     public int getFetchQueueSize()
     {
-        return stageRequests.getCount(AbstractRequest.State.QUEUED);
+        return stageRequests.getCount(r -> r.state.get() == AbstractRequest.State.QUEUED);
     }
 
     public int getActiveStoreJobs()
     {
-        return flushRequests.getCount(AbstractRequest.State.ACTIVE) + flushRequests.getCount(AbstractRequest.State.CANCELED);
+        return flushRequests.getCount(r -> (r.state.get() == AbstractRequest.State.ACTIVE || r.state.get() == AbstractRequest.State.CANCELED));
     }
 
     public int getStoreQueueSize()
     {
-        return flushRequests.getCount(AbstractRequest.State.QUEUED);
+        return flushRequests.getCount(r -> r.state.get() == AbstractRequest.State.QUEUED);
     }
 
     public int getActiveRemoveJobs()
     {
-        return removeRequests.getCount(AbstractRequest.State.ACTIVE) + removeRequests.getCount(AbstractRequest.State.CANCELED);
+        return removeRequests.getCount(r -> (r.state.get() == AbstractRequest.State.ACTIVE || r.state.get() == AbstractRequest.State.CANCELED));
     }
 
     public int getRemoveQueueSize()
     {
-        return removeRequests.getCount(AbstractRequest.State.QUEUED);
+        return removeRequests.getCount(r -> r.state.get() == AbstractRequest.State.QUEUED);
     }
 
     @Override
@@ -696,15 +696,17 @@ public class NearlineStorageHandler
             return state.awaitTermination(timeout, unit);
         }
 
-        public int getCount(AbstractRequest.State state)
+        /**
+         * Return number of requests matching the given predicate.
+         * @param filter predicate to match.
+         * @return
+         */
+        public int getCount(Predicate<R> filter)
         {
-            int cnt = 0;
-            for (R request : requests.values()) {
-                if (request.state.get() == state) {
-                    cnt++;
-                }
-            }
-            return cnt;
+            return (int)requests.values()
+                    .stream()
+                    .filter(filter)
+                    .count();
         }
 
         /**
