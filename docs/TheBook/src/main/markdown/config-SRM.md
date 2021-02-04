@@ -26,10 +26,10 @@ same server multiple times.
 
 ### Basic setup
 
-The SRM service is split between a front end `srm`  and a backend `smrmanager` for scalability. To instantiate
-SRM service both cells need to be started. Not necessarily on the same host.
+The SRM service is split between a front end `srm` and a backend `srmmanager` for scalability. To instantiate
+the SRM service both cells need to be started, not necessarily on the same host.
 
-Like other services, the srm service can be enabled in the layout file `/etc/dcache/layouts/mylayout` of your dCache installation. For an overview of the layout file format, please see [the section called “Defining domains and services”](install.md#defining-domains-and-services).
+Like other services, the srm service can be enabled in the layout file `/etc/dcache/layouts/mylayout` of your dCache installation. For an overview of the layout file format, please see the section [“Creating a minimal dCache configuration”](install.md#creating-a-minimal-dcache-configuration).
 
 Example:
 
@@ -45,15 +45,15 @@ To enable SRM in dCache, add the following lines to your layout file:
 ```
 
 The additional `transfermanagers` service is required to perform 3rd party copy transfers initiated by SRM or WebDAV.
-This service is not required to be co-located with SRM service (domain or host).
+This service is not required to be co-located with th SRM service (domain or host).
 
-Srm service requires an authentication setup, see [Chapter 10, Authorization in dCache](config-gplazma.md) for a general description or the [section called “Authentication and Authorization in dCache”](intouch.md#authentication-and-authorization-in-dcache) for an example setup with X.509 certificates.
+The srm service requires an authentication setup, see [Chapter 10, Authorization in dCache](config-gplazma.md) for a general description or the section [“Authentication and Authorization in dCache”](intouch.md#authentication-and-authorization-in-dcache) for an example setup with X.509 certificates.
 
 You can now copy a file into your dCache using the SRM,
 
 > **NOTE**
 >
-> Please make sure to use latest srmcp client otherwise you will need to specify `-2` in order to use the right version.
+> Please make sure to use the latest srmcp client, otherwise you will need to specify `-2` in order to use the right version.
 
 ```console-user
 srmcp file:////bin/sh srm://dcache.example.org/data/world-writable/srm-test-file
@@ -74,8 +74,8 @@ srmrm srm://dcache.example.org/data/world-writable/srm-test-file
 ### Important SRM configuration options
 
 The defaults for the following configuration parameters can be found
-in the `srmmanager.properties` and `srm.properties` ]
-`transfermanagers.properties` files located in the directory
+in the `srmmanager.properties`, `srm.properties` and
+`transfermanagers.properties` files, which are all located in the directory
 `/usr/share/dcache/defaults`.
 
 If you want to modify parameters, copy them to
@@ -84,7 +84,7 @@ If you want to modify parameters, copy them to
 
 Example:
 
-Change the value for `srm.db.host` in the layout file.
+Change the value for `srmmanager.db.host` in the layout file.
 
 ```ini
 [srm-${host.name}Domain]
@@ -99,7 +99,7 @@ srm.request.copy.threads=250
 transfermanagers.limits.external-transfers=${srm.request.copy.threads}
 ```
 
-The common value should be the roughly equal to the maximum number of the SRM - to -SRM copies your system can sustain.
+The common value should be roughly equal to the maximum number of the SRM - to - SRM copies your system can sustain.
 
 Example:
 
@@ -121,14 +121,14 @@ transfermanagers.limits.external-transfers=2000
 
 ## Utilization of space reservations for data storage
 
-`SRM` version 2.2 introduced a concept of space reservation. Space reservation guarantees that the
+`SRM` version 2.2 introduced the concept of space reservation. Space reservation guarantees that the
 requested amount of storage space of a specified type is made available by the storage system for a
 specified amount of time.
 
 Users can create space reservations using an appropriate `SRM` client, although it is more common for
-the dCache administrator to make space reservations for VOs (see [the section called “SpaceManager configuration”](#spacemanager-configuration). Each space reservation has an associated ID (or space token). VOs then can copy directly into space tokens assigned to them by the dCache administrator.
+the dCache administrator to make space reservations for VOs (see the section [“SpaceManager configuration”](#spacemanager-configuration). Each space reservation has an associated ID (or space token). VOs then can copy directly into space tokens assigned to them by the dCache administrator.
 
-When a file is about to be transferred to a storage system, the space available in the space reservation is checked if it can accomodate the entire file. If yes, this chunk of space is marked as allocated, so that it can not be taken by another, concurrently transferred file. If the file is transferred successfully the allocated space becomes used space within the space reservation, else the allocated space is released back to the space reservation as free space.
+When a file is about to be transferred to a storage system, it is checked whether the space available in the space reservation can accomodate the entire file. If yes, this chunk of space is marked as allocated, so that it can not be taken by another, concurrently transferred file. If the file is transferred successfully, the allocated space becomes used space within the space reservation, else the allocated space is released back to the space reservation as free space.
 
 `SRM` space reservation can be assigned a non-unique description which can be used to query the system for space reservations with a given description.
 
@@ -138,7 +138,7 @@ dCache only manages write space, i.e. space on disk can be reserved only for wri
 
 A space reservation has a retention policy and an access latency.
 
-Retention policy describes the quality of the storage service that will be provided for the data (files) stored in the space reservation and access latency describes the availability of this data. The `SRM` specification requires that if a space reservation is given on upload, then the specified retention policy and access latency must match those of the space reservation.
+Retention policy describes the quality of the storage service that will be provided for the data (files) stored in the space reservation, and access latency describes the availability of this data. The `SRM` specification requires that if a space reservation is given on upload, then the specified retention policy and access latency must match those of the space reservation.
 
 The default values for the retention policy and access latency can be
 changed in the file `/etc/dcache/dcache.conf`.
@@ -146,7 +146,7 @@ changed in the file `/etc/dcache/dcache.conf`.
 **Retention policy**
 The values of retention policy supported by dCache are `REPLICA` and `CUSTODIAL`.
 
--   `REPLICA` corresponds to the lowest quality of the service, usually associated with storing a single copy of each file on the disk.
+-   `REPLICA` corresponds to the lowest quality of the service, usually associated with storing a single copy of each file on disk.
 
 -   `CUSTODIAL` is the highest quality service, usually interpreted as storage of the data on tape.
 
@@ -168,11 +168,11 @@ dcache.default-retention-policy=REPLICA
 **Access latency**
 The two values allowed for access latency are `NEARLINE` and `ONLINE`.
 
--   `NEARLINE` means that data stored in this reservation is allowed to migrate to permanent media. Retrieving these data may result in delays associated with preparatory steps that the storage system has to perform to make these data available for the user I/O (e.g., staging data from tape to a disk cache).
+-   `NEARLINE` means that data stored in this reservation is allowed to migrate to permanent media. Retrieving this data may result in delays associated with preparatory steps that the storage system has to perform to make this data available for user I/O (e.g., staging data from tape to a disk cache).
 
 -   `ONLINE` means that data is readily available allowing for faster access.
 
-In case of dCache `ONLINE` means that there will always be a copy of the file on disk, while `NEARLINE` does not provide such guarantee. As with retention policy, once a file is written into a given space reservation, it inherits the reservation's access latency.
+In case of dCache, `ONLINE` means that there will always be a copy of the file on disk, while `NEARLINE` does not provide such guarantee. As with retention policy, once a file is written into a given space reservation, it inherits the reservation's access latency.
 
 If a space reservation request does not specify an access latency, we will assign a value given by `dcache.default-access-latency`. The default value is `NEARLINE`.
 
@@ -204,7 +204,7 @@ Unless you have reason not to, we recommend placing the `spacemanager` service i
 
 #### Explicit Space Reservations
 
-Each SRM space reservation is made against the total available disk space of a particular link group. If dCache is configured correctly each byte of disk space, that can be reserved, belongs to one and only one link group. See [the section called “SpaceManager configuration”](spacemanager-configuration) for a detailed description.
+Each SRM space reservation is made against the total available disk space of a particular link group. If dCache is configured correctly, each byte of disk space, that can be reserved, belongs to one and only one link group. See the section [“SpaceManager configuration”](#spacemanager-configuration) for a detailed description.
 
 > **IMPORTANT**
 >
@@ -218,7 +218,7 @@ The total space in dCache that can be reserved is the sum of the available space
 
 #### Implicit Space Reservations
 
-dCache can perform implicit space reservations for non-`SRM` transfers, `SRM` Version 1 transfers and for `SRM` Version 2.2 data transfers that are not given the space token explicitly. The parameter that enables this behavior is srm.enable.space-reservation.implicit, which is described in [the section called “SRM configuration for experts”](srm-configuration-for-experts). If no implicit space reservation can be made, the transfer will fail.
+dCache can perform implicit space reservations for non-`SRM` transfers, `SRM` Version 1 transfers and for `SRM` Version 2.2 data transfers that are not given the space token explicitly. The parameter that enables this behavior is srm.enable.space-reservation.implicit, which is described in the section [“SRM configuration for experts”](#srm-configuration-for-experts). If no implicit space reservation can be made, the transfer will fail.
 
 Implicit space reservation means that the `srm` will create a space reservation for a single upload while negotiating the transfer parameters with the client. The space reservation will be created in a link group for which the user is authorized to create space reservations, which has enough available space, and which is able to hold the type of file being uploaded. The space reservation will be short lived. Once it expires, it will be released and the file it held will live on outside any space reservation, but still within the link group to which it was uploaded. Implicit space reservations are thus a technical means to upload files to link groups without using explicit space reservations.
 
@@ -309,11 +309,11 @@ The lack of output tells you that there are no link groups. As there are no link
 
 ##### The Link Groups
 
-For a general introduction about link groups see [the section called “Link Groups”][link groups](config-PoolManager.md#link-groups).
+For a general introduction about link groups see the section called [“Link Groups”](config-PoolManager.md#link-groups).
 
 Example:
 
-In this example we will create a link group for the VO desy. In order to do so we need to have a pool, a pool group and a link. Moreover, we define unit groups named any-store, world-net and any-protocol. (See [the section called “Types of Units”](#types-of-units).)
+In this example we will create a link group for the VO desy. In order to do so we need to have a pool, a pool group and a link. Moreover, we define unit groups named any-store, world-net and any-protocol. (See the section called [“Types of Units”](#types-of-units).)
 
 Define a pool in your layout file, add it to your pool directory and restart the `poolDomain`.
 
@@ -517,7 +517,7 @@ In order to be able to take advantage of the virtual organization (VO) infrastru
 
 -   User needs to use [`voms-proxy-init`](config-gplazma.md#creating-a-voms-proxy) to create a VO proxy.
 
--   dCache needs to use gPlazma with modules that extract VO attributes from the user’s proxy. (See [Chapter 10, Authorization in dCache](config-gplazma.md), have a look at `voms` plugin and see the [section called “Authentication and Authorization in dCache”](config-gplazma.md#authentication-and-authorization-in-dcache) for an example with voms.
+-   dCache needs to use gPlazma with modules that extract VO attributes from the user’s proxy. (See [Chapter 10, Authorization in dCache](config-gplazma.md), have a look at `voms` plugin and see the section called [“VOMS Proxy Certificate”](config-gplazma.md#voms-proxy-certificate) for an example with voms.
 
 Only if these 3 conditions are satisfied the VO based authorization of the SpaceManager will work.
 
