@@ -24,8 +24,28 @@
       <plugins>
 
           <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>build-helper-maven-plugin</artifactId>
+              <executions>
+                  <execution>
+                      <id>regex-property</id>
+                      <goals>
+                          <goal>regex-property</goal>
+                      </goals>
+                      <configuration>
+                          <name>tar.version</name>
+                          <value>${project.version}</value>
+                          <regex>-SNAPSHOT</regex>
+                          <replacement>-\${git.commit.id.abbrev}</replacement>
+                          <failIfNoMatch>false</failIfNoMatch>
+                      </configuration>
+                  </execution>
+              </executions>
+          </plugin>
+
+          <plugin>
               <artifactId>maven-resources-plugin</artifactId>
-              <version>2.5</version>
+              <version>3.2.0</version>
               <executions>
                   <execution>
                       <phase>validate</phase>
@@ -47,7 +67,7 @@
           <plugin>
               <groupId>com.spotify</groupId>
               <artifactId>dockerfile-maven-plugin</artifactId>
-              <version>1.3.7</version>
+              <version>1.4.13</version>
               <executions>
                   <execution>
                       <id>default</id>
@@ -58,7 +78,10 @@
               </executions>
               <configuration>
                   <repository>dcache/dcache</repository>
-                  <tag>${project.version}</tag>
+                  <tag>${tar.version}</tag>
+                  <buildArgs>
+                      <DCACHE_VERSION>${tar.version}</DCACHE_VERSION>
+                  </buildArgs>
               </configuration>
           </plugin>
       </plugins>
