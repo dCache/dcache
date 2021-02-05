@@ -103,7 +103,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         } else {
 
             AccessTimeInfo accessTimeInfo = repository.getAccessTimeInfo().get(pnfsId.toString());
-            Long size = Long.valueOf(storageInfo.getLegacySize());
+            long size = storageInfo.getLegacySize();
             if (size == 0) {
                 try {
                     _size = _fileStore.getFileAttributeView(pnfsId).readAttributes().size();
@@ -115,7 +115,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                 }
 
             } else {
-                _size = size.longValue();
+                _size = size;
             }
 
 
