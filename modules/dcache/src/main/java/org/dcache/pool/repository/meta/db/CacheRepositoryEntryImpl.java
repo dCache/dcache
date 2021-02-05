@@ -106,9 +106,10 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
             if (size == 0) {
                 try {
                     _size = _fileStore.getFileAttributeView(pnfsId).readAttributes().size();
-                    StorageInfo info = _repository.getStorageInfoMap().get(pnfsId.toString());
-                    info.setLegacySize(_size);
-                    _repository.getStorageInfoMap().put(pnfsId.toString(), info);
+                    if (_size != 0) {
+                        storageInfo.setLegacySize(_size);
+                        _repository.getStorageInfoMap().put(pnfsId.toString(), storageInfo);
+                    }
                 } catch (IOException e) {
                     _log.error("Failed to set file size: {}", e.toString());
                 }
