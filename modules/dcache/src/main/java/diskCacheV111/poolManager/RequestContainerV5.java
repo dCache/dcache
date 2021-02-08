@@ -1348,34 +1348,27 @@ public class RequestContainerV5
                 return;
             }
 
-            if (_currentRc == CacheException.FILE_NOT_FOUND) {
+            if (state == RequestState.ST_STAGE && !canStage()) {
                 _state = RequestState.ST_DONE;
-                updateStatus("Failed: file not found");
+                updateStatus("Failed: stage not allowed");
+                _log.debug("Subject is not authorized to stage");
+                _currentRc = CacheException.PERMISSION_DENIED;
+                _currentRm = "File not online. Staging not allowed.";
                 sendInfoMessage(
-                        _currentRc, "Failed " + _currentRm);
+                        _currentRc , "Permission denied." + _currentRm);
+            } else if (!_allowedStates.contains(state)) {
+                _state = RequestState.ST_DONE;
+                updateStatus("Failed: transition to " + state + " not allowed");
+                _log.debug("No permission to perform {}", state);
+                _currentRc = CacheException.PERMISSION_DENIED;
+                _currentRm = "Permission denied.";
+                sendInfoMessage(_currentRc,
+                        "Permission denied for " + state);
             } else {
-                if (state == RequestState.ST_STAGE && !canStage()) {
-                    _state = RequestState.ST_DONE;
-                    updateStatus("Failed: stage not allowed");
-                    _log.debug("Subject is not authorized to stage");
-                    _currentRc = CacheException.PERMISSION_DENIED;
-                    _currentRm = "File not online. Staging not allowed.";
-                    sendInfoMessage(
-                            _currentRc , "Permission denied." + _currentRm);
-                } else if (!_allowedStates.contains(state)) {
-                    _state = RequestState.ST_DONE;
-                    updateStatus("Failed: transition to " + state + " not allowed");
-                    _log.debug("No permission to perform {}", state);
-                    _currentRc = CacheException.PERMISSION_DENIED;
-                    _currentRm = "Permission denied.";
-                    sendInfoMessage(_currentRc,
-                            "Permission denied for " + state);
-                } else {
-                    _state = state;
-                    if (_state != RequestState.ST_DONE) {
-                        _currentRc = 0;
-                        _currentRm = "";
-                    }
+                _state = state;
+                if (_state != RequestState.ST_DONE) {
+                    _currentRc = 0;
+                    _currentRm = "";
                 }
             }
         }
