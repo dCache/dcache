@@ -1,9 +1,15 @@
 package org.dcache.pool.classic;
 
 import com.google.common.collect.Iterables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.util.CommandException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -18,29 +24,20 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileCorruptedCacheException;
-import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
-import diskCacheV111.util.PnfsId;
-
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.util.CommandException;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.util.Checksum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
 import static dmg.util.CommandException.checkCommand;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
 public class ChecksumScanner
@@ -139,6 +136,7 @@ public class ChecksumScanner
                         if (e.getActualChecksums().isPresent()) {
                             _bad.put(id, e.getActualChecksums().get());
                             _badCount++;
+                            invalidateCacheEntryAndSendAlarm(id, e);
                         } else {
                             _log.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
                             _unableCount++;
@@ -202,6 +200,7 @@ public class ChecksumScanner
                     _expectedChecksums = e.getExpectedChecksums().get();
                     _actualChecksums = e.getActualChecksums().get();
                     _bad.put(_pnfsId, _actualChecksums);
+                    invalidateCacheEntryAndSendAlarm(_pnfsId, e);
                 } finally {
                     handle.close();
                 }
@@ -458,19 +457,7 @@ public class ChecksumScanner
                     }
                 } catch (FileCorruptedCacheException e) {
                     _badCount++;
-                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.CHECKSUM,
-                                                            id.toString(),
-                                                            poolName),
-                                    "Marking {} on {} as BROKEN: {}",
-                                    id,
-                                    poolName,
-                                    e.getMessage());
-                    try {
-                        _repository.setState(id, ReplicaState.BROKEN,
-                                "scrubber found checksum inconsistency");
-                    } catch (CacheException f) {
-                        _log.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
-                    }
+                    invalidateCacheEntryAndSendAlarm(id, e);
                 } catch (IOException e) {
                     _unableCount++;
                     throw new IOException("Unable to read " + id + ": " + messageOrClassName(e), e);
@@ -495,6 +482,17 @@ public class ChecksumScanner
                 + _totalCount + " of " + _numFiles + " files: "
                 + _badCount + " corrupt, "
                 + _unableCount + " unable to check";
+        }
+    }
+
+    private void invalidateCacheEntryAndSendAlarm(PnfsId id, FileCorruptedCacheException e) {
+        _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.CHECKSUM, id.toString(), poolName),
+                   "Marking {} on {} as BROKEN: {}", id, poolName, e.getMessage());
+        try {
+            _repository.setState(id, ReplicaState.BROKEN,
+                "scrubber found checksum inconsistency");
+        } catch (CacheException | InterruptedException t) {
+            _log.warn("Failed to mark {} as BROKEN: {}", id, t.getMessage());
         }
     }
 
