@@ -1482,7 +1482,6 @@ public class RequestContainerV5
         //         Because : - Code Exception
         //
         private void stateEngine(Object inputObject) {
-            RequestStatusCode rc;
             _log.debug("stateEngine: for case {}", _state);
 
             switch (_state) {
@@ -1499,7 +1498,6 @@ public class RequestContainerV5
                 }
 
                 if (_enforceP2P) {
-                    clearError();
                     nextStep(RequestState.ST_POOL_2_POOL);
                     return;
                 }
@@ -1520,11 +1518,10 @@ public class RequestContainerV5
                         nextStep(RequestState.ST_STAGE);
                     } else {
                         _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
-                        _poolCandidate = null;
                         suspendIfEnabled(CacheException.POOL_UNAVAILABLE, "Pool unavailable");
                     }
-                    if (_sendHitInfo && _poolCandidate == null) {
-                        sendHitMsg(_bestPool == null ? null : _bestPool.info(), false); //VP
+                    if (_sendHitInfo) {
+                        sendHitMsg(null, false); //VP
                     }
                     break;
 
