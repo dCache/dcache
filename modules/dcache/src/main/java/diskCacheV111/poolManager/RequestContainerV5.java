@@ -1307,7 +1307,12 @@ public class RequestContainerV5
             }
         }
 
-        private boolean canStage()
+        private boolean isFileStageable()
+        {
+            return _parameter._hasHsmBackend && _storageInfo.isStored();
+        }
+
+        private boolean isStagingAllowed()
         {
             /* If the result is cached or the door disabled staging,
              * then we don't check the permissions.
@@ -1348,7 +1353,7 @@ public class RequestContainerV5
                 return;
             }
 
-            if (state == RequestState.ST_STAGE && !canStage()) {
+            if (state == RequestState.ST_STAGE && !isStagingAllowed()) {
                 _state = RequestState.ST_DONE;
                 updateStatus("Failed: stage not allowed");
                 _log.debug("Subject is not authorized to stage");
@@ -1518,7 +1523,7 @@ public class RequestContainerV5
 
                 case NOT_FOUND:
                     _log.debug(" stateEngine: RequestStatusCode.NOT_FOUND ");
-                    if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
+                    if (isFileStageable()) {
                         _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
                         nextStep(RequestState.ST_STAGE);
                     } else {
@@ -1541,14 +1546,14 @@ public class RequestContainerV5
                     //
                     //  if we don't have an hsm we overwrite the p2pAllowed
                     //
-                    nextStep(_parameter._p2pAllowed || ! _parameter._hasHsmBackend
+                    nextStep(_parameter._p2pAllowed || !isFileStageable()
                             ? RequestState.ST_POOL_2_POOL : RequestState.ST_STAGE);
                     break;
 
                 case COST_EXCEEDED:
                     if (_parameter._p2pOnCost) {
                         nextStep(RequestState.ST_POOL_2_POOL);
-                    } else if (_parameter._hasHsmBackend &&  _parameter._stageOnCost) {
+                    } else if (isFileStageable() &&  _parameter._stageOnCost) {
                         nextStep(RequestState.ST_STAGE);
                     } else {
                         failRequest(127, "Cost exceeded (st,p2p not allowed)");
@@ -1580,7 +1585,7 @@ public class RequestContainerV5
                     if (_bestPool == null) {
                         if (_enforceP2P) {
                             failRequest(_currentRc, _currentRm);
-                        } else if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
+                        } else if (isFileStageable()) {
                             _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
                             nextStep(RequestState.ST_STAGE);
                         } else {
@@ -1595,7 +1600,7 @@ public class RequestContainerV5
                 case S_COST_EXCEEDED:
                     _log.info("ST_POOL_2_POOL : RequestStatusCode.S_COST_EXCEEDED");
 
-                    if (_parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored()) {
+                    if (isFileStageable() && _parameter._stageOnCost) {
                         if (_enforceP2P) {
                             failRequest(_currentRc, _currentRm);
                         } else {
@@ -1634,7 +1639,7 @@ public class RequestContainerV5
                 default:
                     if (_enforceP2P) {
                         failRequest(_currentRc, _currentRm);
-                    } else if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
+                    } else if (isFileStageable()) {
                         nextStep(RequestState.ST_STAGE);
                     } else {
                         // FIXME refactor askForPoolToPool to avoid
@@ -1689,7 +1694,7 @@ public class RequestContainerV5
                         }
                     } else {
                         _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
-                        if (_parameter._hasHsmBackend && _storageInfo.isStored()) {
+                        if (isFileStageable()) {
                             _log.info("ST_POOL_2_POOL : trying to stage the file");
                             nextStep(RequestState.ST_STAGE);
                         } else {
