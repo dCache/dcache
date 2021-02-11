@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -210,7 +211,7 @@ public class RequestContainerV5
     private PnfsHandler _pnfsHandler;
 
     private Executor _executor;
-    private final Map<PnfsId, CacheException> _selections = new HashMap<>();
+    private final Map<PnfsId, CacheException> _selections = new ConcurrentHashMap<>();
     private PartitionManager _partitionManager;
     private volatile long _checkFilePingTimer = 10 * 60 * 1000;
     /** value in milliseconds */
@@ -474,30 +475,23 @@ public class RequestContainerV5
     public static final String hh_rc_select = "[<pnfsId> [<errorNumber> [<errorMessage>]] [-remove]]";
     public String ac_rc_select_$_0_3(Args args) {
 
-        synchronized (_selections) {
-            if (args.argc() == 0) {
-                StringBuilder sb = new StringBuilder();
-                for (Map.Entry<PnfsId, CacheException > entry : _selections.entrySet()) {
-
-                    sb.append(entry.getKey().toString()).
-                            append("  ").
-                            append(entry.getValue().toString()).
-                            append("\n");
-                }
-                return sb.toString();
-            }
-            boolean remove = args.hasOption("remove");
-            PnfsId pnfsId = new PnfsId(args.argv(0));
-
-            if (remove) {
-                _selections.remove(pnfsId);
-                return "";
-            }
-            int errorNumber = args.argc() > 1 ? Integer.parseInt(args.argv(1)) : 1;
-            String errorMessage = args.argc() > 2 ? args.argv(2) : ("Failed-"+errorNumber);
-
-            _selections.put(pnfsId, new CacheException(errorNumber, errorMessage));
+        if (args.argc() == 0) {
+            StringBuilder sb = new StringBuilder();
+            _selections.forEach((k,v) -> sb.append(k).append("  ").append(v).append('\n'));
+            return sb.toString();
         }
+
+        PnfsId pnfsId = new PnfsId(args.argv(0));
+
+        if (args.hasOption("remove")) {
+            _selections.remove(pnfsId);
+            return "";
+        }
+
+        int errorNumber = args.argc() > 1 ? Integer.parseInt(args.argv(1)) : 1;
+        String errorMessage = args.argc() > 2 ? args.argv(2) : ("Failed-"+errorNumber);
+
+        _selections.put(pnfsId, new CacheException(errorNumber, errorMessage));
         return "";
     }
     public static final String hh_rc_set_warning_path = " # obsolete";
@@ -1493,12 +1487,10 @@ public class RequestContainerV5
 
             switch (_state) {
             case ST_INIT:
-                synchronized (_selections) {
-                    CacheException ce = _selections.get(_pnfsId);
-                    if (ce != null) {
-                        failRequest(ce.getRc(), ce.getMessage());
-                        return;
-                    }
+                CacheException ce = _selections.get(_pnfsId);
+                if (ce != null) {
+                    failRequest(ce.getRc(), ce.getMessage());
+                    return;
                 }
 
                 if (_suspendIncoming) {
