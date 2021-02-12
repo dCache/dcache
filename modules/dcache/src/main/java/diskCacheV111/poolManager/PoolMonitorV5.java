@@ -318,7 +318,7 @@ public class PoolMonitorV5
                                                                                          .toLowerCase()));
             }
 
-            CostException fallback = null;
+            CostException costException = null;
 
             for (int prio = 0; prio < level.length; prio++) {
                 List<String> poolsInCurrentLevel = level[prio].getPoolList();
@@ -367,18 +367,25 @@ public class PoolMonitorV5
                     return _partition.selectReadPool(_costModule, pools,
                                                      _fileAttributes);
                 } catch (CostException e) {
+                    costException = e;
                     if (!e.shouldFallBack()) {
-                        throw e;
+                        break;
                     }
-                    fallback = e;
                 }
             }
 
-            /* We were asked to fall back, but all available links were
-             * exhausted. Let the caller deal with it.
+            /* If we have a CostException where a pool was selected and
+             * shouldTryAlternatives not set then we return that pool anyway.
+             * REVISIT: consider updating partitions so they don't throw
+             * an exception in this case.
              */
-            if (fallback != null) {
-                throw fallback;
+            if (costException != null) {
+                if (costException.getPool() != null
+                        && !costException.shouldTryAlternatives()) {
+                    return costException.getPool();
+                }
+
+                throw costException;
             }
 
             /* None of the pools we were allowed to read from were

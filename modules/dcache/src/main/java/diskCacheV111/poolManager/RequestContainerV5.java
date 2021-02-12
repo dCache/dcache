@@ -1859,6 +1859,7 @@ public class RequestContainerV5
             try {
                 _bestPool = _poolSelector.selectReadPool();
                 _parameter = _poolSelector.getCurrentPartition();
+                return RequestStatusCode.FOUND;
             } catch (FileNotInCacheException e) {
                 _log.info("[read] {}", e.getMessage());
                 return RequestStatusCode.NOT_FOUND;
@@ -1866,18 +1867,16 @@ public class RequestContainerV5
                 _log.info("[read] {}", e.getMessage());
                 return RequestStatusCode.NOT_PERMITTED;
             } catch (CostException e) {
-                if (e.getPool() == null) {
+                if (e.shouldTryAlternatives()) {
+                    _parameter = _poolSelector.getCurrentPartition();
+                    _bestPool = e.getPool();
+                    _log.info("[read] {} ({})", e.getMessage(), _bestPool);
+                    return RequestStatusCode.COST_EXCEEDED;
+                } else {
                     _log.info("[read] {}", e.getMessage());
                     setError(125, e.getMessage());
                     return RequestStatusCode.ERROR;
                 }
-
-                _bestPool = e.getPool();
-                _parameter = _poolSelector.getCurrentPartition();
-                if (e.shouldTryAlternatives()) {
-                    _log.info("[read] {} ({})", e.getMessage(), _bestPool.name());
-                    return RequestStatusCode.COST_EXCEEDED;
-               }
            } catch (CacheException e) {
                 String err = "Read pool selection failed: " + e.getMessage();
                 _log.warn(err);
@@ -1891,8 +1890,6 @@ public class RequestContainerV5
             } finally {
                 _log.info("[read] Took  {} ms", (System.currentTimeMillis() - _started));
             }
-
-            return RequestStatusCode.FOUND;
         }
         //
         // Result :
