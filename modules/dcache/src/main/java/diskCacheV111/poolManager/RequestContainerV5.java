@@ -1888,10 +1888,6 @@ public class RequestContainerV5
                 _log.error(err);
                 setError(130, err);
                 return RequestStatusCode.ERROR;
-            } catch (RuntimeException e) {
-                _log.error("Read pool selection failed", e);
-                setError(130, "Read pool selection failed: " + e.toString());
-                return RequestStatusCode.ERROR;
             } finally {
                 _log.info("[read] Took  {} ms", (System.currentTimeMillis() - _started));
             }
