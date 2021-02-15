@@ -27,7 +27,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -843,6 +845,14 @@ public class RequestContainerV5
         protected int _retryCounter;
         private final CDC _cdc = new CDC();
 
+        /**
+         * A list of objects that are notified whenever a PoolRequestHandler
+         * object changes state.  The notification happens immediately after
+         * the `_state` value is updated.  The supplied `RequestState` is
+         * the previous (or "old") state.
+         */
+        private final List<Consumer<RequestState>> _observers = new CopyOnWriteArrayList<>();
+
 
         private UOID _waitingFor;
 
@@ -977,6 +987,26 @@ public class RequestContainerV5
                             _protocolInfo,
                             _linkGroup,
                             excluded);
+            if (_sendHitInfo) {
+                _observers.add(oldState -> {
+                    if (_state == RequestState.ST_DONE && _currentRc == 0) {
+                        switch (oldState) {
+                        case ST_INIT:
+                            sendHitMsg(_bestPool.info(), true);
+                            break;
+
+                        case ST_WAITING_FOR_POOL_2_POOL:
+                            sendHitMsg(_p2pSourcePool.info(), true);
+                            break;
+
+                        case ST_WAITING_FOR_STAGING:
+                            sendHitMsg(null, false);
+                            break;
+                        }
+                    }
+                });
+            }
+
             //
             //
             //
@@ -1340,10 +1370,11 @@ public class RequestContainerV5
         }
 
         private void nextStep(RequestState state) {
-
+            RequestState oldState = _state;
             if (state == RequestState.ST_OUT) {
                 // end state
                 _state = RequestState.ST_OUT;
+                _observers.forEach(e -> e.accept(oldState));
                 return;
             }
 
@@ -1370,6 +1401,7 @@ public class RequestContainerV5
                     _currentRm = "";
                 }
             }
+            _observers.forEach(e -> e.accept(oldState));
         }
 
         //
@@ -1506,9 +1538,6 @@ public class RequestContainerV5
                 case FOUND:
                     success(_bestPool);
                     _log.info("AskIfAvailable found the object");
-                    if (_sendHitInfo) {
-                        sendHitMsg(_bestPool.info(), true);
-                    }
                     break;
 
                 case NOT_FOUND:
@@ -1519,9 +1548,6 @@ public class RequestContainerV5
                     } else {
                         _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
                         suspendIfEnabled(CacheException.POOL_UNAVAILABLE, "Pool unavailable");
-                    }
-                    if (_sendHitInfo) {
-                        sendHitMsg(null, false); //VP
                     }
                     break;
 
@@ -1564,10 +1590,6 @@ public class RequestContainerV5
                     nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
                     updateStatus("Waiting for pool-to-pool transfer: "
                             + _p2pSourcePool + " to " + _p2pDestinationPool);
-
-                    if (_sendHitInfo) {
-                        sendHitMsg(_p2pSourcePool.info(), true); //VP
-                    }
                     break;
 
                 case NOT_PERMITTED:
