@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CostException;
 import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.SourceCostException;

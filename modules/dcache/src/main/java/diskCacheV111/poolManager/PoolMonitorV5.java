@@ -29,7 +29,6 @@ import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CostException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
@@ -39,6 +38,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.poolmanager.CostException;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
@@ -49,9 +49,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static java.util.stream.Collectors.toList;
-import static org.dcache.namespace.FileAttribute.LOCATIONS;
-import static org.dcache.namespace.FileAttribute.SIZE;
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class PoolMonitorV5
     extends SerializablePoolMonitor

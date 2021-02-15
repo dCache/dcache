@@ -1,4 +1,6 @@
-package diskCacheV111.util;
+package org.dcache.poolmanager;
+
+import diskCacheV111.util.MissingResourceCacheException;
 
 import org.dcache.poolmanager.SelectedPool;
 

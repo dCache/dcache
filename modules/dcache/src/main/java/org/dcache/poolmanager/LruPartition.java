@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CostException;
 
 import org.dcache.pool.assumption.AvailableSpaceAssumption;
 import org.dcache.vehicles.FileAttributes;

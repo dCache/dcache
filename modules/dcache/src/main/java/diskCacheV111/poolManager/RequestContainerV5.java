@@ -35,7 +35,6 @@ import java.util.regex.PatternSyntaxException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.util.CostException;
 import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -72,6 +71,7 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
 import org.dcache.cells.CellStub;
+import org.dcache.poolmanager.CostException;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
@@ -83,10 +83,11 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static diskCacheV111.poolManager.RequestContainerV5.StateType.TRANSITORY;
+import static diskCacheV111.poolManager.RequestContainerV5.StateType.WAITING;
 import static dmg.util.CommandException.checkCommand;
-import static java.util.stream.Collectors.toList;
-import static diskCacheV111.poolManager.RequestContainerV5.StateType.*;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static org.dcache.util.MathUtils.addWithInfinity;
 
 public class RequestContainerV5

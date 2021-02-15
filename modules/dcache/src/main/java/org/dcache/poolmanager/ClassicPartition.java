@@ -12,7 +12,6 @@ import java.util.Map;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CostException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.pool.assumption.PerformanceCostAssumption;
