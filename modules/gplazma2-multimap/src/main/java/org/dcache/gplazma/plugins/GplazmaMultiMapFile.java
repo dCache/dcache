@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.EntitlementPrincipal;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
@@ -70,7 +71,8 @@ public class GplazmaMultiMapFile
         OIDC("oidc", OidcSubjectPrincipal.class),
         OIDC_GROUP("oidcgrp", OpenIdGroupPrincipal.class),
         UID("uid", UidPrincipal.class),
-        USER_NAME("username", UserNamePrincipal.class);
+        USER_NAME("username", UserNamePrincipal.class),
+        ENTITLEMENT("entitlement", EntitlementPrincipal.class);
 
         private final String label;
         private final Class<? extends Principal> groupType;

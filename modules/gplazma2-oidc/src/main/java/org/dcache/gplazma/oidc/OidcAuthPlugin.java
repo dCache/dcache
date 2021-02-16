@@ -44,6 +44,7 @@ import java.util.stream.StreamSupport;
 
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.EntitlementPrincipal;
 import org.dcache.auth.FullNamePrincipal;
 import org.dcache.auth.LoA;
 import org.dcache.auth.LoAPrincipal;
@@ -464,6 +465,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 addEmail(userInfo, principals);
                 addGroups(userInfo, principals);
                 addLoAs(userInfo, principals);
+                addEntitlements(userInfo, principals);
                 return principals;
             } else {
                 throw new OidcException("No OpendId \"sub\"");
@@ -544,6 +546,37 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                     .filter(l -> l != LoA.REFEDS_IAP_LOCAL_ENTERPRISE)
                     .map(LoAPrincipal::new)
                     .forEach(principals::add);
+        }
+    }
+
+    /**
+     * Add Entitlement principals from mapped eduPersonEntitlement SAML assertions.
+     * For details of mapping between SAML assertions and OIDC claims see
+     * https://wiki.refeds.org/display/CON/Consultation%3A+SAML2+and+OIDC+Mappings
+     */
+    private void addEntitlements(JsonNode userInfo, Set<Principal> principals)
+    {
+        JsonNode value = userInfo.get("eduperson_entitlement");
+        if (value == null) {
+            return;
+        }
+
+        if (value.isArray()) {
+            StreamSupport.stream(value.spliterator(), false)
+                    .map(JsonNode::asText)
+                    .forEach(v -> addEntitlement(principals, v));
+        } else if (value.isTextual()) {
+            addEntitlement(principals, value.asText());
+        }
+    }
+
+    private void addEntitlement(Set<Principal> principals, String value)
+    {
+        try {
+            principals.add(new EntitlementPrincipal(value));
+        } catch (URISyntaxException e) {
+            LOG.debug("Rejecting bad eduperson_entitlement value \"{}\": {}",
+                    value, e.getMessage());
         }
     }
 
