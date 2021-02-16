@@ -39,31 +39,33 @@ public class MultiHSMTest extends TestCase {
 
 	}
 
-	/**
-	 * test reaction of isStores() method when URIs are used
-	 * @throws Exception
-	 */
+        /**
+         * Test that GenericStorageInfo claims it isn't stored when initially
+         * created.
+         */
 	@Test
-	@SuppressWarnings("deprecation")
-	public void testStore() throws Exception {
+	public void testNotStoredInitially() throws Exception {
 
-		StorageInfo storageInfo =  new GenericStorageInfo();
-		assertEquals("SotrageInfo without URL shoul not declare itself as stored",false,  storageInfo.isStored() );
+            StorageInfo storageInfo = new GenericStorageInfo();
 
-		// legacy case
-
-		storageInfo.setIsStored(true);
-		assertEquals("SotrageInfo after  setIsStored(true) shold shoul declare itself as stored",true,  storageInfo.isStored() );
-
-		// legacy case
-		storageInfo.setIsStored(false);
-		assertEquals("SotrageInfo after  setIsStored(false) shold shoul not declare itself as stored",false,  storageInfo.isStored() );
-
-		String osmLocationMain = "osm://desy-main/?store=h1&bfid=1234";
-		storageInfo.addLocation( new URI(osmLocationMain));
-		assertEquals("SotrageInfo with URL shoul declare itself as stored",true,  storageInfo.isStored() );
+            assertFalse("StorageInfo without URL should not declare itself as stored",
+                    storageInfo.isStored());
 	}
 
+        /**
+         * Test that GenericStorageInfo claims a file is stored after a location
+         * is added.
+         */
+	@Test
+	public void testStoreAfterAddingLocation() throws Exception {
+
+            StorageInfo storageInfo = new GenericStorageInfo();
+
+            storageInfo.addLocation(new URI("osm://desy-main/?store=h1&bfid=1234"));
+
+            assertTrue("StorageInfo with URL should declare itself as stored",
+                    storageInfo.isStored());
+	}
 
 	/**
 	 * test to load location extractor depending on HSM type

@@ -208,10 +208,9 @@ public class StorageInfoTest {
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
 
-        storageInfo.setIsStored(false);
-        otherInfo.setIsStored(true);
+        otherInfo.addLocation(new URI("enstore://enstore?bf2"));
 
-        assertFalse("not equal by isSored storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by isSored storageInfo pass", storageInfo.equals(otherInfo));
     }
 
     @Test
