@@ -8,7 +8,6 @@ import java.nio.file.StandardOpenOption;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
-import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
@@ -41,14 +40,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
         try {
 
-            NfsMover mover = _moverHandler.getOrCreateMover(context.getRemoteSocketAddress(),
-                    _args.opwrite.stateid,
-                    context.currentInode().toNfsHandle());
-            if (mover == null) {
-                throw new BadStateidException("No mover associated with given stateid: " + _args.opwrite.stateid);
-            }
-
-            mover.attachSession(context.getSession());
+            NfsMover mover = _moverHandler.getMoverByStateId(context, _args.opwrite.stateid);
             if(!mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new PermException("an attempt to write without IO mode enabled");
             }

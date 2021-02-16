@@ -22,8 +22,10 @@ import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadHandleException;
+import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.AbstractOperationExecutor;
+import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.OperationBIND_CONN_TO_SESSION;
 import org.dcache.nfs.v4.OperationCREATE_SESSION;
@@ -41,7 +43,6 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.util.PortRange;
-import org.dcache.util.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.oncrpc4j.rpc.IoStrategy;
 import org.dcache.oncrpc4j.rpc.net.IpProtocolType;
@@ -201,23 +202,12 @@ public class NFSv4MoverHandler {
         }
     }
 
-    NfsMover getOrCreateMover(InetSocketAddress remoteAddress, stateid4 stateid, byte[] fh) throws ChimeraNFSException {
+    NfsMover getMoverByStateId(CompoundContext context, stateid4 stateid) throws ChimeraNFSException {
         NfsMover mover = _activeIO.get(stateid);
         if (mover == null) {
-            /*
-             * a mover for the same file and the same client can be re-used.
-             */
-            /**
-             * FIXME: this is verry fragile, as we assume that stateid
-             * structure is known and contains clientid.
-             */
-            long clientId = Bytes.getLong(stateid.other, 0);
-            return _activeIO.values().stream()
-                    .filter(m -> Bytes.getLong(m.getStateId().other, 0) == clientId)
-                    .filter(m -> Arrays.equals(fh, m.getNfsFilehandle()))
-                    .findFirst()
-                    .orElse(null);
+            throw new BadStateidException("No mover associated with given stateid: " + stateid);
         }
+        mover.attachSession(context.getSession());
         return mover;
     }
 
