@@ -57,39 +57,42 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.vehicles.qos;
+package org.dcache.pool.qos;
 
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
-import java.util.Objects;
+import org.dcache.cells.CellStub;
+import org.dcache.pool.repository.EntryChangeEvent;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.StickyChangeEvent;
+import org.dcache.vehicles.CorruptFileMessage;
 
-public final class ChangeStickyBitMessage extends Message {
-    private static final long serialVersionUID = -9114794767657001381L;
-    private final String pool;
-    private final PnfsId pnfsId;
-    private final boolean sticky;
+/**
+ *  Notifies on the CorruptFile topic when a broken file is discovered on a pool.
+ */
+public final class BrokenFileNotifier implements StateChangeListener {
+    private final CellStub corruptFileTopic;
+    private final String   poolName;
 
-    public ChangeStickyBitMessage(String pool, PnfsId pnfsId, boolean sticky) {
-        this.pool = Objects.requireNonNull(pool, "message pool cannot be null");
-        this.pnfsId = Objects.requireNonNull(pnfsId, "message pnfsid cannot be null");
-        this.sticky = sticky;
+    public BrokenFileNotifier(CellStub corruptFileTopic, String poolName) {
+        this.corruptFileTopic = corruptFileTopic;
+        this.poolName = poolName;
     }
 
-    public PnfsId getPnfsId() {
-        return pnfsId;
+    @Override
+    public void accessTimeChanged(EntryChangeEvent event) {
+        // NOP
     }
 
-    public String getPool() {
-        return pool;
+    @Override
+    public void stateChanged(StateChangeEvent event) {
+        if (event.getNewState() == ReplicaState.BROKEN) {
+            corruptFileTopic.notify(new CorruptFileMessage(poolName, event.getPnfsId()));
+        }
     }
 
-    public boolean isSticky() {
-        return sticky;
-    }
-
-
-    public String toString() {
-        return String.format("%s: (pool %s) (pnfsid %s) (sticky %s) - %s", getMessageName(),
-                        pool, pnfsId, sticky, super.toString());
+    @Override
+    public void stickyChanged(StickyChangeEvent event) {
+        // NOP
     }
 }

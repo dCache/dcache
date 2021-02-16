@@ -61,6 +61,7 @@ package org.dcache.vehicles.qos;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+import java.util.Objects;
 
 public final class ReplicaStatusMessage extends Message {
     private static final long   serialVersionUID = -5864355937841588647L;
@@ -76,8 +77,8 @@ public final class ReplicaStatusMessage extends Message {
     private boolean removable;
 
     public ReplicaStatusMessage(String pool, PnfsId pnfsId) {
-        this.pool = pool;
-        this.pnfsId = pnfsId;
+        this.pool = Objects.requireNonNull(pool, "message pool cannot be null");
+        this.pnfsId = Objects.requireNonNull(pnfsId, "message pnfsid cannot be null");
     }
 
     public boolean exists() {

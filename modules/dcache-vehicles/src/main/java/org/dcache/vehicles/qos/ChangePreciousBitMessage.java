@@ -61,6 +61,7 @@ package org.dcache.vehicles.qos;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+import java.util.Objects;
 
 public final class ChangePreciousBitMessage extends Message {
     private static final long serialVersionUID = 7740008309835102565L;
@@ -68,8 +69,8 @@ public final class ChangePreciousBitMessage extends Message {
     private final PnfsId pnfsId;
 
     public ChangePreciousBitMessage(String pool, PnfsId pnfsId) {
-        this.pool = pool;
-        this.pnfsId = pnfsId;
+        this.pool = Objects.requireNonNull(pool, "message pool cannot be null");
+        this.pnfsId = Objects.requireNonNull(pnfsId, "message pnfsid cannot be null");
     }
 
     public PnfsId getPnfsId() {
