@@ -114,18 +114,13 @@ public interface StorageInfo
       */
     boolean isCreatedOnly() ;
     void setIsNew(boolean isNew);
+
     /**
-      *
-      * @return true if locations list is not empty or ( legacy case )
-      * if value was explicit set by setIsStored(true)
-      */
+     * Whether the file is stored on tape.
+     * @return true if locations list is not empty.
+     */
     boolean isStored() ;
 
-	/**
-	 * @Deprecated the result will generated depending on content of locations
-	 */
-    @Deprecated
-    void setIsStored(boolean isStored);
     /**
       *  The storage info may contain HSM specific key value pairs.
       *  Nobody should rely on the existence of a particular key.

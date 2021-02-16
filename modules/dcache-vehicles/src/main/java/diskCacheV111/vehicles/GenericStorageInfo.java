@@ -37,7 +37,6 @@ public class GenericStorageInfo
     private boolean _setLocation;
 
     private boolean _isNew = true;
-    private boolean _isStored;
 
     private String _hsm;
     private String _cacheClass;
@@ -156,17 +155,12 @@ public class GenericStorageInfo
         _setStorageClass = isSet;
     }
 
-    /**
-     *
-     * @return true if locations list is not empty or ( legacy case )
-     * if value was explicit set by setIsStored(true)
-     */
     @Override
     public boolean isStored() {
         /*
          * FIXME: _locations!= null is needed to read old SI files
          */
-        return _isStored || (_locations != null && !_locations.isEmpty());
+        return _locations != null && !_locations.isEmpty();
     }
 
     @Override
@@ -203,15 +197,6 @@ public class GenericStorageInfo
     @Override
     public void setStorageClass(String newStorageClass) {
         _storageClass = newStorageClass;
-    }
-
-    /**
-     * @Deprecated the result will generated depending on content of locations
-     */
-    @Override
-    @Deprecated
-    public void setIsStored( boolean isStored) {
-        _isStored = isStored;
     }
 
     @Override
