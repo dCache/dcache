@@ -1960,10 +1960,6 @@ public class RequestContainerV5
                 setError(128, e.getMessage());
                 _log.error("[p2p] {}", e.getMessage());
                 return RequestStatusCode.ERROR;
-            } catch (RuntimeException e) {
-                setError(128, e.getMessage());
-                _log.error("[p2p] contact support@dcache.org", e);
-                return RequestStatusCode.ERROR;
             } finally {
                 _log.info("[p2p] Selection took {} ms", (System.currentTimeMillis() - _started));
             }
@@ -2006,10 +2002,6 @@ public class RequestContainerV5
             } catch (IllegalArgumentException e) {
                 setError(128, e.getMessage());
                 _log.error("[stage] {}", e.getMessage());
-                return RequestStatusCode.ERROR;
-            } catch (RuntimeException e) {
-                setError(128, e.getMessage());
-                _log.error("[stage] contact support@dcache.org", e);
                 return RequestStatusCode.ERROR;
             } finally {
                 _log.info("[stage] Selection took {} ms", (System.currentTimeMillis() - _started));
