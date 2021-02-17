@@ -1535,14 +1535,29 @@ public class RequestContainerV5
                     return;
                 }
 
-                switch (askIfAvailable()) {
-                case FOUND:
-                    success(_bestPool);
-                    _log.info("AskIfAvailable found the object");
-                    break;
+                try {
+                    try {
+                        _bestPool = selectReadPool();
+                        success(_bestPool);
+                    } catch (CostException e) {
+                        if (!e.shouldTryAlternatives()) {
+                            throw e;
+                        }
 
-                case NOT_FOUND:
-                    _log.debug(" stateEngine: RequestStatusCode.NOT_FOUND ");
+                        _parameter = _poolSelector.getCurrentPartition();
+                        _bestPool = e.getPool();
+                        _log.info("[read] {} ({})", e.getMessage(), _bestPool);
+
+                        if (_parameter._p2pOnCost) {
+                            nextStep(RequestState.ST_POOL_2_POOL);
+                        } else if (isFileStageable() &&  _parameter._stageOnCost) {
+                            nextStep(RequestState.ST_STAGE);
+                        } else {
+                            failRequest(127, "Cost exceeded (st,p2p not allowed)");
+                        }
+                    }
+                } catch (FileNotInCacheException e) {
+                    _log.info("[read] {}", e.getMessage());
                     if (isFileStageable()) {
                         _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
                         nextStep(RequestState.ST_STAGE);
@@ -1550,9 +1565,8 @@ public class RequestContainerV5
                         _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
                         suspendIfEnabled(CacheException.POOL_UNAVAILABLE, "Pool unavailable");
                     }
-                    break;
-
-                case NOT_PERMITTED:
+                } catch (PermissionDeniedCacheException e) {
+                    _log.info("[read] {}", e.getMessage());
                     //
                     //  if we can't read the file because 'read is prohibited'
                     //  we at least must give dCache the chance to copy it
@@ -1564,23 +1578,10 @@ public class RequestContainerV5
                     //
                     nextStep(_parameter._p2pAllowed || !isFileStageable()
                             ? RequestState.ST_POOL_2_POOL : RequestState.ST_STAGE);
-                    break;
 
-                case COST_EXCEEDED:
-                    if (_parameter._p2pOnCost) {
-                        nextStep(RequestState.ST_POOL_2_POOL);
-                    } else if (isFileStageable() &&  _parameter._stageOnCost) {
-                        nextStep(RequestState.ST_STAGE);
-                    } else {
-                        failRequest(127, "Cost exceeded (st,p2p not allowed)");
-                    }
-                    break;
-
-                case ERROR:
-                    _log.debug(" stateEngine: RequestStatusCode.ERROR");
+                } catch (CacheException | IllegalArgumentException e) {
+                    _log.warn("Read pool selection failed: {}", e.getMessage());
                     nextStep(RequestState.ST_STAGE);
-                    _log.info("AskIfAvailable returned an error, will continue with Staging");
-                    break;
                 }
                 break;
 
@@ -1832,81 +1833,12 @@ public class RequestContainerV5
             }
         }
 
-        //
-        //  calculate :
-        //       matrix = list of list of active
-        //                pools with file available (sorted)
-        //
-        //  if empty :
-        //        bestPool = 0 , return NOT_FOUND
-        //
-        //  else
-        //        determine best pool by
-        //
-        //        if allowFallback :
-        //           first row for which cost < costCut or
-        //           if not found, pool with lowest cost.
-        //        else
-        //           leftmost pool of first nonzero row
-        //
-        //  if bestPool > costCut :
-        //        return COST_EXCEEDED
-        //
-        //  chose best pool from row selected above by :
-        //     if (minCostCut > 0) :
-        //         take all pools of the selected row
-        //         with cost < minCostCut and make hash selection.
-        //     else
-        //         take leftmost pool.
-        //
-        //  return FOUND
-        //
-        //  RESULT :
-        //      RequestStatusCode.FOUND :
-        //         file is on pool which is allowed and has reasonable cost.
-        //      RequestStatusCode.NOT_FOUND :
-        //         file is not in cache at all
-        //      RequestStatusCode.NOT_PERMITTED :
-        //         file not in an permitted pool but somewhere else
-        //      RequestStatusCode.COST_EXCEEDED :
-        //         file is in permitted pools but cost is too high.
-        //      RequestStatusCode.ERROR :
-        //         - No entry in configuration Permission Matrix
-        //         - Code Exception
-        //
-        private RequestStatusCode askIfAvailable()
+        private SelectedPool selectReadPool() throws CacheException
         {
             try {
-                _bestPool = _poolSelector.selectReadPool();
+                SelectedPool pool = _poolSelector.selectReadPool();
                 _parameter = _poolSelector.getCurrentPartition();
-                return RequestStatusCode.FOUND;
-            } catch (FileNotInCacheException e) {
-                _log.info("[read] {}", e.getMessage());
-                return RequestStatusCode.NOT_FOUND;
-            } catch (PermissionDeniedCacheException e) {
-                _log.info("[read] {}", e.getMessage());
-                return RequestStatusCode.NOT_PERMITTED;
-            } catch (CostException e) {
-                if (e.shouldTryAlternatives()) {
-                    _parameter = _poolSelector.getCurrentPartition();
-                    _bestPool = e.getPool();
-                    _log.info("[read] {} ({})", e.getMessage(), _bestPool);
-                    return RequestStatusCode.COST_EXCEEDED;
-                } else {
-                    _log.info("[read] {}", e.getMessage());
-                    setError(125, e.getMessage());
-                    return RequestStatusCode.ERROR;
-                }
-           } catch (CacheException e) {
-                String err = "Read pool selection failed: " + e.getMessage();
-                _log.warn(err);
-                setError(130, err);
-                return RequestStatusCode.ERROR;
-            } catch (IllegalArgumentException e) {
-                String err = "Read pool selection failed:" + e.getMessage();
-                _log.error(err);
-                setError(130, err);
-                return RequestStatusCode.ERROR;
+                return pool;
             } finally {
                 _log.info("[read] Took  {} ms", (System.currentTimeMillis() - _started));
             }
