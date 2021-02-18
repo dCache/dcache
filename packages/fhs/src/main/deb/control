@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 7), quilt (>= 0.46-7), gzip
 Standards-Version: 3.9.0
 
 Package: @PackageName@
-Depends: ssh-client, adduser, ssl-cert
+Depends: ssh-client, adduser, ssl-cert, rsyslog
 Conflicts: dcache-server
 Architecture: all
 Suggests: ruby, libxml2-utils | xsltproc, python-psycopg2
