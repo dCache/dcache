@@ -965,6 +965,7 @@ public class NearlineStorageHandler
                     .accessLatency(fileAttributes.getAccessLatency())
                     .retentionPolicy(fileAttributes.getRetentionPolicy())
                     .storageInfo(storageInfo)
+                    .size(fileAttributes.getSize())
                     .build();
         }
 
