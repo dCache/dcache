@@ -114,7 +114,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
 
         InetAddress addr;
         try {
-            addr = InetAddresses.forUriString(addrString);
+            addr = InetAddresses.forString(addrString);
         } catch (IllegalArgumentException e) {
             LOGGER.warn("Cannot build internet address: {}", e.getMessage());
             return Optional.empty();
