@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -37,6 +39,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -819,20 +822,6 @@ public class RequestContainerV5
         return commandReply;
     }
 
-    /**
-     * Return Codes used in PoolRequestHandler
-     */
-    public enum RequestStatusCode {
-        OK,
-        FOUND,
-        NOT_FOUND,
-        ERROR,
-        OUT_OF_RESOURCES,
-        COST_EXCEEDED,
-        NOT_PERMITTED,
-        S_COST_EXCEEDED,
-        DELAY
-    }
 
     ///////////////////////////////////////////////////////////////
     //
@@ -1126,7 +1115,8 @@ public class RequestContainerV5
             _currentRm = errorMessage;
         }
 
-        private boolean sendFetchRequest(SelectedPool pool)
+        private void sendFetchRequest(SelectedPool pool)
+                throws MissingResourceCacheException
         {
             // TODO: Include assumption in request
             CellMessage cellMessage = new CellMessage(
@@ -1135,7 +1125,8 @@ public class RequestContainerV5
                     );
             synchronized (_messageHash) {
                 if (_maxRestore >= 0 && _messageHash.size() >= _maxRestore) {
-                    return false;
+                    throw new MissingResourceCacheException("Stage attempts exceed limit "
+                            + _maxRestore);
                 }
                 if (_waitingFor != null) {
                     _messageHash.remove(_waitingFor);
@@ -1144,7 +1135,6 @@ public class RequestContainerV5
                 _messageHash.put(_waitingFor, this);
                 sendMessage(cellMessage);
             }
-            return true;
         }
 
         private void sendPool2PoolRequest(SelectedPool sourcePool, SelectedPool destPool)
@@ -1664,28 +1654,32 @@ public class RequestContainerV5
                     return;
                 }
 
-                switch (askForStaging()) {
-                case FOUND:
-                    clearError();
+                try {
+                    SelectedPool pool;
+                    try {
+                        pool = askForStaging();
+                        _log.info("[staging] selected pool {}", pool.info());
+                    } catch (CostException e) {
+                        if (e.getPool() != null) {
+                            pool = e.getPool();
+                            _log.info("[staging] selected hot pool {}", pool.info());
+                        } else {
+                            throw e;
+                        }
+                    }
+                    _stageCandidate = Optional.of(pool);
                     nextStep(RequestState.ST_WAITING_FOR_STAGING);
-                    String poolName = _stageCandidate.map(Object::toString).orElse("<unknown pool>");
-                    updateStatus("Waiting for stage: " + poolName);
-                    break;
-
-                case OUT_OF_RESOURCES:
+                    updateStatus("Waiting for stage: " + pool);
+                } catch (MissingResourceCacheException e) {
                     _restoreExceeded++;
-                    failRequest(5, "Resource temporarily unavailable : Restore");
-                    sendInfoMessage(_currentRc , "Failed "+_currentRm);
-                    break;
-
-                default:
-                    //
-                    // we couldn't find a pool for staging
-                    //
-                    // FIXME avoid this by refactoring askForStaging so it
-                    // doesn't have side-effects.
-                    errorHandler(_currentRc, _currentRm);
-                    break;
+                    failRequest(5, "Failed to stage file: " + e.getMessage());
+                    sendInfoMessage(5, "Failed to stage file: " + e.getMessage());
+                } catch (CacheException | IllegalArgumentException e) {
+                    _log.warn("[stage] failed to stage file: {}", e.getMessage());
+                    int rc = e instanceof CostException ? 125
+                            : (e instanceof IllegalArgumentException ? 128
+                            : ((CacheException)e).getRc());
+                    errorHandler(rc, e.getMessage());
                 }
                 break;
 
@@ -1855,44 +1849,13 @@ public class RequestContainerV5
             }
         }
 
-        //
-        //   FOUND :
-        //        - pool candidate found
-        //   NOT_FOUND :
-        //        - no pools configured
-        //        - pools configured but not active
-        //        - no pools left after subtracting primary candidate.
-        //   OUT_OF_RESOURCES :
-        //        - too many requests queued
-        //
-        private RequestStatusCode askForStaging()
+        @Nonnull
+        private SelectedPool askForStaging() throws CacheException
         {
             try {
                 SelectedPool pool =  _poolSelector.selectStagePool(_stageCandidate.map(SelectedPool::info));
-                _stageCandidate = Optional.of(pool);
-
-                _log.info("[staging] poolCandidate -> {}", pool.info());
-                if (!sendFetchRequest(pool)) {
-                    return RequestStatusCode.OUT_OF_RESOURCES;
-                }
-
-                return RequestStatusCode.FOUND;
-            } catch (CostException e) {
-                if (e.getPool() != null) {
-                    _stageCandidate = Optional.of(e.getPool());
-                    return RequestStatusCode.FOUND;
-                }
-                _log.info("[stage] {}", e.getMessage());
-                setError(125, e.getMessage());
-                return RequestStatusCode.ERROR;
-            } catch (CacheException e) {
-                setError(e.getRc(), e.getMessage());
-                _log.warn("[stage] {}", e.getMessage());
-                return RequestStatusCode.NOT_FOUND;
-            } catch (IllegalArgumentException e) {
-                setError(128, e.getMessage());
-                _log.error("[stage] {}", e.getMessage());
-                return RequestStatusCode.ERROR;
+                sendFetchRequest(pool);
+                return pool;
             } finally {
                 _log.info("[stage] Selection took {} ms", (System.currentTimeMillis() - _started));
             }
