@@ -1586,15 +1586,14 @@ public class RequestContainerV5
                 break;
 
             case ST_POOL_2_POOL:
-                switch (askForPoolToPool(_overwriteCost)) {
-                case FOUND:
+                try {
+                    askForPoolToPool(_overwriteCost);
                     clearError();
                     nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
                     updateStatus("Waiting for pool-to-pool transfer: "
                             + _p2pSourcePool + " to " + _p2pDestinationPool);
-                    break;
-
-                case NOT_PERMITTED:
+                } catch (PermissionDeniedCacheException e) {
+                    _log.info("[p2p] {}", e.toString());
                     if (_bestPool == null) {
                         if (_enforceP2P) {
                             failRequest(_currentRc, _currentRm);
@@ -1608,14 +1607,11 @@ public class RequestContainerV5
                         success(_bestPool);
                         _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
                     }
-                    break;
-
-                case S_COST_EXCEEDED:
-                    _log.info("ST_POOL_2_POOL : RequestStatusCode.S_COST_EXCEEDED");
-
+                } catch (SourceCostException e) {
+                    _log.info("[p2p] {}", e.getMessage());
                     if (isFileStageable() && _parameter._stageOnCost) {
                         if (_enforceP2P) {
-                            failRequest(_currentRc, _currentRm);
+                            failRequest(e.getRc(), e.getMessage());
                         } else {
                             _log.info("ST_POOL_2_POOL : staging");
                             nextStep(RequestState.ST_STAGE);
@@ -1631,9 +1627,8 @@ public class RequestContainerV5
                             failRequest(194,"PANIC : File not present in any reasonable pool");
                         }
                     }
-                    break;
-
-                case COST_EXCEEDED:
+                } catch (DestinationCostException e) {
+                    _log.info("[p2p] {}", e.getMessage());
                     if (_bestPool == null) {
                         //
                         // this can't possibly happen
@@ -1641,25 +1636,25 @@ public class RequestContainerV5
                         if (!_enforceP2P) {
                             failRequest(192, "PANIC : File not present in any reasonable pool");
                         } else {
-                            failRequest(_currentRc, _currentRm);
+                            failRequest(e.getRc(), e.getMessage());
                         }
                     } else {
                         success(_bestPool);
                         _log.info(" found high cost object");
                     }
-                    break;
-
-                default:
+                } catch (CacheException | IllegalArgumentException e) {
+                    int rc = e instanceof CacheException ?
+                            ((CacheException) e).getRc() : 128;
+                    _log.warn("[p2p] {}", e.getMessage());
                     if (_enforceP2P) {
-                        failRequest(_currentRc, _currentRm);
+                        failRequest(rc, e.getMessage());
                     } else if (isFileStageable()) {
                         nextStep(RequestState.ST_STAGE);
                     } else {
                         // FIXME refactor askForPoolToPool to avoid
                         // side-effects to avoid this.
-                        suspendIfEnabled(_currentRc, _currentRm);
+                        suspendIfEnabled(rc, e.getMessage());
                     }
-                    break;
                 }
                 break;
 
@@ -1843,23 +1838,8 @@ public class RequestContainerV5
                 _log.info("[read] Took  {} ms", (System.currentTimeMillis() - _started));
             }
         }
-        //
-        // Result :
-        //    FOUND :
-        //        valid source/destination pair found fitting all constraints.
-        //    NOT_PERMITTED :
-        //        - already too many copies (_maxPnfsFileCopies)
-        //        - file already everywhere (no destination found)
-        //        - SAME_HOST_NEVER : but no valid combination found
-        //    COST_EXCEEDED :
-        //        - slope == 0 : all destination pools > costCut (p2p)
-        //          else       : (best destination) > (slope * source)
-        //    S_COST_EXCEEDED :
-        //        - all source pools > alert
-        //    ERROR
-        //        - no source pool (code problem)
-        //
-        private RequestStatusCode askForPoolToPool(boolean overwriteCost)
+
+        private void askForPoolToPool(boolean overwriteCost) throws CacheException
         {
             try {
                 Partition.P2pPair pools = _poolSelector.selectPool2Pool(_poolGroup,
@@ -1870,28 +1850,6 @@ public class RequestContainerV5
                 _log.info("[p2p] source={};dest={}",
                         _p2pSourcePool, _p2pDestinationPool);
                 sendPool2PoolRequest(_p2pSourcePool, _p2pDestinationPool);
-
-                return RequestStatusCode.FOUND;
-            } catch (PermissionDeniedCacheException e) {
-                setError(e.getRc(), e.getMessage());
-                _log.info("[p2p] {}", e.toString());
-                return RequestStatusCode.NOT_PERMITTED;
-            } catch (SourceCostException e) {
-                setError(e.getRc(), e.getMessage());
-                _log.info("[p2p] {}", e.getMessage());
-                return RequestStatusCode.S_COST_EXCEEDED;
-            } catch (DestinationCostException e) {
-                setError(e.getRc(), e.getMessage());
-                _log.info("[p2p] {}", e.getMessage());
-                return RequestStatusCode.COST_EXCEEDED;
-            } catch (CacheException e) {
-                setError(e.getRc(), e.getMessage());
-                _log.warn("[p2p] {}", e.getMessage());
-                return RequestStatusCode.ERROR;
-            } catch (IllegalArgumentException e) {
-                setError(128, e.getMessage());
-                _log.error("[p2p] {}", e.getMessage());
-                return RequestStatusCode.ERROR;
             } finally {
                 _log.info("[p2p] Selection took {} ms", (System.currentTimeMillis() - _started));
             }
