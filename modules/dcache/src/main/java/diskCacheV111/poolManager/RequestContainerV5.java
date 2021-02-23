@@ -792,16 +792,18 @@ public class RequestContainerV5
         String canonicalName = pnfsId + "@" + netName + "-" + protocolName + (enforceP2P ? "-p2p" : "")
                         + (poolGroup == null ? "" : ("-pg-" + poolGroup));
 
-        PoolRequestHandler handler;
-
         _log.info("Adding request for : {}", canonicalName);
         synchronized (_handlerHash) {
-            handler = _handlerHash.computeIfAbsent(canonicalName, n ->
-                    new PoolRequestHandler(pnfsId,
-                            poolGroup,
-                            n,
-                            allowedStates));
-            handler.addRequest(envelope);
+            _handlerHash.compute(canonicalName, (k,v) -> {
+                        if (v == null) {
+                            PoolRequestHandler h = new PoolRequestHandler(pnfsId, poolGroup,
+                                    canonicalName, allowedStates, envelope);
+                            h.start();
+                            return h;
+                        } else {
+                            v.addRequest(envelope);
+                            return v;
+                        }});
         }
     }
 
@@ -840,10 +842,10 @@ public class RequestContainerV5
     //
     private class PoolRequestHandler {
 
-        protected final PnfsId _pnfsId;
-        protected final String _poolGroup;
-        protected final List<CellMessage> _messages = new ArrayList<>();
-        protected int _retryCounter;
+        private final PnfsId _pnfsId;
+        private final String _poolGroup;
+        private final List<CellMessage> _messages = new ArrayList<>();
+        private int _retryCounter;
         private final CDC _cdc = new CDC();
 
         /**
@@ -904,67 +906,39 @@ public class RequestContainerV5
 
         private final long _started = System.currentTimeMillis();
         private final String _name;
+        private final FileAttributes _fileAttributes;
+        private final StorageInfo _storageInfo;
+        private final ProtocolInfo _protocolInfo;
+        private final String _linkGroup;
+        private final String _billingPath;
+        private final String _transferPath;
+        private final PoolSelector _poolSelector;
+        private final boolean _failOnExcluded;
+        private final boolean _enforceP2P;
+        private final int _destinationFileStatus;
 
-        private FileAttributes _fileAttributes;
-        private StorageInfo _storageInfo;
-        private ProtocolInfo _protocolInfo;
-        private String _linkGroup;
-        private String _billingPath;
-        private String _transferPath;
-
-        private boolean _enforceP2P;
-        private int _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED;
-
-        private PoolSelector _poolSelector;
         private Partition _parameter = _partitionManager.getDefaultPartition();
 
         /**
          * Indicates the next time a TTL of a request message will be
          * exceeded.
          */
-        private long _nextTtlTimeout = Long.MAX_VALUE;
-        private boolean _failOnExcluded;
+        private long _nextTtlTimeout;
 
-        public PoolRequestHandler(PnfsId pnfsId,
-                String poolGroup,
-                String canonicalName,
-                Collection<RequestState> allowedStates)
+        public PoolRequestHandler(PnfsId pnfsId, String poolGroup,
+                String canonicalName, Collection<RequestState> allowedStates,
+                CellMessage message)
         {
             _pnfsId  = pnfsId;
             _poolGroup = poolGroup;
             _name    = canonicalName;
             _allowedStates = allowedStates;
-	}
-        //...........................................................
-        //
-        // the following methods can be called from outside
-        // at any time.
-        //...........................................................
-        //
-        // add request is assumed to be synchronized by a higher level.
-        //
-        public void addRequest(CellMessage message) {
 
             PoolMgrSelectReadPoolMsg request =
                     (PoolMgrSelectReadPoolMsg)message.getMessageObject();
 
-            // fail-fast if state is not allowed
-            if (!request.getAllowedStates().contains(_state)) {
-                request.setFailed(CacheException.PERMISSION_DENIED, "Pool manager state not allowed");
-                message.revertDirection();
-                sendMessage(message);
-                return;
-            }
-
             _messages.add(message);
-            _stagingDenied = false;
-
-            _nextTtlTimeout = Math.min(_nextTtlTimeout,
-                    addWithInfinity(System.currentTimeMillis(), message.getTtl()));
-
-            if (_poolSelector != null) {
-                return;
-            }
+            _nextTtlTimeout = addWithInfinity(System.currentTimeMillis(), message.getTtl());
 
             _linkGroup = request.getLinkGroup();
             _protocolInfo = request.getProtocolInfo();
@@ -979,6 +953,9 @@ public class RequestContainerV5
             if (request instanceof PoolMgrReplicateFileMsg) {
                 _enforceP2P = true;
                 _destinationFileStatus = ((PoolMgrReplicateFileMsg)request).getDestinationFileStatus();
+            } else {
+                _enforceP2P = false;
+                _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED;
             }
 
             Set<String> excluded = request.getExcludedHosts();
@@ -1008,8 +985,44 @@ public class RequestContainerV5
                     }
                 });
             }
+	}
 
+
+        /**
+         * Called once, after PoolRequestHandler constructed, to start
+         * processing the first request.
+         */
+        public void start()
+        {
             startStateEngine();
+        }
+
+        //...........................................................
+        //
+        // the following methods can be called from outside
+        // at any time.
+        //...........................................................
+        //
+        // add request is assumed to be synchronized by a higher level.
+        //
+        public void addRequest(CellMessage message) {
+
+            PoolMgrSelectReadPoolMsg request =
+                    (PoolMgrSelectReadPoolMsg)message.getMessageObject();
+
+            // fail-fast if state is not allowed
+            if (!request.getAllowedStates().contains(_state)) {
+                request.setFailed(CacheException.PERMISSION_DENIED, "Pool manager state not allowed");
+                message.revertDirection();
+                sendMessage(message);
+                return;
+            }
+
+            _messages.add(message);
+            _stagingDenied = false;
+
+            _nextTtlTimeout = Math.min(_nextTtlTimeout,
+                    addWithInfinity(System.currentTimeMillis(), message.getTtl()));
         }
 
         public List<CellMessage> getMessages() {
