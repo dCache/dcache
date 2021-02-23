@@ -1655,18 +1655,8 @@ public class RequestContainerV5
                 }
 
                 try {
-                    SelectedPool pool;
-                    try {
-                        pool = askForStaging();
-                        _log.info("[staging] selected pool {}", pool.info());
-                    } catch (CostException e) {
-                        if (e.getPool() != null) {
-                            pool = e.getPool();
-                            _log.info("[staging] selected hot pool {}", pool.info());
-                        } else {
-                            throw e;
-                        }
-                    }
+                    SelectedPool pool = askForStaging();
+                    _log.info("[staging] selected pool {}", pool.info());
                     _stageCandidate = Optional.of(pool);
                     nextStep(RequestState.ST_WAITING_FOR_STAGING);
                     updateStatus("Waiting for stage: " + pool);

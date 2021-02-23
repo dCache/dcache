@@ -476,7 +476,7 @@ public class PoolMonitorV5
             Collection<String> locations = filteredFileLocations();
             _log.debug("[stage] Existing locations of the file: {}", locations);
 
-            CostException fallback = null;
+            CostException costException = null;
             for (PoolPreferenceLevel level: match(DirectionType.CACHE)) {
                 try {
                     List<PoolInfo> pools =
@@ -493,18 +493,19 @@ public class PoolMonitorV5
                                                          previous, _fileAttributes);
                     }
                 } catch (CostException e) {
+                    costException = e;
                     if (!e.shouldFallBack()) {
-                        throw e;
+                        break;
                     }
-                    fallback = e;
                 }
             }
 
-            /* We were asked to fall back, but all available links were
-             * exhausted. Let the caller deal with it.
-             */
-            if (fallback != null) {
-                throw fallback;
+            if (costException != null) {
+                SelectedPool pool = costException.getPool();
+                if (pool != null) {
+                    return pool;
+                }
+                throw costException;
             }
 
             throw new CacheException(149, "No pool candidates available/configured/left for stage");
