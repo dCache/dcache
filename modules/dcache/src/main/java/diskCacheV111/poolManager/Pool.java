@@ -30,7 +30,6 @@ public class Pool extends PoolCore implements SelectionPool {
     private ImmutableMap<String, String> _tags = ImmutableMap.of();
     private PoolV2Mode _mode = new PoolV2Mode(PoolV2Mode.DISABLED);
     private CellAddressCore _address;
-    private InetAddress[] _inetAddresses;
     private String _hostName;
 
     public Pool(String name) {
