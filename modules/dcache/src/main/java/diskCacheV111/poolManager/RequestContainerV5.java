@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -854,12 +855,13 @@ public class RequestContainerV5
         private String _currentRm = "";
 
         /**
-         * The best pool found by askIfAvailable(). In contrast to
-         * _poolCandidateInfo, _bestPool may be set even when
-         * askIfAvailable() returns with an error. Eg when the best
-         * pool is too expensive.
+         * A read-accessible pool with a replica of the data but is currently
+         * considered overloaded.  If there are no read-accessible pools with a
+         * replica of the file, or if there is (at least one) non-overloaded
+         * pool with a replica of this file then the value is null.
          */
-        private SelectedPool _bestPool;
+        @Nullable
+        private SelectedPool _hotPoolWithFile;
 
         /**
          * The pool from which to read the file or the pool to which
@@ -982,7 +984,7 @@ public class RequestContainerV5
                     if (_state == RequestState.ST_DONE && _currentRc == 0) {
                         switch (oldState) {
                         case ST_INIT:
-                            sendHitMsg(_bestPool.info(), true);
+                            sendHitMsg(_poolCandidate.info(), true);
                             break;
 
                         case ST_WAITING_FOR_POOL_2_POOL:
@@ -1527,16 +1529,16 @@ public class RequestContainerV5
 
                 try {
                     try {
-                        _bestPool = selectReadPool();
-                        success(_bestPool);
+                        SelectedPool pool = selectReadPool();
+                        success(pool);
                     } catch (CostException e) {
                         if (!e.shouldTryAlternatives()) {
                             throw e;
                         }
 
                         _parameter = _poolSelector.getCurrentPartition();
-                        _bestPool = e.getPool();
-                        _log.info("[read] {} ({})", e.getMessage(), _bestPool);
+                        _hotPoolWithFile = e.getPool();
+                        _log.info("[read] {} ({})", e.getMessage(), _hotPoolWithFile);
 
                         if (_parameter._p2pOnCost) {
                             nextStep(RequestState.ST_POOL_2_POOL);
@@ -1584,7 +1586,7 @@ public class RequestContainerV5
                             + _p2pSourcePool + " to " + _p2pDestinationPool);
                 } catch (PermissionDeniedCacheException e) {
                     _log.info("[p2p] {}", e.toString());
-                    if (_bestPool == null) {
+                    if (_hotPoolWithFile == null) {
                         if (_enforceP2P) {
                             failRequest(_currentRc, _currentRm);
                         } else if (isFileStageable()) {
@@ -1594,7 +1596,7 @@ public class RequestContainerV5
                             suspendIfEnabled(265, "Pool to pool not permitted");
                         }
                     } else {
-                        success(_bestPool);
+                        success(_hotPoolWithFile);
                         _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
                     }
                 } catch (SourceCostException e) {
@@ -1607,8 +1609,8 @@ public class RequestContainerV5
                             nextStep(RequestState.ST_STAGE);
                         }
                     } else {
-                        if (_bestPool != null) {
-                            success(_bestPool);
+                        if (_hotPoolWithFile != null) {
+                            success(_hotPoolWithFile);
                             _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
                         } else {
                             //
@@ -1619,7 +1621,7 @@ public class RequestContainerV5
                     }
                 } catch (DestinationCostException e) {
                     _log.info("[p2p] {}", e.getMessage());
-                    if (_bestPool == null) {
+                    if (_hotPoolWithFile == null) {
                         //
                         // this can't possibly happen
                         //
@@ -1629,7 +1631,7 @@ public class RequestContainerV5
                             failRequest(e.getRc(), e.getMessage());
                         }
                     } else {
-                        success(_bestPool);
+                        success(_hotPoolWithFile);
                         _log.info(" found high cost object");
                     }
                 } catch (CacheException | IllegalArgumentException e) {
