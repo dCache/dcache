@@ -200,29 +200,9 @@ public class DcapDoorSettings
         checkStagePermission.setAllowAnonymousStaging(allowAnonymousStaging);
     }
 
-    public boolean isAuthorizationRequired()
-    {
-        return isAuthorizationRequired;
-    }
-
     public CellPath getPnfsManager()
     {
         return pnfsManager;
-    }
-
-    public CellPath getPoolManager()
-    {
-        return poolManager;
-    }
-
-    public CellPath getPinManager()
-    {
-        return pinManager;
-    }
-
-    public CellPath getGplazma()
-    {
-        return gPlazma;
     }
 
     public CellPath getBilling()
