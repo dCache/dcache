@@ -1099,11 +1099,6 @@ public class RequestContainerV5
             }
         }
 
-        private void clearError() {
-            _currentRc = 0;
-            _currentRm = "";
-        }
-
         private void success(SelectedPool pool)
         {
             _poolCandidate = requireNonNull(pool);
@@ -1580,7 +1575,6 @@ public class RequestContainerV5
             case ST_POOL_2_POOL:
                 try {
                     askForPoolToPool(_overwriteCost);
-                    clearError();
                     nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL);
                     updateStatus("Waiting for pool-to-pool transfer: "
                             + _p2pSourcePool + " to " + _p2pDestinationPool);
