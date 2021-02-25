@@ -7,6 +7,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
@@ -32,6 +34,8 @@ import org.dcache.util.Args;
  */
 public class CachingLoginStrategy implements LoginStrategy, CellCommandListener, CellInfoProvider
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CachingLoginStrategy.class);
+
     private final LoginStrategy _inner;
 
     private final LoadingCache<Principal,CheckedFuture<Principal, CacheException>> _forwardCache;
@@ -82,14 +86,21 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
 
     @Override
     public LoginReply login(Subject subject) throws CacheException {
+        LOGGER.debug("Looking up login for {} in cache.", subject);
         try {
-            return _loginCache.get(subject).checkedGet();
+            LoginReply reply = _loginCache.get(subject).checkedGet();
+            LOGGER.debug("Lookup successful for {}: {}", subject, reply);
+            return reply;
         } catch (ExecutionException e) {
-            Throwables.propagateIfPossible(e.getCause(), CacheException.class);
-            throw new RuntimeException(e.getCause());
+            Throwable cause = e.getCause();
+            LOGGER.debug("Looking for {} failed: {}", subject, cause.toString());
+            Throwables.propagateIfPossible(cause, CacheException.class);
+            throw new RuntimeException(cause);
         } catch (UncheckedExecutionException e) {
-            Throwables.throwIfUnchecked(e.getCause());
-            throw new RuntimeException(e.getCause());
+            Throwable cause = e.getCause();
+            LOGGER.debug("Looking for {} failed: {}", subject, cause.toString());
+            Throwables.throwIfUnchecked(cause);
+            throw new RuntimeException(cause);
         }
     }
 
@@ -156,12 +167,16 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         @Override
         public CheckedFuture<LoginReply, CacheException> load(Subject f) throws TimeoutCacheException
         {
+            LOGGER.debug("Fetching login result for {}", f);
             try {
                 LoginReply s = _inner.login(f);
+                LOGGER.debug("Login successful {}", s);
                 return Futures.immediateCheckedFuture(s);
             } catch (TimeoutCacheException e) {
+                LOGGER.debug("Login timed out");
                 throw e;
             } catch (CacheException e) {
+                LOGGER.debug("Login failed: {}", e.getMessage());
                 return Futures.immediateFailedCheckedFuture(e);
             }
         }
@@ -185,14 +200,16 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
                 .append(_unit.name().toLowerCase()).append("\n");
         sb.append("Login:\n");
         for (Map.Entry<Subject,CheckedFuture<LoginReply, CacheException>> entry : _loginCache.asMap().entrySet()) {
-            sb.append("   ");
-            append(sb, entry.getKey());
+            Subject s = entry.getKey();
+            sb.append("   ").append(s).append(' ');
+            append(sb, s);
             sb.append(" => ");
             try {
-                sb.append(entry.getValue().checkedGet()).append('\n');
+                sb.append(entry.getValue().checkedGet());
             } catch (CacheException e) {
-                sb.append(e.toString()).append('\n');
+                sb.append(e.toString());
             }
+            sb.append('\n');
         }
         sb.append("Map:\n");
         for (Principal p : _forwardCache.asMap().keySet()) {
