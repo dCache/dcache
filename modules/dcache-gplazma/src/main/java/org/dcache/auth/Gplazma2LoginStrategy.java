@@ -1,6 +1,8 @@
 package org.dcache.auth;
 
 import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
@@ -47,6 +49,8 @@ import org.dcache.util.Args;
 public class Gplazma2LoginStrategy
     implements LoginStrategy, EnvironmentAware, CellCommandListener
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Gplazma2LoginStrategy.class);
+
     private String _configurationFile;
     private GPlazma _gplazma;
     private Map<String,Object> _environment = Collections.emptyMap();
@@ -155,6 +159,7 @@ public class Gplazma2LoginStrategy
         try {
             return convertLoginReply(_gplazma.login(subject));
         } catch (AuthenticationException e) {
+            LOGGER.info("Login failed: {}", e.getMessage());
             // We deliberately hide the reason why the login failed from the
             // rest of dCache.  This is to prevent a brute-force attack
             // discovering whether certain user accounts exist.
