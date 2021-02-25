@@ -205,6 +205,7 @@ public class Gplazma2LoginStrategy
             org.dcache.gplazma.LoginReply reply = _gplazma.login(filteredSubject);
             return convertLoginReply(reply);
         } catch (AuthenticationException e) {
+            LOGGER.info("Login failed: {}", e.getMessage());
             // We deliberately hide the reason why the login failed from the
             // rest of dCache.  This is to prevent a brute-force attack
             // discovering whether certain user accounts exist.
