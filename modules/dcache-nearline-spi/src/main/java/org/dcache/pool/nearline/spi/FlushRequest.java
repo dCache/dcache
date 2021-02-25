@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -61,6 +61,12 @@ public interface FlushRequest extends NearlineRequest<Set<URI>>
      * @return Attributes of the file
      */
     FileAttributes getFileAttributes();
+
+    /**
+     * Returns replica creation time in milliseconds.
+     * @return replica creation time.
+     */
+    long getReplicaCreationTime();
 
     /**
      * Signals that the request is being activated and returns the path of the file.
