@@ -149,4 +149,9 @@ class ReadHandleImpl implements ReplicaDescriptor
     public void commit() throws IllegalStateException, InterruptedException, CacheException {
         // NOP
     }
+
+    @Override
+    public long getReplicaCreationTime() {
+        return _entry.getCreationTime();
+    }
 }
