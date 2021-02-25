@@ -123,4 +123,10 @@ public interface ReplicaDescriptor
      * Returns the current size of the replica.
      */
     long getReplicaSize();
+
+    /**
+     * Returns replica creation time in milliseconds.
+     * @return replica creation time.
+     */
+    long getReplicaCreationTime();
 }

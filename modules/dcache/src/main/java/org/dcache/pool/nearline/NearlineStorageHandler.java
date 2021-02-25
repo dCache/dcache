@@ -999,6 +999,11 @@ public class NearlineStorageHandler
         }
 
         @Override
+        public long getReplicaCreationTime() {
+            return descriptor.getReplicaCreationTime();
+        }
+
+        @Override
         public long getDeadline()
         {
             return (state.get() == State.ACTIVE) ? activatedAt + flushTimeout : Long.MAX_VALUE;
