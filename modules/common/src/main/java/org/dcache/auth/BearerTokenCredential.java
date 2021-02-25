@@ -61,6 +61,28 @@ public class BearerTokenCredential implements Serializable
     }
 
     @Override
+    public int hashCode()
+    {
+        return _token.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (o == this) {
+            return true;
+        }
+
+        if (!(o instanceof BearerTokenCredential)) {
+            return false;
+        }
+
+        BearerTokenCredential other = (BearerTokenCredential)o;
+
+        return _token.equals(other._token);
+    }
+
+    @Override
     public String toString()
     {
         return BearerTokenCredential.class.getSimpleName() + "[" + describeToken() + "]";
