@@ -12,9 +12,11 @@ import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
 import java.security.Principal;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -182,13 +184,12 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         sb.append("Max Cache time: ").append(_time).append(" ")
                 .append(_unit.name().toLowerCase()).append("\n");
         sb.append("Login:\n");
-        for (Subject s : _loginCache.asMap().keySet()) {
+        for (Map.Entry<Subject,CheckedFuture<LoginReply, CacheException>> entry : _loginCache.asMap().entrySet()) {
+            sb.append("   ");
+            append(sb, entry.getKey());
+            sb.append(" => ");
             try {
-                CheckedFuture<LoginReply, CacheException> out = _loginCache.getIfPresent(s);
-                if (out != null) {
-                    sb.append("   ").append(s.getPrincipals()).append(" => ");
-                    sb.append(out.checkedGet()).append('\n');
-                }
+                sb.append(entry.getValue().checkedGet()).append('\n');
             } catch (CacheException e) {
                 sb.append(e.toString()).append('\n');
             }
@@ -218,6 +219,43 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
             }
         }
         return sb.toString();
+    }
+
+    private void append(StringBuilder sb, Subject subject)
+    {
+        boolean haveAddedOutput = false;
+
+        Set<Object> publicCredentials = subject.getPublicCredentials();
+        if (!publicCredentials.isEmpty()) {
+            CharSequence details =  publicCredentials.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", ", "{", "}"));
+            sb.append("public=").append(details);
+            haveAddedOutput = true;
+        }
+
+        Set<Object> privateCredentials = subject.getPrivateCredentials();
+        if (!privateCredentials.isEmpty()) {
+            if (haveAddedOutput) {
+                sb.append(" ");
+            }
+            CharSequence details = privateCredentials.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", ", "{", "}"));
+            sb.append("private=").append(details);
+            haveAddedOutput = true;
+        }
+
+        Set<Principal> principals = subject.getPrincipals();
+        if (!principals.isEmpty()) {
+            if (haveAddedOutput) {
+                sb.append(" ");
+            }
+            CharSequence details = principals.stream()
+                    .map(Principal::toString)
+                    .collect(Collectors.joining(", ", "{", "}"));
+            sb.append("principals=").append(details);
+        }
     }
 
     @Override
