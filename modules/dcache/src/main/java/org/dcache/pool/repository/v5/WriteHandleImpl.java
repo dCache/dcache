@@ -418,4 +418,9 @@ class WriteHandleImpl implements ReplicaDescriptor
     {
         return _entry.getReplicaSize();
     }
+
+    @Override
+    public long getReplicaCreationTime() {
+        return _entry.getCreationTime();
+    }
 }
