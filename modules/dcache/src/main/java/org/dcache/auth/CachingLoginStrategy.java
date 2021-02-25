@@ -86,19 +86,19 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
 
     @Override
     public LoginReply login(Subject subject) throws CacheException {
-        LOGGER.debug("Looking up login for {} in cache.", subject);
+        LOGGER.debug("Looking up login for {} in cache.", id(subject));
         try {
             LoginReply reply = _loginCache.get(subject).checkedGet();
-            LOGGER.debug("Lookup successful for {}: {}", subject, reply);
+            LOGGER.debug("Lookup successful for {}: {}", id(subject), reply);
             return reply;
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
-            LOGGER.debug("Looking for {} failed: {}", subject, cause.toString());
+            LOGGER.debug("Looking for {} failed: {}", id(subject), cause.toString());
             Throwables.propagateIfPossible(cause, CacheException.class);
             throw new RuntimeException(cause);
         } catch (UncheckedExecutionException e) {
             Throwable cause = e.getCause();
-            LOGGER.debug("Looking for {} failed: {}", subject, cause.toString());
+            LOGGER.debug("Looking for {} failed: {}", id(subject), cause.toString());
             Throwables.throwIfUnchecked(cause);
             throw new RuntimeException(cause);
         }
@@ -167,16 +167,17 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         @Override
         public CheckedFuture<LoginReply, CacheException> load(Subject f) throws TimeoutCacheException
         {
-            LOGGER.debug("Fetching login result for {}", f);
+            String id=CachingLoginStrategy.this.id(f);
+            LOGGER.debug("Fetching login result for {}", id);
             try {
                 LoginReply s = _inner.login(f);
-                LOGGER.debug("Login successful {}", s);
+                LOGGER.debug("Login successful {}", id);
                 return Futures.immediateCheckedFuture(s);
             } catch (TimeoutCacheException e) {
                 LOGGER.debug("Login timed out");
                 throw e;
             } catch (CacheException e) {
-                LOGGER.debug("Login failed: {}", e.getMessage());
+                LOGGER.debug("Login failed: {}", id);
                 return Futures.immediateFailedCheckedFuture(e);
             }
         }
@@ -201,7 +202,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         sb.append("Login:\n");
         for (Map.Entry<Subject,CheckedFuture<LoginReply, CacheException>> entry : _loginCache.asMap().entrySet()) {
             Subject s = entry.getKey();
-            sb.append("   ").append(s).append(' ');
+            sb.append("   ");
             append(sb, s);
             sb.append(" => ");
             try {
@@ -240,39 +241,36 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
 
     private void append(StringBuilder sb, Subject subject)
     {
-        boolean haveAddedOutput = false;
+        sb.append(id(subject));
 
         Set<Object> publicCredentials = subject.getPublicCredentials();
         if (!publicCredentials.isEmpty()) {
             CharSequence details =  publicCredentials.stream()
                     .map(Object::toString)
                     .collect(Collectors.joining(", ", "{", "}"));
-            sb.append("public=").append(details);
-            haveAddedOutput = true;
+            sb.append(" public=").append(details);
         }
 
         Set<Object> privateCredentials = subject.getPrivateCredentials();
         if (!privateCredentials.isEmpty()) {
-            if (haveAddedOutput) {
-                sb.append(" ");
-            }
             CharSequence details = privateCredentials.stream()
                     .map(Object::toString)
                     .collect(Collectors.joining(", ", "{", "}"));
-            sb.append("private=").append(details);
-            haveAddedOutput = true;
+            sb.append(" private=").append(details);
         }
 
         Set<Principal> principals = subject.getPrincipals();
         if (!principals.isEmpty()) {
-            if (haveAddedOutput) {
-                sb.append(" ");
-            }
             CharSequence details = principals.stream()
                     .map(Principal::toString)
                     .collect(Collectors.joining(", ", "{", "}"));
-            sb.append("principals=").append(details);
+            sb.append(" principals=").append(details);
         }
+    }
+
+    private String id(Subject subject)
+    {
+        return Integer.toHexString(System.identityHashCode(subject));
     }
 
     @Override
