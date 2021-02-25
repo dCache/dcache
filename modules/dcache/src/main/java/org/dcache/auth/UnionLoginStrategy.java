@@ -118,7 +118,9 @@ public class UnionLoginStrategy implements LoginStrategy
         }
 
         if (areCredentialsSupplied && !_shouldFallback) {
-            throw loginFailure != null ? loginFailure : new PermissionDeniedCacheException("Access denied");
+            PermissionDeniedCacheException e = loginFailure != null ? loginFailure : new PermissionDeniedCacheException("No strategy able to authenticate");
+            _log.debug("Login denied: {}", e.getMessage());
+            throw e;
         }
 
         _log.debug( "Strategies failed, trying for anonymous access");
