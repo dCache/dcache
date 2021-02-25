@@ -1107,11 +1107,6 @@ public class RequestContainerV5
             nextStep(RequestState.ST_DONE);
         }
 
-        private void setError(int errorCode, String errorMessage) {
-            _currentRc = errorCode;
-            _currentRm = errorMessage;
-        }
-
         private void sendFetchRequest(SelectedPool pool)
                 throws MissingResourceCacheException
         {
@@ -1751,9 +1746,11 @@ public class RequestContainerV5
 
                 int limit = _currentRc == 0 ? MAX_REQUEST_CLUMPING
                         : Integer.MAX_VALUE;
-                while (answerRequests(limit)) {
-                    setError(CacheException.OUT_OF_DATE,
-                            "Request clumping limit reached");
+
+                if (answerRequests(limit)) {
+                    _currentRc = CacheException.OUT_OF_DATE;
+                    _currentRm = "Request clumping limit reached";
+                    answerRequests(Integer.MAX_VALUE);
                 }
                 nextStep(RequestState.ST_OUT);
             }
