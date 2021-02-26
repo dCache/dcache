@@ -123,11 +123,8 @@ public class GPlazma
                     Principal loginName = new LoginNamePrincipal(username);
                     principals.add(loginName);
                 } else if (credential instanceof BearerTokenCredential) {
-                    String token = ((BearerTokenCredential)credential).getToken();
-                    byte[] hashBytes = Hashing.goodFastHash(128).hashBytes(token.getBytes(US_ASCII)).asBytes();
-                    String hash = Base64.getEncoder().encodeToString(hashBytes);
-                    Principal p = new SimplePrincipal(hash);
-                    principals.add(p);
+                    String description = ((BearerTokenCredential)credential).describeToken();
+                    principals.add(new SimplePrincipal(description));
                 }
             }
         }
