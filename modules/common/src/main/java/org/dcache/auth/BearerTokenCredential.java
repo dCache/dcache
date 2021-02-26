@@ -1,10 +1,13 @@
 package org.dcache.auth;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.hash.Hashing;
 
 import java.io.Serializable;
+import java.util.Base64;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class BearerTokenCredential implements Serializable
 {
@@ -17,14 +20,49 @@ public class BearerTokenCredential implements Serializable
         _token = token;
     }
 
+    /**
+     * Provide the token.  Important: this method must not be used if the
+     * returned value may be logged.
+     * @return  The BearerToken with which the user is authenticating.
+     */
     public String getToken()
     {
         return _token;
     }
 
+    private String hash(String in)
+    {
+        byte[] hashBytes = new byte[8];
+        Hashing.sha256().hashBytes(in.getBytes(US_ASCII)).writeBytesTo(hashBytes, 0, hashBytes.length);
+        return "Hash=" + Base64.getEncoder().withoutPadding().encodeToString(hashBytes);
+    }
+
+    /**
+     * Provide a reasonable description of the token without revealing the
+     * complete token.  The output is intended for human consumption (e.g.,
+     * admin commands, log files) and tries to balance providing enough
+     * information to check whether two tokens are (very likely) the same
+     * without leaking the complete token.
+     * @return a summary of the token that is safe to log
+     */
+    public String describeToken()
+    {
+        int length = _token.length();
+
+        if (length <= 8) {
+            return hash(_token);
+        } else {
+            String head = _token.substring(0, 4);
+            String middle = _token.substring(4, length-4);
+            String tail = _token.substring(length-4, length);
+
+            return head + "+{" + hash(middle) + "}+" + tail;
+        }
+    }
+
     @Override
     public String toString()
     {
-        return BearerTokenCredential.class.getSimpleName();
+        return BearerTokenCredential.class.getSimpleName() + "[" + describeToken() + "]";
     }
 }
