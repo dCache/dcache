@@ -186,7 +186,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
             try {
                 CheckedFuture<LoginReply, CacheException> out = _loginCache.getIfPresent(s);
                 if (out != null) {
-                    sb.append("   ").append(s.getPrincipals()).append(" => ");
+                    sb.append("   ").append(Subjects.toString(s)).append(" => ");
                     sb.append(out.checkedGet()).append('\n');
                 }
             } catch (CacheException e) {
