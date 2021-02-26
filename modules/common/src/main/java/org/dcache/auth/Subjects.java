@@ -552,9 +552,9 @@ public class Subjects
         for (Object credential : subject.getPrivateCredentials()) {
             appendComma(sb);
             if (credential instanceof PasswordCredential) {
-                String username = ((PasswordCredential) credential).getUsername();
+                String description = ((PasswordCredential) credential).describeCredential();
                 sb.append("username-with-password:");
-                appendOptionallyInQuotes(sb, username);
+                appendOptionallyInQuotes(sb, description);
             } else if (credential instanceof BearerTokenCredential) {
                 String token = ((BearerTokenCredential)credential).getToken();
                 sb.append("bearer-token:");

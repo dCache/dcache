@@ -6,6 +6,8 @@ import com.google.common.hash.Hashing;
 import java.io.Serializable;
 import java.util.Base64;
 
+import org.dcache.util.Strings;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -32,9 +34,7 @@ public class BearerTokenCredential implements Serializable
 
     private String hash(String in)
     {
-        byte[] hashBytes = new byte[8];
-        Hashing.sha256().hashBytes(in.getBytes(US_ASCII)).writeBytesTo(hashBytes, 0, hashBytes.length);
-        return "Hash=" + Base64.getEncoder().withoutPadding().encodeToString(hashBytes);
+        return "Hash=" + Strings.base64Hash(in);
     }
 
     /**

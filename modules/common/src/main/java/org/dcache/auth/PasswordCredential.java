@@ -2,6 +2,8 @@ package org.dcache.auth;
 
 import java.io.Serializable;
 
+import org.dcache.util.Strings;
+
 /**
  * The class PasswordCredential acts as a holder for username and
  * password.
@@ -29,6 +31,11 @@ public class PasswordCredential implements Serializable
         return _password;
     }
 
+    public String describeCredential()
+    {
+        return "username="+_username + ",password={Hash:" + Strings.base64Hash(_password) + "}";
+    }
+
     @Override
     public int hashCode()
     {
@@ -53,6 +60,6 @@ public class PasswordCredential implements Serializable
     @Override
     public String toString()
     {
-        return PasswordCredential.class.getSimpleName() + "[user=" + _username + ']';
+        return PasswordCredential.class.getSimpleName() + "[" + describeCredential() + "]";
     }
 }

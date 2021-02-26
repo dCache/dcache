@@ -2,6 +2,7 @@ package org.dcache.util;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.hash.Hashing;
 import com.google.common.net.InetAddresses;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Iterables.transform;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.util.ByteUnit.Type.BINARY;
@@ -583,5 +586,18 @@ public final class Strings {
     public static CharSequence describe(Optional<Instant> when)
     {
         return when.map(TimeUtils::relativeTimestamp).orElse("never");
+    }
+
+    /**
+     * Provide a base64 encoded hash of the supplied String.  The hash algorithm
+     * is not specified, but may be assumed to be cryptographically strong.
+     * @param in the String to be hashed
+     * @return A Base64 representation (without padding) of the resulting hash.
+     */
+    public static String base64Hash(String in)
+    {
+        byte[] hashBytes = new byte[8];
+        Hashing.sha256().hashBytes(in.getBytes(UTF_8)).writeBytesTo(hashBytes, 0, hashBytes.length);
+        return Base64.getEncoder().withoutPadding().encodeToString(hashBytes);
     }
 }
