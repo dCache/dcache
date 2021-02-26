@@ -119,9 +119,8 @@ public class GPlazma
         {
             for (Object credential : privateCredentials) {
                 if (credential instanceof PasswordCredential) {
-                    String username = ((PasswordCredential)credential).getUsername();
-                    Principal loginName = new LoginNamePrincipal(username);
-                    principals.add(loginName);
+                    String description = ((PasswordCredential)credential).describeCredential();
+                    principals.add(new SimplePrincipal(description));
                 } else if (credential instanceof BearerTokenCredential) {
                     String description = ((BearerTokenCredential)credential).describeToken();
                     principals.add(new SimplePrincipal(description));
