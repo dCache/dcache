@@ -523,7 +523,7 @@ public class Subjects
     }
 
     /**
-     * Provide a one-line description of argument.  This is obstensibly the
+     * Provide a one-line description of argument.  This is ostensibly the
      * same job as Subject#toString.  In contrast, this method never includes
      * any line-break characters, provides a better description for X.509 proxy
      * chains, and uses a more terse format.
@@ -556,7 +556,7 @@ public class Subjects
                 sb.append("username-with-password:");
                 appendOptionallyInQuotes(sb, username);
             } else if (credential instanceof BearerTokenCredential) {
-                String token = ((BearerTokenCredential)credential).getToken();
+                String token = ((BearerTokenCredential)credential).describeToken();
                 sb.append("bearer-token:");
                 appendOptionallyInQuotes(sb, token);
             } else {
