@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -792,6 +794,7 @@ public class RequestContainerV5
         private final CDC _cdc = new CDC();
 
 
+        @GuardedBy("RequestContainerV5.this._messageHash")
         private   UOID         _waitingFor;
 
         private   String       _status        = "[<idle>]";
@@ -1029,11 +1032,11 @@ public class RequestContainerV5
         // we only allow to run a single thread at a time.
         //
         private void clearSteering() {
-            if (_waitingFor != null) {
-                synchronized (_messageHash) {
+            synchronized (_messageHash) {
+                if (_waitingFor != null) {
                   _messageHash.remove(_waitingFor);
+                  _waitingFor = null;
                 }
-                _waitingFor = null;
             }
         }
         private void setError( int errorCode , String errorMessage ){
