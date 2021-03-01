@@ -170,7 +170,7 @@ public class IdResources {
              * is a possibility of getting a path which may not correspond
              * to the expected one.
              */
-            FsPath path = handler.getPathByPnfsId(id);
+            FsPath path = FsPath.create(attributes.getStorageInfo().getKey("path"));
 
             /*
              * Since FileResources maps according to the effective root,
