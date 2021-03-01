@@ -127,13 +127,6 @@ public class RequestContainerV5
         ST_INIT(TRANSITORY),
 
         /**
-         * Processing is complete and the outcome of the request has been
-         * determined.  Some final steps are still needed; for example, sending
-         * cell messages to inform the doors of the result.
-         */
-        ST_DONE(TRANSITORY),
-
-        /**
          * It has been determined that the request cannot be satisfied as-is and
          * a pool-to-pool copy is required.  The pool-to-pool copy is to be
          * initiated.
@@ -245,7 +238,7 @@ public class RequestContainerV5
      * RC state machine states sufficient to access online files.
      */
     public static final EnumSet<RequestState> ONLINE_FILES_ONLY
-            = EnumSet.of(RequestState.ST_INIT, RequestState.ST_DONE);
+            = EnumSet.of(RequestState.ST_INIT);
 
     public RequestContainerV5(long tickerInterval) {
         _ticketInterval = tickerInterval;
@@ -968,7 +961,7 @@ public class RequestContainerV5
                             excluded);
             if (_sendHitInfo) {
                 _observers.add(oldState -> {
-                    if (_state == RequestState.ST_DONE && _currentRc == 0) {
+                    if (_state == RequestState.ST_OUT && _currentRc == 0) {
                         switch (oldState) {
                         case ST_INIT:
                             sendHitMsg(_poolCandidate.info(), true);
@@ -1126,7 +1119,8 @@ public class RequestContainerV5
             _poolCandidate = requireNonNull(pool);
             _currentRc = 0;
             _currentRm = "";
-            nextStep(RequestState.ST_DONE);
+            answerRequests();
+            nextStep(RequestState.ST_OUT);
         }
 
         private void sendFetchRequest(SelectedPool pool)
@@ -1187,7 +1181,8 @@ public class RequestContainerV5
            _currentRm = message;
             updateStatus("Failed: " + message);
 
-            nextStep(RequestState.ST_DONE);
+            answerRequests();
+            nextStep(RequestState.ST_OUT);
         }
 
         /**
@@ -1391,27 +1386,27 @@ public class RequestContainerV5
             }
 
             if (state == RequestState.ST_STAGE && !isStagingAllowed()) {
-                _state = RequestState.ST_DONE;
+                _state = RequestState.ST_OUT;
                 updateStatus("Failed: stage not allowed");
                 _log.debug("Subject is not authorized to stage");
                 _currentRc = CacheException.PERMISSION_DENIED;
                 _currentRm = "File not online. Staging not allowed.";
                 sendInfoMessage(
                         _currentRc , "Permission denied." + _currentRm);
+                answerRequests();
             } else if (!_allowedStates.contains(state)) {
-                _state = RequestState.ST_DONE;
+                _state = RequestState.ST_OUT;
                 updateStatus("Failed: transition to " + state + " not allowed");
                 _log.debug("No permission to perform {}", state);
                 _currentRc = CacheException.PERMISSION_DENIED;
                 _currentRm = "Permission denied.";
                 sendInfoMessage(_currentRc,
                         "Permission denied for " + state);
+                answerRequests();
             } else {
                 _state = state;
-                if (_state != RequestState.ST_DONE) {
-                    _currentRc = 0;
-                    _currentRm = "";
-                }
+                _currentRc = 0;
+                _currentRm = "";
             }
             _observers.forEach(e -> e.accept(oldState));
         }
@@ -1769,8 +1764,11 @@ public class RequestContainerV5
             case ST_SUSPENDED:
                 // Nothing to do.
                 break;
+            }
+        }
 
-            case ST_DONE:
+        private void answerRequests()
+        {
                 clearSteering();
                 //
                 // it is essential that we are not within any other
@@ -1788,8 +1786,6 @@ public class RequestContainerV5
                     _currentRm = "Request clumping limit reached";
                     answerRequests(Integer.MAX_VALUE);
                 }
-                nextStep(RequestState.ST_OUT);
-            }
         }
 
         private void updateStatus(String newStatus)
