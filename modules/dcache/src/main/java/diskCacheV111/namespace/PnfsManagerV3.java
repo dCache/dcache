@@ -2202,7 +2202,9 @@ public class PnfsManagerV3
             if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
                 StorageInfo storageInfo = attrs.getStorageInfo();
                 if (storageInfo.getKey("path") == null) {
-                    storageInfo.setKey("path", message.getPnfsPath());
+                    String path = message.getPnfsPath() != null?
+                            message.getPnfsPath() : _nameSpaceProvider.pnfsidToPath(subject, pnfsId);
+                    storageInfo.setKey("path", path);
                 }
                 storageInfo.setKey("uid", Integer.toString(attrs.getOwner()));
                 storageInfo.setKey("gid", Integer.toString(attrs.getGroup()));

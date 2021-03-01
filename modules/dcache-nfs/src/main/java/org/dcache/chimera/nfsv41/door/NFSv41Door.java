@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -1350,7 +1349,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
                 Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  FsPath.ROOT);
+            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  null);
 
             _nfsInode = nfsInode;
 
@@ -1597,6 +1596,22 @@ public class NFSv41Door extends AbstractCellComponent implements
             killMover(0, "layout recall on pool down");
             // keep NFSTransfer#shutdown happy
             finished((CacheException) null);
+        }
+
+        @Override
+        public String getTransferPath()
+        {
+            // no difference for nfs
+            return this.getBillingPath();
+        }
+
+        @Override
+        public synchronized String getBillingPath()
+        {
+            /*
+             * NFS door doesn't know the path and expects that namespace will populate it as a part of storage info.
+             */
+            return getFileAttributes().getStorageInfo().getKey("path");
         }
     }
 
