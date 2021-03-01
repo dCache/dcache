@@ -1175,8 +1175,6 @@ public class RequestContainerV5
         {
             checkArgument(code != 0, "failRequest called with zero error");
 
-            clearSteering();
-
            _currentRc = code;
            _currentRm = message;
             updateStatus("Failed: " + message);
@@ -1717,10 +1715,12 @@ public class RequestContainerV5
                     PingFailure message = (PingFailure)inputObject;
                     if (_p2pDestinationPool.address().equals(message.getPool())) {
                         _log.info("Ping reported that request died.");
+                        clearSteering();
                         errorHandler(CacheException.TIMEOUT, "Replication timed out");
                     }
                 } else if (inputObject != null) {
                     _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
+                    clearSteering();
                     errorHandler(102, "Unexpected message type " + inputObject.getClass());
                 }
                 break;
@@ -1753,10 +1753,12 @@ public class RequestContainerV5
                             .map(SelectedPool::address).orElse(null);
                     if (Objects.equals(stagePoolAddress, message.getPool())) {
                         _log.info("Ping reported that request died.");
+                        clearSteering();
                         errorHandler(CacheException.TIMEOUT, "Staging timed out");
                     }
                 } else if (inputObject != null) {
                     _log.error("Unexpected message type: {}. Possibly a bug.", inputObject.getClass());
+                    clearSteering();
                     errorHandler(102, "Unexpected message type " + inputObject.getClass());
                 }
                 break;
@@ -1769,7 +1771,6 @@ public class RequestContainerV5
 
         private void answerRequests()
         {
-                clearSteering();
                 //
                 // it is essential that we are not within any other
                 // lock when trying to get the handlerHash lock.
