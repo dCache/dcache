@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -850,6 +851,7 @@ public class RequestContainerV5
         private final List<Consumer<RequestState>> _observers = new CopyOnWriteArrayList<>();
 
 
+        @GuardedBy("RequestContainerV5.this._messageHash")
         private UOID _waitingFor;
 
         private String _status = "Idle";
@@ -1106,11 +1108,11 @@ public class RequestContainerV5
         // we only allow to run a single thread at a time.
         //
         private void clearSteering() {
-            if (_waitingFor != null) {
-                synchronized (_messageHash) {
+            synchronized (_messageHash) {
+                if (_waitingFor != null) {
                     _messageHash.remove(_waitingFor);
+                    _waitingFor = null;
                 }
-                _waitingFor = null;
             }
         }
 
