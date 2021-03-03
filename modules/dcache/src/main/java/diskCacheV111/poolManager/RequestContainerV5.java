@@ -1577,7 +1577,7 @@ public class RequestContainerV5
                     _log.info("[p2p] {}", e.toString());
                     if (_hotPoolWithFile == null) {
                         if (_enforceP2P) {
-                            failRequest(_currentRc, _currentRm);
+                            failRequest(e.getRc(), e.getMessage());
                         } else if (isFileStageable()) {
                             _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
                             nextStep(RequestState.ST_STAGE);
