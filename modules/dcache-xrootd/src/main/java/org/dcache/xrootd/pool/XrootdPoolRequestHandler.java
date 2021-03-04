@@ -375,6 +375,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     file.release();
                 }
             }
+        } catch (ParseException e) {
+            throw new XrootdException(kXR_ArgInvalid, e.getMessage());
         }  catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
