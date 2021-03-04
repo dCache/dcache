@@ -157,7 +157,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable
                 AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency() : null;
             if ( (al!=null) && (rp==null)) {
                 throw new IllegalArgumentException("if access latency is specified, "+
-                                                   "then retention policy have to be specified as well");
+                                                   "then retention policy has to be specified as well");
             }
             else if ( rp!=null ) {
                 srmBringOnlineRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));

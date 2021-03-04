@@ -2,7 +2,7 @@
 <!--
   ~ dCache - http://www.dcache.org/
   ~
-  ~ Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+  ~ Copyright (C) 2016 - 2021 Deutsches Elektronen-Synchrotron
   ~
   ~ This program is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Affero General Public License as
@@ -452,6 +452,34 @@
         </property>
     </bean>
 
+    <bean id="scheduling-strategy-provider-bringonline" class="org.dcache.srm.scheduler.strategy.TapeRecallSchedulingStrategyProvider">
+        <property name="configuration">
+            <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+                <property name="prefix" value="srmmanager.scheduler.${srmmanager.plugins.scheduler-bring-online}"/>
+            </bean>
+        </property>
+        <property name="tapeInfoProvider" ref="tape-info-provider"/>
+        <property name="requirementsChecker" ref="tape-recall-scheduling-requirements-checker"/>
+    </bean>
+
+    <bean id="tape-info-provider" class="org.dcache.srm.taperecallscheduling.FilebasedTapeInfoProvider">
+        <description>Tape location info provider for tape recall scheduling</description>
+        <property name="tapeInfoDir" value="${srmmanager.boclustering.tapeinfo-dir}"/>
+    </bean>
+
+    <bean id="tape-recall-scheduling-requirements-checker" class="org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker">
+        <description>Holds config parameters for tape recall scheduling and moderates usage</description>
+        <property name="maxActiveTapes" value="${srmmanager.boclustering.max-active-tapes}"/>
+        <property name="minTapeRecallPercentage" value="${srmmanager.boclustering.min-tape-recall-percentage}"/>
+        <property name="minNumberOfRequestsForTapeSelection" value="${srmmanager.boclustering.min-request-count-for-tape}"/>
+        <property name="minJobWaitingTime"
+                  value="#{ T(org.dcache.util.TimeUtils).durationOf('${srmmanager.boclustering.min-time-in-queue}', '${srmmanager.boclustering.min-time-in-queue.unit}')}"/>
+        <property name="maxJobWaitingTime"
+                  value="#{ T(org.dcache.util.TimeUtils).durationOf('${srmmanager.boclustering.max-time-in-queue}', '${srmmanager.boclustering.max-time-in-queue.unit}')}"/>
+        <property name="tapeinfolessJobWaitingTime"
+                  value="#{ T(org.dcache.util.TimeUtils).durationOf('${srmmanager.boclustering.time-in-queue-for-jobs-without-tapeinfo}', '${srmmanager.boclustering.time-in-queue-for-jobs-without-tapeinfo.unit}')}"/>
+    </bean>
+
     <bean id="transfer-strategy-provider" class="org.dcache.srm.scheduler.TransferStrategyFactoryBean">
         <property name="name" value="${srmmanager.plugins.transfer}"/>
         <property name="configuration">
@@ -475,7 +503,6 @@
         <property name="maxReadyJobs" value="${srmmanager.request.get.max-transfers}"/>
     </bean>
 
-
     <bean id="scheduler-ls" class="diskCacheV111.srm.dcache.Scheduler"
           init-method="start" destroy-method="stop">
         <description>Scheduler for LS operations</description>
@@ -489,7 +516,6 @@
         <property name="maxInprogress" value="${srmmanager.request.ls.max-inprogress}"/>
     </bean>
 
-
     <bean id="scheduler-bringonline" class="diskCacheV111.srm.dcache.Scheduler"
           init-method="start" destroy-method="stop">
         <description>Scheduler for BRING-ONLINE operations</description>
@@ -497,12 +523,11 @@
         <constructor-arg value="bring_online_${srmmanager.scheduler-id}"/>
         <constructor-arg value="org.dcache.srm.request.BringOnlineFileRequest"/>
 
-        <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+        <property name="schedulingStrategyProvider" ref="${srmmanager.plugins.scheduler-bring-online}"/>
         <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
         <property name="maxRequests" value="${srmmanager.request.bring-online.max-requests}"/>
         <property name="maxInprogress" value="${srmmanager.request.bring-online.max-inprogress}"/>
     </bean>
-
 
     <bean id="scheduler-put" class="diskCacheV111.srm.dcache.Scheduler"
           init-method="start" destroy-method="stop">
