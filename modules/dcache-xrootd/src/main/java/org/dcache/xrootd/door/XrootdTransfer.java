@@ -19,6 +19,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
+import org.dcache.xrootd.util.ParseException;
 
 public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
 {
@@ -29,7 +30,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     private final XrootdTpcInfo tpcInfo;
 
     public XrootdTransfer(PnfsHandler pnfs, Subject subject,
-            Restriction restriction, FsPath path, Map<String,String> opaque) {
+            Restriction restriction, FsPath path, Map<String,String> opaque) throws ParseException {
         super(pnfs, subject, restriction, path);
         tpcInfo = new XrootdTpcInfo(opaque);
     }
