@@ -354,6 +354,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
             return new RedirectResponse<>(req, host,address.getPort(),
                                           opaqueString, "");
+        } catch (ParseException e) {
+            return withError(req, kXR_ArgInvalid, "Path arguments do not parse");
         } catch (FileNotFoundCacheException e) {
             return withError(req, xrootdErrorCode(e.getRc()), "No such file");
         } catch (FileExistsCacheException e) {
@@ -397,7 +399,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                                                 Map<String,String> opaque,
                                                 FsPath fsPath,
                                                 String remoteHost)
-                    throws CacheException
+                    throws CacheException, ParseException
     {
         if (!_door.isReadAllowed(fsPath)) {
             throw new PermissionDeniedCacheException(
