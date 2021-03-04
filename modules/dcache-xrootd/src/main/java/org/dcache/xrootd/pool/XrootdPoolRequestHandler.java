@@ -315,19 +315,19 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             if (uuid == null) {
                 _log.info("Request to open {} contains no UUID.", msg.getPath());
                 throw new XrootdException(kXR_NotAuthorized, "Request lacks the "
-                                + UUID_PREFIX + " property.");
+                    + UUID_PREFIX + " property.");
             }
 
             enforceClientTlsIfDestinationRequiresItForTpc(opaqueMap);
 
             NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel file
-                            = _server.openFile(uuid, false);
+                = _server.openFile(uuid, false);
             if (file == null) {
                 _log.info("No mover found for {} with UUID {}.", msg.getPath(), uuid);
                 return redirectToDoor(ctx, msg, () ->
                 {
                     throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX
-                                    + " is no longer valid.");
+                        + " is no longer valid.");
                 });
             }
 
@@ -340,8 +340,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     throw new XrootdException(kXR_Unsupported, "File exists.");
                 } else if ((msg.isNew() || msg.isReadWrite()) && isWrite) {
                     boolean posc = (msg.getOptions() & kXR_posc) == kXR_posc ||
-                                    file.getProtocolInfo().getFlags()
-                                        .contains(XrootdProtocolInfo.Flags.POSC);
+                        file.getProtocolInfo().getFlags()
+                            .contains(XrootdProtocolInfo.Flags.POSC);
                     if (opaqueMap.containsKey("tpc.src")) {
                         _log.debug("Request to open {} is as third-party destination.", msg);
 
@@ -349,10 +349,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                         tpcInfo.setDelegatedProxy(file.getProtocolInfo().getDelegatedCredential());
 
                         descriptor = new TpcWriteDescriptor(file, posc, ctx,
-                                                            _server,
-                                                            opaqueMap.get("org.dcache.xrootd.client"),
-                                                            tpcInfo,
-                                                            tlsSessionInfo);
+                            _server,
+                            opaqueMap.get("org.dcache.xrootd.client"),
+                            tpcInfo,
+                            tlsSessionInfo);
                     } else {
                         descriptor = new WriteDescriptor(file, posc);
                     }
@@ -375,6 +375,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     file.release();
                 }
             }
+        } catch (ParseException e) {
+            throw new XrootdException(kXR_ArgInvalid, e.getMessage());
         }  catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
