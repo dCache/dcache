@@ -80,9 +80,12 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.dcache.srm.SRMFileRequestNotFoundException;
@@ -299,12 +302,16 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         TBringOnlineRequestFileStatus[] statusArray = getArrayOfTBringOnlineRequestFileStatus(surls);
         response.setArrayOfFileStatuses(new ArrayOfTBringOnlineRequestFileStatus(statusArray));
         if (LOGGER.isDebugEnabled()) {
-            StringBuilder s = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
-            s.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
-            for (TBringOnlineRequestFileStatus fs : statusArray) {
-                s.append(" FileStatusCode = ").append(fs.getStatus().getStatusCode());
+            StringBuilder sb = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
+            sb.append(" StatusCode = ").append(response.getReturnStatus().getStatusCode());
+            if (statusArray.length > 0) {
+                sb.append(" FileStatusCodes =");
             }
-            LOGGER.debug(s.toString());
+            Arrays.stream(statusArray)
+                    .map(s -> s.getStatus().getStatusCode())
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                    .forEach((k,v) -> sb.append(" ").append(k).append(" (").append(v).append(" times)"));
+            LOGGER.debug(sb.toString());
         }
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
