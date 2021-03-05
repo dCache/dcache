@@ -82,7 +82,7 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.BackEndErrorHimeraFsException;
-import org.dcache.chimera.IOHimeraFsException;
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
@@ -159,11 +159,11 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             try {
                 printResults(connection, location, poolInfoMap, printWriter);
             } catch (SQLException e) {
-                throw new IOHimeraFsException(e.getMessage());
+                throw new ChimeraFsException(e.getMessage());
             } finally {
                 tryToClose(connection);
             }
-        } catch (IOHimeraFsException e) {
+        } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
                             String.format("Could not handle pnfsids for %s",
                                             location), e);
@@ -179,11 +179,11 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             try {
                 printResults(connection, locations, printWriter);
             } catch (SQLException e) {
-                throw new IOHimeraFsException(e.getMessage());
+                throw new ChimeraFsException(e.getMessage());
             } finally {
                 tryToClose(connection);
             }
-        } catch (IOHimeraFsException e) {
+        } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
                                      String.format("Could not handle pnfsids for %s",
                                                    locations), e);
@@ -217,11 +217,11 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             try {
                 handleQuery(connection, scan);
             } catch (SQLException | CacheException e) {
-                throw new IOHimeraFsException(e.getMessage());
+                throw new ChimeraFsException(e.getMessage());
             } finally {
                 tryToClose(connection);
             }
-        } catch (IOHimeraFsException e) {
+        } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
                                      String.format("Could not handle pnfsids for %s",
                                                    scan.getPool()), e);
@@ -260,7 +260,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         this.namespace = namespace;
     }
 
-    private Connection getConnection() throws IOHimeraFsException {
+    private Connection getConnection() throws ChimeraFsException {
         try {
             return connectionPool.getConnection();
         } catch (SQLException e) {

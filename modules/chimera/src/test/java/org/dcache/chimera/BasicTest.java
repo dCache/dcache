@@ -257,7 +257,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         try {
             fileInode.remove("anObject");
             fail("you can't remove an  object in file Inode");
-        } catch (IOHimeraFsException ioe) {
+        } catch (ChimeraFsException ioe) {
             // OK
         }
     }

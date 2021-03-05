@@ -335,7 +335,7 @@ public class FsInode {
     public void remove(String name) throws ChimeraFsException {
 
         if (!isDirectory()) {
-            throw new IOHimeraFsException("Not a directory");
+            throw new ChimeraFsException("Not a directory");
         }
 
         _fs.remove(this, name, inodeOf(name, STAT));

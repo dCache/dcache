@@ -41,7 +41,7 @@ public class DirectoryStreamHelper {
      * @return a stream of {@link HimeraDirectoryEntry}
      * @throws IOException
      */
-    public static Stream<HimeraDirectoryEntry> streamOf(FsInode inode) throws IOException, IOHimeraFsException {
+    public static Stream<HimeraDirectoryEntry> streamOf(FsInode inode) throws IOException, ChimeraFsException {
         DirectoryStreamB<HimeraDirectoryEntry> listStream = inode.newDirectoryStream();
         return listStream.stream().onClose(uncheckedRunnable(listStream));
     }

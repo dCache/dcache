@@ -19,7 +19,7 @@ package org.dcache.chimera;
 /**
  * Backend database failure Exception.
  */
-public class BackEndErrorHimeraFsException extends IOHimeraFsException {
+public class BackEndErrorHimeraFsException extends ChimeraFsException {
 
     private static final long serialVersionUID = -5719825809029114667L;
 
