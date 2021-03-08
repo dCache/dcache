@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,13 +63,13 @@ import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.DirNotEmptyHimeraFsException;
+import org.dcache.chimera.DirNotEmptyChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.HimeraDirectoryEntry;
+import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
@@ -341,7 +340,7 @@ public class ChimeraNameSpaceProvider
             return fileAttributes;
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (FileExistsChimeraFsException e) {
             throw new FileExistsCacheException("File exists: " + path);
@@ -385,7 +384,7 @@ public class ChimeraNameSpaceProvider
             return inode.getPnfsId();
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (FileExistsChimeraFsException e) {
             throw new FileExistsCacheException("File exists: " + path);
@@ -439,7 +438,7 @@ public class ChimeraNameSpaceProvider
             return pnfsid;
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (FileExistsChimeraFsException e) {
             throw new FileExistsCacheException("File exists: " + path);
@@ -512,9 +511,9 @@ public class ChimeraNameSpaceProvider
             _fs.remove(inode);
 
             return getFileAttributes(inode, attr);
-        }catch(FileNotFoundHimeraFsException fnf) {
+        }catch(FileNotFoundChimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
-        }catch(DirNotEmptyHimeraFsException e) {
+        }catch(DirNotEmptyChimeraFsException e) {
             throw new CacheException("Directory is not empty: " + pnfsId);
         }catch(IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -547,9 +546,9 @@ public class ChimeraNameSpaceProvider
             _fs.remove(parent, name, inode);
 
             return getFileAttributes(inode, attr);
-        }catch(FileNotFoundHimeraFsException fnf) {
+        }catch(FileNotFoundChimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
-        }catch(DirNotEmptyHimeraFsException e) {
+        }catch(DirNotEmptyChimeraFsException e) {
             throw new CacheException("Directory is not empty: " + path);
         }catch(IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -586,9 +585,9 @@ public class ChimeraNameSpaceProvider
             _fs.remove(parent, name, inode);
 
             return getFileAttributes(inode, attr);
-        } catch (FileNotFoundHimeraFsException fnf) {
+        } catch (FileNotFoundChimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
-        } catch (DirNotEmptyHimeraFsException e) {
+        } catch (DirNotEmptyChimeraFsException e) {
             throw new CacheException("Directory is not empty: " + path);
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
@@ -652,7 +651,7 @@ public class ChimeraNameSpaceProvider
                         }
                     }
                 }
-            } catch (FileNotFoundHimeraFsException e) {
+            } catch (FileNotFoundChimeraFsException e) {
                 throw new NotDirCacheException("No such directory: " +
                                                dest.getParent());
             }
@@ -693,7 +692,7 @@ public class ChimeraNameSpaceProvider
                             throw new PermissionDeniedCacheException("Access denied: " + destinationPath);
                         }
                     }
-                } catch (FileNotFoundHimeraFsException e) {
+                } catch (FileNotFoundChimeraFsException e) {
                     /* Destination doesn't exist and we can move the file;
                      * unfortunately there is no way to test this with
                      * Chimera without throwing an exception.
@@ -702,7 +701,7 @@ public class ChimeraNameSpaceProvider
             }
 
             _fs.rename(inode, sourceDir, source.getName(), destDir, dest.getName());
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: "
                                                  + pnfsId);
         } catch (FileExistsChimeraFsException e) {
@@ -725,7 +724,7 @@ public class ChimeraNameSpaceProvider
         try {
             ExtendedInode inode = new ExtendedInode(_fs, pnfsId, NO_STAT);
             _fs.addInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
-        }catch(FileNotFoundHimeraFsException e) {
+        }catch(FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file: " + pnfsId);
         } catch (ChimeraFsException e){
             _log.error("Exception in addCacheLocation {}", e);
@@ -769,7 +768,7 @@ public class ChimeraNameSpaceProvider
                     _fs.remove(inode);
                 }
             }
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId, e);
         } catch (ChimeraFsException e){
             _log.error("Exception in clearCacheLocation for {} : {}", pnfsId, e);
@@ -796,7 +795,7 @@ public class ChimeraNameSpaceProvider
     {
         try {
             return pathToInode(subject, path).getPnfsId();
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory " + path);
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
@@ -813,7 +812,7 @@ public class ChimeraNameSpaceProvider
             ChimeraCacheInfo.CacheFlags flags = info.getFlags();
             flags.remove(attribute);
             info.writeCacheInfo(inode);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory " + pnfsId);
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -827,7 +826,7 @@ public class ChimeraNameSpaceProvider
     {
         try {
             _fs.removeInodeChecksum(new ExtendedInode(_fs, pnfsId, NO_STAT), type.getType());
-        }catch(FileNotFoundHimeraFsException e) {
+        }catch(FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         }catch(ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -873,7 +872,7 @@ public class ChimeraNameSpaceProvider
                 throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
             }
             return locations;
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
@@ -898,7 +897,7 @@ public class ChimeraNameSpaceProvider
         throws ChimeraFsException, CacheException
     {
         if (!inode.exists()) {
-            throw new FileNotFoundHimeraFsException();
+            throw new FileNotFoundChimeraFsException();
         }
 
         FileAttributes attributes = new FileAttributes();
@@ -1044,7 +1043,7 @@ public class ChimeraNameSpaceProvider
                 throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
             }
             return fileAttributes;
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -1186,7 +1185,7 @@ public class ChimeraNameSpaceProvider
             }
 
             return getFileAttributes(inode, acquire);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         } catch (IOException e) {
             _log.error("Exception in setFileAttributes: {}", e);
@@ -1219,16 +1218,16 @@ public class ChimeraNameSpaceProvider
             }
 
             int counter = 0;
-            try (DirectoryStreamB<HimeraDirectoryEntry> dirStream = dir
+            try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = dir
                     .newDirectoryStream()) {
-                for (HimeraDirectoryEntry entry : dirStream) {
+                for (ChimeraDirectoryEntry entry : dirStream) {
                     try {
                         String name = entry.getName();
                         if (!name.equals(".") && !name.equals("..") &&
                                 (pattern == null || pattern.matcher(name)
                                         .matches()) &&
                                 range.contains(counter++)) {
-                            // FIXME: actually, HimeraDirectoryEntry
+                            // FIXME: actually, ChimeraDirectoryEntry
                             // already contains most of attributes
                             FileAttributes fa =
                                     attrs.isEmpty()
@@ -1236,7 +1235,7 @@ public class ChimeraNameSpaceProvider
                                             : getFileAttributes(new ExtendedInode(_fs, entry.getInode()), attrs);
                             handler.addEntry(name, fa);
                         }
-                    } catch (FileNotFoundHimeraFsException e) {
+                    } catch (FileNotFoundChimeraFsException e) {
                         /* Not an error; files may be deleted during the
                          * list operation.
                          */
@@ -1244,7 +1243,7 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (IOException e) {
             _log.error("Exception in list: {}", e);
@@ -1313,7 +1312,7 @@ public class ChimeraNameSpaceProvider
                 throw new NotDirCacheException("Not a directory: " + path);
             }
             return inode;
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + path, e);
         }
     }
@@ -1358,7 +1357,7 @@ public class ChimeraNameSpaceProvider
                         throw new PermissionDeniedCacheException("Access denied: " + path);
                     }
                 }
-            } catch (FileNotFoundHimeraFsException ignored) {
+            } catch (FileNotFoundChimeraFsException ignored) {
             }
 
             /* User must be authorized to create file.
@@ -1493,7 +1492,7 @@ public class ChimeraNameSpaceProvider
                 uploadDirInode = new ExtendedInode(_fs, _fs.path2inode(temporaryDir.parent().toString()));
                 temporaryDirInode = uploadDirInode.inodeOf(temporaryDir.name(), STAT);
                 inodeOfFile = temporaryDirInode.inodeOf(temporaryPath.name(), STAT);
-            } catch (FileNotFoundHimeraFsException e) {
+            } catch (FileNotFoundChimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryPath, e);
             }
 
@@ -1520,7 +1519,7 @@ public class ChimeraNameSpaceProvider
             ExtendedInode finalDirInode;
             try {
                 finalDirInode = new ExtendedInode(_fs, _fs.path2inode(finalDir.toString()));
-            } catch (FileNotFoundHimeraFsException e) {
+            } catch (FileNotFoundChimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + finalDir, e);
             }
 
@@ -1544,7 +1543,7 @@ public class ChimeraNameSpaceProvider
                         throw new PermissionDeniedCacheException("Overwrite denied: " + finalPath);
                     }
                 }
-            } catch (FileNotFoundHimeraFsException ignored) {
+            } catch (FileNotFoundChimeraFsException ignored) {
             }
 
             /* Read file attributes before moving the file. Otherwise the cached parent will
@@ -1586,7 +1585,7 @@ public class ChimeraNameSpaceProvider
             ExtendedInode uploadDirInode;
             try {
                 uploadDirInode = new ExtendedInode(_fs, _fs.path2inode(temporaryDir.parent().toString()));
-            } catch (FileNotFoundHimeraFsException e) {
+            } catch (FileNotFoundChimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryDir, e);
             }
 
@@ -1613,8 +1612,8 @@ public class ChimeraNameSpaceProvider
     {
         try {
             if (inode.isDirectory() && inode.stat().getNlink() > 2) {
-                try (DirectoryStreamB<HimeraDirectoryEntry> list = _fs.newDirectoryStream(inode)) {
-                    for (HimeraDirectoryEntry entry : list) {
+                try (DirectoryStreamB<ChimeraDirectoryEntry> list = _fs.newDirectoryStream(inode)) {
+                    for (ChimeraDirectoryEntry entry : list) {
                         String child = entry.getName();
                         if (!child.equals(".") && !child.equals("..")) {
                             ExtendedInode childInode = new ExtendedInode(_fs, entry.getInode());
@@ -1661,7 +1660,7 @@ public class ChimeraNameSpaceProvider
             }
 
             return _fs.getXattr(target, name);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file " + path);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to list extended attributes: "
@@ -1708,7 +1707,7 @@ public class ChimeraNameSpaceProvider
             throw new NoAttributeCacheException(e.getMessage(), e);
         } catch (FileExistsChimeraFsException e) {
             throw new AttributeExistsCacheException(e.getMessage(), e);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file " + path);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to list extended attributes: "
@@ -1736,7 +1735,7 @@ public class ChimeraNameSpaceProvider
             }
 
             return _fs.listXattrs(target);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file " + path);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to list extended attributes: "
@@ -1764,7 +1763,7 @@ public class ChimeraNameSpaceProvider
             }
 
             _fs.removeXattr(target, name);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException("No such file " + path);
         } catch (NoXdataChimeraException e) {
             throw new NoAttributeCacheException("No attribute " + name + " for file " + path,

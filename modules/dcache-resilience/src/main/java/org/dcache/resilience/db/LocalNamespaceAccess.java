@@ -81,7 +81,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 
 import org.dcache.auth.Subjects;
-import org.dcache.chimera.BackEndErrorHimeraFsException;
+import org.dcache.chimera.BackEndErrorChimeraFsException;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
@@ -264,7 +264,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         try {
             return connectionPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorChimeraFsException(e.getMessage());
         }
     }
 

@@ -53,11 +53,11 @@ import org.dcache.acl.parser.ACEParser;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.HimeraDirectoryEntry;
+import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.OriginTag;
 import org.dcache.chimera.UnixPermission;
@@ -316,17 +316,17 @@ public class Shell extends ShellApplication
                 time = "atime";
             }
 
-            List<HimeraDirectoryEntry> entries = new LinkedList<>();
+            List<ChimeraDirectoryEntry> entries = new LinkedList<>();
 
             long totalBlocks = 0;
 
-            HimeraDirectoryEntry dot = null;
-            HimeraDirectoryEntry dotdot = null;
+            ChimeraDirectoryEntry dot = null;
+            ChimeraDirectoryEntry dotdot = null;
 
             FsInode inode = lookup(path);
 
-            try (DirectoryStreamB<HimeraDirectoryEntry> dirStream = inode.newDirectoryStream()) {
-                for (HimeraDirectoryEntry entry : dirStream) {
+            try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = inode.newDirectoryStream()) {
+                for (ChimeraDirectoryEntry entry : dirStream) {
                     String name = entry.getName();
                     Stat stat = entry.getStat();
 
@@ -354,13 +354,13 @@ public class Shell extends ShellApplication
             sb.append("total ").append(totalBlocks).append('\n');
             printEntry(sb, dot);
             printEntry(sb, dotdot);
-            for (HimeraDirectoryEntry entry : entries) {
+            for (ChimeraDirectoryEntry entry : entries) {
                 printEntry(sb, entry);
             }
             return sb.toString();
         }
 
-        private void printEntry(StringBuilder sb, HimeraDirectoryEntry entry) throws IOException
+        private void printEntry(StringBuilder sb, ChimeraDirectoryEntry entry) throws IOException
         {
             if (entry != null) {
                 Stat stat = entry.getStat();
@@ -553,7 +553,7 @@ public class Shell extends ShellApplication
             FsInode dst;
             try {
                 dst = lookup(destination);
-            } catch (FileNotFoundHimeraFsException e) {
+            } catch (FileNotFoundChimeraFsException e) {
                 dst = null;
             }
             FsInode srcDir = lookup(source.getParentFile());
@@ -721,7 +721,7 @@ public class Shell extends ShellApplication
             FsInode inode = lookup(path);
             try {
                 fs.statTag(inode, tag);
-            } catch (FileNotFoundHimeraFsException fnf) {
+            } catch (FileNotFoundChimeraFsException fnf) {
                 fs.createTag(inode, tag);
             }
 
@@ -957,7 +957,7 @@ public class Shell extends ShellApplication
             FsInode inode;
             try {
                 inode = lookup(path);
-            } catch (FileNotFoundHimeraFsException fnf) {
+            } catch (FileNotFoundChimeraFsException fnf) {
                 if (path.isAbsolute()) {
                     inode = fs.createFile(path.toString());
                 } else {

@@ -19,7 +19,7 @@ import java.util.StringTokenizer;
 import diskCacheV111.vehicles.CacheStatistics;
 
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.posix.Stat;
 
@@ -139,8 +139,7 @@ public class ChimeraCacheInfo implements Serializable {
 		_cacheFlags.commit();
 	}
 
-	public void writeCacheInfo(FsInode inode) throws ChimeraFsException
-	{
+	public void writeCacheInfo(FsInode inode) throws ChimeraFsException {
 
 		//
 		// currently we accept 1 and 2 but we only write 2.
@@ -193,7 +192,7 @@ public class ChimeraCacheInfo implements Serializable {
 		_cacheStatistics = cs;
 	}
 
-        public ChimeraCacheInfo(FsInode inode) throws ChimeraFsException, IOException {
+	public ChimeraCacheInfo(FsInode inode) throws ChimeraFsException, IOException {
 
 		byte[] buff;
 		int len = 0;
@@ -201,7 +200,7 @@ public class ChimeraCacheInfo implements Serializable {
 			Stat stat = inode.stat();
 			buff = new byte[(int)stat.getSize()];
 			len = inode.read(0, buff, 0, buff.length);
-		}catch(FileNotFoundHimeraFsException fnf) {
+		} catch (FileNotFoundChimeraFsException fnf) {
 			buff = new byte[0];
 		}
 

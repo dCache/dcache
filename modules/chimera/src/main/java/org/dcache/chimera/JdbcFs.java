@@ -201,7 +201,7 @@ public class JdbcFs implements FileSystemProvider {
             throw e;
         } catch (NonTransientDataAccessResourceException e) {
             rollbackOnException(status, e);
-            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
+            throw new BackEndErrorChimeraFsException(e.getMessage(), e);
         } catch (DataAccessException e) {
             rollbackOnException(status, e);
             throw new ChimeraFsException(e.getMessage(), e);
@@ -349,7 +349,7 @@ public class JdbcFs implements FileSystemProvider {
                 return inTransaction(status -> {
                     FsInode useInode = _sqlDriver.inodeOf(parent, cmd[2], STAT);
                     if (useInode == null) {
-                        throw new FileNotFoundHimeraFsException(cmd[2]);
+                        throw new FileNotFoundChimeraFsException(cmd[2]);
                     }
                     try {
                         Stat stat = useInode.statCache();
@@ -390,7 +390,7 @@ public class JdbcFs implements FileSystemProvider {
             try {
                 Stat parentStat = parent.statCache();
                 if (parentStat == null) {
-                    throw new FileNotFoundHimeraFsException("parent=" + parent.toString());
+                    throw new FileNotFoundChimeraFsException("parent=" + parent.toString());
                 }
 
                 if ((parentStat.getMode() & UnixPermission.F_TYPE) != UnixPermission.S_IFDIR) {
@@ -431,7 +431,7 @@ public class JdbcFs implements FileSystemProvider {
         inTransaction(status -> {
             try {
                 if (!parent.exists()) {
-                    throw new FileNotFoundHimeraFsException("parent=" + parent.toString());
+                    throw new FileNotFoundChimeraFsException("parent=" + parent.toString());
                 }
                 if (!parent.isDirectory()) {
                     throw new NotDirChimeraException(parent);
@@ -465,7 +465,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(FsInode dir) throws ChimeraFsException {
+    public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir) throws ChimeraFsException {
         return _sqlDriver.newDirectoryStream(dir);
     }
 
@@ -484,7 +484,7 @@ public class JdbcFs implements FileSystemProvider {
             String name = filePath.getName();
             FsInode inode = _sqlDriver.inodeOf(parent, name, STAT);
             if (inode == null || !_sqlDriver.remove(parent, name, inode)) {
-                throw new FileNotFoundHimeraFsException(path);
+                throw new FileNotFoundChimeraFsException(path);
             }
             return null;
         });
@@ -494,7 +494,7 @@ public class JdbcFs implements FileSystemProvider {
     public void remove(FsInode directory, String name, FsInode inode) throws ChimeraFsException {
         inTransaction(status -> {
             if (!_sqlDriver.remove(directory, name, inode)) {
-                throw new FileNotFoundHimeraFsException(name);
+                throw new FileNotFoundChimeraFsException(name);
             }
             return null;
         });
@@ -511,10 +511,10 @@ public class JdbcFs implements FileSystemProvider {
                 throw new InvalidArgumentChimeraException("Cannot delete file system root.");
             }
             if (!inode.exists()) {
-                throw new FileNotFoundHimeraFsException("No such file.");
+                throw new FileNotFoundChimeraFsException("No such file.");
             }
             if (inode.isDirectory() && inode.statCache().getNlink() > 2) {
-                throw new DirNotEmptyHimeraFsException("Directory is not empty");
+                throw new DirNotEmptyChimeraFsException("Directory is not empty");
             }
             _sqlDriver.remove(inode);
             return null;
@@ -535,7 +535,7 @@ public class JdbcFs implements FileSystemProvider {
     public Stat stat(FsInode inode, int level) throws ChimeraFsException {
         Stat stat = _sqlDriver.stat(inode, level);
         if (stat == null) {
-            throw new FileNotFoundHimeraFsException(inode.toString());
+            throw new FileNotFoundChimeraFsException(inode.toString());
         }
         if (level == 0) {
             _inoCache.put(stat.getId(), stat.getIno());
@@ -641,7 +641,7 @@ public class JdbcFs implements FileSystemProvider {
     public FsInode path2inode(String path, FsInode startFrom) throws ChimeraFsException {
         FsInode inode = _sqlDriver.path2inode(startFrom, path);
         if (inode == null) {
-            throw new FileNotFoundHimeraFsException(path);
+            throw new FileNotFoundChimeraFsException(path);
         }
         fillIdCaches(inode);
         return inode;
@@ -653,7 +653,7 @@ public class JdbcFs implements FileSystemProvider {
             return _idCache.get(inode.ino(), () -> {
                 String id = _sqlDriver.getId(inode);
                 if (id == null) {
-                    throw new FileNotFoundHimeraFsException(String.valueOf(inode.ino()));
+                    throw new FileNotFoundChimeraFsException(String.valueOf(inode.ino()));
                 }
                 return id;
             });
@@ -672,7 +672,7 @@ public class JdbcFs implements FileSystemProvider {
                 return new FsInode(this, _inoCache.get(id, () -> {
                     Long ino = _sqlDriver.getInumber(id);
                     if (ino == null) {
-                        throw new FileNotFoundHimeraFsException(id);
+                        throw new FileNotFoundChimeraFsException(id);
                     }
                     return ino;
                 }));
@@ -685,7 +685,7 @@ public class JdbcFs implements FileSystemProvider {
         } else {
             Stat stat = _sqlDriver.stat(id);
             if (stat == null) {
-                throw new FileNotFoundHimeraFsException(id);
+                throw new FileNotFoundChimeraFsException(id);
             }
             _inoCache.put(stat.getId(), stat.getIno());
             _idCache.put(stat.getIno(), stat.getId());
@@ -704,7 +704,7 @@ public class JdbcFs implements FileSystemProvider {
     {
         List<FsInode> inodes = _sqlDriver.path2inodes(startFrom, path);
         if (inodes.isEmpty()) {
-            throw new FileNotFoundHimeraFsException(path);
+            throw new FileNotFoundChimeraFsException(path);
         }
         fillIdCaches(inodes.get(inodes.size() - 1));
         return inodes;
@@ -718,11 +718,11 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(id)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 2) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
                 if (inode == null) {
-                    throw new FileNotFoundHimeraFsException(cmd[1]);
+                    throw new FileNotFoundChimeraFsException(cmd[1]);
                 }
                 return new FsInode_ID(this, inode.ino());
             }
@@ -730,14 +730,14 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(use)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 3) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 try {
                     int level = Integer.parseInt(cmd[1]);
 
                     FsInode inode = _sqlDriver.inodeOf(parent, cmd[2], NO_STAT);
                     if (inode == null) {
-                        throw new FileNotFoundHimeraFsException(cmd[2]);
+                        throw new FileNotFoundChimeraFsException(cmd[2]);
                     }
                     if (level <= LEVELS_NUMBER) {
                         stat(inode, level);
@@ -747,8 +747,8 @@ public class JdbcFs implements FileSystemProvider {
                     }
                 } catch (NumberFormatException nfe) {
                     //	possible wrong format...ignore
-                } catch (FileNotFoundHimeraFsException e) {
-                    throw new FileNotFoundHimeraFsException(name);
+                } catch (FileNotFoundChimeraFsException e) {
+                    throw new FileNotFoundChimeraFsException(name);
                 }
 
             }
@@ -756,7 +756,7 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(access)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if ((cmd.length < 2) || (cmd.length > 3)) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 try {
                     int level = cmd.length == 2 ? 0 : Integer.parseInt(cmd[2]);
@@ -770,8 +770,8 @@ public class JdbcFs implements FileSystemProvider {
                     }
                 } catch (NumberFormatException nfe) {
                     //	possible wrong format...ignore
-                } catch (FileNotFoundHimeraFsException e) {
-                    throw new FileNotFoundHimeraFsException(name);
+                } catch (FileNotFoundChimeraFsException e) {
+                    throw new FileNotFoundChimeraFsException(name);
                 }
 
             }
@@ -779,11 +779,11 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(nameof)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 2) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 FsInode nameofInode = new FsInode_NAMEOF(this, id2inode(cmd[1], NO_STAT).ino());
                 if (!nameofInode.exists()) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 return nameofInode;
             }
@@ -791,11 +791,11 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(const)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 2) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 FsInode constInode = new FsInode_CONST(this, parent.ino());
                 if (!constInode.exists()) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 return constInode;
             }
@@ -803,11 +803,11 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(parent)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 2) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 FsInode parentInode = new FsInode_PARENT(this, id2inode(cmd[1], NO_STAT).ino());
                 if (!parentInode.exists()) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 return parentInode;
             }
@@ -815,11 +815,11 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(pathof)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 2) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 FsInode pathofInode = new FsInode_PATHOF(this, id2inode(cmd[1], NO_STAT).ino());
                 if (!pathofInode.exists()) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 return pathofInode;
             }
@@ -827,11 +827,11 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(tag)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 2) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 FsInode tagInode = new FsInode_TAG(this, parent.ino(), cmd[1]);
                 if (!tagInode.exists()) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 return tagInode;
             }
@@ -839,11 +839,11 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(suri)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 2) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
                 if (inode == null) {
-                    throw new FileNotFoundHimeraFsException(cmd[1]);
+                    throw new FileNotFoundChimeraFsException(cmd[1]);
                 }
                 return new FsInode_SURI(this, inode.ino());
             }
@@ -859,13 +859,13 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(pset)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length < 3) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 String[] args = new String[cmd.length - 2];
                 System.arraycopy(cmd, 2, args, 0, args.length);
                 FsInode psetInode = new FsInode_PSET(this, id2inode(cmd[1], NO_STAT).ino(), args);
                 if (!psetInode.exists()) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 return psetInode;
             }
@@ -873,7 +873,7 @@ public class JdbcFs implements FileSystemProvider {
             if (name.equals(".(get)(cursor)")) {
                 FsInode pgetInode = new FsInode_PCUR(this, parent.ino());
                 if (!pgetInode.exists()) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 return pgetInode;
             }
@@ -881,12 +881,12 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(get)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length < 3) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
 
                 FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
                 if (inode == null) {
-                    throw new FileNotFoundHimeraFsException(cmd[1]);
+                    throw new FileNotFoundChimeraFsException(cmd[1]);
                 }
                 switch(cmd[2]) {
                     case "locality":
@@ -897,7 +897,7 @@ public class JdbcFs implements FileSystemProvider {
                     case "pins":
                         return new FsInode_PINS(this, inode.ino());
                     default:
-                        throw new FileNotFoundHimeraFsException(cmd[2]);
+                        throw new FileNotFoundChimeraFsException(cmd[2]);
                 }
             }
 
@@ -908,11 +908,11 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(config)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length != 2) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
                 FsInode inode = _sqlDriver.inodeOf(getWormID(), cmd[1], NO_STAT);
                 if (inode == null) {
-                    throw new FileNotFoundHimeraFsException(cmd[1]);
+                    throw new FileNotFoundChimeraFsException(cmd[1]);
                 }
                 return inode;
             }
@@ -920,12 +920,12 @@ public class JdbcFs implements FileSystemProvider {
             if (name.startsWith(".(fset)(")) {
                 String[] cmd = PnfsCommandProcessor.process(name);
                 if (cmd.length < 3) {
-                    throw new FileNotFoundHimeraFsException(name);
+                    throw new FileNotFoundChimeraFsException(name);
                 }
 
                 FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
                 if (inode == null) {
-                    throw new FileNotFoundHimeraFsException(cmd[1]);
+                    throw new FileNotFoundChimeraFsException(cmd[1]);
                 }
 
                 String[] args = new String[cmd.length - 2];
@@ -937,7 +937,7 @@ public class JdbcFs implements FileSystemProvider {
 
         FsInode inode = _sqlDriver.inodeOf(parent, name, cacheOption);
         if (inode == null) {
-            throw new FileNotFoundHimeraFsException(name);
+            throw new FileNotFoundChimeraFsException(name);
         }
         fillIdCaches(inode);
         inode.setParent(parent);
@@ -986,7 +986,7 @@ public class JdbcFs implements FileSystemProvider {
                      */
                     Stat s = _sqlDriver.stat(inode);
                     if (s == null) {
-                        throw new FileNotFoundHimeraFsException();
+                        throw new FileNotFoundChimeraFsException();
                     }
                     if ((s.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR) {
                         throw new IsDirChimeraException(inode);
@@ -1037,7 +1037,7 @@ public class JdbcFs implements FileSystemProvider {
                 }
                 return _sqlDriver.write(inode, level, beginIndex, data, offset, len);
             } catch (ForeignKeyViolationException e) {
-                throw new FileNotFoundHimeraFsException(e);
+                throw new FileNotFoundChimeraFsException(e);
             }
         });
     }
@@ -1098,7 +1098,7 @@ public class JdbcFs implements FileSystemProvider {
             }
 
             if (!_sqlDriver.rename(inode, srcDir, source, destDir, dest)) {
-                throw new FileNotFoundHimeraFsException(source);
+                throw new FileNotFoundChimeraFsException(source);
             }
             return true;
         });
@@ -1125,7 +1125,7 @@ public class JdbcFs implements FileSystemProvider {
             try {
                 _sqlDriver.addInodeLocation(inode, type, location);
             } catch (ForeignKeyViolationException e) {
-                throw new FileNotFoundHimeraFsException(e);
+                throw new FileNotFoundChimeraFsException(e);
             }
             return null;
         });
@@ -1267,7 +1267,7 @@ public class JdbcFs implements FileSystemProvider {
             try {
                 _sqlDriver.setStorageInfo(inode, storageInfo);
             } catch (ForeignKeyViolationException e) {
-                throw new FileNotFoundHimeraFsException(e);
+                throw new FileNotFoundChimeraFsException(e);
             }
             return null;
         });
@@ -1287,7 +1287,7 @@ public class JdbcFs implements FileSystemProvider {
             try {
                 _sqlDriver.setInodeChecksum(inode, type, checksum);
             } catch (ForeignKeyViolationException e) {
-                throw new FileNotFoundHimeraFsException(e);
+                throw new FileNotFoundChimeraFsException(e);
             }
             return null;
         });

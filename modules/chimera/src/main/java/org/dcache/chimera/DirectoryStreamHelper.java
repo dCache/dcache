@@ -29,7 +29,7 @@ public class DirectoryStreamHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(DirectoryStreamHelper.class);
 
     /**
-     * Returns a {@link Stream} of {@link HimeraDirectoryEntry} in the directory {@code inode}.
+     * Returns a {@link Stream} of {@link ChimeraDirectoryEntry} in the directory {@code inode}.
      *
      *  After this method returns, then any subsequent I/O exception that occurs while listing the directory is wrapped
      *  in an UncheckedIOException.
@@ -38,11 +38,11 @@ public class DirectoryStreamHelper {
      * close method is invoked after the stream operations are completed.
      *
      * @param inode of a directory to be listed
-     * @return a stream of {@link HimeraDirectoryEntry}
+     * @return a stream of {@link ChimeraDirectoryEntry}
      * @throws IOException
      */
-    public static Stream<HimeraDirectoryEntry> streamOf(FsInode inode) throws IOException, ChimeraFsException {
-        DirectoryStreamB<HimeraDirectoryEntry> listStream = inode.newDirectoryStream();
+    public static Stream<ChimeraDirectoryEntry> streamOf(FsInode inode) throws IOException, ChimeraFsException {
+        DirectoryStreamB<ChimeraDirectoryEntry> listStream = inode.newDirectoryStream();
         return listStream.stream().onClose(uncheckedRunnable(listStream));
     }
 

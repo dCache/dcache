@@ -19,20 +19,20 @@ package org.dcache.chimera;
 /**
  * Backend database failure Exception.
  */
-public class BackEndErrorHimeraFsException extends ChimeraFsException {
+public class BackEndErrorChimeraFsException extends ChimeraFsException {
 
     private static final long serialVersionUID = -5719825809029114667L;
 
-    public BackEndErrorHimeraFsException() {
-        super("BackEndErrorHimeraFsException");
+    public BackEndErrorChimeraFsException() {
+        super("BackEndErrorChimeraFsException");
     }
 
-    public BackEndErrorHimeraFsException(String msg) {
-        super("BackEndErrorHimeraFsException (" + msg + ')');
+    public BackEndErrorChimeraFsException(String msg) {
+        super("BackEndErrorChimeraFsException (" + msg + ')');
     }
 
-    public BackEndErrorHimeraFsException(String msg, Throwable cause)
+    public BackEndErrorChimeraFsException(String msg, Throwable cause)
     {
-        super("BackEndErrorHimeraFsException (" + msg + ')', cause);
+        super("BackEndErrorChimeraFsException (" + msg + ')', cause);
     }
 }

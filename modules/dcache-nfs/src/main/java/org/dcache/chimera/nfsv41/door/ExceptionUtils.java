@@ -9,7 +9,7 @@ import java.util.concurrent.TimeoutException;
 import diskCacheV111.util.CacheException;
 
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.*;
 
@@ -80,7 +80,7 @@ public class ExceptionUtils {
 
     public static ChimeraNFSException asNfsException(ChimeraFsException e, Class< ? extends ChimeraNFSException> defaultException) {
 
-        if (e instanceof FileNotFoundHimeraFsException) {
+        if (e instanceof FileNotFoundChimeraFsException) {
             return new  NoEntException(e.getMessage(), e);
         }
 

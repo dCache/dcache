@@ -45,10 +45,10 @@ import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Who;
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.DirNotEmptyHimeraFsException;
+import org.dcache.chimera.DirNotEmptyChimeraFsException;
 import org.dcache.chimera.DirectoryStreamHelper;
 import org.dcache.chimera.FileExistsChimeraFsException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
@@ -66,7 +66,7 @@ import org.dcache.chimera.FsInode_PSET;
 import org.dcache.chimera.FsInode_SURI;
 import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.FsInode_TAGS;
-import org.dcache.chimera.HimeraDirectoryEntry;
+import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.InvalidArgumentChimeraException;
 import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
@@ -143,7 +143,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             FsInode parentFsInode = toFsInode(parent);
             FsInode fsInode = parentFsInode.inodeOf(path, NO_STAT);
             return toInode(fsInode);
-        }catch (FileNotFoundHimeraFsException e) {
+        }catch (FileNotFoundChimeraFsException e) {
             throw new NoEntException("Path Do not exist.");
         }
     }
@@ -217,9 +217,9 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 	    throw new NotDirException("not a directory");
 	} catch (FileExistsChimeraFsException e) {
 	    throw new ExistException("destination exists");
-	} catch (DirNotEmptyHimeraFsException e) {
+	} catch (DirNotEmptyChimeraFsException e) {
             throw new NotEmptyException("directory exist and not empty");
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new NoEntException("file not found");
         } catch (PermissionDeniedChimeraFsException e) {
             throw new PermException(e.getMessage());
@@ -244,9 +244,9 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         FsInode parentFsInode = toFsInode(parent);
         try {
             _fs.remove(parentFsInode, path, _fs.inodeOf(parentFsInode, path, STAT));
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new NoEntException("path not found");
-        } catch (DirNotEmptyHimeraFsException e) {
+        } catch (DirNotEmptyChimeraFsException e) {
             throw new NotEmptyException("directory not empty");
         }
     }
@@ -275,7 +275,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         // ignore whatever is sent by client
         byte[] currentVerifier = directoryVerifier(inode);
 
-        try(Stream<HimeraDirectoryEntry> dirStream = DirectoryStreamHelper.streamOf(parentFsInode)) {
+        try(Stream<ChimeraDirectoryEntry> dirStream = DirectoryStreamHelper.streamOf(parentFsInode)) {
             TreeSet<DirectoryEntry> list = dirStream.map(e -> new DirectoryEntry(e.getName(), toInode(e.getInode()),
                             fromChimeraStat(e.getStat(), e.getInode().ino()),
                             directoryCookieOf(e.getStat(), e.getName()))
@@ -323,7 +323,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         FsInode fsInode = toFsInode(inode);
         try {
             return  fromChimeraStat(fsInode.stat(), fsInode.ino());
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new NoEntException("Path Do not exist.");
         }
     }
@@ -366,7 +366,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             throw new InvalException(e.getMessage());
         } catch (IsDirChimeraException e) {
             throw new IsDirException(e.getMessage());
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new StaleException(e.getMessage());
         } catch (PermissionDeniedChimeraFsException e) {
             throw new PermException(e.getMessage());
@@ -390,7 +390,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             }
             System.arraycopy(unixAcl, 0, aces, i, unixAcl.length);
             return Acls.compact(aces);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new StaleException(e.getMessage());
         }
     }
@@ -404,7 +404,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         }
         try {
             _fs.setACL(fsInode, dacl);
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new StaleException(e.getMessage());
         }
     }

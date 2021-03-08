@@ -1,6 +1,5 @@
 package org.dcache.chimera.namespace;
 
-import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +15,7 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.posix.Stat;
@@ -89,7 +88,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 return null;
             }
             return getDefaultAccessLatency();
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage(), e);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to obtain AccessLatency: " + e.getMessage(), e);
@@ -132,7 +131,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             }
 
             return getDefaultRetentionPolicy();
-        } catch (FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage(), e);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to obtain RetentionPolicy: " + e.getMessage(), e);
@@ -230,7 +229,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 }
             }
 
-        }catch(FileNotFoundHimeraFsException e) {
+        }catch(FileNotFoundChimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage());
         }catch(ChimeraFsException he ) {
             throw new CacheException(he.getMessage() );

@@ -16,33 +16,30 @@
  */
 package org.dcache.chimera;
 
-import org.dcache.chimera.posix.Stat;
+public class DirNotEmptyChimeraFsException extends ChimeraFsException {
 
-public class HimeraDirectoryEntry {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 4850649327433452917L;
 
-    private final String _name;
-    private final Stat _stat;
-    private final FsInode _inode;
-
-    public HimeraDirectoryEntry(String name, FsInode inode) throws ChimeraFsException {
-        this(name, inode, inode.statCache());
+    /**
+     * Creates a new instance of <code>DirNotEmptyChimeraFsException</code> without detail message.
+     */
+    public DirNotEmptyChimeraFsException() {
+        super();
     }
 
-    public HimeraDirectoryEntry(String name, FsInode inode, Stat stat) {
-        _inode = inode;
-        _name = name;
-        _stat = stat;
+    /**
+     * Constructs an instance of <code>DirNotEmptyChimeraFsException</code> with the specified detail message.
+     * @param msg the detail message.
+     */
+    public DirNotEmptyChimeraFsException(String msg) {
+        super(msg);
     }
 
-    public FsInode getInode() {
-        return _inode;
-    }
-
-    public String getName() {
-        return _name;
-    }
-
-    public Stat getStat() {
-        return _stat;
+    public DirNotEmptyChimeraFsException(String message, Throwable cause)
+    {
+        super(message, cause);
     }
 }

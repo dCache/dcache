@@ -40,7 +40,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
@@ -693,7 +693,7 @@ public class PnfsManagerTest
         try {
             _fs.path2inode(path);
             fail(path + " exists when it was expected not to");
-        } catch (FileNotFoundHimeraFsException ignored) {
+        } catch (FileNotFoundChimeraFsException ignored) {
         }
     }
 

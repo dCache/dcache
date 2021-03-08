@@ -63,7 +63,7 @@ public class FsInode_TAG extends FsInode {
     @Override
     public Stat stat() throws ChimeraFsException {
         if (!exists()) {
-            throw new FileNotFoundHimeraFsException("tag do not exist");
+            throw new FileNotFoundChimeraFsException("tag do not exist");
         }
 
         Stat ret = _fs.statTag(this, _tag);

@@ -189,7 +189,7 @@ public class FsInode {
      * gets the actual stat information of the inode and updated the cached value
      * See also statCache()
      * @return Stat
-     * @throws FileNotFoundHimeraFsException
+     * @throws FileNotFoundChimeraFsException
      */
     public Stat stat() throws ChimeraFsException {
         _stat = _fs.stat(this, _level);
@@ -201,7 +201,7 @@ public class FsInode {
      * gets the cached value of  stat information of the inode
      * See also stat()
      * @return Stat
-     * @throws FileNotFoundHimeraFsException
+     * @throws FileNotFoundChimeraFsException
      */
     public Stat statCache() throws ChimeraFsException {
         return (_stat == null) ? stat() : _stat;
@@ -290,7 +290,7 @@ public class FsInode {
         try {
             statCache();
             rc = true;
-        } catch (FileNotFoundHimeraFsException hfe) {
+        } catch (FileNotFoundChimeraFsException hfe) {
         }
         return rc;
     }
@@ -425,7 +425,7 @@ public class FsInode {
         return _level;
     }
 
-    public DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream() throws ChimeraFsException {
+    public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream() throws ChimeraFsException {
         return _fs.newDirectoryStream(this);
     }
 
