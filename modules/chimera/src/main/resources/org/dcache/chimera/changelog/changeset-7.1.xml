@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="31" author="tigran">
+        <sql>
+            UPDATE t_inodes i SET inlink=1+(SELECT count(*) FROM t_dirs d WHERE d.iparent=i.inumber) where i.ipnfsid='000000000000000000000000000000000000';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -121,10 +121,15 @@ public interface FileSystemProvider extends Closeable {
     void createFileWithId(FsInode parent, String id, String name, int owner, int group, int mode, int type)
             throws ChimeraFsException;
 
-    String[] listDir(String dir);
-
-    String[] listDir(FsInode dir) throws ChimeraFsException;
-
+    /**
+     * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry in the directory.
+     *
+     * The returned stream may keep system resources allocated. The try-with-resources construct should be used
+     * to ensure that the stream's close method is invoked after the stream operations are completed.
+     *
+     * @param dir inode of the directory to list
+     * @return stream of directory entries
+     */
     DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir)
             throws ChimeraFsException;
 

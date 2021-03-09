@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -550,30 +551,30 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test
     public void testRemoveFileById() throws Exception
     {
-        int n = _fs.listDir(_rootInode).length;
+        long n = getDirEntryCount(_rootInode);
         FsInode file = _rootInode.create("foo", 0, 0, 0644);
         _fs.remove(file);
-        assertEquals(n, _fs.listDir(_rootInode).length);
+        assertEquals(n, getDirEntryCount(_rootInode));
     }
 
     @Test
     public void testRemoveSeveralHardlinksById() throws Exception
     {
-        int n = _fs.listDir(_rootInode).length;
+        long n = getDirEntryCount(_rootInode);
         FsInode file = _rootInode.create("foo", 0, 0, 0644);
         _fs.createHLink(_rootInode, file, "bar");
         _fs.remove(file);
-        assertEquals(n, _fs.listDir(_rootInode).length);
+        assertEquals(n, getDirEntryCount(_rootInode));
         assertEquals(n, _rootInode.stat().getNlink());
     }
 
     @Test
     public void testRemoveDirById() throws Exception
     {
-        int n =_fs.listDir(_rootInode).length;
+        long n = getDirEntryCount(_rootInode);
         FsInode foo = _rootInode.mkdir("foo");
         _fs.remove(foo);
-        assertEquals(n, _fs.listDir(_rootInode).length);
+        assertEquals(n, getDirEntryCount(_rootInode));
     }
 
     @Test(expected= DirNotEmptyChimeraFsException.class)
@@ -603,18 +604,18 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testRemoveFileByPath() throws Exception {
-        int n = _fs.listDir(_rootInode).length;
+        long n = getDirEntryCount(_rootInode);
         FsInode file = _rootInode.create("foo", 0, 0, 0644);
         _fs.remove("/foo");
-        assertEquals(n, _fs.listDir(_rootInode).length);
+        assertEquals(n, getDirEntryCount(_rootInode));
     }
 
     @Test
     public void testRemoveDirByPath() throws Exception {
-        int n = _fs.listDir(_rootInode).length;
+        long n = getDirEntryCount(_rootInode);
         FsInode foo = _rootInode.mkdir("foo");
         _fs.remove("/foo");
-        assertEquals(n, _fs.listDir(_rootInode).length);
+        assertEquals(n, getDirEntryCount(_rootInode));
     }
 
     @Test(expected= DirNotEmptyChimeraFsException.class)
@@ -1491,4 +1492,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertThat("inode generation must be update on xattr remote",
                 _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
     }
+
+    private long getDirEntryCount(FsInode dir) throws IOException {
+        try (var s = _fs.newDirectoryStream(dir)) {
+            return s.stream().count();
+        }
+    }
+
 }

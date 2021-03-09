@@ -224,24 +224,10 @@ public class FsSqlDriver {
     }
 
     /**
-     * returns list of files in the directory. If there is no entries,
-     * empty list is returned. inode is not tested to be a directory
+     * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry in the directory.
      *
      * @param dir
-     * @return
-     */
-    String[] listDir(FsInode dir) {
-        List<String> directoryList = _jdbc.queryForList("SELECT iname FROM t_dirs WHERE iparent=?",
-                                                        String.class, dir.ino());
-        return Stream.concat(Stream.of(".", ".."), directoryList.stream()).toArray(String[]::new);
-    }
-
-    /**
-     * the same as listDir, but array of {@ChimeraDirectoryEntry} is returned, which contains
-     * file attributes as well.
-     *
-     * @param dir
-     * @return
+     * @return stream of directory entries
      */
     DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir) {
         return new DirectoryStreamB<ChimeraDirectoryEntry>()

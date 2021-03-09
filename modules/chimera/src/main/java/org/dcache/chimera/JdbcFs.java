@@ -451,20 +451,6 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public String[] listDir(String dir) {
-        try {
-            return listDir(path2inode(dir));
-        } catch (ChimeraFsException e) {
-            return null;
-        }
-    }
-
-    @Override
-    public String[] listDir(FsInode dir) throws ChimeraFsException {
-        return _sqlDriver.listDir(dir);
-    }
-
-    @Override
     public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir) throws ChimeraFsException {
         return _sqlDriver.newDirectoryStream(dir);
     }
