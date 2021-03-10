@@ -63,7 +63,10 @@ public class ChecksumCalculatingTransfer extends Transfer
 
         setAdditionalAttributes(EnumSet.of(FileAttribute.CHECKSUM));
         readNameSpaceEntry(false);
-        Checksum existingChecksum = Checksums.preferrredOrder().max(getFileAttributes().getChecksums());
+        if (getFileAttributes().getChecksums().isEmpty()) {
+            throw new CacheException("No checksums found.");
+        }
+        Checksum existingChecksum = Checksums.preferredOrder().max(getFileAttributes().getChecksums());
         MessageDigest verifyingDigest = existingChecksum.getType().createMessageDigest();
         MessageDigest desiredDigest = desiredType.createMessageDigest();
 

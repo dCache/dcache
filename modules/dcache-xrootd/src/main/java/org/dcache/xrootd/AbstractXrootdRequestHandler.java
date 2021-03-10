@@ -97,7 +97,7 @@ public class AbstractXrootdRequestHandler extends XrootdProtocolRequestHandler
                                 + "but not of the requested type.");
             }
 
-            Checksum checksum = Checksums.preferrredOrder().min(checksums);
+            Checksum checksum = Checksums.preferredOrder().min(checksums);
             return new QueryResponse(msg,checksum.getType()
                                                       .getName()
                                                       .toLowerCase()
