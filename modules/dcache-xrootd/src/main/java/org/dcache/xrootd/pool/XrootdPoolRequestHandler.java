@@ -21,12 +21,11 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -38,10 +37,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileCorruptedCacheException;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.repository.OutOfDiskException;
@@ -87,6 +82,8 @@ import org.dcache.xrootd.util.ChecksumInfo;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
@@ -126,6 +123,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      * the Netty ChannelPipeline, so okay to store stateful information.
      */
     private boolean _hasOpenedFiles;
+
     /**
      * Address of the door. Enables us to redirect the client back if an
      * operation should better be performed at the door.
@@ -170,13 +168,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         }
     }
 
-    /**
-     * @throws IOException closing the server socket that handles the
-     *                     connection fails
-     */
     @Override
     public void channelInactive(ChannelHandlerContext ctx)
-            throws Exception
     {
         /* close leftover descriptors */
         for (FileDescriptor descriptor : _descriptors) {
@@ -191,8 +184,20 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 } else if (descriptor.getChannel().getIoMode().contains(StandardOpenOption.WRITE)) {
                     descriptor.getChannel().release(new CacheException(
                             "Client disconnected without closing file."));
-                } else {
+                } else if (!descriptor.getChannel().getIoMode().contains(StandardOpenOption.READ)) {
                     descriptor.getChannel().release();
+                } else {
+                    /*
+                     *  Because IO stall during a read may trigger the xrootd client
+                     *  to attempt, after a timeout, to reconnect by opening another socket,
+                     *  we would like not to reject it on the basis of a missing mover.  Thus in the
+                     *  case that the file descriptor maps to a READ mover channel, we leave the
+                     *  mover in the map held by the transfer service.  We start a timer
+                     *  in case there is no reconnect, in which case the channel is then released.
+                     */
+                    _server.scheduleReconnectTimerForMover(descriptor);
+                    _log.debug("{} channeInactive, starting timer for reconnect with mover {}.",
+                        ctx.channel(), descriptor.getChannel().getMoverUuid());
                 }
             }
         }
@@ -208,10 +213,23 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 if (descriptor != null) {
                     if (descriptor.isPersistOnSuccessfulClose()) {
                         descriptor.getChannel().release(new FileCorruptedCacheException(
-                                "File was opened with Persist On Successful Close and client was disconnected due to an error: " +
+                                "File was opened with Persist On Successful Close and client was "
+                                    + "disconnected due to an error: " +
                                 t.getMessage(), t));
-                    } else {
+                    } else if (!(descriptor.getChannel().getIoMode().contains(StandardOpenOption.READ)
+                                 && t instanceof IOException)) {
                         descriptor.getChannel().release(t);
+                    } else {
+                        /*
+                         *  Analogously to the exclusion of READ channels in the
+                         *  channelInactive method (see explanation above).
+                         *
+                         *  Here we limit the exclusion to an actual instance of IOException on READ
+                         *  (the stall could present itself eventually as a broken pipe exception).
+                         */
+                        _server.scheduleReconnectTimerForMover(descriptor);
+                        _log.debug("{} exceptionCaught ({}), starting timer for reconnect with mover {}.",
+                            ctx.channel(), t.toString(), descriptor.getChannel().getMoverUuid());
                     }
 
                     if (descriptor instanceof TpcWriteDescriptor) {
@@ -234,6 +252,12 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     throws XrootdException
     {
         XrootdSessionIdentifier sessionId = new XrootdSessionIdentifier();
+
+        /*
+         * It is only necessary to tell the client to observe the unix protocol
+         * if security is on and signed hashes are being enforced.
+         * We also need to swap the decoder.
+         */
         String sec;
 
         /**
@@ -330,6 +354,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                                     + " is no longer valid.");
                 });
             }
+
+            /*
+             *  Stop any timer in case this is a reconnect.
+             */
+            _server.cancelReconnectTimerForMover(uuid);
 
             try {
                 FileDescriptor descriptor;
@@ -696,7 +725,37 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                              "open file.");
         }
 
-        ListenableFuture<Void> future = _descriptors.get(fd).getChannel().release();
+        /*
+         *  While there is currently no provision in the dCache xroot implementation
+         *  for the concurrent use of the same mover channel for file reads on
+         *  separate sockets (i.e., chunked reading from different offsets are all done
+         *  on the same socket/channel, and each new open at the door is mapped to a new
+         *  mover), the mover is nevertheless opened here on the pool in non-exclusive mode.
+         *
+         *  What this legacy choice implies is that the xroot mover could potentially be reused
+         *  while open, and in fact we wish to provide for this on READs by not releasing the mover
+         *  should one of the channels using it go inactive or catch an IOException.
+         *
+         *  Since for dCache xrootd (unlike HTTP), multiple sockets using the same mover thus
+         *  always denotes a fail/retry or timeout/retry attempt, the client will have considered
+         *  the preceding attempt null and will send an end session request after logging in on
+         *  a new socket.  It will also not request close on the first socket, for obvious
+         *  reasons.
+         *
+         *  The behavior of the xrootd client thus poses a problem.  If we were to map movers to
+         *  session ids and then release them when the client sends the end session request,
+         *  this would still risk closing the mover and removing it from the uuid map before
+         *  the new open request has a chance to increment the mover's reference count (a
+         *  race with the client).
+         *
+         *  One solution would be implement a "releaseNoClose" semantics on the mover, and use
+         *  that in the channelInactive and exceptionCaught methods; but that choice still
+         *  is subject to timing issues and is not reliable.
+         *
+         *  The alternative adopted here is to implement a forcible close by releasing
+         *  all references to the mover.
+         */
+        ListenableFuture<Void> future = _descriptors.get(fd).getChannel().releaseAll();
         future.addListener(() -> {
             try {
                 Uninterruptibles.getUninterruptibly(future);
