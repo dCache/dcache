@@ -18,39 +18,32 @@
 package org.dcache.xrootd.pool;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.timeout.IdleStateHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
 import diskCacheV111.util.CacheException;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleStateHandler;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.Resource;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.util.CDCThreadFactory;
@@ -68,6 +61,9 @@ import org.dcache.xrootd.security.SigningPolicy;
 import org.dcache.xrootd.security.TLSSessionInfo;
 import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
 import org.dcache.xrootd.util.ServerProtocolFlags;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import static org.dcache.xrootd.plugins.XrootdTLSHandlerFactory.CLIENT_TLS;
 import static org.dcache.xrootd.plugins.XrootdTLSHandlerFactory.SERVER_TLS;
@@ -149,10 +145,14 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     private Map<String, String>         queryConfig;
     private NioEventLoopGroup           thirdPartyClientGroup;
     private ScheduledExecutorService    thirdPartyShutdownExecutor;
+
     private SigningPolicy               signingPolicy;
     private ServerProtocolFlags         serverProtocolFlags;
     private long                        tpcServerResponseTimeout;
     private TimeUnit                    tpcServerResponseTimeoutUnit;
+    private Map<String, Timer>          reconnectTimers;
+    private long                        readReconnectTimeout;
+    private TimeUnit                    readReconnectTimeoutUnit;
 
     public XrootdTransferService()
     {
@@ -180,12 +180,72 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                         .setNameFormat("xrootd-tpc-client-%d")
                         .build();
         thirdPartyClientGroup = new NioEventLoopGroup(0, new CDCThreadFactory(factory));
+        reconnectTimers = new HashMap<>();
     }
 
     @Required
     public void setAccessLogPlugins(List<ChannelHandlerFactory> plugins)
     {
         this.accessLogPlugins = plugins;
+    }
+
+    /**
+     * Stop the timer, presumably because the client has reconnected.
+     *
+     * @param uuid  of the mover (channel)
+     */
+    public synchronized void cancelReconnectTimerForMover(UUID uuid)
+    {
+        Timer timer = reconnectTimers.remove(uuid.toString());
+        if (timer != null) {
+            LOGGER.debug("timer for {} cancelled.", uuid);
+            timer.cancel();
+        }
+    }
+
+    /**
+     *  Because IO stall during a read may trigger the xrootd client
+     *  to attempt, after a timeout, to reconnect by opening another socket,
+     *  we would like not to reject it on the basis of a missing mover.  Thus in the
+     *  case that the file descriptor maps to a READ mover channel, we leave the
+     *  mover in the map held by the transfer service and we start a timer.
+     *  If the client fails to reconnect before expiration, the channel is released.
+     *
+     *  @param descriptor referencing the mover (channel)
+     */
+    public synchronized void scheduleReconnectTimerForMover(FileDescriptor descriptor)
+    {
+        NettyMoverChannel channel = descriptor.getChannel();
+        UUID key = channel.getMoverUuid();
+        /*
+         * Make sure no timer exists associated with this mover.
+         * This might happen if both channel inactive and exception caught
+         * calls trigger this method in rapid succession.
+         */
+        cancelReconnectTimerForMover(key);
+        Timer timer = new Timer();
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                LOGGER.debug("timer for {} expired, releasing channel.", key);
+                channel.releaseAll();
+                removeReadReconnectTimer(key);
+            }
+        };
+        reconnectTimers.put(key.toString(), timer);
+        timer.schedule(task, readReconnectTimeoutUnit.toMillis(readReconnectTimeout));
+    }
+
+    @Required
+    public void setReadReconnectTimeout(long readReconnectTimeout)
+    {
+        this.readReconnectTimeout = readReconnectTimeout;
+    }
+
+    @Required
+    public void setReadReconnectTimeoutUnit(TimeUnit readReconnectTimeoutUnit)
+    {
+        this.readReconnectTimeoutUnit = readReconnectTimeoutUnit;
     }
 
     @Required
@@ -358,5 +418,10 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     {
         super.initialiseShutdown();
         shutdownGracefully(thirdPartyClientGroup);
+    }
+
+    private synchronized void removeReadReconnectTimer(UUID key)
+    {
+        reconnectTimers.remove(key.toString());
     }
 }
