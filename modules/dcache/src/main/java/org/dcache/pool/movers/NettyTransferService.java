@@ -21,6 +21,15 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -32,13 +41,6 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -50,18 +52,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
@@ -75,6 +67,9 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.NettyPortRange;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -368,10 +363,14 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             public void execute()
                     throws Exception
             {
+                UUID uuid = mover.getUuid();
                 NettyMoverChannel channel =
-                        autoclose(new NettyMoverChannel(mover.open(), connectTimeoutUnit.toMillis(connectTimeout), this,
-                                mover::addChecksumType, mover::addExpectedChecksum));
-                if (uuids.putIfAbsent(mover.getUuid(), channel) != null) {
+                        autoclose(new NettyMoverChannel(uuid,
+                                                        mover.open(),
+                                                        connectTimeoutUnit.toMillis(connectTimeout), this,
+                                                        mover::addChecksumType,
+                                                        mover::addExpectedChecksum));
+                if (uuids.putIfAbsent(uuid, channel) != null) {
                     throw new IllegalStateException("UUID conflict");
                 }
                 conditionallyStartServer();
@@ -448,14 +447,17 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         private final SettableFuture<Void> closeFuture = SettableFuture.create();
         private final Consumer<ChecksumType> checksumCalculation;
         private final Consumer<Checksum> integrityChecker;
+        private final UUID moverUuid;
 
-        public NettyMoverChannel(MoverChannel<P> file,
+        public NettyMoverChannel(UUID moverUuid,
+                                 MoverChannel<P> file,
                                  long connectTimeout,
                                  CompletionHandler<Void, Void> completionHandler,
                                  Consumer<ChecksumType> checksumCalculation,
                                  Consumer<Checksum> integrityChecker)
         {
             super(file);
+            this.moverUuid = moverUuid;
             this.completionHandler = completionHandler;
             this.checksumCalculation = checksumCalculation;
             this.integrityChecker = integrityChecker;
@@ -480,6 +482,11 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         public void addChecksum(Checksum value)
         {
             integrityChecker.accept(value);
+        }
+
+        public UUID getMoverUuid()
+        {
+            return moverUuid;
         }
 
         @Override
@@ -555,6 +562,12 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             }
         }
 
+        public ListenableFuture<Void> releaseAll()
+        {
+            sync.resetOpen();
+            return release();
+        }
+
         public void done()
         {
             closeFuture.set(null);
@@ -605,6 +618,10 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             synchronized boolean onFailure() {
                 open--;
                 return close();
+            }
+
+            synchronized void resetOpen() {
+                open = 0;
             }
 
             synchronized boolean onCancel()

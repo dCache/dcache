@@ -369,6 +369,8 @@
       <property name="connectTimeout" value="${pool.mover.xrootd.timeout.connect}"/>
       <property name="connectTimeoutUnit" value="${pool.mover.xrootd.timeout.connect.unit}"/>
       <property name="maxFrameSize" value="${pool.mover.xrootd.frame-size}"/>
+      <property name="readReconnectTimeout" value="${pool.mover.xrootd.read-reconnect-timeout}"/>
+      <property name="readReconnectTimeoutUnit" value="${pool.mover.xrootd.read-reconnect-timeout.unit}"/>
       <property name="accessLogPlugins">
         <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
           <property name="plugins" value="access-log"/>
