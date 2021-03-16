@@ -19,6 +19,9 @@ package org.dcache.ftp.door;
 
 import com.google.common.cache.LoadingCache;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -38,8 +41,12 @@ import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 import org.dcache.util.Args;
 import org.dcache.util.OptionParser;
 
+
 public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreterFactory
 {
+    public static final Logger LOGGER =
+            LoggerFactory.getLogger(FtpInterpreterFactory.class);
+
     protected final FtpDoorSettings settings = new FtpDoorSettings();
 
     protected abstract AbstractFtpDoorV1 createInterpreter() throws Exception;
@@ -50,6 +57,12 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
         OptionParser options = new OptionParser(args);
         options.inject(settings);
         options.inject(this);
+        if (settings.isKafkaEnabled)
+        {
+            settings.createKafkaProducer();
+            LOGGER.info("Creating KafkaProducer");
+
+        }
     }
 
     @Override
@@ -76,5 +89,14 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
         interpreter.setSpaceLookupCache(spaceLookupCache);
         interpreter.init();
         return interpreter;
+    }
+
+    @Override
+    public void destroy()
+    {
+        if (settings.isKafkaEnabled){
+            settings.destroy();
+            LOGGER.info("Shutdow KafkaProducer");
+        }
     }
 }

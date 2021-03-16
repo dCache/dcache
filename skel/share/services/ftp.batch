@@ -93,6 +93,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -gplazma=\"${ftp.service.gplazma}\" \
    -billing=\"${ftp.service.billing}\" \
    -kafka=\"${ftp.enable.kafka}\" \
+   -kafka-clientid=\"${ftp.cell.name}\" \
    -bootstrap-server-kafka=\"${ftp.kafka.bootstrap-servers}\" \
    -kafka-topic=\"${ftp.kafka.topic}\" \
    -kafka-max-block=${ftp.kafka.maximum-block}\

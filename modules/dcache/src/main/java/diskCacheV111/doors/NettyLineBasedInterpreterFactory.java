@@ -81,4 +81,9 @@ public interface NettyLineBasedInterpreterFactory
                                 LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
                                 LoadingCache<String,Optional<Space>> spaceLookupCache)
             throws Exception;
+
+    /**
+     * Free allocated  resources
+     */
+    void destroy();
 }

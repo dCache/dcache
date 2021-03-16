@@ -67,6 +67,9 @@ public class FtpDoorSettings
     @Option(name = "retries-kafka")
     protected String kafkaRetries;
 
+    @Option(name = "kafka-clientid")
+    protected String kafkaclientid;
+
 
     @Option(name = "clientDataPortRange",
             defaultValue = "0")
@@ -225,6 +228,9 @@ public class FtpDoorSettings
             description = "If enabled, the state of a transfer is logged when the client aborts.",
             defaultValue = "false")
     protected boolean logAbortedTransfers;
+
+    private KafkaProducer _kafkaProducer;
+
 
     public PortRange getPortRange()
     {
@@ -434,25 +440,33 @@ public class FtpDoorSettings
         return stub;
     }
 
-    public KafkaProducer createKafkaProducer(String bootstrap_server,
-                                             String client_id,
-                                             String max_block_ms,
-                                             String retries)
+    public KafkaProducer createKafkaProducer()
     {
         Properties props = new Properties();
-
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_server);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, client_id);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServer);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, kafkaclientid);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.dcache.notification.DoorRequestMessageSerializer");
-        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, max_block_ms);
-        props.put(ProducerConfig.RETRIES_CONFIG, retries);
+        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, kafkaMaxBlock);
+        props.put(ProducerConfig.RETRIES_CONFIG, kafkaRetries);
 
-        return new KafkaProducer<>(props);
+        _kafkaProducer = new KafkaProducer<>(props);
+        return _kafkaProducer;
     }
 
     public PnfsHandler createPnfsHandler(CellEndpoint cellEndpoint)
     {
         return new PnfsHandler(new CellStub(cellEndpoint, pnfsManager, pnfsTimeout, pnfsTimeoutUnit));
+    }
+
+
+    public KafkaProducer getKafkaProducer()
+    {
+        return _kafkaProducer;
+    }
+
+    public void destroy() {
+        getKafkaProducer().close();
+
     }
 }

@@ -164,6 +164,7 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     @Override
     protected void doStop()
     {
+        factory.destroy();
         socketGroup.shutdownGracefully(500, 2000, TimeUnit.MILLISECONDS).syncUninterruptibly();
         poolManagerHandler.beforeStop();
         executor.shutdown();
