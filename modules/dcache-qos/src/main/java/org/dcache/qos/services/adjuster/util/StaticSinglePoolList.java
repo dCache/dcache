@@ -57,58 +57,51 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.adjuster.util;
 
 import com.google.common.collect.ImmutableList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import org.dcache.pool.migration.RefreshablePoolList;
 
 /**
- *  Base class for maintaining a set of counters.
- *
- *  @param <C> counter type.
+ *  A simplified degenerate implementation of {@link RefreshablePoolList}
+ *  tailored for use by the qos system. Provides a static list
+ *  of the pool information to the migration task.
+ *  <p/>
+ *  As currently used, the pool list will actually contain
+ *  only a single pool which has been precomputed for selection by the
+ *  verification service, already taking into account offline pools.
  */
-public abstract class QoSCounterGroup<C extends QoSCounter> {
-  protected final String name;
-  protected final Map<String, C> counters;
+public final class StaticSinglePoolList implements RefreshablePoolList {
+    private final ImmutableList<PoolManagerPoolInformation> pools;
+    private final ImmutableList<String> offline = ImmutableList.of();
 
-  protected QoSCounterGroup(String name) {
-    this.name = name;
-    counters = Collections.synchronizedMap(new TreeMap<>());
-  }
+    public StaticSinglePoolList(PoolManagerPoolInformation info) {
+        this.pools = ImmutableList.of(info);
+    }
 
-  public void addCounter(String key) {
-    C counter = createCounter(key);
-    counters.put(key, counter);
-  }
+    @Override
+    public synchronized ImmutableList<String> getOfflinePools() {
+        return offline;
+    }
 
-  public C getCounter(String key) {
-    return counters.get(key);
-  }
+    @Override
+    public synchronized ImmutableList<PoolManagerPoolInformation> getPools() {
+        return pools;
+    }
 
-  public boolean hasCounter(String key) {
-    return counters.containsKey(key);
-  }
+    @Override
+    public synchronized boolean isValid() {
+        return true;
+    }
 
-  public List<String> getKeys() {
-    return ImmutableList.copyOf(counters.keySet());
-  }
+    @Override
+    public synchronized void refresh() {
+        //NOP
+    }
 
-  public String getName() {
-    return name;
-  }
-
-  public List<C> getValues() {
-    return ImmutableList.copyOf(counters.values());
-  }
-
-  public void removeCounter(String key) {
-    counters.remove(key);
-  }
-
-  public abstract void format(StringBuilder builder);
-
-  protected abstract C createCounter(String key);
+    @Override
+    public String toString() {
+        return String.format("pools %s, offline %s", pools, offline);
+    }
 }

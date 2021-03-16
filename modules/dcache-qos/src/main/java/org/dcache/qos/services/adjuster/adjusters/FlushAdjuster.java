@@ -57,58 +57,34 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.adjuster.adjusters;
 
-import com.google.common.collect.ImmutableList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import org.dcache.pool.migration.Task;
+import org.dcache.pool.migration.TaskParameters;
+import org.dcache.pool.repository.ReplicaState;
 
 /**
- *  Base class for maintaining a set of counters.
- *
- *  @param <C> counter type.
+ *  This adjustment usually will be in response to a user/admin request to
+ *  change a disk-only file to tape, but could also involve an initial write
+ *  of a CUSTODIAL file which did not land on an HSM pool.  A suitable HSM pool
+ *  will have been found by the verification service.
+ *  <p/>
+ *  As with its parent, task state does not change to completed until it receives a response
+ *  from the module.  However, in the case of FLUSH, this response occurs immediately
+ *  after the file has either been copied or its PRECIOUS bit has been set.
  */
-public abstract class QoSCounterGroup<C extends QoSCounter> {
-  protected final String name;
-  protected final Map<String, C> counters;
-
-  protected QoSCounterGroup(String name) {
-    this.name = name;
-    counters = Collections.synchronizedMap(new TreeMap<>());
+public final class FlushAdjuster extends CopyAdjuster {
+  @Override
+  protected void createTask(TaskParameters taskParameters, String source) {
+    migrationTask = new Task(taskParameters,
+                             completionHandler,
+                             source,
+                             pnfsId,
+        ReplicaState.PRECIOUS,
+        Collections.EMPTY_LIST,
+        Collections.EMPTY_LIST,
+        attributes,
+        attributes.getAccessTime());
   }
-
-  public void addCounter(String key) {
-    C counter = createCounter(key);
-    counters.put(key, counter);
-  }
-
-  public C getCounter(String key) {
-    return counters.get(key);
-  }
-
-  public boolean hasCounter(String key) {
-    return counters.containsKey(key);
-  }
-
-  public List<String> getKeys() {
-    return ImmutableList.copyOf(counters.keySet());
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public List<C> getValues() {
-    return ImmutableList.copyOf(counters.values());
-  }
-
-  public void removeCounter(String key) {
-    counters.remove(key);
-  }
-
-  public abstract void format(StringBuilder builder);
-
-  protected abstract C createCounter(String key);
 }

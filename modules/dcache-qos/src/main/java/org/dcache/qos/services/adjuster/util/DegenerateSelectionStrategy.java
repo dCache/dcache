@@ -57,58 +57,28 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.adjuster.util;
 
-import com.google.common.collect.ImmutableList;
-import java.util.Collections;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import javax.annotation.Nullable;
+import org.dcache.pool.migration.PoolSelectionStrategy;
+import org.dcache.pool.migration.Task;
 
 /**
- *  Base class for maintaining a set of counters.
- *
- *  @param <C> counter type.
+ *  Simply returns the single member of the list.
+ *  <p/>
+ *  The reason for its existence is so that the verification handler can preselect the source
+ *  and target pools, but still make use of the migration module {@link Task}, which requires
+ *  an implementation of {@link PoolSelectionStrategy} to be provided.
  */
-public abstract class QoSCounterGroup<C extends QoSCounter> {
-  protected final String name;
-  protected final Map<String, C> counters;
-
-  protected QoSCounterGroup(String name) {
-    this.name = name;
-    counters = Collections.synchronizedMap(new TreeMap<>());
-  }
-
-  public void addCounter(String key) {
-    C counter = createCounter(key);
-    counters.put(key, counter);
-  }
-
-  public C getCounter(String key) {
-    return counters.get(key);
-  }
-
-  public boolean hasCounter(String key) {
-    return counters.containsKey(key);
-  }
-
-  public List<String> getKeys() {
-    return ImmutableList.copyOf(counters.keySet());
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public List<C> getValues() {
-    return ImmutableList.copyOf(counters.values());
-  }
-
-  public void removeCounter(String key) {
-    counters.remove(key);
-  }
-
-  public abstract void format(StringBuilder builder);
-
-  protected abstract C createCounter(String key);
+public final class DegenerateSelectionStrategy implements PoolSelectionStrategy {
+    @Nullable
+    @Override
+    public PoolManagerPoolInformation select(List<PoolManagerPoolInformation> pools) {
+        if (pools.isEmpty()) {
+            return null;
+        }
+        return pools.get(0);
+    }
 }

@@ -57,58 +57,50 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.util;
+package org.dcache.qos.services.adjuster.adjusters;
 
 import com.google.common.collect.ImmutableList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import diskCacheV111.util.PnfsId;
+import org.dcache.pool.classic.Cancellable;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.qos.data.QoSAction;
+import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
+import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
+import org.dcache.qos.util.MessageGuard;
+import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *  Base class for maintaining a set of counters.
- *
- *  @param <C> counter type.
+ *  Parent class for adjusters. Generates a QOS session id for the remote messaging
+ *  to identify events originating here.
  */
-public abstract class QoSCounterGroup<C extends QoSCounter> {
-  protected final String name;
-  protected final Map<String, C> counters;
+public abstract class QoSAdjuster implements Cancellable {
+  protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
+  protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
+  protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
+      = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
 
-  protected QoSCounterGroup(String name) {
-    this.name = name;
-    counters = Collections.synchronizedMap(new TreeMap<>());
+  protected PnfsId pnfsId;
+  protected FileAttributes attributes;
+  protected QoSAction action;
+  protected QoSAdjustTaskCompletionHandler completionHandler;
+
+  public void adjustQoS(QoSAdjusterTask task) {
+    pnfsId = task.getPnfsId();
+    action = task.getAction();
+    attributes = task.getAttributes();
+
+    /*
+     *  Generate the SESSION ID.   This is used by the QoS status endpoint
+     *  (requirements listener or QoS engine) to exclude location updates
+     *  which result from copies or actions initiated here (an optimization
+     *  so as not to resend redundant verification requests).
+     */
+    MessageGuard.setQoSSession();
+
+    runAdjuster(task);
   }
 
-  public void addCounter(String key) {
-    C counter = createCounter(key);
-    counters.put(key, counter);
-  }
-
-  public C getCounter(String key) {
-    return counters.get(key);
-  }
-
-  public boolean hasCounter(String key) {
-    return counters.containsKey(key);
-  }
-
-  public List<String> getKeys() {
-    return ImmutableList.copyOf(counters.keySet());
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public List<C> getValues() {
-    return ImmutableList.copyOf(counters.values());
-  }
-
-  public void removeCounter(String key) {
-    counters.remove(key);
-  }
-
-  public abstract void format(StringBuilder builder);
-
-  protected abstract C createCounter(String key);
+  protected abstract void runAdjuster(QoSAdjusterTask task);
 }
