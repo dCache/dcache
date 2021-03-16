@@ -230,7 +230,7 @@ public class Checksums
                         .findFirst());
     }
 
-    public static Ordering<Checksum> preferrredOrder()
+    public static Ordering<Checksum> preferredOrder()
     {
         return PREFERRED_CHECKSUM_ORDERING;
     }
