@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -49,7 +49,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,9 +89,6 @@ public class LocationManager extends CellAdapter
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(LocationManager.class);
-
-    // legacy support. remove in 7.0
-    private static final String ZK_CORES_PLAIN = "/dcache/lm/cores";
 
     private static final String ZK_CORES_URI = "/dcache/lm/cores-uri";
     private static final String ZK_CORE_CONFIG = "/dcache/lm/core-config";
@@ -333,7 +329,6 @@ public class LocationManager extends CellAdapter
 
 
         /* Only created if the local domain is a core. */
-        private LmPersistentNode<HostAndPort> localLegacy; // remove with 7.0
         private LmPersistentNode<CoreDomainInfo> localUri;
 
         protected CoreDomains(String domainName, CuratorFramework client, PathChildrenCache cores)
@@ -366,9 +361,6 @@ public class LocationManager extends CellAdapter
         public void close() throws IOException
         {
             CloseableUtils.closeQuietly(cores);
-            if (localLegacy != null) {
-                CloseableUtils.closeQuietly(localLegacy);
-            }
             if (localUri != null) {
                 CloseableUtils.closeQuietly(localUri);
             }
@@ -391,18 +383,6 @@ public class LocationManager extends CellAdapter
                                                         coreDomainInfo,
                                                         CoreDomainInfo::toBytes,
                                                         localUri);
-
-            // produce legacy file for backward compatibility. Remove with 7.0
-            Optional<HostAndPort> plainConnection = coreDomainInfo.getEndpointForSchema("tcp");
-            if (plainConnection.isPresent()) {
-                localLegacy = LmPersistentNode.createOrUpdate(client,
-                                                            pathOf(ZK_CORES_PLAIN, domainName),
-                                                            plainConnection.get(),
-                                                            address -> address.toString()
-                                                                              .getBytes(StandardCharsets.US_ASCII),
-                                                            localLegacy);
-            }
-
         }
     }
 
