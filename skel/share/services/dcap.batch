@@ -118,6 +118,7 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -kafka-max-block=${dcap.kafka.maximum-block}\
              -kafka-max-block-units=${dcap.kafka.maximum-block.unit}\
              -retries-kafka=0 \
+             -kafka-clientid=\"${dcap.cell.name}\" \
              -stageConfigurationFilePath=\"${dcap.authz.staging}\" \
              -allowAnonymousStaging=\"${dcap.authz.anonymous-staging}\" \
              -io-queue=${dcap.mover.queue} \

@@ -100,6 +100,9 @@ public class DcapDoorSettings
     @Option(name = "retries-kafka")
     protected String kafkaRetries;
 
+    @Option(name = "kafka-clientid")
+    protected String kafkaclientid;
+
 
     @Option(name = "hsm",
             description = "Cell address of hsm manager",
@@ -202,7 +205,7 @@ public class DcapDoorSettings
         checkStagePermission = new CheckStagePermission(stageConfigurationFilePath);
         checkStagePermission.setAllowAnonymousStaging(allowAnonymousStaging);
         if (isKafkaEnabled) {
-            _kafkaProducer = createKafkaProducer(kafkaBootstrapServer, String.valueOf(kafkaMaxBlock), kafkaRetries);
+            _kafkaProducer = createKafkaProducer();
             _log.warn("Creating KafkaProducer" + _kafkaProducer.hashCode());
         }
     }
@@ -343,17 +346,15 @@ public class DcapDoorSettings
 
 
 
-    public KafkaProducer createKafkaProducer(String bootstrap_server,
-                                             String max_block_ms,
-                                             String retries)
+    public KafkaProducer createKafkaProducer()
     {
         Properties props = new Properties();
-        //TODO check client_id
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_server);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServer);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, kafkaclientid);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.dcache.notification.DoorRequestMessageSerializer");
-        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, max_block_ms);
-        props.put(ProducerConfig.RETRIES_CONFIG, retries);
+        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, kafkaMaxBlock);
+        props.put(ProducerConfig.RETRIES_CONFIG, kafkaRetries);
 
         return new KafkaProducer<>(props);
     }
