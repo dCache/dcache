@@ -1924,9 +1924,9 @@ As the tester user, we can upload some test data into the
 `/public/tester` directory:
 
 ```console-root
-curl -u tester:TooManySecrets -L -T /bin/bash http://localhost:2880/public/tester/test-1.dat
+curl -u tester:TooManySecrets -L -T /bin/bash ftp://localhost:22126/public/tester/test-1.dat
 |964544 bytes uploaded
-curl -u tester:TooManySecrets -L -T /bin/bash http://localhost:2880/public/tester/test-2.dat
+curl -u tester:TooManySecrets -L -T /bin/bash ftp://localhost:22126/public/tester/test-2.dat
 |964544 bytes uploaded
 ```
 
