@@ -1606,7 +1606,11 @@ public class NFSv41Door extends AbstractCellComponent implements
             /*
              * NFS door doesn't know the path and expects that namespace will populate it as a part of storage info.
              */
-            return getFileAttributes().getStorageInfo().getKey("path");
+            if (getFileAttributes().isDefined(FileAttribute.STORAGEINFO)) {
+                return getFileAttributes().getStorageInfo().getKey("path");
+            } else {
+                return "N/A";
+            }
         }
     }
 
