@@ -92,6 +92,8 @@ Change the value for `srmmanager.db.host` in the layout file.
 srmmanager.db.host=hostname
 ```
 
+If a dCache instance contains more than one `srmmanager`, it is necessary that each one has a _distinct_ database.
+
 The property `srm.request.copy.threads` controls number of copy requests in the running state. Copy requests are 3-rd party srm transfers and therefore the property `transfermanagers.limits.external-transfers` is best to be set to the same value as shown below.
 
 ```ini
