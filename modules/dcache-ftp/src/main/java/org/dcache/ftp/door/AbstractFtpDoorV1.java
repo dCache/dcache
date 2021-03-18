@@ -3022,16 +3022,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private Checksum calculateChecksum(String file) throws FTPCommandException, IOException
-    {
-        ServerSocket ss = new ServerSocket();
-
-        FtpTransfer transfer = new FtpTransfer(absolutePath(file),
-                            -1, -1, Mode.PASSIVE, TransferMode.MODE_S, 1, (InetSocketAddress) ss.getLocalSocketAddress(),
-                            MiB.toBytes(1), DelayedPassiveReply.NONE, null, 1);
-        return null;
-    }
-
     @Help("SCKS <SP> <alg> <SP> <value> - Fail next upload if checksum does not match.")
     public void ftp_scks(String arg) throws FTPCommandException
     {
