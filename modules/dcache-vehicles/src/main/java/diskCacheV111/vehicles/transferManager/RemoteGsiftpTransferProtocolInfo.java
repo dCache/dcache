@@ -164,8 +164,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
       return sb;
   }
 
-  public boolean isFileCheckRequired() { return true; }
-
   /** Getter for property gsiftpTranferManagerName.
    * @return Value of property gsiftpTranferManagerName.
    */

@@ -46,10 +46,6 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
         return _protocolName + "-" + _major + "." + _minor;
     }
 
-    public boolean isFileCheckRequired() {
-        return false;
-    }
-
     public stateid4 stateId() {
         return _stateId;
     }
