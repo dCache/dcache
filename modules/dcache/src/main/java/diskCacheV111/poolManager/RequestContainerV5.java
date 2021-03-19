@@ -1846,8 +1846,9 @@ public class RequestContainerV5
                     // best candidate is the right one
                     return RequestStatusCode.OK;
                 case CacheException.HSM_DELAY_ERROR:
-                    _currentRm = "Suspend by HSM request : " + reply.getErrorObject() == null
-                            ? "No info" : reply.getErrorObject().toString();
+                    String explanation = reply.getErrorObject() == null
+                                    ? "No info" : reply.getErrorObject().toString();
+                    _currentRm = "Suspend by HSM request : " + explanation;
                     return RequestStatusCode.DELAY;
                 default:
                     _currentRm = reply.getErrorObject() == null
