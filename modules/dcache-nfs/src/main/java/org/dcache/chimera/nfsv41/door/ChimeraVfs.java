@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2020 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2021 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -642,23 +642,42 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public void setXattr(Inode inode, String attr, byte[] value, SetXattrMode mode) throws IOException {
         FsInode fsInode = toFsInode(inode);
 
-        FileSystemProvider.SetXattrMode m;
-        switch (mode) {
-            case CREATE:
-                m = FileSystemProvider.SetXattrMode.CREATE;
-                break;
-            case REPLACE:
-                m = FileSystemProvider.SetXattrMode.REPLACE;
-                break;
-
-            case EITHER:
-                m = FileSystemProvider.SetXattrMode.EITHER;
-                break;
-            default:
-                throw new RuntimeException();
-        }
         try {
-            _fs.setXattr(fsInode, attr, value, m);
+            if (attr.startsWith(XATTR_TAG_PREFIX) && fsInode.isDirectory()) {
+                String tagName = attr.substring(XATTR_TAG_PREFIX.length());
+                if (mode == SetXattrMode.CREATE) {
+                    _fs.createTag(fsInode, tagName);
+                }
+
+                if (mode == SetXattrMode.EITHER) {
+                    try {
+                        _fs.statTag(fsInode, tagName);
+                    } catch (FileNotFoundChimeraFsException e) {
+                        _fs.createTag(fsInode, tagName);
+                    }
+                }
+
+                _fs.setTag(fsInode, tagName, value, 0, value.length);
+            } else {
+
+                FileSystemProvider.SetXattrMode m;
+                switch (mode) {
+                    case CREATE:
+                        m = FileSystemProvider.SetXattrMode.CREATE;
+                        break;
+                    case REPLACE:
+                        m = FileSystemProvider.SetXattrMode.REPLACE;
+                        break;
+
+                    case EITHER:
+                        m = FileSystemProvider.SetXattrMode.EITHER;
+                        break;
+                    default:
+                        throw new RuntimeException();
+                }
+
+                _fs.setXattr(fsInode, attr, value, m);
+            }
         } catch (NoXdataChimeraException e) {
             throw new NoXattrException(e.getMessage(), e);
         } catch (FileExistsChimeraFsException e) {
@@ -683,7 +702,12 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public void removeXattr(Inode inode, String attr) throws IOException {
         FsInode fsInode = toFsInode(inode);
         try {
-            _fs.removeXattr(fsInode, attr);
+            if (attr.startsWith(XATTR_TAG_PREFIX) && fsInode.isDirectory()) {
+                String tagName = attr.substring(XATTR_TAG_PREFIX.length());
+                _fs.removeTag(fsInode, tagName);
+            } else {
+                _fs.removeXattr(fsInode, attr);
+            }
         } catch (NoXdataChimeraException e) {
             throw new NoXattrException(e.getMessage(), e);
         }

@@ -209,3 +209,55 @@ As enabling it might have negative effects on the performance, the default value
 it false.
 
 > NOTICE: currently only the [ldap](config-gplazma.md#ldap) plugin supports group mapping by uid when `gplazma.ldap.try-uid-mapping` option is enabled.
+
+## Accessing directory tags
+
+There are two ways to access dCache directory tags over NFS mount: the legacy one as via magic files and as extended attributes.
+
+### Directory tags as magic files
+
+Each directory tag can be accessed via special file name, for example to read or write a tag with the name `foo`, the magic file is
+`.(tag)(foo)`:
+
+```console-user
+echo bar > '.(tag)(foo)'
+```
+
+or
+
+```console-user
+cat '.(tag)(foo)'
+|bar
+```
+
+To list all existing file use `.(tags)()` magic file:
+
+```console-user
+ cat '.(tags)()'
+|.(tag)(OSMTemplate)
+|.(tag)(foo)
+|.(tag)(sGroup)
+```
+
+>NOTICE: the directory tags can't be remove via magic files
+
+### Directory tags as extended attributes
+
+The dCache's NFSv4 door implements *extended attributes over NFS* which is specified in [RFC8276](https://tools.ietf.org/rfc/rfc8276.txt). With compatible NFS client (for the moment only Linux kernel 5.10 and later), the directory tags can be access as extended attributes prefixed with `dcache.tag.`. For example:
+
+```console-user
+ attr -l .
+|Attribute "dcache.tag.OSMTemplate" has a 15 byte value for .
+|Attribute "dcache.tag.sGroup" has a 8 byte value for .
+```
+
+or
+
+```console-user
+getfattr  .
+|# file: .
+|user.dcache.tag.OSMTemplate
+|user.dcache.tag.sGroup
+```
+
+> NOTICE: the `getfattr` and `setfattr` commands adds an extra `user.` prefix.
