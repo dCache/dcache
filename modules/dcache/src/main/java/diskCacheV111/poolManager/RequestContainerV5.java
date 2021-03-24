@@ -1794,7 +1794,7 @@ public class RequestContainerV5
             _log.debug(" stateEngine: {}", message);
             updateStatus(message);
             nextStep(RequestState.ST_SUSPENDED);
-            sendInfoMessage(code, message);
+            sendInfoMessage(0, message);
         }
 
         private void suspendIfEnabled(int code, String message)
