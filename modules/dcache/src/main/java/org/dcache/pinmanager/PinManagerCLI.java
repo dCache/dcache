@@ -297,7 +297,10 @@ public class PinManagerCLI
             StringBuilder out = new StringBuilder();
             AtomicInteger total = new AtomicInteger();
             _dao.get(criterion)
-                    .stream().collect(Collectors.groupingBy(Pin::getPool)).forEach(
+                    .stream()
+                    .filter(p -> p.getPool() != null) // rare in-flight occurrences
+                    .collect(Collectors.groupingBy(Pin::getPool))
+                    .forEach(
                     (name, poolpins) ->
                     {
                         int count = poolpins.size();
