@@ -947,7 +947,7 @@ public class RequestContainerV5
            //
            //
            //
-           add(null) ;
+           startStateEngine();
         }
 
         public List<CellMessage> getMessages() {
@@ -1188,9 +1188,16 @@ public class RequestContainerV5
            synchronized( _fifo ){
                _log.info( "Adding Object : {}", obj ) ;
                _fifo.addFirst(obj) ;
-               if( _stateEngineActive ) {
-                   return;
-               }
+
+                if (!_stateEngineActive) {
+                    startStateEngine();
+                }
+           }
+        }
+
+        private void startStateEngine()
+        {
+           synchronized (_fifo) {
                _log.info( "Starting Engine" ) ;
                _stateEngineActive = true ;
                try {
