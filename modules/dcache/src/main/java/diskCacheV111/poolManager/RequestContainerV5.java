@@ -1556,6 +1556,10 @@ public class RequestContainerV5
                     } else {
                         _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
                         suspendIfEnabled(CacheException.POOL_UNAVAILABLE, "Pool unavailable");
+                        // FIXME move this notification into the state change observer
+                        if (_sendHitInfo) {
+                            sendHitMsg(null, false);
+                        }
                     }
                 } catch (PermissionDeniedCacheException e) {
                     _log.info("[read] {}", e.getMessage());
