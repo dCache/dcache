@@ -1658,7 +1658,6 @@ public class RequestContainerV5
                 try {
                     SelectedPool pool = askForStaging();
                     _log.info("[staging] selected pool {}", pool.info());
-                    _stageCandidate = Optional.of(pool);
                     nextStep(RequestState.ST_WAITING_FOR_STAGING);
                     updateStatus("Waiting for stage: " + pool);
                 } catch (MissingResourceCacheException e) {
@@ -1849,6 +1848,7 @@ public class RequestContainerV5
         {
             try {
                 SelectedPool pool =  _poolSelector.selectStagePool(_stageCandidate.map(SelectedPool::info));
+                _stageCandidate = Optional.of(pool);
                 sendFetchRequest(pool);
                 return pool;
             } finally {
