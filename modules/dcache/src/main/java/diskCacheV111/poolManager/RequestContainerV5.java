@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -1729,7 +1730,9 @@ public class RequestContainerV5
                     }
                 } else if (inputObject instanceof PingFailure) {
                     PingFailure message = (PingFailure)inputObject;
-                    if (_poolCandidate.address().equals(message.getPool())) {
+                    CellAddressCore stagePoolAddress = _stageCandidate
+                            .map(SelectedPool::address).orElse(null);
+                    if (Objects.equals(stagePoolAddress, message.getPool())) {
                         _log.info("Ping reported that request died.");
                         errorHandler(CacheException.TIMEOUT, "Staging timed out");
                     }
@@ -1942,10 +1945,8 @@ public class RequestContainerV5
                                     break;
 
                                 case ST_WAITING_FOR_STAGING:
-                                    pool = handler._poolCandidate;
-                                    if (pool != null) {
-                                        stageRequests.put(pool.address(), handler);
-                                    }
+                                    handler._stageCandidate.ifPresent(p ->
+                                            stageRequests.put(p.address(), handler));
                                     break;
                                 }
                             }
