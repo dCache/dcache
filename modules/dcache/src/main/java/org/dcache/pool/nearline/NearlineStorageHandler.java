@@ -63,8 +63,10 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.annotation.concurrent.Immutable;
 
 import java.util.OptionalLong;
 
@@ -134,6 +136,43 @@ public class NearlineStorageHandler
         implements CellCommandListener, StateChangeListener, CellSetupProvider, CellLifeCycleAware, CellInfoProvider, CellIdentityAware,
                 PoolDataBeanProvider<StorageHandlerData>
 {
+
+    /**
+     * Queue occupation statistics.
+     *
+     * REVISIT: change to record type when java14 is allowed.
+     */
+    @Immutable
+    public static final class QueueStat {
+
+        private final int queued;
+        private final int active;
+        private final int canceled;
+
+        public QueueStat(int queued, int active, int canceled) {
+
+            checkArgument(queued >= 0);
+            checkArgument(active >= 0);
+            checkArgument(canceled >= 0);
+
+            this.queued = queued;
+            this.active = active;
+            this.canceled = canceled;
+        }
+
+        public int queued() {
+            return queued;
+        }
+
+        public int active() {
+            return active;
+        }
+
+        public int canceled() {
+            return canceled;
+        }
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NearlineStorageHandler.class);
 
     private final FlushRequestContainer flushRequests = new FlushRequestContainer();
@@ -406,32 +445,35 @@ public class NearlineStorageHandler
 
     public int getActiveFetchJobs()
     {
-        return stageRequests.getCount(r -> (r.state.get() == AbstractRequest.State.ACTIVE || r.state.get() == AbstractRequest.State.CANCELED));
+        QueueStat queueStat = stageRequests.getQueueStats();
+        return queueStat.active() + queueStat.canceled();
     }
 
     public int getFetchQueueSize()
     {
-        return stageRequests.getCount(r -> r.state.get() == AbstractRequest.State.QUEUED);
+        return stageRequests.getQueueStats().queued();
     }
 
     public int getActiveStoreJobs()
     {
-        return flushRequests.getCount(r -> (r.state.get() == AbstractRequest.State.ACTIVE || r.state.get() == AbstractRequest.State.CANCELED));
+        QueueStat queueStat = flushRequests.getQueueStats();
+        return queueStat.active() + queueStat.canceled();
     }
 
     public int getStoreQueueSize()
     {
-        return flushRequests.getCount(r -> r.state.get() == AbstractRequest.State.QUEUED);
+        return flushRequests.getQueueStats().queued();
     }
 
     public int getActiveRemoveJobs()
     {
-        return removeRequests.getCount(r -> (r.state.get() == AbstractRequest.State.ACTIVE || r.state.get() == AbstractRequest.State.CANCELED));
+        QueueStat queueStat = removeRequests.getQueueStats();
+        return queueStat.active() + queueStat.canceled();
     }
 
     public int getRemoveQueueSize()
     {
-        return removeRequests.getCount(r -> r.state.get() == AbstractRequest.State.QUEUED);
+        return removeRequests.getQueueStats().queued();
     }
 
     @Override
@@ -478,9 +520,16 @@ public class NearlineStorageHandler
 
         private final List<Future<?>> asyncTasks = new ArrayList<>();
 
-        AbstractRequest(NearlineStorage storage)
+        /**
+         * Reference to queue statistics counter.
+         */
+        private final AtomicReference<QueueStat> queueStat;
+
+        AbstractRequest(NearlineStorage storage, @Nonnull AtomicReference<QueueStat> queueStat)
         {
             this.storage = storage;
+            this.queueStat = queueStat;
+            incQueued();
         }
 
         // Implements NearlineRequest#setIncluded
@@ -515,6 +564,7 @@ public class NearlineStorageHandler
                 return Futures.immediateFailedFuture(new IllegalStateException("Request is no longer queued."));
             }
             activatedAt = System.currentTimeMillis();
+            incActiveFromQueued();
             return Futures.immediateFuture(null);
         }
 
@@ -532,8 +582,14 @@ public class NearlineStorageHandler
 
         public void cancel()
         {
-            if (state.getAndSet(State.CANCELED) != State.CANCELED) {
+            State oldState = state.getAndSet(State.CANCELED);
+            if ( oldState != State.CANCELED) {
                 storage.cancel(uuid);
+                if (oldState == State.ACTIVE) {
+                    incCancelFromActive();
+                } else {
+                    incCancelFromQueued();
+                }
                 synchronized(this) {
                     for (Future<?> task : asyncTasks) {
                         /*
@@ -583,6 +639,87 @@ public class NearlineStorageHandler
         {
             return Long.compare(createdAt, o.createdAt);
         }
+
+        public void removeFromQueue() {
+            State currentState = state.get();
+            switch (currentState) {
+                case QUEUED:
+                    decQueued();
+                    break;
+                case ACTIVE:
+                    decActive();
+                    break;
+                case CANCELED:
+                    decCanceled();
+                    break;
+                default:
+                    throw new RuntimeException();
+            }
+        }
+
+        private void incQueued() {
+            boolean isSet;
+            do {
+                QueueStat current = queueStat.get();
+                QueueStat withThis = new QueueStat(current.queued() +1, current.active(), current.canceled());
+                isSet = queueStat.compareAndSet(current, withThis);
+            } while (!isSet);
+        }
+
+        private void incActiveFromQueued() {
+            boolean isSet;
+            do {
+                QueueStat current = queueStat.get();
+                QueueStat withThis = new QueueStat(current.queued() -1, current.active() + 1, current.canceled());
+                isSet = queueStat.compareAndSet(current, withThis);
+            } while (!isSet);
+        }
+
+        private void incCancelFromActive() {
+            boolean isSet;
+            do {
+                QueueStat current = queueStat.get();
+                QueueStat withThis = new QueueStat(current.queued(), current.active() - 1, current.canceled() + 1);
+                isSet = queueStat.compareAndSet(current, withThis);
+            } while (!isSet);
+        }
+
+        private void incCancelFromQueued() {
+            boolean isSet;
+            do {
+                QueueStat current = queueStat.get();
+                QueueStat withThis = new QueueStat(current.queued() - 1, current.active(), current.canceled() + 1);
+                isSet = queueStat.compareAndSet(current, withThis);
+            } while (!isSet);
+        }
+
+        private void decQueued() {
+            boolean isSet;
+            do {
+                QueueStat current = queueStat.get();
+                QueueStat withThis = new QueueStat(current.queued() -1, current.active(), current.canceled());
+                isSet = queueStat.compareAndSet(current, withThis);
+            } while (!isSet);
+        }
+
+        private void decActive() {
+            boolean isSet;
+            do {
+                QueueStat current = queueStat.get();
+                QueueStat withThis = new QueueStat(current.queued(), current.active() - 1, current.canceled());
+                isSet = queueStat.compareAndSet(current, withThis);
+            } while (!isSet);
+        }
+
+        private void decCanceled() {
+            boolean isSet;
+            do {
+                QueueStat current = queueStat.get();
+                QueueStat withThis = new QueueStat(current.queued(), current.active(), current.canceled() -1);
+                isSet = queueStat.compareAndSet(current, withThis);
+            } while (!isSet);
+        }
+
     }
 
     /**
@@ -604,6 +741,11 @@ public class NearlineStorageHandler
         protected final ConcurrentHashMap<K, R> requests = new ConcurrentHashMap<>();
 
         private final ContainerState state = new ContainerState();
+
+        /**
+         * Queue usage statistics.
+         */
+        protected AtomicReference<QueueStat> queueStats = new AtomicReference<>(new QueueStat(0, 0, 0));
 
         public void addAll(NearlineStorage storage,
                            Iterable<F> files,
@@ -697,16 +839,11 @@ public class NearlineStorageHandler
         }
 
         /**
-         * Return number of requests matching the given predicate.
-         * @param filter predicate to match.
-         * @return
+         * Get current request states statistics.
+         * @return request states statistics.
          */
-        public int getCount(Predicate<R> filter)
-        {
-            return (int)requests.values()
-                    .stream()
-                    .filter(filter)
-                    .count();
+        public QueueStat getQueueStats() {
+            return queueStats.get();
         }
 
         /**
@@ -743,6 +880,8 @@ public class NearlineStorageHandler
             if (actualRequest == null) {
                 return Collections.emptyList();
             }
+
+            actualRequest.removeFromQueue();
             state.decrement();
             return actualRequest.callbacks();
         }
@@ -769,7 +908,7 @@ public class NearlineStorageHandler
         protected FlushRequestImpl createRequest(NearlineStorage storage, PnfsId id)
                 throws CacheException, InterruptedException
         {
-            return new FlushRequestImpl(storage, id);
+            return new FlushRequestImpl(storage, queueStats, id);
         }
 
         @Override
@@ -792,7 +931,7 @@ public class NearlineStorageHandler
                                                  FileAttributes file)
                 throws CacheException
         {
-            return new StageRequestImpl(storage, file);
+            return new StageRequestImpl(storage, queueStats, file);
         }
 
         @Override
@@ -813,7 +952,7 @@ public class NearlineStorageHandler
         @Override
         protected RemoveRequestImpl createRequest(NearlineStorage storage, URI uri)
         {
-            return new RemoveRequestImpl(storage, uri);
+            return new RemoveRequestImpl(storage, queueStats, uri);
         }
 
         @Override
@@ -828,9 +967,9 @@ public class NearlineStorageHandler
         private final ReplicaDescriptor descriptor;
         private final StorageInfoMessage infoMsg;
 
-        public FlushRequestImpl(NearlineStorage nearlineStorage, PnfsId pnfsId) throws CacheException, InterruptedException
+        public FlushRequestImpl(NearlineStorage nearlineStorage, AtomicReference<QueueStat> stats, PnfsId pnfsId) throws CacheException, InterruptedException
         {
-            super(nearlineStorage);
+            super(nearlineStorage, stats);
             descriptor = repository.openEntry(pnfsId, EnumSet.of(OpenFlags.NOATIME));
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, false);
             infoMsg.setStorageInfo(descriptor.getFileAttributes().getStorageInfo());
@@ -1100,9 +1239,9 @@ public class NearlineStorageHandler
         private final ReplicaDescriptor descriptor;
         private ListenableFuture<Void> allocationFuture;
 
-        public StageRequestImpl(NearlineStorage storage, FileAttributes fileAttributes) throws CacheException
+        public StageRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats, FileAttributes fileAttributes) throws CacheException
         {
-            super(storage);
+            super(storage, stats);
             PnfsId pnfsId = fileAttributes.getPnfsId();
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, true);
             infoMsg.setStorageInfo(fileAttributes.getStorageInfo());
@@ -1256,9 +1395,9 @@ public class NearlineStorageHandler
     {
         private final URI uri;
 
-        RemoveRequestImpl(NearlineStorage storage, URI uri)
+        RemoveRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats, URI uri)
         {
-            super(storage);
+            super(storage, stats);
             this.uri = uri;
             LOGGER.debug("Remove request created for {}.", uri);
         }
