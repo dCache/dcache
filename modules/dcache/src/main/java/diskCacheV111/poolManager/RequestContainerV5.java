@@ -1660,6 +1660,8 @@ public class RequestContainerV5
                     _log.info("[staging] selected pool {}", pool.info());
                     nextStep(RequestState.ST_WAITING_FOR_STAGING);
                     updateStatus("Waiting for stage: " + pool);
+                } catch (CostException e) {
+                    errorHandler(125, e.getMessage());
                 } catch (MissingResourceCacheException e) {
                     _restoreExceeded++;
                     failRequest(5, "Failed to stage file: " + e.getMessage());
