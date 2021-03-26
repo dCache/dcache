@@ -388,6 +388,29 @@ settings, write access can be further restricted to few directories
 (based on the local namespace, the `pnfs`). Setting xroot access to
 read-only has the highest priority, overriding all other settings.
 
+### Tried-hosts
+
+Xrootd uses the path URL CGI "tried" and "triedrc" as hints to the
+redirector/manager not to reselect a data source because of some
+error condition or preference.  dCache provides limited support for
+this attribute.  In particular, it will honor it in the case that
+the indicated cause suggests some error previously encountered
+that suggests an IO malfunction on the node.
+
+The property
+
+```
+xrootd.enable.tried-hosts
+```
+
+is true by default. When it is off, the 'tried' element on the path
+is simply ignored.  dCache also ignored the tried hosts when 'triedrc'
+is not provided, or when it is not 'enoent' or 'ioerr'.  In the latter
+two cases, the xrootd door will forward the list of previously tried
+hosts to the Pool Manager to ask that they be excluded from selection.
+
+See ``xrootd.properties`` for further information.
+
 ### Other configuration options
 
 The `xrootd-door` has several other configuration properties. You can
