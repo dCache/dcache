@@ -94,6 +94,7 @@ import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
 
+import static java.util.stream.Collectors.toSet;
 import static org.dcache.xrootd.CacheExceptionMapper.xrootdErrorCode;
 import static org.dcache.xrootd.CacheExceptionMapper.xrootdException;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
@@ -105,6 +106,49 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 {
     private static final Logger _log =
         LoggerFactory.getLogger(XrootdRedirectHandler.class);
+
+    /*
+     *  REVISIT
+     *
+     *  This enum has been placed temporarily in the door in order to expedite
+     *  patching the behavior of dCache with respect to the 'tried' path GGI (tried-hosts).
+     *
+     *  A subsequent patch will move this to the xrootd4j library where it belongs, and
+     *  eliminate this definition when the library dependency is updated.
+     */
+    enum TriedRc {
+        ENOENT("enoent", "The file was not found at the listed hosts."),
+        IOERR("ioerr", "The client received an I/O error on the listed hosts."),
+        FSERR("fserr", "The client received a non-I/O error from the file system."),
+        SRVERR("srverr", "The client received a server-related error."),
+        RESEL("resel", "The client is trying to find a better server."),
+        RESEG("reseg", "The client is globally trying to find a better server.");
+
+        private static final Set<String> KEYS = EnumSet.allOf(TriedRc.class)
+                                                       .stream()
+                                                       .map(TriedRc::key)
+                                                       .collect(toSet());
+        private final String key;
+        private final String description;
+
+        TriedRc(String key, String description) {
+            this.key = key;
+            this.description = description;
+        }
+
+        public String key() {
+            return key;
+        }
+
+        public String description() {
+            return description;
+        }
+
+        static Set<String> keys()
+        {
+            return KEYS;
+        }
+    }
 
     private class SessionInfo
     {
@@ -627,20 +671,34 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     }
 
     private Set<String> extractTriedHosts(Map<String, String> opaque)
-        throws XrootdException
     {
         String tried = Strings.emptyToNull(opaque.get("tried"));
-        if (tried == null) {
+        String rc = Strings.emptyToNull(opaque.get("triedrc"));
+
+        if (tried == null || rc == null) {
+            _log.debug("tried {}, triedrc {}, ignoring.", tried, rc);
             return Collections.EMPTY_SET;
-        } else if (!_door.isTriedHostsEnabled()) {
-            throw new XrootdException(kXR_InvalidRequest,
-                                      "tried hosts option not supported.");
+        }
+
+        if (!_door.isTriedHostsEnabled()) {
+            _log.debug("tried hosts option not enabled, ignoring 'tried={}'.", tried);
+            return Collections.EMPTY_SET;
+        }
+
+        TriedRc triedRc = TriedRc.valueOf(rc.toUpperCase());
+        _log.debug("tried {}, triedrc {}, cause {}.", tried, triedRc.key(), triedRc.description());
+
+        switch (triedRc) {
+            case ENOENT:
+            case IOERR:
+                break;
+            default:
+                return Collections.EMPTY_SET;
         }
 
         Set<String> triedHosts
-                        = Arrays.stream(tried.split(","))
-                                .collect(Collectors.toSet());
-        _log.info("TRIED : {}", triedHosts);
+            = Arrays.stream(tried.split(",")).collect(Collectors.toSet());
+        _log.debug("tried hosts : {}", triedHosts);
 
         return triedHosts;
     }
