@@ -63,6 +63,7 @@ import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.namespace.FileType.REGULAR;
+import static org.dcache.util.FileAttributesBuilder.attributes;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.BDDMockito.any;
@@ -872,45 +873,9 @@ public class RemoteNameSpaceProviderTests
         }
     }
 
-    private FileAttributesBuilder attributes()
-    {
-        return new FileAttributesBuilder();
-    }
-
     private DirectoryEntryBuilder entry()
     {
         return new DirectoryEntryBuilder();
-    }
-
-    /**
-     * A fluent class to build a FileAttribute.
-     */
-    private static class FileAttributesBuilder
-    {
-        private final FileAttributes _attributes = new FileAttributes();
-
-        public FileAttributesBuilder size(long size)
-        {
-            _attributes.setSize(size);
-            return this;
-        }
-
-        public FileAttributesBuilder type(FileType type)
-        {
-            _attributes.setFileType(type);
-            return this;
-        }
-
-        public FileAttributesBuilder id(PnfsId id)
-        {
-            _attributes.setPnfsId(id);
-            return this;
-        }
-
-        public FileAttributes build()
-        {
-            return _attributes;
-        }
     }
 
     /**
