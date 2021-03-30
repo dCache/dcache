@@ -125,7 +125,7 @@ public class NfsTransferService
             retry--;
             portRange = new PortRange(minTcpPort, maxTcpPort);
             try {
-                _nfsIO = new NFSv4MoverHandler(portRange, _ioStrategy, _withGss, _cellAddress.getCellName(), _door, _bootVerifier);
+                _nfsIO = new NFSv4MoverHandler(this, portRange, _ioStrategy, _withGss, _cellAddress.getCellName(), _door, _bootVerifier);
                 bound = true;
             } catch (BindException e) {
                 bindException = e;
@@ -218,13 +218,7 @@ public class NfsTransferService
         try {
 
             final Cancellable cancellableMover = mover.enable(completionHandler);
-
-            CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
-            final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
-            final InetSocketAddress[] localSocketAddresses = localSocketAddresses(mover);
-            _door.notify(directDoorPath,
-                         new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), localSocketAddresses, legacyStateId,
-                                                        _bootVerifier));
+            notifyDoorWithRedirect(mover);
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).
@@ -234,6 +228,15 @@ public class NfsTransferService
             completionHandler.failed(e, null);
         }
         return null;
+    }
+
+    public void notifyDoorWithRedirect(NfsMover mover) throws SocketException {
+        CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
+        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
+        final InetSocketAddress[] localSocketAddresses = localSocketAddresses(mover);
+        _door.notify(directDoorPath,
+                new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses, legacyStateId,
+                        _bootVerifier));
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
@@ -86,6 +88,7 @@ public class NFSv4MoverHandler {
      */
     private final CellStub _door;
 
+    private final NfsTransferService _nfsTransferService;
     private final ScheduledExecutorService _cleanerExecutor;
     private final long _bootVerifier;
 
@@ -94,10 +97,11 @@ public class NFSv4MoverHandler {
      */
     private final Duration deadMoverIdleTime;
 
-    public NFSv4MoverHandler(PortRange portRange, IoStrategy ioStrategy,
+    public NFSv4MoverHandler(NfsTransferService nfsTransferService, PortRange portRange, IoStrategy ioStrategy,
             boolean withGss, String serverId, CellStub door, long bootVerifier)
             throws IOException , GSSException, OncRpcException {
 
+        _nfsTransferService = nfsTransferService;
         _embededDS = new NFSServerV41.Builder()
                 .withOperationExecutor(_operationFactory)
                 .build();
@@ -135,6 +139,7 @@ public class NFSv4MoverHandler {
         // Make mover validation schedule to match nfs state handler lease timeout.
         deadMoverIdleTime = Duration.ofSeconds(_embededDS.getStateHandler().getLeaseTime()).multipliedBy(LEASE_MISSES);
         _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), deadMoverIdleTime.toSeconds(), deadMoverIdleTime.toSeconds(), TimeUnit.SECONDS);
+        _cleanerExecutor.scheduleAtFixedRate(new MoverResendRedirect(), 30, 30, TimeUnit.SECONDS);
     }
 
     /**
@@ -270,6 +275,30 @@ public class NFSv4MoverHandler {
                                     _cleanerExecutor);
                     });
         }
-
     }
+
+    /**
+     * Scans active transfers to find movers that wasn't connected by a client and re-sent the redirect information.
+     */
+    class MoverResendRedirect implements Runnable {
+        @Override
+        public void run() {
+            Instant now = Instant.now();
+
+            // mover is not attached to a session (no connection from client)
+            _activeIO.values()
+                    .stream()
+                    .filter(Predicate.not(NfsMover::hasSession))
+                    .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred()).plusSeconds(5).isBefore(now))
+                    .forEach( mover -> {
+                        _log.warn("Re-sending mover redirect {}", mover);
+                        try {
+                            _nfsTransferService.notifyDoorWithRedirect(mover);
+                        } catch (SocketException e) {
+                            _log.warn("Failed to send re-direct notification", e);
+                        }
+                    });
+        }
+    }
+
 }
