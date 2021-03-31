@@ -257,31 +257,6 @@ public class FtpDoorSettings
         return maxRetries;
     }
 
-    public int getPoolManagerTimeout()
-    {
-        return poolManagerTimeout;
-    }
-
-    public TimeUnit getPoolManagerTimeoutUnit()
-    {
-        return poolManagerTimeoutUnit;
-    }
-
-    public int getPnfsTimeout()
-    {
-        return pnfsTimeout;
-    }
-
-    public TimeUnit getPnfsTimeoutUnit()
-    {
-        return pnfsTimeoutUnit;
-    }
-
-    public int getPoolTimeout()
-    {
-        return poolTimeout;
-    }
-
     public TimeUnit getPoolTimeoutUnit()
     {
         return poolTimeoutUnit;
