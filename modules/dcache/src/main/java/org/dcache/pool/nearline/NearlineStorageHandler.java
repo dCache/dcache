@@ -584,12 +584,12 @@ public class NearlineStorageHandler
         {
             State oldState = state.getAndSet(State.CANCELED);
             if ( oldState != State.CANCELED) {
-                storage.cancel(uuid);
                 if (oldState == State.ACTIVE) {
                     incCancelFromActive();
                 } else {
                     incCancelFromQueued();
                 }
+                storage.cancel(uuid);
                 synchronized(this) {
                     for (Future<?> task : asyncTasks) {
                         /*
