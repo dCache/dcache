@@ -151,9 +151,9 @@ public class NearlineStorageHandler
 
         public QueueStat(int queued, int active, int canceled) {
 
-            checkArgument(queued >= 0);
-            checkArgument(active >= 0);
-            checkArgument(canceled >= 0);
+            checkArgument(queued >= 0, "Negative number of queued requests");
+            checkArgument(active >= 0, "Negative number of active requests");
+            checkArgument(canceled >= 0, "Negative number of canceled requests");
 
             this.queued = queued;
             this.active = active;
