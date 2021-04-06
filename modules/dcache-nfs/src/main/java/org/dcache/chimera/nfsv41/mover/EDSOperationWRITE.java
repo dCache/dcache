@@ -26,11 +26,11 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationWRITE.class.getName());
 
-    private final NFSv4MoverHandler _moverHandler;
+    private final NfsTransferService nfsTransferService;
 
-    public EDSOperationWRITE(nfs_argop4 args, NFSv4MoverHandler moverHandler) {
+    public EDSOperationWRITE(nfs_argop4 args, NfsTransferService nfsTransferService) {
         super(args, nfs_opnum4.OP_WRITE);
-        _moverHandler = moverHandler;
+        this.nfsTransferService = nfsTransferService;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
         try {
 
-            NfsMover mover = _moverHandler.getMoverByStateId(context, _args.opwrite.stateid);
+            NfsMover mover = nfsTransferService.getMoverByStateId(context, _args.opwrite.stateid);
             if(!mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new PermException("an attempt to write without IO mode enabled");
             }

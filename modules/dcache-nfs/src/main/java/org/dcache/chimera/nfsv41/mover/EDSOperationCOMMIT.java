@@ -15,11 +15,11 @@ import org.dcache.pool.repository.RepositoryChannel;
 
 public class EDSOperationCOMMIT extends AbstractNFSv4Operation {
 
-    private final NFSv4MoverHandler _moverHandler;
+    private final NfsTransferService nfsTransferService;
 
-    public EDSOperationCOMMIT(nfs_argop4 args, NFSv4MoverHandler moverHandler) {
+    public EDSOperationCOMMIT(nfs_argop4 args, NfsTransferService nfsTransferService) {
         super(args, nfs_opnum4.OP_COMMIT);
-        _moverHandler = moverHandler;
+        this.nfsTransferService = nfsTransferService;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class EDSOperationCOMMIT extends AbstractNFSv4Operation {
          * that for now we have only one writer and, as a result, pnfsid will
          * point only to a single mover.
          */
-        NfsMover mover = _moverHandler.getPnfsIdByHandle(inode.toNfsHandle());
+        NfsMover mover = nfsTransferService.getPnfsIdByHandle(inode.toNfsHandle());
 
         RepositoryChannel fc = mover.getMoverChannel();
         fc.sync();

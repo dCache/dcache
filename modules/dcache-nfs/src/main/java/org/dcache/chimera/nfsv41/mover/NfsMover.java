@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -46,7 +46,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
     private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
     private NFSv41Session _session;
-    private final NFSv4MoverHandler _nfsIO;
+    private final NfsTransferService _nfsTransferService;
     private final NFS4State _state;
     private final PnfsHandler _namespace;
     private volatile CompletionHandler<Void, Void> _completionHandler;
@@ -54,7 +54,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
             NfsTransferService nfsTransferService, PnfsHandler pnfsHandler) {
         super(handle, message, pathToDoor, nfsTransferService);
-        _nfsIO = nfsTransferService.getNfsMoverHandler();
+        _nfsTransferService = nfsTransferService;
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
         _state = new MoverState(null, new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         _namespace = pnfsHandler;
@@ -90,7 +90,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
         open();
         _completionHandler = completionHandler;
-        _nfsIO.add(this);
+        _nfsTransferService.add(this);
         return (e) -> disable(null);
 
     }
@@ -101,7 +101,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      * @param error error to report, or {@code null} on success
      */
     void disable(Throwable error) {
-        _nfsIO.remove(NfsMover.this);
+        _nfsTransferService.remove(NfsMover.this);
         detachSession();
         try {
             getMoverChannel().close();

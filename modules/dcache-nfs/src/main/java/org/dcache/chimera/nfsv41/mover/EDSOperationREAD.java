@@ -30,11 +30,11 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
         }
     };
 
-     private final NFSv4MoverHandler _moverHandler;
+     private final NfsTransferService nfsTransferService;
 
-    public EDSOperationREAD(nfs_argop4 args, NFSv4MoverHandler moverHandler) {
+    public EDSOperationREAD(nfs_argop4 args, NfsTransferService nfsTransferService) {
         super(args, nfs_opnum4.OP_READ);
-        _moverHandler = moverHandler;
+        this.nfsTransferService = nfsTransferService;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             long offset = _args.opread.offset.value;
             int count = _args.opread.count.value;
 
-            NfsMover mover = _moverHandler.getMoverByStateId(context, _args.opread.stateid);
+            NfsMover mover = nfsTransferService.getMoverByStateId(context, _args.opread.stateid);
 
             ByteBuffer bb = BUFFERS.get();
             bb.clear().limit(count);
