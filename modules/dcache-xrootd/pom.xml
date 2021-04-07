@@ -41,6 +41,10 @@
       <artifactId>xrootd4j-scitokens</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>xrootd4j-ztn</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-haproxy</artifactId>
     </dependency>

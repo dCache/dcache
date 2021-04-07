@@ -134,12 +134,20 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
             if (authnFactory != null) {
                 ProxyDelegationClientFactory clientFactory
                                 = createProxyDelegationClientFactory(name);
+                /*
+                 *  for ztn we don't want to use the union strategy because it has
+                 *  no specific authentication strategy and we don't want to allow
+                 *  anonymous operations on the door.  We just want the user to be 'nobody'
+                 *  until further authorization, such as using tokens, takes over.
+                 */
+                LoginStrategy loginStrategy = "ztn".equals(name) ?
+                    _anonymousLoginStrategy : _loginStrategy;
                 return new LoginAuthenticationHandlerFactory(GPLAZMA_PREFIX + name,
                                                                     name,
                                                                     clientFactory,
                                                                     _properties,
                                                                      authnFactory,
-                                                                    _loginStrategy);
+                                                                     loginStrategy);
             }
         }
 

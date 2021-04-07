@@ -21,11 +21,12 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileCorruptedCacheException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -37,6 +38,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.repository.OutOfDiskException;
@@ -82,8 +87,6 @@ import org.dcache.xrootd.util.ChecksumInfo;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
