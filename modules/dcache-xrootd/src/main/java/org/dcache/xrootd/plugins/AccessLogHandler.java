@@ -276,12 +276,36 @@ public class AccessLogHandler extends ChannelDuplexHandler
             return "isDirectory";
         case kXR_Cancelled:
             return "Cancelled";
-        case kXR_ChkLenErr:
-            return "ChkLenErr";
+        case kXR_ItExists:
+            return "ItExists";
         case kXR_ChkSumErr:
             return "ChkSumErr";
         case kXR_inProgress:
             return "inProgress";
+        case kXR_overQuota:
+            return "overQuota";
+        case kXR_SigVerErr:
+            return "SigVerErr";
+        case kXR_DecryptErr:
+            return "DecryptErr";
+        case kXR_Overloaded:
+            return "Overloaded";
+        case kXR_fsReadOnly:
+            return "fsReadOnly";
+        case kXR_BadPayload:
+            return "BadPayload";
+        case kXR_AttrNotFound:
+            return "AttrNotFound";
+        case kXR_TLSRequired:
+            return "TLSRequired";
+        case kXR_noReplicas:
+            return "noReplicas";
+        case kXR_AuthFailed:
+            return "AuthFailed";
+        case kXR_Impossible:
+            return "Impossible";
+        case kXR_Conflict:
+            return "Conflict";
         case kXR_noErrorYet:
             return "noErrorYet";
         default:
