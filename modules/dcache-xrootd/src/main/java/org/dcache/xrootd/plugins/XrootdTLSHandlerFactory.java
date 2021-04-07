@@ -62,14 +62,9 @@ public class XrootdTLSHandlerFactory extends SSLHandlerFactory
                                        .findFirst().orElse(null);
     }
 
-    private final boolean startTls;
-    private final String name;
-
     public XrootdTLSHandlerFactory(Properties properties, boolean startTls) throws Exception
     {
-        super(properties);
-        this.startTls = startTls;
-        name = startTls ? SERVER_TLS : CLIENT_TLS;
+        initialize(properties, startTls);
     }
 
     @Override
