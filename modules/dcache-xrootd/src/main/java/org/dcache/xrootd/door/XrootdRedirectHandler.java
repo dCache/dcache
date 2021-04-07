@@ -19,12 +19,16 @@ package org.dcache.xrootd.door;
 
 import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileIsNewCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.TimeoutCacheException;
+import dmg.cells.nucleus.CellPath;
 import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -41,18 +45,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileIsNewCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.NotFileCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.TimeoutCacheException;
-
-import dmg.cells.nucleus.CellPath;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttributes;
@@ -67,7 +60,7 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.XrootdProtocol.*;
+import org.dcache.xrootd.protocol.XrootdProtocol.FilePerm;
 import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
@@ -88,12 +81,15 @@ import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
+import org.dcache.xrootd.tpc.XrootdTpcInfo.Cgi;
 import org.dcache.xrootd.tpc.XrootdTpcInfo.Status;
 import org.dcache.xrootd.util.ChecksumInfo;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
 import org.dcache.xrootd.util.TriedRc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.dcache.xrootd.CacheExceptionMapper.xrootdErrorCode;
 import static org.dcache.xrootd.CacheExceptionMapper.xrootdException;
@@ -283,10 +279,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
             XrootdResponse response
                 = conditionallyHandleThirdPartyRequest(req,
-                                                       sessionInfo,
-                                                       opaque,
-                                                       path,
-                                                       remoteAddress.getHostName());
+                sessionInfo,
+                opaque,
+                path,
+                remoteAddress.getHostName());
             if (response != null) {
                 return response;
             }
@@ -308,7 +304,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 }
             } catch (NumberFormatException exception) {
                 _log.warn("Ignoring malformed oss.asize: {}",
-                          exception.getMessage());
+                    exception.getMessage());
             }
 
             _log.info("OPAQUE : {}", opaque);
@@ -323,9 +319,9 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             opaque.put("org.dcache.xrootd.client", getTpcClientId(req.getSession()));
             String opaqueString = OpaqueStringParser.buildOpaqueString(opaque);
 
-           /*
-            * Interact with core dCache to open the requested file.
-            */
+            /*
+             * Interact with core dCache to open the requested file.
+             */
             XrootdTransfer transfer;
             if (neededPerm == FilePerm.WRITE) {
                 /**
@@ -336,17 +332,17 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                  */
                 boolean overwrite = req.isDelete() && !req.isNew();
                 boolean persistOnSuccessfulClose = (req.getOptions()
-                        & XrootdProtocol.kXR_posc) == XrootdProtocol.kXR_posc;
+                    & XrootdProtocol.kXR_posc) == XrootdProtocol.kXR_posc;
                 // TODO: replace with req.isPersistOnSuccessfulClose() with the latest xrootd4j
                 transfer = _door.write(remoteAddress, path, triedHosts,
-                        ioQueue, uuid, true, overwrite, size,
-                                       sessionInfo.getMaximumUploadSize(),
-                        localAddress, req.getSubject(), sessionInfo.getRestriction(),
-                                       persistOnSuccessfulClose,
-                        ((sessionInfo.isLoggedIn()) ?
-                                        sessionInfo.getUserRootPath() : _rootPath),
-                        req.getSession().getDelegatedCredential(),
-                        opaque);
+                    ioQueue, uuid, true, overwrite, size,
+                    sessionInfo.getMaximumUploadSize(),
+                    localAddress, req.getSubject(), sessionInfo.getRestriction(),
+                    persistOnSuccessfulClose,
+                    ((sessionInfo.isLoggedIn()) ?
+                        sessionInfo.getUserRootPath() : _rootPath),
+                    req.getSession().getDelegatedCredential(),
+                    opaque);
             } else {
                 /*
                  * If this is a tpc transfer, then dCache is source here.
@@ -367,8 +363,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 }
 
                 transfer = _door.read(remoteAddress, path, triedHosts, ioQueue,
-                                uuid, localAddress, subject,
-                                sessionInfo.getRestriction(), opaque);
+                    uuid, localAddress, subject,
+                    sessionInfo.getRestriction(), opaque);
 
                 /*
                  * Again, if this is a tpc transfer, then dCache is source here.
@@ -381,10 +377,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 String client = opaque.get("tpc.org");
                 if (client != null) {
                     int index = client.indexOf("@");
-                    if (index != -1 && index < client.length()-1) {
-                        client = client.substring(index+1);
+                    if (index != -1 && index < client.length() - 1) {
+                        client = client.substring(index + 1);
                         transfer.setClientAddress(new InetSocketAddress(client,
-                                                                        0));
+                            0));
                     }
                 }
             }
@@ -406,7 +402,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             String host = address.getHostName();
             if (InetAddresses.isInetAddress(host)) {
                 _log.warn("Unable to resolve IP address {} "
-                                          + "to a canonical name", host);
+                    + "to a canonical name", host);
             }
 
             _log.info("Redirecting to {}, {}", host, address);
@@ -454,6 +450,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
      * <p>With the modified TPC lite (delegation) protocol, there is no
      * need to wait for the rendezvous destination check by comparing
      * the open from the source.</p>
+     *
+     * <p>There is also the case where no delegated proxy exists but
+     *    a different authentication protocol (like ZTN/scitokens)
+     *    is being used.  It seems that even with delegation in this
+     *    case the initiating client does not call open. A check
+     *    for authz in the opaque data has been added (03/21/2021).</p>
      */
     private XrootdResponse<OpenRequest>
         conditionallyHandleThirdPartyRequest(OpenRequest req,
@@ -484,6 +486,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         String tpcKey = opaque.get("tpc.key");
         if (tpcKey == null) {
             _log.debug("{} –– not a third-party request.", req);
+            return null;  // proceed as usual with mover + redirect
+        }
+
+        if (opaque.containsKey(Cgi.AUTHZ.key())) {
+            _log.debug("{} –– request contains authorization token.", req);
             return null;  // proceed as usual with mover + redirect
         }
 

@@ -1,19 +1,25 @@
 package org.dcache.auth;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.hash.Hashing;
-
 import java.io.Serializable;
-import java.util.Base64;
-
+import java.util.Optional;
+import javax.security.auth.Subject;
 import org.dcache.util.Strings;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class BearerTokenCredential implements Serializable
 {
     private static final long serialVersionUID = -5933313664563503235L;
+
+    public static Optional<String> getBearerTokenFromSubject(Subject subject) {
+        return subject.getPrivateCredentials().stream()
+                      .filter(t -> t instanceof BearerTokenCredential)
+                      .map(BearerTokenCredential.class::cast)
+                      .findAny()
+                      .map(BearerTokenCredential::getToken);
+    }
+
     private final String _token;
 
     public BearerTokenCredential(String token)

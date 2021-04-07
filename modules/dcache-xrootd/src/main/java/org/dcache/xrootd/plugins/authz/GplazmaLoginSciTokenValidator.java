@@ -59,29 +59,60 @@ documents or software obtained from this server.
  */
 package org.dcache.xrootd.plugins.authz;
 
-import java.util.Properties;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import io.netty.channel.ChannelHandlerContext;
+import javax.security.auth.Subject;
+import org.dcache.auth.BearerTokenCredential;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.xrootd.core.XrootdException;
+import org.dcache.xrootd.door.LoginEvent;
+import org.dcache.xrootd.security.TokenValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.dcache.xrootd.plugins.AuthorizationFactory;
-import org.dcache.xrootd.plugins.AuthorizationProvider;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 
-public class XrootdSciTokenAuthzProvider implements AuthorizationProvider
-{
-    /*
-     *  Used by factory.
-     */
-    static final String NAME = "scitokens";
+/**
+ *  Validates SciTokens via Gplazma login strategy.
+ */
+public class GplazmaLoginSciTokenValidator implements TokenValidator {
+  private static final Logger LOGGER = LoggerFactory.getLogger(GplazmaLoginSciTokenValidator.class);
 
-    private static final String STRICT_PROPERTY = "xrootd.plugin!scitokens.strict";
+  /*
+   * Caching should be enabled on the xrootd door by default.
+   */
+  private final LoginStrategy loginStrategy;
 
-    @Override
-    public AuthorizationFactory createFactory(String plugin, Properties properties)
-    {
-        if (NAME.equals(plugin)) {
-            String strict = properties.getProperty(STRICT_PROPERTY,
-                                                   "false");
-            return new XrootdSciTokenAuthzFactory(Boolean.valueOf(strict));
-        }
+  public GplazmaLoginSciTokenValidator(LoginStrategy loginStrategy) {
+    this.loginStrategy = loginStrategy;
+  }
 
-        return null;
+  @Override
+  public void validate(ChannelHandlerContext ctx, String token) throws XrootdException {
+    Subject tokenSubject = new Subject();
+    tokenSubject.getPrivateCredentials().add(new BearerTokenCredential(token));
+
+    LoginReply loginReply;
+
+    try {
+      LOGGER.debug("getting login reply with: {}.", tokenSubject.getPrivateCredentials());
+      loginReply = loginStrategy.login(tokenSubject);
+    } catch (PermissionDeniedCacheException e) {
+      throw new XrootdException(kXR_NotAuthorized, e.toString());
+    } catch (CacheException e) {
+      throw new XrootdException(kXR_ServerError, e.toString());
     }
+
+    /**
+     *  It is possible the the user is already logged in via a standard
+     *  authentication protocol.  In that case, the XrootdRedirectHandler
+     *  in the door already has stored a Restriction object and user
+     *  metadata.  This needs to be overwritten with the current values.
+     */
+    LOGGER.debug("notifying door of new login reply: {}.", loginReply);
+    ctx.fireUserEventTriggered(new LoginEvent(loginReply));
+  }
 }

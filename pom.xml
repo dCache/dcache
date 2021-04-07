@@ -736,6 +736,11 @@
             </dependency>
             <dependency>
                 <groupId>org.dcache</groupId>
+                <artifactId>xrootd4j-scitokens</artifactId>
+                <version>${version.xrootd4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-authz-plugin-alice</artifactId>
                 <version>1.2.0</version>
             </dependency>
