@@ -3,6 +3,11 @@ package org.dcache.xrootd.door;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import diskCacheV111.util.FsPath;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.util.TimebasedCounter;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -17,10 +22,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -30,14 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.FsPath;
-
-import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.util.TimebasedCounter;
-
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.NDC;
 import org.dcache.xrootd.core.XrootdAuthenticationHandler;
@@ -45,14 +38,16 @@ import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.dcache.xrootd.plugins.XrootdTLSHandlerFactory;
 import org.dcache.xrootd.plugins.tls.SSLHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.security.SigningPolicy;
 import org.dcache.xrootd.security.TLSSessionInfo;
 import org.dcache.xrootd.util.ServerProtocolFlags;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
-import static org.dcache.xrootd.plugins.XrootdTLSHandlerFactory.SERVER_TLS;
+import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
 
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure
@@ -268,8 +263,8 @@ public class NettyXrootdServer implements CellIdentityAware
                          *  The door only needs one for incoming requests (server).
                          */
                         SSLHandlerFactory sslHandlerFactory
-                                        = XrootdTLSHandlerFactory.getHandlerFactory(SERVER_TLS,
-                                                                                    _sslHandlerFactories);
+                                        = SSLHandlerFactory.getHandlerFactory(SERVER_TLS,
+                                                                              _sslHandlerFactories);
                         TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(_serverProtocolFlags);
                         tlsSessionInfo.setServerSslHandlerFactory(sslHandlerFactory);
 

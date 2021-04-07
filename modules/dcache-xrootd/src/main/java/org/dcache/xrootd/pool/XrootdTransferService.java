@@ -54,7 +54,6 @@ import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
-import org.dcache.xrootd.plugins.XrootdTLSHandlerFactory;
 import org.dcache.xrootd.plugins.tls.SSLHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.security.SigningPolicy;
@@ -65,8 +64,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import static org.dcache.xrootd.plugins.XrootdTLSHandlerFactory.CLIENT_TLS;
-import static org.dcache.xrootd.plugins.XrootdTLSHandlerFactory.SERVER_TLS;
+import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.CLIENT_TLS;
+import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
 
 /**
  * xrootd transfer service.
@@ -397,11 +396,10 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
          */
         TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(serverProtocolFlags);
         SSLHandlerFactory factory
-                        = XrootdTLSHandlerFactory.getHandlerFactory(SERVER_TLS,
-                                                                    sslHandlerFactories);
-        tlsSessionInfo.setServerSslHandlerFactory(factory);
-        factory = XrootdTLSHandlerFactory.getHandlerFactory(CLIENT_TLS,
+                        = SSLHandlerFactory.getHandlerFactory(SERVER_TLS,
                                                               sslHandlerFactories);
+        tlsSessionInfo.setServerSslHandlerFactory(factory);
+        factory = SSLHandlerFactory.getHandlerFactory(CLIENT_TLS, sslHandlerFactories);
         tlsSessionInfo.setClientSslHandlerFactory(factory);
 
         XrootdPoolRequestHandler handler

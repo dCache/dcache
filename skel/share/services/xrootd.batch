@@ -33,6 +33,7 @@ check -strong xrootd.loginbroker.update-period.unit
 check -strong xrootd.loginbroker.update-threshold
 check -strong xrootd.loginbroker.version
 check -strong xrootd.loginbroker.family
+check -strong xrootd.security.tls.handler-factory.class
 check -strong xrootd.security.tls.mode
 check -strong xrootd.security.tls.require-login
 check -strong xrootd.security.tls.require-session
