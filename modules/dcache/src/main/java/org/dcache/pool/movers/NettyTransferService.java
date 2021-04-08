@@ -109,7 +109,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     private NettyPortRange portRange;
 
     /** UUID to channel map. */
-    private final ConcurrentMap<UUID, NettyMoverChannel> uuids = Maps.newConcurrentMap();
+    protected final ConcurrentMap<UUID, NettyMoverChannel> uuids = Maps.newConcurrentMap();
 
     /** Server name. */
     private final String name;
