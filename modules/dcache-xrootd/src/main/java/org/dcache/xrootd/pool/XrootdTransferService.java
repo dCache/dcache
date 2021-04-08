@@ -193,12 +193,12 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
      *
      * @param uuid  of the mover (channel)
      */
-    public synchronized void cancelReconnectTimerForMover(UUID uuid)
+    public synchronized void cancelReconnectTimeoutForMover(UUID uuid)
     {
         Timer timer = reconnectTimers.remove(uuid.toString());
         if (timer != null) {
-            LOGGER.debug("timer for {} cancelled.", uuid);
             timer.cancel();
+            LOGGER.debug("cancelReconnectTimeoutForMover, timer cancelled for {}.", uuid);
         }
     }
 
@@ -216,23 +216,27 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     {
         NettyMoverChannel channel = descriptor.getChannel();
         UUID key = channel.getMoverUuid();
-        /*
-         * Make sure no timer exists associated with this mover.
-         * This might happen if both channel inactive and exception caught
-         * calls trigger this method in rapid succession.
-         */
-        cancelReconnectTimerForMover(key);
-        Timer timer = new Timer();
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                LOGGER.debug("timer for {} expired, releasing channel.", key);
-                channel.releaseAll();
-                removeReadReconnectTimer(key);
-            }
-        };
-        reconnectTimers.put(key.toString(), timer);
-        timer.schedule(task, readReconnectTimeoutUnit.toMillis(readReconnectTimeout));
+        cancelReconnectTimeoutForMover(key);
+        if (uuids.containsKey(key)) {
+            Timer timer = new Timer();
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    channel.release();
+                    removeReadReconnectTimer(key);
+                    timer.cancel();
+                    LOGGER.debug("reconnect timer expired for {}; " +
+                        "channel was released and timer cancelled.",
+                        key);
+                }
+            };
+            reconnectTimers.put(key.toString(), timer);
+            timer.schedule(task, readReconnectTimeoutUnit.toMillis(readReconnectTimeout));
+        } else {
+            LOGGER.debug("setReconnectTimeoutForMover for {}; " +
+                "mover no longer accessible; skipping.",
+                key);
+        }
     }
 
     @Required
