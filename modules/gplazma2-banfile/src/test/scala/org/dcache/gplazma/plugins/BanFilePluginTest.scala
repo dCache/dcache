@@ -6,12 +6,12 @@ import org.junit.runner.RunWith
 
 import scala.collection.JavaConversions._
 import scala.io.Source
-
 import java.util.Properties
 import java.security.Principal
-
 import org.dcache.gplazma.AuthenticationException
 import com.google.common.io.Resources.getResource
+
+import java.util.stream.Collectors
 
 class TestPrincipal(name : String) extends Principal {
   override def getName: String = name
@@ -25,7 +25,7 @@ class TestPrincipalB(name : String) extends TestPrincipal(name)
 
 trait stringSource extends BanFilePlugin {
   var sourceString : String = _
-  override def fromSource : Source = Source fromString sourceString
+  override def loadConfigLines:  java.util.List[String] = sourceString.lines().collect(Collectors.toList())
 }
 
 @RunWith(classOf[JUnitRunner])
