@@ -76,6 +76,7 @@ import diskCacheV111.vehicles.PoolHitInfoMessage;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg.Context;
+import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -2986,6 +2987,267 @@ public class RequestContainerV5Test
         assertThat(info.getStatus(), not(emptyString()));
     }
 
+    @Test
+    public void shouldRetryPool2PoolOnDestinationPoolUp() throws Exception
+    {
+        given(aPartitionManager().withDefault(aPartition()));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onPool2PoolSelects(aPoolPair()
+                        .withSource("source-pool@dCacheDomain")
+                        .withDestination("destination-pool@dCacheDomain"))));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+        given(aReplicateRequest()
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        whenReceiving(aPoolStatusChange().thatPool("destination-pool").isUp());
+
+        var reply = replySentWith(endpoint);
+        then(reply).should().setFailed(eq(10021), any());
+        then(reply).should().setContext(0, null);
+        then(billing).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldDoNothingOnPoolUpUnrelatedToOngoingPool2Pool() throws Exception
+    {
+        given(aPartitionManager().withDefault(aPartition()));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onPool2PoolSelects(aPoolPair()
+                        .withSource("source-pool@dCacheDomain")
+                        .withDestination("destination-pool@dCacheDomain"))));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+        given(aReplicateRequest()
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+        verify(endpoint).sendMessage(any());
+
+        whenReceiving(aPoolStatusChange().thatPool("unrelated-pool").isUp());
+
+        then(endpoint).shouldHaveNoMoreInteractions();
+        then(billing).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldRetryPool2PoolOnDestinationPoolDown() throws Exception
+    {
+        given(aPartitionManager().withDefault(aPartition()));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onPool2PoolSelects(aPoolPair()
+                        .withSource("source-pool@dCacheDomain")
+                        .withDestination("destination-pool@dCacheDomain"))));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+        given(aReplicateRequest()
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        whenReceiving(aPoolStatusChange().thatPool("destination-pool").isDown());
+
+        var reply = replySentWith(endpoint);
+        then(reply).should().setFailed(eq(10021), any());
+        then(reply).should().setContext(0, null);
+        then(billing).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldDoNothingOnPoolDownUnrelatedToOngoingPool2Pool() throws Exception
+    {
+        given(aPartitionManager().withDefault(aPartition()));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onPool2PoolSelects(aPoolPair()
+                        .withSource("source-pool@dCacheDomain")
+                        .withDestination("destination-pool@dCacheDomain"))));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+        given(aReplicateRequest()
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+        verify(endpoint).sendMessage(any());
+
+        whenReceiving(aPoolStatusChange().thatPool("unrelated-pool").isDown());
+
+        then(endpoint).shouldHaveNoMoreInteractions();
+        then(billing).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldRetryOnStagePoolUp() throws Exception
+    {
+        var stagePool = aPool("stage-pool@dCacheDomain");
+        given(aPartitionManager().withDefault(aPartition().withStageAllowed(true)));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onReadThrows(aFileNotInCacheException())
+                .onStageSelects(stagePool)));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+        given(aReadRequest()
+                .by(ROOT)
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB)
+                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        whenReceiving(aPoolStatusChange().thatPool("stage-pool").isUp());
+
+        var reply = replySentWith(endpoint);
+        then(reply).should().setFailed(eq(10021), any());
+        then(reply).should().setContext(0, stagePool);
+        then(billing).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldDoNothingOnPoolUpUnrelatedToOngoingStage() throws Exception
+    {
+        given(aPartitionManager().withDefault(aPartition().withStageAllowed(true)));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onReadThrows(aFileNotInCacheException())
+                .onStageSelects("stage-pool@dCacheDomain")));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+        given(aReadRequest()
+                .by(ROOT)
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB)
+                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+        verify(endpoint).sendMessage(any());
+
+        whenReceiving(aPoolStatusChange().thatPool("unrelated-pool").isUp());
+
+        then(endpoint).shouldHaveNoMoreInteractions();
+        then(billing).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldRetryOnStagePoolDown() throws Exception
+    {
+        var stagePool = aPool("stage-pool@dCacheDomain");
+        given(aPartitionManager().withDefault(aPartition().withStageAllowed(true)));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onReadThrows(aFileNotInCacheException())
+                .onStageSelects(stagePool)));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+        given(aReadRequest()
+                .by(ROOT)
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB)
+                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        whenReceiving(aPoolStatusChange().thatPool("stage-pool").isDown());
+
+        var reply = replySentWith(endpoint);
+        then(reply).should().setFailed(eq(10021), any());
+        then(reply).should().setContext(0, stagePool);
+        then(billing).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldDoNothingOnPoolDownUnrelatedToOngoingStage() throws Exception
+    {
+        given(aPartitionManager().withDefault(aPartition().withStageAllowed(true)));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onReadThrows(aFileNotInCacheException())
+                .onStageSelects("stage-pool@dCacheDomain")));
+        given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
+        given(aReadRequest()
+                .by(ROOT)
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB)
+                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+        verify(endpoint).sendMessage(any());
+
+        whenReceiving(aPoolStatusChange().thatPool("unrelated-pool").isDown());
+
+        then(endpoint).shouldHaveNoMoreInteractions();
+        then(billing).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldDoNothingOnPoolDownWhenRequestIsSuspended() throws Exception
+    {
+        given(aPartitionManager().withDefault(aPartition()));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onReadThrows(aFileNotInCacheException())));
+        given(aContainer("PoolManager@dCacheDomain")
+                .thatDoesNotSendHitMessages()
+                .withConfig("rc onerror suspend"));
+        given(aReadRequest()
+                .by(ROOT)
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        whenReceiving(aPoolStatusChange().thatPool("some-pool").isDown());
+
+        then(endpoint).shouldHaveNoInteractions();
+    }
+
+    @Test
+    public void shouldRetryOnPoolUpWhenRequestIsSuspended() throws Exception
+    {
+        given(aPartitionManager().withDefault(aPartition()));
+        given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
+                .withProtocolUnit("HTTP", "http/1"));
+        given(aPoolMonitor().thatReturns(aPoolSelectorThat()
+                .onReadThrows(aFileNotInCacheException())));
+        given(aContainer("PoolManager@dCacheDomain")
+                .thatDoesNotSendHitMessages()
+                .withConfig("rc onerror suspend"));
+        given(aReadRequest()
+                .by(ROOT)
+                .forFile("80D1B8B90CED30430608C58002811B3285FC")
+                .withPath("/public/test")
+                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withProtocolInfo(aProtocolInfo().withProtocol("http")
+                        .withMajorVersion(1).withIPAddress("192.168.1.1")));
+
+        whenReceiving(aPoolStatusChange().thatPool("some-pool").isUp());
+
+        var reply = replySentWith(endpoint);
+        then(reply).should().setFailed(eq(10021), any());
+        then(reply).should().setContext(0, null);
+        then(endpoint).shouldHaveNoMoreInteractions();
+    }
+
     private void given(ContainerBuilder builder)
     {
         container = builder.build();
@@ -3157,6 +3419,11 @@ public class RequestContainerV5Test
         }
 
         return new ResponseMessageDeliverable(outbound.get());
+    }
+
+    private PoolStatusChangedBuilder aPoolStatusChange()
+    {
+        return new PoolStatusChangedBuilder();
     }
 
     private PoolPairBuilder aPoolPair()
@@ -4027,6 +4294,40 @@ public class RequestContainerV5Test
     private interface Deliverable
     {
         void deliverTo(RequestContainerV5 container) throws IOException, InterruptedException;
+    }
+
+    private static class PoolStatusChangedBuilder implements Deliverable
+    {
+        private String pool;
+        private int status;
+
+        public PoolStatusChangedBuilder thatPool(String name)
+        {
+            pool = name;
+            return this;
+        }
+
+        public PoolStatusChangedBuilder withStatus(int value)
+        {
+            status = value;
+            return this;
+        }
+
+        public PoolStatusChangedBuilder isUp()
+        {
+            return withStatus(PoolStatusChangedMessage.UP);
+        }
+
+        public PoolStatusChangedBuilder isDown()
+        {
+            return withStatus(PoolStatusChangedMessage.DOWN);
+        }
+
+        @Override
+        public void deliverTo(RequestContainerV5 container)
+        {
+            container.poolStatusChanged(pool, status);
+        }
     }
 
     /**
