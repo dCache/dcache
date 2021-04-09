@@ -1022,6 +1022,8 @@ public class RequestContainerV5
         {
             if (_poolCandidate != null) {
                 return _poolCandidate.name();
+            } else if (_stageCandidate.isPresent()) {
+                return _stageCandidate.get().name();
             } else if (_p2pDestinationPool != null) {
                 return _p2pDestinationPool.name();
             } else {
