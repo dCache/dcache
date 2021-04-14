@@ -25,9 +25,9 @@ public class ObjectMapperProvider implements ContextResolver<ObjectMapper>
     {
         return new ObjectMapper()
                 .registerModule(PNFSID_SERIALIZER)
-                .disable(SerializationFeature.WRITE_NULL_MAP_VALUES)
                 .enable(DeserializationFeature.UNWRAP_ROOT_VALUE)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
     }
 
