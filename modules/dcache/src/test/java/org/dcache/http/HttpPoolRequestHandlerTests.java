@@ -125,7 +125,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(GET).
                 forUri("/path/to/file?dcache-http-uuid="+ANOTHER_UUID));
 
-        assertThat(_response.getStatus(), is(BAD_REQUEST));
+        assertThat(_response.status(), is(BAD_REQUEST));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
@@ -140,7 +140,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(GET).
                 forUri("/path/to/another-file?dcache-http-uuid=" + SOME_UUID));
 
-        assertThat(_response.getStatus(), is(BAD_REQUEST));
+        assertThat(_response.status(), is(BAD_REQUEST));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
@@ -155,7 +155,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(GET).
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
-        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response.status(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=file"));
@@ -180,7 +180,7 @@ public class HttpPoolRequestHandlerTests
                 .withHeader("Want-Digest", "adler32")
                 .forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
-        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response.status(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=file"));
@@ -204,7 +204,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(GET).
                 forUri("/path/to/file%3Fhere?dcache-http-uuid="+SOME_UUID));
 
-        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response.status(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=\"file?here\""));
@@ -229,7 +229,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(GET).
                 forUri("/path/to/file%5C%22here?dcache-http-uuid="+SOME_UUID));
 
-        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response.status(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=\"file\\\\\\\"here\""));
@@ -259,7 +259,7 @@ public class HttpPoolRequestHandlerTests
                 forUri("/path/to/%E1%9A%A0%E1%9B%87%E1%9A%BB?dcache-http-uuid="
                 + SOME_UUID));
 
-        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response.status(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename*=UTF-8''%E1%9A%A0%E1%9B%87%E1%9A%BB"));
@@ -284,7 +284,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(GET).withHeader("Range", "bytes=0-499").
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
-        assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
+        assertThat(_response.status(), is(PARTIAL_CONTENT));
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "500"));
         assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-499/1024"));
@@ -309,7 +309,7 @@ public class HttpPoolRequestHandlerTests
                 .withHeader("Want-Digest", "adler32")
                 .forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
-        assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
+        assertThat(_response.status(), is(PARTIAL_CONTENT));
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "500"));
         assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-499/1024"));
@@ -332,7 +332,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(GET).withHeader("Range", "bytes=0-1024").
                 forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
-        assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
+        assertThat(_response.status(), is(PARTIAL_CONTENT));
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
         assertThat(_response, hasHeader(CONTENT_RANGE, "bytes 0-99/100"));
@@ -357,7 +357,7 @@ public class HttpPoolRequestHandlerTests
                 .withHeader("Want-Digest", "adler32")
                 .forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
-        assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
+        assertThat(_response.status(), is(PARTIAL_CONTENT));
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
         assertThat(_response, hasHeader(CONTENT_TYPE,
                 "multipart/byteranges; boundary=\"__AAAAAAAAAAAAAAAA__\""));
@@ -391,7 +391,7 @@ public class HttpPoolRequestHandlerTests
     {
         whenClientMakes(a(DELETE).forUri("/path/to/file"));
 
-        assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
+        assertThat(_response.status(), is(NOT_IMPLEMENTED));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
@@ -400,7 +400,7 @@ public class HttpPoolRequestHandlerTests
     {
         whenClientMakes(a(CONNECT).forUri("/path/to/file"));
 
-        assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
+        assertThat(_response.status(), is(NOT_IMPLEMENTED));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
@@ -412,7 +412,7 @@ public class HttpPoolRequestHandlerTests
         whenClientMakes(a(HEAD)
                 .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
-        assertThat(_response.getStatus(), is(OK));
+        assertThat(_response.status(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
         assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
     }
@@ -422,7 +422,7 @@ public class HttpPoolRequestHandlerTests
     {
         whenClientMakes(a(OPTIONS).forUri("/path/to/file"));
 
-        assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
+        assertThat(_response.status(), is(NOT_IMPLEMENTED));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
@@ -431,7 +431,7 @@ public class HttpPoolRequestHandlerTests
     {
         whenClientMakes(a(PATCH).forUri("/path/to/file"));
 
-        assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
+        assertThat(_response.status(), is(NOT_IMPLEMENTED));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
@@ -440,7 +440,7 @@ public class HttpPoolRequestHandlerTests
     {
         whenClientMakes(a(POST).forUri("/path/to/file"));
 
-        assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
+        assertThat(_response.status(), is(NOT_IMPLEMENTED));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 
@@ -450,7 +450,7 @@ public class HttpPoolRequestHandlerTests
         givenDoorHasOrganisedWriteOf(file("/path/to/file").with(SOME_UUID));
         whenClientMakes(a(PUT)
                 .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
-        assertThat(_response.getStatus(), is(CREATED));
+        assertThat(_response.status(), is(CREATED));
     }
 
     @Test
@@ -461,7 +461,7 @@ public class HttpPoolRequestHandlerTests
                 .withHeader("Want-Digest", "adler32")
                 .withEntity("Hello, world")
                 .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
-        assertThat(_response.getStatus(), is(CREATED));
+        assertThat(_response.status(), is(CREATED));
         assertThat(_response.headers().get("Digest"), equalTo("adler32=1bd40469"));
     }
 
@@ -473,7 +473,7 @@ public class HttpPoolRequestHandlerTests
                 .withHeader("Want-Digest", "md5")
                 .withEntity("Hello, world")
                 .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
-        assertThat(_response.getStatus(), is(CREATED));
+        assertThat(_response.status(), is(CREATED));
         assertThat(_response.headers().get("Digest"), equalTo("md5=vG5vFrigd+9fvI1Z0LkxuQ=="));
     }
 
@@ -484,7 +484,7 @@ public class HttpPoolRequestHandlerTests
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
         whenClientMakes(a(PUT)
                 .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
-        assertThat(_response.getStatus(), is(METHOD_NOT_ALLOWED));
+        assertThat(_response.status(), is(METHOD_NOT_ALLOWED));
     }
 
     @Test
@@ -493,7 +493,7 @@ public class HttpPoolRequestHandlerTests
         givenDoorHasOrganisedWriteOf(file("/path/to/file").with(SOME_UUID));
         whenClientMakes(a(GET)
                 .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
-        assertThat(_response.getStatus(), is(METHOD_NOT_ALLOWED));
+        assertThat(_response.status(), is(METHOD_NOT_ALLOWED));
     }
 
     @Test
@@ -501,7 +501,7 @@ public class HttpPoolRequestHandlerTests
     {
         whenClientMakes(a(TRACE).forUri("/path/to/file"));
 
-        assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
+        assertThat(_response.status(), is(NOT_IMPLEMENTED));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
     }
 

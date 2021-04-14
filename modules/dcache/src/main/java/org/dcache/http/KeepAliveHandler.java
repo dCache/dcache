@@ -94,7 +94,7 @@ public class KeepAliveHandler extends ChannelDuplexHandler
 
         if (message instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) message;
-            is100Continue = response.getStatus().equals(HttpResponseStatus.CONTINUE);
+            is100Continue = response.status().equals(HttpResponseStatus.CONTINUE);
 
             boolean keepAlive = _inflightKeepAlive.getFirst();
 
