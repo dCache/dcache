@@ -238,7 +238,7 @@ public class CopyFilter implements Filter
     {
         checkArgument(clientIds.entrySet()
                                .stream()
-                               .allMatch(e -> CharMatcher.ASCII.matchesAllOf(e.getValue())),
+                               .allMatch(e -> CharMatcher.ascii().matchesAllOf(e.getValue())),
                      "Client Ids must be ASCII Characters only");
         _clientIds = clientIds;
     }
@@ -247,7 +247,7 @@ public class CopyFilter implements Filter
     {
         checkArgument(clientSecrets.entrySet()
                                    .stream()
-                                   .allMatch(e -> CharMatcher.ASCII.matchesAllOf(e.getValue())),
+                                   .allMatch(e -> CharMatcher.ascii().matchesAllOf(e.getValue())),
                      "Client Secrets must be ASCII Characters only");
         _clientSecrets = clientSecrets;
     }
