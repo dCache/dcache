@@ -12,6 +12,14 @@ export PATH
 wantdir="$1/dcache.target.wants"
 mkdir "$wantdir"
 
+#
+# Linux shell by default uses /tmp directory for temporary files,
+# including here-document (cat > << EOF...). When generator runs
+# the /root (thus /tmp) are mounted read-only.
+#
+# Point shell to a read-write directory
+export TMPDIR=/run/tmpfiles.d/
+
 for domain in $(getProperty dcache.domains); do
     RESTART_DELAY="$(getProperty dcache.restart.delay "$domain")"
     USER="$(getProperty dcache.user "$domain")"
