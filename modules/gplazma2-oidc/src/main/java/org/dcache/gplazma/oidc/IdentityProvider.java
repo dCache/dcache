@@ -18,7 +18,8 @@
  */
 package org.dcache.gplazma.oidc;
 
-import com.google.common.base.Strings;
+
+import com.google.common.base.Splitter;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,6 +42,8 @@ public class IdentityProvider
     private final String name;
     private final URI issuer;
     private final URI configuration;
+    private final boolean acceptUsername;
+    private final boolean acceptGroups;
 
     public IdentityProvider(String name, String description)
     {
@@ -56,6 +59,27 @@ public class IdentityProvider
             throw new IllegalArgumentException("Invalid endpoint " + endpoint + ": " + e.getMessage());
         }
         configuration = issuer.resolve(withTrailingSlash(issuer.getPath()) + ".well-known/openid-configuration");
+
+        boolean username = false;
+        boolean groups = false;
+        String acceptValue = args.getOption("accept");
+        if (acceptValue != null) {
+            for (String item : Splitter.on(',').split(acceptValue)) {
+                switch (item) {
+                case "username":
+                    username = true;
+                    break;
+                case "groups":
+                    groups = true;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown accept item \"" + item + "\"");
+                }
+            }
+        }
+
+        acceptUsername = username;
+        acceptGroups = groups;
     }
 
     private static String withTrailingSlash(String path)
@@ -71,6 +95,16 @@ public class IdentityProvider
     public URI getIssuerEndpoint()
     {
         return issuer;
+    }
+
+    public boolean isUsernameAccepted()
+    {
+        return acceptUsername;
+    }
+
+    public boolean areGroupsAccepted()
+    {
+        return acceptGroups;
     }
 
     /**
