@@ -2074,6 +2074,9 @@ public class PnfsManagerV3
     private void postProcessSetFileAttributes(PnfsSetFileAttributes message)
     {
         FileAttributes attributes = message.getFileAttributes();
+        if (attributes == null) {
+            return;
+        }
         Optional<AccessLatency> al = attributes.getAccessLatencyIfPresent();
         Optional<RetentionPolicy> rp = attributes.getRetentionPolicyIfPresent();
         if (al.isPresent() || rp. isPresent()) {
