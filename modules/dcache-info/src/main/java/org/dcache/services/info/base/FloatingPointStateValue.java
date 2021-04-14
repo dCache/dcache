@@ -81,7 +81,7 @@ public class FloatingPointStateValue extends StateValue
     public int hashCode()
     {
         // TODO: do something better here.
-        Float floatVal = new Float(_storage);
+        Float floatVal = Float.valueOf((float)_storage);
         return floatVal.hashCode();
     }
 
