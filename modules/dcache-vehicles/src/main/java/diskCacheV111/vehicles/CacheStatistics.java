@@ -53,8 +53,8 @@ public class CacheStatistics implements Serializable, Comparable<CacheStatistics
 	try {
 	    _totalAccesses = Integer.parseInt(st.nextToken());
 	    _accessTime    = Long.parseLong(st.nextToken());
-	    _score         = new Float(st.nextToken());
-	    _halfLife      = new Float(st.nextToken());
+	    _score         =  Float.valueOf(st.nextToken());
+	    _halfLife      =  Float.valueOf(st.nextToken());
 	} catch (Exception e){
 	    throw new IllegalArgumentException(pnfsString);
 	}
@@ -149,14 +149,11 @@ public class CacheStatistics implements Serializable, Comparable<CacheStatistics
         //
         //XXX this needs to use the half-life algorithm
         //
-	if (_totalAccesses == other.getTotalAccesses()){
-            return _accessTime>other.getAccessTime()?-1:_accessTime==other.getAccessTime()?0:1;
-//	    return (new Long(_accessTime)).compareTo(new Long(other.getAccessTime()));
-	} else {
-            return _totalAccesses>other.getTotalAccesses()?
-                      -1:_totalAccesses==other.getTotalAccesses()?0:1;
-//	    return (new Integer(_totalAccesses)).compareTo(new Integer(other.getTotalAccesses()));
-	}
+		if (_totalAccesses == other.getTotalAccesses()){
+			return Long.compare(other.getAccessTime(), _accessTime);
+		} else {
+			return Integer.compare(other.getTotalAccesses(), _totalAccesses);
+		}
     }
 
     public static void main(String[] args){
