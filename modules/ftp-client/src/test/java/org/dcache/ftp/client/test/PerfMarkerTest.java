@@ -123,7 +123,7 @@ public class PerfMarkerTest extends TestCase {
 	testObject(msg,
 			 111222333444.5,
 			 true, 5,
-			 true, new Long("987654321987654321").longValue(),
+			 true, Long.valueOf("987654321987654321").longValue(),
 			 true, 30);
 
 
@@ -138,7 +138,7 @@ public class PerfMarkerTest extends TestCase {
 	testObject(msg,
 			 111222333444.5,
 			 true, 5,
-			 true, new Long("987654321987654321").longValue(),
+			 true, Long.valueOf("987654321987654321").longValue(),
 			 true, 30);
 
 
@@ -166,7 +166,7 @@ public class PerfMarkerTest extends TestCase {
 	testObject(msg,
 			 111222333444.5,
 			 true, 5,
-			 true, new Long("987654321987654321").longValue(),
+			 true, Long.valueOf("987654321987654321").longValue(),
 			 false, 0);
 
 
