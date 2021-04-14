@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -46,10 +47,12 @@ import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.EntitlementPrincipal;
 import org.dcache.auth.FullNamePrincipal;
+import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoA;
 import org.dcache.auth.LoAPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
+import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.exceptions.OidcException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
@@ -404,7 +407,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
             JsonNode discoveryDoc = discoveryCache.get(ip);
             userinfoLookupTiming = Stopwatch.createStarted();
             String userInfoEndPoint = extractUserInfoEndPoint(discoveryDoc);
-            Set<Principal> principals = validateBearerTokenWithOpenIdProvider(token, userInfoEndPoint);
+            Set<Principal> principals = validateBearerTokenWithOpenIdProvider(ip, token, userInfoEndPoint);
             return LookupResult.success(ip, principals);
         } catch (OidcException oe) {
             return LookupResult.error(ip, oe.getMessage());
@@ -452,8 +455,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         return providersByIssuer.values();
     }
 
-    private Set<Principal> validateBearerTokenWithOpenIdProvider(String token,
-            String infoUrl) throws OidcException
+    private Set<Principal> validateBearerTokenWithOpenIdProvider(IdentityProvider ip,
+            String token, String infoUrl) throws OidcException
     {
         try {
             JsonNode userInfo = getUserInfo(infoUrl, token);
@@ -463,9 +466,15 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 addSub(userInfo, principals);
                 addNames(userInfo, principals);
                 addEmail(userInfo, principals);
-                addGroups(userInfo, principals);
+                Function<String,Principal> toGroupPrincipal = ip.areGroupsAccepted()
+                        ? OidcAuthPlugin::toGroupName
+                        : OpenIdGroupPrincipal::new;
+                addGroups(userInfo, principals, toGroupPrincipal);
                 addLoAs(userInfo, principals);
                 addEntitlements(userInfo, principals);
+                if (ip.isUsernameAccepted()) {
+                    addUsername(userInfo, principals);
+                }
                 return principals;
             } else {
                 throw new OidcException("No OpendId \"sub\"");
@@ -477,6 +486,20 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         } catch (IOException e) {
             throw new OidcException("Failed to fetch UserInfo: " + e.getMessage());
         }
+    }
+
+    private static GroupNamePrincipal toGroupName(String id)
+    {
+        /**
+         * REVISIT: The group id (as supplied by the OP) may be hierarchical;
+         * e.g. "/foo/bar".  For top-level groups (e.g., "/foo") the mapping
+         * that removes the initial slash seems reasonable ("/foo" --> "foo");
+         * however, how should this be handled more generally?
+         * Mapping "/foo/bar" --> foo_bar is one option.  Should this be
+         * configurable?
+         */
+        String name = id.startsWith("/") ? id.substring(1) : id;
+        return new GroupNamePrincipal(name);
     }
 
     private JsonNode getUserInfo(String url, String token) throws AuthenticationException, IOException
@@ -526,11 +549,12 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         return principals.add(new OidcSubjectPrincipal(userInfo.get("sub").asText()));
     }
 
-    private void addGroups(JsonNode userInfo, Set<Principal> principals)
+    private void addGroups(JsonNode userInfo, Set<Principal> principals,
+            Function<String,Principal> toPrincipal)
     {
         if (userInfo.has("groups") && userInfo.get("groups").isArray()) {
             for (JsonNode group : userInfo.get("groups")) {
-                principals.add(new OpenIdGroupPrincipal(group.asText()));
+                principals.add(toPrincipal.apply(group.asText()));
             }
         }
     }
@@ -569,6 +593,15 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
             addEntitlement(principals, value.asText());
         }
     }
+
+    private void addUsername(JsonNode userInfo, Set<Principal> principals)
+    {
+        JsonNode value = userInfo.get("preferred_username");
+        if (value != null && value.isTextual()) {
+            principals.add(new UserNamePrincipal(value.asText()));
+        }
+    }
+
 
     private void addEntitlement(Set<Principal> principals, String value)
     {
