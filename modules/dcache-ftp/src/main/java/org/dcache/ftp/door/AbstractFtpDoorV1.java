@@ -2869,6 +2869,7 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> CHGRP <SP> <group> <SP> <path> - Change group-owner of <path> to group <group>\r\n" +
             "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>\r\n" +
             "SITE <SP> CLIENTINFO <SP> <id> - Provide server with information about the client\r\n" +
+            "SITE <SP> SYMLINK <SP> <dest> <SP> <path> - Register symlink at <path>, pointing to <dest>\r\n" +
             "SITE <SP> SYMLINKFROM <SP> <path> - Register symlink location; SYMLINKTO must follow\r\n" +
             "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command\r\n" +
             "SITE <SP> TASKID <SP> <id> - Provide server with an identifier\r\n" +
@@ -2907,6 +2908,9 @@ public abstract class AbstractFtpDoorV1
         } else if (args[0].equalsIgnoreCase("CLIENTINFO")) {
             checkFTPCommand(args.length >= 2, 500, "command must be in the form 'SITE CLIENTINFO <info>'");
             doClientinfo(arg.substring(11));
+        } else if (args[0].equalsIgnoreCase("SYMLINK")) {
+            checkFTPCommand(args.length >= 3, 500, "command must be in the form 'SITE SYMLINK <dest> <path>'");
+            doSymlink(arg.substring(8));
         } else if (args[0].equalsIgnoreCase("SYMLINKFROM")) {
             checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE SYMLINKFROM <path>'");
             doSymlinkFrom(args[1]);
@@ -3140,6 +3144,22 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    public void doSymlink(String arg) throws FTPCommandException
+    {
+        checkLoggedIn(FORBID_ANONYMOUS_USER);
+
+        int idx = arg.indexOf(' ');
+        checkFTPCommand(idx != -1, 501, "Missing <path> argument");
+        checkFTPCommand(idx != 0, 501, "<dest> argument too short");
+        checkFTPCommand(idx < arg.length(), 501, "<path> argument too short");
+
+        String destination = arg.substring(0, idx).replace("%20", " ");
+        String path = arg.substring(idx+1);
+
+        createSymLink(path, destination);
+        reply ("257 symlink '" + path + "' created.");
+    }
+
     public void doSymlinkFrom(String path) throws FTPCommandException
     {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
@@ -3160,9 +3180,21 @@ public abstract class AbstractFtpDoorV1
         // {@code #doSymlinkFrom}.
 
         try {
-            _pnfs.createSymLink(absolutePath(_symlinkPath).toString(), target,
-                    FileAttributes.of().uid(_subject).gid(_subject).build());
+            createSymLink(_symlinkPath, target);
             reply ("257 symlink '" + _symlinkPath + "' created.");
+        } finally {
+            _symlinkPath = null;
+        }
+    }
+
+    private void createSymLink(String path, String target)
+            throws FTPCommandException
+    {
+        String absPath = absolutePath(path).toString();
+        FileAttributes attr = FileAttributes.of().uid(_subject).gid(_subject).build();
+
+        try {
+            _pnfs.createSymLink(absPath, requireNonNull(target), attr);
         } catch (PermissionDeniedCacheException e) {
             throw new FTPCommandException(550, "Permission denied.", e);
         } catch (NotDirCacheException e) {
@@ -3174,8 +3206,6 @@ public abstract class AbstractFtpDoorV1
         } catch (CacheException e) {
             LOGGER.warn("Unable to create symlink: {}", e.toString());
             throw new FTPCommandException(451, "Unexpected problem: " + e, e);
-        } finally {
-            _symlinkPath = null;
         }
     }
 
