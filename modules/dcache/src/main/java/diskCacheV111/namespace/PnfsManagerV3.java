@@ -1349,8 +1349,61 @@ public class PnfsManagerV3
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                   "Pnfs lookup failed");
         }
+    }
 
+    private void checkMkdirAllowed(PnfsCreateEntryMessage message)
+            throws PermissionDeniedCacheException
+    {
+        if (Subjects.isRoot(message.getSubject())) {
+            return;
+        }
 
+        FsPath path = message.getFsPath();
+        Restriction restriction = message.getRestriction();
+
+        /* As a special case, if the user is allowed to upload into
+         * a child directory then they are also allowed to create this
+         * directory.  This allows the user to create missing parent
+         * directories upto (but not including) the final element in the path.
+         * The final element, if missing MUST be uploaded as a file.
+         *
+         * For example, if the allowed path for upload is '/data/test-1/item1'
+         * where 'test-1' and 'item1' do not exist, then an attempt to create
+         * the directory '/data/test-1' should succeed.  However, an attempt to
+         * mkdir '/data/test-1/item1' should fail.
+         */
+        if (restriction.hasUnrestrictedChild(UPLOAD, path)) {
+            return;
+        }
+
+        /* As another special case, allow the user to create a directory if
+         * the user is allowed to upload.  We want to ensure that the user
+         * cannot create a directory for the final the target directory.
+         *
+         * For example, if the allowed path for upload is '/data/test-1/item1`
+         * where 'item1' already exists as a directory, then the user should
+         * be allowed to create the directory '/data/test-1/item1/subdir1'.
+         *
+         * Example 2, if the allowed path for upload is '/data/test-1/item1'
+         * where 'test-1' already exists but 'item1' does not exist then
+         * the user SHOULD NOT be allowed to create 'item1' as a directory.
+         *
+         * To cover these two cases, we check whether the user would be allowed
+         * to upload a file as the same name as the parent for the new
+         * directory.  In example 1, the parent is 'item1' and the user would
+         * be allowed to upload this file (if it didn't alreaedy exist).
+         * In example 2, the parent is 'test-1' and the user is not allowed to
+         * upload this file.
+         */
+        if (!path.isRoot() && !restriction.isRestricted(UPLOAD, path.parent())) {
+            return;
+        }
+
+        /**
+         * A regular permissions check, categorising this operation as a MANAGE
+         * activity.
+         */
+        checkRestrictionOnParent(message, MANAGE);
     }
 
     public void createEntry(PnfsCreateEntryMessage pnfsMessage)
@@ -1371,12 +1424,7 @@ public class PnfsManagerV3
             switch (type) {
             case DIR:
                 _log.info("create directory {}", path);
-                // as a special case, if the user is allowed to upload into
-                // a child directory then they are also allowed to create this
-                // directory
-                if (!pnfsMessage.getRestriction().hasUnrestrictedChild(UPLOAD, pnfsMessage.getFsPath())) {
-                    checkRestrictionOnParent(pnfsMessage, MANAGE);
-                }
+                checkMkdirAllowed(pnfsMessage);
 
                 PnfsId pnfsId = _nameSpaceProvider.createDirectory(subject, path,
                         assign);
