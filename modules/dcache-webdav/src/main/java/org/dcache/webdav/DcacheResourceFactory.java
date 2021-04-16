@@ -1058,7 +1058,7 @@ public class DcacheResourceFactory
         final ST t = _template.getInstanceOf(HTML_TEMPLATE_LISTING_NAME);
 
         if (t == null) {
-            out.append(DcacheResponseHandler.templateNotFoundErrorPage(_template.getPath(),
+            out.append(DcacheHtmlResponseHandler.templateNotFoundErrorPage(_template.getPath(),
                     HTML_TEMPLATE_LISTING_NAME));
             return;
         }

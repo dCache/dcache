@@ -456,7 +456,7 @@
         <description>The template used to generate directory listing and error pages</description>
         <property name="resource" value="${webdav.templates.html}"/>
         <property name="autoReload" value="${webdav.enable.auto-reload.templates}"/>
-        <property name="workaroundTemplate" value="#{T(org.dcache.webdav.DcacheResponseHandler).HTML_TEMPLATE_NAME}"/>
+        <property name="workaroundTemplate" value="#{T(org.dcache.webdav.DcacheHtmlResponseHandler).HTML_TEMPLATE_NAME}"/>
     </bean>
 
     <bean id="server-connector" class="org.dcache.util.jetty.ConnectorFactoryBean">
