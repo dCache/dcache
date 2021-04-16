@@ -1,7 +1,9 @@
 package org.dcache.webdav;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.net.MediaType;
 import io.milton.config.HttpManagerBuilder;
+import io.milton.http.AbstractWrappingResponseHandler;
 import io.milton.http.Auth;
 import io.milton.http.AuthenticationService;
 import io.milton.http.HandlerHelper;
@@ -32,23 +34,41 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
     @Override
     public Object getObject() throws Exception
     {
-        DcacheResponseHandler dcacheResponseHandler = new DcacheResponseHandler();
-        dcacheResponseHandler.setPathMapper(_pathMapper);
-        WebDavResponseHandler handler = new FederationResponseHandler(dcacheResponseHandler);
+        DcacheHtmlResponseHandler htmlResponseHandler = new DcacheHtmlResponseHandler();
+
+        DcacheSimpleResponseHandler simpleResponseHandler = new DcacheSimpleResponseHandler();
+
+        AcceptAwareResponseHandler acceptAware = new AcceptAwareResponseHandler();
+        acceptAware.addResponse(MediaType.HTML_UTF_8, htmlResponseHandler);
+        acceptAware.addResponse(MediaType.PLAIN_TEXT_UTF_8, simpleResponseHandler);
+        acceptAware.setDefaultResponse(MediaType.PLAIN_TEXT_UTF_8);
+
+        WorkaroundsResponseHandler workarounds = WorkaroundsResponseHandler.wrap(acceptAware);
+        workarounds.setPathMapper(_pathMapper);
+
+        Rfc3230ResponseHandler rfc3230 = Rfc3230ResponseHandler.wrap(workarounds);
+        AbstractWrappingResponseHandler handler = new FederationResponseHandler(rfc3230);
         setWebdavResponseHandler(handler);
 
         init();
 
-        // Late initialization of DcacheResponseHandler because AuthenticationService and other collaborators
-        // have to be created first.
-        dcacheResponseHandler.setAuthenticationService(getAuthenticationService());
-        dcacheResponseHandler.setWrapped(
-            new DefaultWebDavResponseHandler(getHttp11ResponseHandler(), getResourceTypeHelper(),
-                                             getPropFindXmlGenerator()));
-        dcacheResponseHandler.setReloadableTemplate(_template);
-        dcacheResponseHandler.setTemplateConfig(_templateConfig);
-        dcacheResponseHandler.setStaticContentPath(_staticContentPath);
-        dcacheResponseHandler.setBuffering(getBuffering());
+        // Late initialization of handlers because AuthenticationService and
+        // other collaborators have to be created first.
+
+        DefaultWebDavResponseHandler miltonDefaultHandler =
+                new DefaultWebDavResponseHandler(getHttp11ResponseHandler(),
+                        getResourceTypeHelper(), getPropFindXmlGenerator());
+
+        workarounds.setAuthenticationService(getAuthenticationService());
+
+        htmlResponseHandler.setWrapped(miltonDefaultHandler);
+        htmlResponseHandler.setReloadableTemplate(_template);
+        htmlResponseHandler.setTemplateConfig(_templateConfig);
+        htmlResponseHandler.setStaticContentPath(_staticContentPath);
+
+        simpleResponseHandler.setWrapped(miltonDefaultHandler);
+
+        handler.setBuffering(getBuffering());
 
         return buildHttpManager();
     }
