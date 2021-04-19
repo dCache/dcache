@@ -199,6 +199,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         flushExecutor.shutdown();
         stageExecutor.shutdown();
         removeExecutor.shutdown();
+        scheduledExecutor.shutdown();
         executor.shutdown();
     }
 
