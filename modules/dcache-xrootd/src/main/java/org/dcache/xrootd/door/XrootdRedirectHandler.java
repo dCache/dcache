@@ -60,7 +60,7 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.XrootdProtocol.FilePerm;
+import org.dcache.xrootd.protocol.XrootdProtocol.*;
 import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
@@ -103,23 +103,26 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     private static final Logger _log =
         LoggerFactory.getLogger(XrootdRedirectHandler.class);
 
-    private class SessionInfo
+    private class LoginSessionInfo
     {
+        private final Subject subject;
         private final Restriction restriction;
         private final OptionalLong maximumUploadSize;
         private final FsPath userRootPath;
         private final boolean loggedIn;
 
-        SessionInfo(Restriction restriction)
+        LoginSessionInfo(Restriction restriction)
         {
+            subject = new Subject();
             this.restriction = restriction;
             maximumUploadSize = OptionalLong.empty();
             userRootPath = null;
             loggedIn = false;
         }
 
-        SessionInfo(LoginReply reply)
+        LoginSessionInfo(LoginReply reply)
         {
+            subject = reply.getSubject();
             restriction = reply.getRestriction();
             userRootPath = reply.getLoginAttributes().stream()
                                  .filter(RootDirectory.class::isInstance)
@@ -135,6 +138,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         public Restriction getRestriction()
         {
             return restriction;
+        }
+
+        public Subject getSubject()
+        {
+            return subject;
         }
 
         public OptionalLong getMaximumUploadSize()
@@ -155,8 +163,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
     private final XrootdDoor          _door;
     private final Map<String, String> _appIoQueues;
-    private final SessionInfo         _defaultSessionInfo;
-    private final Deque<SessionInfo>  _logins;
+    private final LoginSessionInfo _defaultLoginSessionInfo;
+    private final Deque<LoginSessionInfo>  _logins;
     private final FsPath              _rootPath;
 
     /**
@@ -173,7 +181,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         _rootPath = rootPath;
         _queryConfig = queryConfig;
         _appIoQueues = appIoQueues;
-        _defaultSessionInfo = new SessionInfo(Restrictions.denyAll());
+        _defaultLoginSessionInfo = new LoginSessionInfo(Restrictions.denyAll());
         _logins = new ArrayDeque<>(2);
     }
 
@@ -256,7 +264,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
         InetSocketAddress localAddress = getDestinationAddress();
         InetSocketAddress remoteAddress = getSourceAddress();
-        SessionInfo sessionInfo = sessionInfo();
+        LoginSessionInfo loginSessionInfo = sessionInfo();
 
         Map<String,String> opaque;
 
@@ -279,7 +287,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
             XrootdResponse response
                 = conditionallyHandleThirdPartyRequest(req,
-                sessionInfo,
+                loginSessionInfo,
                 opaque,
                 path,
                 remoteAddress.getHostName());
@@ -336,11 +344,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 // TODO: replace with req.isPersistOnSuccessfulClose() with the latest xrootd4j
                 transfer = _door.write(remoteAddress, path, triedHosts,
                     ioQueue, uuid, true, overwrite, size,
-                    sessionInfo.getMaximumUploadSize(),
-                    localAddress, req.getSubject(), sessionInfo.getRestriction(),
+                    loginSessionInfo.getMaximumUploadSize(),
+                    localAddress,
+                    loginSessionInfo.getSubject(),
+                    loginSessionInfo.getRestriction(),
                     persistOnSuccessfulClose,
-                    ((sessionInfo.isLoggedIn()) ?
-                        sessionInfo.getUserRootPath() : _rootPath),
+                    ((loginSessionInfo.isLoggedIn()) ?
+                        loginSessionInfo.getUserRootPath() : _rootPath),
                     req.getSession().getDelegatedCredential(),
                     opaque);
             } else {
@@ -357,14 +367,14 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 Subject subject;
 
                 if (opaque.get("tpc.key") == null) {
-                    subject = req.getSubject();
+                    subject = loginSessionInfo.getSubject();
                 } else {
                     subject = Subjects.ROOT;
                 }
 
                 transfer = _door.read(remoteAddress, path, triedHosts, ioQueue,
                     uuid, localAddress, subject,
-                    sessionInfo.getRestriction(), opaque);
+                    loginSessionInfo.getRestriction(), opaque);
 
                 /*
                  * Again, if this is a tpc transfer, then dCache is source here.
@@ -459,7 +469,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
      */
     private XrootdResponse<OpenRequest>
         conditionallyHandleThirdPartyRequest(OpenRequest req,
-                                                SessionInfo sessionInfo,
+                                                LoginSessionInfo loginSessionInfo,
                                                 Map<String,String> opaque,
                                                 FsPath fsPath,
                                                 String remoteHost)
@@ -470,10 +480,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                             "Read permission denied");
         }
 
+        Subject subject = loginSessionInfo.getSubject();
+        Restriction restriction = loginSessionInfo.getRestriction();
+
         if ("placement".equals(opaque.get("tpc.stage"))) {
             FileStatus status = _door.getFileStatus(fsPath,
-                                                    req.getSubject(),
-                                                    sessionInfo.getRestriction(),
+                                                    subject,
+                                                    restriction,
                                                     remoteHost);
             int fd = _door.nextTpcPlaceholder();
             _log.debug("placement response to {} sent to {} with fhandle {}.",
@@ -581,8 +594,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             _log.debug("Open request {} from client to door as source, "
                                       + "info {}: OK.", req, info);
             FileStatus status = _door.getFileStatus(fsPath,
-                                                    req.getSubject(),
-                                                    sessionInfo.getRestriction(),
+                                                    subject,
+                                                    restriction,
                                                     remoteHost);
             int flags = status.getFlags();
 
@@ -721,12 +734,14 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     protected XrootdResponse<StatRequest> doOnStat(ChannelHandlerContext ctx, StatRequest req)
         throws XrootdException
     {
-        String path = req.getPath();
         try {
+            String path = req.getPath();
+            LoginSessionInfo loginSessionInfo = sessionInfo();
             InetSocketAddress client = getSourceAddress();
-            SessionInfo sessionInfo = sessionInfo();
-            return new StatResponse(req, _door.getFileStatus(createFullPath(path), req.getSubject(),
-                                                             sessionInfo.getRestriction(),
+
+            return new StatResponse(req, _door.getFileStatus(createFullPath(path),
+                                                             loginSessionInfo.getSubject(),
+                                                             loginSessionInfo.getRestriction(),
                                                              client.getAddress().getHostAddress()));
         } catch (FileNotFoundCacheException e) {
             throw xrootdException(e.getRc(), "No such file");
@@ -753,11 +768,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             for (int i = 0; i < paths.length; i++) {
                 paths[i] = createFullPath(req.getPaths()[i]);
             }
-            SessionInfo sessionInfo = sessionInfo();
+            LoginSessionInfo loginSessionInfo = sessionInfo();
+            Subject subject = loginSessionInfo.getSubject();
+            Restriction restriction = loginSessionInfo.getRestriction();
             return new StatxResponse(req,
                                      _door.getMultipleFileStatuses(paths,
-                                                                   req.getSubject(),
-                                                                   sessionInfo.getRestriction()));
+                                                                   subject,
+                                                                   restriction));
         } catch (TimeoutCacheException e) {
             throw xrootdException(e.getRc(), "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
@@ -781,10 +798,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         _log.info("Trying to delete {}", req.getPath());
 
         try {
-            SessionInfo sessionInfo = sessionInfo();
+            LoginSessionInfo loginSessionInfo = sessionInfo();
             _door.deleteFile(createFullPath(req.getPath()),
-                             req.getSubject(),
-                             sessionInfo.getRestriction());
+                                            loginSessionInfo.getSubject(),
+                                            loginSessionInfo.getRestriction());
             return withOk(req);
         } catch (TimeoutCacheException e) {
             throw xrootdException(e.getRc(), "Internal timeout");
@@ -810,10 +827,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         _log.info("Trying to delete directory {}", req.getPath());
 
         try {
-            SessionInfo sessionInfo = sessionInfo();
+            LoginSessionInfo loginSessionInfo = sessionInfo();
             _door.deleteDirectory(createFullPath(req.getPath()),
-                                  req.getSubject(),
-                                  sessionInfo.getRestriction());
+                                  loginSessionInfo.getSubject(),
+                                  loginSessionInfo.getRestriction());
             return withOk(req);
         } catch (TimeoutCacheException e) {
             throw xrootdException(e.getRc(), "Internal timeout");
@@ -838,11 +855,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         _log.info("Trying to create directory {}", req.getPath());
 
         try {
-            SessionInfo sessionInfo = sessionInfo();
+            LoginSessionInfo loginSessionInfo = sessionInfo();
             _door.createDirectory(createFullPath(req.getPath()),
                                   req.shouldMkPath(),
-                                  req.getSubject(),
-                                  sessionInfo.getRestriction());
+                                  loginSessionInfo.getSubject(),
+                                  loginSessionInfo.getRestriction());
             return withOk(req);
         } catch (TimeoutCacheException e) {
             throw xrootdException(e.getRc(), "Internal timeout");
@@ -874,11 +891,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         _log.info("Trying to rename {} to {}", req.getSourcePath(), req.getTargetPath());
 
         try {
-            SessionInfo sessionInfo = sessionInfo();
+            LoginSessionInfo loginSessionInfo = sessionInfo();
             _door.moveFile(createFullPath(req.getSourcePath()),
                            createFullPath(req.getTargetPath()),
-                           req.getSubject(),
-                           sessionInfo.getRestriction());
+                           loginSessionInfo.getSubject(),
+                           loginSessionInfo.getRestriction());
             return withOk(req);
         } catch (TimeoutCacheException e) {
             throw xrootdException(e.getRc(), "Internal timeout");
@@ -941,10 +958,10 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             try {
                 ChecksumInfo checksumInfo = new ChecksumInfo(msg.getPath(),
                                                      msg.getOpaque());
-                SessionInfo sessionInfo = sessionInfo();
+                LoginSessionInfo loginSessionInfo = sessionInfo();
                 Set<Checksum> checksums = _door.getChecksums(createFullPath(msg.getPath()),
-                                                             msg.getSubject(),
-                                                             sessionInfo.getRestriction());
+                                                             loginSessionInfo.getSubject(),
+                                                             loginSessionInfo.getRestriction());
                 return selectChecksum(checksumInfo, checksums, msg);
             } catch (CacheException e) {
                 throw xrootdException(e);
@@ -970,15 +987,15 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             if (!_door.isReadAllowed(fullListPath)) {
                 throw new PermissionDeniedCacheException("Permission denied.");
             }
-            SessionInfo sessionInfo = sessionInfo();
+            LoginSessionInfo loginSessionInfo = sessionInfo();
+            Subject subject = loginSessionInfo.getSubject();
+            Restriction restriction = loginSessionInfo.getRestriction();
             if (request.isDirectoryStat()) {
-                _door.listPath(fullListPath, request.getSubject(),
-                                sessionInfo.getRestriction(),
-                               new StatListCallback(request, fullListPath, ctx),
+                _door.listPath(fullListPath, subject, restriction,
+                               new StatListCallback(request, subject, restriction, fullListPath, ctx),
                                _door.getRequiredAttributesForFileStatus());
             } else {
-                _door.listPath(fullListPath, request.getSubject(),
-                                sessionInfo.getRestriction(),
+                _door.listPath(fullListPath, subject, restriction,
                                new ListCallback(request, ctx),
                                EnumSet.noneOf(FileAttribute.class));
             }
@@ -1200,23 +1217,30 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
     private class StatListCallback extends ListCallback
     {
-        private final String _client;
         protected final FsPath _dirPath;
+        private final String _client;
+        private final Subject _subject;
+        private final Restriction _restriction;
 
-        public StatListCallback(DirListRequest request, FsPath dirPath, ChannelHandlerContext context)
+        public StatListCallback(DirListRequest request,
+                                Subject subject,
+                                Restriction restriction,
+                                FsPath dirPath,
+                                ChannelHandlerContext context)
         {
             super(request, context);
             _client = getSourceAddress().getAddress().getHostAddress();
             _dirPath = dirPath;
+            _subject = subject;
+            _restriction = restriction;
         }
 
         @Override
         public void success(PnfsListDirectoryMessage message)
         {
-            SessionInfo sessionInfo = sessionInfo();
             message.getEntries().stream().forEach(
-                    e -> _response.add(e.getName(), _door.getFileStatus(_request.getSubject(),
-                                                                        sessionInfo.getRestriction(),
+                    e -> _response.add(e.getName(), _door.getFileStatus(_subject,
+                                                                        _restriction,
                                                                         _dirPath.child(e.getName()),
                                                                         _client, e.getFileAttributes())));
             if (message.isFinal()) {
@@ -1237,9 +1261,9 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         }
 
         LoginReply reply = event.getLoginReply();
-        SessionInfo info = reply == null
-                        ? new SessionInfo(Restrictions.none())
-                        : new SessionInfo(reply);
+        LoginSessionInfo info = reply == null
+                        ? new LoginSessionInfo(Restrictions.none())
+                        : new LoginSessionInfo(reply);
 
         _logins.push(info);
     }
@@ -1264,16 +1288,17 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
      *
      * @return current info.
      */
-    private SessionInfo sessionInfo()
+    private LoginSessionInfo sessionInfo()
     {
         if (_logins.size() > 1) {
             return _logins.pop();
         }
 
         if (_logins.isEmpty()) {
-            return _defaultSessionInfo;
+            return _defaultLoginSessionInfo;
         }
 
         return _logins.peek();
     }
+
 }
