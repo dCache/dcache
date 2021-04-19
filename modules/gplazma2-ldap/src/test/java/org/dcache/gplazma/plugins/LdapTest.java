@@ -141,12 +141,10 @@ public class LdapTest {
         assertThat("expected GID not found", principals, hasItem(ACTOR_GID_PRINCIPAL));
     }
 
-    @Test
-    public void shouldDoNothingForNonExisting() throws AuthenticationException {
+    @Test(expected=AuthenticationException.class)
+    public void shouldThrowExceptionForNonExisting() throws AuthenticationException {
         Set<Principal> principals = Sets.newHashSet(NON_EXISTING_PRINCIPAL);
         plugin.map(principals);
-        assertThat("unexpected number of returned principals", principals, hasSize(1));
-        assertThat("expected USERNAME not found", principals, hasItem(NON_EXISTING_PRINCIPAL));
     }
 
     @Test

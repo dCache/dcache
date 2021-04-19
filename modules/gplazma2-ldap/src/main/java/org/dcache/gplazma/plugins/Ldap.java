@@ -421,47 +421,53 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         boolean isUsernameMissing = false;
 
         Optional<Principal> principal = findFirst(principals, UserNamePrincipal.class::isInstance);
-        if (!principal.isPresent() && tryUidMapping) {
+
+        if (principal.isEmpty()) {
+            checkAuthentication(tryUidMapping, "no username");
+
             principal = findFirst(principals, UidPrincipal.class::isInstance);
+            checkAuthentication(principal.isPresent(), "no username or uid");
+
             filter = "(uidNumber=%s)";
             isUsernameMissing = true;
         }
 
-        if (principal.isPresent()) {
+        assert principal.isPresent();
 
-            //REVISIT: if we query LDAP server to user record, then we probably have to respect the provided primary GID
-            boolean hasPrimaryGid = principals.stream()
-                    .filter(GidPrincipal.class::isInstance)
-                    .map(GidPrincipal.class::cast)
-                    .anyMatch(GidPrincipal::isPrimaryGroup);
+        //REVISIT: if we query LDAP server to user record, then we probably have to respect the provided primary GID
+        boolean hasPrimaryGid = principals.stream()
+                .filter(GidPrincipal.class::isInstance)
+                .map(GidPrincipal.class::cast)
+                .anyMatch(GidPrincipal::isPrimaryGroup);
 
-            try (AutoCloseableLdapContext ctx = new AutoCloseableLdapContext()) {
-                NamingEnumeration<SearchResult> sResult = ctx.search(peopleOU,
-                        String.format(filter, principal.get().getName()),
-                        SC_UID_GID_NUMBER);
+        try (AutoCloseableLdapContext ctx = new AutoCloseableLdapContext()) {
+            NamingEnumeration<SearchResult> sResult = ctx.search(peopleOU,
+                    String.format(filter, principal.get().getName()),
+                    SC_UID_GID_NUMBER);
 
-                try {
-                    if (sResult.hasMore()) {
-                        Attributes userAttr = sResult.next().getAttributes();
+            try {
+                checkAuthentication(sResult.hasMore(), "unknown %s",
+                        isUsernameMissing ? "uid" : "username");
 
-                        Principal usernamePrincipal;
-                        if (isUsernameMissing) {
-                            usernamePrincipal = new UserNamePrincipal((String) userAttr.get(USER_ID_ATTRIBUTE).get());
-                            principals.add(usernamePrincipal);
-                        } else {
-                            usernamePrincipal = principal.get();
-                            principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
-                        }
+                Attributes userAttr = sResult.next().getAttributes();
 
-                        principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), !hasPrimaryGid));
-                        principals.addAll(getGroupsByUid.searchGroup(ctx, usernamePrincipal, peopleOU, groupOU));
-                    }
-                } finally {
-                    sResult.close();
+                Principal usernamePrincipal;
+                if (isUsernameMissing) {
+                    usernamePrincipal = new UserNamePrincipal((String) userAttr.get(USER_ID_ATTRIBUTE).get());
+                    principals.add(usernamePrincipal);
+                } else {
+                    usernamePrincipal = principal.get();
+                    principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
                 }
-            } catch (NamingException e) {
-                LOGGER.warn("Failed to get mapping: {}", e.toString());
+
+                principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), !hasPrimaryGid));
+                principals.addAll(getGroupsByUid.searchGroup(ctx, usernamePrincipal, peopleOU, groupOU));
+            } finally {
+                sResult.close();
             }
+        } catch (NamingException e) {
+            LOGGER.warn("Failed to get mapping: {}", e.toString());
+            throw new AuthenticationException("problem with LDAP server");
         }
     }
 
