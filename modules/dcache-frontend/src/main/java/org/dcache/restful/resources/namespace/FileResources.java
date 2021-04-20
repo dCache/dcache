@@ -311,7 +311,15 @@ public class FileResources {
                                              + "or directory.  The value of the "
                                              + "JSON object 'gid' item is the "
                                              + "numerical value of the desired "
-                                             + "new group-owner.",
+                                             + "new group-owner."
+                                             + "\n"
+                                             + "If action is 'chmod' then the "
+                                             + "command reqests the change of "
+                                             + "the target file's or directory's "
+                                             + "permissions.  The value of the "
+                                             + "JSON object 'mode' item is the "
+                                             + "numerical value of the desired "
+                                             + "mode.",
                                          required = true,
                                          examples = @Example({
                                              @ExampleProperty(mediaType = "MV",
@@ -340,17 +348,22 @@ public class FileResources {
                                                          + "}"),
                                              @ExampleProperty(mediaType = "RM-XATTR",
                                                      value = "{\n"
-                                                         + "    \"action\" : \"rm-xattr\"\n"
+                                                         + "    \"action\" : \"rm-xattr\",\n"
                                                          + "    \"names\" : [\n"
                                                          + "        \"attr-1\",\n"
                                                          + "        \"attr-2\"\n"
                                                          + "    ]\n"
                                                          + "}"),
                                              @ExampleProperty(mediaType = "CHGRP",
-                                                         value = "{\n"
-                                                             + "    \"action\" : \"chgrp\"\n"
-                                                             + "    \"gid\" : 1000\n"
-                                                             + "}")}))
+                                                     value = "{\n"
+                                                         + "    \"action\" : \"chgrp\",\n"
+                                                         + "    \"gid\" : 1000\n"
+                                                         + "}"),
+                                             @ExampleProperty(mediaType = "CHMOD",
+                                                     value = "{\n"
+                                                         + "    \"action\" : \"chmod\",\n"
+                                                         + "    \"mode\" : 493\n"
+                                                         + "}")}))
                                  String requestPayload)
     {
         try {
@@ -396,7 +409,7 @@ public class FileResources {
                     break;
                 case "set-xattr":
                     String modeString = reqPayload.optString("mode", "EITHER");
-                    Mode mode = modeOf(modeString);
+                    Mode xattrSetMode = modeOf(modeString);
 
                     JSONObject attributeOject = reqPayload.getJSONObject("attributes");
                     Map<String,byte[]> attributes = new HashMap<>(attributeOject.length());
@@ -404,11 +417,15 @@ public class FileResources {
                         String value = attributeOject.getString(key);
                         attributes.put(key, value.getBytes(StandardCharsets.UTF_8));
                     }
-                    pnfsHandler.writeExtendedAttribute(path, attributes, mode);
+                    pnfsHandler.writeExtendedAttribute(path, attributes, xattrSetMode);
                     break;
                 case "chgrp":
                     int gid = reqPayload.getInt("gid");
                     pnfsHandler.setFileAttributes(path, FileAttributes.ofGid(gid));
+                    break;
+                case "chmod":
+                    int mode = reqPayload.getInt("mode");
+                    pnfsHandler.setFileAttributes(path, FileAttributes.ofMode(mode));
                     break;
             }
         } catch (FileNotFoundCacheException e) {
