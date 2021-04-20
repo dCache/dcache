@@ -978,7 +978,7 @@ public class ChimeraNameSpaceProvider
                 break;
             case MODE:
                 stat = inode.statCache();
-                attributes.setMode(stat.getMode());
+                attributes.setMode(stat.getMode() & UnixPermission.S_PERMS);
                 break;
             case PNFSID:
                 attributes.setPnfsId(inode.getPnfsId());
