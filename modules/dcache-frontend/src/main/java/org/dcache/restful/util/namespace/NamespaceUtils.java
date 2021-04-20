@@ -108,6 +108,10 @@ public final class NamespaceUtils {
             json.setSize(attributes.getSize());
         }
 
+        if (attributes.isDefined(FileAttribute.MODE)) {
+            json.setMode(attributes.getMode());
+        }
+
         FileType fileType = null;
 
         if (attributes.isDefined(FileAttribute.TYPE)) {
@@ -217,10 +221,6 @@ public final class NamespaceUtils {
             json.setHsm(attributes.getHsm());
         }
 
-        if (attributes.isDefined(FileAttribute.MODE)) {
-            json.setMode(attributes.getMode());
-        }
-
         if (attributes.isDefined(FileAttribute.OWNER)) {
             json.setOwner(attributes.getOwner());
         }
@@ -252,6 +252,7 @@ public final class NamespaceUtils {
         attributes.add(FileAttribute.SIZE);
         attributes.add(FileAttribute.TYPE);
         attributes.add(FileAttribute.XATTR);
+        attributes.add(FileAttribute.MODE);
 
         if (locations || locality || qos || optional) {
             attributes.add(FileAttribute.LOCATIONS);
@@ -275,7 +276,6 @@ public final class NamespaceUtils {
             attributes.add(FileAttribute.CHECKSUM);
             attributes.add(FileAttribute.CHANGE_TIME);
             attributes.add(FileAttribute.OWNER_GROUP);
-            attributes.add(FileAttribute.MODE);
             attributes.add(FileAttribute.OWNER);
             attributes.add(FileAttribute.STORAGECLASS);
         }
