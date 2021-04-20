@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -346,6 +347,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         }
 
         checkAuthentication(token != null, "No bearer token in the credentials");
+        checkValid(token);
 
         List<LookupResult> allResults;
 
@@ -393,6 +395,27 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         successfulResults.stream()
                 .map(LookupResult::getPrincipals)
                 .forEach(identifiedPrincipals::addAll);
+    }
+
+    private static void checkValid(String token) throws AuthenticationException
+    {
+        if (JsonWebToken.isCompatibleFormat(token)) {
+            try {
+                JsonWebToken jwt = new JsonWebToken(token);
+
+                Instant now = Instant.now();
+
+                Optional<Instant> exp = jwt.getPayloadInstant("exp");
+                checkAuthentication(!exp.isPresent() || now.isBefore(exp.get()),
+                        "expired");
+
+                Optional<Instant> nbf = jwt.getPayloadInstant("nbf");
+                checkAuthentication(!nbf.isPresent() || now.isAfter(nbf.get()),
+                        "not yet valid");
+            } catch (IOException e) {
+                LOG.debug("Failed to parse token: {}", e.toString());
+            }
+        }
     }
 
     private LookupResult queryUserInfo(IdentityProvider ip, String token)
