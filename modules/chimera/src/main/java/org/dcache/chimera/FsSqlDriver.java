@@ -60,7 +60,6 @@ import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -124,6 +123,7 @@ public class FsSqlDriver {
     final JdbcTemplate _jdbc;
 
     private final long _root;
+
 
     /**
      *  this is a utility class which is issues SQL queries on database
@@ -1968,6 +1968,169 @@ public class FsSqlDriver {
             throw new NoXdataChimeraException(attr);
         }
         // trigger generation update
+        setInodeAttributes(inode, 0, new Stat());
+    }
+
+    Long getLabel(String labelname) throws ChimeraFsException {
+      return  _jdbc.queryForObject("SELECT label_id FROM t_labels where labelname=?",
+                (rs, rn) -> {
+                    return (rs.getLong("label_id"));
+                }, labelname);
+
+    }
+
+
+    /**
+     * Attache a given label to  a given file system object.
+     * @param inode file system object.
+     * @param labelname label name.
+     * @throws ChimeraFsException
+     */
+    void addLabel(FsInode inode, String labelname) throws ChimeraFsException {
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        try {
+
+            int l = _jdbc.queryForObject(
+                    "SELECT count(*) FROM t_labels WHERE labelname=?",
+                    Integer.class, labelname);
+
+            if (l == 0) {
+                _jdbc.update(
+                        con -> {
+                            PreparedStatement ps = con.prepareStatement(
+                                    "INSERT INTO t_labels ( labelname) VALUES (?)",
+                                    Statement.RETURN_GENERATED_KEYS);
+                            ps.setString(1, labelname);
+
+                            return ps;
+                        }, keyHolder);
+                Long label_id = (Long) keyHolder.getKeys().get("label_id");
+
+                _jdbc.update("INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?)",
+                        label_id, inode.ino());
+
+            } else {
+
+                Long label_id = getLabel(labelname);
+
+
+                int n = _jdbc.queryForObject(
+                        "SELECT count(*) FROM t_labels_ref WHERE inumber=? and label_id = label_id",
+                        Integer.class, inode.ino());
+
+                if (n == 0) {
+                    _jdbc.update("INSERT INTO t_labels_ref (label_id, inumber) VALUES (?,?)",
+                            label_id, inode.ino());
+                }
+            }
+
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoLabelChimeraException(labelname);
+        }
+
+        setInodeAttributes(inode, 0, new Stat());
+    }
+
+
+    /**
+     * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry for virtual directory.     *
+     *
+     * @param labelname a name of the label attached to files
+     * @return stream of files  having the given label
+     */
+    DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname) {
+        return new DirectoryStreamB<ChimeraDirectoryEntry>() {
+            final VirtualDirectoryStreamImpl stream = new VirtualDirectoryStreamImpl(labelname, _jdbc);
+
+
+            @Override
+            public Iterator<ChimeraDirectoryEntry> iterator() {
+                return new Iterator<ChimeraDirectoryEntry>() {
+                    private ChimeraDirectoryEntry current = innerNext();
+
+                    @Override
+                    public boolean hasNext() {
+                        return current != null;
+                    }
+
+                    @Override
+                    public ChimeraDirectoryEntry next() {
+                        if (current == null) {
+                            throw new NoSuchElementException("No more entries");
+                        }
+                        ChimeraDirectoryEntry entry = current;
+                        current = innerNext();
+                        return entry;
+                    }
+
+                    protected ChimeraDirectoryEntry innerNext() {
+                        try {
+                            ResultSet rs = stream.next();
+                            if (rs == null) {
+                                return null;
+                            }
+
+                            Stat stat = toStat(rs);
+                            //TODO get set _fs in constractor
+                            FsInode inode = new FsInode(dir.getFs(), rs.getLong("fileid"), FsInodeType.INODE, 0);
+                            return new ChimeraDirectoryEntry(rs.getString("filename"), inode, stat);
+                        } catch (SQLException e) {
+                            LOGGER.error("failed to fetch next entry: {}", e.getMessage());
+                            return null;
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public void close() throws IOException {
+                stream.close();
+            }
+        };
+    }
+
+    /**
+     * Retrieve an array of lables  for a given file system object.
+     *
+     * @param inode file system object.
+     * @return a set of labels.
+     * @throws ChimeraFsException
+     */
+    Set<String> getLabels (FsInode inode) throws ChimeraFsException {
+        Set<String> labels = new HashSet<>();
+        _jdbc.query("SELECT labelname FROM t_labels WHERE label_id IN" +
+                "(SELECT label_id FROM t_labels_ref WHERE inumber = ?)",
+                (rs) -> {
+                    String name = rs.getString("labelname");
+                    labels.add(name);
+                },
+                inode.ino());
+        return labels;
+    }
+
+    /**
+     * Delete a label of a given file system object.
+     *
+     * @param labelname file system object.
+     * @throws ChimeraFsException
+     */
+    void removeLabel(FsInode inode, String labelname) throws ChimeraFsException {
+
+        int n =_jdbc.update("DELETE FROM t_labels_ref WHERE inumber = ? and  label_id in (SELECT label_id FROM t_labels WHERE  labelname = ? )",
+               inode.ino(), labelname );
+
+        int k = _jdbc.queryForObject(
+                "SELECT count(*) FROM t_labels_ref WHERE  label_id in (SELECT label_id FROM t_labels WHERE  labelname = ?)",
+                Integer.class,  labelname);
+
+        if (k==0){
+            _jdbc.update("DELETE FROM t_labels WHERE labelname = ?", labelname);
+
+        }
+        if (n == 0) {
+            throw new NoLabelChimeraException(labelname);
+        }
         setInodeAttributes(inode, 0, new Stat());
     }
 

@@ -133,6 +133,19 @@ public interface FileSystemProvider extends Closeable {
     DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir)
             throws ChimeraFsException;
 
+
+    /**
+     * Returns {@link DirectoryStreamB} of ChimeraDirectoryEntry in the directory.
+     *
+     * The returned stream may keep system resources allocated. The try-with-resources construct should be used
+     * to ensure that the stream's close method is invoked after the stream operations are completed.
+     *
+     * @param labelname inode of the directory to list
+     * @return stream of directory entries
+     */
+    DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname)
+            throws ChimeraFsException;
+
     void remove(String path) throws ChimeraFsException;
 
     /**
@@ -457,13 +470,40 @@ public interface FileSystemProvider extends Closeable {
         REPLACE
     }
 
+    /*metadata block*/
+
+
     /**
-     * Get an Extended Attribute of a inode.
+     * Attaches a given label to  a given file system object.
      * @param inode file system object.
-     * @param attr extended attribute name.
-     * @return value of the attribute.
+     * @param labelname label name.
      * @throws ChimeraFsException
      */
+    void addLabel(FsInode inode, String labelname) throws ChimeraFsException;
+
+
+    /**
+     * Retrieve an array of lables  for a given file system object.
+     * @param inode file system object.
+     * @throws ChimeraFsException
+     */
+     Set<String> getLabels(FsInode inode) throws ChimeraFsException;
+
+
+    /**
+     * Delete a given  labels of a given file system object.
+     * @param inode file system object.
+     * @throws ChimeraFsException
+     */
+    void removeLabel(FsInode inode, String labelName) throws ChimeraFsException;
+
+    /**
+    * Get an Extended Attribute of a inode.
+    * @param inode file system object.
+    * @param attr extended attribute name.
+    * @return value of the attribute.
+    * @throws ChimeraFsException
+    */
     byte[] getXattr(FsInode inode, String attr) throws ChimeraFsException;
 
     /**

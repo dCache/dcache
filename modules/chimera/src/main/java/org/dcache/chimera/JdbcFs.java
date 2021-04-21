@@ -456,6 +456,11 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
+    public DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(FsInode dir, String labelname) throws ChimeraFsException {
+        return _sqlDriver.virtualDirectoryStream(dir, labelname);
+    }
+
+    @Override
     public void remove(String path) throws ChimeraFsException {
 
         File filePath = new File(path);
@@ -1440,6 +1445,38 @@ public class JdbcFs implements FileSystemProvider {
     public Set<String> listXattrs(FsInode inode) throws ChimeraFsException {
         return inTransaction(status -> _sqlDriver.listXattrs(inode));
     }
+
+
+    @Override
+    public void addLabel(FsInode inode, String labelname) throws ChimeraFsException {
+        inTransaction(status -> {
+            try {
+                _sqlDriver.addLabel(inode, labelname);
+            } catch (DuplicateKeyException e) {
+                throw new FileExistsChimeraFsException(e);
+            }
+            return null;
+        });
+    }
+
+
+    @Override
+    public Set<String> getLabels(FsInode inode) throws ChimeraFsException {
+        return inTransaction(status -> _sqlDriver.getLabels(inode));
+    }
+
+    @Override
+    public void removeLabel(FsInode inode, String labelname) throws ChimeraFsException {
+        inTransaction(status -> {
+            try {
+                _sqlDriver.removeLabel(inode, labelname);
+            } catch (DuplicateKeyException e) {
+                throw new FileExistsChimeraFsException(e);
+            }
+            return null;
+        });
+    }
+
 
     @Override
     public void removeXattr(FsInode inode, String attr) throws ChimeraFsException {

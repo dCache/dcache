@@ -1368,6 +1368,178 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertArrayEquals("Get xattr returns unexpected value", value, result);
     }
 
+
+
+    @Test
+    public void testGenerationVirtualdir() throws Exception {
+        FsInode dir = _rootInode.mkdir("cat");
+
+        String labelname = "cat";
+
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+
+        String labelnameCat = "cat";
+        String labelnameDog = "dog";
+
+        _fs.addLabel(inodeA, labelnameCat);
+        _fs.addLabel(inodeB, labelnameCat);
+        _fs.addLabel(inodeC, labelnameDog);
+
+        List<String> fileNames = new ArrayList<>();
+
+        try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _rootInode.virtualDirectoryStream(labelname)) {
+
+            for (ChimeraDirectoryEntry entry : dirStream) {
+                fileNames.add(entry.getName());
+            }
+        }
+        assertTrue(fileNames.containsAll(Lists.newArrayList("bFile-"+dir,"bFile-"+dir )));
+    }
+
+    @Test
+    public void testLabelDoesNotExist() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+        String labelnameCat = "cat";
+        String labelnameDog = "dog";
+
+        _fs.addLabel(inodeA, labelnameCat);
+        _fs.addLabel(inodeB, labelnameCat);
+        _fs.addLabel(inodeC, labelnameDog);
+
+
+        DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _rootInode.virtualDirectoryStream( "yellow");
+
+        assertEquals("Unexpected number of labels", 0, dirStream.stream().count());
+
+    }
+
+
+    @Test
+    public void testRemoveLabel() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+        String labelnameCat = "cat";
+        String labelnameDog = "dog";
+
+        _fs.addLabel(inodeA, labelnameCat);
+        _fs.addLabel(inodeB, labelnameCat);
+        _fs.addLabel(inodeC, labelnameCat);
+        _fs.addLabel(inodeC, labelnameDog);
+
+        _fs.removeLabel(inodeC, labelnameCat);
+
+        DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _rootInode.virtualDirectoryStream(labelnameCat);
+
+        assertEquals("Unexpected number of labels", 2, dirStream.stream().count());
+
+    }
+
+
+    @Test
+    public void testRemoveLabelsFromAllFiles() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+        String labelnameCat = "cat";
+        String labelnameDog = "dog";
+
+        _fs.addLabel(inodeA, labelnameCat);
+        _fs.addLabel(inodeB, labelnameCat);
+        _fs.addLabel(inodeC, labelnameCat);
+        _fs.addLabel(inodeC, labelnameDog);
+
+        _fs.removeLabel(inodeC, labelnameCat);
+        _fs.removeLabel(inodeB, labelnameCat);
+        _fs.removeLabel(inodeA, labelnameCat);
+
+        DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _rootInode.virtualDirectoryStream(labelnameCat);
+
+        assertEquals("Unexpected number of labels", 0, dirStream.stream().count());
+        assertTrue("Unexpected label",  _fs.getLabels(inodeC).iterator().next().equals("dog"));
+
+
+    }
+
+    @Test
+    public void testGetLabels() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+        FsInode inode = _fs.createFile(dir, "aFile");
+
+        String[] labels = {"cat", "dog", "yellow", "green"};
+
+        for(String  labelName: labels) {
+            _fs.addLabel(inode, labelName);
+        }
+
+        Collection<String> labelsSet = _fs.getLabels(inode);
+
+        assertEquals("Unexpected number of attributes", 4, labelsSet.size());
+        assertThat("List labels without order", labelsSet, containsInAnyOrder(labels));
+
+
+    }
+
+    @Test
+    public void testaddLabelsExist() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+
+        String labelnameCat = "cat";
+
+        _fs.addLabel(inodeA, labelnameCat);
+        _fs.addLabel(inodeB, labelnameCat);
+        _fs.addLabel(inodeA, labelnameCat);
+
+        DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _rootInode.virtualDirectoryStream(labelnameCat);
+
+        assertEquals("Unexpected number of labels", 2, dirStream.stream().count());
+    }
+
+    @Test
+    public void testAddLabels() throws Exception {
+
+        FsInode dir = _fs.mkdir("/test");
+
+        FsInode inodeA = _fs.createFile(dir, "aFile");
+        FsInode inodeB = _fs.createFile(dir, "bFile");
+        FsInode inodeC = _fs.createFile(dir, "cFile");
+
+        String labelnameCat = "cat";
+        String labelnameDog = "dog";
+
+        _fs.addLabel(inodeA, labelnameCat);
+        _fs.addLabel(inodeB, labelnameCat);
+        _fs.addLabel(inodeC, labelnameDog);
+
+        DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _rootInode.virtualDirectoryStream(labelnameCat);
+
+        assertEquals("Unexpected number of labels", 2, dirStream.stream().count());
+        assertTrue("Unexpected labels",_fs.getLabels(inodeA).contains("cat") && _fs.getLabels(inodeB).contains("cat") );
+
+    }
+
     @Test(expected = FileExistsChimeraFsException.class)
     public void testExclusiveCreateXattr() throws Exception {
 

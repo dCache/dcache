@@ -429,6 +429,10 @@ public class FsInode {
         return _fs.newDirectoryStream(this);
     }
 
+    public DirectoryStreamB<ChimeraDirectoryEntry> virtualDirectoryStream(String labelname) throws ChimeraFsException {
+        return _fs.virtualDirectoryStream(this, labelname);
+    }
+
     public String getId() throws ChimeraFsException
     {
         Stat stat = _stat;

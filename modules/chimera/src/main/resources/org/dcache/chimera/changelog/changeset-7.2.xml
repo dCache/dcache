@@ -20,4 +20,59 @@
 
     </changeSet>
 
+
+    <changeSet id="33" author="marina">
+        <comment>Add label attribute support</comment>
+        <createTable tableName="t_labels">
+            <column name="label_id" type="bigint" autoIncrement="true">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="labelname" type="varchar(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="t_labels"/>
+        </rollback>
+
+        <createTable tableName="t_labels_ref">
+
+            <column name="label_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+
+
+        </createTable>
+
+        <addPrimaryKey columnNames="inumber, label_id" constraintName="i_label_pkey" tableName="t_labels_ref"/>
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_labels_ref"
+                                 constraintName="t_labels_ref_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="label_id" baseTableName="t_labels_ref"
+                                 constraintName="i_labels_ref_lable_id"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="label_id"
+                                 referencedTableName="t_labels"
+        />
+
+        <rollback>
+            <dropTable tableName="t_labels_ref"/>
+        </rollback>
+
+    </changeSet>
+
+
 </databaseChangeLog>
