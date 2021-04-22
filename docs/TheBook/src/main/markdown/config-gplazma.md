@@ -545,6 +545,281 @@ Default: `false`
 
 Allow the ldap plugin to use the user's (numerical) uid to identify the user if no username is known. If enabled, the plugin uses the `uidNumber` attribute in LDAP to establish the username for such login attempts.
 
+##### omnisession
+
+The omnisession plugin provides an easy and convenient way to provide
+session information for dCache users.  It uses a single configuration
+file to describe which login attributes (such as home directory, root
+directory, read-only accounts, etc) are added for dCache users.
+
+It provides a superset of functionality of some other session plugins;
+specifically, the kpwd and storage-authzdb plugins when used as
+session plugins: all deployments using a storage-authzdb or kpwd
+plugin during the session phase may be updated to use the omnisession
+plugin instead.
+
+The omnisession plugin uses a single configuration file.  Without any
+explicit configuration, this file is located at
+`${dcache.paths.etc}/omnisession.conf` (which expands to
+`/etc/dcache/omnisession.conf` by default) but the location may be
+adjusted by modifying the `dcache.paths.etc` configuration property or
+the `gplazma.omnisession.file` configuration property.
+
+The configuration file may have any number of empty lines.  Comments
+are also supported.  Any line that starts with a hash symbol `#` is
+treated as a comment and ignored.
+
+All other lines define login attributes that apply to one or more
+users.
+
+The general format of such lines is
+
+```
+PREDICATE ATTRIBUTE [ATTRIBUTE ...]
+```
+
+The `PREDICATE` term describes to which users the attributes apply.
+These mostly follow a simple `TYPE:VALUE` format; for example, the
+predicate `username:paul` matches all users with a username of `paul`,
+similarly, the predicate `gid:1000` matches all users with GID of
+1000.  A complete list of predicate types is given below.
+
+In some cases, a predicate's value may have spaces.  To accomodate
+such cases, the value may be placed in double-quotes; for example, the
+predicate `dn:"/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar"`
+matches all users with that specific distinguished name.
+
+There is a special predicate `DEFAULT` that matches all users.  This
+may be used to describe attributes that match all users.  A file may
+have at most one `DEFAULT` line.
+
+The remainder of a non-empty, non-comment line is a white-space
+separated list of attribute terms.  There must be at least one
+attribute term, with each attribute term describing a login attribute
+that should be added when the user logs in.
+
+An attribute term generally has the form `TYPE:VALUE` where `TYPE`
+describes what kind of attribute is being defined and `VALUE`
+describes the specific value of that type; for example, `root:/`
+indicates that the user's root directory is `/` (the root of dCache's
+namespace) and `home:/Users/paul` states that the user's home
+directory is `/Users/paul`.  A complete list of attribute types is
+given below.
+
+Although a line may contain multiple login attributes, there are
+certain restrictions on those attributes contained on a single line.
+It is not legal to express the same information more than once; for
+example, a line with the two terms `root:/ root:/data` is not valid.
+This is also not valid even if the values are consistent (e.g.,
+`root:/ root:/`).
+
+Here is a complete example
+
+```
+username:paul  root:/ home:/Users/paul
+```
+
+In this example, line matches user `paul` and adds two login
+attributes: a home directory (with value `/Users/paul`) and a root
+directory (with value `/`).
+
+
+###### Login attribute overriding
+
+During the login process, a user is identitied by a set of principals.
+These principals may match multiple lines in the configuration file.
+When this happens, login attributes are added in file's order: a line
+that matches the user's principals that appear nearer the top of the
+file is processed before a matching line that appears further down the
+file's contents.
+
+This order matters if the multiple matching lines provide login
+attributes of the same type; for example, one matching line has a
+`home` attribute as does a subsequent matching line.
+
+If this happens then the first attribute (the one nearest the top of
+the file) is used.  Subsequent attributes are ignored for this login
+attempt.
+
+Here is an example of attribute overriding:
+
+```
+username:paul  home:/Users/paul
+group:group-a  root:/ home:/Groups/group-a
+```
+
+In this example, if a user with username `paul` and who is a member of
+group `group-a` logs in, the home directory will be `/Users/paul` and
+the root directory will be `/`.  Other members of `group-a` will have
+a home directory of `/Groups/group-a` and a root directory of `/`.
+
+The `DEFAULT` is special.  It always matches last, irrespective of
+where it appears in the configuration file.  Therefore, if a login
+attempt matches any lines then those attributes will always take
+precedence over the DEFAULT set of login attributes.
+
+Although dCache doesn't care where in the file the DEFAULT predicate
+is located, but it's recommended to put it at the end of the file.
+
+The following is another example of attribute overriding, but this
+time using DEFAULT.
+
+```
+username:paul  home:/Users/paul
+group:group-a  home:/Groups/group-a
+DEFAULT        root:/ home:/
+```
+
+In this example, the user with username `paul` has a home directory
+`/Users/paul`, members of `group-a` have a home directory
+`/groups/group-a` (except for user `paul`) and all dCache users have a
+home directory of `/` (except for members of group-a and user `paul`).
+All users have a root directory of `/`.
+
+
+###### Combining with other session plugins
+
+If the omnisession plugin is combined with other session plugins then
+omniplugin will refrain from adding attributes that are already
+defined.  Omnisession will add any other (undefined) attributes.
+
+Here's an example.  gPlazma is configured to use both `ldap` and
+`omnisession` as session plugins.  When user X logs in the ldap plugin
+adding a home directory and the omnisession configuration file
+indicates both a home directory and a root directory for user X.  This
+user will receive the home directory from LDAP and the root directory
+from omnisession.
+
+The omnisession plugin is successful if it adds at least one login
+attribute, and fails otherwise.  This affects gPlazma configuration
+(e.g., optional vs sufficient vs requisite).  For details, see the
+section of gPlazma configuration.
+
+Note that users are required to have a home directory attribute and a
+root directory attribute before their login will be successful.
+
+###### Handling bad configuration
+
+A line within the configuration file with bad attribute declarations
+will be marked invalid.  The plugin will fail for any user who's
+principals match that invalid line's predicate.  The plugin will be
+successful for users with predicates that only match valid lines and
+for whom at least one attribute is added.
+
+Here is an example:
+
+```
+username:paul  home:/ home:/Users/paul
+DEFAULT        root:/ home:/
+```
+
+The first line is invalid because the `home` attribute is defined
+twice.  Therefore, the plugin will fail for a login attempt with
+username `paul`, but will succeed for other users.
+
+If a line has a badly written predicate then the entire file is
+considered bad and the plugin will fail for all users.
+
+Here is an example:
+
+```
+user:paul  home:/Users/paul
+DEFAULT    root:/ home:/
+```
+
+The predicate `user:paul` is not valid (it should have be
+`username:paul`).  Because of this, the plugin will fail for all
+users.
+
+###### Predicates catalogue
+
+The omnisession plugin accepts the following predicates.
+
+- **dn** The user's Distinguished Name, which is typically obtained by
+   authenticating via X.509.  Example:
+   `dn:"/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar"`
+- **email** Predicate matches the user's email address, if known.
+   Example: `email:user@example.org` matches users with email address
+   `user@example.org`.
+- **gid** Predicate matches the user's gid.  There is an optional
+   field that describes whether the match should be limited to users
+   with a matching primary gid, a matching nonprimary gid, or a match
+   gid of either type.  Example: `gid:1000` matches a user that is a
+   member of the gid 1000 group.  `gid:1000,primary` matches members
+   of the group with gid 1000 if the user has this as their primary
+   gid, `gid:1000,nonprimary` matches members of the group with gid
+   1000 if the user has this as their non-primary gid.
+- **group** Predicate that matches members of the named group. There
+   is an optional field that describes whether the match should be
+   limited to users with a matching primary group, a matching
+   nonprimary group, or a matching group of either use.  Example:
+   `group:group-a` matches a user that is a member of the `group-a`
+   group.  `group:group-a,primary` matches members of the `group-a`
+   group if the user has this as their primary group,
+   `group:group-a,nonprimary` matches members of the `group-a` group
+   if the user has this as their non-primary gid.
+- **fqan** Predicate that matches a VOMS FQAN. There is an optional
+   field that describes whether the match should be limited to users
+   with a matching primary FQAN, a matching nonprimary FQAN, or a
+   matching FQAN of either use.  Example: `fqan:/atlas` matches a user
+   that is a member of the `/atlas` FQAN.  `fqan:/atlas,primary`
+   matches members of the `/atlas` FQAN if the user has this as their
+   primary FQAN, `fqan:/atlas,nonprimary` matches members of the
+   `/atlas` FQAN if the user has this as their non-primary FQAN.
+- **kerberos** Predicate that matches a Kerberos principal.  Example:
+   `kerberos:paul@DESY.DE` matches users with the Kerberos principal
+   `paul@DESY.DE`.
+- **oidc** Predicate that matches an OpenID-Connect `sub` ("subject")
+   claim from a specific OP.  Example:
+   `oidc:83326983-68a3-4f2c-8f0b-385ecd3e97b2@OP` matches users
+   identified by the `sub` claim with the value
+   `83326983-68a3-4f2c-8f0b-385ecd3e97b2` who have authenticated with
+   the OAuth2 Provider configured with the alias `OP`.
+- **oidcgrp** Predicate that matches the OpenID-Connect `groups` claim
+   values.  Example: `oidcgrp:/main-group` matches `groups` claim that
+   contains a value `/main-group`.
+- **uid** Predicate that matches the uid of a user.  Example:
+   `uid:15691` matches the user with uid 15691.
+- **username** Predicate that matches the username of a user.
+   Example: `username:paul` matches the user with username `paul`.
+- **entitlement** Predicate that matches an eduPersonEntitlement
+   claim.  Example:
+   `entitlement:urn:geant:example.org:group:EXAMPLE#example.org`
+   matches users that have the eduPersonEntitlement claim
+   `urn:geant:helmholtz.de:group:EXAMPLE#login.helmholtz.de`
+
+###### Login attribute catalogue
+
+This section provides a list of all login attributes that the
+omnisession plugin supports.
+
+The `root`, `home` and `prefix` attributes accept an absolute path as
+a value.  This means those values must start with a `/`.
+
+- **read-only** This attribute limits the user so that the may not
+   modify dCache.  Example: `read-only`.
+- **root** The user's root directory.  The user will see only a
+   subtree of dCache's namespace.  This works similarly to the chroot
+   command. Example: `root:/data/experiment-A` that limits the user's
+   view of the namespace to the `/data/expriment-A` subtree.
+- **home** The user's home directory. In general, this is a directory
+   that is somehow special for the user, although the precise
+   semantics of this attribute is protocol specific.  There are
+   network protocols or clients that have no concept of a home
+   directory. Example: `home:/Users/paul` indicates the user has a
+   home directory of `/Users/paul`.
+- **prefix** This attribute limits which part of the namespace a user
+   may access.  Unlike the `root` attribute, the user sees parent
+   directories; however, parent directories appear as if they have a
+   single entry.  Example: `prefix:/data/experiment-A` allows the user
+   access to a specific subtree while preserving paths.
+- **max-upload** Limit the size of any single uploaded file.  The
+   value is a file size that may optionally ISO symbols.  Examples:
+   `max-upload:5GiB` limits uploads to a maximum of five gibibyte
+   (~5.4e9 bytes), `max-upload:1TB` limits uploads to a maximum of one
+   terabyte (1e12 bytes), `max-upload:1048576` limits users to one
+   mibibyte files.
+
 #### identity Plug-ins
 
 ##### nsswitch
