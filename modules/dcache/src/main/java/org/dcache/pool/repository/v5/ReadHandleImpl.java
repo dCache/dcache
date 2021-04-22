@@ -79,15 +79,17 @@ class ReadHandleImpl implements ReplicaDescriptor
         RepositoryChannel channel = _entry.openChannel(_openOptions);
         long fileSizeAlloc = channel.size();
         if (_fileAttributes.getSize() != fileSizeAlloc) {
+            IOException ex = new IOException("Failed to read the file, because file is Broken.");
             try {
                 _entry.update("Filesystem and pool database file sizes are inconsistent",
                         r -> r.setState(ReplicaState.BROKEN));
-                channel.close();
-                throw new IOException("Failed to read the file, because file is Broken.");
-
             } catch (CacheException e) {
                 LOGGER.warn("Filesystem and pool database file sizes inconsistency: {}", e.toString());
+                ex.addSuppressed(e);
+            } finally {
+                channel.close();
             }
+            throw ex;
         }
         return channel;
     }
