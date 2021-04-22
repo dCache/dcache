@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>omnisession</name>
+        <class>org.dcache.gplazma.omnisession.OmniSessionPlugin</class>
+    </plugin>
+</plugins>
