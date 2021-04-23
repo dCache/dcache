@@ -39,6 +39,14 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
+      <artifactId>dcache-core</artifactId>
+      <version>${project.version}</version>
+      <classifier>tests</classifier>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
       <artifactId>common-cli</artifactId>
       <version>${project.version}</version>
     </dependency>

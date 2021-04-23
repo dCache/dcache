@@ -18,47 +18,8 @@
  */
 package diskCacheV111.poolManager;
 
-import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.BDDMockito;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.stubbing.Answer;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
-import java.util.function.IntFunction;
-import java.util.stream.Collectors;
-
 import diskCacheV111.poolManager.RequestContainerV5.RequestState;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DestinationCostException;
@@ -68,7 +29,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SourceCostException;
 import diskCacheV111.vehicles.InfoMessage;
-import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
@@ -81,49 +41,89 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
-
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.stream.Collectors;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
-import org.dcache.pool.assumption.Assumption;
+import org.dcache.mock.CacheExceptionBuilder;
+import org.dcache.mock.PartitionManagerBuilder;
+import org.dcache.mock.PoolMonitorBuilder;
+import org.dcache.mock.PoolSelectionUnitBuilder;
+import org.dcache.mock.ProtocolInfoBuilder;
 import org.dcache.poolmanager.CostException;
-import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
-import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
-import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.SelectedPool;
 import org.dcache.util.Args;
 import org.dcache.util.FileAttributesBuilder;
 import org.dcache.vehicles.FileAttributes;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.BDDMockito;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.auth.Subjects.NOBODY;
 import static org.dcache.auth.Subjects.ROOT;
+import static org.dcache.mock.PartitionBuilder.aPartition;
+import static org.dcache.mock.PartitionManagerBuilder.aPartitionManager;
+import static org.dcache.mock.PoolMonitorBuilder.aPoolMonitor;
+import static org.dcache.mock.PoolPairBuilder.aPoolPair;
+import static org.dcache.mock.PoolSelectionUnitBuilder.aPoolSelectionUnit;
+import static org.dcache.mock.PoolSelectorBuilder.aPoolSelectorThat;
+import static org.dcache.mock.ProtocolInfoBuilder.aProtocolInfo;
+import static org.dcache.mock.SelectedPoolBuilder.aPool;
 import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.FileAttributesBuilder.aStorageInfo;
 import static org.dcache.util.FileAttributesBuilder.attributes;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RequestContainerV5Test
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestContainerV5Test.class);
     private static final String POOL_GROUP = "thePoolGroup";
-    private static final int CLIENT_EPHEMERIAL_PORT = 1000;
 
     @Mock
     CellStub billing;
@@ -144,7 +144,6 @@ public class RequestContainerV5Test
     ExecutorService executor;
     PoolManagerGetRestoreHandlerInfo infoResponse;
     String commandResponse;
-    CellMessage sentMessage;
 
     @Before
     public void setup()
@@ -3381,16 +3380,6 @@ public class RequestContainerV5Test
         return new ContainerBuilder(address);
     }
 
-    private PartitionManagerBuilder aPartitionManager()
-    {
-        return new PartitionManagerBuilder();
-    }
-
-    private PoolMonitorBuilder aPoolMonitor()
-    {
-        return new PoolMonitorBuilder();
-    }
-
     private SelectReadPoolRequestBuilder aReadRequest()
     {
         return new SelectReadPoolRequestBuilder();
@@ -3426,29 +3415,9 @@ public class RequestContainerV5Test
         return new PoolStatusChangedBuilder();
     }
 
-    private PoolPairBuilder aPoolPair()
-    {
-        return new PoolPairBuilder();
-    }
-
     private Deliverable anInfoRequest()
     {
         return new GetRestoreHandlerInfoRequestBuilder();
-    }
-
-    private ProtocolInfoBuilder aProtocolInfo()
-    {
-        return new ProtocolInfoBuilder();
-    }
-
-    private PoolSelectorBuilder aPoolSelectorThat()
-    {
-        return new PoolSelectorBuilder();
-    }
-
-    private PartitionBuilder aPartition()
-    {
-        return new PartitionBuilder();
     }
 
     private CostExceptionBuilder aCostException()
@@ -3494,11 +3463,6 @@ public class RequestContainerV5Test
     private DestinationCostException aDestinationCostException()
     {
         return new DestinationCostException("destination pool is hot");
-    }
-
-    private PoolSelectionUnitBuilder aPoolSelectionUnit()
-    {
-        return new PoolSelectionUnitBuilder();
     }
 
     /**
@@ -3815,65 +3779,6 @@ public class RequestContainerV5Test
     }
 
     /**
-     * Build a mocked SelectedPool.
-     */
-    private static class SelectedPoolBuilder
-    {
-        private final SelectedPool pool = mock(SelectedPool.class);
-        private final Assumption assumption = mock(Assumption.class);
-
-        public SelectedPoolBuilder()
-        {
-            BDDMockito.given(pool.assumption()).willReturn(assumption);
-        }
-
-        public SelectedPoolBuilder withName(String name)
-        {
-            BDDMockito.given(pool.name()).willReturn(name);
-            return this;
-        }
-
-        public SelectedPoolBuilder withAddress(String address)
-        {
-            CellAddressCore addressCore = new CellAddressCore(address);
-            PoolInfo info = mock(PoolInfo.class);
-            BDDMockito.given(info.getAddress()).willReturn(addressCore);
-            BDDMockito.given(pool.info()).willReturn(info);
-            BDDMockito.given(pool.address()).willReturn(addressCore);
-            return this;
-        }
-
-        public SelectedPool build()
-        {
-            return pool;
-        }
-    }
-
-    /**
-     * A builder interface for creating mocked CacheExceptions with internal
-     * structure.
-     * @param <T> the type of CacheException to build.
-     */
-    private interface CacheExceptionBuilder<T extends CacheException>
-    {
-        T build();
-    }
-
-    /**
-     * Build a SelectedPool mock, based on the naming-convention that the
-     * pool name is also the cell's name.
-     * @param address The cell address (i.e., with a '@')
-     * @return a mocked SelectedPool.
-     */
-    private static SelectedPool aPool(String address)
-    {
-        int index = address.indexOf('@');
-        checkArgument(index > -1);
-        String name = address.substring(0, index);
-        return new SelectedPoolBuilder().withName(name).withAddress(address).build();
-    }
-
-    /**
      * This class implements the builder pattern for creating a mocked
      * CostException.
      */
@@ -3905,385 +3810,6 @@ public class RequestContainerV5Test
         {
             return new CostException("cost exceeded", bestPool, false,
                     shouldTryAlternatives);
-        }
-    }
-
-    /**
-     * Build a mocked PoolSelectionUnit.
-     */
-    private class PoolSelectionUnitBuilder
-    {
-        private final Map<String,String> netUnits = new HashMap<>();
-        private final Map<String,String> protocolUnits = new HashMap<>();
-
-        public PoolSelectionUnitBuilder withNetUnit(String name, String ipAddress)
-        {
-            netUnits.put(name, ipAddress);
-            return this;
-        }
-
-        public PoolSelectionUnitBuilder withProtocolUnit(String name, String protocol)
-        {
-            protocolUnits.put(name, protocol);
-            return this;
-        }
-
-        public PoolSelectionUnit build()
-        {
-            PoolSelectionUnit psu = mock(PoolSelectionUnit.class);
-
-            netUnits.forEach((n,a) -> {
-                        try {
-                            BDDMockito.given(psu.getNetIdentifier(a)).willReturn(n);
-                        } catch (UnknownHostException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-            protocolUnits.forEach((n,p) -> BDDMockito.given(psu.getProtocolUnit(p)).willReturn(n));
-
-            return psu;
-        }
-    }
-
-    /**
-     * Create a PoolPair object using the builder pattern.  Note that, since
-     * the code accesses field-members directly, this builder creates a real
-     * object rather than a mocked object.
-     */
-    private static class PoolPairBuilder
-    {
-        private SelectedPool source;
-        private SelectedPool destination;
-
-        public PoolPairBuilder withSource(String address)
-        {
-            source = aPool(address);
-            return this;
-        }
-
-        public PoolPairBuilder withDestination(String address)
-        {
-            destination = aPool(address);
-            return this;
-        }
-
-        public Partition.P2pPair build()
-        {
-            return new Partition.P2pPair(source, destination);
-        }
-    }
-
-    /**
-     * This class creates a mocked PoolSelector object using the builder
-     * pattern.
-     */
-    private static class PoolSelectorBuilder
-    {
-        private final PoolSelector selector = mock(PoolSelector.class);
-
-        public PoolSelectorBuilder onPool2PoolSelects(PoolPairBuilder builder) throws CacheException
-        {
-            var poolPair = builder.build();
-            BDDMockito.given(selector.selectPool2Pool(any(), anyBoolean())).willReturn(poolPair);
-            return this;
-        }
-
-        public PoolSelectorBuilder onPool2PoolThrows(CacheExceptionBuilder builder) throws CacheException
-        {
-            return onPool2PoolThrows(builder.build());
-        }
-
-        public PoolSelectorBuilder onPool2PoolThrows(Exception exception) throws CacheException
-        {
-            BDDMockito.given(selector.selectPool2Pool(any(), anyBoolean())).willThrow(exception);
-            return this;
-        }
-
-        public PoolSelectorBuilder onStageSelects(String address)
-                throws CacheException
-        {
-            var pool = aPool(address);
-            return onStageSelects(pool);
-        }
-
-        public PoolSelectorBuilder onStageSelects(SelectedPool pool)
-                throws CacheException
-        {
-            BDDMockito.given(selector.selectStagePool(any())).willReturn(pool);
-            return this;
-        }
-
-        public PoolSelectorBuilder onReadSelects(String address) throws CacheException
-        {
-            var pool = aPool(address);
-            BDDMockito.given(selector.selectReadPool()).willReturn(pool);
-            return this;
-        }
-
-        public PoolSelectorBuilder onStageThrows(CacheExceptionBuilder builder)
-                throws CacheException
-        {
-            return onStageThrows(builder.build());
-        }
-
-        public PoolSelectorBuilder onStageThrows(Exception exception)
-                throws CacheException
-        {
-            BDDMockito.given(selector.selectStagePool(any())).willThrow(exception);
-            return this;
-        }
-
-        public PoolSelectorBuilder onReadThrows(CacheExceptionBuilder builder)
-                throws CacheException
-        {
-            return this.onReadThrows(builder.build());
-        }
-
-        public PoolSelectorBuilder onReadThrows(Exception e)
-                throws CacheException
-        {
-            BDDMockito.given(selector.selectReadPool()).willThrow(e);
-            return this;
-        }
-
-        public PoolSelectorBuilder returnsCurrentPartition(PartitionBuilder builder)
-        {
-            BDDMockito.given(selector.getCurrentPartition()).willReturn(builder.build());
-            return this;
-        }
-
-        public PoolSelector build()
-        {
-            return selector;
-        }
-    }
-
-    /**
-     * This class provides a minimal concrete implementation of the Partition.
-     * All partition-specific behaviour is left unimplemented.
-     */
-    private static class SimplePartition extends Partition
-    {
-        private static final Map<String,String> DEFAULTS = Collections.emptyMap();
-        private static final Map<String,String> INHERITED = Collections.emptyMap();
-
-        public SimplePartition(Map<String,String> args)
-        {
-            super(DEFAULTS, INHERITED, args);
-        }
-
-        @Override
-        protected Partition create(Map<String, String> inherited, Map<String, String> defined) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public String getType() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public SelectedPool selectWritePool(CostModule cm, List<PoolInfo> pools,
-                FileAttributes attributes, long preallocated) throws CacheException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public SelectedPool selectReadPool(CostModule cm, List<PoolInfo> pools,
-                FileAttributes attributes) throws CacheException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src,
-                List<PoolInfo> dst, FileAttributes attributes, boolean force)
-                throws CacheException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public SelectedPool selectStagePool(CostModule cm, List<PoolInfo> pools,
-                Optional<PoolInfo> previous, FileAttributes attributes)
-                throws CacheException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-    }
-
-    /**
-     * Build a Partition object using the builder pattern.  Unfortunately,
-     * since RequestContainerV5 accesses field members from Partition directly
-     * this class returns a real object rather than a mock object.
-     */
-    private class PartitionBuilder
-    {
-        private Map<String,String> arguments = new HashMap<>();
-
-        private String asArgument(boolean enabled)
-        {
-            return enabled ? "yes": "no";
-        }
-
-        public PartitionBuilder withStageAllowed(boolean enabled)
-        {
-            arguments.put("stage-allowed", asArgument(enabled));
-            return this;
-        }
-
-        public PartitionBuilder withP2pAllowed(boolean enabled)
-        {
-            arguments.put("p2p-allowed", asArgument(enabled));
-            return this;
-        }
-
-        public PartitionBuilder withP2pOnCost(boolean enabled)
-        {
-            arguments.put("p2p-oncost", asArgument(enabled));
-            return this;
-        }
-
-        public PartitionBuilder withP2pForTransfer(boolean enabled)
-        {
-            arguments.put("p2p-fortransfer", asArgument(enabled));
-            return this;
-        }
-
-        public PartitionBuilder withStageOnCost(boolean enabled)
-        {
-            arguments.put("stage-oncost", asArgument(enabled));
-            return this;
-        }
-
-        public Partition build()
-        {
-            return new SimplePartition(arguments);
-        }
-    }
-
-    /**
-     * This class builds a PoolMonitor mock object using the builder pattern.
-     */
-    private class PoolMonitorBuilder
-    {
-        private PoolSelector selector;
-
-        public PoolMonitorBuilder thatReturns(PoolSelectorBuilder builder)
-        {
-            selector = builder.build();
-            return this;
-        }
-
-        public PoolMonitorV5 build()
-        {
-            PoolMonitorV5 monitor = mock(PoolMonitorV5.class);
-
-            BDDMockito.given(monitor.getPoolSelector(any(), any(), any(), any()))
-                    .willReturn(requireNonNull(selector));
-
-            return monitor;
-        }
-    }
-
-    /**
-     * This class builds a mock PartitionManager object using the builder
-     * pattern.
-     */
-    private static class PartitionManagerBuilder
-    {
-        private Partition defaultPartition;
-
-        public PartitionManagerBuilder withDefault(PartitionBuilder builder)
-        {
-            defaultPartition = requireNonNull(builder.build());
-            return this;
-        }
-
-        public PartitionManager build()
-        {
-            PartitionManager manager = mock(PartitionManager.class);
-
-            BDDMockito.given(manager.getDefaultPartition())
-                    .willReturn(defaultPartition);
-
-            return manager;
-        }
-    }
-
-    /**
-     * This class builds a mock ProtocolInfo object using the builder pattern.
-     */
-    private class ProtocolInfoBuilder
-    {
-        private String protocol;
-        private int majorVersion;
-
-        private ProtocolInfoBuilder()
-        {
-        }
-
-        private ProtocolInfoBuilder(ProtocolInfoBuilder previous)
-        {
-            protocol = previous.protocol;
-            majorVersion = previous.majorVersion;
-        }
-
-        public ProtocolInfoBuilder withProtocol(String protocol)
-        {
-            this.protocol = protocol;
-            return this;
-        }
-
-        public ProtocolInfoBuilder withMajorVersion(int version)
-        {
-            majorVersion = version;
-            return this;
-        }
-
-        public IpProtocolInfoBuilder withIPAddress(String address)
-        {
-            return new IpProtocolInfoBuilder(this, address);
-        }
-
-        public ProtocolInfo build()
-        {
-            ProtocolInfo mock = mock(ProtocolInfo.class);
-            addBehaviour(mock);
-            return mock;
-        }
-
-        public void addBehaviour(ProtocolInfo mock)
-        {
-            BDDMockito.given(mock.getProtocol()).willReturn(protocol);
-            Mockito.doReturn(majorVersion).when(mock).getMajorVersion();
-        }
-    }
-
-    /**
-     * This class builds a mock IpProtocolInfo object using the builder pattern.
-     */
-    private class IpProtocolInfoBuilder extends ProtocolInfoBuilder
-    {
-        private final InetAddress address;
-
-        private IpProtocolInfoBuilder(ProtocolInfoBuilder previous, String address)
-        {
-            super(previous);
-            this.address = InetAddresses.forString(address);
-        }
-
-        @Override
-        public ProtocolInfo build()
-        {
-            IpProtocolInfo mock = mock(IpProtocolInfo.class);
-            addBehaviour(mock);
-            return mock;
-        }
-
-        public void addBehaviour(IpProtocolInfo mock)
-        {
-            super.addBehaviour(mock);
-
-            InetSocketAddress client = new InetSocketAddress(address, CLIENT_EPHEMERIAL_PORT);
-            BDDMockito.given(mock.getSocketAddress()).willReturn(client);
         }
     }
 
