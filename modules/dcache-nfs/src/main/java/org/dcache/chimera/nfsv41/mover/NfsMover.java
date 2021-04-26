@@ -44,7 +44,7 @@ import org.dcache.vehicles.FileAttributes;
 
 public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
-    private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
+    private static final Logger _log = LoggerFactory.getLogger(NfsMover.class);
     private NFSv41Session _session;
     private final NfsTransferService _nfsTransferService;
     private final NFS4State _state;
