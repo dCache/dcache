@@ -205,8 +205,8 @@ public class RepositoryData implements Serializable {
                                    "    [" + fileSystemRatioFreeToTotal + "]");
         pw.println("Limits for maximum disk space");
         pw.println("    File system          : " + fileSystemMaxSpace);
-        pw.println("    Statically configured: " + staticallyConfiguredMax);
-        pw.println("    Runtime configured   : " + runtimeConfiguredMax);
+        pw.println("    Statically configured: " + (staticallyConfiguredMax == null? "-" : staticallyConfiguredMax.toString()));
+        pw.println("    Runtime configured   : " + (runtimeConfiguredMax == null? "-" : runtimeConfiguredMax.toString()));
     }
 
     public void setFileSystemFree(Long fileSystemFree) {

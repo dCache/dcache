@@ -1033,8 +1033,8 @@ public class ReplicaRepository
             info.setFileSystemFree(fsFree);
             info.setFileSystemRatioFreeToTotal(((double) fsFree) / fsTotal);
             info.setFileSystemMaxSpace(fsFree + used);
-            info.setStaticallyConfiguredMax(_staticMaxSize.longValue());
-            info.setRuntimeConfiguredMax(getConfiguredMaxSize().longValue());
+            info.setStaticallyConfiguredMax(_staticMaxSize.isSpecified() ? _staticMaxSize.longValue(): null);
+            info.setRuntimeConfiguredMax(_runtimeMaxSize.isSpecified() ? _runtimeMaxSize.longValue() : null);
         } finally {
             _stateLock.readLock().unlock();
         }
