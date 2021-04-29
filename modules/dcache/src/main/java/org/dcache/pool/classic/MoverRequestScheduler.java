@@ -1,8 +1,12 @@
 package org.dcache.pool.classic;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.JobInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CDC;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -21,25 +25,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.annotation.Nullable;
-
-import dmg.cells.nucleus.CDC;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.vehicles.IoJobInfo;
-import diskCacheV111.vehicles.JobInfo;
-import diskCacheV111.vehicles.ProtocolInfo;
-
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.json.MoverData;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -371,7 +368,9 @@ public class MoverRequestScheduler
      */
     public void setMaxActiveJobs(int maxJobs)
     {
-        _semaphore.setMaxPermits(maxJobs);
+        synchronized (this) {
+            _semaphore.setMaxPermits(maxJobs);
+        }
         PrioritizedRequest request;
         while (_semaphore.tryAcquire() && (request = nextOrRelease()) != null) {
             sendToExecution(request);
@@ -383,27 +382,28 @@ public class MoverRequestScheduler
      *
      * @return number of pending requests.
      */
-    public int getQueueSize()
+    public synchronized int getQueueSize()
     {
-        BlockingQueue<PrioritizedRequest> queue;
-        synchronized (this) {
-            queue = _queue;
-        }
-        return queue.size();
+        return _queue.size();
     }
 
     /**
-     * Get the number of write requests running or waiting to run.
+     * @return object containing queue name and statistics.
      */
-    public int getCountByPriority(IoPriority priority)
-    {
-        BlockingQueue<PrioritizedRequest> queue;
+    public NamedPoolQueueInfo getQueueInfo() {
+        int jobs;
+        int queued;
+        int writes;
+        int max_active;
         synchronized (this) {
-            queue = _queue;
+            jobs = _jobs.size();
+            writes = (int) _jobs.values().stream().filter(PrioritizedRequest::isWrite).count();
+            queued = _queue.size();
+            max_active = _semaphore.getMaxPermits();
         }
-        return (int) queue.stream()
-                .filter(r -> r.getPriority() == priority)
-                .count();
+        int active = jobs - queued;
+        int reads = jobs - writes;
+        return new NamedPoolQueueInfo(_name, active, max_active, queued, reads, writes);
     }
 
     /**
@@ -691,6 +691,16 @@ public class MoverRequestScheduler
         public long getCreateTime()
         {
             return _ctime;
+        }
+
+        public boolean isRead()
+        {
+            return _mover.getIoMode().equals(FileStore.O_READ);
+        }
+
+        public boolean isWrite()
+        {
+            return _mover.getIoMode().equals(FileStore.O_RW);
         }
 
         @Override
