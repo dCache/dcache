@@ -1914,12 +1914,7 @@ public class PoolV4
 
     private static PoolCostInfo.NamedPoolQueueInfo toNamedPoolQueueInfo(MoverRequestScheduler queue)
     {
-        return new PoolCostInfo.NamedPoolQueueInfo(queue.getName(),
-                                                   queue.getActiveJobs(),
-                                                   queue.getMaxActiveJobs(),
-                                                   queue.getQueueSize(),
-                                                   queue.getCountByPriority(IoPriority.REGULAR),
-                                                   queue.getCountByPriority(IoPriority.HIGH));
+        return queue.getQueueInfo();
     }
 
     /**
