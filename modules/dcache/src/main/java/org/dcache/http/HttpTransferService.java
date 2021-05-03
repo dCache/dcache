@@ -81,6 +81,15 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
         super("http");
     }
 
+    CorsConfigBuilder corsConfigBuilder()
+    {
+        return CorsConfigBuilder.forAnyOrigin()
+                .allowNullOrigin()
+                .allowedRequestMethods(GET, PUT, HEAD)
+                .allowedRequestHeaders(CONTENT_TYPE, AUTHORIZATION, CONTENT_MD5,
+                        "Want-Digest", "suppress-www-authenticate");
+    }
+
     public int getChunkSize()
     {
         return chunkSize;
@@ -175,13 +184,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
             pipeline.addLast("custom-headers", new CustomResponseHeadersHandler(customHeaders));
         }
 
-        CorsConfig corsConfig = CorsConfigBuilder.forAnyOrigin()
-                .allowNullOrigin()
-                .allowedRequestMethods(GET, PUT, HEAD)
-                .allowedRequestHeaders(CONTENT_TYPE, AUTHORIZATION, CONTENT_MD5,
-                        "Want-Digest", "suppress-www-authenticate")
-                .build();
-        pipeline.addLast("cors", new CorsHandler(corsConfig));
+        pipeline.addLast("cors", new CorsHandler(corsConfigBuilder().build()));
 
         pipeline.addLast("transfer", new HttpPoolRequestHandler(this, chunkSize));
     }
