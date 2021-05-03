@@ -1,7 +1,5 @@
 package org.dcache.pool.repository;
 
-import com.google.common.collect.Sets;
-
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.OpenOption;
@@ -22,8 +20,8 @@ import static java.nio.file.StandardOpenOption.WRITE;
 public interface FileStore
 {
 
-    static final Set<StandardOpenOption> O_READ = Sets.immutableEnumSet(READ);
-    static final Set<StandardOpenOption> O_RW = Sets.immutableEnumSet(READ, WRITE, CREATE);
+    Set<StandardOpenOption> O_READ = Set.of(READ);
+    Set<StandardOpenOption> O_RW = Set.of(READ, WRITE, CREATE);
 
     /**
      * Returns the URI to the data file for the given PNFS id.
