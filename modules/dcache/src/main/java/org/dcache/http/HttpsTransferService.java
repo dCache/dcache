@@ -26,6 +26,7 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +71,12 @@ public class HttpsTransferService extends HttpTransferService
         return host != null && !host.isEmpty() && host.charAt(0) == '[' && host.charAt(host.length()-1) == ']'
                 ? host.substring(1, host.length()-1)
                 : host;
+    }
+
+    @Override
+    CorsConfigBuilder corsConfigBuilder()
+    {
+        return super.corsConfigBuilder().allowCredentials();
     }
 
     @Override
