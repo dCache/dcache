@@ -5,7 +5,6 @@ import io.swagger.jaxrs.listing.SwaggerSerializers;
 import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
-import org.dcache.restful.filters.ResponseHeaderFilter;
 import org.dcache.restful.interceptors.LoggingInterceptor;
 import org.dcache.restful.providers.ErrorResponseProvider;
 import org.dcache.restful.providers.ObjectMapperProvider;
@@ -55,7 +54,6 @@ public class DcacheRestApplication extends ResourceConfig
         register(DoorsResources.class);
 
         //register filters
-        register(ResponseHeaderFilter.class);
         register(RequestUser.class);
 
         //register features/provider
