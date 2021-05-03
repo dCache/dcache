@@ -1,10 +1,15 @@
 package org.dcache.webdav;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 
+import javax.annotation.PostConstruct;
+import javax.servlet.Filter;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,29 +18,42 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.eclipse.jetty.servlets.CrossOriginFilter.*;
 
-public class CrossOriginResourceSharingHandler extends AbstractHandler
+/**
+ * A Jetty Handler that uses Jetty's CrossOriginFilter to implement support
+ * for CORS.
+ */
+public class CrossOriginResourceSharingHandler extends AbstractHandler implements FilterConfig
 {
+    private static final Map<String,String> DEFAULT_CONFIG = Map.of(
+            ALLOWED_METHODS_PARAM, "GET,PUT,POST,DELETE",
+            ALLOWED_HEADERS_PARAM, "Content-Type,Authorization,Suppress-WWW-Authenticate",
+            PREFLIGHT_MAX_AGE_PARAM, "0", // Disable 'Access-Control-Max-Age' response.
+            CHAIN_PREFLIGHT_PARAM, "false");
     private static final ImmutableList<String> ALLOWED_ORIGIN_PROTOCOL = ImmutableList.of("http", "https");
-    private List<String> _allowedClientOrigins = Collections.emptyList();
+    private Filter filter;
+    private final Map<String,String> filterConfig = new HashMap<>(DEFAULT_CONFIG);
 
     public void setAllowedClientOrigins(String origins)
     {
+        String configValue;
+
         if (origins.isEmpty()) {
-            _allowedClientOrigins = Collections.emptyList();
+            configValue = "*";
         } else {
-            List<String> originList = Arrays.stream(origins.split(","))
-                    .map(String::trim)
-                    .collect(Collectors.toList());
-            originList.forEach(CrossOriginResourceSharingHandler::checkOrigin);
-            _allowedClientOrigins = originList;
+            // Fail fast
+            Splitter.on(',').trimResults().splitToList(origins).forEach(CrossOriginResourceSharingHandler::checkOrigin);
+            configValue = origins;
         }
+
+        filterConfig.put(ALLOWED_ORIGINS_PARAM, configValue);
     }
 
     private static void checkOrigin(String s)
@@ -60,32 +78,48 @@ public class CrossOriginResourceSharingHandler extends AbstractHandler
         }
     }
 
+    @PostConstruct
+    public void setup()
+    {
+        filter = new CrossOriginFilter();
+
+        try {
+            filter.init(this);
+        } catch (ServletException e) {
+            throw new RuntimeException("Bad CrossOriginFilter config: "
+                    + e.toString(), e);
+        }
+    }
+
     @Override
     public void handle(String target, Request baseRequest,
                        HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
-        String clientOrigin = request.getHeader("origin");
-        response.setHeader("Access-Control-Allow-Credentials", "true");
+        baseRequest.setHandled(true);
+        filter.doFilter(request, response, (req,res) -> baseRequest.setHandled(false));
+    }
 
-        if (_allowedClientOrigins.isEmpty()) {
-            response.setHeader("Access-Control-Allow-Origin", "*");
-        } else if (_allowedClientOrigins.contains(clientOrigin)) {
-            response.setHeader("Access-Control-Allow-Origin", clientOrigin);
+    @Override
+    public String getFilterName()
+    {
+        return "cors-filter";
+    }
 
-            if (_allowedClientOrigins.size() > 1) {
-                response.setHeader("Vary", "Origin");
-            }
-        }
+    @Override
+    public ServletContext getServletContext()
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-        if ("OPTIONS".equals(request.getMethod())) {
-            response.setHeader("Allow", "GET, PUT, POST, DELETE");
-            response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-            response.setHeader("Access-Control-Allow-Headers",
-                    "Authorization, Content-Type, Suppress-WWW-Authenticate");
+    @Override
+    public String getInitParameter(String name)
+    {
+        return filterConfig.get(name);
+    }
 
-            /* Note: we do not mark the request as handled.  This is to allow
-             * other handlers to add response headers.
-             */
-        }
+    @Override
+    public Enumeration<String> getInitParameterNames()
+    {
+        return Collections.enumeration(filterConfig.keySet());
     }
 }
