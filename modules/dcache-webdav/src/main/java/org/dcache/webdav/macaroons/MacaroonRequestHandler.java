@@ -176,9 +176,6 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
 
                 response.setStatus(200);
                 response.setContentType(RESPONSE_MIMETYPE);
-                response.setHeader("Access-Control-Allow-Origin", "*");
-                response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PROPFIND");
-                response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
                 try (PrintWriter w = response.getWriter()) {
                     w.println(json.toString(JSON_RESPONSE_INDENTATION));
                 }
