@@ -61,6 +61,7 @@ package org.dcache.chimera;
 
 import com.google.common.base.Throwables;
 import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
+import org.dcache.poolmanager.RemotePoolMonitor;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -88,7 +89,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
@@ -103,7 +103,6 @@ import org.dcache.pinmanager.PinManagerListPinsMessage;
 import org.dcache.pinmanager.PinManagerListPinsMessage.Info;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
-import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.vehicles.FileAttributes;
 
 
@@ -177,12 +176,16 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
             PinManagerListPinsMessage.State.PINNED, PinState.PINNED,
             PinManagerListPinsMessage.State.UNPINNING, PinState.UNPINNING);
 
-    private CellStub poolManagerStub;
     private CellStub pinManagerStub;
     private CellStub billingStub;
     private PnfsHandler pnfsHandler;
     private CellAddressCore myAddress;
     private boolean queryPnfsManagerOnRename;
+
+    /**
+     * Pool manager's runtime configuration.
+     */
+    private RemotePoolMonitor poolMonitor;
 
     @Required
     public void setQueryPnfsManagerOnRename(boolean yes)
@@ -204,16 +207,17 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
         this.pnfsHandler = pnfsHandler;
     }
 
-    public void setPoolManagerStub(CellStub poolManagerStub) {
-        this.poolManagerStub = poolManagerStub;
-    }
-
     public void setPinManagerStub(CellStub pinManagerStub) {
         this.pinManagerStub = pinManagerStub;
     }
 
     public void setBillingStub(CellStub billingStub) {
         this.billingStub = billingStub;
+    }
+
+    public void setPoolMonitor(RemotePoolMonitor poolMonitor)
+    {
+        this.poolMonitor = poolMonitor;
     }
 
     @Override
@@ -326,13 +330,9 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
      * instead of simply its status as recorded in the Chimera database.
      */
     private String getFileLocality(String filePath) throws ChimeraFsException {
-        PoolMonitor _poolMonitor;
         FileLocality locality = FileLocality.UNAVAILABLE;
 
         try {
-            _poolMonitor = poolManagerStub.sendAndWait(
-                            new PoolManagerGetPoolMonitor()).getPoolMonitor();
-
             Set<FileAttribute> requestedAttributes
                 = EnumSet.of(FileAttribute.TYPE,
                              FileAttribute.SIZE,
@@ -347,8 +347,8 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
              * client so that link net masks do not interfere; note that SRM uses
              * "localhost", so it is not a deviation from existing behavior.
              */
-            locality = _poolMonitor.getFileLocality(attributes, "localhost");
-        } catch (CacheException | NoRouteToCellException | InterruptedException t) {
+            locality = poolMonitor.getFileLocality(attributes, "localhost");
+        } catch (CacheException t) {
             throw new ChimeraFsException("getFileLocality", t);
         }
 
