@@ -104,13 +104,19 @@
         <property name="shouldUpdate" value="${nfs.db.schema.auto}"/>
     </bean>
 
+
+    <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
+        <description>Maintains runtime information about all pools</description>
+        <property name="poolManagerStub" ref="poolManagerStub"/>
+    </bean>
+
     <bean id="fileSystem" class="org.dcache.chimera.DCacheAwareJdbcFs"
             depends-on="liquibase">
         <description>Chimera Filesystem</description>
         <constructor-arg ref="dataSource" />
         <constructor-arg ref="tx-manager" />
         <property name="pnfsHandler" ref="pnfs"/>
-        <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="poolMonitor" ref="pool-monitor"/>
         <property name="pinManagerStub" ref="pinManagerStub"/>
         <property name="billingStub" ref="billing-stub"/>
 	<property name="queryPnfsManagerOnRename" value="${nfs.enable.pnfsmanager-query-on-move}"/>
