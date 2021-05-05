@@ -262,12 +262,8 @@ public class PoolManagerV5
                     throw new IllegalArgumentException("Timers to small : " + parameter);
                 }
 
-                if (deathDetected > 0L) {
-                    _deathDetected = deathDetected * 1000L;
-                }
-                if (sleeping > 0L) {
-                    _sleepTimer = sleeping * 1000L;
-                }
+                _deathDetected = deathDetected * 1000L;
+                _sleepTimer = sleeping * 1000L;
 
             } catch (Exception ee) {
                 _log.warn("WatchdogThread : illegal arguments [{}] (using defaults) {}", parameter, ee.getMessage());
