@@ -74,7 +74,7 @@ support.
 | [poolmanager](config-PoolManager.md)            | When   a file  reading or writing a transfer request is sent to the dCache system, the poolmanager then decides how to handle this request.     |
 | [resilience](config-resilience.md)                      |Controls the number of replicas of a file on the pools. |
 | [hoppingmanager](config-hopping.md)               | Service that orchestrates file replica distribution across the pools triggered by a variety of conditions.     |
-| cleaner                      | Service that periodically cleans (removes) deleted files' replicas from the pools. |
+| [cleaner](config-cleaner.md)                     | Service that periodically cleans (removes) deleted files' replicas from the pools. |
 | [info](config-info-provider.md)         | Provides information about the dCache instance in a standard format called GLUE. |
 | [missing-files](config-missing-files.md)                | A component designed to react to requests to retrieve missing files.      |
  |[pool](cookbook-pool.md)                      | Data storage (cookbook)    |

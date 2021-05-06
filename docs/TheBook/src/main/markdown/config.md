@@ -22,6 +22,11 @@ This part contains descriptions of the components of dCache, their role, functio
     - [Directory Tags for dCache](config-chimera.md#directory-tags-for-dcache)
     - [Storage Class and Directory Tags](config-chimera.md#storage-class-and-directory)
 
+1. [The Cleaner Service](config-cleaner.md)
+   -  [Configuration](config-cleaner.md#configuration)
+   -  [Disk Cleaner](config-cleaner.md#disk-cleaner)
+   -  [HSM Cleaner](config-cleaner.md#hsm-cleaner)
+
 1. [Cell Message Passing](config-message-passing.md#the-cell-package)
 
 1. [The Resilience Service](config-resilience.md)
@@ -68,6 +73,9 @@ This part contains descriptions of the components of dCache, their role, functio
     - [Example of an executable to simulate a tape backend](config-hsm.md#example-of-an-executable-to-simulate-a-tape-backend)
 
 1. [The PinManager Service](config-pinmanager.md)
+   -  [The (Un-)Pinning Concept](config-pinmanager.md#un-pinning-concept)
+   -  [The pin life cycle](config-pinmanager.md#the-pin-life-cycle)
+   -  [Configuring](config-pinmanager.md#configuring)
 
 1. [File Hopping](config-hopping.md)
     - [File Hopping on arrival from outside dCache](config-hopping.md#file-hopping-on-arrival-from-outside-dcache)

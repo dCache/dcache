@@ -25,7 +25,7 @@ dCache Book
         
         -   [bulk service](config-bulk.md)
 
-        -   cleaner service
+        -   [cleaner service](config-cleaner.md)
 
         -   dcap service
 
