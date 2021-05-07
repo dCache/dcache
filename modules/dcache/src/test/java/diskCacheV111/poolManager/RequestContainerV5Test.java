@@ -18,7 +18,6 @@
  */
 package diskCacheV111.poolManager;
 
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 import diskCacheV111.poolManager.RequestContainerV5.RequestState;
 import diskCacheV111.util.CacheException;
@@ -29,14 +28,12 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SourceCostException;
 import diskCacheV111.vehicles.InfoMessage;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg.Context;
-import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -49,34 +46,38 @@ import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.mock.CacheExceptionBuilder;
+import org.dcache.mock.Deliverable;
+import org.dcache.mock.DeliveryRepeater;
+import org.dcache.mock.EndpointMessageReceiver;
+import org.dcache.mock.EnvelopeAndMessageDeliverable;
+import org.dcache.mock.FixedTimes;
 import org.dcache.mock.PartitionManagerBuilder;
 import org.dcache.mock.PoolMonitorBuilder;
 import org.dcache.mock.PoolSelectionUnitBuilder;
+import org.dcache.mock.PoolStatusChangedBuilder;
 import org.dcache.mock.ProtocolInfoBuilder;
+import org.dcache.mock.ResponseMessageDeliverable;
 import org.dcache.poolmanager.CostException;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
 import org.dcache.poolmanager.SelectedPool;
 import org.dcache.util.Args;
+import org.dcache.util.ExecutorUtils;
 import org.dcache.util.FileAttributesBuilder;
 import org.dcache.vehicles.FileAttributes;
 import org.junit.After;
@@ -88,12 +89,9 @@ import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Throwables.throwIfUnchecked;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.auth.Subjects.NOBODY;
 import static org.dcache.auth.Subjects.ROOT;
@@ -113,7 +111,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -556,7 +553,6 @@ public class RequestContainerV5Test
         then(billing).shouldHaveNoInteractions();
     }
 
-
     @Test
     public void shouldDuplicateFileForReplicateRequest() throws Exception
     {
@@ -567,7 +563,8 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain").thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
         whenReceiving(aReplicateRequest()
@@ -599,7 +596,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatSendsHitMessages());
 
@@ -639,7 +636,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -671,7 +668,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -703,7 +700,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -734,7 +731,7 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aCostException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -766,7 +763,7 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -798,7 +795,7 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(anIllegalArgumentException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -855,7 +852,7 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -887,7 +884,7 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aPermissionDeniedCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -920,7 +917,7 @@ public class RequestContainerV5Test
                         .withPool("hot-pool@dCacheDomain")
                         .withTryAlternatives(true))
                 .returnsCurrentPartition(aPartition().withStageAllowed(true).withStageOnCost(true).withP2pOnCost(false))));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -952,7 +949,7 @@ public class RequestContainerV5Test
                         .withTryAlternatives(true))
                 .returnsCurrentPartition(aPartition().withStageAllowed(true).withStageOnCost(true))
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -1009,7 +1006,7 @@ public class RequestContainerV5Test
                 .onReadThrows(aPermissionDeniedCacheException())
                 .onPool2PoolThrows(aPermissionDeniedCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain")
                 .thatDoesNotSendHitMessages());
@@ -1241,7 +1238,7 @@ public class RequestContainerV5Test
                 .returnsCurrentPartition(aPartition().withStageAllowed(true).withStageOnCost(true).withP2pOnCost(true))
                 .onPool2PoolThrows(aSourceCostException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -1561,7 +1558,7 @@ public class RequestContainerV5Test
                 .returnsCurrentPartition(aPartition().withStageAllowed(true).withStageOnCost(true).withP2pOnCost(true))
                 .onPool2PoolThrows(aCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -1704,7 +1701,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -1733,7 +1730,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -1764,7 +1761,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithReturnCode(3141));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -1794,7 +1791,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithReturnCode(3141));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -1824,7 +1821,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(Pool2PoolTransferMsg.class)
                 .repliesWithErrorObject("xyzzy").andReturnCode(3141));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
@@ -1857,7 +1854,7 @@ public class RequestContainerV5Test
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))
                         .onStageSelects(stagePool)));
-        given(aCell("destination-pool@dCacheDomain")
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
                         .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWithReturnCode(3141)
               .andAnotherCell("stage-pool@dCacheDomain")
                         .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
@@ -1996,7 +1993,7 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain").thatOnAdminCommand("pp ls").repliesWith(""));
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(pool).thatOnAdminCommand("pp ls").repliesWith(""));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
         given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
@@ -2023,8 +2020,8 @@ public class RequestContainerV5Test
                 .onPool2PoolSelects(aPoolPair()
                         .withSource("source-pool@dCacheDomain")
                         .withDestination("destination-pool@dCacheDomain"))));
-        given(aCell("destination-pool@dCacheDomain").thatOnReceiving(Pool2PoolTransferMsg.class)
-                .repliesWith(PoolFetchFileMessage.class));
+        given(aCell("destination-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(Pool2PoolTransferMsg.class).repliesWith(PoolFetchFileMessage.class));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
         whenReceiving(aReplicateRequest()
@@ -2050,7 +2047,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects("stage-pool@dCacheDomain")));
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain")
                 .thatDoesNotSendHitMessages()
                 .withConfig("rc suspend on"));
@@ -2093,7 +2091,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain")
                 .thatDoesNotSendHitMessages()
                 .withConfig("rc set max restore 0"));
@@ -2129,7 +2128,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageThrows(aCostException().withPool("stage-pool@dCacheDomain"))));
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
         whenReceiving(aReadRequest()
@@ -2287,7 +2287,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class).repliesWithSuccess());
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
         whenReceiving(aReadRequest()
@@ -2317,7 +2318,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class).repliesWithReturnCode(10013));
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class).repliesWithReturnCode(10013));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
         whenReceiving(aReadRequest()
@@ -2356,7 +2358,7 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain")
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
                 .thatOnReceiving(PoolFetchFileMessage.class).repliesWithErrorObject("xyzzy").andReturnCode(10013));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -2396,7 +2398,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class).repliesWithReturnCode(3141));
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class).repliesWithReturnCode(3141));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
         whenReceiving(aReadRequest()
@@ -2425,7 +2428,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class)
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class)
                 .repliesWithErrorObject("xyzzy").repliesWithReturnCode(3141));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -2542,7 +2546,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain").thatOnAdminCommand("rh ls").repliesWith(""));
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(pool)
+            .thatOnAdminCommand("rh ls").repliesWith(""));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
         given(aReadRequest()
                 .by(ROOT)
@@ -2659,7 +2664,8 @@ public class RequestContainerV5Test
         given(aPoolMonitor().thatReturns(aPoolSelectorThat()
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class)
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class)
                 .repliesWith(Pool2PoolTransferMsg.class));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
 
@@ -2798,7 +2804,8 @@ public class RequestContainerV5Test
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class).storesRequestIn(poolStageRequest));
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class).storesRequestIn(poolStageRequest));
         given(repeat(20), i -> aReadRequestFrom("door-" + i + "@dCacheDomain")
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
@@ -2832,8 +2839,8 @@ public class RequestContainerV5Test
                 .onReadThrows(aFileNotInCacheException())
                 .onStageSelects(stagePool)));
         given(aContainer("PoolManager@dCacheDomain").thatDoesNotSendHitMessages());
-        given(aCell("stage-pool@dCacheDomain").thatOnReceiving(PoolFetchFileMessage.class)
-                .storesRequestIn(poolStageRequest));
+        given(aCell("stage-pool@dCacheDomain").communicatingVia(endpoint)
+            .thatOnReceiving(PoolFetchFileMessage.class).storesRequestIn(poolStageRequest));
         given(repeat(30), i -> aReadRequestFrom("door-" + i + "@dCacheDomain")
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
@@ -3354,6 +3361,26 @@ public class RequestContainerV5Test
         return list.getValue();
     }
 
+    private static void deliverToContainer(RequestContainerV5 container,
+                                           CellMessage envelope,
+                                           Serializable request)
+        throws IOException {
+            /* REVISIT: the following embeds knowledge of how RequestContainerV5
+               receives information; specifically, that messages of type
+               PoolMgrSelectReadPoolMsg are handled differently from other
+               messages.  This is undesirable, as changes in how
+               RequestContainerV5 receives messages will require similar
+               changes here.  However, the alternative (using reflection) was
+               felt to be too complicated.  A future version may replace this
+               by using dCache's actual message delivery mechanism here.
+            */
+        if (request instanceof PoolMgrSelectReadPoolMsg) {
+            container.messageArrived(envelope, (PoolMgrSelectReadPoolMsg)request);
+        } else {
+            container.messageArrived(envelope, request);
+        }
+    }
+
     private static <T extends InfoMessage> T notificationSentWith(CellStub stub, Class<T> type)
     {
         var messageArg = ArgumentCaptor.forClass(Serializable.class);
@@ -3362,17 +3389,18 @@ public class RequestContainerV5Test
                 .filter(e -> type.isInstance(e))
                 .map(type::cast)
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("CellStub#notify not called with " + type + " argument"));
+                .orElseThrow(() -> new AssertionError("CellStub#notify not called with "
+                    + type + " argument"));
     }
 
     private FixedTimes repeat(int count)
     {
-        return new FixedTimes(count);
+        return new FixedTimes<RequestContainerV5>(count);
     }
 
     private EndpointMessageReceiver aCell(String address)
     {
-        return new EndpointMessageReceiver(address);
+        return new ContainerEndpointMessageReceiver(address);
     }
 
     private ContainerBuilder aContainer(String address)
@@ -3395,11 +3423,6 @@ public class RequestContainerV5Test
         return new ReplicateFileRequestBuilder();
     }
 
-    private ResponseMessageDeliverable aResponseTo(CellMessage outbound)
-    {
-        return new ResponseMessageDeliverable(outbound);
-    }
-
     private ResponseMessageDeliverable aResponseTo(Future<CellMessage> outbound)
             throws InterruptedException, ExecutionException
     {
@@ -3407,12 +3430,12 @@ public class RequestContainerV5Test
             fail("aResponseTo() called with Future<CellMessage> argument that is not yet done.");
         }
 
-        return new ResponseMessageDeliverable(outbound.get());
+        return new ContainerResponseMessageDeliverable(outbound.get());
     }
 
     private PoolStatusChangedBuilder aPoolStatusChange()
     {
-        return new PoolStatusChangedBuilder();
+        return new ContainerPoolStatusChangedBuilder();
     }
 
     private Deliverable anInfoRequest()
@@ -3463,251 +3486,6 @@ public class RequestContainerV5Test
     private DestinationCostException aDestinationCostException()
     {
         return new DestinationCostException("destination pool is hot");
-    }
-
-    /**
-     * Deliver multiple messages.  The specific messages are built using an
-     * integer index, with the first message having index 1.
-     */
-    private interface DeliveryRepeater
-    {
-        void repeatDeliveryTo(IntFunction<Deliverable> messageBuilder,
-                RequestContainerV5 container);
-    }
-
-    /**
-     * Deliver a message a fixed number times.  An iterator index (1-indexed) is
-     * passed to the message builder function to allow it to build distinct
-     * messages over the customisation.
-     */
-    private class FixedTimes implements DeliveryRepeater
-    {
-        private final int count;
-
-        public FixedTimes(int count)
-        {
-            checkArgument(count > 0);
-            this.count = count;
-        }
-
-        @Override
-        public void repeatDeliveryTo(IntFunction<Deliverable> messageBuilder,
-                RequestContainerV5 container)
-        {
-            for (int i = 1; i <= count; i++) {
-                try {
-                    var message = messageBuilder.apply(i);
-                    message.deliverTo(container);
-                } catch (IOException | InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-
-    /**
-     * Build a generic set of responses describing how named cells will react
-     * to stimuli.  Because we can only mock the send methods once, a single
-     * builder instance must describe all responses for all named cells.
-     */
-    private class EndpointMessageReceiver
-    {
-        private final List<MessageResponse> messageResponses = new ArrayList<>();
-        private final List<AdminCommandResponse> adminResponses = new ArrayList<>();
-        private CellAddressCore currentAddress;
-
-        EndpointMessageReceiver(String address)
-        {
-            currentAddress = new CellAddressCore(address);
-        }
-
-        public MessageResponse thatOnReceiving(Class<? extends Message> messageType)
-        {
-            MessageResponse response = new MessageResponse(messageType);
-            messageResponses.add(response);
-            return response;
-        }
-
-        public AdminCommandResponse thatOnAdminCommand(String command)
-        {
-            AdminCommandResponse response = new AdminCommandResponse(command);
-            adminResponses.add(response);
-            return response;
-        }
-
-        public EndpointMessageReceiver andAnotherCell(String address)
-        {
-            currentAddress = new CellAddressCore(address);
-            return this;
-        }
-
-        public void accept(CellMessage envelope)
-        {
-            var destination = envelope.getDestinationPath().getDestinationAddress();
-
-            if (destination.equals(currentAddress)) {
-                messageResponses.forEach(r -> r.accept(envelope));
-            }
-        }
-
-        private void mockAdminResponses()
-        {
-            Answer a = i -> {
-                        var target = i.getArgument(0, CellPath.class);
-                        var destination = target.getDestinationAddress();
-                        var message = i.getArgument(1, Serializable.class).toString();
-                        var response = adminResponses.stream()
-                                .map(r -> r.accept(destination, message))
-                                .filter(Optional::isPresent)
-                                .map(Optional::get)
-                                .findFirst()
-                                .orElseThrow();
-                        return Futures.immediateFuture(response);
-                    };
-
-            Mockito.doAnswer(a).when(pool).send(isA(CellPath.class), isA(Serializable.class), isA(Class.class));
-        }
-
-        private void mockMessageResponses()
-        {
-            Answer a = i -> {
-                        CellMessage envelope = i.getArgument(0, CellMessage.class);
-                        messageResponses.forEach(s -> s.accept(envelope));
-                        return null;
-                    };
-
-            Mockito.doAnswer(a).when(endpoint).sendMessage(any());
-        }
-
-        public void build()
-        {
-            if (!adminResponses.isEmpty()) {
-                mockAdminResponses();
-            }
-
-            if (!messageResponses.isEmpty()) {
-                mockMessageResponses();
-            }
-        }
-
-        /**
-         * This class describes how a specific cell responds to a Message.
-         */
-        private class MessageResponse
-        {
-            private final CellAddressCore address = EndpointMessageReceiver.this.currentAddress;
-            private final Class<? extends Message> reactsTo;
-            private Class<? extends Message> responseType;
-            private int code;
-            private Serializable error;
-            private Consumer<CellMessage> reaction = this::sendReply;
-
-            public MessageResponse(Class<? extends Message> messageType)
-            {
-                reactsTo = requireNonNull(messageType);
-                responseType = messageType;
-            }
-
-            public MessageResponse replies()
-            {
-                return this;
-            }
-
-            public EndpointMessageReceiver repliesWith(Class<? extends Message> responseType)
-            {
-                this.responseType = requireNonNull(responseType);
-                return EndpointMessageReceiver.this;
-            }
-
-            public EndpointMessageReceiver repliesWithSuccess()
-            {
-                return repliesWithReturnCode(0);
-            }
-
-            public EndpointMessageReceiver repliesWithReturnCode(int code)
-            {
-                this.code = code;
-                return EndpointMessageReceiver.this;
-            }
-
-            public MessageResponse repliesWithErrorObject(Serializable error)
-            {
-                this.error = error;
-                return this;
-            }
-
-            public EndpointMessageReceiver andReturnCode(int code)
-            {
-                return repliesWithReturnCode(code);
-            }
-
-            public EndpointMessageReceiver storesRequestIn(SettableFuture<CellMessage> future)
-            {
-                requireNonNull(future);
-
-                reaction = e -> {
-                            if (!future.set(e)) {
-                                throw new IllegalStateException("pool received multiple messages");
-                            }
-                        };
-
-                return EndpointMessageReceiver.this;
-            }
-
-            private void sendReply(CellMessage envelope)
-            {
-                try {
-                    aResponseTo(envelope)
-                            .ofType(responseType)
-                            .withError(error)
-                            .withRc(code)
-                            .deliverTo(container);
-                } catch (InterruptedException | IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            public void accept(CellMessage envelope)
-            {
-                CellAddressCore destination = envelope.getDestinationPath().getDestinationAddress();
-
-                if (destination.equals(address)) {
-                    Serializable messageObject = envelope.getMessageObject();
-
-                    if (reactsTo.isInstance(messageObject)) {
-                        reaction.accept(envelope);
-                    }
-                }
-            }
-        }
-
-        /**
-         * This class describes how a cell reacts to an admin command.
-         */
-        private class AdminCommandResponse
-        {
-            private final CellAddressCore address = EndpointMessageReceiver.this.currentAddress;
-            private final String command;
-            private String reply;
-
-            public AdminCommandResponse(String command)
-            {
-                this.command = requireNonNull(command);
-            }
-
-            public EndpointMessageReceiver repliesWith(String reply)
-            {
-                this.reply = requireNonNull(reply);
-                return EndpointMessageReceiver.this;
-            }
-
-            public Optional<String> accept(CellAddressCore targetAddress, String command)
-            {
-                return address.equals(targetAddress) && this.command.equals(command)
-                        ? Optional.of(reply)
-                        : Optional.empty();
-            }
-        }
     }
 
     /**
@@ -3778,6 +3556,19 @@ public class RequestContainerV5Test
         }
     }
 
+    private class ContainerEndpointMessageReceiver
+        extends EndpointMessageReceiver<RequestContainerV5>
+    {
+        protected ContainerEndpointMessageReceiver(String address) {
+            super(address);
+        }
+
+        @Override
+        protected ResponseMessageDeliverable<RequestContainerV5> aResponseTo(CellMessage message) {
+            return new ContainerResponseMessageDeliverable(message);
+        }
+    }
+
     /**
      * This class implements the builder pattern for creating a mocked
      * CostException.
@@ -3813,42 +3604,9 @@ public class RequestContainerV5Test
         }
     }
 
-    /**
-     * A generic interface that describes methods through which the
-     * RequestContainerV5 test object receives triggers.
-     */
-    private interface Deliverable
+    private static class ContainerPoolStatusChangedBuilder
+        extends PoolStatusChangedBuilder<RequestContainerV5>
     {
-        void deliverTo(RequestContainerV5 container) throws IOException, InterruptedException;
-    }
-
-    private static class PoolStatusChangedBuilder implements Deliverable
-    {
-        private String pool;
-        private int status;
-
-        public PoolStatusChangedBuilder thatPool(String name)
-        {
-            pool = name;
-            return this;
-        }
-
-        public PoolStatusChangedBuilder withStatus(int value)
-        {
-            status = value;
-            return this;
-        }
-
-        public PoolStatusChangedBuilder isUp()
-        {
-            return withStatus(PoolStatusChangedMessage.UP);
-        }
-
-        public PoolStatusChangedBuilder isDown()
-        {
-            return withStatus(PoolStatusChangedMessage.DOWN);
-        }
-
         @Override
         public void deliverTo(RequestContainerV5 container)
         {
@@ -3907,54 +3665,18 @@ public class RequestContainerV5Test
     }
 
     /**
-     * This class provides a way to deliver a Message to a
-     * RequestContainerV5 object using the
-     * {@literal messageArrived(CellMessage, Message)} interface.
-     */
-    private abstract class EnvelopeAndMessageDeliverable implements Deliverable
-    {
-        protected abstract CellMessage buildEnvelope();
-
-        @Override
-        public void deliverTo(RequestContainerV5 container) throws IOException, InterruptedException
-        {
-            CellMessage envelope = buildEnvelope();
-
-            envelope.nextDestination();
-
-            Serializable request = envelope.getMessageObject();
-
-            /* REVISIT: the following embeds knowledge of how RequestContainerV5
-               receives information; specifically, that messages of type
-               PoolMgrSelectReadPoolMsg are handled differently from other
-               messages.  This is undesirable, as changes in how
-               RequestContainerV5 receives messages will require similar
-               changes here.  However, the alternative (using reflection) was
-               felt to be too complicated.  A future version may replace this
-               by using dCache's actual message delivery mechanism here.
-            */
-            if (request instanceof PoolMgrSelectReadPoolMsg) {
-                container.messageArrived(envelope, (PoolMgrSelectReadPoolMsg)request);
-            } else {
-                container.messageArrived(envelope, request);
-            }
-        }
-    }
-
-    /**
      * This class delivers a request to RequestContainerV5.  It is also
      * responsible that the {@literal deliverTo} method does not return until
      * RequestContainerV5 has fully processed the request.  This should result
      * in RequestContainerV5 either sending a reply or sending a message to
      * a pool.
      */
-    private abstract class RequestMessageDeliverable extends EnvelopeAndMessageDeliverable
+    private abstract class RequestMessageDeliverable
+        extends EnvelopeAndMessageDeliverable<RequestContainerV5>
     {
-        private final CellAddressCore source;
-
         RequestMessageDeliverable(String source)
         {
-            this.source = new CellAddressCore(source);
+            this.sourceAddress = new CellAddressCore(source);
         }
 
         protected abstract Serializable buildRequest();
@@ -3967,14 +3689,14 @@ public class RequestContainerV5Test
             CellAddressCore destination = ((FriendlyRequestContainerV5)container).getCellAddress();
 
             CellMessage msg = new CellMessage(destination, request);
-            msg.addSourceAddress(source);
+            msg.addSourceAddress(sourceAddress);
             return msg;
         }
 
         @Override
-        public void deliverTo(RequestContainerV5 container) throws IOException, InterruptedException
-        {
-            super.deliverTo(container);
+        protected void doDeliverTo(RequestContainerV5 receiver, CellMessage envelope,
+            Serializable request) throws IOException, InterruptedException {
+            deliverToContainer(container, envelope, request);
             waitUntilQuiescent();
         }
     }
@@ -3983,57 +3705,28 @@ public class RequestContainerV5Test
      * Send a reply from a pool to RequestContainerV5.  This is done by the
      * same thread sending the request.
      */
-    private class ResponseMessageDeliverable extends EnvelopeAndMessageDeliverable
+    private class ContainerResponseMessageDeliverable
+        extends ResponseMessageDeliverable<RequestContainerV5>
     {
-        private final CellMessage outbound;
-        private Class<? extends Message> responseType;
-        private Serializable error;
-        private int code;
-
-        ResponseMessageDeliverable(CellMessage outbound)
+        protected ContainerResponseMessageDeliverable(CellMessage outbound)
         {
-            this.outbound = requireNonNull(outbound);
-
-            // Simulate delivery of message to destination.
-            outbound.addSourceAddress(((FriendlyRequestContainerV5)container).getCellAddress());
-            outbound.nextDestination();
-
-            Serializable request = outbound.getMessageObject();
-            checkArgument(request instanceof Message);
-            responseType = (Class<? extends Message>) request.getClass();
-        }
-
-        public ResponseMessageDeliverable ofType(Class<? extends Message> type)
-        {
-            responseType = requireNonNull(type);
-            return this;
-        }
-
-        public ResponseMessageDeliverable withError(Serializable error)
-        {
-            this.error = error;
-            return this;
-        }
-
-        public ResponseMessageDeliverable withRc(int code)
-        {
-            this.code = code;
-            return this;
+            super(outbound);
         }
 
         @Override
-        protected CellMessage buildEnvelope()
-        {
-            Message response = mock(responseType);
-            if (error != null) {
-                BDDMockito.given(response.getErrorObject()).willReturn(error);
-            }
-            BDDMockito.given(response.getReturnCode()).willReturn(code);
+        public ResponseMessageDeliverable aResponseTo(CellMessage message) {
+            return new ContainerResponseMessageDeliverable(message);
+        }
 
-            outbound.revertDirection();
-            outbound.setMessageObject(response);
+        @Override
+        protected void configureOutboundAddress() {
+            this.sourceAddress = ((FriendlyRequestContainerV5)container).getCellAddress();
+        }
 
-            return outbound;
+        @Override
+        protected void doDeliverTo(RequestContainerV5 receiver, CellMessage envelope,
+            Serializable request) throws IOException, InterruptedException {
+            deliverToContainer(container, envelope, request);
         }
     }
 
@@ -4164,7 +3857,7 @@ public class RequestContainerV5Test
         }
     }
 
-    private class GetRestoreHandlerInfoRequestBuilder implements Deliverable
+    private class GetRestoreHandlerInfoRequestBuilder implements Deliverable<RequestContainerV5>
     {
         @Override
         public void deliverTo(RequestContainerV5 container) throws IOException
@@ -4176,41 +3869,29 @@ public class RequestContainerV5Test
     }
 
     /**
-     * Wait until the RequestContainer is no longer processing input.  It is
-     * guaranteed that, when this method returns, the container will have sent
+     * Wait until the RequestContainer is no longer processing input.
+     *
+     * The state-updating task will only exit if the read request:
+     *
+     *      is waiting for a pool2pool transfer to complete,
+     *
+     *      is waiting for a stage request to complete,
+     *
+     *      has been suspended,
+     *
+     *      has fully processed the request (replies sent to the doors).
+     *
+     *  Therefore, provided the state-updating task has been submitted
+     *  before calling this method, it is guaranteed that any messages have
+     *  been sent when this method exists.
+     *
+     * Since the executor is single-threaded, it is guaranteed that,
+     * when this method returns, the container will have sent
      * any pending messages.
      */
     private void waitUntilQuiescent() throws InterruptedException
     {
-        /*
-         *  This works by injecting a test job (a canary) into the executor.
-         *  The executor is single-threaded, therefore the canary is only
-         *  executed after all existing jobs have completed.
-         *
-         *  The state-updating task will only exit if the read request:
-         *
-         *      is waiting for a pool2pool transfer to complete,
-         *
-         *      is waiting for a stage request to complete,
-         *
-         *      has been suspended,
-         *
-         *      has fully processed the request (replies sent to the doors).
-         *
-         *  Therefore, provided the state-updating task has been submitted
-         *  before calling this method, it is guaranteed that any messages have
-         *  been sent when this method exists.
-         */
-        Future canary = executor.submit(() -> {});
-        try {
-            canary.get(1, TimeUnit.SECONDS);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            throwIfUnchecked(cause);
-            throw new RuntimeException(cause);
-        } catch (TimeoutException e) {
-            fail("Took too long for RequestContainer to go quiet");
-        }
+        ExecutorUtils.waitUntilQuiescent(executor);
     }
 
     /**
