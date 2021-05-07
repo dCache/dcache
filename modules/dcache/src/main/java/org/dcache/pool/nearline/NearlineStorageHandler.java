@@ -18,8 +18,6 @@
 package org.dcache.pool.nearline;
 
 import com.google.common.base.Functions;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -866,12 +864,17 @@ public class NearlineStorageHandler
 
         public String printJobQueue()
         {
-            return Joiner.on('\n').join(requests.values());
+            return requests.values().stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining("\n"));
         }
 
-        public String printJobQueue(Ordering<R> ordering)
+        public String printJobQueue(Comparator<R> ordering)
         {
-            return Joiner.on('\n').join(ordering.sortedCopy(requests.values()));
+            return requests.values().stream()
+                    .sorted(ordering)
+                    .map(Object::toString)
+                    .collect(Collectors.joining("\n"));
         }
 
         private Iterable<CompletionHandler<Void,K>> remove(K key)
@@ -1073,7 +1076,7 @@ public class NearlineStorageHandler
                 }
                 done(null);
 
-                LOGGER.info("Flushed {} to nearline storage: {}", pnfsId, Joiner.on(' ').join(uris));
+                LOGGER.info("Flushed {} to nearline storage: {}", pnfsId, uris);
             } catch (Exception e) {
                 done(e);
             }
@@ -1495,7 +1498,7 @@ public class NearlineStorageHandler
         @Override
         public String call()
         {
-            return stageRequests.printJobQueue(Ordering.natural());
+            return stageRequests.printJobQueue(Comparator.naturalOrder());
         }
     }
 
@@ -1545,7 +1548,7 @@ public class NearlineStorageHandler
         @Override
         public String call()
         {
-            return flushRequests.printJobQueue(Ordering.natural());
+            return flushRequests.printJobQueue(Comparator.naturalOrder());
         }
     }
 
@@ -1579,7 +1582,7 @@ public class NearlineStorageHandler
         @Override
         public String call()
         {
-            return removeRequests.printJobQueue(Ordering.natural());
+            return removeRequests.printJobQueue(Comparator.naturalOrder());
         }
     }
 
