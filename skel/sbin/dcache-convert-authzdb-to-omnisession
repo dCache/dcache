@@ -1,0 +1,107 @@
+#!/bin/sh
+
+@DCACHE_LOAD_CONFIG@
+
+printUsage() {
+    echo "Usage:"
+    echo ""
+    echo "    convert-authzdb-to-omnisession [-f] [-c] [AUTHZDB_CONFIG [OMNISESSION_CONFIG]]"
+    echo
+    echo "This utility converts an authzdb plugin configuration to the equivalent"
+    echo "omnisession configuration.  The utility accepts two arguments, both of"
+    echo "which are optional."
+    echo
+    echo "    -f              overwrite existing files."
+    echo
+    echo "    -c              do not check for authzdb usage."
+    echo
+    echo "    AUTHZDB_CONFIG  the configuration file for the authzdb configuration"
+    echo "                    file.  If not specified then the default location is"
+    echo "                    used."
+    echo
+    echo "    OMNISESSION_CONFIG  the configuration file for the omnisession"
+    echo "                    configuration file.  If not specified then the default"
+    echo "                    location is used."
+    echo
+    echo "If the OMNISESSION_CONFIG file already exists then this script will NOT run, so"
+    echo "it will not overwrite this file.  Specify the '-f' option to overwrite the existing"
+    echo "file."
+    echo
+    echo "If gPlazma is not configured to use 'authzdb' as a session plugin then this script"
+    echo "will NOT run.  Specify the '-c' option to override this behaviuor."
+}
+
+fail() { # $1 - why
+    echo "$1" >&1
+    echo >&1
+    printUsage >&1
+    exit 1
+}
+
+if [ "$1" = "-f" ]; then
+    overwrite=1
+    shift
+fi
+
+if [ "$1" = "-c" ]; then
+    dontCheck=1
+    shift
+fi
+
+[ $# -le 2 ] || fail "You supplied $# arguments and a maximum of two is expected."
+
+gplazmaFile=$(getProperty gplazma.configuration.file)
+
+[ -f $gplazmaFile ] || [ -z "$dontCheck" ] || fail "Cannot find gPlazma configuration file."
+
+grep -q session.*authzdb $gplazmaFile || [ "$dontCheck" = "1" ] || fail "gPlazma is not using authzdb as a session plugin."
+
+if [ $# -ge 1 ]; then
+    SRC=$1
+else
+    SRC=$(getProperty gplazma.authzdb.file)
+fi
+
+[ -e "$SRC" ] || fail "Cannot convert file because $SRC does not exist."
+[ -f "$SRC" ] || fail "Cannot convert file because $SRC is not a file."
+[ -r "$SRC" ] || fail "Cannot convert file because $SRC is not readable."
+
+if [ $# -ge 2 ]; then
+    TARGET=$1
+else
+    TARGET=$(getProperty gplazma.omnisession.file)
+fi
+
+[ ! -e "$TARGET" ] || [ "$overwrite" = 1 ] || fail "$TARGET exists and '-f' was not specified."
+[ ! -e "$TARGET" ] || [ -f "$TARGET" ] || fail "$TARGET exists and is not a file."
+
+export CLASSPATH="$(printLimitedClassPath slf4j-api logback-classic \
+        logback-core logback-console-config guava dcache-common gplazma2-grid)"
+quickJava org.dcache.gplazma.plugins.AuthzdbToOmnisession "$SRC" "$TARGET"
+
+if [ $? -eq 0 ]; then
+    haveOmnisession=0
+    grep -q session.*omnisession $gplazmaFile && haveOmnisession=1
+
+    if [ $haveOmnisession = 0 ]; then
+	currentLine=$(grep session.*authzdb $gplazmaFile)
+	gplazma_conf=$(basename  $gplazmaFile)
+	echo
+	echo "To complete the migration, you should update your '${gplazma_conf}' file by"
+	if [ "$currentLine" = "" ]; then
+	    echo "adding the following line:"
+	    echo
+	    echo "    session requisite omnisession"
+	else
+	    newLine=$(echo $currentLine | awk '/session .* authzdb/{print "session "$2" omnisession"}')
+	    echo "replacing the line:"
+	    echo
+	    echo "    $currentLine"
+	    echo
+	    echo "with the following line:"
+	    echo
+	    echo "    $newLine"
+	fi
+	echo
+    fi
+fi
