@@ -952,7 +952,7 @@
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-jersey2-jaxrs</artifactId>
-                <version>1.5.17</version>
+                <version>1.6.2</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.plugin</groupId>
