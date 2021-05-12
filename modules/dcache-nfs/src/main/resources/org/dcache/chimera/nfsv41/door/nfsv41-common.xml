@@ -190,9 +190,13 @@
         <property name="root" value="/"/>
     </bean>
 
-
     <bean name="clientStore" class="org.dcache.nfs.v4.BerkeleyDBClientStore" destroy-method="close">
         <constructor-arg value="${nfs.clientdb.location}" />
+        <constructor-arg>
+                <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
+                    <property name="prefix" value="nfs.clientdb.config"/>
+                </bean>
+        </constructor-arg>
     </bean>
 
     <bean abstract="true" id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
