@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -67,7 +69,6 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdSession;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.XrootdProtocol.*;
 import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
@@ -97,6 +98,8 @@ import org.dcache.xrootd.util.ParseException;
 import static java.util.stream.Collectors.toSet;
 import static org.dcache.xrootd.CacheExceptionMapper.xrootdErrorCode;
 import static org.dcache.xrootd.CacheExceptionMapper.xrootdException;
+import static org.dcache.xrootd.door.XrootdRedirectHandler.TriedRc.ENOENT;
+import static org.dcache.xrootd.door.XrootdRedirectHandler.TriedRc.IOERR;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 /**
@@ -683,36 +686,55 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         throw new CacheException(CacheException.THIRD_PARTY_TRANSFER_FAILED, error);
     }
 
+    /*
+     *  There are six recognized error codes for host retries.  Our policy is the following:
+     *
+     *  (a) if tried hosts is disabled, we ignore the host list;
+     *  (b) if there are no associated error codes (list is empty or undefined), we ingore the host list;
+     *  (c) we include only hosts in the set returned whose error codes are enoent or ioerr.
+     */
     private Set<String> extractTriedHosts(Map<String, String> opaque)
     {
         String tried = Strings.emptyToNull(opaque.get("tried"));
-        String rc = Strings.emptyToNull(opaque.get("triedrc"));
-
-        if (tried == null || rc == null) {
-            _log.debug("tried {}, triedrc {}, ignoring.", tried, rc);
-            return Collections.EMPTY_SET;
-        }
+        String triedrc = Strings.emptyToNull(opaque.get("triedrc"));
 
         if (!_door.isTriedHostsEnabled()) {
-            _log.debug("tried hosts option not enabled, ignoring 'tried={}'.", tried);
+            _log.debug("tried hosts option not enabled, ignoring 'tried={},triedrc={}'.",
+                tried, triedrc);
             return Collections.EMPTY_SET;
         }
 
-        TriedRc triedRc = TriedRc.valueOf(rc.toUpperCase());
-        _log.debug("tried {}, triedrc {}, cause {}.", tried, triedRc.key(), triedRc.description());
-
-        switch (triedRc) {
-            case ENOENT:
-            case IOERR:
-                break;
-            default:
-                return Collections.EMPTY_SET;
+        if (tried == null || triedrc == null) {
+            _log.debug("tried {}, triedrc {}, ignoring.", tried, triedrc);
+            return Collections.EMPTY_SET;
         }
 
-        Set<String> triedHosts
-            = Arrays.stream(tried.split(",")).collect(Collectors.toSet());
-        _log.debug("tried hosts : {}", triedHosts);
+        List<String> hostNames
+            =  Arrays.stream(tried.split(",")).map(String::trim).collect(Collectors.toList());
+        List<String> errorCodes
+            =  Arrays.stream(triedrc.split(",")).map(String::trim).collect(Collectors.toList());
+        Set<String> triedHosts = new HashSet<>();
 
+        /*
+         *  Assuming the comma-delimited lists are correspondingly ordered,
+         *  the iteration can be bound by the length of the error codes list.
+         *  Should the length of the error code list exceed that of the host list,
+         *  this would actually constitute a client bug, but we treat it silently
+         *  by then using the length of the host list as upper bound.
+         */
+        int len = Math.min(errorCodes.size(), hostNames.size());
+
+        for (int i = 0; i < len; ++i) {
+            String value = errorCodes.get(i).toUpperCase();
+            if (value.equals(ENOENT.name()) || value.equals(IOERR.name())) {
+                String host = hostNames.get(i);
+                triedHosts.add(host);
+                _log.debug("tried {}, triedrc {}, {}.",
+                    host, value, TriedRc.valueOf(value).description());
+            }
+        }
+
+        _log.debug("tried hosts : {}", triedHosts);
         return triedHosts;
     }
 
