@@ -1,15 +1,17 @@
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.subsystem.SubsystemFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.File;
+import java.io.IOException;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 
-public class LegacySubsystemFactory implements NamedFactory<Command>, CellMessageSender
+public class LegacySubsystemFactory implements SubsystemFactory, CellMessageSender
 {
     private CellEndpoint _endpoint;
 
@@ -53,8 +55,7 @@ public class LegacySubsystemFactory implements NamedFactory<Command>, CellMessag
     }
 
     @Override
-    public Command create()
-    {
+    public Command createSubsystem(ChannelSession channelSession) throws IOException {
         return new LegacyAdminShellCommand(_endpoint, _historyFile, _historySize, _prompt, _useColor);
     }
 }

@@ -5,6 +5,7 @@ import jline.console.ConsoleReader;
 import jline.console.history.FileHistory;
 import jline.console.history.MemoryHistory;
 import jline.console.history.PersistentHistory;
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
@@ -78,7 +79,7 @@ public class AnsiTerminalCommand implements Command, Runnable {
     }
 
     @Override
-    public void destroy() {
+    public void destroy(ChannelSession channelSession) {
         Thread thread = _pipeThread;
         if (thread != null) {
             thread.interrupt();
@@ -109,7 +110,7 @@ public class AnsiTerminalCommand implements Command, Runnable {
     }
 
     @Override
-    public void start(Environment env) throws IOException {
+    public void start(ChannelSession channelSession, Environment env) throws IOException {
         _pipedOut = new PipedOutputStream();
         _pipedIn = new PipedInputStream(_pipedOut);
         _userAdminShell.setUser(env.getEnv().get(Environment.ENV_USER));
