@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.ssh2;
 
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.command.CommandFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -127,7 +128,7 @@ public class DirectCommandFactory implements CommandFactory, CellMessageSender
     }
 
     @Override
-    public Command createCommand(String command) {
+    public Command createCommand(ChannelSession channelSession, String command) {
         checkArgument(command != null, "No command");
         return new DirectCommand(Arrays.asList(command.split(COMMAND_SEPARATOR)),
                 endpoint,

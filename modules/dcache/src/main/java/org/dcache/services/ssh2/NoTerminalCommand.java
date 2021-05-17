@@ -1,5 +1,6 @@
 package org.dcache.services.ssh2;
 
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
@@ -45,7 +46,7 @@ public class NoTerminalCommand implements Command, Runnable
     }
 
     @Override
-    public void destroy() {
+    public void destroy(ChannelSession channelSession) {
     }
 
     @Override
@@ -69,7 +70,7 @@ public class NoTerminalCommand implements Command, Runnable
     }
 
     @Override
-    public void start(Environment env) throws IOException {
+    public void start(ChannelSession channelSession, Environment env) throws IOException {
         _userAdminShell.setUser(env.getEnv().get(Environment.ENV_USER));
         CDC cdc = new CDC();
         _adminShellThread = new Thread(() -> cdc.execute(this));
