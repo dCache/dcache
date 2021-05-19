@@ -3,11 +3,11 @@ package org.dcache.services.ssh2;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
-import com.google.common.io.BaseEncoding;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
+import org.apache.sshd.common.config.keys.AuthorizedKeyEntry;
 import org.apache.sshd.common.config.keys.KeyUtils;
 import org.apache.sshd.common.keyprovider.KeyPairProvider;
 import org.apache.sshd.common.session.Session;
@@ -45,21 +45,17 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
@@ -86,7 +82,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     // get the user part from a public key line like
     // ... ssh-rsa AAAA...... user@hostname
     private static final Pattern _pubKeyFileUsername =
-            Pattern.compile(".*ssh-.* (.*?)@.*");
+            Pattern.compile("(.*?)@.*");
 
     private final SshServer _server;
     // UniversalSpringCell injected parameters
@@ -322,16 +318,6 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
     private class AdminPublickeyAuthenticator implements PublickeyAuthenticator {
 
-        private PublicKey toPublicKey(String s) {
-            try {
-                AuthorizedKeyParser decoder = new AuthorizedKeyParser();
-                return decoder.decodePublicKey(s);
-            } catch (InvalidKeySpecException | NoSuchAlgorithmException | IllegalArgumentException e) {
-                _log.warn("can't decode public key from file: {} ", e.getMessage());
-            }
-            return null;
-        }
-
         private String getUserFromKeyLine(String line) {
             Matcher m = _pubKeyFileUsername.matcher(line);
             if (m.matches()) {
@@ -348,33 +334,33 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             _log.debug("Authentication username set to: {} publicKey: {}",
                     userName, key);
             try {
-                try(Stream<String> fileStream = java.nio.file.Files.lines(_authorizedKeyList.toPath())) {
-                    String matchedPubKey = fileStream
-                            .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
-                            .filter(l -> key.equals(toPublicKey(l)))
-                            .findFirst()
-                            .orElse(null);
+                for(AuthorizedKeyEntry ke: AuthorizedKeyEntry.readAuthorizedKeys(_authorizedKeyList.toPath())) {
+                    PublicKey publicKey = ke.resolvePublicKey(null);
 
-                    if (null == matchedPubKey) {
-                        reason = "key file: no match";
-                    } else if (!isValidHost(matchedPubKey, session)) {
+                    String hostspec = ke.getLoginOptions().getOrDefault("from", "");
+                    if (!isValidHost(hostspec, session)) {
                         reason = "key file: publickey used from unallowed host";
-                    } else {
-                        String keyUsername = getUserFromKeyLine(matchedPubKey);
+                        continue;
+                    }
+
+                    if (publicKey.equals(key)) {
+                        String keyUsername = getUserFromKeyLine(ke.getComment());
                         if (keyUsername.isEmpty()) {
-                            reason =
-                                "key file: no username@host for publickey set";
-                        } else if (userName.equals(keyUsername)) {
-                            successful = true;
-                        } else {
+                            reason = "key file: no username@host for publickey set";
+                            continue;
+                        }
+                        if (!keyUsername.equals(userName)) {
                             reason = "key file: different username for "
                                     + "publickey expected";
+                            continue;
                         }
+                        successful = true;
+                        break;
                     }
                 }
             } catch (FileNotFoundException e) {
                 _log.debug("File not found: {}", _authorizedKeyList);
-            } catch (IOException e) {
+            } catch (IOException | GeneralSecurityException e) {
                 _log.error("Failed to read {}: {}", _authorizedKeyList,
                         e.getMessage());
             }
@@ -389,18 +375,17 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             return successful;
         }
 
-        private boolean isValidHost(String line, ServerSession session) {
-            for (String linePart : Splitter.on(" ").trimResults().omitEmptyStrings().split(line)) {
-                if (linePart.startsWith("from=\"") && linePart.endsWith("\"")) {
-                    String from = linePart.substring(6, linePart.length()-1);
-                    Set<Outcome> outcomes = EnumSet.noneOf(Outcome.class);
-                    for (String pattern : Splitter.on(",").trimResults().omitEmptyStrings().split(from)) {
-                        outcomes.add(patternMatchesHost(pattern, session));
-                    }
-                    return outcomes.contains(Outcome.ALLOW) && !outcomes.contains(Outcome.DENY);
-                }
+        private boolean isValidHost(String hostSpec, ServerSession session) {
+
+            if (hostSpec.isEmpty()) {
+                return true;
             }
-            return true;
+
+            Set<Outcome> outcomes = EnumSet.noneOf(Outcome.class);
+            for (String pattern : Splitter.on(",").trimResults().omitEmptyStrings().split(hostSpec)) {
+                outcomes.add(patternMatchesHost(pattern, session));
+            }
+            return outcomes.contains(Outcome.ALLOW) && !outcomes.contains(Outcome.DENY);
         }
 
         private Outcome patternMatchesHost(String pattern, ServerSession session) {
