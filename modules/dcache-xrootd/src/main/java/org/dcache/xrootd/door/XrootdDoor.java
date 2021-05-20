@@ -87,6 +87,7 @@ import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -185,6 +186,16 @@ public class XrootdDoor
      */
     private final Map<Integer,XrootdTransfer> _transfers =
         new ConcurrentHashMap<>();
+
+    /*
+     *  Map of upload transfer path to pnfsid.
+     *
+     *  This is a stable branch fix for a bug in the handling of xrootd persist-on-successful-close.
+     *  When requesting attributes, use the pnfsid registered on open instead of the path,
+     *  which may not yet have been finalized because the pool sent an OK to the client
+     *  prematurely (that problem will be rectified on master).
+     */
+    private final Map<String, PnfsId> _uploadPaths =  new ConcurrentHashMap<>();
 
     private boolean triedHostsEnabled;
 
@@ -389,7 +400,7 @@ public class XrootdDoor
                             path,
                             options,
                             EnumSet.of(PNFSID, SIZE, STORAGEINFO));
-            msg = _pnfsStub.sendAndWait(msg);
+            _pnfsStub.sendAndWait(msg);
         } catch (InterruptedException ex) {
             throw new CacheException("Operation interrupted", ex);
         } catch (NoRouteToCellException ex) {
@@ -449,7 +460,19 @@ public class XrootdDoor
                     notifyBilling(rc, message);
                     _log.warn("Post upload operation failed: {} (error code={})",
                             message, rc);
+                } finally {
+                    _uploadPaths.remove(path.toString());
                 }
+            }
+
+            @Override
+            public synchronized InetSocketAddress waitForRedirect(long millis)
+                throws CacheException, InterruptedException {
+                InetSocketAddress address = super.waitForRedirect(millis);
+                if (address != null) {
+                    _uploadPaths.put(path.toString(), getPnfsId());
+                }
+                return address;
             }
         };
         transfer.setCellAddress(getCellAddress());
@@ -505,6 +528,21 @@ public class XrootdDoor
         transfer.setKafkaSender(_kafkaSender);
         transfer.setTriedHosts(tried);
         return transfer;
+    }
+
+    private FileAttributes getFileAttributes(FsPath path,
+                                             Set<FileAttribute> requestedAttributes,
+                                             PnfsHandler pnfsHandler)
+        throws CacheException
+    {
+        PnfsId pnfsId = _uploadPaths.get(path.toString());
+        if (pnfsId != null) {
+            PnfsGetFileAttributes request = new PnfsGetFileAttributes(pnfsId, requestedAttributes);
+            request.setPnfsPath(path.toString());
+            return pnfsHandler.request(request).getFileAttributes();
+        } else {
+            return pnfsHandler.getFileAttributes(path.toString(), requestedAttributes);
+        }
     }
 
     public XrootdTransfer
@@ -630,6 +668,7 @@ public class XrootdDoor
                     throw e;
                 }
             }
+
             maxUploadSize.ifPresent(transfer::setMaximumLength);
             if (size != null) {
                 checkResourceNotMissing(!maxUploadSize.isPresent() || size
@@ -675,6 +714,7 @@ public class XrootdDoor
                 _transfers.remove(handle);
             }
         }
+
         return transfer;
     }
 
@@ -1089,8 +1129,7 @@ public class XrootdDoor
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject, restriction);
         Set<FileAttribute> requestedAttributes = EnumSet.of(CHECKSUM);
-        FileAttributes attributes =
-                pnfsHandler.getFileAttributes(fullPath.toString(), requestedAttributes);
+        FileAttributes attributes = getFileAttributes(fullPath, requestedAttributes, pnfsHandler);
         return attributes.getChecksums();
     }
 
@@ -1101,7 +1140,7 @@ public class XrootdDoor
          */
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject, restriction);
         Set<FileAttribute> requestedAttributes = getRequiredAttributesForFileStatus();
-        FileAttributes attributes = pnfsHandler.getFileAttributes(fullPath.toString(), requestedAttributes);
+        FileAttributes attributes = getFileAttributes(fullPath, requestedAttributes, pnfsHandler);
         return getFileStatus(subject, restriction, fullPath, clientHost, attributes);
     }
 
@@ -1144,8 +1183,7 @@ public class XrootdDoor
             try {
                 Set<FileAttribute> requestedAttributes = EnumSet.of(TYPE);
                 requestedAttributes.addAll(_pdp.getRequiredAttributes());
-                FileAttributes attributes =
-                        pnfsHandler.getFileAttributes(allPaths[i].toString(), requestedAttributes);
+                FileAttributes attributes = getFileAttributes(allPaths[i], requestedAttributes, pnfsHandler);
                 flags[i] = getFileStatusFlags(subject, restriction, allPaths[i], attributes);
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.FILE_NOT_FOUND &&
