@@ -255,6 +255,10 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
                 uploadPath, path, requested, explanation)).getDeletedFiles();
     }
 
+    @Override
+    public void updateFsStat() {
+    }
+
     public byte[] readExtendedAttribute(Subject subject, FsPath path, String name)
             throws CacheException
     {

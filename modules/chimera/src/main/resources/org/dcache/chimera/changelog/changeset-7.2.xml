@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="32" author="litvinse">
+      <comment>add FS statiscs table</comment>
+
+      <createTable tableName="t_fstat">
+        <column name="iusedfiles" type="bigint"/>
+        <column name="iusedspace" type="bigint"/>
+      </createTable>
+
+      <insert tableName="t_fstat">
+        <column name="iusedfiles" value="1048576"/>
+        <column name="iusedspace" value="1048576"/>
+      </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

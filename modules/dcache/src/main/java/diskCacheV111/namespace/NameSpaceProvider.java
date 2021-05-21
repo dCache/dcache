@@ -418,4 +418,10 @@ public interface NameSpaceProvider
      */
     void removeExtendedAttribute(Subject subject, FsPath path, String name)
             throws CacheException;
+
+    /**
+     * Update FS stat cache.
+     */
+    void updateFsStat() throws CacheException;
+
 }

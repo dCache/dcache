@@ -1344,11 +1344,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertThat(fsStat.getUsedFiles(),greaterThan(0L));
     }
     @Test
-    public void testEmptyFsStat() throws ChimeraFsException {
+    public void testFsStat() throws ChimeraFsException {
 
         FsStat fsStat = _fs.getFsStat();
-        assertThat(fsStat.getUsedSpace(), is(0L));
-        assertThat(fsStat.getUsedFiles(), is(0L));
+        assertThat(fsStat.getUsedSpace(), is(1048576L));
+        assertThat(fsStat.getUsedFiles(), is(1048576L));
     }
 
     @Test

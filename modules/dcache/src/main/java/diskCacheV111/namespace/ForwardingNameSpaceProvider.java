@@ -229,4 +229,10 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider
     {
         delegate().removeExtendedAttribute(subject, path, name);
     }
+
+    @Override
+    public void updateFsStat() throws CacheException {
+        delegate().updateFsStat();
+    }
+
 }

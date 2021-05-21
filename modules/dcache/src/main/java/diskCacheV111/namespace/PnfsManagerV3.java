@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -37,6 +38,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -107,6 +110,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.ColumnWriter.TabulatedRow;
+import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.TimeUtils;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
@@ -124,7 +128,7 @@ import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsManagerV3
     extends AbstractCellComponent
-    implements CellCommandListener, CellMessageReceiver, CellInfoProvider
+    implements CellCommandListener, CellMessageReceiver, CellInfoProvider, LeaderLatchListener
 {
     private static final Logger _log =
         LoggerFactory.getLogger(PnfsManagerV3.class);
@@ -161,6 +165,11 @@ public class PnfsManagerV3
     private int _queueMaxSize;
     private int _listThreads;
     private long _logSlowThreshold;
+
+    private ScheduledFuture<?> updateFsFuture;
+    private ScheduledExecutorService scheduledExecutor;
+    private TimeUnit updateFsStatIntervalUnit;
+    private long updateFsStatInterval;
 
     /**
      * Whether to use folding.
@@ -238,6 +247,24 @@ public class PnfsManagerV3
     public PnfsManagerV3()
     {
         populateRequestMap();
+    }
+
+    @Required
+    public void setUpdateFsStatInterval(long updateFsStatInterval)
+    {
+        this.updateFsStatInterval = updateFsStatInterval;
+    }
+
+    @Required
+    public void setUpdateFsStatIntervalUnit(TimeUnit updateFsStatIntervalUnit)
+    {
+        this.updateFsStatIntervalUnit = updateFsStatIntervalUnit;
+    }
+
+    @Required
+    public void setScheduledExecutor(ScheduledExecutorService executor)
+    {
+        scheduledExecutor = executor;
     }
 
     @Required
@@ -387,6 +414,33 @@ public class PnfsManagerV3
         }
         queue.offer(SHUTDOWN_SENTINEL);
     }
+
+    @Override
+    public void isLeader()
+    {
+        updateFsFuture = scheduledExecutor.
+            scheduleWithFixedDelay(
+                                   new FireAndForgetTask(new Runnable() {
+                                           @Override
+                                           public void run() {
+                                               try {
+                                                   updateFsStat();
+                                               } catch (CacheException ignore) {
+                                                   _log.error("Failed to tun updateFsStat: {}", ignore.getMessage());
+                                               }
+                                           }
+                                       }),
+                                   100000,
+                                   updateFsStatIntervalUnit.toMillis(updateFsStatInterval),
+                                   TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void notLeader()
+    {
+        updateFsFuture.cancel(true);
+    }
+
 
     @Override
     public void getInfo( PrintWriter pw ){
@@ -2661,5 +2715,12 @@ public class PnfsManagerV3
         if (restriction.isRestricted(activity, path)) {
             throw new PermissionDeniedCacheException("Restriction " + restriction + " denied activity " + activity + " on " + path);
         }
+    }
+
+    /**
+     * This function to be run periodically to update FS stat cache
+     */
+    public void updateFsStat() throws CacheException {
+        _nameSpaceProvider.updateFsStat();
     }
 }

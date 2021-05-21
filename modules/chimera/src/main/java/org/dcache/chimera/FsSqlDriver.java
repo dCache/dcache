@@ -155,17 +155,27 @@ public class FsSqlDriver {
     }
 
     /**
+     * Update file system cache table.
+     */
+    void updateFsStat() {
+        _jdbc.update("UPDATE t_fstat SET iusedFiles = t.usedFiles, "+
+                     "iusedSpace = t.usedSpace "+
+                     "FROM (SELECT count(*) AS usedFiles, "+
+                     "SUM(isize) AS usedSpace FROM t_inodes "+
+                     "WHERE itype=32768) t");
+    }
+
+    /**
      * Get FsStat for a given filesystem.
      * @return fsStat
      */
     FsStat getFsStat() {
         return _jdbc.queryForObject(
-                "SELECT count(*) AS usedFiles, SUM(isize) AS usedSpace FROM t_inodes WHERE itype=32768",
+                                    "SELECT iusedfiles AS usedFiles, iusedspace AS usedSpace from t_fstat",
                 (rs, rowNum) -> {
                     long usedFiles = rs.getBigDecimal("usedFiles")
                             .min(BigDecimal.valueOf(Long.MAX_VALUE))
                             .longValue();
-                    // SUM(isize) of an empty table returns null
                     BigDecimal usedSpaceB = rs.getBigDecimal("usedSpace");
                     long usedSpace = usedSpaceB == null? 0L : usedSpaceB.min(BigDecimal.valueOf(Long.MAX_VALUE)).longValue();
                     return new FsStat(JdbcFs.AVAILABLE_SPACE, JdbcFs.TOTAL_FILES, usedSpace, usedFiles);

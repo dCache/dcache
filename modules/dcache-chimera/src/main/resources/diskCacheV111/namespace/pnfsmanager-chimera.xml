@@ -3,7 +3,9 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:property-placeholder/>
     <context:annotation-config/>
@@ -39,6 +41,10 @@
       <property name="atimeGap" value="${pnfsmanager.atime-gap}" />
       <property name="flushNotificationTarget" value="${pnfsmanager.destination.flush-notification}"/>
       <property name="cancelUploadNotificationTarget" value="${pnfsmanager.destination.cancel-upload-notification}"/>
+      <property name="scheduledExecutor" ref="scheduled-executor"/>
+      <property name="updateFsStatInterval" value="${pnfsmanager.fs-stat-cache.time}"/>
+      <property name="updateFsStatIntervalUnit" value="${pnfsmanager.fs-stat-cache.time.unit}"/>
+
   </bean>
 
     <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
@@ -119,6 +125,27 @@
       <property name="nameSpaceProvider" ref="name-space-provider"/>
   </bean>
 
+
+  <bean id="scheduled-executor"
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
+      <description>Task scheduler</description>
+      <constructor-arg>
+          <bean class="java.util.concurrent.Executors"
+                factory-method="newScheduledThreadPool"
+                destroy-method="shutdown">
+              <constructor-arg value="2"/>
+          </bean>
+      </constructor-arg>
+  </bean>
+
+  <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
+        init-method="initZkLeaderListener" destroy-method="shutdown">
+      <constructor-arg value="pnfsmanager"/>
+      <property name="leadershipListener">
+          <ref bean="leaderlistener-group"/>
+      </property>
+  </bean>
+
   <beans profile="inotify-true">
       <bean id="event-notifier" class="diskCacheV111.namespace.EventNotifier">
           <description>Service allowing other dCache components to be notified of namespace events</description>
@@ -146,7 +173,16 @@
                     value="${pnfsmanager.inotify-generation.backlog.per-door}"/>
       </bean>
 
-      <bean parent="pnfs-manager">
+      <bean id="leaderlistener-group" class="org.dcache.cells.LeadershipListenerGroup">
+        <description>Propagates leadership change notifications to managed listeners</description>
+        <property name="leaderElectionAwareComponents">
+          <set>
+            <ref bean="pnfs-manager-ionotify"/>
+          </set>
+        </property>
+      </bean>
+
+      <bean id="pnfs-manager-ionotify" parent="pnfs-manager">
           <property name="nameSpaceProvider">
               <bean class="diskCacheV111.namespace.MonitoringNameSpaceProvider">
                   <property name="nameSpaceProvider" ref="name-space-provider"/>
@@ -154,11 +190,24 @@
               </bean>
           </property>
       </bean>
+
   </beans>
 
   <beans profile="inotify-false">
-      <bean parent="pnfs-manager">
+
+      <bean id="leaderlistener-group" class="org.dcache.cells.LeadershipListenerGroup">
+	<description>Propagates leadership change notifications to managed listeners</description>
+	<property name="leaderElectionAwareComponents">
+          <set>
+            <ref bean="pnfs-manager-no-ionotify"/>
+          </set>
+	</property>
+      </bean>
+
+      <bean id="pnfs-manager-no-ionotify" parent="pnfs-manager">
           <property name="nameSpaceProvider" ref="name-space-provider"/>
       </bean>
+
+
   </beans>
 </beans>

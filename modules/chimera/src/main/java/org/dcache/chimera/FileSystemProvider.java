@@ -376,6 +376,11 @@ public interface FileSystemProvider extends Closeable {
     String getInfo();
 
     /**
+     * Update file system statistics.
+     */
+    void updateFsStat() throws ChimeraFsException;
+
+    /**
      * Get file system statistic.
      *
      * @return {@link FsStat} of the file system

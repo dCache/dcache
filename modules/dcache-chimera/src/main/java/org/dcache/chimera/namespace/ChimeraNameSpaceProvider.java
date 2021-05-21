@@ -1607,6 +1607,15 @@ public class ChimeraNameSpaceProvider
         return deleted;
     }
 
+    @Override
+    public void updateFsStat() throws CacheException {
+        try {
+            _fs.updateFsStat();
+        } catch (ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+        }
+    }
+
     private void removeRecursively(ExtendedInode parent, String name, ExtendedInode inode,
             Consumer<ExtendedInode> deleted) throws ChimeraFsException, CacheException
     {

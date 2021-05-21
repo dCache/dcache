@@ -1330,6 +1330,11 @@ public class JdbcFs implements FileSystemProvider {
         }
     }
 
+    @Override
+    public void updateFsStat() throws ChimeraFsException {
+        _sqlDriver.updateFsStat();
+    }
+
     public FsStat getFsStat0() throws ChimeraFsException {
         return _sqlDriver.getFsStat();
     }
