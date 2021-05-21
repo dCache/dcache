@@ -45,6 +45,9 @@ public class MacaroonContext {
 
     private FsPath root = FsPath.ROOT;
     private FsPath home = FsPath.ROOT;
+
+    // FIXME: path is a relative path (relative to root) but uses FsPath, which
+    // is intended to store only absolute paths in dCache namespace.
     private FsPath path = FsPath.ROOT;
     private String username;
     private OptionalLong maxUpload = OptionalLong.empty();
@@ -69,12 +72,18 @@ public class MacaroonContext {
         return home == FsPath.ROOT ? Optional.empty() : Optional.of(home);
     }
 
+    /**
+     * Specify the new root value.  This does NOT modify the "path" path.
+     */
     public void setRoot(FsPath newRoot) {
         LOG.debug("Setting root to {}", root);
         checkArgument(newRoot.hasPrefix(root), "Attempt to weaken root path");
         root = newRoot;
     }
 
+    /**
+     * Update the root value.  This will modify any non-/ "path" path.
+     */
     public void updateRoot(String directory) throws InvalidCaveatException {
         FsPath newRoot = root.chroot(directory);
 
@@ -101,8 +110,11 @@ public class MacaroonContext {
         return root == FsPath.ROOT ? Optional.empty() : Optional.of(root);
     }
 
-    public void setPath(FsPath desiredPath) {
-        path = desiredPath;
+    /**
+     * Note that the supplied path is interpreted as being relative to the root.
+     */
+    public void setPath(String desiredPath) {
+        path = FsPath.ROOT.chroot(desiredPath);
         LOG.debug("Setting path to {}", path);
     }
 
