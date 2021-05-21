@@ -241,7 +241,10 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
 
         MacaroonContext context = new MacaroonContext();
 
+        FsPath desiredPath = _pathMapper.asDcachePath(request, target);
+
         FsPath userRoot = FsPath.ROOT;
+        FsPath prefixRestrictionPath = null;
         for (LoginAttribute attr : AuthenticationHandler.getLoginAttributes(request)) {
             if (attr instanceof HomeDirectory) {
                 context.setHome(FsPath.ROOT.resolve(((HomeDirectory) attr).getHome()));
@@ -256,14 +259,11 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
                 if (target.equals("/")) {
                     checkArgument(paths.size() == 1,
                           "Cannot serialise with multiple path restrictions");
-                    context.setPath(paths.iterator().next());
+                    prefixRestrictionPath = paths.iterator().next();
                 } else {
-                    FsPath desiredPath = _pathMapper.asDcachePath(request, target);
-                    if (!paths.stream().anyMatch(desiredPath::hasPrefix)) {
-                        throw new ErrorResponseException(SC_BAD_REQUEST,
-                              "Bad request path: Desired path not within existing path");
-                    }
-                    context.setPath(desiredPath);
+                    prefixRestrictionPath = paths.stream().filter(desiredPath::hasPrefix).findFirst()
+                            .orElseThrow(() -> new ErrorResponseException(SC_BAD_REQUEST,
+                                    "Bad request path: Desired path not within existing path"));
                 }
             } else if (attr instanceof Restriction) {
                 throw new ErrorResponseException(SC_BAD_REQUEST,
@@ -282,11 +282,18 @@ public class MacaroonRequestHandler extends AbstractHandler implements CellIdent
         context.setUid(Subjects.getUid(subject));
         context.setGids(Subjects.getGids(subject));
         context.setUsername(Subjects.getUserName(subject));
-        context.setRoot(_pathMapper.effectiveRoot(userRoot,
-              m -> new ErrorResponseException(SC_BAD_REQUEST, m)));
 
-        if (!target.equals("/") && !context.getPath().isPresent()) {
-            context.setPath(_pathMapper.asDcachePath(request, target));
+        FsPath effectiveRoot = _pathMapper.effectiveRoot(userRoot,
+                m -> new ErrorResponseException(SC_BAD_REQUEST, m));
+
+        context.setRoot(effectiveRoot);
+
+        FsPath path = prefixRestrictionPath != null
+                ? prefixRestrictionPath
+                : target.equals("/") ? null : desiredPath;
+
+        if (path != null) {
+            context.setPath(path.stripPrefix(effectiveRoot));
         }
 
         return context;
