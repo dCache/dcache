@@ -72,6 +72,7 @@ import org.dcache.util.cli.ShellApplication;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.padStart;
 import static com.google.common.io.ByteStreams.toByteArray;
+import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 import static org.dcache.util.ByteUnit.KiB;
@@ -205,8 +206,18 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "chown", hint = "change file owner and group",
-             description = "The chown command sets the owner of PATH to UID. Mapped user names " +
-                     "cannot be used.")
+             description = "The chown command sets the owner of <path> to <uid>. "
+                     + "The group-ownership may also be updated by specifying "
+                     + "the desired <gid> value with a colon separating the two "
+                     + "values.  Non-numerial values (such as username or "
+                     + "groupname) cannot be used to describe the desired "
+                     + "ownership.\n"
+                     + "\n"
+                     + "By default, the command targets an individual file or "
+                     + "directory.  If the -R option used along with a "
+                     + "directory target then both that directory and all of "
+                     + "its contents are updated.  This is repeated for any "
+                     + "subdirectories contained within the target directory.")
     public class ChownCommand implements Callable<Serializable>
     {
         @Argument(index = 0, valueSpec = "UID[:GID]")
@@ -215,49 +226,76 @@ public class Shell extends ShellApplication
         @Argument(index = 1)
         File path;
 
-        private int _uid;
-        private int _gid;
+        @Option(name="R", usage="Apply the change recursively.  This requires "
+                + "<path> to be a directory.")
+        boolean recursive;
 
-        private void parseOwner(String ownership)
+        private Stat buildUpdatedOwnership(String ownership) throws CommandException
         {
-            int colon = ownership.indexOf(':');
+            Stat stat = new Stat();
 
+            int colon = ownership.indexOf(':');
             if (colon == -1) {
-                _uid = parseInteger(ownership);
-                _gid = -1;
+                int uid = parseInteger(ownership);
+                stat.setUid(uid);
             } else {
-                checkArgument(colon > 0 && colon < ownership.length() - 1,
+                checkCommand(colon > 0 && colon < ownership.length() - 1,
                               "Colon must separate two integers.");
-                _uid = parseInteger(ownership.substring(0, colon));
-                _gid = parseInteger(ownership.substring(colon + 1));
-                checkArgument(_gid >= 0, "GID must be 0 or greater.");
+                int uid = parseInteger(ownership.substring(0, colon));
+                stat.setUid(uid);
+                int gid = parseInteger(ownership.substring(colon + 1));
+                checkCommand(gid >= 0, "GID must be 0 or greater.");
+                stat.setGid(gid);
             }
 
-            checkArgument(_uid >= 0, "UID must be 0 or greater.");
+            checkCommand(stat.getUid() >= 0, "UID must be 0 or greater.");
+            return stat;
         }
 
-        private int parseInteger(String value)
+        private int parseInteger(String value) throws CommandException
         {
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Only integer values are allowed and \"" + value +"\" is not an integer.");
+                throw new CommandException("Only integer values are allowed and \"" + value +"\" is not an integer.");
             }
         }
 
         @Override
-        public Serializable call() throws ChimeraFsException
+        public Serializable call() throws IOException, CommandException
         {
-            parseOwner(owner);
-	    Stat stat = new Stat();
-	    stat.setUid(_uid);
+            Stat updateOwnership = buildUpdatedOwnership(owner);
 
-            if (_gid != -1) {
-                stat.setGid(_gid);
-            }
 	    FsInode inode = lookup(path);
-	    inode.setStat(stat);
+	    inode.setStat(updateOwnership);
+
+            if (recursive && inode.isDirectory()) {
+                chownRecursively(updateOwnership, inode);
+            }
+
             return null;
+        }
+
+        private void chownRecursively(Stat updateOwnership, FsInode dirNode)
+                throws IOException
+        {
+            assert dirNode.isDirectory();
+
+            try (var dirStream = dirNode.newDirectoryStream()) {
+                for (var entry : dirStream) {
+                    String name = entry.getName();
+                    if (name.equals(".") || name.equals("..")) {
+                        continue;
+                    }
+
+                    FsInode child = entry.getInode();
+                    child.setStat(updateOwnership);
+
+                    if (child.isDirectory()) {
+                        chownRecursively(updateOwnership, child);
+                    }
+                }
+            }
         }
     }
 
