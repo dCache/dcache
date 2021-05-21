@@ -348,7 +348,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
         boolean isSSL = ldapUrl.startsWith("ldaps");
         if (!isSSL) {
-            LOGGER.warn("LDAP conection is not secure!");
+            LOGGER.warn("LDAP connection is not secure!");
         }
 
         /*
