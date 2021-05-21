@@ -67,11 +67,15 @@ public class MacaroonLoginStrategy implements LoginStrategy {
 
             LoginReply reply = new LoginReply();
 
+            FsPath root = context.getRoot().orElse(FsPath.ROOT);
             Set<LoginAttribute> attributes = reply.getLoginAttributes();
             attributes.add(new HomeDirectory(context.getHome().orElse(FsPath.ROOT)));
-            attributes.add(new RootDirectory(context.getRoot().orElse(FsPath.ROOT)));
+            attributes.add(new RootDirectory(root));
             context.getExpiry().map(Expiry::new).ifPresent(attributes::add);
-            context.getPath().map(PrefixRestriction::new).ifPresent(attributes::add);
+            context.getPath()
+                    .map(root::chroot)
+                    .map(PrefixRestriction::new)
+                    .ifPresent(attributes::add);
             context.getAllowedActivities().map(EnumSet::complementOf)
                   .map(DenyActivityRestriction::new).ifPresent(attributes::add);
             context.getMaxUpload().ifPresent(s -> attributes.add(new MaxUploadSize(s)));
