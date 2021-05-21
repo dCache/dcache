@@ -110,8 +110,13 @@ public class MacaroonContext {
         path = path.chroot(directory);
     }
 
-    public Optional<FsPath> getPath() {
-        return path == FsPath.ROOT ? Optional.empty() : Optional.of(path);
+    /**
+     * The returned value is a relative path that should be resolved against
+     * the root path {@see getRoot()} to obtain the full path in dCache
+     * namespace.
+     */
+    public Optional<String> getPath() {
+        return path == FsPath.ROOT ? Optional.empty() : Optional.of(path.toString());
     }
 
     public void setUsername(String name) {
