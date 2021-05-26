@@ -29,8 +29,8 @@ import javax.sql.DataSource;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.CellStub;
@@ -44,7 +44,7 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
 
     private static final Logger _log = LoggerFactory.getLogger(DiskCleaner.class);
 
-    protected ScheduledExecutorService _executor;
+    protected ScheduledThreadPoolExecutor _executor;
     private ScheduledFuture<?> _cleanerTask;
 
     /**
@@ -72,7 +72,7 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
     protected boolean _hasHaLeadership = false;
 
     @Required
-    public void setExecutor(ScheduledExecutorService executor) {
+    public void setExecutor(ScheduledThreadPoolExecutor executor) {
         _executor = executor;
     }
 

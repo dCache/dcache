@@ -23,11 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
 import diskCacheV111.util.CacheException;
@@ -159,25 +159,42 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
      * @throws InterruptedException
      */
     private void runDelete(List<String> poolList) throws InterruptedException {
+        boolean runAsync =_executor.getCorePoolSize() > 1;
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
         for (String pool: poolList) {
             if (Thread.interrupted()) {
                 throw new InterruptedException("Cleaner interrupted");
             }
 
-            runDelete(pool);
-
-            // Notify other components that we are done deleting
-            runNotification();
+            if (runAsync) {
+                CompletableFuture<Void> cf = CompletableFuture.runAsync(
+                        () -> {
+                            runDelete(pool);
+                            runNotification();
+                            _log.info("Finished deleting from pool {}", pool);
+                        }, _executor);
+                futures.add(cf);
+            } else {
+                runDelete(pool);
+                runNotification();
+                _log.info("Finished deleting from pool {}", pool);
+            }
+        }
+        if (runAsync) {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).join();
         }
     }
 
-    private void runDelete(String pool) throws InterruptedException {
+    private void runDelete(String pool) {
         _log.info("runDelete(): Now processing pool {}", pool);
         if (!_poolsBlackList.containsKey(pool)) {
             try {
                 cleanPoolComplete(pool);
             } catch (NoRouteToCellException | CacheException e) {
                 _log.warn("Failed to remove files from {}: {}", pool, e.getMessage());
+            } catch (InterruptedException e) {
+                _log.warn("Cleaner was interrupted while deleting files from pool {}: {}", pool, e.getMessage());
             }
         }
     }
@@ -265,7 +282,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         }
     }
 
-    private void runNotification() throws InterruptedException {
+    private void runNotification() {
         final String QUERY =
                 "SELECT ipnfsid FROM t_locationinfo_trash t1 " +
                         "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2)";
@@ -275,6 +292,8 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
                 _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
             } catch (ExecutionException e) {
                 _log.warn(e.getCause().getMessage());
+            } catch (InterruptedException e) {
+                _log.warn("Cleaner interruption: {}", e.getMessage());
             }
         }
     }
@@ -417,7 +436,7 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
             if (_poolsBlackList.containsKey(poolName)) {
                 return "This pool is not available for the moment and therefore will not be cleaned.";
             }
-            cleanPoolComplete(poolName);
+            runDelete(Arrays.asList(new String[]{poolName}));
             return "";
         }
     }
@@ -475,6 +494,8 @@ public class DiskCleaner extends AbstractCleaner implements  CellCommandListener
         pw.printf("Reply Timeout:  %d\n", _poolStub.getTimeout());
         pw.printf("Number of files processed at once:  %d\n", _processAtOnce);
         pw.printf("Delete notification targets:  %s\n", Arrays.toString(_deleteNotificationTargets));
+        int threadPoolSize = _executor.getCorePoolSize();
+        pw.printf("Cleaning up to %d pools in parallel\n",threadPoolSize == 1 ? 1 : threadPoolSize - 1);
     }
 
 }
