@@ -3,19 +3,20 @@ package org.dcache.services.ssh2;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
+import org.apache.sshd.common.AttributeRepository;
 import org.apache.sshd.common.config.keys.AuthorizedKeyEntry;
 import org.apache.sshd.common.config.keys.KeyUtils;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.sshd.common.keyprovider.KeyPairProvider;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
-import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.core.CoreModuleProperties;
+import org.apache.sshd.server.auth.pubkey.AuthorizedKeyEntriesPublickeyAuthenticator;
 import org.apache.sshd.server.command.CommandFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.gss.GSSAuthenticator;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
-import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
+import org.apache.sshd.server.config.keys.AuthorizedKeysAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 
 import org.apache.sshd.server.shell.ShellFactory;
@@ -37,14 +38,12 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.time.Duration;
 import java.util.Arrays;
@@ -78,6 +77,11 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private static final Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private static final Logger _accessLog =
             LoggerFactory.getLogger("org.dcache.access.ssh2");
+
+    /**
+     * Attribute to avoid double logging of public kay based logins.
+     */
+    public static final AttributeRepository.AttributeKey<Boolean> LOGGED = new AttributeRepository.AttributeKey<>();
 
     // get the user part from a public key line like
     // ... ssh-rsa AAAA...... user@hostname
@@ -270,17 +274,6 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 .add("successful", successful)
                 .add("reason", reason)
                 .toLogger(_accessLog);
-
-        // set session parameter
-        if (successful) {
-            try {
-                session.setAuthenticated();
-                session.setUsername(username);
-            } catch (IOException e) {
-                _log.error("Failed to set Authenticated: {}",
-                        e.getMessage());
-            }
-        }
     }
 
     private class AdminPasswordAuthenticator implements PasswordAuthenticator {
@@ -317,7 +310,11 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         }
     }
 
-    private class AdminPublickeyAuthenticator implements PublickeyAuthenticator {
+    private class AdminPublickeyAuthenticator extends AuthorizedKeysAuthenticator {
+
+        public AdminPublickeyAuthenticator() {
+            super(_authorizedKeyList.toPath());
+        }
 
         private String getUserFromKeyLine(String line) {
             Matcher m = _pubKeyFileUsername.matcher(line);
@@ -330,48 +327,39 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         @Override
         public boolean authenticate(String userName, PublicKey key,
                 ServerSession session) {
-            boolean successful = false;
+
+            _log.debug("Authentication username set to: {} publicKey: {}", userName, key);
+
             String reason = null;
-            _log.debug("Authentication username set to: {} publicKey: {}",
-                    userName, key);
-            try {
-                for(AuthorizedKeyEntry ke: AuthorizedKeyEntry.readAuthorizedKeys(_authorizedKeyList.toPath())) {
-                    PublicKey publicKey = ke.resolvePublicKey(null, null);
-
-                    String hostspec = ke.getLoginOptions().getOrDefault("from", "");
-                    if (!isValidHost(hostspec, session)) {
-                        reason = "key file: publickey used from unallowed host";
-                        continue;
-                    }
-
-                    if (publicKey.equals(key)) {
-                        String keyUsername = getUserFromKeyLine(ke.getComment());
-                        if (keyUsername.isEmpty()) {
-                            reason = "key file: no username@host for publickey set";
-                            continue;
-                        }
-                        if (!keyUsername.equals(userName)) {
-                            reason = "key file: different username for "
-                                    + "publickey expected";
-                            continue;
-                        }
-                        successful = true;
-                        break;
-                    }
+            boolean successful = super.authenticate(userName, key, session);
+            if (successful) {
+                AuthorizedKeyEntry ke = session.getAttribute(AuthorizedKeyEntriesPublickeyAuthenticator.AUTHORIZED_KEY);
+                String hostspec = ke.getLoginOptions().getOrDefault("from", "");
+                if (!isValidHost(hostspec, session)) {
+                    reason = "key file: publickey used from unallowed host";
+                    successful = false;
                 }
-            } catch (FileNotFoundException e) {
-                _log.debug("File not found: {}", _authorizedKeyList);
-            } catch (IOException | GeneralSecurityException e) {
-                _log.error("Failed to read {}: {}", _authorizedKeyList,
-                        e.getMessage());
+                String keyUsername = getUserFromKeyLine(ke.getComment());
+                if (keyUsername.isEmpty()) {
+                    reason = "key file: no username@host for publickey set";
+                    successful = false;
+                }
+                if (!keyUsername.equals(userName)) {
+                    reason = "key file: different username for "
+                            + "publickey expected";
+                    successful = false;
+                }
+            } else {
+                reason = "key file: no matching key found";
             }
 
             // the method gets called twice while pubkey authentication,
-            // to avoid duplicate logging, check if already authenticated
-            if (!session.isAuthenticated()) {
-                String method = "PublicKey (" + key.getAlgorithm() + " "
-                        + KeyUtils.getFingerPrint(key) + ")";
+            // to avoid duplicate logging, check if already logged
+            // REVISIT: we need to investigate the reason of duplicate logging
+            if(session.getAttribute(LOGGED) == null) {
+                String method = "PublicKey (" + key.getAlgorithm() + " " + KeyUtils.getFingerPrint(key) + ")";
                 logLoginTry(userName, session, method, successful, reason);
+                session.setAttribute(LOGGED, true);
             }
             return successful;
         }
