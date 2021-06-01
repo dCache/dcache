@@ -71,29 +71,20 @@ public class InotifyChannel  extends ForwardingRepositoryChannel
     private final PnfsId target;
     private final boolean isOpenForRead;
     private final NotificationAmplifier notification;
+    private final Duration suppressDuration;
 
     private Operation lastOperation;
     private Instant whenSendNextEvent;
-    private Duration suppressDuration = Duration.ZERO;
 
 
     public InotifyChannel(RepositoryChannel inner, NotificationAmplifier notification,
-            PnfsId target, boolean openForWrite)
+            PnfsId target, boolean openForWrite, Duration suppressDuration)
     {
         this.inner = inner;
         this.target = target;
         isOpenForRead = !openForWrite;
         this.notification = notification;
-    }
-
-    public synchronized void setSuppressDuration(Duration duration)
-    {
-        Instant newWhenSendNextEvent = whenSendNextEvent == null
-                ? null
-                : whenSendNextEvent.minus(suppressDuration).plus(duration);
-
-        suppressDuration = duration;
-        whenSendNextEvent = newWhenSendNextEvent;
+        this.suppressDuration = suppressDuration;
     }
 
     @Override

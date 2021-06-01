@@ -42,8 +42,7 @@ public class InotifyReplicaRecord extends ForwardingReplicaRecord
 {
     private final ReplicaRecord inner;
     private final NotificationAmplifier notification;
-
-    private Duration suppressDuration = Duration.ZERO;
+    private final Duration suppressDuration;
 
     public enum OpenFlags implements OpenOption
     {
@@ -58,19 +57,11 @@ public class InotifyReplicaRecord extends ForwardingReplicaRecord
 
 
     public InotifyReplicaRecord(ReplicaRecord inner, NotificationAmplifier notification,
-            PnfsId target)
+            PnfsId target, Duration suppressDuration)
     {
         this.inner = inner;
         this.notification = notification;
-    }
-
-    /**
-     * Update the suppression period for all subsequently opened
-     * RepositoryChannel. Any already opened channels are not affected.
-     */
-    public void setSuppressDuration(Duration duration)
-    {
-        suppressDuration = duration;
+        this.suppressDuration = suppressDuration;
     }
 
     @Override
@@ -96,8 +87,7 @@ public class InotifyReplicaRecord extends ForwardingReplicaRecord
         boolean openForWrite = mode.contains(StandardOpenOption.WRITE);
 
         InotifyChannel channel = new InotifyChannel(innerChannel, notification,
-                getPnfsId(), openForWrite);
-        channel.setSuppressDuration(suppressDuration);
+                getPnfsId(), openForWrite, suppressDuration);
         channel.sendOpenEvent();
         return channel;
     }

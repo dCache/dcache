@@ -63,9 +63,7 @@ public class InotifyReplicaStore extends ForwardingReplicaStore
             throws DuplicateEntryException, CacheException
     {
         ReplicaRecord innerRecord = super.create(id, flags);
-        InotifyReplicaRecord record = new InotifyReplicaRecord(innerRecord, notification, id);
-        record.setSuppressDuration(suppression);
-        return record;
+        return new InotifyReplicaRecord(innerRecord, notification, id, suppression);
     }
 
     @Override
@@ -76,8 +74,6 @@ public class InotifyReplicaStore extends ForwardingReplicaStore
             return null;
         }
 
-        InotifyReplicaRecord record = new InotifyReplicaRecord(innerRecord, notification, id);
-        record.setSuppressDuration(suppression);
-        return record;
+        return new InotifyReplicaRecord(innerRecord, notification, id, suppression);
     }
 }
