@@ -80,7 +80,7 @@ public class CanlSslServerSocketCreator extends ServerSocketFactory
                                         .withKeyPath(keyPath.toPath())
                                         .withCertificatePath(certPath.toPath())
                                         .withLazy(false)
-                                        .buildWithCaching();
+                                        .buildWithCaching(SSLContext.class);
             factory.call();
         } catch (Exception e) {
             Throwables.propagateIfPossible(e, IOException.class);

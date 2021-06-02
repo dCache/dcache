@@ -23,27 +23,21 @@ import com.google.common.net.InetAddresses;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
-import eu.emi.security.authn.x509.CrlCheckingMode;
-import eu.emi.security.authn.x509.OCSPCheckingMode;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.nio.file.Path;
 import java.util.UUID;
-
 
 public class HttpsTransferService extends HttpTransferService
 {
@@ -51,9 +45,9 @@ public class HttpsTransferService extends HttpTransferService
 
     private static final String PROTOCOL_HTTPS = "https";
 
-    private SSLContext _sslContext;
+    private SslContext _sslContext;
 
-    public void setSslContext(SSLContext sslContext)
+    public void setSslContext(SslContext sslContext)
     {
         _sslContext = sslContext;
     }
@@ -110,8 +104,7 @@ public class HttpsTransferService extends HttpTransferService
     @Override
     protected void addChannelHandlers(ChannelPipeline pipeline)
     {
-        SSLEngine engine = _sslContext.createSSLEngine();
-        engine.setUseClientMode(false);
+        SSLEngine engine = _sslContext.newEngine(pipeline.channel().alloc());
         engine.setWantClientAuth(false);
         pipeline.addLast("ssl", new SslHandler(engine));
         super.addChannelHandlers(pipeline);

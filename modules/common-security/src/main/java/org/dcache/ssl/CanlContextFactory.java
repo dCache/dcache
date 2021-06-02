@@ -28,22 +28,23 @@ import eu.emi.security.authn.x509.RevocationParameters;
 import eu.emi.security.authn.x509.StoreUpdateListener;
 import eu.emi.security.authn.x509.ValidationError;
 import eu.emi.security.authn.x509.ValidationErrorCategory;
-import eu.emi.security.authn.x509.ValidationErrorListener;
 import eu.emi.security.authn.x509.X509CertChainValidator;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
 import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
 import eu.emi.security.authn.x509.impl.PEMCredential;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.SSLException;
 
-import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -62,6 +63,10 @@ import static org.dcache.util.Callables.memoizeWithExpiration;
 /**
  * SslContextFactory based on the CANL library. Uses the builder pattern to
  * create immutable instances.
+ * <p/>
+ *
+ * Implements the SslContextFactory which allows specifying either Java or Native (OpenSSL)
+ * as implementation.
  */
 public class CanlContextFactory implements SslContextFactory
 {
@@ -72,6 +77,7 @@ public class CanlContextFactory implements SslContextFactory
 
     private final SecureRandom secureRandom = new SecureRandom();
     private final TrustManager[] trustManagers;
+    private final boolean startTls;
 
     private static final AutoCloseable NOOP = new AutoCloseable()
     {
@@ -81,8 +87,9 @@ public class CanlContextFactory implements SslContextFactory
         }
     };
 
-    protected CanlContextFactory(TrustManager... trustManagers)
+    protected CanlContextFactory(boolean startTls, TrustManager... trustManagers)
     {
+        this.startTls = startTls;
         this.trustManagers = trustManagers;
     }
 
@@ -102,7 +109,19 @@ public class CanlContextFactory implements SslContextFactory
     }
 
     @Override
-    public SSLContext getContext(X509Credential credential)
+    public <T> T getContext(Class<T> type, X509Credential credential)
+        throws GeneralSecurityException
+    {
+        if (type.isAssignableFrom(SSLContext.class)) {
+            return (T) getJavaSSLContext(credential);
+        } else if (type.isAssignableFrom(SslContext.class)) {
+            return (T) getNettySslContext(credential);
+        }
+
+        throw new GeneralSecurityException("cannot get SSL context of type " + type);
+    }
+
+    private SSLContext getJavaSSLContext(X509Credential credential)
             throws GeneralSecurityException
     {
         KeyManager[] keyManagers;
@@ -115,6 +134,19 @@ public class CanlContextFactory implements SslContextFactory
         SSLContext context = SSLContext.getInstance("TLS");
         context.init(keyManagers, trustManagers, secureRandom);
         return context;
+    }
+
+    private SslContext getNettySslContext(X509Credential credential)
+        throws GeneralSecurityException
+    {
+        KeyManager keyManager = credential == null ? null : credential.getKeyManager();
+        SslContextBuilder builder = startTls ? SslContextBuilder.forServer(keyManager)
+            : SslContextBuilder.forClient();
+        try {
+            return builder.trustManager(trustManagers[0]).startTls(startTls).build();
+        } catch (SSLException e) {
+            throw new GeneralSecurityException("Could not get Netty SSL context: " + e.getMessage());
+        }
     }
 
     public static class Builder
@@ -131,9 +163,16 @@ public class CanlContextFactory implements SslContextFactory
         private TimeUnit credentialUpdateIntervalUnit = TimeUnit.MINUTES;
         private Supplier<AutoCloseable> loggingContextSupplier = () -> NOOP;
         private long validationCacheLifetime = 300000;
+        private boolean startTls = true; // default/server mode
 
         private Builder()
         {
+        }
+
+        public Builder startTls(boolean startTls)
+        {
+            this.startTls = startTls;
+            return this;
         }
 
         public Builder withCertificateAuthorityPath(Path certificateAuthorityPath)
@@ -271,17 +310,19 @@ public class CanlContextFactory implements SslContextFactory
                 }
                 return false;
             });
-            return new CanlContextFactory(new SSLTrustManager(v));
+            return new CanlContextFactory(startTls, new SSLTrustManager(v));
         }
 
-        public Callable<SSLContext> buildWithCaching()
-        {
+        public <T> Callable<T> buildWithCaching(Class<T> contextType) throws Exception {
             final CanlContextFactory factory = build();
-            Callable<SSLContext> newContext =
-                    () -> factory.getContext(
-                            new PEMCredential(keyPath.toString(), certificatePath.toString(), null));
-            return  memoizeWithExpiration(memoizeFromFiles(newContext, keyPath, certificatePath),
-                                          credentialUpdateInterval, credentialUpdateIntervalUnit);
+            PEMCredential credential
+                = new PEMCredential(keyPath.toString(), certificatePath.toString(), null);
+            Callable newContext = () -> factory.getContext(contextType, credential);
+            return (Callable<T>) memoizeWithExpiration(memoizeFromFiles(newContext,
+                                                                        keyPath,
+                                                                        certificatePath),
+                                                        credentialUpdateInterval,
+                                                        credentialUpdateIntervalUnit);
         }
     }
 }

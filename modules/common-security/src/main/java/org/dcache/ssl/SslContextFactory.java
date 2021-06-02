@@ -20,21 +20,23 @@ package org.dcache.ssl;
 import eu.emi.security.authn.x509.X509Credential;
 
 import javax.annotation.Nullable;
-import javax.net.ssl.SSLContext;
 
 import java.security.GeneralSecurityException;
 
 /**
- * Factory for creating SSLContext instances.
+ * Factory for creating SSL context instances.
+ * (e.g., javax.net.SSLContext or io.netty.handler.ssl.SslContext).
  */
 public interface SslContextFactory
 {
     /**
-     * Provides an SSLContext that will use the supplied optional client
+     * Provides an SslContext that will use the supplied optional client
      * credential for authentication.
+     * @param type of the context object to create.
      * @param credential the credential to use, or null if no X.509 credential.
-     * @return an SSLContext to use with an SSLSocket.
+     * @return an SSL context to use.
      * @throws GeneralSecurityException if there is a problem establishing the context.
      */
-    SSLContext getContext(@Nullable X509Credential credential) throws GeneralSecurityException;
+    <T> T getContext(Class<T> type, @Nullable X509Credential credential)
+        throws GeneralSecurityException;
 }

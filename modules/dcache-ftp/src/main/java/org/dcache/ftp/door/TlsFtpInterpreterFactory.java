@@ -22,7 +22,9 @@ import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 
-import javax.net.ssl.SSLContext;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.SslContext;
+
 import javax.net.ssl.SSLEngine;
 
 import java.io.File;
@@ -84,7 +86,7 @@ public class TlsFtpInterpreterFactory extends FtpInterpreterFactory
 
     private Optional<String> anonUser;
 
-    private SSLContext sslContext;
+    private SslContext sslContext;
 
     @Override
     public void configure(Args args) throws ConfigurationException
@@ -104,7 +106,7 @@ public class TlsFtpInterpreterFactory extends FtpInterpreterFactory
     @Override
     protected AbstractFtpDoorV1 createInterpreter()
     {
-        SSLEngine engine = sslContext.createSSLEngine();
+        SSLEngine engine = sslContext.newEngine(ByteBufAllocator.DEFAULT);
         engine.setNeedClientAuth(false);
 
         /* REVISIT: with FTPS, it is possible for a client to send an X.509
@@ -119,7 +121,7 @@ public class TlsFtpInterpreterFactory extends FtpInterpreterFactory
                 anonymousRoot, requireAnonEmailPassword);
     }
 
-    protected SSLContext buildContext() throws Exception
+    protected SslContext buildContext() throws Exception
     {
         return CanlContextFactory.custom()
                 .withCertificatePath(service_cert.toPath())
@@ -130,7 +132,7 @@ public class TlsFtpInterpreterFactory extends FtpInterpreterFactory
                 .withNamespaceMode(namespaceMode)
                 .withLazy(false)
                 .withLoggingContext(new CDC()::restore)
-                .buildWithCaching()
+                .buildWithCaching(SslContext.class)
                 .call();
     }
 

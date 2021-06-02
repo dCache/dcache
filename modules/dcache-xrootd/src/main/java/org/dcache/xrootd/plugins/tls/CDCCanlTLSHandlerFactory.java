@@ -17,13 +17,13 @@
  */
 package org.dcache.xrootd.plugins.tls;
 
-import dmg.cells.nucleus.CDC;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
+import io.netty.handler.ssl.SslContext;
 import java.io.File;
 import java.util.Properties;
-import javax.net.ssl.SSLContext;
+
 import org.dcache.ssl.CanlContextFactory;
 
 /**
@@ -42,7 +42,7 @@ public class CDCCanlTLSHandlerFactory extends SSLHandlerFactory {
   private static final String OCSP_MODE = "xrootd.security.tls.ca.ocsp-mode";
 
   @Override
-  protected SSLContext buildContext(Properties properties) throws Exception {
+  protected SslContext buildContext(Properties properties) throws Exception {
     File serviceKey = new File(properties.getProperty(SERVICE_KEY));
     File serviceCert = new File(properties.getProperty(SERVICE_CERT));
     File serviceCaCerts = new File(properties.getProperty(SERVICE_CACERTS));
@@ -61,8 +61,8 @@ public class CDCCanlTLSHandlerFactory extends SSLHandlerFactory {
         .withOcspCheckingMode(ocspMode)
         .withNamespaceMode(namespaceMode)
         .withLazy(false)
-        .withLoggingContext(new CDC()::restore)
-        .buildWithCaching()
+        .startTls(startTls)
+        .buildWithCaching(SslContext.class)
         .call();
   }
 }

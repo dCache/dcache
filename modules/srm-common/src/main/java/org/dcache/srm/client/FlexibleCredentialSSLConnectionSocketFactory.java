@@ -177,7 +177,7 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
         verifyCredentials(context);
         final SSLContext sslContext;
         try {
-            sslContext = contextProvider.getContext(credential);
+            sslContext = contextProvider.getContext(SSLContext.class, credential);
         } catch (GeneralSecurityException e) {
             throw new IOException("Failed to create SSLContext: " + e.getMessage(), e);
         }

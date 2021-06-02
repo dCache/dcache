@@ -21,6 +21,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import eu.emi.security.authn.x509.X509Credential;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
@@ -68,9 +69,9 @@ public class ClientGsiEngineDssContextFactory implements DssContextFactory
     {
         try {
             SSLEngine delegate =
-                    contextFactory.getContext(credential).createSSLEngine(
-                            remoteSocketAddress.getHostString(),
-                            remoteSocketAddress.getPort());
+                contextFactory.getContext(SSLContext.class, credential)
+                    .createSSLEngine(remoteSocketAddress.getHostString(),
+                        remoteSocketAddress.getPort());
             SSLParameters sslParameters = delegate.getSSLParameters();
             String[] cipherSuites = toArray(filter(asList(sslParameters.getCipherSuites()), not(in(bannedCiphers))), String.class);
             String[] protocols = toArray(filter(asList(sslParameters.getProtocols()), not(in(bannedProtocols))), String.class);

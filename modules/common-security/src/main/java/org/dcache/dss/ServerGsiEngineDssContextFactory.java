@@ -23,7 +23,9 @@ import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 
-import javax.net.ssl.SSLContext;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.SslContext;
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
@@ -63,7 +65,7 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory
     private final CertificateFactory cf;
     private final Set<String> bannedCiphers;
     private final Set<String> bannedProtocols;
-    private final Callable<SSLContext> factory;
+    private final Callable<SslContext> factory;
     private final KeyPairCache keyPairCache;
 
     public ServerGsiEngineDssContextFactory(String args) throws Exception
@@ -97,14 +99,14 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory
         keyPairCache = new KeyPairCache(keyCacheLifetime, keyCacheLifetimeUnit);
 
         factory = CanlContextFactory.custom()
-                .withCertificateAuthorityPath(certificateAuthorityPath.toPath())
-                .withCrlCheckingMode(crlMode)
-                .withOcspCheckingMode(ocspMode)
-                .withNamespaceMode(namespaceMode)
-                .withLazy(false)
-                .withKeyPath(serverKeyPath.toPath())
-                .withCertificatePath(serverCertificatePath.toPath())
-                .buildWithCaching();
+            .withCertificateAuthorityPath(certificateAuthorityPath.toPath())
+            .withCrlCheckingMode(crlMode)
+            .withOcspCheckingMode(ocspMode)
+            .withNamespaceMode(namespaceMode)
+            .withLazy(false)
+            .withKeyPath(serverKeyPath.toPath())
+            .withCertificatePath(serverCertificatePath.toPath())
+            .buildWithCaching(SslContext.class);
         factory.call(); // Fail fast in case of config errors
     }
 
@@ -113,8 +115,9 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory
             throws IOException
     {
         try {
-            SSLEngine delegate = factory.call().createSSLEngine(remoteSocketAddress.getHostString(),
-                                                                 remoteSocketAddress.getPort());
+            SSLEngine delegate = factory.call().newEngine(ByteBufAllocator.DEFAULT,
+                                                            remoteSocketAddress.getHostString(),
+                                                            remoteSocketAddress.getPort());
             SSLParameters sslParameters = delegate.getSSLParameters();
             String[] cipherSuites = toArray(filter(asList(sslParameters.getCipherSuites()), not(in(bannedCiphers))), String.class);
             String[] protocols = toArray(filter(asList(sslParameters.getProtocols()), not(in(bannedProtocols))), String.class);
