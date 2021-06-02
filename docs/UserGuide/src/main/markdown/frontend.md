@@ -2635,20 +2635,20 @@ guaranteed.
 
 The following bulk requests are available through the frontend REST API:
 
-- `` GET https://<host>:3880/bulk-requests`` 
+- `` GET https://<host>:3880/api/v1/bulk-requests`` 
    –– returns a list, optionally filtered by ``status``, of requests owned by the user.
    
-- `` POST https://<host>:3880/bulk-requests`` 
+- `` POST https://<host>:3880/api/v1/bulk-requests`` 
    –– submits a request on behalf of the user.
    
-- `` GET https://<host>:3880/bulk-requests/<id>``
+- `` GET https://<host>:3880/api/v1/bulk-requests/<id>``
    –– returns the status info for the request identified by the path.
    
--  ``PATCH https://<host>:3880/bulk-requests/<id>``
+-  ``PATCH https://<host>:3880/api/v1/bulk-requests/<id>``
    –– takes some action on the request identified by the path.  Currently,
       only ``{'action':'cancel'}`` is available.
       
--  ``DELETE https://<host>:3880/bulk-requests/<id>``
+-  ``DELETE https://<host>:3880/api/v1/bulk-requests/<id>``
    –– clears the request metadata and resources from the the service.  If
       the request is in a running state, it must be cancelled first or 
       deletion will fail.
