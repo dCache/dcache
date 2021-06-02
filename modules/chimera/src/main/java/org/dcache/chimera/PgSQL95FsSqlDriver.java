@@ -406,4 +406,16 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
         }
     }
 
+    /**
+     * Update file system cache table.
+     */
+
+    @Override
+    void updateFsStat() {
+        _jdbc.update("UPDATE t_fstat SET iusedFiles = t.usedFiles, "+
+                     "iusedSpace = t.usedSpace "+
+                     "FROM (SELECT count(*) AS usedFiles, "+
+                     "SUM(isize) AS usedSpace FROM t_inodes "+
+                     "WHERE itype=32768) t");
+    }
 }

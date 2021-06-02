@@ -158,11 +158,9 @@ public class FsSqlDriver {
      * Update file system cache table.
      */
     void updateFsStat() {
-        _jdbc.update("UPDATE t_fstat SET iusedFiles = t.usedFiles, "+
-                     "iusedSpace = t.usedSpace "+
-                     "FROM (SELECT count(*) AS usedFiles, "+
-                     "SUM(isize) AS usedSpace FROM t_inodes "+
-                     "WHERE itype=32768) t");
+        _jdbc.update("UPDATE t_fstat SET "+
+                     "iusedFiles = (SELECT count(*) AS usedFiles FROM t_inodes WHERE itype=32768), "+
+                     "iusedSpace =  (SELECT SUM(isize) AS usedSpace FROM t_inodes WHERE itype=32768)");
     }
 
     /**
