@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -289,23 +288,6 @@ public class AnsiTerminalCommand implements Command, Runnable {
                 }
             }
             return super.getWidth();
-        }
-    }
-
-    private static class SshOutputStream extends FilterOutputStream
-    {
-        public SshOutputStream(OutputStream out) {
-            super(out);
-        }
-
-        @Override
-        public void write(int c) throws IOException {
-            if (c == '\n') {
-                super.write(0xa);
-                super.write(0xd);
-            } else {
-                super.write(c);
-            }
         }
     }
 

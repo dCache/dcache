@@ -134,7 +134,7 @@ public class DirectCommand implements Command, Runnable, SessionAware
 
     @Override
     public void setErrorStream(OutputStream err) {
-        errorWriter = new PrintWriter(err);
+        errorWriter = new PrintWriter(new SshOutputStream(err));
     }
 
     @Override
@@ -149,7 +149,7 @@ public class DirectCommand implements Command, Runnable, SessionAware
 
     @Override
     public void setOutputStream(OutputStream out) {
-        outWriter = new PrintWriter(out);
+        outWriter = new PrintWriter(new SshOutputStream(out));
     }
 
     @Override
