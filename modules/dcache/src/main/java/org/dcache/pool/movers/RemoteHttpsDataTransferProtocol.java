@@ -1,13 +1,12 @@
 package org.dcache.pool.movers;
 
-import eu.emi.security.authn.x509.X509CertChainValidator;
-import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import java.io.IOException;
 import java.nio.file.OpenOption;
@@ -33,18 +32,18 @@ import org.dcache.vehicles.FileAttributes;
  */
 public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProtocol
 {
-    private final TrustManager trustManager;
+    private final TrustManager[] trustManagers;
     private final SecureRandom secureRandom;
 
     private PrivateKey privateKey;
     private X509Certificate[] chain;
 
-    public RemoteHttpsDataTransferProtocol(CellEndpoint cell, X509CertChainValidator validator,
+    public RemoteHttpsDataTransferProtocol(CellEndpoint cell, X509TrustManager trustManager,
                                            SecureRandom secureRandom)
     {
         super(cell);
         this.secureRandom = secureRandom;
-        this.trustManager = new SSLTrustManager(validator);
+        this.trustManagers = new TrustManager[]{trustManager};
     }
 
     @Override
@@ -71,10 +70,7 @@ public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProto
                 keyManagers = new KeyManager[0];
             }
             SSLContext context = SSLContext.getInstance("TLS");
-            context.init(
-                    keyManagers,
-                    new TrustManager[]{trustManager},
-                    secureRandom);
+            context.init(keyManagers, trustManagers, secureRandom);
             return super.customise(builder).setSSLContext(context);
         } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
             throw new CacheException("failed to build http client: " + e.getMessage(), e);
