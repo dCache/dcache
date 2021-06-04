@@ -459,12 +459,12 @@
   <bean id="remote-http-transfer-service" class="org.dcache.pool.classic.RemoteHttpTransferService"
           depends-on="rep" destroy-method="shutdown">
       <property name="postTransferService" ref="post-transfer-service"/>
-      <property name="certificateAuthorityPath" value="${pool.authn.capath}"/>
-      <property name="certificateAuthorityUpdateInterval" value="${pool.authn.capath.refresh}"/>
-      <property name="certificateAuthorityUpdateIntervalUnit" value="${pool.authn.capath.refresh.unit}"/>
-      <property name="namespaceMode" value="${pool.authn.namespace-mode}"/>
-      <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
-      <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
+      <property name="certificateAuthorityPath" value="${pool.mover.http-tpc.authn.capath}"/>
+      <property name="certificateAuthorityUpdateInterval" value="${pool.mover.http-tpc.authn.capath.refresh}"/>
+      <property name="certificateAuthorityUpdateIntervalUnit" value="${pool.mover.http-tpc.authn.capath.refresh.unit}"/>
+      <property name="namespaceMode" value="${pool.mover.http-tpc.authn.namespace-mode}"/>
+      <property name="crlCheckingMode" value="${pool.mover.http-tpc.authn.crl-mode}"/>
+      <property name="ocspCheckingMode" value="${pool.mover.http-tpc.authn.ocsp-mode}"/>
   </bean>
 
   <bean id="banned-ciphers" class="org.dcache.util.Crypto"
@@ -475,12 +475,12 @@
   <bean id="remote-gsiftp-transfer-service" class="org.dcache.pool.classic.RemoteGsiftpTransferService"
           depends-on="rep" destroy-method="shutdown">
       <property name="postTransferService" ref="post-transfer-service"/>
-      <property name="certificateAuthorityPath" value="${pool.authn.capath}"/>
-      <property name="certificateAuthorityUpdateInterval" value="${pool.authn.capath.refresh}"/>
-      <property name="certificateAuthorityUpdateIntervalUnit" value="${pool.authn.capath.refresh.unit}"/>
-      <property name="namespaceMode" value="${pool.authn.namespace-mode}"/>
-      <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
-      <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
+      <property name="certificateAuthorityPath" value="${pool.mover.remote-gsiftp.authn.capath}"/>
+      <property name="certificateAuthorityUpdateInterval" value="${pool.mover.remote-gsiftp.authn.capath.refresh}"/>
+      <property name="certificateAuthorityUpdateIntervalUnit" value="${pool.mover.remote-gsiftp.authn.capath.refresh.unit}"/>
+      <property name="namespaceMode" value="${pool.mover.remote-gsiftp.authn.namespace-mode}"/>
+      <property name="crlCheckingMode" value="${pool.mover.remote-gsiftp.authn.crl-mode}"/>
+      <property name="ocspCheckingMode" value="${pool.mover.remote-gsiftp.authn.ocsp-mode}"/>
       <property name="bannedCiphers" ref="banned-ciphers"/>
       <property name="portRange">
           <bean class="org.dcache.util.PortRange">

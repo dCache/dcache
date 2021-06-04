@@ -19,6 +19,22 @@ check -strong pool.authn.crl-mode
 check -strong pool.authn.ocsp-mode
 check pool.authn.ciphers
 
+check -strong pool.mover.http-tpc.authn.capath
+check -strong pool.mover.http-tpc.authn.capath.refresh
+check -strong pool.mover.http-tpc.authn.capath.refresh.unit
+check -strong pool.mover.http-tpc.authn.namespace-mode
+check -strong pool.mover.http-tpc.authn.crl-mode
+check -strong pool.mover.http-tpc.authn.ocsp-mode
+check pool.mover.http-tpc.authn.ciphers
+
+check -strong pool.mover.remote-gsiftp.authn.capath
+check -strong pool.mover.remote-gsiftp.authn.capath.refresh
+check -strong pool.mover.remote-gsiftp.authn.capath.refresh.unit
+check -strong pool.mover.remote-gsiftp.authn.namespace-mode
+check -strong pool.mover.remote-gsiftp.authn.crl-mode
+check -strong pool.mover.remote-gsiftp.authn.ocsp-mode
+check pool.mover.remote-gsiftp.authn.ciphers
+
 check -strong pool.limits.worker-threads
 check -strong pool.limits.nearline-threads
 check -strong pool.enable.repository-check
