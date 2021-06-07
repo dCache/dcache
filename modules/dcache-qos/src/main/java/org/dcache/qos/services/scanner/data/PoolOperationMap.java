@@ -85,6 +85,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
@@ -162,6 +163,8 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
       return rescanWindowUnit.toMillis(rescanWindow);
     }
   }
+
+
 
   private final Lock lock = new ReentrantLock();
   private final Condition condition = lock.newCondition();
@@ -619,7 +622,8 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
    *  <p/>
    *  See documentation at {@link #doScan}.
    */
-  public void scan(PoolFilter filter, StringBuilder reply, StringBuilder errors) {
+  public PoolScanReply scan(PoolFilter filter) {
+    PoolScanReply reply = new PoolScanReply();
     lock.lock();
     try {
       Set<String> pools = getMappedPools();
@@ -643,16 +647,16 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
               mode = currentPsu.getPool(pool).getPoolMode();
             }
             if (doScan(pool, null, null, null, mode, true)) {
-              reply.append("\t").append(pool).append("\n");
+              reply.addPool(pool, Optional.empty());
             }
           } catch (IllegalArgumentException e) {
-            errors.append("\t")
-                  .append(String.format("%s, %s", pool, new ExceptionMessage(e))).append("\n");
+            reply.addPool(pool, Optional.of(e));
           }
         }
       }
     } finally {
       lock.unlock();
+      return reply;
     }
   }
 
