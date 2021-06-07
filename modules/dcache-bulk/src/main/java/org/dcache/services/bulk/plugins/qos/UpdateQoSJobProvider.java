@@ -82,7 +82,7 @@ public class UpdateQoSJobProvider extends BulkJobProvider<UpdateQoSJob> {
                                 null);
 
   public UpdateQoSJobProvider() {
-    super("UPDATE-QOS", FILE, ExpansionType.DEPTH_FIRST);
+    super("UPDATE-QOS", FILE, ExpansionType.BREADTH_FIRST);
   }
 
   @Override

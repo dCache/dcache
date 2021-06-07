@@ -70,7 +70,7 @@ import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
 
 public class UnpinJobProvider extends BulkJobProvider<UnpinJob> {
   public UnpinJobProvider() {
-    super("UNPIN", FILE, ExpansionType.DEPTH_FIRST);
+    super("UNPIN", FILE, ExpansionType.BREADTH_FIRST);
   }
 
   @Override

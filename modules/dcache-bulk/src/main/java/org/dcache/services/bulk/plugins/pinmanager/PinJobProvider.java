@@ -84,7 +84,7 @@ public class PinJobProvider extends BulkJobProvider<PinJob> {
                                 "MINUTES");
 
   public PinJobProvider() {
-    super("PIN", FILE, ExpansionType.DEPTH_FIRST);
+    super("PIN", FILE, ExpansionType.BREADTH_FIRST);
   }
 
   @Override
