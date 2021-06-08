@@ -59,6 +59,7 @@ import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.NotDirChimeraException;
+import org.dcache.chimera.NoLabelChimeraException;
 import org.dcache.chimera.OriginTag;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
@@ -1162,6 +1163,84 @@ public class Shell extends ShellApplication
             FsInode inode = lookup(path);
             fs.removeXattr(inode, name);
             return null;
+        }
+    }
+
+    @Command(name = "label add", hint = "add a label",
+            description = "Add label to a file")
+    public class ExtendedAddLabelCommand implements Callable<Serializable>
+    {
+        @Argument(index = 0, usage = "The file to modify")
+        File path;
+
+        @Argument(index = 1, usage = "The label name")
+        String name;
+
+        @Override
+        public Serializable call() throws ChimeraFsException, CommandException
+        {
+
+            FsInode inode = lookup(path);
+            fs.addLabel(inode, name);
+            return "";
+
+        }
+    }
+
+    @Command(name = "label rm", hint = "remove the given label",
+            description = "Remove the label from the file.")
+    public class ExtendedLabelRmCommand implements Callable<Serializable>
+    {
+        @Argument(index = 0, usage = "The file to modify")
+        File path;
+
+        @Argument(index = 1, usage = "The label name")
+        String name;
+
+        @Override
+        public Serializable call() throws ChimeraFsException
+        {
+            FsInode inode = lookup(path);
+            fs.removeLabel(inode, name);
+            return null;
+        }
+    }
+
+
+    @Command(name = "labels get", hint = "get labels",
+            description = "Show all  the labels for  the given file.")
+    public class ExtendedLabelGetCommand implements Callable<Serializable> {
+        @Argument(index = 0, usage = "The file which labels to be listed ")
+        File path;
+
+        @Override
+        public Serializable call() throws ChimeraFsException {
+            FsInode inode = lookup(path);
+            StringBuilder sb = new StringBuilder();
+            for (String label : fs.getLabels(inode)) {
+                sb.append(label).append('\n');
+            }
+            return sb.toString();
+        }
+    }
+
+    @Command(name = "ls_virtualdir", hint = "list all files having the given label",
+            description = "Show all  the labels for  the given file.")
+    public class ExtendedListFilesWithLabelCommand implements Callable<Serializable> {
+        @Argument(index = 0, usage = "lable  ")
+        String labelname;
+
+        @Override
+        public Serializable call() throws ChimeraFsException {
+            StringBuilder sb = new StringBuilder();
+            try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = fs.virtualDirectoryStream(pwd, labelname)) {
+                for (ChimeraDirectoryEntry entry : dirStream) {
+                    sb.append(" ").append(entry.getName());
+                }
+                return sb.toString();
+            } catch (IOException e) {
+                throw new NoLabelChimeraException();
+            }
         }
     }
 }
