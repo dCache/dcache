@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -43,6 +44,11 @@ public class ChecksumScanner
 {
     private static final Logger _log =
         LoggerFactory.getLogger(ChecksumScanner.class);
+
+    /**
+     * OpenOptions to use by scanner, when checksum of a file is calculated.
+     */
+    private static final EnumSet<? extends OpenOption> SCANNER_OPEN_OPTIONS = EnumSet.of(OpenFlags.NOATIME);
 
     private final FullScan _fullScan = new FullScan();
     private final Scrubber _scrubber = new Scrubber();
@@ -120,8 +126,7 @@ public class ChecksumScanner
 
                 for (PnfsId id: _repository) {
                     try {
-                        ReplicaDescriptor handle =
-                            _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
+                        ReplicaDescriptor handle = _repository.openEntry(id, SCANNER_OPEN_OPTIONS);
                         try {
                             _csm.verifyChecksum(handle);
                         } finally {
@@ -446,7 +451,7 @@ public class ChecksumScanner
                     if (_repository.getState(id) == ReplicaState.CACHED ||
                         _repository.getState(id) == ReplicaState.PRECIOUS) {
                         ReplicaDescriptor handle =
-                            _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
+                            _repository.openEntry(id, SCANNER_OPEN_OPTIONS);
                         try {
                             _csm.verifyChecksumWithThroughputLimit(handle);
                         } finally {
