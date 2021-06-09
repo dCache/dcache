@@ -187,6 +187,7 @@ public class ChecksumModuleV1
         Map<String, String> policies = new HashMap<>();
         _policy.stream().forEach((p) -> policies.put(p.name(), getPolicy(p)));
         policies.put(ON_TRANSFER.name(), "on");
+        info.setPolicies(policies);
         if (hasPolicy(SCRUB)) {
             if (!Double.isInfinite(_throughputLimit)) {
                 info.setThroughputLimitInMibPerSec(BYTES.toMiB(_throughputLimit));
