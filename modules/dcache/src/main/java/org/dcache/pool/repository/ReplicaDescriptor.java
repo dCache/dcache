@@ -19,7 +19,7 @@ import org.dcache.vehicles.FileAttributes;
  * simultaneously. An open read descriptor does not prevent entry state
  * changes.
  */
-public interface ReplicaDescriptor
+public interface ReplicaDescriptor extends AutoCloseable
 {
     /*
      * TODO:

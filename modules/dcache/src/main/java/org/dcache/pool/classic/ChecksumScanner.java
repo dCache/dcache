@@ -125,13 +125,8 @@ public class ChecksumScanner
                 _bad.clear();
 
                 for (PnfsId id: _repository) {
-                    try {
-                        ReplicaDescriptor handle = _repository.openEntry(id, SCANNER_OPEN_OPTIONS);
-                        try {
+                    try (ReplicaDescriptor handle = _repository.openEntry(id, SCANNER_OPEN_OPTIONS)) {
                             _csm.verifyChecksum(handle);
-                        } finally {
-                            handle.close();
-                        }
                     } catch (FileNotInCacheException e) {
                         /* It was removed before we could get it. No problem.
                          */
@@ -191,22 +186,15 @@ public class ChecksumScanner
 
         @Override
         public void runIt()
-                throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException
-        {
+                throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException {
             stopScrubber();
-            try {
-                ReplicaDescriptor handle =
-                    _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME));
-                try {
-                    _actualChecksums = _csm.verifyChecksum(handle);
-                } catch (FileCorruptedCacheException e) {
-                    _expectedChecksums = e.getExpectedChecksums().get();
-                    _actualChecksums = e.getActualChecksums().get();
-                    _bad.put(_pnfsId, _actualChecksums);
-                    invalidateCacheEntryAndSendAlarm(_pnfsId, e);
-                } finally {
-                    handle.close();
-                }
+            try (ReplicaDescriptor handle = _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME))) {
+                _actualChecksums = _csm.verifyChecksum(handle);
+            } catch (FileCorruptedCacheException e) {
+                _expectedChecksums = e.getExpectedChecksums().get();
+                _actualChecksums = e.getActualChecksums().get();
+                _bad.put(_pnfsId, _actualChecksums);
+                invalidateCacheEntryAndSendAlarm(_pnfsId, e);
             } finally {
                 startScrubber();
             }
