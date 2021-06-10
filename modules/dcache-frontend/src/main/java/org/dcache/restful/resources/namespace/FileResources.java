@@ -427,6 +427,8 @@ public class FileResources {
                     int mode = reqPayload.getInt("mode");
                     pnfsHandler.setFileAttributes(path, FileAttributes.ofMode(mode));
                     break;
+                default:
+                    throw new UnsupportedOperationException("No such action " + action);
             }
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
