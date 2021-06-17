@@ -115,7 +115,7 @@ public final class StagingAdjuster extends QoSAdjuster {
     attributes = task.getAttributes();
     executorService.submit(() -> {
       handleStaging();
-      waitForStaging();
+      task.setToWaiting();
     });
   }
 
@@ -124,6 +124,55 @@ public final class StagingAdjuster extends QoSAdjuster {
     if (future != null) {
       future.cancel(true);
       cancelPin();
+    }
+  }
+
+  /**
+   *  Polled by main map thread.  If the future is done, this will trigger the
+   *  completion handler.
+   */
+  public void poll() {
+    synchronized (this) {
+      if (future == null) {
+        completionHandler.taskFailed(pnfsId, Optional.empty(),
+            new CacheException(CacheException.SERVICE_UNAVAILABLE,
+                "no future returned by message send."));
+        return;
+      }
+    }
+
+    PinManagerPinMessage migrationReply = null;
+    Object error = null;
+
+    try {
+      LOGGER.debug("poll, checking pin request future.isDone() for {}.", pnfsId);
+      if (!future.isDone()) {
+        return;
+      }
+
+      migrationReply = getUninterruptibly(future);
+      if (migrationReply.getReturnCode() != 0) {
+        error = migrationReply.getErrorObject();
+      }
+    } catch (CancellationException e) {
+      /*
+       *  Cancelled state set by caller.
+       */
+    } catch (ExecutionException e) {
+      error = e.getCause();
+    }
+
+    LOGGER.debug("poll, calling completion handler for {}.", pnfsId);
+    String target = migrationReply.getPool();
+
+    if (error == null) {
+      completionHandler.taskCompleted(pnfsId, Optional.ofNullable(target));
+    } else if (error instanceof Throwable) {
+      completionHandler.taskFailed(pnfsId, Optional.ofNullable(target),
+          new CacheException("Pin failure", (Throwable) error));
+    } else {
+      completionHandler.taskFailed(pnfsId, Optional.ofNullable(target),
+          new CacheException(String.valueOf(error)));
     }
   }
 
@@ -140,6 +189,7 @@ public final class StagingAdjuster extends QoSAdjuster {
                                                               QOS_PIN_REQUEST_ID,
                                                               QOS_PIN_TEMP_LIFETIME);
       future = pinManager.send(message, Long.MAX_VALUE);
+
       LOGGER.debug("handleStaging, sent pin manager request for {}.", pnfsId);
     } catch (URISyntaxException e) {
       completionHandler.taskFailed(pnfsId, Optional.empty(),
@@ -158,46 +208,5 @@ public final class StagingAdjuster extends QoSAdjuster {
     PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
     pinManager.send(message, Long.MAX_VALUE);
     LOGGER.debug("handleStaging, sent pin manager request to unpin {}.", pnfsId);
-  }
-
-  private void waitForStaging() {
-    synchronized (this) {
-      if (future == null) {
-        completionHandler.taskFailed(pnfsId, Optional.empty(),
-                                     new CacheException(CacheException.SERVICE_UNAVAILABLE,
-                                     "no future returned by message send."));
-        return;
-      }
-    }
-
-    PinManagerPinMessage migrationReply = null;
-    Object error = null;
-
-    try {
-      LOGGER.debug("handleStaging, waiting for pin request future for {}.", pnfsId);
-      migrationReply = getUninterruptibly(future);
-      if (migrationReply.getReturnCode() != 0) {
-        error = migrationReply.getErrorObject();
-      }
-    } catch (CancellationException e) {
-      /*
-       *  Cancelled state set by caller.
-       */
-    } catch (ExecutionException e) {
-      error = e.getCause();
-    }
-
-    LOGGER.debug("handleStaging, calling completion handler for {}.", pnfsId);
-    String target = migrationReply.getPool();
-
-    if (error == null) {
-      completionHandler.taskCompleted(pnfsId, Optional.ofNullable(target));
-    } else if (error instanceof Throwable) {
-      completionHandler.taskFailed(pnfsId, Optional.ofNullable(target),
-          new CacheException("Pin failure", (Throwable) error));
-    } else {
-      completionHandler.taskFailed(pnfsId, Optional.ofNullable(target),
-          new CacheException(String.valueOf(error)));
-    }
   }
 }

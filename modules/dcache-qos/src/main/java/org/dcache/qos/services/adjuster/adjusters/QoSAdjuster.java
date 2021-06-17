@@ -102,5 +102,13 @@ public abstract class QoSAdjuster implements Cancellable {
     runAdjuster(task);
   }
 
+  /**
+   *  If the adjuster is asynchronous (and the task is in a WAITING state) it
+   *  should call isDone on the Future and then call the completion handler if true.
+   */
+  public void poll() {
+    /* NOP here. */
+  }
+
   protected abstract void runAdjuster(QoSAdjusterTask task);
 }

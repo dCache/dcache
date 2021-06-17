@@ -106,6 +106,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     private final Map<String, QoSAdjusterTask> index = new ConcurrentHashMap<>();
     private final Deque<QoSAdjusterTask> runningQueue = new LinkedBlockingDeque<>();
     private final Deque<QoSAdjusterTask> readyQueue = new LinkedBlockingDeque<>();
+    private final Deque<QoSAdjusterTask> waitingQueue = new LinkedBlockingDeque<>();
     private final AtomicLong signalled = new AtomicLong(0L);
 
     private QoSAdjusterFactory factory;
@@ -126,7 +127,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
 
     /*
      *  Note that this throttle is necessary.  Staging adjustments and migration tasks
-     *  relinguish the thread, so we cannot rely on the thread pool to put a barrier
+     *  relinquish the thread, so we cannot rely on the thread pool to put a barrier
      *  on the number of concurrent (or "waiting") jobs.
      */
     private int maxRunning = 200;
@@ -266,7 +267,8 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  The consumer thread. When notified or times out, runs scan.
+     *  The consumer thread. When notified or times out, polls any waiting tasks and
+     *  then runs scan.
      *  <p/>
      *  Note that since the scan takes place outside of the monitor, the
      *  signals sent by various update methods will not be caught before
@@ -281,6 +283,8 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
 
                 signalled.set(0);
                 long start = System.currentTimeMillis();
+
+                pollWaiting();
 
                 scan();
 
@@ -320,15 +324,30 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
         try {
             final List<QoSAdjusterTask> toRemove = new ArrayList<>();
             /*
-             *  Check both queues in case of cancellation.
+             *  Check all queues in case of cancellation.
+             *  Also move tasks off running queue to waiting queue
+             *  that have gone to the WAITING state.
              */
-            runningQueue.stream().filter(QoSAdjusterTask::isDone)
+            runningQueue.forEach(t -> {
+                if (t.isDone()) {
+                    toRemove.add(t);
+                    handleTerminatedTask(t);
+                } else if (t.isWaiting()) {
+                    toRemove.add(t);
+                    waitingQueue.add(t);
+                }
+            });
+
+            toRemove.forEach(runningQueue::remove);
+            toRemove.clear();
+
+            waitingQueue.stream().filter(QoSAdjusterTask::isDone)
                 .forEach(t -> {
                     toRemove.add(t);
                     handleTerminatedTask(t);
                 });
 
-            toRemove.stream().forEach(runningQueue::remove);
+            toRemove.forEach(waitingQueue::remove);
             toRemove.clear();
 
             readyQueue.stream().filter(QoSAdjusterTask::isDone)
@@ -337,7 +356,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
                     handleTerminatedTask(t);
                 });
 
-            toRemove.stream().forEach(readyQueue::remove);
+            toRemove.forEach(readyQueue::remove);
             toRemove.clear();
 
             int available = maxRunning - runningQueue.size();
@@ -499,6 +518,15 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
             history.add(task.getPnfsId(), task.toHistoryString(), task.getException() != null);
             counters.recordTask(task);
             taskHandler.notifyAdjustmentCompleted(task);
+        }
+    }
+
+    private void pollWaiting() {
+        read.lock();
+        try {
+            waitingQueue.stream().forEach(QoSAdjusterTask::poll);
+        } finally {
+            read.unlock();
         }
     }
 

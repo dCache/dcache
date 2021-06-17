@@ -104,7 +104,7 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
   private long endTime;
 
   enum Status {
-    INITIALIZED, RUNNING, CANCELLED, DONE
+    INITIALIZED, RUNNING, WAITING, CANCELLED, DONE
   }
 
   private Status status;
@@ -239,8 +239,14 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
     return status == Status.RUNNING;
   }
 
+  public synchronized boolean isWaiting() { return status == Status.WAITING; }
+
   public synchronized boolean isDone() {
     return status == Status.DONE || status == Status.CANCELLED;
+  }
+
+  public synchronized void poll() {
+    adjuster.poll();
   }
 
   public void relayMessage(PoolMigrationCopyFinishedMessage message) {
@@ -259,6 +265,10 @@ public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable
 
   public synchronized void setFuture(Future future) {
     this.future = future;
+  }
+
+  public synchronized void setToWaiting() {
+    status = Status.WAITING;
   }
 
   public synchronized void taskTerminated(Optional<String> target, Exception exception) {

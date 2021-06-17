@@ -88,7 +88,7 @@ public final class QoSAdjusterAdmin implements CellCommandListener {
     protected QoSAction action;
 
     @Option(name = "state",
-        valueSpec = "INITIALIZED|RUNNING|CANCELLED|DONE",
+        valueSpec = "INITIALIZED|RUNNING|WAITING|CANCELLED|DONE",
         separator = ",",
         usage = "Match only operations for files matching this comma-delimited set of states; "
             + "default is RUNNING.")
