@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 
 import diskCacheV111.util.FsPath;
 
+import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.JsonWebToken;
 
@@ -87,7 +88,11 @@ public class Issuer
         }
         sb.append(".well-known/openid-configuration");
         String configEndpoint = sb.toString();
-        this.identity = ImmutableSet.copyOf(identity);
+
+        this.identity = ImmutableSet.<Principal>builder()
+                .addAll(identity)
+                .add(new OAuthProviderPrincipal(id))
+                .build();
 
         this.configuration = new HttpJsonNode(client, configEndpoint,
                 Duration.ofHours(1), Duration.ofSeconds(10));

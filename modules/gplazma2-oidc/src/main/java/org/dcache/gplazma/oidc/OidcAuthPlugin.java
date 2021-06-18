@@ -51,6 +51,7 @@ import org.dcache.auth.FullNamePrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoA;
 import org.dcache.auth.LoAPrincipal;
+import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UserNamePrincipal;
@@ -486,6 +487,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
             if (userInfo != null && userInfo.has("sub")) {
                 LOG.debug("UserInfo from OpenId Provider: {}", userInfo);
                 Set<Principal> principals = new HashSet<>();
+                principals.add(new OAuthProviderPrincipal(ip.getName()));
                 addSub(ip, userInfo, principals);
                 addNames(userInfo, principals);
                 addEmail(userInfo, principals);
