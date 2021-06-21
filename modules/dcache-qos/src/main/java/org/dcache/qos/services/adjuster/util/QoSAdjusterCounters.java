@@ -164,14 +164,14 @@ public final class QoSAdjusterCounters extends QoSCounters {
 
   @Override
   public void appendCounts(StringBuilder builder) {
-    builder.append(String.format(FORMAT_ACTIONS, ACTIONS_HEADER));
+    builder.append(String.format(FORMAT_ACTIONS, (Object[])ACTIONS_HEADER));
     QoSCounterGroup group = groupMap.get(ACTIONS);
     group.format(builder);
   }
 
   @Override
   public void appendDetails(StringBuilder builder) {
-    builder.append(String.format(FORMAT_DETAILS, DETAILS_HEADER));
+    builder.append(String.format(FORMAT_DETAILS, (Object[])DETAILS_HEADER));
     QoSCounterGroup group = groupMap.get(POOLS);
     group.format(builder);
   }

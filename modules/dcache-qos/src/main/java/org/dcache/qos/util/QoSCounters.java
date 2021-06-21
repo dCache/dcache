@@ -213,7 +213,7 @@ public abstract class QoSCounters {
 
     if (!path.exists()) {
       try (FileWriter fw = new FileWriter(path, true)) {
-        fw.write(String.format(getStatisticsFormat(), getStatisticsHeader()));
+        fw.write(String.format(getStatisticsFormat(), (Object[]) getStatisticsHeader()));
         fw.flush();
       } catch (FileNotFoundException e) {
         LOGGER.error("Unable to initialize statistics file: {}", e.getMessage());

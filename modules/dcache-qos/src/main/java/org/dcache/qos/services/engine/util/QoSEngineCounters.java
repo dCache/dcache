@@ -104,7 +104,7 @@ public final class QoSEngineCounters extends QoSCounters implements Runnable {
 
   @Override
   public void appendCounts(StringBuilder builder) {
-    builder.append("\n").append(String.format(FORMAT_CNTS, CNTS_HEADER));
+    builder.append("\n").append(String.format(FORMAT_CNTS, (Object[])CNTS_HEADER));
     groupMap.values().stream().forEach(g -> g.format(builder));
   }
 
