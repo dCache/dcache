@@ -378,7 +378,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         X509Credential credential = Axis.getDelegatedCredential().orElse(null);
         String remoteIP = Axis.getRemoteAddress();
         String remoteHost = isClientDNSLookup ?
-                            InetAddresses.forString(remoteIP).getCanonicalHostName() : remoteIP;
+                            InetAddresses.forUriString(remoteIP).getCanonicalHostName() : remoteIP;
 
         Set<LoginAttribute> loginAttributes = AuthenticationHandler.getLoginAttributes(Axis.getHttpServletRequest());
 
