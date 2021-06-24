@@ -38,6 +38,7 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.exceptions.GplazmaParseMapFileException;
 import org.dcache.util.Args;
 import org.dcache.util.Exceptions;
+import org.dcache.util.NDC;
 
 import static org.dcache.gplazma.plugins.exceptions.GplazmaParseMapFileException.checkFormat;
 
@@ -67,7 +68,54 @@ public class GplazmaMultiMapFile
         GROUP_NAME("group", GroupNamePrincipal.class),
         FQAN("fqan", FQANPrincipal.class),
         KERBEROS_PRINCIPAL("kerberos", KerberosPrincipal.class),
-        OIDC("oidc", OidcSubjectPrincipal.class),
+        OIDC("oidc", OidcSubjectPrincipal.class) {
+            @Override
+            public Principal buildPrincipal(String value)
+                    throws GplazmaParseMapFileException
+            {
+                int atIndex = value.lastIndexOf('@');
+                checkFormat(atIndex != -1, "Missing '@' in oidc principal \"%s\"",
+                        value);
+                String claim = value.substring(0, atIndex);
+                String op = value.substring(atIndex+1);
+                return new OidcSubjectPrincipal(claim, op);
+            }
+
+            @Override
+            public PrincipalMatcher buildMatcher(String value)
+                    throws GplazmaParseMapFileException
+            {
+                int atIndex = value.lastIndexOf('@');
+                String claim = atIndex == -1 ? null : value.substring(0, atIndex);
+                String op = atIndex == -1 ? null : value.substring(atIndex+1);
+
+                NDC loadingNDC = NDC.cloneNdc();
+
+                return p -> {
+                    if (!(p instanceof OidcSubjectPrincipal)) {
+                        return false;
+                    }
+
+                    OidcSubjectPrincipal other = (OidcSubjectPrincipal)p;
+
+                    // REVISIT the following test exists only for backwards compatibility.
+                    if (other.getSubClaim().equals(value)) {
+                        NDC mappingNDC = NDC.cloneNdc();
+                        NDC.set(loadingNDC);
+                        try {
+                            LOG.warn("Please replace \"oidc:{}\" with \"oidc:{}@{}\"",
+                                    value, other.getSubClaim(), other.getOP());
+                        } finally {
+                            NDC.set(mappingNDC);
+                        }
+                        return true;
+                    }
+
+                    return atIndex != -1 && other.getSubClaim().equals(claim)
+                                        && other.getOP().equals(op);
+                };
+            }
+        },
         OIDC_GROUP("oidcgrp", OpenIdGroupPrincipal.class),
         UID("uid", UidPrincipal.class),
         USER_NAME("username", UserNamePrincipal.class);
@@ -165,7 +213,16 @@ public class GplazmaMultiMapFile
 
                 if (!lastLoaded.equals(mtime)) {
                     lastLoaded = mtime;
-                    map = parseMapFile();
+
+                    NDC mappingNDC = NDC.cloneNdc();
+                    try {
+                        NDC.clear();
+                        NDC.push(file.toString());
+
+                        map = parseMapFile();
+                    } finally {
+                        NDC.set(mappingNDC);
+                    }
                 }
             } catch (IOException e) {
                  throw new AuthenticationException("failed to read " + file + ": "
@@ -187,6 +244,7 @@ public class GplazmaMultiMapFile
             lineCount++;
             line = line.trim();
             if (!line.isEmpty() && line.charAt(0) != '#') {
+                NDC.push("line " + lineCount);
                 try {
                     Args args = new Args(line);
                     checkFormat(args.argc() > 0, "Missing predicate matcher");
@@ -196,7 +254,9 @@ public class GplazmaMultiMapFile
                     map.put(asMatcher(matcherDescription),
                             asPrincipals(mappedPrincipalDescriptions));
                 } catch (GplazmaParseMapFileException e) {
-                    warningsConsumer.accept(file.getFileName() + ":" + lineCount + ": " + e.getMessage());
+                    warningsConsumer.accept(e.getMessage());
+                } finally {
+                    NDC.pop();
                 }
             }
         }
