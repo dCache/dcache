@@ -151,11 +151,13 @@ public class PrincipalSetMaker
 
     /**
      * Add an OIDC principal to the set.
-     * @param id the OIDC 'sub' of this user.
+     * @param sub the OIDC 'sub' of this user.
+     * @param op the name/alias of the OAuth2 Provider that asserted this
+     * identity.
      */
-    public PrincipalSetMaker withOidc(String id)
+    public PrincipalSetMaker withOidc(String sub, String op)
     {
-        _principals.add(new OidcSubjectPrincipal(id));
+        _principals.add(new OidcSubjectPrincipal(sub, op));
         return this;
     }
 
