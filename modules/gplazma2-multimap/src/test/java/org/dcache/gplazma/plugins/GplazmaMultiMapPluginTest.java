@@ -48,7 +48,7 @@ public class GplazmaMultiMapPluginTest
     @Test(expected = AuthenticationException.class)
     public void shouldFailWhenFileDoesNotExist() throws Exception
     {
-        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub"));
+        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub", "GOOGLE"));
     }
 
     @Test(expected = AuthenticationException.class)
@@ -56,17 +56,35 @@ public class GplazmaMultiMapPluginTest
     {
         givenConfig("   ");
 
-        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub"));
+        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub", "GOOGLE"));
     }
 
     @Test
-    public void shouldMapOidcToUsername() throws Exception
+    public void shouldMapOidcWithoutOPToUsername() throws Exception
     {
         givenConfig("oidc:googleoidcsub  username:kermit");
 
-        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub"));
+        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub", "GOOGLE"));
 
         assertThat(results, hasItem(new UserNamePrincipal("kermit")));
+    }
+
+    @Test
+    public void shouldMapOidcWithOPToUsername() throws Exception
+    {
+        givenConfig("oidc:googleoidcsub@GOOGLE  username:kermit");
+
+        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub", "GOOGLE"));
+
+        assertThat(results, hasItem(new UserNamePrincipal("kermit")));
+    }
+
+    @Test(expected = AuthenticationException.class)
+    public void shouldNotMapOidcWithDifferentOP() throws Exception
+    {
+        givenConfig("oidc:googleoidcsub@GITHUB  username:kermit");
+
+        whenMapCalledWith(aSetOfPrincipals().withOidc("googleoidcsub", "GOOGLE"));
     }
 
     @Test

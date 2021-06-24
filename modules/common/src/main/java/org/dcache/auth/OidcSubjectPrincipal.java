@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.security.Principal;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @since 2.16
@@ -15,18 +16,41 @@ public class OidcSubjectPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 1L;
     private final String _sub;
+    private final String _op;
 
-    public OidcSubjectPrincipal(String sub)
+    /**
+     * Create a new principal.
+     * @param sub The value of the 'sub' claim.
+     * @param op The name/alias of the OP that asserted this claim.
+     */
+    public OidcSubjectPrincipal(String sub, String op)
     {
         checkArgument(CharMatcher.ascii().matchesAllOf(sub), "OpenId \"sub\" is not ASCII encoded");
         checkArgument(sub.length() <= 255, "OpenId \"sub\" must not exceed 255 ASCII characters");
         _sub = sub;
+        _op = requireNonNull(op);
     }
 
     @Override
     public String getName()
     {
+        return _sub + "@" + _op;
+    }
+
+    /**
+     * @return the value of the 'sub' claim.
+     */
+    public String getSubClaim()
+    {
         return _sub;
+    }
+
+    /**
+     * @return the dCache-internal alias for the OP.
+     */
+    public String getOP()
+    {
+        return _op;
     }
 
     @Override
@@ -40,18 +64,18 @@ public class OidcSubjectPrincipal implements Principal, Serializable
         }
 
         OidcSubjectPrincipal other = (OidcSubjectPrincipal) obj;
-        return _sub.equals(other._sub);
+        return _sub.equals(other._sub) && _op.equals(other._op);
     }
 
     @Override
     public int hashCode()
     {
-        return _sub.hashCode();
+        return _sub.hashCode() ^ _op.hashCode();
     }
 
     @Override
     public String toString()
     {
-        return "OidcSubjectPrincipal[" + _sub + ']';
+        return "OidcSubjectPrincipal[" + _sub + '@' + _op + ']';
     }
 }
