@@ -403,7 +403,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
             JsonNode discoveryDoc = discoveryCache.get(ip);
             userinfoLookupTiming = Stopwatch.createStarted();
             String userInfoEndPoint = extractUserInfoEndPoint(discoveryDoc);
-            Set<Principal> principals = validateBearerTokenWithOpenIdProvider(token, userInfoEndPoint);
+            Set<Principal> principals = validateBearerTokenWithOpenIdProvider(ip,
+                    token, userInfoEndPoint);
             return LookupResult.success(ip, principals);
         } catch (OidcException oe) {
             return LookupResult.error(ip, oe.getMessage());
@@ -451,15 +452,15 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         return providersByIssuer.values();
     }
 
-    private Set<Principal> validateBearerTokenWithOpenIdProvider(String token,
-            String infoUrl) throws OidcException
+    private Set<Principal> validateBearerTokenWithOpenIdProvider(IdentityProvider ip,
+            String token, String infoUrl) throws OidcException
     {
         try {
             JsonNode userInfo = getUserInfo(infoUrl, token);
             if (userInfo != null && userInfo.has("sub")) {
                 LOG.debug("UserInfo from OpenId Provider: {}", userInfo);
                 Set<Principal> principals = new HashSet<>();
-                addSub(userInfo, principals);
+                addSub(ip, userInfo, principals);
                 addNames(userInfo, principals);
                 addEmail(userInfo, principals);
                 addGroups(userInfo, principals);
@@ -519,9 +520,11 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         }
     }
 
-    private boolean addSub(JsonNode userInfo, Set<Principal> principals)
+    private boolean addSub(IdentityProvider ip, JsonNode userInfo,
+            Set<Principal> principals)
     {
-        return principals.add(new OidcSubjectPrincipal(userInfo.get("sub").asText()));
+        String claimValue = userInfo.get("sub").asText();
+        return principals.add(new OidcSubjectPrincipal(claimValue, ip.getName()));
     }
 
     private void addGroups(JsonNode userInfo, Set<Principal> principals)

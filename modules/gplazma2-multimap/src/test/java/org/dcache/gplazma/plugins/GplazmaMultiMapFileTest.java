@@ -3,15 +3,11 @@ package org.dcache.gplazma.plugins;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.hamcrest.Matcher;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,12 +22,10 @@ import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
-import org.dcache.auth.GroupPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.gplazma.AuthenticationException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -88,7 +82,7 @@ public class GplazmaMultiMapFileTest {
     public void shouldFailWhenWrongMapFormatOidc() throws Exception {
         givenConfig("oid:googleopenidsubject    username:kermit");
 
-        whenMapping(new OidcSubjectPrincipal("googleopenidsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleopenidsubject", "GOOGLE"));
 
         assertThat(warnings, is(not(empty())));
         assertThat(mappedPrincipals, is(empty()));
@@ -155,13 +149,53 @@ public class GplazmaMultiMapFileTest {
     }
 
     @Test
-    public void shouldPassWhenOidcMapped() throws Exception {
+    public void shouldPassWhenOidcMappedWithoutOP() throws Exception {
         givenConfig("oidc:googleoidcsubject    username:kermit");
 
-        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
 
         assertThat(warnings, is(empty()));
         assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
+    }
+
+    @Test
+    public void shouldPassWhenOidcMappedWithOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE    username:kermit");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
+    }
+
+    @Test
+    public void shouldPassWhenOidcWithAtMappedWithoutOP() throws Exception {
+        givenConfig("oidc:sub-claim@test    username:kermit");
+
+        whenMapping(new OidcSubjectPrincipal("sub-claim@test", "OP"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
+    }
+
+    @Test
+    public void shouldPassWhenOidcWithAtMappedWithOP() throws Exception {
+        givenConfig("oidc:sub-claim@test@OP    username:kermit");
+
+        whenMapping(new OidcSubjectPrincipal("sub-claim@test", "OP"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UserNamePrincipal("kermit")));
+    }
+
+    @Test
+    public void shouldIgnoreMappingWithWrongOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE    username:kermit");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "NOT-GOOGLE"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
@@ -175,20 +209,30 @@ public class GplazmaMultiMapFileTest {
     }
 
     @Test
-    public void shouldPassWhenUidMapped() throws Exception {
+    public void shouldPassWhenUidMappedFromOidcWithoutOP() throws Exception {
         givenConfig("oidc:googleoidcsubject    uid:1000");
 
-        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
 
         assertThat(warnings, is(empty()));
         assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
     }
 
     @Test
-    public void shouldPassWhenUidPrimaryGidTrueMapped() throws Exception {
+    public void shouldPassWhenUidMappedFromOidcWithOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE    uid:1000");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+    }
+
+    @Test
+    public void shouldPassWhenUidPrimaryGidTrueMappedFromOidcWithoutOP() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,true  uid:1000  ");
 
-        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
 
         assertThat(warnings, is(empty()));
         assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
@@ -196,10 +240,21 @@ public class GplazmaMultiMapFileTest {
     }
 
     @Test
-    public void shouldPassWhenUidPrimaryGidFalseMapped() throws Exception {
+    public void shouldPassWhenUidPrimaryGidTrueMappedFromOidcWithOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE   gid:1000,true  uid:1000  ");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("1000", true)));
+    }
+
+    @Test
+    public void shouldPassWhenUidPrimaryGidFalseMappedFromOidcWithoutOP() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,false  uid:1000  ");
 
-        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
 
         assertThat(warnings, is(empty()));
         assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
@@ -207,10 +262,21 @@ public class GplazmaMultiMapFileTest {
     }
 
     @Test
-    public void shouldPassWhenUidGidMapped() throws Exception {
+    public void shouldPassWhenUidPrimaryGidFalseMappedFromOidcWithOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE   gid:1000,false  uid:1000  ");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("1000", false)));
+    }
+
+    @Test
+    public void shouldPassWhenUidGidMappedFromOidcWithoutOP() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000  uid:1000  ");
 
-        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
 
         assertThat(warnings, is(empty()));
         assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
@@ -218,30 +284,74 @@ public class GplazmaMultiMapFileTest {
     }
 
     @Test
-    public void shouldFailWhenGidFormatWrong() throws Exception {
+    public void shouldPassWhenUidGidMappedFromOidcWithOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE   gid:1000  uid:1000  ");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("1000", false)));
+    }
+
+    @Test
+    public void shouldFailWhenGidFormatWrongFromOidcWithoutOP() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,,true  uid:1000  ");
 
-        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
 
         assertThat(warnings, is(not(empty())));
         assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
-    public void shouldFailWhenGidFormatWrong2() throws Exception {
+    public void shouldFailWhenGidFormatWrongFromOidcWithOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE   gid:1000,,true  uid:1000  ");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
+
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
+    }
+
+    @Test
+    public void shouldFailWhenGidFormatWrong2FromOidcWithoutOP() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,true,  uid:1000  ");
 
-        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
 
         assertThat(warnings, is(not(empty())));
         assertThat(mappedPrincipals, is(empty()));
     }
 
     @Test
-    public void shouldPassWhenUidGidMapped2() throws Exception {
+    public void shouldFailWhenGidFormatWrong2FromOidcWithOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE   gid:1000,true,  uid:1000  ");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
+
+        assertThat(warnings, is(not(empty())));
+        assertThat(mappedPrincipals, is(empty()));
+    }
+
+    @Test
+    public void shouldPassWhenUidGidMapped2FromOidcWithoutOP() throws Exception {
         givenConfig("oidc:googleoidcsubject   gid:1000,true  gid:2000 uid:1000  uid:2000");
 
-        whenMapping(new OidcSubjectPrincipal("googleoidcsubject"));
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
+
+        assertThat(warnings, is(empty()));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("2000")));
+        assertThat(mappedPrincipals, hasItem(new UidPrincipal("1000")));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("2000", false)));
+        assertThat(mappedPrincipals, hasItem(new GidPrincipal("1000", true)));
+    }
+
+    @Test
+    public void shouldPassWhenUidGidMapped2FromOidcWithOP() throws Exception {
+        givenConfig("oidc:googleoidcsubject@GOOGLE   gid:1000,true  gid:2000 uid:1000  uid:2000");
+
+        whenMapping(new OidcSubjectPrincipal("googleoidcsubject", "GOOGLE"));
 
         assertThat(warnings, is(empty()));
         assertThat(mappedPrincipals, hasItem(new UidPrincipal("2000")));
