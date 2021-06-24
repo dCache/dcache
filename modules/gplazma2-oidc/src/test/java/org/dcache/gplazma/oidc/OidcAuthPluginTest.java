@@ -163,7 +163,7 @@ public class OidcAuthPluginTest {
                                 .toString()),
                         withBearerToken("validtoken"));
 
-        assertThat(principals, hasSubject("214234823942934792371"));
+        assertThat(principals, hasSubject("214234823942934792371", "idc-iam.example.org"));
         assertThat(principals, hasFullName("Kermit The", "Frog", "Kermit The Frog"));
         assertThat(principals, hasEmail("kermit.the.frog@email.com"));
         assertThat(principals, hasGroup("Users"));
@@ -279,9 +279,9 @@ public class OidcAuthPluginTest {
         return (token == null) ? null : new BearerTokenCredential(token);
     }
 
-    public static Matcher<Iterable<? super OidcSubjectPrincipal>> hasSubject(String dn)
+    public static Matcher<Iterable<? super OidcSubjectPrincipal>> hasSubject(String sub, String op)
     {
-        return hasItem(new OidcSubjectPrincipal(dn));
+        return hasItem(new OidcSubjectPrincipal(sub, op));
     }
 
     public static Matcher<Iterable<? super EmailAddressPrincipal>> hasEmail(String email)
