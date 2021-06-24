@@ -486,7 +486,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
             if (userInfo != null && userInfo.has("sub")) {
                 LOG.debug("UserInfo from OpenId Provider: {}", userInfo);
                 Set<Principal> principals = new HashSet<>();
-                addSub(userInfo, principals);
+                addSub(ip, userInfo, principals);
                 addNames(userInfo, principals);
                 addEmail(userInfo, principals);
                 Function<String,Principal> toGroupPrincipal = ip.areGroupsAccepted()
@@ -567,9 +567,11 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         }
     }
 
-    private boolean addSub(JsonNode userInfo, Set<Principal> principals)
+    private boolean addSub(IdentityProvider ip, JsonNode userInfo,
+            Set<Principal> principals)
     {
-        return principals.add(new OidcSubjectPrincipal(userInfo.get("sub").asText()));
+        String claimValue = userInfo.get("sub").asText();
+        return principals.add(new OidcSubjectPrincipal(claimValue, ip.getName()));
     }
 
     private void addGroups(JsonNode userInfo, Set<Principal> principals,
