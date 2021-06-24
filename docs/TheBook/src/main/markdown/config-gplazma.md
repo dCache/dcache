@@ -837,11 +837,16 @@ dCache requires that authenticated credentials be mapped to posix style `usernam
 
 For example,
 
-> oidc:9889-1231-2999-12312       username:kermit
-
+> oidc:9889-1231-2999-12312@GOOGLE    username:kermit
+>
 > email:kermit.the.frog@email.com     username:thefrog
 
-In this example, it is assumed there is an additional mapping from username to uid, gid etc in files like storage-autzdb.
+In this example, the first line matches users with `sub` claim
+`9889-1231-2999-12312` from the OAuth2 Provider `GOOGLE` and adds the
+username `kermit`.  The second example matches the email address
+`kermit.the.frog@email.com` and adds the username `thefrog`.  In both
+cases, it is assumed there is an additional mapping from username to
+uid, gid etc in files like storage-autzdb.
 
 This mapping as shown above can be stored in a gplazma multi-map configuration file. The location of the multimap configuration file can be specified with another gplazma property **gplazma.multimap.file**. By default it is configured to be located in /etc/dcache/multi-mapfile.
 

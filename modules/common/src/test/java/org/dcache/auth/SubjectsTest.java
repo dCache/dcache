@@ -7,9 +7,14 @@ import org.junit.Test;
 
 import javax.security.auth.Subject;
 
+import java.security.Principal;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
+import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.*;
 
 public class SubjectsTest
@@ -265,5 +270,19 @@ public class SubjectsTest
 
         assertEquals(GID1, gids[0]);
         assertEquals(GID2, gids[1]);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectOidcWithoutOP()
+    {
+        Subjects.principalsFromArgs(asList("oidc:sub-claim"));
+    }
+
+    @Test
+    public void shouldPrincipalsFromArgsForOidc()
+    {
+        Set<Principal> principals = Subjects.principalsFromArgs(asList("oidc:sub-claim@OP"));
+
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim", "OP")));
     }
 }
