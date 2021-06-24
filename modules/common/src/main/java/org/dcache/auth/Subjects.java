@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class Subjects
 {
@@ -488,7 +488,11 @@ public class Subjects
                     principal = new Origin(InetAddresses.forString(value));
                     break;
                 case "oidc":
-                    principal = new OidcSubjectPrincipal(value);
+                    int atIndex = value.lastIndexOf('@');
+                    checkArgument(atIndex != -1, "format for 'oidc' principals is <value>@<OP>");
+                    String oidcClaim = value.substring(0, atIndex);
+                    String op = value.substring(atIndex+1);
+                    principal = new OidcSubjectPrincipal(oidcClaim, op);
                     break;
                 case "email":
                     principal = new EmailAddressPrincipal(value);
