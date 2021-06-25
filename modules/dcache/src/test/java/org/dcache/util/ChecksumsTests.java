@@ -20,7 +20,12 @@ import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Arrays.asList;
-import static org.dcache.util.ChecksumType.*;
+import static org.dcache.util.ChecksumType.ADLER32;
+import static org.dcache.util.ChecksumType.MD4_TYPE;
+import static org.dcache.util.ChecksumType.MD5_TYPE;
+import static org.dcache.util.ChecksumType.SHA1;
+import static org.dcache.util.ChecksumType.SHA256;
+import static org.dcache.util.ChecksumType.SHA512;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -76,6 +81,39 @@ public class ChecksumsTests
     }
 
     @Test
+    public void shouldGiveCorrectStringForSetOfSha1()
+    {
+        givenSet(checksum().ofType(SHA1).
+                withValue("e7e46ff10df57532f816596327e98f9597b8c21e"));
+
+        whenGeneratingRfc3230ForSetOfChecksums();
+
+        assertThat(_rfc3230, equalTo("sha=5+Rv8Q31dTL4FlljJ+mPlZe4wh4="));
+    }
+
+    @Test
+    public void shouldGiveCorrectStringForSetOfSha256()
+    {
+        givenSet(checksum().ofType(SHA256).
+                withValue("36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"));
+
+        whenGeneratingRfc3230ForSetOfChecksums();
+
+        assertThat(_rfc3230, equalTo("sha-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw="));
+    }
+
+    @Test
+    public void shouldGiveCorrectStringForSetOfSha512()
+    {
+        givenSet(checksum().ofType(SHA512).
+                withValue("07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6"));
+
+        whenGeneratingRfc3230ForSetOfChecksums();
+
+        assertThat(_rfc3230, equalTo("sha-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g=="));
+    }
+
+    @Test
     public void shouldGiveCorrectStringForAdler32AndMD5()
     {
         givenSet(checksum().ofType(ADLER32).withValue("3da0195"),
@@ -101,6 +139,26 @@ public class ChecksumsTests
 
         assertThat(_rfc3230, hasOnlyParts("adler32=03da0195",
                 "md5=HUXZLQLMuI/KZ5KDcJPcOA=="));
+    }
+
+    @Test
+    public void shouldGiveCorrectStringForUnsupportedAndAdler32AndMD5andSha1andSha256andSha512()
+    {
+        givenSet(checksum().ofType(MD4_TYPE).withValue("6df23dc03f9b54cc38a0fc1483df6e21"),
+                checksum().ofType(ADLER32).withValue("3da0195"),
+                checksum().ofType(MD5_TYPE).withValue("1d45d92d02ccb88fca6792837093dc38"),
+                checksum().ofType(SHA256).withValue("36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"),
+                checksum().ofType(SHA1).withValue("e7e46ff10df57532f816596327e98f9597b8c21e"),
+                checksum().ofType(SHA512).withValue("07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6")
+        );
+
+        whenGeneratingRfc3230ForSetOfChecksums();
+
+        assertThat(_rfc3230, hasOnlyParts("adler32=03da0195",
+                "md5=HUXZLQLMuI/KZ5KDcJPcOA==",
+                "sha-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw=",
+                "sha-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g==",
+                "sha=5+Rv8Q31dTL4FlljJ+mPlZe4wh4="));
     }
 
     @Test
@@ -198,6 +256,120 @@ public class ChecksumsTests
     }
 
     @Test
+    public void shouldReturnSingleChecksumForSha1String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("sha=5+Rv8Q31dTL4FlljJ+mPlZe4wh4=");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA1, "e7e46ff10df57532f816596327e98f9597b8c21e"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForSha1StringWithSpace()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230(" sha=5+Rv8Q31dTL4FlljJ+mPlZe4wh4= ");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA1, "e7e46ff10df57532f816596327e98f9597b8c21e"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForCapitalSha1String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("SHA=5+Rv8Q31dTL4FlljJ+mPlZe4wh4=");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA1, "e7e46ff10df57532f816596327e98f9597b8c21e"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForMalformedSha1String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("sha=THIS-IS-NOT-VALID-DIGEST");
+
+        assertThat(result, empty());
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForSha256String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("sha-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw=");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA256, "36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForSha256StringWithSpace()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230(" sha-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw= ");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA256, "36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForCapitalSha256String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("SHA-256=NuudxKFQ87LneQmR5fl4+IdjL5KiACt8VTQMKp7xwxw=");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA256, "36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForMalformedSha256String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("sha-256=THIS-IS-NOT-VALID-DIGEST");
+
+        assertThat(result, empty());
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForSha512String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("sha-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g==");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA512, "07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForSha512StringWithSpace()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230(" sha-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g== ");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA512, "07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForCapitalSha512String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("SHA-512=B+VH2VhvanP3P7rAQ17XaVEhj7fQyNeIownXhUNru2Quk6JSqVTyORJUfR6KO17W4b/XCXghIz+gU489uFT+5g==");
+
+        Set<Checksum> expected = Collections.singleton(new Checksum(SHA512, "07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6"));
+
+        assertThat(result, equalTo(expected));
+    }
+
+    @Test
+    public void shouldReturnSingleChecksumForMalformedSha512String()
+    {
+        Set<Checksum> result = Checksums.decodeRfc3230("sha-512=THIS-IS-NOT-VALID-DIGEST");
+
+        assertThat(result, empty());
+    }
+
+    @Test
     public void shouldReturnBothForMd5AndAdler32()
     {
         Set<Checksum> result =
@@ -259,6 +431,30 @@ public class ChecksumsTests
         Optional<ChecksumType> type = Checksums.parseWantDigest("md5");
         assertThat(type.isPresent(), is(equalTo(true)));
         assertThat(type.get(), is(equalTo(ChecksumType.MD5_TYPE)));
+    }
+
+    @Test
+    public void shouldFindSha1AsSingleEntry()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("sha-1");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(SHA1)));
+    }
+
+    @Test
+    public void shouldFindSha256AsSingleEntry()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("sha-256");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(SHA256)));
+    }
+
+    @Test
+    public void shouldFindSha512AsSingleEntry()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("sha-512");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(SHA512)));
     }
 
     @Test
@@ -384,6 +580,42 @@ public class ChecksumsTests
     }
 
     @Test
+    public void shouldReturnWantDigestForSingleSha1Checksum()
+    {
+        Checksum checksum = newSha1Checksum("e7e46ff10df57532f816596327e98f9597b8c21e");
+        Set<Checksum> checksums = Collections.singleton(checksum);
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("sha")));
+    }
+
+    @Test
+    public void shouldReturnWantDigestForSingleSha256Checksum()
+    {
+        Checksum checksum = newSha256Checksum("36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c");
+        Set<Checksum> checksums = Collections.singleton(checksum);
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("sha-256")));
+    }
+
+    @Test
+    public void shouldReturnWantDigestForSingleSha512Checksum()
+    {
+        Checksum checksum = newSha512Checksum("07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6");
+        Set<Checksum> checksums = Collections.singleton(checksum);
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("sha-512")));
+    }
+
+    @Test
     public void shouldReturnMd5Adler32WantDigestForAdler32Md5Checksum()
     {
         List<Checksum> checksums = asList(
@@ -427,11 +659,26 @@ public class ChecksumsTests
     }
 
     @Test
+    public void shouldReturnWantDigestForSha1Sha256sHA512Checksum()
+    {
+        List<Checksum> checksums = asList(
+                newSha1Checksum("e7e46ff10df57532f816596327e98f9597b8c21e"),
+                newSha256Checksum("36eb9dc4a150f3b2e7790991e5f978f887632f92a2002b7c55340c2a9ef1c31c"),
+                newSha512Checksum("07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6")
+        );
+
+        Optional<String> wantDigest = Checksums.asWantDigest(checksums);
+
+        assertTrue(wantDigest.isPresent());
+        assertThat(wantDigest.get(), is(equalTo("sha-512,sha-256;q=0.7,sha;q=0.3")));
+    }
+
+    @Test
     public void shouldBuildExpectedGenericWantDigest()
     {
         String wantDigest = Checksums.buildGenericWantDigest();
 
-        assertThat(wantDigest, is(equalTo("md5,adler32;q=0.5")));
+        assertThat(wantDigest, is(equalTo("sha-512,sha-256;q=0.8,sha;q=0.6,md5;q=0.4,adler32;q=0.2")));
     }
 
     private Checksum newMd4Checksum(String value)
@@ -447,6 +694,21 @@ public class ChecksumsTests
     private Checksum newAdler32Checksum(String value)
     {
         return new Checksum(ChecksumType.ADLER32, value);
+    }
+
+    private Checksum newSha1Checksum(String value)
+    {
+        return new Checksum(SHA1, value);
+    }
+
+    private Checksum newSha256Checksum(String value)
+    {
+        return new Checksum(SHA256, value);
+    }
+
+    private Checksum newSha512Checksum(String value)
+    {
+        return new Checksum(SHA512, value);
     }
 
     private void givenSet(ChecksumBuilder... builders)

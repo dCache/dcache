@@ -5,6 +5,7 @@ import com.google.common.io.BaseEncoding;
 
 import java.io.Serializable;
 import java.security.MessageDigest;
+import java.util.Base64;
 
 import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -64,6 +65,11 @@ public class Checksum  implements Serializable
         checkArgument(this.value.length() == type.getNibbles(),
             "%s requires %s hexadecimal digits but \"%s\" has %s",
             type.getName(), type.getNibbles(), value, this.value.length());
+    }
+
+    public static Checksum fromBase64Value(ChecksumType type, String value) {
+        byte[] bytes = Base64.getDecoder().decode(value);
+        return new Checksum(type, bytes);
     }
 
     /**

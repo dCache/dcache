@@ -19,7 +19,10 @@ public enum ChecksumType
         }
     },
     MD5_TYPE(2,"MD5", 128),
-    MD4_TYPE(3,"MD4", 128);
+    MD4_TYPE(3,"MD4", 128),
+    SHA1(4, "SHA-1", 160),
+    SHA256(5, "SHA-256", 256),
+    SHA512(6, "SHA-512", 512);
 
     private final int type;
     private final String name;

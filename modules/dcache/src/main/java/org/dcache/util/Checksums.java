@@ -48,6 +48,9 @@ public class Checksums
     private static final Map<ChecksumType,String> CHECKSUMTYPE_TO_RFC3230_NAME = ImmutableMap.<ChecksumType,String>builder()
             .put(ADLER32, "adler32")
             .put(MD5_TYPE, "md5")
+            .put(SHA1, "sha")
+            .put(SHA256, "sha-256")
+            .put(SHA512, "sha-512")
             .build();
 
     private static final EntryTransformer<String,String,Checksum>
@@ -58,16 +61,25 @@ public class Checksums
                      * http://www.iana.org/assignments/http-dig-alg/http-dig-alg.xml
                      */
                     switch(type.toLowerCase()) {
-                    case "adler32":
-                        return new Checksum(ChecksumType.ADLER32, value);
 
-                    case "md5":
-                        byte[] bytes = Base64.getDecoder().decode(value);
-                        return new Checksum(ChecksumType.MD5_TYPE, bytes);
+                        case "adler32":
+                            return new Checksum(ChecksumType.ADLER32, value);
 
-                    default:
-                        _log.debug("Unsupported checksum type {}", type);
-                        return null;
+                        case "md5":
+                            return Checksum.fromBase64Value(ChecksumType.MD5_TYPE, value);
+
+                        case "sha":
+                            return Checksum.fromBase64Value(SHA1, value);
+
+                        case "sha-256":
+                            return Checksum.fromBase64Value(SHA256, value);
+
+                        case "sha-512":
+                            return Checksum.fromBase64Value(SHA512, value);
+
+                        default:
+                            _log.debug("Unsupported checksum type {}", type);
+                            return null;
                     }
                 } catch(IllegalArgumentException e) {
                     _log.debug("Value \"{}\" is invalid for type {}", value,
@@ -76,7 +88,7 @@ public class Checksums
                 }
             };
     private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDERING =
-            Ordering.explicit(MD5_TYPE, ADLER32, MD4_TYPE);
+            Ordering.explicit(SHA512, SHA256, SHA1, MD5_TYPE, ADLER32, MD4_TYPE);
     private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
             PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(Checksum::getType);
 
@@ -90,15 +102,20 @@ public class Checksums
                 String value = f.getValue();
 
                 switch(f.getType()) {
-                case ADLER32:
-                    return "adler32=" + value;
-                case MD4_TYPE:
-                    return null;
-                case MD5_TYPE:
-                    byte[] bytes = BaseEncoding.base16().lowerCase().decode(value);
-                    return "md5=" + Base64.getEncoder().encodeToString(bytes);
-                default:
-                    return null;
+                    case ADLER32:
+                        return "adler32=" + value;
+                    case MD4_TYPE:
+                        return null;
+                    case MD5_TYPE:
+                        return "md5=" + Base64.getEncoder().encodeToString( BaseEncoding.base16().lowerCase().decode(value) );
+                    case SHA1:
+                        return "sha=" + Base64.getEncoder().encodeToString( BaseEncoding.base16().lowerCase().decode(value) );
+                    case SHA256:
+                        return "sha-256=" + Base64.getEncoder().encodeToString( BaseEncoding.base16().lowerCase().decode(value) );
+                    case SHA512:
+                        return "sha-512=" + Base64.getEncoder().encodeToString( BaseEncoding.base16().lowerCase().decode(value) );
+                    default:
+                        return null;
                 }
             };
 

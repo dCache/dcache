@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2007-2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2007-2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -74,13 +74,21 @@ import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.*;
 import static org.dcache.util.ByteUnit.*;
 import static org.dcache.util.ChecksumType.ADLER32;
 import static org.dcache.util.ChecksumType.MD5_TYPE;
+import static org.dcache.util.ChecksumType.SHA1;
+import static org.dcache.util.ChecksumType.SHA256;
+import static org.dcache.util.ChecksumType.SHA512;
 
 public class ChecksumModuleV1
     implements CellCommandListener, ChecksumModule, CellSetupProvider, CellInfoProvider,
                 PoolDataBeanProvider<ChecksumModuleData>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChecksumModuleV1.class);
-    private static final Map<ChecksumType,String> CHECKSUM_NAMES = ImmutableMap.of(ADLER32, "adler32", MD5_TYPE, "md5");
+    private static final Map<ChecksumType,String> CHECKSUM_NAMES = ImmutableMap.of(
+            ADLER32, "adler32",
+            MD5_TYPE, "md5",
+            SHA1, "sha",
+            SHA256, "sha256",
+            SHA512, "sha512");
     private static final long MILLISECONDS_IN_SECOND = 1000;
 
     /**
@@ -385,7 +393,7 @@ public class ChecksumModuleV1
                     "will also be stored in the namespace.")
     public class SetChecksumTypeCommand implements Callable<String>
     {
-        @Argument(valueSpec = "adler32|md5")
+        @Argument(valueSpec = "adler32|md5|sha|sha256|sha512")
         String[] arguments;
 
         @Override
@@ -594,7 +602,7 @@ public class ChecksumModuleV1
                 .map(d -> new Checksum(ChecksumType.getChecksumType(d.getAlgorithm()), d.digest()))
                 .collect(Collectors.toSet());
 
-        LOGGER.debug("Computed checksum, length {}, checksum {} in {} ms{}", pos, checksums.toString(),
+        LOGGER.debug("Computed checksum, length {}, checksum {} in {} ms{}", pos, checksums,
                    System.currentTimeMillis() - start, pos == 0 ? ""
                             : ", throughput " +
                               throughputAsString(pos, System.currentTimeMillis() - start) +
