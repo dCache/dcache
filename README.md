@@ -21,6 +21,8 @@ Documentation
 
 [The dCache book](docs/TheBook/src/main/markdown/index.md)
 
+[User Guide](docs/UserGuide/src/main/markdown/index.md)
+
 Getting Started
 ===============
 
