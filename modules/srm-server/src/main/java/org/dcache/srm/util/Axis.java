@@ -90,7 +90,7 @@ public class Axis
     public static InetSocketAddress getRemoteSocketAddress()
     {
         HttpServletRequest r = getHttpServletRequest();
-        return new InetSocketAddress(InetAddresses.forString(r.getRemoteAddr()), r.getRemotePort());
+        return new InetSocketAddress(InetAddresses.forUriString(r.getRemoteAddr()), r.getRemotePort());
     }
 
     public static String getRequestHeader(String name)
