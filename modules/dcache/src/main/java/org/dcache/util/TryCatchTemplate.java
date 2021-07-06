@@ -19,6 +19,8 @@ package org.dcache.util;
 
 import com.google.common.io.Closer;
 
+import javax.annotation.Nonnull;
+
 import java.io.Closeable;
 import java.nio.channels.CompletionHandler;
 
@@ -174,9 +176,10 @@ public abstract class TryCatchTemplate<V, A> implements Cancellable, CompletionH
      * An implementation should not call {@code completed} or {@code setCancellable} from within
      * {@code executeWithCancellable}.
      */
+    @Nonnull
     protected Cancellable executeWithCancellable() throws Exception
     {
-        return null;
+        return msg -> {};
     }
 
     /**
