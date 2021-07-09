@@ -44,7 +44,10 @@
       <property name="scheduledExecutor" ref="scheduled-executor"/>
       <property name="updateFsStatInterval" value="${pnfsmanager.fs-stat-cache.time}"/>
       <property name="updateFsStatIntervalUnit" value="${pnfsmanager.fs-stat-cache.time.unit}"/>
-
+      <property name="updateQuotaInterval" value="${pnfsmanager.quota.update.interval}"/>
+      <property name="updateQuotaIntervalUnit" value="${pnfsmanager.quota.update.interval.time.unit}"/>
+      <property name="quotaSystem" ref="quota-system"/>
+      <property name="quotaEnabled" value="${pnfsmanager.enable.quota}"/>
   </bean>
 
     <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
@@ -98,6 +101,27 @@
       <description>Chimera</description>
       <constructor-arg ref="data-source"/>
       <constructor-arg ref="tx-manager"/>
+      <property name="quota" ref="quota-system"/>
+      <property name="quotaEnabled" value="${pnfsmanager.enable.quota}"/>
+      <property name="defaultRetentionPolicy" value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${pnfsmanager.default-retention-policy}') }"/>
+  </bean>
+
+  <bean id="quota-refresh-executor"
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
+      <description>Task scheduler</description>
+      <constructor-arg>
+          <bean class="java.util.concurrent.Executors"
+                factory-method="newScheduledThreadPool"
+                destroy-method="shutdown">
+              <constructor-arg value="2"/>
+          </bean>
+      </constructor-arg>
+  </bean>
+
+  <bean id="quota-system" class="org.dcache.chimera.quota.JdbcQuota" depends-on="liquibase">
+      <description>Quota</description>
+      <constructor-arg ref="data-source"/>
+      <property name="quotaRefreshExecutor" ref="quota-refresh-executor"/>
   </bean>
 
   <bean id="extractor" class="${pnfsmanager.plugins.storage-info-extractor}">
@@ -133,7 +157,7 @@
           <bean class="java.util.concurrent.Executors"
                 factory-method="newScheduledThreadPool"
                 destroy-method="shutdown">
-              <constructor-arg value="2"/>
+              <constructor-arg value="5"/>
           </bean>
       </constructor-arg>
   </bean>

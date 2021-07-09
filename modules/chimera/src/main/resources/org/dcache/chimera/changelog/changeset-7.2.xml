@@ -6,18 +6,66 @@
      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet id="32" author="litvinse">
-      <comment>add FS statiscs table</comment>
+        <comment>add FS statiscs table</comment>
+        <createTable tableName="t_fstat">
+            <column name="iusedfiles" type="bigint"/>
+            <column name="iusedspace" type="bigint"/>
+        </createTable>
+        <insert tableName="t_fstat">
+            <column name="iusedfiles" value="1048576"/>
+            <column name="iusedspace" value="1048576"/>
+        </insert>
+    </changeSet>
 
-      <createTable tableName="t_fstat">
-        <column name="iusedfiles" type="bigint"/>
-        <column name="iusedspace" type="bigint"/>
-      </createTable>
+    <changeSet id="33" author="litvinse">
+        <comment>add quota tables</comment>
+        <createTable tableName="t_user_quota">
+            <column name="iuid" type="int">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_user_quota_iuid_pkey"/>
+            </column>
+            <column name="icustodial_used" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ioutput_used" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ireplica_used" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="icustodial_limit" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ioutput_limit" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ireplica_limit" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
 
-      <insert tableName="t_fstat">
-        <column name="iusedfiles" value="1048576"/>
-        <column name="iusedspace" value="1048576"/>
-      </insert>
-
+        <createTable tableName="t_group_quota">
+            <column name="igid" type="int">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="t_group_quota_igid_pkey"/>
+            </column>
+            <column name="icustodial_used" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ioutput_used" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ireplica_used" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="icustodial_limit" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ioutput_limit" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ireplica_limit" type="bigint">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
     </changeSet>
 
 

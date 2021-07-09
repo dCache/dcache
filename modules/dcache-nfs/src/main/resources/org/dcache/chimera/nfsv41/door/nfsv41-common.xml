@@ -110,6 +110,25 @@
         <property name="poolManagerStub" ref="poolManagerStub"/>
     </bean>
 
+    <bean id="quota-refresh-executor"
+          class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
+      <description>Task scheduler</description>
+      <constructor-arg>
+        <bean class="java.util.concurrent.Executors"
+              factory-method="newScheduledThreadPool"
+              destroy-method="shutdown">
+          <constructor-arg value="2"/>
+        </bean>
+      </constructor-arg>
+    </bean>
+
+    <bean id="quota-system" class="org.dcache.chimera.quota.JdbcQuota" depends-on="liquibase">
+      <description>Quota</description>
+      <constructor-arg ref="dataSource"/>
+      <property name="quotaRefreshExecutor" ref="quota-refresh-executor"/>
+    </bean>
+
+
     <bean id="fileSystem" class="org.dcache.chimera.DCacheAwareJdbcFs"
             depends-on="liquibase">
         <description>Chimera Filesystem</description>
@@ -120,6 +139,10 @@
         <property name="pinManagerStub" ref="pinManagerStub"/>
         <property name="billingStub" ref="billing-stub"/>
 	<property name="queryPnfsManagerOnRename" value="${nfs.enable.pnfsmanager-query-on-move}"/>
+	<property name="quota" ref="quota-system"/>
+	<property name="quotaEnabled" value="${nfs.enable.quota}"/>
+	<property name="defaultRetentionPolicy" value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${nfs.default-retention-policy}') }"/>
+
     </bean>
 
     <bean id="export" class="org.dcache.nfs.ExportFile">

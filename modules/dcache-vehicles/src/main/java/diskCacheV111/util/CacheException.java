@@ -235,4 +235,3 @@ public class CacheException extends Exception
         return "CacheException(rc=" + _rc + ";msg=" + getMessage() + ')';
     }
 }
-

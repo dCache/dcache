@@ -42,7 +42,7 @@ import org.dcache.util.SqlGlob;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.primitives.Longs.tryParse;
-import static org.dcache.util.ByteUnits.isoPrefix;
+import static org.dcache.util.ArgumentHandler.parseByteQuantity;
 
 public class SpaceManagerCommandLineInterface implements CellCommandListener
 {
@@ -805,19 +805,5 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                                       .thatHaveNoFiles());
             return (spaces == 1) ? "One space reservation purged." : (spaces + " space reservations purged.");
         }
-    }
-
-    private static long parseByteQuantity(String arg)
-    {
-        String s = arg.endsWith("B") ? arg.substring(0, arg.length()-1) : arg;
-        return checkNonNegative(ByteSizeParser.using(isoPrefix()).parse(s));
-    }
-
-    private static long checkNonNegative(long size)
-    {
-        if (size < 0L) {
-            throw new IllegalArgumentException("Size must be non-negative.");
-        }
-        return size;
     }
 }

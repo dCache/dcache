@@ -16,12 +16,15 @@
  */
 package org.dcache.chimera;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectUpdateSemanticsDataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 
 import java.io.File;
+import java.net.SocketException;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -412,10 +415,17 @@ public class PgSQL95FsSqlDriver extends FsSqlDriver {
 
     @Override
     void updateFsStat() {
-        _jdbc.update("UPDATE t_fstat SET iusedFiles = t.usedFiles, "+
-                     "iusedSpace = t.usedSpace "+
-                     "FROM (SELECT count(*) AS usedFiles, "+
-                     "SUM(isize) AS usedSpace FROM t_inodes "+
-                     "WHERE itype=32768) t");
+        try {
+            _jdbc.update("UPDATE t_fstat SET iusedFiles = t.usedFiles, "+
+                    "iusedSpace = t.usedSpace "+
+                    "FROM (SELECT count(*) AS usedFiles, "+
+                    "SUM(isize) AS usedSpace FROM t_inodes "+
+                     "WHERE itype=32768) as t");
+        } catch (DataAccessException e) {
+            Throwable cause = Throwables.getRootCause(e);
+            if (cause instanceof SocketException) {
+                LOGGER.warn("FS stat update interrupted {}", e.getMessage());
+            }
+        }
     }
 }

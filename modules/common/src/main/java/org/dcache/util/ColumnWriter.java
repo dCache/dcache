@@ -88,6 +88,21 @@ public class ColumnWriter
     }
 
     /**
+     * Create a column for showing a number of bytes as integer values.  All
+     * values are scaled by the given ByteUnit units written as an integer
+     * value; for example, if the value is 10240 and ByteUnit.KiB is supplied
+     * then the output is {@literal 10}.
+     * @param name the column's name
+     * @param units the specific unit into which values will be scaled
+     * @param nullValue the string to print in place of null value.
+     */
+    public ColumnWriter bytes(String name, ByteUnit units, String nullValue)
+    {
+        addColumn(new FixedScalingByteColumn(name, units, nullValue));
+        return this;
+    }
+
+    /**
      * Create a column for showing a number of bytes in a human readable
      * fashion.  Values are individually examined and the "best" units is
      * chosen.  The displayUnits argument describes whether the multipliers
@@ -102,6 +117,25 @@ public class ColumnWriter
     public ColumnWriter bytes(String name, ByteUnit.Type displayUnits)
     {
         addColumn(new HumanReadableByteColumn(name, displayUnits));
+        return this;
+    }
+
+    /**
+     * Create a column for showing a number of bytes in a human readable
+     * fashion.  Values are individually examined and the "best" units is
+     * chosen.  The displayUnits argument describes whether the multipliers
+     * are base-2 (KiB, MiB, GiB, etc) or base-10 (kB, MB, GB, etc).
+     * For example, if the value is 10240 and displayUnits is
+     * ByteUnit.Type.BINARY then the output is {@literal 10KiB}. If the value
+     * is 1000 and displayUnits is ByteUnit.Type.DECIMAL then the output is
+     * {@literal 10kB}.
+     * @param name the column's name
+     * @param displayUnits the base of the units when automatically scaling values
+     * @param nullValue string to print in place of null value.
+     */
+    public ColumnWriter bytes(String name, ByteUnit.Type displayUnits, String nullValue)
+    {
+        addColumn(new HumanReadableByteColumn(name, displayUnits, nullValue));
         return this;
     }
 
@@ -122,6 +156,27 @@ public class ColumnWriter
             return bytes(name, units.get());
         } else {
             return bytes(name, displayUnits);
+        }
+    }
+
+    /**
+     * Create a column for optionally showing a number of bytes as integer
+     * values or in a human readable fashion.  If the units argument is
+     * present then displayUnits is ignored and the method behaves as
+     * {@link #bytes(java.lang.String, org.dcache.util.ByteUnit)}.  If the units
+     * argument is absent then this method behaves as
+     * {@link #bytes(java.lang.String, org.dcache.util.ByteUnit.Type)}.
+     * @param name the column's name
+     * @param units the specific unit into which values will be scaled, if present.
+     * @param displayUnits the base of the units when automatically scaling values.
+     * @param nullValue string to print in place of null value.
+     */
+    public ColumnWriter bytes(String name, Optional<ByteUnit> units, ByteUnit.Type displayUnits, String nullValue)
+    {
+        if (units.isPresent()) {
+            return bytes(name, units.get(), nullValue);
+        } else {
+            return bytes(name, displayUnits, nullValue);
         }
     }
 
@@ -399,11 +454,18 @@ public class ColumnWriter
     private class HumanReadableByteColumn extends AbstractByteColumn
     {
         private final ByteUnit.Type displayUnits;
+        private final String nullValue;
 
         public HumanReadableByteColumn(String name, ByteUnit.Type displayUnits)
         {
+            this(name, displayUnits, null);
+        }
+
+        public HumanReadableByteColumn(String name, ByteUnit.Type displayUnits, String nullValue)
+        {
             super(name);
             this.displayUnits = displayUnits;
+            this.nullValue = nullValue;
         }
 
         @Override
@@ -416,7 +478,11 @@ public class ColumnWriter
         public int width(Object rawValue)
         {
             if (rawValue == null) {
-                return 0;
+		if (nullValue!=null) {
+		    return nullValue.length();
+		} else  {
+		    return 0;
+		}
             }
 
             if (displayUnits.unitsOf((long) rawValue) == BYTES) {
@@ -429,8 +495,16 @@ public class ColumnWriter
         public void render(Object o, int actualWidth, PrintWriter out)
         {
             if (o == null) {
-                while (actualWidth-- > 0) {
-                    out.append(' ');
+                if (nullValue == null)  {
+                    while (actualWidth-- > 0) {
+                        out.append(' ');
+                    }
+                } else {
+                    int padding = actualWidth - nullValue.length();
+                    while (padding-- > 0) {
+                        out.append(' ');
+                    }
+                    out.append(nullValue);
                 }
             } else {
                 long value = (long) o;
@@ -455,11 +529,18 @@ public class ColumnWriter
     private class FixedScalingByteColumn extends AbstractByteColumn
     {
         private final ByteUnit units;
+        private final String nullValue;
 
         public FixedScalingByteColumn(String name, ByteUnit units)
         {
+            this(name, units, null);
+        }
+
+        public FixedScalingByteColumn(String name, ByteUnit units, String nullValue)
+        {
             super(name);
             this.units = units;
+            this.nullValue = nullValue;
         }
 
         @Override
@@ -472,7 +553,11 @@ public class ColumnWriter
         public int width(Object rawValue)
         {
             if (rawValue == null) {
-                return 0;
+                if (nullValue != null) {
+                    return nullValue.length();
+                } else {
+                    return 0;
+                }
             }
 
             long value = (long)rawValue;
@@ -484,8 +569,12 @@ public class ColumnWriter
         public void render(Object o, int actualWidth, PrintWriter out)
         {
             if (o == null) {
-                while (actualWidth-- > 0) {
-                    out.append(' ');
+                if (nullValue == null) {
+                    while (actualWidth-- > 0) {
+                        out.append(' ');
+                    }
+                } else {
+                    out.format("%" + actualWidth + 's', nullValue);
                 }
             } else {
                 String renderedValue = renderValue((long) o, units);

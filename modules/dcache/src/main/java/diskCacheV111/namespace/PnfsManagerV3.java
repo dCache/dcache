@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -33,6 +34,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -92,6 +95,8 @@ import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
 
+
+
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
@@ -106,6 +111,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.util.Args;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.ColumnWriter;
@@ -118,6 +124,9 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.dcache.chimera.quota.JdbcQuota;
+import org.dcache.chimera.quota.Quota;
+import org.dcache.chimera.quota.QuotaHandler;
 
 import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -171,6 +180,13 @@ public class PnfsManagerV3
     private TimeUnit updateFsStatIntervalUnit;
     private long updateFsStatInterval;
 
+    private ScheduledFuture<?> updateGroupQuotaFuture;
+    private ScheduledFuture<?> updateUserQuotaFuture;
+    private TimeUnit updateQuotaIntervalUnit;
+    private long updateQuotaInterval;
+    private boolean quotaEnabled;
+
+
     /**
      * Whether to use folding.
      */
@@ -218,6 +234,8 @@ public class PnfsManagerV3
 
     private List<ProcessThread> _listProcessThreads = new ArrayList<>();
 
+    private JdbcQuota quotaSystem;
+
     private void populateRequestMap()
     {
         _gauges.addGauge(PnfsAddCacheLocationMessage.class);
@@ -259,6 +277,24 @@ public class PnfsManagerV3
     public void setUpdateFsStatIntervalUnit(TimeUnit updateFsStatIntervalUnit)
     {
         this.updateFsStatIntervalUnit = updateFsStatIntervalUnit;
+    }
+
+    @Required
+    public void setUpdateQuotaInterval(long updateQuotaInterval)
+    {
+        this.updateQuotaInterval = updateQuotaInterval;
+    }
+
+    @Required
+    public void setUpdateQuotaIntervalUnit(TimeUnit updateQuotaIntervalUnit)
+    {
+        this.updateQuotaIntervalUnit = updateQuotaIntervalUnit;
+    }
+
+    @Required
+    public void setQuotaEnabled(boolean quotaEnabled)
+    {
+        this.quotaEnabled = quotaEnabled;
     }
 
     @Required
@@ -360,8 +396,19 @@ public class PnfsManagerV3
         _cancelUploadNotificationTargets = Splitter.on(',').omitEmptyStrings().splitToList(target);
     }
 
-    public void init()
+    @Required
+    public void setQuotaSystem(JdbcQuota quota)
     {
+        quotaSystem = quota;
+    }
+
+    @Required
+    public QuotaHandler getQuotaSystem()
+    {
+        return quotaSystem;
+    }
+
+    public void init() {
         _stub = new CellStub(getCellEndpoint());
 
         _fifos = new BlockingQueue[_threads];
@@ -433,14 +480,42 @@ public class PnfsManagerV3
                                    100000,
                                    updateFsStatIntervalUnit.toMillis(updateFsStatInterval),
                                    TimeUnit.MILLISECONDS);
+
+        if (quotaEnabled) {
+            updateGroupQuotaFuture = scheduledExecutor.
+                    scheduleWithFixedDelay(
+                            new FireAndForgetTask(new Runnable() {
+                                @Override
+                                public void run() {
+                                    quotaSystem.updateGroupQuotas();
+                                }
+                            }),
+                            600000,
+                            updateQuotaIntervalUnit.toMillis(updateQuotaInterval),
+                            TimeUnit.MILLISECONDS);
+
+            updateUserQuotaFuture = scheduledExecutor.
+                    scheduleWithFixedDelay(
+                            new FireAndForgetTask(new Runnable() {
+                                @Override
+                                public void run() {
+                                    quotaSystem.updateUserQuotas();
+                                }
+                            }),
+                            600000,
+                            updateQuotaIntervalUnit.toMillis(updateQuotaInterval),
+                            TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
-    public void notLeader()
-    {
+    public void notLeader() {
         updateFsFuture.cancel(true);
+         if (quotaEnabled) {
+             updateGroupQuotaFuture.cancel(true);
+             updateUserQuotaFuture.cancel(true);
+         }
     }
-
 
     @Override
     public void getInfo( PrintWriter pw ){
@@ -842,6 +917,232 @@ public class PnfsManagerV3
                     EnumSet.noneOf(FileAttribute.class));
 
             return "";
+        }
+    }
+
+    @Command(name = "show group quota",
+             hint = "Print group quota",
+             description = "Display group quota")
+
+    public class ShowGroupQuotaCommand implements Callable<String> {
+        @Option(name = "gid",
+                usage = "Get group quota info by GID")
+        String gid;
+
+        @Option(name = "h",
+                usage = "Use unit suffixes Byte, Kilobyte, Megabyte, Gigabyte, Terabyte and " +
+                        "Petabyte in order to reduce the number of digits to three or less " +
+                        "using base 10 for sizes.")
+        boolean humanReadable;
+
+        @Override
+        public String call() throws CacheException {
+            if (!quotaEnabled) {
+                return "Quota is disabled.";
+            }
+            quotaSystem.refreshGroupQuotas();
+            Optional<ByteUnit> displayUnit = humanReadable
+                    ? Optional.empty()
+                    : Optional.of(ByteUnit.BYTES);
+
+            ColumnWriter table = new ColumnWriter()
+                    .header("gid").right("gid").space()
+                    .header("CUSTODIAL").bytes("custodial", displayUnit, ByteUnit.Type.DECIMAL).space()
+                    .header("limit").bytes("custodial_limit", displayUnit, ByteUnit.Type.DECIMAL, "NONE").space()
+                    .header("REPLICA").bytes("replica", displayUnit, ByteUnit.Type.DECIMAL).space()
+                    .header("limit").bytes("replica_limit", displayUnit, ByteUnit.Type.DECIMAL, "NONE").space()
+                    .header("OUTPUT").bytes("output", displayUnit, ByteUnit.Type.DECIMAL).space()
+                    .header("limit").bytes("output_limit", displayUnit, ByteUnit.Type.DECIMAL, "NONE").space();
+            Map<Integer, Quota> quotas = quotaSystem.getGroupQuotas();
+            if (gid != null) {
+                int igid = Integer.parseInt(gid);
+                Quota quota = quotas.get(igid);
+                if (quota == null) {
+                    throw new CacheException("No group found");
+                }
+                fillRow(table, quota);
+            } else {
+                SortedSet<Integer> keys = new TreeSet<>(quotas.keySet());
+                for (Integer key : keys) {
+                    Quota quota = quotas.get(key);
+                    fillRow(table, quota);
+                }
+            }
+            return table.toString();
+        }
+
+        private void fillRow(ColumnWriter table, Quota quota) {
+            table.row()
+                    .value("gid", quota.getId())
+                    .value("custodial", quota.getUsedCustodialSpace())
+                    .value("custodial_limit", quota.getCustodialSpaceLimit())
+                    .value("replica", quota.getUsedReplicaSpace())
+                    .value("replica_limit", quota.getReplicaSpaceLimit())
+                    .value("output", quota.getUsedOutputSpace())
+                    .value("output_limit", quota.getOutputSpaceLimit());
+        }
+
+    }
+
+    @Command(name = "show user quota",
+             hint = "Print user quota",
+             description = "Display user quota")
+
+    public class ShowUserQuotaCommand implements Callable<String> {
+        @Option(name = "uid",
+                usage = "Get user quota info by UID")
+        String uid;
+
+        @Option(name = "h",
+                usage = "Use unit suffixes Byte, Kilobyte, Megabyte, Gigabyte, Terabyte and " +
+                        "Petabyte in order to reduce the number of digits to three or less " +
+                        "using base 10 for sizes.")
+        boolean humanReadable;
+
+        @Override
+        public String call() throws CacheException {
+            if (!quotaEnabled) {
+                return "Quota is disabled.";
+            }
+            quotaSystem.refreshUserQuotas();
+            Optional<ByteUnit> displayUnit = humanReadable
+                    ? Optional.empty()
+                    : Optional.of(ByteUnit.BYTES);
+
+            ColumnWriter table = new ColumnWriter()
+                    .header("uid").right("uid").space()
+                    .header("CUSTODIAL").bytes("custodial", displayUnit, ByteUnit.Type.DECIMAL).space()
+                    .header("limit").bytes("custodial_limit", displayUnit, ByteUnit.Type.DECIMAL, "NONE").space()
+                    .header("REPLICA").bytes("replica", displayUnit, ByteUnit.Type.DECIMAL).space()
+                    .header("limit").bytes("replica_limit", displayUnit, ByteUnit.Type.DECIMAL, "NONE").space()
+                    .header("OUTPUT").bytes("output", displayUnit, ByteUnit.Type.DECIMAL).space()
+                    .header("limit").bytes("output_limit", displayUnit, ByteUnit.Type.DECIMAL, "NONE").space();
+            Map<Integer, Quota> quotas = quotaSystem.getUserQuotas();
+            if (uid != null) {
+                int iuid = Integer.parseInt(uid);
+                Quota quota = quotas.get(iuid);
+                if (quota == null) {
+                    throw new CacheException("No user found");
+                }
+                fillRow(table, quota);
+            } else {
+                SortedSet<Integer> keys = new TreeSet<>(quotas.keySet());
+                for (Integer key : keys) {
+                    Quota quota = quotas.get(key);
+                    fillRow(table, quota);
+                }
+            }
+            return table.toString();
+        }
+
+        private void fillRow(ColumnWriter table, Quota quota) {
+            table.row()
+                    .value("uid", quota.getId())
+                    .value("custodial", quota.getUsedCustodialSpace())
+                    .value("custodial_limit", quota.getCustodialSpaceLimit())
+                    .value("replica", quota.getUsedReplicaSpace())
+                    .value("replica_limit", quota.getReplicaSpaceLimit())
+                    .value("output", quota.getUsedOutputSpace())
+                    .value("output_limit", quota.getOutputSpaceLimit());
+        }
+    }
+
+    @Command(name = "set user quota",
+            hint = "Set user quota",
+            description = "Set user quota")
+
+    public class SetUserQuotaCommand implements Callable<String> {
+
+        @Argument(index = 0,
+                valueSpec = "UID",
+                usage = "User uid.")
+        int uid;
+
+        @Option(name = "custodial",
+                usage = "Specify custodial user quota in bytes, with optional byte unit suffix "+
+                    "using either SI or IEEE 1541 prefixes. \"null\" value removes quota.")
+        String custodial;
+
+        @Option(name = "replica",
+                usage = "Specify replica user quota in bytes, with optional byte unit suffix "+
+                    "using either SI or IEEE 1541 prefixes.  \"null\" value removes quota.")
+        String replica;
+
+        @Option(name = "output",
+                usage = "Specify output user quota in bytes, with optional byte unit suffix "+
+                    "using either SI or IEEE 1541 prefixes. \"null\" value removes quota.")
+        String output;
+
+        @Override
+        public String call() throws CacheException {
+            if (!quotaEnabled) {
+                return "Quota is disabled.";
+            }
+            if (custodial == null &&
+                    replica == null &&
+                    output == null) {
+                throw new CacheException("At least one option needs to be specified");
+            }
+
+            quotaSystem.refreshUserQuotas();
+            Quota quota = quotaSystem.getUserQuotas().get(uid);
+
+            if (quota == null) {
+                quota = new Quota(uid, 0, null,
+                        0, null, 0, null);
+                quotaSystem.createUserQuota(quota);
+            }
+            Quota.furnishQuota(quota, custodial, output, replica);
+            quotaSystem.setUserQuota(quota);
+            return quota.toString();
+        }
+    }
+
+    @Command(name = "set group quota",
+            hint = "Set group quota",
+            description = "Set group quota")
+
+    public class SetGroupQuotaCommand implements Callable<String> {
+
+        @Argument(index = 0,
+                valueSpec = "GID",
+                usage = "User gid.")
+        int gid;
+
+        @Option(name = "custodial",
+                usage = "Specify custodial group quota in bytes; \"null\" value removes quota.")
+        String custodial;
+
+        @Option(name = "replica",
+                usage = "Specify replica group quota in bytes; \"null\" value removes quota.")
+        String replica;
+
+        @Option(name = "output",
+                usage = "Specify output group quota in bytes; \"null\" value removes quota.")
+        String output;
+
+        @Override
+        public String call() throws CacheException {
+            if (!quotaEnabled) {
+                return "Quota is disabled.";
+            }
+            if (custodial == null &&
+                    replica == null &&
+                    output == null) {
+                throw new CacheException("At least one option needs to be specified");
+            }
+
+            quotaSystem.refreshGroupQuotas();
+            Quota quota = quotaSystem.getGroupQuotas().get(gid);
+
+            if (quota == null) {
+                quota = new Quota(gid, 0, null,
+                        0, null, 0, null);
+                quotaSystem.createGroupQuota(quota);
+            }
+            Quota.furnishQuota(quota, custodial, output, replica);
+            quotaSystem.setGroupQuota(quota);
+            return quota.toString();
         }
     }
 
@@ -1508,7 +1809,6 @@ public class PnfsManagerV3
             case REGULAR:
                 _log.info("create file {}", path);
                 checkRestriction(pnfsMessage, UPLOAD);
-
                 requested.add(FileAttribute.STORAGEINFO);
                 requested.add(FileAttribute.PNFSID);
 

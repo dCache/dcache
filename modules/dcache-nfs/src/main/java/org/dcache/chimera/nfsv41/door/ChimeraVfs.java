@@ -73,9 +73,11 @@ import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.NoXdataChimeraException;
 import org.dcache.chimera.PermissionDeniedChimeraFsException;
+import org.dcache.chimera.QuotaChimeraFsException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
+import org.dcache.nfs.status.DQuotException;
 import org.dcache.nfs.status.ExistException;
 import org.dcache.nfs.status.InvalException;
 import org.dcache.nfs.status.IsDirException;
@@ -158,6 +160,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             return toInode(fsInode);
         } catch (FileExistsChimeraFsException e) {
             throw new ExistException("path already exists");
+        } catch (QuotaChimeraFsException e) {
+            throw new DQuotException(e.getMessage());
         }
     }
 

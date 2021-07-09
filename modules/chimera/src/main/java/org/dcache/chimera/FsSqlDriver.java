@@ -16,6 +16,7 @@
  */
 package org.dcache.chimera;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
@@ -40,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -158,9 +160,16 @@ public class FsSqlDriver {
      * Update file system cache table.
      */
     void updateFsStat() {
-        _jdbc.update("UPDATE t_fstat SET "+
-                     "iusedFiles = (SELECT count(*) AS usedFiles FROM t_inodes WHERE itype=32768), "+
-                     "iusedSpace =  (SELECT SUM(isize) AS usedSpace FROM t_inodes WHERE itype=32768)");
+        try {
+            _jdbc.update("UPDATE t_fstat SET "+
+                    "iusedFiles = (SELECT count(*) AS usedFiles FROM t_inodes WHERE itype=32768), "+
+                    "iusedSpace =  (SELECT SUM(isize) AS usedSpace FROM t_inodes WHERE itype=32768)");
+        } catch (DataAccessException e) {
+            Throwable cause = Throwables.getRootCause(e);
+            if (cause instanceof SocketException) {
+                LOGGER.warn("FS statistics update interrupted {}.", e.getMessage());
+            }
+        }
     }
 
     /**
