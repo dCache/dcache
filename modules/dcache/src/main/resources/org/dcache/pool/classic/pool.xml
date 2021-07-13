@@ -365,6 +365,7 @@
           depends-on="rep">
       <description>Xrootd transfer service</description>
       <property name="postTransferService" ref="post-transfer-service"/>
+      <property name="pnfsStub" ref="pnfsStub"/>
       <property name="threads" value="${pool.mover.xrootd.threads}"/>
       <property name="clientIdleTimeout" value="${pool.mover.xrootd.timeout.idle}"/>
       <property name="clientIdleTimeoutUnit" value="${pool.mover.xrootd.timeout.idle.unit}"/>

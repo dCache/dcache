@@ -19,9 +19,28 @@ package org.dcache.xrootd.door;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Range;
-
-import javax.security.auth.Subject;
-
+import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.PnfsCreateUploadPath;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginManagerChildrenInfo;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
@@ -41,31 +60,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-
-import diskCacheV111.poolManager.PoolMonitorV5;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileLocality;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.IoDoorEntry;
-import diskCacheV111.vehicles.IoDoorInfo;
-import diskCacheV111.vehicles.PnfsCancelUpload;
-import diskCacheV111.vehicles.PnfsCommitUpload;
-import diskCacheV111.vehicles.PnfsCreateUploadPath;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolMoverKillMessage;
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.services.login.LoginManagerChildrenInfo;
+import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
@@ -106,20 +101,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 
 import static diskCacheV111.util.MissingResourceCacheException.checkResourceNotMissing;
 import static java.util.Objects.requireNonNull;
-import static org.dcache.namespace.FileAttribute.CHECKSUM;
-import static org.dcache.namespace.FileAttribute.MODIFICATION_TIME;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.SIZE;
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
-import static org.dcache.namespace.FileAttribute.TYPE;
+import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.TransferRetryPolicy.tryOnce;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_isDir;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_offline;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_other;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_poscpend;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_readable;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_writable;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_xset;
+import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 /**
  * Shared cell component used to interface with the rest of
@@ -375,99 +359,6 @@ public class XrootdDoor
                                  XrootdProtocol.PROTOCOL_VERSION_MINOR));
     }
 
-    private void uploadDone(Subject subject, Restriction restriction,
-            FsPath path, FsPath uploadPath, boolean createDir,
-            boolean overwrite)
-            throws CacheException {
-        try {
-            EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
-            if (overwrite) {
-                options.add(CreateOption.OVERWRITE_EXISTING);
-            }
-            PnfsCommitUpload msg
-                    = new PnfsCommitUpload(subject,
-                            restriction,
-                            uploadPath,
-                            path,
-                            options,
-                            EnumSet.of(PNFSID, SIZE, STORAGEINFO));
-            msg = _pnfsStub.sendAndWait(msg);
-        } catch (InterruptedException ex) {
-            throw new CacheException("Operation interrupted", ex);
-        } catch (NoRouteToCellException ex) {
-            throw new CacheException("Internal communication failure", ex);
-        }
-    }
-
-    private void abortUpload(Subject subject, Restriction restriction,
-            FsPath path, FsPath uploadPath, String reason)
-            throws CacheException {
-        try {
-            PnfsCancelUpload msg = new PnfsCancelUpload(subject, restriction,
-                    uploadPath, path,
-                    EnumSet.noneOf(FileAttribute.class),
-                    "XROOTD upload aborted: " + reason);
-            _pnfsStub.sendAndWait(msg);
-        } catch (InterruptedException ex) {
-            throw new CacheException("Operation interrupted", ex);
-        } catch (NoRouteToCellException ex) {
-            throw new CacheException("Internal communication failure", ex);
-        }
-    }
-
-    private XrootdTransfer
-            createUploadTransfer(InetSocketAddress client, FsPath path, Set<String> tried,
-                    String ioQueue, UUID uuid, InetSocketAddress local,
-                    Subject subject, Restriction restriction, boolean createDir,
-                    boolean overwrite, Long size, FsPath uploadPath,
-                    Map<String,String> opaque) throws ParseException
-    {
-        XrootdTransfer transfer = new XrootdTransfer(_pnfs, subject, restriction,
-                uploadPath, opaque) {
-            @Override
-            public synchronized void finished(CacheException error) {
-                try {
-                    super.finished(error);
-
-                    _transfers.remove(getFileHandle());
-                    if (error == null) {
-                        uploadDone(subject, restriction, path, uploadPath,
-                                createDir, overwrite);
-
-                        notifyBilling(0, "");
-                        _log.info("Transfer {}@{} finished",
-                                getPnfsId(), getPool());
-                    } else {
-                        int rc = error.getRc();
-                        String message = error.getMessage();
-                        abortUpload(subject, restriction, path, uploadPath, message);
-                        notifyBilling(rc, message);
-                        _log.warn("Transfer {}@{} failed: {} (error code={})",
-                                getPnfsId(), getPool(), message, rc);
-                    }
-                } catch (CacheException ex) {
-                    String message = ex.getMessage();
-                    int rc = ex.getRc();
-                    notifyBilling(rc, message);
-                    _log.warn("Post upload operation failed: {} (error code={})",
-                            message, rc);
-                }
-            }
-        };
-        transfer.setCellAddress(getCellAddress());
-        transfer.setPoolManagerStub(_poolManagerStub);
-        transfer.setPoolStub(_poolStub);
-        transfer.setBillingStub(_billingStub);
-        transfer.setClientAddress(client);
-        transfer.setUUID(uuid);
-        transfer.setDoorAddress(local);
-        transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
-        transfer.setFileHandle(_handleCounter.getAndIncrement());
-        transfer.setKafkaSender(_kafkaSender);
-        transfer.setTriedHosts(tried);
-        return transfer;
-    }
-
     private XrootdTransfer
         createTransfer(InetSocketAddress client, FsPath path, Set<String> tried,
                        String ioQueue, UUID uuid, InetSocketAddress local, Subject subject,
@@ -594,19 +485,14 @@ public class XrootdDoor
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
-        XrootdTransfer transfer;
-        if (persistOnSuccessfulClose) {
-            FsPath uploadPath = getUploadPath(subject, restriction, createDir,
-                                              overwrite, size, path, rootPath);
-            transfer = createUploadTransfer(client, path, tried, ioQueue, uuid,
-                                            local, subject, restriction,
-                                            createDir, overwrite, size,
-                                            uploadPath, opaque);
-        } else {
-            transfer = createTransfer(client, path, tried, ioQueue, uuid, local,
+        FsPath transferPath = persistOnSuccessfulClose ?
+            getUploadPath(subject, restriction, createDir, overwrite, size, path, rootPath) : path;
+
+        XrootdTransfer transfer = createTransfer(client, transferPath, tried, ioQueue, uuid, local,
                                       subject, restriction, opaque);
-        }
+
         transfer.setOverwriteAllowed(overwrite);
+
         /*
          *  If this is a destination door/server and the session
          *  does not contain a proxy, eventually fail downstream.

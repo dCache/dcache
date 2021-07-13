@@ -47,6 +47,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -444,27 +445,19 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             @Override
             protected void execute() throws Exception
             {
-                postTransferService.execute(mover, this);
+                executeMoverClose(mover, this);
             }
 
             @Override
             protected void onSuccess(Void result, Void attachment) throws Exception
             {
-                NettyMoverChannel channel = uuids.remove(mover.getUuid());
-                if (channel != null) {
-                    channel.done();
-                    conditionallyStopServer();
-                }
+                closeMoverChannel(mover, Optional.empty());
             }
 
             @Override
             protected void onFailure(Throwable t, Void attachment) throws Exception
             {
-                NettyMoverChannel channel = uuids.remove(mover.getUuid());
-                if (channel != null) {
-                    channel.done(t);
-                    conditionallyStopServer();
-                }
+                closeMoverChannel(mover, Optional.of(t));
             }
         };
     }
@@ -692,6 +685,23 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                 return false;
             }
         }
+    }
+
+    protected void closeMoverChannel(NettyMover<P> mover, Optional<Throwable> error) {
+        NettyMoverChannel channel = uuids.remove(mover.getUuid());
+        if (channel != null) {
+            if (error.isPresent()) {
+                channel.done(error.get());
+            }  else {
+                channel.done();
+            }
+            conditionallyStopServer();
+        }
+    }
+
+    protected void executeMoverClose(NettyMover<P> mover,
+        CompletionHandler<Void, Void> completionHandler) {
+        postTransferService.execute(mover, completionHandler);
     }
 
     protected abstract void sendAddressToDoor(NettyMover<P> mover, int port)

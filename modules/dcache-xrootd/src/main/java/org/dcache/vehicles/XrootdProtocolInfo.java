@@ -1,18 +1,17 @@
 package org.dcache.vehicles;
 
 import com.google.common.collect.Sets;
-
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.IpProtocolInfo;
+import dmg.cells.nucleus.CellPath;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.UUID;
-
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.IpProtocolInfo;
-
-import dmg.cells.nucleus.CellPath;
+import org.dcache.auth.attributes.Restriction;
 
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 
 public class XrootdProtocolInfo implements IpProtocolInfo {
 
@@ -43,11 +42,15 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
     private InetSocketAddress _clientSocketAddress;
 
+    private Restriction restriction;
+
     private Serializable delegatedCredential;
 
     private Long _tpcUid;
 
     private Long _tpcGid;
+
+    private boolean _overwriteAllowed;
 
     public XrootdProtocolInfo(String protocol, int major, int minor,
                               InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
@@ -96,6 +99,10 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         return _major;
     }
 
+    public Restriction getRestriction() {
+        return restriction;
+    }
+
     @Override
     public String getVersionString() {
         return _name + "-" + _major + "." + _minor;
@@ -133,6 +140,10 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         return _clientSocketAddress;
     }
 
+    public boolean isOverwriteAllowed() {
+        return _overwriteAllowed;
+    }
+
     public void setSocketAddress(InetSocketAddress address)
     {
         _clientSocketAddress = address;
@@ -148,6 +159,10 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         this.delegatedCredential = delegatedCredential;
     }
 
+    public void setRestriction(Restriction restriction) {
+        this.restriction = requireNonNull(restriction);
+    }
+
     public void setTpcUid(Long tpcUid)
     {
         _tpcUid = tpcUid;
@@ -156,5 +171,9 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
     public void setTpcGid(Long tpcGid)
     {
         _tpcGid = tpcGid;
+    }
+
+    public void setOverwriteAllowed(boolean overwriteAllowed) {
+        _overwriteAllowed = overwriteAllowed;
     }
 }

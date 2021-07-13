@@ -19,6 +19,8 @@ import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.util.ParseException;
 
+import static java.util.Objects.requireNonNull;
+
 public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
 {
     private UUID _uuid;
@@ -26,10 +28,12 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     private int _fileHandle;
     private Serializable _delegatedCredential;
     private final XrootdTpcInfo tpcInfo;
+    private final Restriction restriction;
 
     public XrootdTransfer(PnfsHandler pnfs, Subject subject,
             Restriction restriction, FsPath path, Map<String,String> opaque) throws ParseException {
         super(pnfs, subject, restriction, path);
+        this.restriction = requireNonNull(restriction);
         tpcInfo = new XrootdTpcInfo(opaque);
         try {
             tpcInfo.setUid(Subjects.getUid(subject));
@@ -76,12 +80,14 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     protected ProtocolInfo getProtocolInfoForPool() {
         XrootdProtocolInfo info = createXrootdProtocolInfo();
         info.setDelegatedCredential(_delegatedCredential);
+        info.setRestriction(restriction);
         /*
          * In order to conform with xroot unix protocol if (a) we do TPC from a dCache source
          * (b) signed hash verification is on rather than TLS.
          */
         info.setTpcUid(tpcInfo.getUid());
         info.setTpcGid(tpcInfo.getGid());
+        info.setOverwriteAllowed(_isOverwriteAllowed);
         return info;
     }
 

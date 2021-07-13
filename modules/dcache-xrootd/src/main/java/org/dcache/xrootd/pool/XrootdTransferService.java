@@ -19,8 +19,13 @@ package org.dcache.xrootd.pool;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.vehicles.PnfsCancelUpload;
+import diskCacheV111.vehicles.PnfsCommitUpload;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
@@ -32,9 +37,11 @@ import io.netty.handler.timeout.IdleStateHandler;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,6 +51,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
+import org.dcache.cells.CellStub;
+import org.dcache.namespace.CreateOption;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.util.CDCThreadFactory;
@@ -64,6 +74,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.CLIENT_TLS;
 import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
 
@@ -153,6 +165,9 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     private long                        readReconnectTimeout;
     private TimeUnit                    readReconnectTimeoutUnit;
 
+    /** Communication stub for talking to namespace, if necessary. */
+    private CellStub pnfsStub;
+
     public XrootdTransferService()
     {
         super("xrootd");
@@ -237,6 +252,11 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                 "mover no longer accessible; skipping.",
                 key);
         }
+    }
+
+    public void setPnfsStub(CellStub pnfsStub)
+    {
+        this.pnfsStub = requireNonNull(pnfsStub);
     }
 
     @Required
@@ -332,6 +352,39 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         this.queryConfig = queryConfig;
     }
 
+    /**
+     *  Overridden here to support persist-on-successful-close.
+     *
+     *  The upload handling needs to precede the actual mover channel close, because
+     *  the request handler waits on the closeFuture there.
+     */
+    @Override
+    protected void closeMoverChannel(NettyMover<XrootdProtocolInfo> mover, Optional<Throwable> error)
+    {
+        if (!Objects.equals(mover.getTransferPath(), mover.getBillingPath())) {
+            if (error.isEmpty()) {
+                try {
+                    handleUploadDone(mover);
+                } catch (CacheException e) {
+                    try {
+                        handleUploadAbort(mover, e);
+                    } catch (CacheException ee) {
+                        e.addSuppressed(ee);
+                    }
+                    error = Optional.of(e);
+                }
+            } else {
+                try {
+                    handleUploadAbort(mover, error.get());
+                } catch (CacheException e) {
+                    error.get().addSuppressed(e);
+                }
+            }
+        }
+
+        super.closeMoverChannel(mover, error);
+    }
+
     @Override
     protected UUID createUuid(XrootdProtocolInfo protocolInfo)
     {
@@ -420,6 +473,46 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     {
         super.initialiseShutdown();
         shutdownGracefully(thirdPartyClientGroup);
+    }
+
+    private void handleUploadAbort(NettyMover<XrootdProtocolInfo> mover, Throwable cause)
+        throws CacheException
+    {
+        try {
+            PnfsCancelUpload msg = new PnfsCancelUpload(mover.getSubject(),
+                mover.getProtocolInfo().getRestriction(),
+                FsPath.create(mover.getTransferPath()),
+                FsPath.create(mover.getBillingPath()),
+                EnumSet.noneOf(FileAttribute.class),
+                "upload aborted: " + Exceptions.meaningfulMessage(cause));
+            pnfsStub.sendAndWait(msg);
+        } catch (InterruptedException ex) {
+            throw new CacheException("Operation interrupted", ex);
+        } catch (NoRouteToCellException ex) {
+            throw new CacheException("Internal communication failure", ex);
+        }
+    }
+
+    private void handleUploadDone(NettyMover<XrootdProtocolInfo> mover) throws CacheException
+    {
+        try {
+            EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
+            if (mover.getProtocolInfo().isOverwriteAllowed()) {
+                options.add(CreateOption.OVERWRITE_EXISTING);
+            }
+
+            PnfsCommitUpload msg = new PnfsCommitUpload(mover.getSubject(),
+                mover.getProtocolInfo().getRestriction(),
+                FsPath.create(mover.getTransferPath()),
+                FsPath.create(mover.getBillingPath()),
+                options,
+                EnumSet.of(PNFSID, SIZE, STORAGEINFO));
+            pnfsStub.sendAndWait(msg);
+        } catch (InterruptedException ex) {
+            throw new CacheException("Operation interrupted", ex);
+        } catch (NoRouteToCellException ex) {
+            throw new CacheException("Internal communication failure", ex);
+        }
     }
 
     private synchronized void removeReadReconnectTimer(UUID key)

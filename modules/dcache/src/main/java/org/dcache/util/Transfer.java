@@ -137,7 +137,7 @@ public class Transfer implements Comparable<Transfer>
 
     private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
     private boolean _isBillingNotified;
-    private boolean _isOverwriteAllowed;
+    protected boolean _isOverwriteAllowed;
 
     private Set<FileAttribute> _additionalAttributes =
             EnumSet.noneOf(FileAttribute.class);
