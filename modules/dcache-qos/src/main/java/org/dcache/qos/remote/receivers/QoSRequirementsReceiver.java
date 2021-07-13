@@ -171,9 +171,11 @@ public final class QoSRequirementsReceiver implements CellMessageReceiver, Consu
         == Status.DISABLED) {
       return;
     }
-    fileStatusHandler.handleActionCompleted(message.getPnfsId(),
-                                            message.getAction(),
-                                            message.getErrorObject());
+
+    message.getCompletedQoSActions()
+        .forEach(action ->fileStatusHandler.handleActionCompleted(action.getPnfsId(),
+            action.getAction(),
+            action.getError()));
   }
 
   public void setMessageGuard(MessageGuard messageGuard) {

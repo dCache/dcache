@@ -61,20 +61,65 @@ package org.dcache.qos.remote.clients;
 
 import diskCacheV111.util.PnfsId;
 import java.io.Serializable;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.LinkedList;
 import org.dcache.cells.CellStub;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.listeners.QoSActionCompletedListener;
+import org.dcache.util.RunnableModule;
+import org.dcache.vehicles.qos.CompletedQoSAction;
 import org.dcache.vehicles.qos.QoSActionCompleteMessage;
 
 /**
- *  Use this client when communicating with a remote requirements engine.
+ * Use this client when communicating with a remote requirements engine. Uses batching.
  */
-public final class RemoteQoSActionCompletedClient implements QoSActionCompletedListener {
+public final class RemoteQoSActionCompletedClient extends RunnableModule
+    implements QoSActionCompletedListener {
+
+  private final Deque<CompletedQoSAction> queue = new LinkedList<>();
   private CellStub requirementsService;
+  private int batchSize = 256;
 
   @Override
-  public void fileQoSActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error) {
-    requirementsService.send(new QoSActionCompleteMessage(pnfsId, action, error));
+  public synchronized void fileQoSActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error) {
+    synchronized (queue) {
+      queue.add(new CompletedQoSAction(pnfsId, action, error));
+      if (queue.size() >= batchSize) {
+        queue.notifyAll();
+      }
+    }
+  }
+
+  @Override
+  public void run() {
+    while (isRunning()) {
+      synchronized (queue) {
+        try {
+          queue.wait(timeoutUnit.toMillis(timeout));
+        } catch (InterruptedException e) {
+          break;
+        }
+
+        int len = queue.size();
+
+        if (len > 0) {
+          QoSActionCompleteMessage message = new QoSActionCompleteMessage();
+
+          int cnt = 0;
+          for (Iterator<CompletedQoSAction> i = queue.iterator(); i.hasNext() && cnt < len; ++cnt) {
+            message.addAction(i.next());
+            i.remove();
+          }
+
+          requirementsService.send(message);
+        }
+      }
+    }
+  }
+
+  public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
   }
 
   public void setRequirementsService(CellStub requirementsService) {

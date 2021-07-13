@@ -59,28 +59,37 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.qos;
 
-import diskCacheV111.vehicles.Message;
-import java.util.ArrayList;
-import java.util.List;
+import diskCacheV111.util.PnfsId;
+import java.io.Serializable;
+import org.dcache.qos.data.QoSAction;
 
-public class QoSActionCompleteMessage extends Message {
-  private static final long serialVersionUID = -8274061495042289973L;
+public class CompletedQoSAction implements Serializable {
+  private static final long serialVersionUID = -8527569804388994644L;
+  private final PnfsId pnfsId;
+  private final QoSAction action;
+  private final Serializable error;
 
-  private final List<CompletedQoSAction> completedQoSActions = new ArrayList<>();
-
-  public void addAction(CompletedQoSAction action) {
-    completedQoSActions.add(action);
+  public CompletedQoSAction(PnfsId pnfsId, QoSAction action, Serializable error) {
+    this.pnfsId = pnfsId;
+    this.action = action;
+    this.error = error;
   }
 
-  public List<CompletedQoSAction> getCompletedQoSActions() {
-    return completedQoSActions;
+  public PnfsId getPnfsId() {
+    return pnfsId;
   }
 
-  public int currentSize() {
-    return completedQoSActions.size();
+  public QoSAction getAction() {
+    return action;
+  }
+
+  public Serializable getError() {
+    return error;
   }
 
   public String toString() {
-    return completedQoSActions.toString();
+    return "ACTION[" + action + "][" + pnfsId + "]"
+        + (error  == null ? " success" : " failed with " + error )
+        + " (" + super.toString() + ")";
   }
 }
