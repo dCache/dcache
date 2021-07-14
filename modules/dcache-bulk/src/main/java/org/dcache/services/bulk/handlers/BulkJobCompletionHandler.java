@@ -71,7 +71,7 @@ import javax.annotation.concurrent.GuardedBy;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.services.bulk.job.BulkJob;
-import org.dcache.services.bulk.queue.SignalAware;
+import org.dcache.util.SignalAware;
 
 /**
  *  Manages the set of jobs associated with a request.

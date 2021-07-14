@@ -85,7 +85,7 @@ import org.dcache.services.bulk.handlers.BulkJobCompletionHandler;
 import org.dcache.services.bulk.handlers.BulkSubmissionHandler;
 import org.dcache.services.bulk.job.MultipleTargetJob.TargetType;
 import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
-import org.dcache.services.bulk.queue.SignalAware;
+import org.dcache.util.SignalAware;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;

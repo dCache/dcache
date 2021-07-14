@@ -57,7 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.bulk.queue;
+package org.dcache.util;
 
 /**
  *  The purpose of this interface is to make explicit the handling of signals

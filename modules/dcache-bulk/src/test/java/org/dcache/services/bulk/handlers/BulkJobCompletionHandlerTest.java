@@ -68,7 +68,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.job.BulkJob;
 import org.dcache.services.bulk.job.BulkJobKey;
-import org.dcache.services.bulk.queue.SignalAware;
+import org.dcache.util.SignalAware;
 
 /**
  *  Tests the logic of the completion listener for correctness.

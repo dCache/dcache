@@ -92,6 +92,7 @@ import org.dcache.services.bulk.job.SingleTargetJob;
 import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.SignalAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
