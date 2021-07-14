@@ -281,9 +281,7 @@ curl https://dcache.example.org/?authz=$MACAROON
 
 ## Example macaroon use-cases
 
-This section describes some scenarios where macaroons may prove
-useful.  This is not an exhaustive list, but meant more to whet your
-appetite.
+See [Macaroon Hands-On](macaroons_handson.md) for a few examples on using macaroons with `curl` on the command line.
 
 ### Portal use-case
 ### Direct sharing
