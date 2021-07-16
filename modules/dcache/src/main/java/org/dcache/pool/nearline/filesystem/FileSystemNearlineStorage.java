@@ -18,7 +18,8 @@
 package org.dcache.pool.nearline.filesystem;
 
 import com.google.common.collect.Iterables;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.InvalidMessageCacheException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,23 +32,28 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.InvalidMessageCacheException;
-
+import java.util.concurrent.TimeUnit;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.nearline.AbstractBlockingNearlineStorage;
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.MiB;
 
 public abstract class FileSystemNearlineStorage extends AbstractBlockingNearlineStorage
 {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private Path directory;
+    private long stageDelay = 0L;
+    private TimeUnit stageDelayUnit = SECONDS;
+    private ByteUnit stageDelayPer = MiB;
 
     public FileSystemNearlineStorage(String type, String name)
     {
@@ -102,6 +108,17 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
             throw new InvalidMessageCacheException("Invalid nearline storage URI: " + location);
         }
         stage(getExternalPath(path.substring(1)), request.getFile().toPath());
+
+        long millis = computeSimulatedDelayInMillis(request.getFileAttributes());
+
+        if (millis > 0) {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+
         return Collections.emptySet();
     }
 
@@ -121,6 +138,12 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
         String directory = properties.get("directory");
         checkArgument(directory != null, "directory attribute is required");
         this.directory = FileSystems.getDefault().getPath(directory);
+        String value = properties.get("stage-delay");
+        stageDelay = value == null ? 0L: Long.valueOf(value);
+        value = properties.get("stage-delay-unit");
+        stageDelayUnit = value == null ? SECONDS : TimeUnit.valueOf(value.toUpperCase());
+        value = properties.get("stage-delay-per");
+        stageDelayPer = value == null ? MiB : ByteUnit.valueOf(value);
     }
 
     @Override
@@ -133,4 +156,15 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
     protected abstract void flush(Path path, Path externalPath) throws IOException;
     protected abstract void stage(Path externalPath, Path path) throws IOException;
     protected abstract void remove(Path externalPath) throws IOException;
+
+    private long computeSimulatedDelayInMillis(FileAttributes fileAttributes) {
+        double delay;
+        if (fileAttributes.isDefined(FileAttribute.SIZE)) {
+            double scaledSize = stageDelayPer.convert((double)fileAttributes.getSize(), BYTES);
+            delay = scaledSize * stageDelay;
+        } else {
+            delay = stageDelay;
+        }
+        return stageDelayUnit.toMillis((long)Math.ceil(delay));
+    }
 }
