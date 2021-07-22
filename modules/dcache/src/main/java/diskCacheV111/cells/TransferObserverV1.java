@@ -97,8 +97,8 @@ public class TransferObserverV1
                     "JobState",           //  13
                     "Submitted",          //  14
                     "Time",               //  15
-                    "Trans.&nbsp;(KB)",   //  16
-                    "Speed&nbsp;(KB/s)",  //  17
+                    "Trans.&nbsp;(KiB)",   //  16
+                    "Speed&nbsp;(KiB/s)",  //  17
                     "Running"             //  18
     };
 
@@ -639,8 +639,8 @@ public class TransferObserverV1
                         "status", "Status",
                         "waiting", "Waiting",
                         "state", "S",
-                        "transferred", "Trans.&nbsp;(KB)",
-                        "speed", "Speed&nbsp;(KB/s)");
+                        "transferred", "Trans.&nbsp;(KiB)",
+                        "speed", "Speed&nbsp;(KiB/s)");
         transfers.stream().forEach((t) -> createHtmlTableRow(page, t));
         page.endTable();
         page.addFooter(getClass().getName());
