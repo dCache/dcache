@@ -12,7 +12,6 @@ import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.property.PropertySource.PropertyMetaData;
-import io.milton.property.PropertySource.PropertySetException;
 import io.milton.resource.CollectionResource;
 import io.milton.resource.DeletableResource;
 import io.milton.resource.GetableResource;
@@ -52,6 +51,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.vehicles.FileAttributes;
 
 import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
+import static java.nio.charset.StandardCharsets. UTF_8;
 
 /**
  * Exposes dCache directories as resources in the Milton WebDAV
@@ -177,7 +177,7 @@ public class DcacheDirectoryResource
         throws IOException, NotAuthorizedException
     {
         try {
-            Writer writer = new OutputStreamWriter(out, "UTF-8");
+            Writer writer = new OutputStreamWriter(out, UTF_8);
             if (!_factory.deliverClient(_path, writer)) {
                 _factory.list(_path, writer);
             }

@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
-import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -68,6 +67,7 @@ import org.dcache.util.BoundedExecutor;
 import org.dcache.util.SequentialExecutor;
 import org.dcache.util.Transfer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.util.ByteUnit.KiB;
 
 /**
@@ -100,11 +100,6 @@ public class NettyLineBasedDoor
      * Shared handler for communicating with pool manager.
      */
     private final PoolManagerHandler poolManager;
-
-    /**
-     * Character encoding of the protocol.
-     */
-    private final Charset charset;
 
     /**
      * Line separator encoding of the protocol.
@@ -180,7 +175,6 @@ public class NettyLineBasedDoor
         this.commandExecutor = new SequentialExecutor(executor);
         this.poolManager = poolManagerHandler;
 
-        this.charset = Charset.forName(args.getOption("charset", "UTF-8"));
         String lineSeparator = args.getOption("lineSeparator", "WINDOWS");
         switch (lineSeparator) {
         case "WINDOWS":
@@ -404,10 +398,10 @@ public class NettyLineBasedDoor
 
         // Decoders
         pipeline.addBefore(self, "frameDecoder", new LineBasedFrameDecoder(KiB.toBytes(64)));
-        pipeline.addBefore(self, "stringDecoder", new StringDecoder(charset));
+        pipeline.addBefore(self, "stringDecoder", new StringDecoder(UTF_8));
 
         // Encoder
-        pipeline.addBefore(self, "lineEncoder", new LineEncoder(lineSeparator, charset));
+        pipeline.addBefore(self, "lineEncoder", new LineEncoder(lineSeparator, UTF_8));
 
         pipeline.addBefore(self, "logger", new LoggingHandler());
     }

@@ -103,12 +103,10 @@ import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.ProtocolFamily;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.text.DateFormat;
@@ -245,13 +243,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.ftp.door.AnonymousPermission.ALLOW_ANONYMOUS_USER;
 import static org.dcache.ftp.door.AnonymousPermission.FORBID_ANONYMOUS_USER;
 import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.namespace.FileType.LINK;
-import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.util.Exceptions.genericCheck;
 import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 import static org.dcache.util.Strings.describe;
@@ -3841,7 +3838,7 @@ public abstract class AbstractFtpDoorV1
             int total;
             try {
                 PrintWriter writer =
-                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), StandardCharsets.UTF_8));
+                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), UTF_8));
 
                 DirectoryListPrinter printer;
                 if (listLong) {
@@ -4052,7 +4049,7 @@ public abstract class AbstractFtpDoorV1
             int total;
             try {
                 PrintWriter writer =
-                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
+                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), UTF_8));
 
                 total = _listSource.printDirectory(_subject, _authz,
                         new MlsdFactPrinter(writer), path, null,

@@ -15,7 +15,6 @@ import org.springframework.dao.DataAccessException;
 
 import javax.annotation.Nonnull;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -33,6 +32,8 @@ import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.util.Configuration;
+
+import static java.nio.charset.StandardCharsets. UTF_8;
 
 /**
  *
@@ -198,12 +199,9 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         for (String item : Splitter.on(',').split(value)) {
             List<String> elements = Splitter.on('=').limit(2).splitToList(item);
             if (elements.size() == 2) {
-                try {
-                    items.put(URLDecoder.decode(elements.get(0), "UTF-8"),
-                            URLDecoder.decode(elements.get(1), "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    LOGGER.error("JVM does not support UTF-8", e);
-                }
+                items.put(URLDecoder.decode(elements.get(0), UTF_8),
+                        URLDecoder.decode(elements.get(1), UTF_8));
+
             } else {
                 LOGGER.error("Skipping malformed extraInfo item: {}", item);
             }

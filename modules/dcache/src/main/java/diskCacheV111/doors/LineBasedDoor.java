@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -45,6 +45,8 @@ import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.SequentialExecutor;
 import org.dcache.util.Transfer;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Door cell for line based protocols.
@@ -160,7 +162,7 @@ public class LineBasedDoor
                  * automatically freed when the socket is closed.
                  */
                 BufferedReader in =
-                    new BufferedReader(new InputStreamReader(engine.getInputStream(), "UTF-8"));
+                    new BufferedReader(new InputStreamReader(engine.getInputStream(), UTF_8));
 
                 String s = in.readLine();
                 while (s != null) {
