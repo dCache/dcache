@@ -17,7 +17,6 @@ import javax.inject.Named;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
@@ -107,7 +106,7 @@ public class QosManagement {
     @Produces(MediaType.APPLICATION_JSON)
     public BackendCapabilityResponse getQueriedQosForFiles(
             @ApiParam("The file quality of service to query.")
-            @PathParam("qos") String qosValue) throws CacheException {
+            @PathParam("qos") String qosValue) {
 
         BackendCapabilityResponse backendCapabilityResponse
                         = new BackendCapabilityResponse();
@@ -170,8 +169,6 @@ public class QosManagement {
             } else {
                 throw new ForbiddenException(e);
             }
-        } catch (CacheException e) {
-            throw new InternalServerErrorException(e);
         } catch (UnsupportedOperationException e) {
             throw new BadRequestException(e);
         }
@@ -195,7 +192,7 @@ public class QosManagement {
     @Produces(MediaType.APPLICATION_JSON)
     public BackendCapabilityResponse getQueriedQosForDirectories(
             @ApiParam("The directory quality of service to query.")
-            @PathParam("qos") String qosValue) throws CacheException {
+            @PathParam("qos") String qosValue) {
 
         BackendCapabilityResponse backendCapabilityResponse
                         = new BackendCapabilityResponse();
@@ -255,8 +252,6 @@ public class QosManagement {
             } else {
                 throw new ForbiddenException(e);
             }
-        } catch (CacheException e) {
-            throw new InternalServerErrorException(e);
         } catch (UnsupportedOperationException e) {
             throw new BadRequestException(e);
         }
