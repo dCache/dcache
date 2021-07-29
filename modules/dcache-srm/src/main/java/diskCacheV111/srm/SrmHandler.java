@@ -199,6 +199,7 @@ import org.dcache.srm.v2_2.TRequestTokenReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.v2_2.TTransferParameters;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.NetLoggerBuilder;
 
@@ -1143,6 +1144,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             log.add("request.lifetime", request.getDesiredTotalRequestTime());
             log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
                     ArrayOfTGetFileRequest::getRequestArray, TGetFileRequest::getSourceSURL);
+            log.add("request.protocols",
+                    describeTransferProtocols(request.getTransferParameters()));
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
                     ArrayOfTGetRequestFileStatus::getStatusArray, TGetRequestFileStatus::getStatus);
@@ -1165,6 +1168,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             log.add("request.lifetime", request.getDesiredTotalRequestTime());
             log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
                     ArrayOfTPutFileRequest::getRequestArray, TPutFileRequest::getTargetSURL);
+            log.add("request.protocols",
+                    describeTransferProtocols(request.getTransferParameters()));
 
             ArrayOfTPutRequestFileStatus statuses = response.getArrayOfFileStatuses();
             log.addSingleValue("turl", statuses, ArrayOfTPutRequestFileStatus::getStatusArray,
@@ -1203,6 +1208,12 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             logFileStatus(log, response.getArrayOfFileStatuses(), ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
         }
 
+        private void log(NetLoggerBuilder log, SrmReserveSpaceRequest request, SrmReserveSpaceResponse response)
+        {
+            log.add("request.protocols",
+                    describeTransferProtocols(request.getTransferParameters()));
+        }
+
         private void log(NetLoggerBuilder log, SrmStatusOfCopyRequestRequest request, SrmStatusOfCopyRequestResponse response)
         {
             log.addSingleValue("request.src-surl", request.getArrayOfSourceSURLs(), ArrayOfAnyURI::getUrlArray);
@@ -1227,6 +1238,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                     ArrayOfTGetFileRequest::getRequestArray, TGetFileRequest::getSourceSURL);
             log.add("request.desiredLifeTime", request.getDesiredLifeTime());
             log.add("request.desiredTotalRequestTime", request.getDesiredTotalRequestTime());
+            log.add("request.protocols",
+                    describeTransferProtocols(request.getTransferParameters()));
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
                     ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
@@ -1244,6 +1257,46 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                     TBringOnlineRequestFileStatus::getStatus);
         }
 
+        private String describeTransferProtocols(TTransferParameters parameters)
+        {
+            if (parameters == null) {
+                return null;
+            }
+
+            ArrayOfString arrayTransferProtocols = parameters.getArrayOfTransferProtocols();
+            if (arrayTransferProtocols == null) {
+                return null;
+            }
+
+            String[] transferProtocols = arrayTransferProtocols.getStringArray();
+            if (transferProtocols == null || transferProtocols.length == 0) {
+                return null;
+            }
+
+            if (transferProtocols.length == 1) {
+                return transferProtocols [0];
+            }
+
+            Map<String,Integer> listedProtocols = new HashMap<>();
+            int lastIndex = transferProtocols.length-1;
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i <= lastIndex; i++) {
+                String protocol = transferProtocols [i];
+
+                Integer previousIndex = listedProtocols.get(protocol);
+                if (previousIndex == null) {
+                    sb.append(protocol);
+                    listedProtocols.put(protocol, i);
+                } else {
+                    sb.append('\\').append(previousIndex + 1); // use 1-index in references.
+                }
+                if (i < lastIndex) {
+                    sb.append(',');
+                }
+            }
+            return sb.toString();
+        }
 
         private void logCountAndOffset(NetLoggerBuilder log, Integer count, Integer offset)
         {
