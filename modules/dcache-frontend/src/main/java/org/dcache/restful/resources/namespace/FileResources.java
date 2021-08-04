@@ -146,6 +146,8 @@ public class FileResources {
                                                 @QueryParam("qos") boolean isQos,
                                                 @ApiParam("Whether to include extended attributes.")
                                                 @QueryParam("xattr") boolean isXattr,
+                                                @ApiParam("Whether to include labels.")
+                                                @QueryParam("labels") boolean isLabels,
                                                 @ApiParam("Limit number of replies in directory listing.")
                                                 @QueryParam("limit") String limit,
                                                 @ApiParam("Number of entries to skip in directory listing.")
@@ -164,7 +166,7 @@ public class FileResources {
             FileAttributes namespaceAttributes = handler.getFileAttributes(path, attributes);
             NamespaceUtils.chimeraToJsonAttributes(path.name(), fileAttributes,
                                                    namespaceAttributes,
-                                                   isLocality, isLocations,
+                                                   isLocality, isLocations, isLabels,
                                                    false, isXattr,
                                                    request, poolMonitor);
             if (isQos) {
@@ -206,7 +208,7 @@ public class FileResources {
                     NamespaceUtils.chimeraToJsonAttributes(fName,
                                                            childrenAttributes,
                                                            entry.getFileAttributes(),
-                                                           isLocality, isLocations,
+                                                           isLocality, isLocations, isLabels,
                                                            false, isXattr,
                                                            request, poolMonitor);
                     childrenAttributes.setFileName(fName);

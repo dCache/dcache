@@ -173,6 +173,10 @@ class WriteHandleImpl implements ReplicaDescriptor
             if (_fileAttributes.isDefined(XATTR)) {
                 attributesToUpdate.setXattrs(_fileAttributes.getXattrs());
             }
+
+            if (_fileAttributes.isDefined(LABELS)) {
+                attributesToUpdate.setLabels(_fileAttributes.getLabels());
+            }
         }
 
         _pnfs.setFileAttributes(_entry.getPnfsId(), attributesToUpdate);

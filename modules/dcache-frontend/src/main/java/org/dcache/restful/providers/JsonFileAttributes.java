@@ -3,10 +3,9 @@ package org.dcache.restful.providers;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-import java.net.FileNameMap;
 import java.net.URI;
-import java.net.URLConnection;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,6 +132,9 @@ public class JsonFileAttributes
 
     @ApiModelProperty("File's extended attributes.")
     private Map<String,String> xattr;
+
+    @ApiModelProperty("File's labels.")
+    private Set<String> labels;
 
     public ACL getAcl() {
         return _acl;
@@ -394,5 +396,17 @@ public class JsonFileAttributes
 
     public Map<String,String> getExtendedAttributes() {
         return xattr;
+    }
+
+    public void setLabels(Set<String> labelnames) {
+        if (labelnames == null) return;
+        if(labels == null) {
+            labels = new HashSet();
+        }
+        labels.addAll(labelnames);
+    }
+
+    public Set<String> getLabels() {
+        return labels == null ? new HashSet() : labels;
     }
 }

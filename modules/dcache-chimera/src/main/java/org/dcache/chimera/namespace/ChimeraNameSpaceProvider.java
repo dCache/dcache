@@ -1007,6 +1007,9 @@ public class ChimeraNameSpaceProvider
                 }
                 attributes.setXattrs(xattrs);
                 break;
+            case LABELS:
+                 attributes.setLabels(_fs.getLabels(inode));
+            break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
             }
@@ -1142,6 +1145,12 @@ public class ChimeraNameSpaceProvider
                     _fs.setXattr(inode, e.getKey(),
                             e.getValue().getBytes(StandardCharsets.UTF_8),
                             SetXattrMode.EITHER);
+                }
+            }
+
+            if (attr.isDefined(LABELS)) {
+                for (String label : attr.getLabels()) {
+                    _fs.addLabel(inode, label);
                 }
             }
 

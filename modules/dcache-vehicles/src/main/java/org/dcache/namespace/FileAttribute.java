@@ -37,5 +37,12 @@ public enum FileAttribute {
     /**
      * @since 6.2
      */
-    XATTR // Be careful not to send this to pools before next golden release (7.2)
-}
+    XATTR, // Be careful not to send this to pools before next golden release (7.2)
+
+    /**
+     * @since 7.2
+     */
+    LABELS
+
+
+    }
