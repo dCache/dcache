@@ -183,7 +183,21 @@ Non-critical services will not directly affect transfers in case of
 unavailabilty. As such, it may be unnecessary to replicate these services if the
 primary interest is rolling upgrades.
 
-The following is a list of non-critical replicable services in dCache 2.16.
+The following is a list of non-critical replicable services in dCache 6.2.
+
+### `billing`
+
+To replicate the billing service, the underlying store should be shared,
+otherwise one risks potentially dispersing text records over several nodes.
+Hence, a shared rdbms database instance should be enabled.  Absent a database,
+enabling kafka may offer an alternative to centralized record-keeping
+without the bottleneck of a single dCache service.
+
+### `cleaner`
+
+Cleaner is fully replicable. Several instances must share the same database. The
+configuration should be synchronized such that all instances are configured the
+same way.
 
 ### `admin`
 
