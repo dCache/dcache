@@ -318,3 +318,12 @@ here:
 https://github.com/dCache/dcache-snow
 
   [Regular Expressions]: http://docs.oracle.com/javase/tutorial/essential/regex
+
+
+## Alarms and Kakfa
+
+Alarms is not a replicable service because it uses a logback client which
+requires a fixed URL. Enabling dcache.log.level.kafka to send alarms
+to a kafka service is, however, possible, though without the alarms service,
+one loses the ability to receive alarms in dCache-View, not to mention
+the deletion and close functions, and also the ability to use the SPI plugins.
