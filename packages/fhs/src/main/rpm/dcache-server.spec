@@ -116,6 +116,7 @@ rm -rf "$RPM_BUILD_ROOT"
 /usr/sbin/dcache-info-provider
 /usr/sbin/dcache-billing-indexer
 /usr/sbin/dcache-wait-for-cells
+/usr/sbin/dcache-convert-authzdb-to-omnisession
 /usr/bin/chimera
 /usr/bin/dcache
 /usr/bin/dcache-star
