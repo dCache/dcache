@@ -1060,17 +1060,17 @@ public class PnfsManagerV3
 
         @Option(name = "custodial",
                 usage = "Specify custodial user quota in bytes, with optional byte unit suffix "+
-                    "using either SI or IEEE 1541 prefixes. \"null\" value removes quota.")
+                    "using either SI or IEEE 1541 prefixes. \"null\" value means no limit.")
         String custodial;
 
         @Option(name = "replica",
                 usage = "Specify replica user quota in bytes, with optional byte unit suffix "+
-                    "using either SI or IEEE 1541 prefixes.  \"null\" value removes quota.")
+                    "using either SI or IEEE 1541 prefixes.  \"null\" value means no limit.")
         String replica;
 
         @Option(name = "output",
                 usage = "Specify output user quota in bytes, with optional byte unit suffix "+
-                    "using either SI or IEEE 1541 prefixes. \"null\" value removes quota.")
+                    "using either SI or IEEE 1541 prefixes. \"null\" value means no limit.")
         String output;
 
         @Override
@@ -1106,19 +1106,22 @@ public class PnfsManagerV3
 
         @Argument(index = 0,
                 valueSpec = "GID",
-                usage = "User gid.")
+                usage = "Group id.")
         int gid;
 
         @Option(name = "custodial",
-                usage = "Specify custodial group quota in bytes; \"null\" value removes quota.")
+                usage = "Specify custodial group quota in bytes, with optional byte unit suffix "+
+                    "using either SI or IEEE 1541 prefixes. \"null\" value means no limit.")
         String custodial;
 
         @Option(name = "replica",
-                usage = "Specify replica group quota in bytes; \"null\" value removes quota.")
+                usage = "Specify replica group quota in bytes, with optional byte unit suffix "+
+                    "using either SI or IEEE 1541 prefixes.  \"null\" value means no limit.")
         String replica;
 
         @Option(name = "output",
-                usage = "Specify output group quota in bytes; \"null\" value removes quota.")
+                usage = "Specify output group quota in bytes, with optional byte unit suffix "+
+                    "using either SI or IEEE 1541 prefixes. \"null\" value means no limit.")
         String output;
 
         @Override
