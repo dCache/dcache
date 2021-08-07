@@ -33,7 +33,6 @@ import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.auth.FQAN;
-import org.dcache.util.ByteSizeParser;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.ColumnWriter;

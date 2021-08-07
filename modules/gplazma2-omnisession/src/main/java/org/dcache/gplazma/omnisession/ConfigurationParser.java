@@ -53,9 +53,10 @@ public class ConfigurationParser implements LineBasedParser<Configuration>
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationParser.class);
 
     private static final Set<String> PATH_ATTRIBUTES = Set.of("home", "root", "path");
-    private static final ByteSizeParser.Builder SIZE_PARSER = ByteSizeParser.using(ByteUnits.isoSymbol())
+    private static final ByteSizeParser SIZE_PARSER = ByteSizeParser.using(ByteUnits.isoSymbol())
             .withWhitespace(NOT_ALLOWED)
-            .withUnits(OPTIONAL);
+            .withUnits(OPTIONAL)
+            .build();
 
     /** Something is wrong when parsing this line. */
     private static class BadLineException extends Exception

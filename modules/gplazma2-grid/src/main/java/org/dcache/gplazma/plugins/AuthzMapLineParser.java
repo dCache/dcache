@@ -8,14 +8,11 @@ import org.slf4j.LoggerFactory;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.dcache.util.ByteSizeParser;
-import org.dcache.util.ByteUnit;
-import org.dcache.util.ByteUnits;
 
 import static java.util.Objects.requireNonNull;
 import static org.dcache.util.ByteUnits.isoSymbol;
@@ -51,6 +48,8 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
     private static final int UM_HOME_GROUP = 6;
     private static final int UM_ROOT_GROUP = 7;
     private static final int UM_FS_ROOT_GROUP = 8;
+
+    private static final ByteSizeParser SIZE_PARSER = ByteSizeParser.using(isoSymbol()).build();
 
     private static long[] toLongs(String[] s)
     {
@@ -90,7 +89,7 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
                 String maxUploadValue = matcher.group("maxupload");
                 OptionalLong maxUpload = maxUploadValue == null
                         ? OptionalLong.empty()
-                        : OptionalLong.of(ByteSizeParser.using(isoSymbol()).parse(maxUploadValue));
+                        : OptionalLong.of(SIZE_PARSER.parse(maxUploadValue));
                 UserAuthzInformation info = new UserAuthzInformation(key, access,
                         Long.parseLong(uid), gids, home, root, fsroot, maxUpload);
                 return new SimpleImmutableEntry<>(new StringPredicate(key), info);

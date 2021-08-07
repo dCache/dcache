@@ -123,7 +123,7 @@ public class ByteSizeParser
     {
         private final Representation representation;
         private NumericalInput input = NumericalInput.FLOATING_POINT;
-        private Coercion coersion = Coercion.ROUND;
+        private Coercion coercion = Coercion.ROUND;
         private Whitespace whitespace = Whitespace.OPTIONAL;
         private UnitPresence unitPresence = UnitPresence.OPTIONAL;
         private ByteUnit defaultUnits = ByteUnit.BYTES;
@@ -135,7 +135,7 @@ public class ByteSizeParser
 
         public Builder withCoersion(Coercion coersion)
         {
-            this.coersion = requireNonNull(coersion);
+            this.coercion = requireNonNull(coersion);
             return this;
         }
 
@@ -167,37 +167,21 @@ public class ByteSizeParser
             return this;
         }
 
-        public long parse(String value, ByteUnit targetUnits) throws NumberFormatException
+        public ByteSizeParser build()
         {
-            String whitespaceAndUnit = whitespace.regularExpression + "(?<unit>\\p{Alpha}+)";
-            String whitespaceAndUnitWithPresence = unitPresence == UnitPresence.REQUIRED
-                    ? whitespaceAndUnit
-                    : ("(?:" + whitespaceAndUnit + ")?");
-
-            Pattern pattern = Pattern.compile("(?<number>" + input.regularExpression + ")"
-                    + whitespaceAndUnitWithPresence);
-            Matcher m = pattern.matcher(value);
-            if (!m.matches()) {
-                throw new NumberFormatException("Bad input \"" + value + "\" does not match " + pattern);
-            }
-
-            ByteUnit givenUnits = Optional.ofNullable(m.group("unit"))
-                    .map(s -> representation.parse(s).orElseThrow(() -> new NumberFormatException("Unknown unit \"" + s + "\"")))
-                    .orElse(defaultUnits);
-
-            return input.convert(m.group("number"), givenUnits, targetUnits, coersion);
+            return new ByteSizeParser(this);
         }
 
-        public long parse(String value) throws NumberFormatException
-        {
-            return parse(value, ByteUnit.BYTES);
-        }
     }
 
-    private ByteSizeParser()
-    {
-        // prevent instantiation
-    }
+    private final Whitespace whitespace;
+    private final UnitPresence unitPresence;
+    private final NumericalInput input;
+    private final Representation representation;
+    private final ByteUnit defaultUnits;
+    private final Coercion coercion;
+
+    private Pattern pattern;
 
     /**
      * Create a new Builder that parses the input with the specified
@@ -210,5 +194,47 @@ public class ByteSizeParser
     public static Builder using(Representation representation)
     {
         return new Builder(representation);
+    }
+
+    private ByteSizeParser(Builder builder)
+    {
+        whitespace = builder.whitespace;
+        unitPresence = builder.unitPresence;
+        input = builder.input;
+        representation = builder.representation;
+        defaultUnits = builder.defaultUnits;
+        coercion = builder.coercion;
+    }
+
+    private synchronized Pattern pattern()
+    {
+        if (pattern == null) {
+            String whitespaceAndUnit = whitespace.regularExpression + "(?<unit>\\p{Alpha}+)";
+            String whitespaceAndUnitWithPresence = unitPresence == UnitPresence.REQUIRED
+                    ? whitespaceAndUnit
+                    : ("(?:" + whitespaceAndUnit + ")?");
+            pattern = Pattern.compile("(?<number>" + input.regularExpression + ")"
+                    + whitespaceAndUnitWithPresence);
+        }
+        return pattern;
+    }
+
+    public long parse(String value, ByteUnit targetUnits) throws NumberFormatException
+    {
+        Matcher m = pattern().matcher(value);
+        if (!m.matches()) {
+            throw new NumberFormatException("Bad input \"" + value + "\" does not match " + pattern);
+        }
+
+        ByteUnit givenUnits = Optional.ofNullable(m.group("unit"))
+                .map(s -> representation.parse(s).orElseThrow(() -> new NumberFormatException("Unknown unit \"" + s + "\"")))
+                .orElse(defaultUnits);
+
+        return input.convert(m.group("number"), givenUnits, targetUnits, coercion);
+    }
+
+    public long parse(String value) throws NumberFormatException
+    {
+        return parse(value, ByteUnit.BYTES);
     }
 }

@@ -37,7 +37,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoSymbolSimpleNumber()
     {
-        long value = ByteSizeParser.using(isoSymbol()).parse("1");
+        long value = ByteSizeParser.using(isoSymbol()).build().parse("1");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -45,7 +45,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoSymbolSpaceByteNumber()
     {
-        long value = ByteSizeParser.using(isoSymbol()).parse("1 B");
+        long value = ByteSizeParser.using(isoSymbol()).build().parse("1 B");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -53,7 +53,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoSymbolNoSpaceByteNumber()
     {
-        long value = ByteSizeParser.using(isoSymbol()).parse("1B");
+        long value = ByteSizeParser.using(isoSymbol()).build().parse("1B");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -61,7 +61,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoSymbolNoSpaceKiloNumber()
     {
-        long value = ByteSizeParser.using(isoSymbol()).parse("1kB");
+        long value = ByteSizeParser.using(isoSymbol()).build().parse("1kB");
 
         assertThat(value, is(equalTo(1_000L)));
     }
@@ -69,7 +69,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoSymbolNoSpaceKibiNumber()
     {
-        long value = ByteSizeParser.using(isoSymbol()).parse("1KiB");
+        long value = ByteSizeParser.using(isoSymbol()).build().parse("1KiB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -77,25 +77,25 @@ public class ByteSizeParserTest
     @Test(expected=NumberFormatException.class)
     public void shouldNotParseNonIsoSymbolKibi()
     {
-        ByteSizeParser.using(isoSymbol()).parse("1Ki");
+        ByteSizeParser.using(isoSymbol()).build().parse("1Ki");
     }
 
     @Test(expected=NumberFormatException.class)
     public void shouldNotParseNonIsoSymbolWrongKibi()
     {
-        ByteSizeParser.using(isoSymbol()).parse("1kiB");
+        ByteSizeParser.using(isoSymbol()).build().parse("1kiB");
     }
 
     @Test(expected=NumberFormatException.class)
     public void shouldNotParseNonIsoSymbolKilo()
     {
-        ByteSizeParser.using(isoSymbol()).parse("1K");
+        ByteSizeParser.using(isoSymbol()).build().parse("1K");
     }
 
     @Test
     public void shouldParseIsoPrefixSimpleNumber()
     {
-        long value = ByteSizeParser.using(isoPrefix()).parse("1");
+        long value = ByteSizeParser.using(isoPrefix()).build().parse("1");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -103,7 +103,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoPrefixNoSpaceKiloNumber()
     {
-        long value = ByteSizeParser.using(isoPrefix()).parse("1k");
+        long value = ByteSizeParser.using(isoPrefix()).build().parse("1k");
 
         assertThat(value, is(equalTo(1_000L)));
     }
@@ -111,7 +111,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoPrefixSpaceKiloNumber()
     {
-        long value = ByteSizeParser.using(isoPrefix()).parse("1 k");
+        long value = ByteSizeParser.using(isoPrefix()).build().parse("1 k");
 
         assertThat(value, is(equalTo(1_000L)));
     }
@@ -119,7 +119,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoPrefixNoSpaceKibiNumber()
     {
-        long value = ByteSizeParser.using(isoPrefix()).parse("1Ki");
+        long value = ByteSizeParser.using(isoPrefix()).build().parse("1Ki");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -127,7 +127,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIsoPrefixSpaceKibiNumber()
     {
-        long value = ByteSizeParser.using(isoPrefix()).parse("1 Ki");
+        long value = ByteSizeParser.using(isoPrefix()).build().parse("1 Ki");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -135,7 +135,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecSymbolSimpleNumber()
     {
-        long value = ByteSizeParser.using(jedecSymbol()).parse("1");
+        long value = ByteSizeParser.using(jedecSymbol()).build().parse("1");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -143,7 +143,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecSymbolSpaceByte()
     {
-        long value = ByteSizeParser.using(jedecSymbol()).parse("1 B");
+        long value = ByteSizeParser.using(jedecSymbol()).build().parse("1 B");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -151,7 +151,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecSymbolNoSpaceByte()
     {
-        long value = ByteSizeParser.using(jedecSymbol()).parse("1B");
+        long value = ByteSizeParser.using(jedecSymbol()).build().parse("1B");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -159,7 +159,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecSymbolNoSpaceKiloNumber()
     {
-        long value = ByteSizeParser.using(jedecSymbol()).parse("1kB");
+        long value = ByteSizeParser.using(jedecSymbol()).build().parse("1kB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -167,7 +167,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecSymbolSpaceKiloNumber()
     {
-        long value = ByteSizeParser.using(jedecSymbol()).parse("1 kB");
+        long value = ByteSizeParser.using(jedecSymbol()).build().parse("1 kB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -175,7 +175,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecSymbolNoSpaceKibiNumber()
     {
-        long value = ByteSizeParser.using(jedecSymbol()).parse("1KB");
+        long value = ByteSizeParser.using(jedecSymbol()).build().parse("1KB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -183,7 +183,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecSymbolSpaceKibiNumber()
     {
-        long value = ByteSizeParser.using(jedecSymbol()).parse("1 KB");
+        long value = ByteSizeParser.using(jedecSymbol()).build().parse("1 KB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -191,7 +191,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecPrefixSimpleNumber()
     {
-        long value = ByteSizeParser.using(jedecPrefix()).parse("1");
+        long value = ByteSizeParser.using(jedecPrefix()).build().parse("1");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -199,7 +199,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecPrefixNoSpaceKiloNumber()
     {
-        long value = ByteSizeParser.using(jedecPrefix()).parse("1k");
+        long value = ByteSizeParser.using(jedecPrefix()).build().parse("1k");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -207,7 +207,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecPrefixSpaceKiloNumber()
     {
-        long value = ByteSizeParser.using(jedecPrefix()).parse("1 k");
+        long value = ByteSizeParser.using(jedecPrefix()).build().parse("1 k");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -215,7 +215,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecPrefixNoSpaceKibiNumber()
     {
-        long value = ByteSizeParser.using(jedecPrefix()).parse("1K");
+        long value = ByteSizeParser.using(jedecPrefix()).build().parse("1K");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -223,7 +223,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseJedecPrefixSpaceKibiNumber()
     {
-        long value = ByteSizeParser.using(jedecPrefix()).parse("1 K");
+        long value = ByteSizeParser.using(jedecPrefix()).build().parse("1 K");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -231,7 +231,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseSimpleNumberWithDefaultUnits()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withDefaultUnits(MiB).parse("1");
+        long value = ByteSizeParser.using(isoSymbol()).withDefaultUnits(MiB).build().parse("1");
 
         assertThat(value, is(equalTo(1048576L)));
     }
@@ -239,7 +239,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberWithUnitsWithDefaultUnits()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withDefaultUnits(MiB).parse("1KiB");
+        long value = ByteSizeParser.using(isoSymbol()).withDefaultUnits(MiB).build().parse("1KiB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -247,7 +247,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseIntegerWithIntegerInput()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withInput(INTEGER).parse("1");
+        long value = ByteSizeParser.using(isoSymbol()).withInput(INTEGER).build().parse("1");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -255,13 +255,13 @@ public class ByteSizeParserTest
     @Test(expected=NumberFormatException.class)
     public void shouldNotParseFloatWithIntegerInput()
     {
-        ByteSizeParser.using(isoSymbol()).withInput(INTEGER).parse("1.5KiB");
+        ByteSizeParser.using(isoSymbol()).withInput(INTEGER).build().parse("1.5KiB");
     }
 
     @Test
     public void shouldParseIntegerWithFloatInput()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withInput(FLOATING_POINT).parse("1");
+        long value = ByteSizeParser.using(isoSymbol()).withInput(FLOATING_POINT).build().parse("1");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -269,7 +269,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseFloatWithFloatInput()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withInput(FLOATING_POINT).parse("1.5KiB");
+        long value = ByteSizeParser.using(isoSymbol()).withInput(FLOATING_POINT).build().parse("1.5KiB");
 
         assertThat(value, is(equalTo(1536L)));
     }
@@ -277,7 +277,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberWithUnitsWithRequiredUnits()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withUnits(REQUIRED).parse("1KiB");
+        long value = ByteSizeParser.using(isoSymbol()).withUnits(REQUIRED).build().parse("1KiB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -285,13 +285,13 @@ public class ByteSizeParserTest
     @Test(expected=NumberFormatException.class)
     public void shouldNotParseNumberWithoutUnitsWithRequiredUnits()
     {
-        ByteSizeParser.using(isoSymbol()).withUnits(REQUIRED).parse("1");
+        ByteSizeParser.using(isoSymbol()).withUnits(REQUIRED).build().parse("1");
     }
 
     @Test
     public void shouldParseNumberWithUnitsWithOptionalUnits()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withUnits(OPTIONAL).parse("1KiB");
+        long value = ByteSizeParser.using(isoSymbol()).withUnits(OPTIONAL).build().parse("1KiB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -299,7 +299,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberWithoutUnitsWithOptionalUnits()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withUnits(OPTIONAL).parse("1");
+        long value = ByteSizeParser.using(isoSymbol()).withUnits(OPTIONAL).build().parse("1");
 
         assertThat(value, is(equalTo(1L)));
     }
@@ -307,7 +307,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberWithWhitespaceWithOptionalWhitespace()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.OPTIONAL).parse("1 KiB");
+        long value = ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.OPTIONAL).build().parse("1 KiB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -315,7 +315,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberWithoutWhitespaceWithOptionalWhitespace()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.OPTIONAL).parse("1KiB");
+        long value = ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.OPTIONAL).build().parse("1KiB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -323,7 +323,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberWithWhitespaceWithRequiredWhitespace()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.REQUIRED).parse("1 KiB");
+        long value = ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.REQUIRED).build().parse("1 KiB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -331,19 +331,19 @@ public class ByteSizeParserTest
     @Test(expected=NumberFormatException.class)
     public void shouldNotParseNumberWithoutWhitespaceWithRequiredWhitespace()
     {
-        ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.REQUIRED).parse("1KiB");
+        ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.REQUIRED).build().parse("1KiB");
     }
 
     @Test(expected=NumberFormatException.class)
     public void shouldNotParseNumberWithWhitespaceWithForbiddenWhitespace()
     {
-        ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.NOT_ALLOWED).parse("1 KiB");
+        ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.NOT_ALLOWED).build().parse("1 KiB");
     }
 
     @Test
     public void shouldParseNumberWithoutWhitespaceWithForbiddenWhitespace()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.NOT_ALLOWED).parse("1KiB");
+        long value = ByteSizeParser.using(isoSymbol()).withWhitespace(Whitespace.NOT_ALLOWED).build().parse("1KiB");
 
         assertThat(value, is(equalTo(1024L)));
     }
@@ -351,7 +351,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberWithCeilingCoersion()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withCoersion(CEIL).parse("1.1KiB"); // 1126.4
+        long value = ByteSizeParser.using(isoSymbol()).withCoersion(CEIL).build().parse("1.1KiB"); // 1126.4
 
         assertThat(value, is(equalTo(1127L)));
     }
@@ -359,7 +359,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberWithFloorCoersion()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withCoersion(FLOOR).parse("1.2KiB"); // 1228.8
+        long value = ByteSizeParser.using(isoSymbol()).withCoersion(FLOOR).build().parse("1.2KiB"); // 1228.8
 
         assertThat(value, is(equalTo(1228L)));
     }
@@ -367,7 +367,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberRoundUpWithRoundCoersion()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withCoersion(ROUND).parse("1.2KiB"); // 1228.8
+        long value = ByteSizeParser.using(isoSymbol()).withCoersion(ROUND).build().parse("1.2KiB"); // 1228.8
 
         assertThat(value, is(equalTo(1229L)));
     }
@@ -375,7 +375,7 @@ public class ByteSizeParserTest
     @Test
     public void shouldParseNumberRoundDownWithRoundCoersion()
     {
-        long value = ByteSizeParser.using(isoSymbol()).withCoersion(ROUND).parse("1.1KiB"); // 1126.4
+        long value = ByteSizeParser.using(isoSymbol()).withCoersion(ROUND).build().parse("1.1KiB"); // 1126.4
 
         assertThat(value, is(equalTo(1126L)));
     }

@@ -64,10 +64,12 @@ import static org.dcache.util.ByteUnits.isoPrefix;
 
 public final class ArgumentHandler {
 
+    private static final ByteSizeParser SIZE_PARSER = ByteSizeParser.using(isoPrefix()).build();
+
     public static long parseByteQuantity(String arg)
     {
         String s = arg.endsWith("B") ? arg.substring(0, arg.length()-1) : arg;
-        return checkNonNegative(ByteSizeParser.using(isoPrefix()).parse(s));
+        return checkNonNegative(SIZE_PARSER.parse(s));
     }
 
     public static long checkNonNegative(long size)

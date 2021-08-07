@@ -27,6 +27,7 @@ public class DiskSpace
 {
     public static final DiskSpace UNSPECIFIED = new DiskSpace(Long.MAX_VALUE);
     private static final Representation JEDEC_WITH_LOWER_K = new JedecPrefixLowerKRepresentation();
+    private static final ByteSizeParser SIZE_PARSER = ByteSizeParser.using(jedecPrefix()).build();
 
     private final long _value;
 
@@ -58,7 +59,7 @@ public class DiskSpace
             return Long.MAX_VALUE;
         }
 
-        return ByteSizeParser.using(jedecPrefix()).parse(s.toUpperCase());
+        return SIZE_PARSER.parse(s.toUpperCase());
     }
 
     @Override

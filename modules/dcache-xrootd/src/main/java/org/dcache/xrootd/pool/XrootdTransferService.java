@@ -56,7 +56,6 @@ import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
-import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
