@@ -3,17 +3,14 @@ package org.dcache.services.ssh2;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
-import org.apache.sshd.common.Factory;
-import org.apache.sshd.common.FactoryManager;
-import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.config.keys.AuthorizedKeyEntry;
 import org.apache.sshd.common.config.keys.KeyUtils;
+import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.sshd.common.keyprovider.KeyPairProvider;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
 import org.apache.sshd.common.util.security.SecurityUtils;
-import org.apache.sshd.server.command.Command;
+import org.apache.sshd.core.CoreModuleProperties;
 import org.apache.sshd.server.command.CommandFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.gss.GSSAuthenticator;
@@ -21,6 +18,8 @@ import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 
+import org.apache.sshd.server.shell.ShellFactory;
+import org.apache.sshd.server.subsystem.SubsystemFactory;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -47,6 +46,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -151,7 +151,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     @Required
-    public void setShellFactory(Factory<Command> shellCommand) {
+    public void setShellFactory(ShellFactory shellCommand) {
         _server.setShellFactory(shellCommand);
     }
 
@@ -161,7 +161,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     @Required
-    public void setSubsystemFactories(List<NamedFactory<Command>> subsystemFactories)
+    public void setSubsystemFactories(List<SubsystemFactory> subsystemFactories)
     {
         _server.setSubsystemFactories(subsystemFactories);
     }
@@ -223,15 +223,16 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     private void configureKeyFiles() {
-        KeyPairProvider keyPair = SecurityUtils.createGeneratorHostKeyProvider(_hostKey);
+        KeyPairProvider keyPair = new FileKeyPairProvider(_hostKey);
         _server.setKeyPairProvider(keyPair);
     }
 
     private void startServer() {
-        long effectiveTimeout = _idleTimeoutUnit.toMillis(_idleTimeout);
-        PropertyResolverUtils.updateProperty(_server, FactoryManager.IDLE_TIMEOUT, effectiveTimeout);
-        // esure, that read timeout is longer than idle timeout
-        PropertyResolverUtils.updateProperty(_server, FactoryManager.NIO2_READ_TIMEOUT, effectiveTimeout*2);
+        // Duration#of is picky about overflows
+        Duration effectiveTimeout = Duration.ofMillis(_idleTimeoutUnit.toMillis(_idleTimeout));
+        CoreModuleProperties.IDLE_TIMEOUT.set(_server, effectiveTimeout);
+        // ensure, that read timeout is longer than idle timeout
+        CoreModuleProperties.NIO2_READ_TIMEOUT.set(_server, effectiveTimeout);
 
         _server.setPort(_port);
         _server.setHost(_host);
@@ -335,7 +336,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     userName, key);
             try {
                 for(AuthorizedKeyEntry ke: AuthorizedKeyEntry.readAuthorizedKeys(_authorizedKeyList.toPath())) {
-                    PublicKey publicKey = ke.resolvePublicKey(null);
+                    PublicKey publicKey = ke.resolvePublicKey(null, null);
 
                     String hostspec = ke.getLoginOptions().getOrDefault("from", "");
                     if (!isValidHost(hostspec, session)) {

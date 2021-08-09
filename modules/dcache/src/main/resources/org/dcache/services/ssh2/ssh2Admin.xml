@@ -64,7 +64,7 @@
         <property name="cellStub" ref="gplazma"/>
     </bean>
 
-    <bean id="shell-factory" class="org.dcache.services.ssh2.ShellFactory">
+    <bean id="shell-factory" class="org.dcache.services.ssh2.AdminShellFactory">
         <property name="historyFile" value="${admin.paths.history}"/>
         <property name="historySize" value="${admin.history.size}"/>
         <property name="useColor" value="${admin.enable.colors}"/>
