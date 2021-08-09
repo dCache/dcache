@@ -17,12 +17,14 @@
  */
 package org.dcache.util;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.dcache.util.ByteUnits.Representation;
 
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -121,16 +123,16 @@ public class ByteSizeParser
 
     public static class Builder
     {
-        private final Representation representation;
+        private final List<Representation> representations;
         private NumericalInput input = NumericalInput.FLOATING_POINT;
         private Coercion coercion = Coercion.ROUND;
         private Whitespace whitespace = Whitespace.OPTIONAL;
         private UnitPresence unitPresence = UnitPresence.OPTIONAL;
         private ByteUnit defaultUnits = ByteUnit.BYTES;
 
-        private Builder(Representation representation)
+        private Builder(List<Representation> representations)
         {
-            this.representation = requireNonNull(representation);
+            this.representations = requireNonNull(representations);
         }
 
         public Builder withCoersion(Coercion coersion)
@@ -177,7 +179,7 @@ public class ByteSizeParser
     private final Whitespace whitespace;
     private final UnitPresence unitPresence;
     private final NumericalInput input;
-    private final Representation representation;
+    private final List<Representation> representations;
     private final ByteUnit defaultUnits;
     private final Coercion coercion;
 
@@ -185,15 +187,25 @@ public class ByteSizeParser
 
     /**
      * Create a new Builder that parses the input with the specified
-     * representation.  By default, the parser accepts floating-point values,
-     * a space between numerical value and units is optional, and the numerical
-     * value is rounded to the nearest integer value.
+     * representations.  If multiple representations are presented then an
+     * input's units string is parsed by the supplied representations in the
+     * order given.  The first representation that can successfully parse the
+     * units is used.
+     * <p>
+     * <b>Warning</b> it is recommended not to configure a parser to accept both
+     * JEDEC and ISO representations.  This is because the parsed value may
+     * depend on case (upper and lower case letters different values) or be
+     * otherwise poorly defined.
+     * <p>
+     * By default, the parser accepts floating-point values, a space between
+     * numerical value and units is optional, and the numerical value is
+     * rounded to the nearest integer value.
      * @param representation How a ByteUnit is represented.
      * @return a Builder that may be configured before use in parsing a String.
      */
-    public static Builder using(Representation representation)
+    public static Builder using(Representation... representation)
     {
-        return new Builder(representation);
+        return new Builder(asList(representation));
     }
 
     private ByteSizeParser(Builder builder)
@@ -201,7 +213,7 @@ public class ByteSizeParser
         whitespace = builder.whitespace;
         unitPresence = builder.unitPresence;
         input = builder.input;
-        representation = builder.representation;
+        representations = builder.representations;
         defaultUnits = builder.defaultUnits;
         coercion = builder.coercion;
     }
@@ -227,10 +239,19 @@ public class ByteSizeParser
         }
 
         ByteUnit givenUnits = Optional.ofNullable(m.group("unit"))
-                .map(s -> representation.parse(s).orElseThrow(() -> new NumberFormatException("Unknown unit \"" + s + "\"")))
+                .map(s -> parseUnit(s).orElseThrow(() -> new NumberFormatException("Unknown unit \"" + s + "\"")))
                 .orElse(defaultUnits);
 
         return input.convert(m.group("number"), givenUnits, targetUnits, coercion);
+    }
+
+    private Optional<ByteUnit> parseUnit(String unit)
+    {
+        return representations.stream()
+                .map(r -> r.parse(unit))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
     }
 
     public long parse(String value) throws NumberFormatException

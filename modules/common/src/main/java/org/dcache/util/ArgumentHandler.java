@@ -61,15 +61,15 @@ documents or software obtained from this server.
 package org.dcache.util;
 
 import static org.dcache.util.ByteUnits.isoPrefix;
+import static org.dcache.util.ByteUnits.isoSymbol;
 
 public final class ArgumentHandler {
 
-    private static final ByteSizeParser SIZE_PARSER = ByteSizeParser.using(isoPrefix()).build();
+    private static final ByteSizeParser SIZE_PARSER = ByteSizeParser.using(isoPrefix(), isoSymbol()).build();
 
     public static long parseByteQuantity(String arg)
     {
-        String s = arg.endsWith("B") ? arg.substring(0, arg.length()-1) : arg;
-        return checkNonNegative(SIZE_PARSER.parse(s));
+        return checkNonNegative(SIZE_PARSER.parse(arg));
     }
 
     public static long checkNonNegative(long size)
@@ -79,5 +79,4 @@ public final class ArgumentHandler {
         }
         return size;
     }
-
 }

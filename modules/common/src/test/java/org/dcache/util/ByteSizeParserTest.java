@@ -379,4 +379,43 @@ public class ByteSizeParserTest
 
         assertThat(value, is(equalTo(1126L)));
     }
+
+    @Test
+    public void shouldParseIsoSymbolWhenAcceptingIsoSymbolAndIsoPrefix()
+    {
+        long value = ByteSizeParser.using(isoSymbol(), isoPrefix()).build().parse("1KiB");
+
+        assertThat(value, is(equalTo(1024L)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixWhenAcceptingIsoSymbolAndIsoPrefix()
+    {
+        long value = ByteSizeParser.using(isoSymbol(), isoPrefix()).build().parse("1Ki");
+
+        assertThat(value, is(equalTo(1024L)));
+    }
+
+    @Test
+    public void shouldParseIsoSymbolWhenAcceptingIsoPrefixAndIsoSymbol()
+    {
+        long value = ByteSizeParser.using(isoPrefix(), isoSymbol()).build().parse("1KiB");
+
+        assertThat(value, is(equalTo(1024L)));
+    }
+
+    @Test
+    public void shouldParseIsoPrefixWhenAcceptingIsoPrefixAndIsoSymbol()
+    {
+        long value = ByteSizeParser.using(isoPrefix(), isoSymbol()).build().parse("1Ki");
+
+        assertThat(value, is(equalTo(1024L)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectUnknownUnitWhenAcceptingIsoSymbolAndIsoPrefix()
+    {
+        // NB. "K" and "KB" are NOT valid ISO symbols, but they ARE valid JEDEC.
+        ByteSizeParser.using(isoSymbol(), isoPrefix()).build().parse("1KB");
+    }
 }
