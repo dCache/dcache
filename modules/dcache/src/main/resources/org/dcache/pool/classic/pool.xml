@@ -371,9 +371,8 @@
       <property name="clientIdleTimeoutUnit" value="${pool.mover.xrootd.timeout.idle.unit}"/>
       <property name="connectTimeout" value="${pool.mover.xrootd.timeout.connect}"/>
       <property name="connectTimeoutUnit" value="${pool.mover.xrootd.timeout.connect.unit}"/>
-      <property name="maxFrameSize" value="${pool.mover.xrootd.frame-size}"/>
-      <property name="tpcClientChunkSize" value="#{ T(org.dcache.util.ByteSizeParser).using( T(org.dcache.util.ByteUnits).isoPrefix()).parse('${pool.mover.xrootd.tpc-client-chunk-size}') }"/>
-      <property name="maxFrameSize" value="#{ T(org.dcache.util.ByteSizeParser).using( T(org.dcache.util.ByteUnits).isoPrefix()).parse('${pool.mover.xrootd.frame-size}') }"/>
+      <property name="tpcClientChunkSize" value="#{ T(org.dcache.util.ByteSizeParser).using( T(org.dcache.util.ByteUnits).isoSymbol()).parse('${pool.mover.xrootd.tpc-client-chunk-size}') }"/>
+      <property name="maxFrameSize" value="#{ T(org.dcache.util.ByteSizeParser).using( T(org.dcache.util.ByteUnits).isoSymbol()).parse('${pool.mover.xrootd.frame-size}') }"/>
       <property name="readReconnectTimeout" value="${pool.mover.xrootd.read-reconnect-timeout}"/>
       <property name="readReconnectTimeoutUnit" value="${pool.mover.xrootd.read-reconnect-timeout.unit}"/>
       <property name="accessLogPlugins">
