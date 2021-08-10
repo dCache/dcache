@@ -56,6 +56,7 @@ import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
@@ -164,6 +165,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     private Map<String, Timer>          reconnectTimers;
     private long                        readReconnectTimeout;
     private TimeUnit                    readReconnectTimeoutUnit;
+    private int                         tpcClientChunkSize;
 
     /** Communication stub for talking to namespace, if necessary. */
     private CellStub pnfsStub;
@@ -339,6 +341,17 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public int getMaxFrameSize()
     {
         return maxFrameSize;
+    }
+
+    @Required
+    public void setTpcClientChunkSize(int tpcClientChunkSize)
+    {
+        this.tpcClientChunkSize = tpcClientChunkSize;
+    }
+
+    public int getTpcClientChunkSize()
+    {
+        return tpcClientChunkSize;
     }
 
     public Map<String, String> getQueryConfig()

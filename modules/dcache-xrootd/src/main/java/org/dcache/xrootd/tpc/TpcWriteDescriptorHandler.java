@@ -61,10 +61,7 @@ package org.dcache.xrootd.tpc;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
-
 import java.util.Set;
-
-import org.dcache.util.ByteUnit;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.xrootd.tpc.protocol.messages.InboundChecksumResponse;
@@ -78,8 +75,6 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
  */
 public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler
 {
-    private static final int DEFAULT_CHUNK = ByteUnit.MiB.toBytes(4);
-
     private final TpcWriteDescriptor descriptor;
 
     public TpcWriteDescriptorHandler(TpcWriteDescriptor descriptor)
@@ -130,6 +125,6 @@ public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler
     @Override
     protected int getChunkSize()
     {
-        return DEFAULT_CHUNK;
+        return descriptor.getClientChunkSize();
     }
 }

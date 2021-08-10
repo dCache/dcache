@@ -126,6 +126,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     private SyncRequest     syncRequest;
     private boolean         isFirstSync;
     private Integer         transferStatus;
+    private int             clientChunkSize;
 
     public TpcWriteDescriptor(NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel,
                               boolean posc,
@@ -137,6 +138,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
     {
         super(channel, posc);
         userResponseCtx = ctx;
+        clientChunkSize = service.getTpcClientChunkSize();
         client = new XrootdTpcClient(userUrn,
                                      info,
                                      this,
@@ -187,6 +189,11 @@ public final class TpcWriteDescriptor extends WriteDescriptor
                                .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
         }
+    }
+
+    public int getClientChunkSize()
+    {
+        return clientChunkSize;
     }
 
     public synchronized XrootdResponse<StatRequest> handleStat(StatRequest msg)

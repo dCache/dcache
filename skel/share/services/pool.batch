@@ -53,6 +53,7 @@ check -strong pool.mover.xrootd.read-reconnect-timeout
 check -strong pool.mover.xrootd.read-reconnect-timeout.unit
 check -strong pool.mover.xrootd.tpc-server-response-timeout
 check -strong pool.mover.xrootd.tpc-server-response-timeout.unit
+check -storng pool.mover.xrootd.tpc-client-chunk-size
 check -strong pool.mover.xrootd.frame-size
 check -strong pool.mover.xrootd.port.min
 check -strong pool.mover.xrootd.port.max
