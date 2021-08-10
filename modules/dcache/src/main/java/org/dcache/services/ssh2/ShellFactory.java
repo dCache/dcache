@@ -1,8 +1,7 @@
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.common.Factory;
 import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.shell.ShellFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.File;
@@ -15,7 +14,7 @@ import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.cells.CellStub;
 import org.dcache.util.list.ListDirectoryHandler;
 
-public class AdminShellFactory implements ShellFactory, CellMessageSender
+public class ShellFactory implements Factory<Command>, CellMessageSender
 {
     private CellEndpoint _endpoint;
     private File _historyFile;
@@ -81,12 +80,12 @@ public class AdminShellFactory implements ShellFactory, CellMessageSender
     }
 
     @Override
-    public Command createShell(ChannelSession channelSession)
+    public Command create()
     {
-        return new ShellCommand(_historyFile, _historySize, _useColor, createAdminShell());
+        return new ShellCommand(_historyFile, _historySize, _useColor, createShell());
     }
 
-    private UserAdminShell createAdminShell()
+    private UserAdminShell createShell()
     {
         UserAdminShell shell = new UserAdminShell(_prompt);
         shell.setCellEndpoint(_endpoint);

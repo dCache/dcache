@@ -59,10 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.session.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,7 +97,7 @@ import org.dcache.util.Strings;
  *
  * @author litvinse
  */
-public class DirectCommand implements Command, Runnable
+public class DirectCommand implements Command, Runnable, SessionAware
 {
     private static final Logger LOGGER =
         LoggerFactory.getLogger(DirectCommand.class);
@@ -127,7 +128,7 @@ public class DirectCommand implements Command, Runnable
     }
 
     @Override
-    public void destroy(ChannelSession channelSession) {
+    public void destroy() {
         shellThread.interrupt();
     }
 
@@ -152,13 +153,9 @@ public class DirectCommand implements Command, Runnable
     }
 
     @Override
-    public void start(ChannelSession channelSession, Environment env) {
-
-        sessionId = Sessions.connectionId(channelSession.getServerSession());
-
+    public void start(Environment env) {
         try (CDC ignored = new CDC()) {
             CDC.setSession(sessionId);
-            shell.setSession(sessionId);
             shell.setUser(env.getEnv().get(Environment.ENV_USER));
             CDC cdc = new CDC();
             shellThread = new Thread(() -> cdc.execute(this));
@@ -232,5 +229,12 @@ public class DirectCommand implements Command, Runnable
                 errorWriter.flush();
             }
         }
+    }
+
+    @Override
+    public void setSession(ServerSession session)
+    {
+        sessionId = Sessions.connectionId(session);
+        shell.setSession(sessionId);
     }
 }
