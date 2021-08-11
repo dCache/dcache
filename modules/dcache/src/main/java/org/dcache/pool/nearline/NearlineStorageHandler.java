@@ -1100,11 +1100,11 @@ public class NearlineStorageHandler
         {
             FileAttributes fileAttributes = descriptor.getFileAttributes();
             StorageInfo storageInfo = fileAttributes.getStorageInfo().clone();
+            storageInfo.isSetAddLocation(true);
             for (URI uri : uris) {
                 try {
                     HsmLocationExtractorFactory.validate(uri);
                     storageInfo.addLocation(uri);
-                    storageInfo.isSetAddLocation(true);
                 } catch (IllegalArgumentException e) {
                     throw new CacheException(2, e.getMessage(), e);
                 }
@@ -1118,14 +1118,16 @@ public class NearlineStorageHandler
         }
 
         private void notifyNamespace(PnfsId pnfsid, FileAttributes fileAttributes)
-                throws InterruptedException
+                throws InterruptedException, CacheException
         {
+            retrying:
             while (true) {
                 try {
                     pnfs.fileFlushed(pnfsid, fileAttributes);
                     break;
                 } catch (CacheException e) {
-                    if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                    switch (e.getRc()) {
+                    case CacheException.FILE_NOT_FOUND:
                         /* In case the file was deleted, we are presented
                          * with the problem that the file is now on tape,
                          * however the location has not been registered
@@ -1134,27 +1136,46 @@ public class NearlineStorageHandler
                          * seems to be to remove the file from tape here.
                          * For now we ignore this issue (REVISIT).
                          */
-                        break;
-                    }
+                        break retrying;
 
-                    /* The message to the PnfsManager failed. There are several
-                     * possible reasons for this; we may have lost the
-                     * connection to the PnfsManager; the PnfsManager may have
-                     * lost its connection to the namespace or otherwise be in
-                     * trouble; bugs; etc.
-                     *
-                     * We keep retrying until we succeed. This will effectively
-                     * block this thread from flushing any other files, which
-                     * seems sensible when we have trouble talking to the
-                     * PnfsManager. If the pool crashes or gets restarted while
-                     * waiting here, we will end up flushing the file again. We
-                     * assume that the nearline storage is able to eliminate the
-                     * duplicate; or at least tolerate the duplicate (given that
-                     * this situation should be rare, we can live with a little
-                     * bit of wasted tape).
-                     */
-                    LOGGER.error("Error notifying pnfsmanager about a flushed file: {} ({})",
-                            e.getMessage(), e.getRc());
+                    case CacheException.INVALID_UPDATE:
+                        /* PnfsManager has indicated that there was a problem
+                         * updating the file with the information describing the
+                         * flush.  This is despite the flush operation returning
+                         * successfully.
+                         *
+                         * Given this discrepency, we MUST NOT automatically
+                         * retry the request, as this could lead to multiple
+                         * copies of the file's data being stored on tape.
+                         * Instead some kind of manual intevention is required.
+                         *
+                         * A CacheException with an rc in [30, 40) has the
+                         * effect of failing the request.  A failed flush
+                         * request is NOT automatically retried, but requires
+                         * manual (admin) intervention before retrying.
+                         */
+                        throw new CacheException(30, e.getMessage());
+
+                    default:
+                        /* The message to the PnfsManager failed. There are several
+                         * possible reasons for this; we may have lost the
+                         * connection to the PnfsManager; the PnfsManager may have
+                         * lost its connection to the namespace or otherwise be in
+                         * trouble; bugs; etc.
+                         *
+                         * We keep retrying until we succeed. This will effectively
+                         * block this thread from flushing any other files, which
+                         * seems sensible when we have trouble talking to the
+                         * PnfsManager. If the pool crashes or gets restarted while
+                         * waiting here, we will end up flushing the file again. We
+                         * assume that the nearline storage is able to eliminate the
+                         * duplicate; or at least tolerate the duplicate (given that
+                         * this situation should be rare, we can live with a little
+                         * bit of wasted tape).
+                         */
+                        LOGGER.error("Error notifying pnfsmanager about a flushed file: {} ({})",
+                                e.getMessage(), e.getRc());
+                    }
                 }
                 TimeUnit.MINUTES.sleep(2);
             }

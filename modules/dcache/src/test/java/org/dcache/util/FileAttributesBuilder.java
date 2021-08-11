@@ -18,10 +18,7 @@
  */
 package org.dcache.util;
 
-import java.net.URI;
-
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.namespace.FileType;
@@ -33,27 +30,6 @@ import org.dcache.vehicles.FileAttributes;
 public class FileAttributesBuilder
 {
     private final FileAttributes _attributes = new FileAttributes();
-
-    public static class StorageInfoBuilder
-    {
-        private final GenericStorageInfo info = new GenericStorageInfo();
-
-        public StorageInfoBuilder withLocation(String uri)
-        {
-            info.addLocation(URI.create(uri));
-            return this;
-        }
-
-        public StorageInfo build()
-        {
-            return info;
-        }
-    }
-
-    public static StorageInfoBuilder aStorageInfo()
-    {
-        return new StorageInfoBuilder();
-    }
 
     public static FileAttributesBuilder attributes()
     {

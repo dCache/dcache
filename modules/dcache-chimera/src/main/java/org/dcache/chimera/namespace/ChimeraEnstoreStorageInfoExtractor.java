@@ -105,4 +105,10 @@ public class ChimeraEnstoreStorageInfoExtractor
     private static boolean isEncoded(String s) {
         return !s.equals(UriUtils.decode(s, StandardCharsets.UTF_8));
     }
+
+    @Override
+    protected void checkFlushUpdate(StorageInfo info) throws CacheException
+    {
+        /* No checks needed: Enstore updates the namespace directly. */
+    }
 }
