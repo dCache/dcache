@@ -52,4 +52,9 @@ public interface FileDescriptor
      * Whether the file was opened with kXR_posc.
      */
     boolean isPersistOnSuccessfulClose();
+
+    /**
+     * Option to postprocess.  Default is NOP.
+     */
+    default void close() {}
 }

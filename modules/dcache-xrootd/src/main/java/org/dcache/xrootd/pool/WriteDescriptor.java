@@ -16,29 +16,35 @@ import org.dcache.xrootd.util.ByteBuffersProvider;
 public class WriteDescriptor extends ReadDescriptor
 {
     private boolean posc;
+    private boolean closed;
 
     public WriteDescriptor(NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel, boolean posc)
     {
         super(channel);
         this.posc = posc;
+        closed = false;
     }
 
     @Override
-    public XrootdResponse<SyncRequest> sync(SyncRequest msg)
+    public synchronized XrootdResponse<SyncRequest> sync(SyncRequest msg)
         throws IOException, InterruptedException
     {
-        _channel.sync();
+        if (!closed) {
+            _channel.sync();
+        }
         return new OkResponse(msg);
     }
 
     @Override
-    public void write(ByteBuffersProvider provider)
+    public synchronized void write(ByteBuffersProvider provider)
                     throws IOException
     {
-        long position = provider.getWriteOffset();
-        for (ByteBuffer buffer : provider.toByteBuffers()) {
-            while (buffer.hasRemaining()) {
+        if (!closed) {
+            long position = provider.getWriteOffset();
+            for (ByteBuffer buffer : provider.toByteBuffers()) {
+                while (buffer.hasRemaining()) {
                     position += _channel.write(buffer, position);
+                }
             }
         }
     }
@@ -47,5 +53,9 @@ public class WriteDescriptor extends ReadDescriptor
     public boolean isPersistOnSuccessfulClose()
     {
         return posc;
+    }
+
+    public synchronized void close() {
+        closed = true;
     }
 }
