@@ -62,9 +62,18 @@ package org.dcache.chimera.quota;
 
 import diskCacheV111.util.RetentionPolicy;
 
-import static org.dcache.util.ArgumentHandler.parseByteQuantity;
+import org.dcache.util.ByteSizeParser;
+
+import static org.dcache.util.ByteUnits.isoPrefix;
+import static org.dcache.util.ByteUnits.isoSymbol;
 
 public class Quota {
+
+    private static final ByteSizeParser SIZE_PARSER = ByteSizeParser
+            .using(isoPrefix(), isoSymbol())
+            .requiring(l -> l >= 0, "Size must be non-negative.")
+            .build();
+
     int id;
     private final long usedCustodialSpace;
     private final long usedReplicaSpace;
@@ -227,17 +236,17 @@ public class Quota {
                                     String replica) {
         if (custodial != null) {
             Long custodialLimit = custodial.equalsIgnoreCase("null") ?
-                null : parseByteQuantity(custodial);
+                null : SIZE_PARSER.parse(custodial);
             q.setCustodialSpaceLimit(custodialLimit);
         }
         if (output != null) {
             Long outputLimit = output.equalsIgnoreCase("null") ?
-                null : parseByteQuantity(output);
+                null : SIZE_PARSER.parse(output);
             q.setOutputSpaceLimit(outputLimit);
         }
         if (replica != null) {
             Long replicaLimit = replica.equalsIgnoreCase("null") ?
-                null : parseByteQuantity(replica);
+                null : SIZE_PARSER.parse(replica);
             q.setReplicaSpaceLimit(replicaLimit);
         }
     }

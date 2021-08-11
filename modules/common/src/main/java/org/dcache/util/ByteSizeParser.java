@@ -17,8 +17,10 @@
  */
 package org.dcache.util;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.LongPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +38,30 @@ import static java.util.Objects.requireNonNull;
  */
 public class ByteSizeParser
 {
+    /**
+     * A class that holds some test that a parsed value must satisfy to be
+     * accepted along with an error message that describes a failure to
+     * satisfy that requirement.
+     */
+    private static class Requirement
+    {
+        private final LongPredicate requirement;
+        private final String error;
+
+        private Requirement(LongPredicate requirement, String error)
+        {
+            this.requirement = requirement;
+            this.error = error;
+        }
+
+        public Optional<String> rejectionMessage(long value)
+        {
+            return requirement.test(value)
+                    ? Optional.empty()
+                    : Optional.of(error);
+        }
+    }
+
     /**
      * Allowed input types.
      */
@@ -124,6 +150,7 @@ public class ByteSizeParser
     public static class Builder
     {
         private final List<Representation> representations;
+        private final List<Requirement> requirements = new ArrayList<>();
         private NumericalInput input = NumericalInput.FLOATING_POINT;
         private Coercion coercion = Coercion.ROUND;
         private Whitespace whitespace = Whitespace.OPTIONAL;
@@ -159,6 +186,12 @@ public class ByteSizeParser
             return this;
         }
 
+        public Builder requiring(LongPredicate requirement, String error)
+        {
+            requirements.add(new Requirement(requirement, error));
+            return this;
+        }
+
         /**
          * Which ByteUnit to use if units are optional and the parse value
          * does not specify any units.
@@ -176,6 +209,7 @@ public class ByteSizeParser
 
     }
 
+    private final List<Requirement> requirements;
     private final Whitespace whitespace;
     private final UnitPresence unitPresence;
     private final NumericalInput input;
@@ -216,6 +250,7 @@ public class ByteSizeParser
         representations = builder.representations;
         defaultUnits = builder.defaultUnits;
         coercion = builder.coercion;
+        requirements = List.copyOf(builder.requirements);
     }
 
     private synchronized Pattern pattern()
@@ -242,7 +277,16 @@ public class ByteSizeParser
                 .map(s -> parseUnit(s).orElseThrow(() -> new NumberFormatException("Unknown unit \"" + s + "\"")))
                 .orElse(defaultUnits);
 
-        return input.convert(m.group("number"), givenUnits, targetUnits, coercion);
+        long size = input.convert(m.group("number"), givenUnits, targetUnits, coercion);
+
+        requirements.stream()
+                .map(r -> r.rejectionMessage(size))
+                .flatMap(Optional::stream)
+                .findFirst()
+                .map(IllegalArgumentException::new)
+                .ifPresent(e -> {throw e;});
+
+        return size;
     }
 
     private Optional<ByteUnit> parseUnit(String unit)

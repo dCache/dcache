@@ -33,6 +33,7 @@ import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.auth.FQAN;
+import org.dcache.util.ByteSizeParser;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.ColumnWriter;
@@ -41,10 +42,16 @@ import org.dcache.util.SqlGlob;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.primitives.Longs.tryParse;
-import static org.dcache.util.ArgumentHandler.parseByteQuantity;
+import static org.dcache.util.ByteUnits.isoPrefix;
+import static org.dcache.util.ByteUnits.isoSymbol;
 
 public class SpaceManagerCommandLineInterface implements CellCommandListener
 {
+    private static final ByteSizeParser SIZE_PARSER = ByteSizeParser
+            .using(isoPrefix(), isoSymbol())
+            .requiring(l -> l >= 0, "Size must be non-negative.")
+            .build();
+
     private SpaceManagerDatabase db;
     private PnfsHandler pnfs;
     private LinkGroupLoader linkGroupLoader;
@@ -216,7 +223,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             }
 
             if (size != null) {
-                space.setSizeInBytes(parseByteQuantity(size));
+                space.setSizeInBytes(SIZE_PARSER.parse(size));
             }
             if (description != null) {
                 space.setDescription(description);
@@ -713,7 +720,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Override
         public String executeInTransaction() throws DataAccessException
         {
-            long sizeInBytes = parseByteQuantity(size);
+            long sizeInBytes = SIZE_PARSER.parse(size);
 
             LinkGroup linkGroup = db.getLinkGroupByName(lg);
             if (linkGroup.getUpdateTime() < linkGroupLoader.getLatestUpdateTime()) {

@@ -418,4 +418,52 @@ public class ByteSizeParserTest
         // NB. "K" and "KB" are NOT valid ISO symbols, but they ARE valid JEDEC.
         ByteSizeParser.using(isoSymbol(), isoPrefix()).build().parse("1KB");
     }
+
+    @Test
+    public void shouldAcceptValidValue()
+    {
+        ByteSizeParser.using(isoSymbol())
+                .requiring(l -> l >= 0, "value must not be negative")
+                .build()
+                .parse("1KiB");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectNegativeValue()
+    {
+        ByteSizeParser.using(isoSymbol())
+                .requiring(l -> l >= 0, "value must not be negative")
+                .build()
+                .parse("-1KiB");
+    }
+
+    @Test
+    public void shouldAcceptValidValueWithTwoRequirements()
+    {
+        ByteSizeParser.using(isoSymbol())
+                .requiring(l -> l >= 0, "negative value")
+                .requiring(l -> l < MiB.toBytes(100), "number too big")
+                .build()
+                .parse("1KiB");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectNegativeValueWithTwoRequirements()
+    {
+        ByteSizeParser.using(isoSymbol())
+                .requiring(l -> l >= 0, "value must not be negative")
+                .requiring(l -> l < MiB.toBytes(100), "number too big")
+                .build()
+                .parse("-1KiB");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectTooLargeValueWithTwoRequirements()
+    {
+        ByteSizeParser.using(isoSymbol())
+                .requiring(l -> l >= 0, "value must not be negative")
+                .requiring(l -> l < MiB.toBytes(100), "number too big")
+                .build()
+                .parse("1GiB");
+    }
 }
