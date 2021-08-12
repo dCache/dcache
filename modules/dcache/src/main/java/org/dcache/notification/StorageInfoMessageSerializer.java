@@ -20,12 +20,18 @@ package org.dcache.notification;
 import org.apache.kafka.common.serialization.Serializer;
 import org.json.JSONObject;
 
+import java.net.URI;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
+import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -54,6 +60,14 @@ public class StorageInfoMessageSerializer implements Serializer<StorageInfoMessa
 
         o.put("session", data.getTransaction());
 
+        JSONObject hsm = new JSONObject();
+        hsm.put("type", data.getHsmType());
+        hsm.put("instance", data.getHsmInstance());
+        hsm.put("provider", data.getHsmProvider());
+        o.put("hsm", hsm);
+
+        o.put("locations", buildLocations(data));
+
         o.put("pnfsid", data.getPnfsId());
         o.put("billingPath", data.getBillingPath());
         o.put("fileSize", data.getFileSize());
@@ -61,9 +75,33 @@ public class StorageInfoMessageSerializer implements Serializer<StorageInfoMessa
 
         o.put("transferTime", data.getTransferTime());
 
-
-
         return o.toString().getBytes(UTF_8);
+    }
+
+    private List<URI> buildLocations(StorageInfoMessage data)
+    {
+        StorageInfo si = data.getStorageInfo();
+
+        switch (data.getMessageType()) {
+        case StorageInfoMessage.STORE_MSG_TYPE:
+            return si.isSetAddLocation() ? si.locations() : Collections.emptyList();
+
+        case StorageInfoMessage.RESTORE_MSG_TYPE:
+            String hsmType = data.getHsmType();
+            String hsmInstance = data.getHsmInstance();
+
+            // REVISIT this is (more-or-less) a copy-n-paste from
+            // AbstractBlockingNearlineStorage#getLocations and follows
+            // similar assumptions in HsmSet#getInstanceName.
+            return si.locations().stream()
+                .filter(uri -> Objects.equals(uri.getScheme(), hsmType))
+                .filter(uri -> Objects.equals(uri.getAuthority(), hsmInstance))
+                .collect(Collectors.toList());
+
+        default:
+            throw new IllegalArgumentException("Unexpected message type \""
+                    + data.getMessageType() + "\"");
+        }
     }
 
     @Override
