@@ -99,6 +99,11 @@
         <groupId>org.springframework</groupId>
         <artifactId>spring-beans</artifactId>
     </dependency>
+
+    <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

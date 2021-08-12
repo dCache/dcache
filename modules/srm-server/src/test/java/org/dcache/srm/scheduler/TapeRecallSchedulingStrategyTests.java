@@ -1,3 +1,20 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2021 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.srm.scheduler;
 
 import java.net.URI;
@@ -13,9 +30,11 @@ import org.dcache.srm.scheduler.strategy.TapeRecallSchedulingStrategy;
 import org.dcache.srm.taperecallscheduling.SchedulingInfoTape;
 import org.dcache.srm.taperecallscheduling.SchedulingItemJob;
 import org.dcache.srm.taperecallscheduling.TapeInfo;
-import org.dcache.srm.taperecallscheduling.TapeInfoProvider;
+import org.dcache.srm.taperecallscheduling.TapeInformant;
+import org.dcache.srm.taperecallscheduling.spi.TapeInfoProvider;
 import org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker;
 import org.dcache.srm.taperecallscheduling.TapefileInfo;
+import org.dcache.srm.taperecallscheduling.tapeinfoprovider.JsonFileTapeInfoProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,6 +89,17 @@ public class TapeRecallSchedulingStrategyTests {
                     .filter(e -> fileids.contains(e.getKey()))
                     .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         }
+
+        @Override
+        public String describe() {
+            return null;
+        }
+
+        @Override
+        public boolean reload() {
+            return false;
+        }
+
     }
 
     private BringOnlineFileRequest createJob(long jobid, String file, long ctime) throws URISyntaxException {
@@ -112,7 +142,9 @@ public class TapeRecallSchedulingStrategyTests {
         tapeInfoProvider.addTapeInfo("tape3", new TapeInfo(100, 70));
 
         strategy.setRequirementsChecker(requirementsChecker);
-        strategy.setTapeInfoProvider(tapeInfoProvider);
+        TapeInformant tapeInformant = new TapeInformant();
+        tapeInformant.setTapeInfoProvider(tapeInfoProvider);
+        strategy.setTapeInformant(tapeInformant);
     }
 
     @Test

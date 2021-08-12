@@ -20,14 +20,13 @@ package org.dcache.srm.scheduler.strategy;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
+import org.dcache.srm.taperecallscheduling.TapeInformant;
 import org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker;
-import org.dcache.srm.taperecallscheduling.TapeInfoProvider;
 
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class TapeRecallSchedulingStrategyProvider implements SchedulingStrategyProvider {
-    private TapeInfoProvider tapeInfoProvider;
+    private TapeInformant tapeInformant;
     private TapeRecallSchedulingRequirementsChecker requirementsChecker;
 
 
@@ -40,8 +39,9 @@ public class TapeRecallSchedulingStrategyProvider implements SchedulingStrategyP
     public void setConfiguration(Map<String, String> configuration) {
     }
 
-    public void setTapeInfoProvider(TapeInfoProvider provider) {
-        this.tapeInfoProvider = provider;
+    public void setTapeInformant(TapeInformant informant)
+    {
+        tapeInformant = informant;
     }
 
     public void setRequirementsChecker(TapeRecallSchedulingRequirementsChecker checker) {
@@ -51,7 +51,7 @@ public class TapeRecallSchedulingStrategyProvider implements SchedulingStrategyP
     @Override
     public SchedulingStrategy createStrategy(Scheduler scheduler) {
         TapeRecallSchedulingStrategy strategy = new TapeRecallSchedulingStrategy();
-        strategy.setTapeInfoProvider(tapeInfoProvider);
+        strategy.setTapeInformant(tapeInformant);
         strategy.setRequirementsChecker(requirementsChecker);
         return strategy;
     }

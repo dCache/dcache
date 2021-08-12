@@ -22,11 +22,11 @@ import com.google.common.base.Strings;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
+import org.dcache.srm.taperecallscheduling.TapeInformant;
 import org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker;
 import org.dcache.srm.taperecallscheduling.SchedulingItemJob;
 import org.dcache.srm.taperecallscheduling.SchedulingInfoTape;
 import org.dcache.srm.taperecallscheduling.TapeInfo;
-import org.dcache.srm.taperecallscheduling.TapeInfoProvider;
 import org.dcache.srm.taperecallscheduling.TapefileInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +59,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
     private static final long MIN_TIME_BETWEEN_TAPEINFO_FETCHING = MINUTES.toMillis(1);
 
     private TapeRecallSchedulingRequirementsChecker requirementsChecker;
-    private TapeInfoProvider tapeInfoProvider;
+    private TapeInformant tapeInformant;
     private long lastTapeInfoFetch = 0;
 
     // cached tape info and scheduling queues
@@ -75,8 +75,8 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
         requirementsChecker = moderator;
     }
 
-    public void setTapeInfoProvider(TapeInfoProvider provider) {
-        this.tapeInfoProvider = provider;
+    public void setTapeInformant(TapeInformant informant) {
+        tapeInformant = informant;
     }
 
     @Override
@@ -355,7 +355,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
                 .map(i -> {i.setAttemptedToRetrieveTapeLocationInfo(); return i.getFileid();})
                 .collect(Collectors.toList());
 
-        Map<String, TapefileInfo> newTapeFileInfos = tapeInfoProvider.getTapefileInfos(fileids);
+        Map<String, TapefileInfo> newTapeFileInfos = tapeInformant.getTapefileInfos(fileids);
         LOGGER.info("Retrieved tape info on {}/{} files", newTapeFileInfos.size(), fileids.size());
 
         Iterator<SchedulingItemJob> iterator = newJobs.iterator();
@@ -418,7 +418,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
         if (tapesWithoutInfo.size() == 0) {
             return;
         }
-        Map<String, TapeInfo> newInfo = tapeInfoProvider.getTapeInfos(tapesWithoutInfo);
+        Map<String, TapeInfo> newInfo = tapeInformant.getTapeInfos(tapesWithoutInfo);
         LOGGER.info("Retrieved info on {}/{} tapes", newInfo.size(), tapesWithoutInfo.size());
 
         newInfo.entrySet().stream().forEach(e -> addTapeInfo(e.getKey(), e.getValue().getCapacity(), e.getValue().getUsedSpace()));

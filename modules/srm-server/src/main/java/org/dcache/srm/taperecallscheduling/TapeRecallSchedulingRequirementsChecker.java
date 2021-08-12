@@ -28,7 +28,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellInfoProvider
     private long minNumberOfRequestsForTapeSelection = NO_VALUE;
     private long minJobWaitingTime = MINUTES.toMillis(2);
     private long maxJobWaitingTime = HOURS.toMillis(1);
-    private long tapeinfolessJobWaitingTime = MINUTES.toMillis(10); // queue waiting time for jos without tape info
+    private long tapeinfolessJobWaitingTime = MINUTES.toMillis(10); // queue waiting time for jobs without tape info
 
     public void setMaxActiveTapes(int tapeCount) {
         checkArgument(tapeCount > 0, "There need to be more than 0 max. active tapes");
@@ -174,6 +174,6 @@ public class TapeRecallSchedulingRequirementsChecker implements CellInfoProvider
         pw.printf("    Min. number of requests for tape selection: %s\n", minNumberOfRequestsForTapeSelection == NO_VALUE ? "-" : minNumberOfRequestsForTapeSelection);
         pw.printf("    Min. time requests stay in the queue: %s\n", TimeUtils.describe(Duration.ofMillis(minJobWaitingTime)).orElse("-"));
         pw.printf("    Max. time requests stay in the queue: %s\n", TimeUtils.describe(Duration.ofMillis(maxJobWaitingTime)).orElse("-"));
-        pw.printf("    Min. time in requests without tape info stay in the queue: %s\n", tapeinfolessJobWaitingTime == NO_VALUE ? "-" : TimeUtils.describe(Duration.ofMillis(tapeinfolessJobWaitingTime)).orElse("-"));
+        pw.printf("    Min. time requests without tape info stay in the queue: %s\n", tapeinfolessJobWaitingTime == NO_VALUE ? "-" : TimeUtils.describe(Duration.ofMillis(tapeinfolessJobWaitingTime)).orElse("-"));
     }
 }

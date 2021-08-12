@@ -452,19 +452,24 @@
         </property>
     </bean>
 
+    <bean id="tape-info-provider-provider" class="org.dcache.srm.taperecallscheduling.TapeInfoProviderFactoryBean">
+        <property name="name" value="${srmmanager.boclustering.plugins.tapeinfoprovider}"/>
+        <property name="tapeInfoDir" value="${srmmanager.boclustering.tapeinfo-dir}"/>
+    </bean>
+
+    <bean id="tape-informant" class="org.dcache.srm.taperecallscheduling.TapeInformant">
+        <description>Responsible for passing on tape location information</description>
+        <property name="tapeInfoProviderProvider" ref="tape-info-provider-provider"/>
+    </bean>
+
     <bean id="scheduling-strategy-provider-bringonline" class="org.dcache.srm.scheduler.strategy.TapeRecallSchedulingStrategyProvider">
         <property name="configuration">
             <bean class="org.dcache.util.configuration.ConfigurationMapFactoryBean">
                 <property name="prefix" value="srmmanager.scheduler.${srmmanager.plugins.scheduler-bring-online}"/>
             </bean>
         </property>
-        <property name="tapeInfoProvider" ref="tape-info-provider"/>
+        <property name="tapeInformant" ref="tape-informant"/>
         <property name="requirementsChecker" ref="tape-recall-scheduling-requirements-checker"/>
-    </bean>
-
-    <bean id="tape-info-provider" class="org.dcache.srm.taperecallscheduling.FilebasedTapeInfoProvider">
-        <description>Tape location info provider for tape recall scheduling</description>
-        <property name="tapeInfoDir" value="${srmmanager.boclustering.tapeinfo-dir}"/>
     </bean>
 
     <bean id="tape-recall-scheduling-requirements-checker" class="org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker">
