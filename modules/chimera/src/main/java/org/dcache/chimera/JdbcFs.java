@@ -21,9 +21,11 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import diskCacheV111.util.RetentionPolicy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -63,7 +65,10 @@ import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 
 import static com.google.common.base.Preconditions.checkArgument;
+
 import java.nio.charset.StandardCharsets;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.dcache.acl.enums.AceFlags.*;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
@@ -1568,15 +1573,29 @@ public class JdbcFs implements FileSystemProvider {
         }
     }
 
+    // REVISIT: this method violates DRY by duplicating functionality from
+    // ChimeraHsmStorageInfoExtractor#getRetentionPolicy.
     private RetentionPolicy getRetentionPolicyFromParentTag(FsInode parent)
     {
+        String firstLine;
+
         try {
             Stat tagStat = statTag(parent, "RetentionPolicy");
             byte[] data = new byte[(int) tagStat.getSize()];
             getTag(parent, "RetentionPolicy", data, 0, data.length);
-            RetentionPolicy rp = RetentionPolicy.valueOf(new String(data));
-            return rp;
+            firstLine = ByteSource.wrap(data).asCharSource(UTF_8).readFirstLine();
         } catch (ChimeraFsException e) {
+            return _defaultRetentionPolicy;
+        } catch (IOException e) {
+            // This should not happen.
+            throw new RuntimeException("Unexpected IOException found", e);
+        }
+
+        try {
+            return RetentionPolicy.valueOf(firstLine);
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Badly formatted RetentionPolicy tag in {}: {}", parent,
+                    e.getMessage());
             return _defaultRetentionPolicy;
         }
     }
