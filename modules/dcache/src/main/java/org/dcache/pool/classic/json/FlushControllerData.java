@@ -61,7 +61,9 @@ package org.dcache.pool.classic.json;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.Date;
+import java.time.Instant;
+
+import org.dcache.util.TimeUtils;
 
 /**
  * <p>Corresponds to the information delivered
@@ -103,8 +105,8 @@ public class FlushControllerData implements Serializable {
         pw.println("   Minimum flush delay on error  : " + flushDelayOnError
                                    + " ms");
         if (nextFlush != null) {
-            pw.println("   Next flush                    : " + new Date(
-                            nextFlush));
+            pw.println("   Next flush                    : "
+                    + TimeUtils.relativeTimestamp(Instant.ofEpochMilli(nextFlush)));
         }
     }
 
