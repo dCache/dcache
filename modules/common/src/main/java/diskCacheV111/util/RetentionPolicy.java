@@ -145,7 +145,7 @@ public final class RetentionPolicy implements Serializable {
             int id = Integer.parseInt(policy);
             return getRetentionPolicy(id);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Unknown Policy");
+            throw new IllegalArgumentException("Unknown Policy: \"" + policy + "\"");
         }
     }
 
@@ -157,7 +157,7 @@ public final class RetentionPolicy implements Serializable {
             }
         }
 
-        throw new IllegalArgumentException("Unknown policy Id");
+        throw new IllegalArgumentException("Unknown policy Id: " + id);
     }
 
     public static RetentionPolicy valueOf(String value) {
