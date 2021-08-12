@@ -178,10 +178,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         /* close leftover descriptors */
         for (FileDescriptor descriptor : _descriptors) {
             if (descriptor != null) {
-                /*
-                 *  Does not affect read descriptors.
-                 */
-                descriptor.close();
+                if (descriptor instanceof TpcWriteDescriptor) {
+                    ((TpcWriteDescriptor)descriptor).shutDown();
+                }
+
                 if (descriptor.isPersistOnSuccessfulClose()) {
                     descriptor.getChannel().release(new FileCorruptedCacheException(
                             "File was opened with Persist On Successful Close and not closed."));
@@ -774,11 +774,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
          *  The alternative adopted here is to implement a forcible close by releasing
          *  all references to the mover.
          */
-
-        FileDescriptor descriptor = _descriptors.get(fd);
-        descriptor.close();
-
-        NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel = descriptor.getChannel();
+        NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel
+                        = _descriptors.get(fd).getChannel();
 
         /*
          *  Stop any timer in case this is a reconnect.
