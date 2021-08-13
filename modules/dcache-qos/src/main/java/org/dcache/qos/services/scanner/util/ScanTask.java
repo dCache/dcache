@@ -60,42 +60,24 @@ documents or software obtained from this server.
 package org.dcache.qos.services.scanner.util;
 
 import java.util.concurrent.ExecutorService;
-import org.dcache.qos.data.QoSMessageType;
-import org.dcache.qos.services.scanner.data.PoolScanSummary;
-import org.dcache.qos.services.scanner.handlers.PoolOpHandler;
+import java.util.concurrent.Future;
+import org.dcache.pool.classic.Cancellable;
+import org.dcache.qos.util.ErrorAwareTask;
 
-/**
- *  Executes call to scan a pool and dispatch verification requests.
- */
-public final class PoolScanTask extends ScanTask {
-    private final PoolOpHandler handler;
-    private final PoolScanSummary scan;
+public abstract class ScanTask extends ErrorAwareTask implements Cancellable {
+  private Future future;
 
-    public PoolScanTask(String pool,
-                        QoSMessageType type,
-                        String group,
-                        String storageUnit,
-                        boolean forced,
-                        PoolOpHandler handler) {
-        this.handler = handler;
-        scan = new PoolScanSummary(pool, type, group, storageUnit, forced);
+  @Override
+  public synchronized void cancel(String explanation) {
+    if (future != null) {
+      future.cancel(true);
+      future = null;
     }
+  }
 
-    @Override
-    public void run() {
-        if (!scan.isCancelled()) {
-            handler.handlePoolScan(scan);
-        }
-    }
+  public void submit() {
+    future = getService().submit(toFireAndForgetTask());
+  }
 
-    @Override
-    public synchronized void cancel(String explanation) {
-        scan.setCancelled(true);
-        super.cancel(explanation);
-    }
-
-    @Override
-    protected ExecutorService getService() {
-        return handler.getPoolTaskService();
-    }
+  protected abstract ExecutorService getService();
 }

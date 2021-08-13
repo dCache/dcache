@@ -75,9 +75,9 @@ import org.slf4j.LoggerFactory;
  *  Updates the scan counts on the basis of verification response.  Updates the operation map
  *  when a pool's status has changed.
  */
-public final class NamespacePoolOpHandler implements PoolOpHandler {
+public final class NamespaceOpHandler implements PoolOpHandler {
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(NamespacePoolOpHandler.class);
+                    = LoggerFactory.getLogger(NamespaceOpHandler.class);
 
     private NamespaceAccess  namespace;
     private QoSPoolScanResponseListener listener;
@@ -88,7 +88,7 @@ public final class NamespacePoolOpHandler implements PoolOpHandler {
 
     private PoolTaskCompletionHandler completionHandler;
 
-    public ExecutorService getTaskService() {
+    public ExecutorService getPoolTaskService() {
         return taskService;
     }
 

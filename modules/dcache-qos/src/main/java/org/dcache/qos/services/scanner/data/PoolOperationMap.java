@@ -98,8 +98,8 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.qos.data.PoolQoSStatus;
 import org.dcache.qos.data.QoSMessageType;
-import org.dcache.qos.services.scanner.data.PoolOperation.NextAction;
-import org.dcache.qos.services.scanner.data.PoolOperation.State;
+import org.dcache.qos.services.scanner.data.PoolScanOperation.NextAction;
+import org.dcache.qos.services.scanner.data.PoolScanOperation.State;
 import org.dcache.qos.services.scanner.handlers.PoolOpHandler;
 import org.dcache.qos.services.scanner.util.PoolScanTask;
 import org.dcache.qos.services.scanner.util.QoSScannerCounters;
@@ -118,7 +118,7 @@ import org.slf4j.LoggerFactory;
  *  is observed before actually launching the associated task.
  *  <p/>
  *  Subsequent duplicate messages are handled according to a transition
- *  table (see {@link PoolOperation#getNextAction(PoolQoSStatus)}) which defines whether
+ *  table (see {@link PoolScanOperation#getNextAction(PoolQoSStatus)}) which defines whether
  *  the current operation should be kept, replaced or cancelled (see {@link #update}).
  *  <p/>
  *  The map is swept every period.  Idle pools are first checked for expired
@@ -145,9 +145,9 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
   private static final Logger LOGGER = LoggerFactory.getLogger(PoolOperationMap.class);
 
   @VisibleForTesting
-  protected final Map<String, PoolOperation> idle = new LinkedHashMap<>();
-  protected final Map<String, PoolOperation> waiting = new LinkedHashMap<>();
-  protected final Map<String, PoolOperation> running = new HashMap<>();
+  protected final Map<String, PoolScanOperation> idle = new LinkedHashMap<>();
+  protected final Map<String, PoolScanOperation> waiting = new LinkedHashMap<>();
+  protected final Map<String, PoolScanOperation> running = new HashMap<>();
 
   class Watchdog {
     Integer rescanWindow;
@@ -229,7 +229,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
    * @param operations        the pools which could potentially be in the excluded state.
    */
   private static void save(String excludedPoolsFile,
-      Map<String, PoolOperation> operations) {
+      Map<String, PoolScanOperation> operations) {
     File current = new File(excludedPoolsFile);
     try {
       java.nio.file.Files.deleteIfExists(current.toPath());
@@ -404,7 +404,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
   }
 
   public String getState(String pool) {
-    PoolOperation operation = get(pool);
+    PoolScanOperation operation = get(pool);
     if (operation == null) {
       return null;
     }
@@ -420,7 +420,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
    */
   public String list(PoolMatcher filter) {
     StringBuilder builder = new StringBuilder();
-    TreeMap<String, PoolOperation>[] tmp = new TreeMap[]{new TreeMap(),
+    TreeMap<String, PoolScanOperation>[] tmp = new TreeMap[]{new TreeMap(),
         new TreeMap<>(),
         new TreeMap<>()};
     lock.lock();
@@ -443,10 +443,10 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
 
     int total = 0;
 
-    for (TreeMap<String, PoolOperation> map : tmp) {
-      for (Entry<String, PoolOperation> entry : map.entrySet()) {
+    for (TreeMap<String, PoolScanOperation> map : tmp) {
+      for (Entry<String, PoolScanOperation> entry : map.entrySet()) {
         String key = entry.getKey();
-        PoolOperation op = entry.getValue();
+        PoolScanOperation op = entry.getValue();
         if (filter.matches(key, op)) {
           builder.append(key).append("\t").append(op).append("\n");
           ++total;
@@ -517,7 +517,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
        *  lost all their replicas.
        */
       addPool(QoSMessageType.CHECK_CUSTODIAL_ONLINE.name());
-      PoolOperation operation = get(QoSMessageType.CHECK_CUSTODIAL_ONLINE.name());
+      PoolScanOperation operation = get(QoSMessageType.CHECK_CUSTODIAL_ONLINE.name());
       operation.currStatus = PoolQoSStatus.ENABLED;
       operation.lastStatus = PoolQoSStatus.ENABLED;
     } finally {
@@ -628,7 +628,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     try {
       Set<String> pools = getMappedPools();
       for (String pool : pools) {
-        PoolOperation operation = null;
+        PoolScanOperation operation = null;
         if (waiting.containsKey(pool)) {
           operation = waiting.get(pool);
         } else if (idle.containsKey(pool)) {
@@ -719,8 +719,8 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     LOGGER.trace("updateStatus for {}: {}.", pool, status);
     lock.lock();
     try {
-      Map<String, PoolOperation> queue = running;
-      PoolOperation operation = queue.get(pool);
+      Map<String, PoolScanOperation> queue = running;
+      PoolScanOperation operation = queue.get(pool);
 
       if (operation == null) {
         queue = waiting;
@@ -785,7 +785,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     LOGGER.debug("Parent {}, child operation has completed.", pool);
     lock.lock();
     try {
-      PoolOperation operation = get(pool);
+      PoolScanOperation operation = get(pool);
       operation.incrementCompleted(failed);
       if (operation.isComplete()) {
         terminate(pool, operation);
@@ -800,7 +800,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     LOGGER.debug("Pool {}, operation update, children {}.", pool, children);
     lock.lock();
     try {
-      PoolOperation operation = get(pool);
+      PoolScanOperation operation = get(pool);
       operation.exception = exception;
       operation.setChildren(children);
       operation.lastUpdate = System.currentTimeMillis();
@@ -831,14 +831,14 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     }
 
     idle.put(pool,
-             new PoolOperation(initializationGracePeriodUnit.toMillis(initializationGracePeriod)));
+             new PoolScanOperation(initializationGracePeriodUnit.toMillis(initializationGracePeriod)));
   }
 
-  private long cancel(Map<String, PoolOperation> queue, PoolMatcher filter) {
+  private long cancel(Map<String, PoolScanOperation> queue, PoolMatcher filter) {
     AtomicLong canceled = new AtomicLong(0);
 
     ImmutableSet.copyOf(queue.keySet()).stream().forEach((k) -> {
-      PoolOperation operation = queue.get(k);
+      PoolScanOperation operation = queue.get(k);
       if (filter.matches(k, operation)) {
         cancel(k, operation, queue);
         canceled.incrementAndGet();
@@ -848,7 +848,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     return canceled.get();
   }
 
-  private void cancel(String pool, PoolOperation operation, Map<String, PoolOperation> queue) {
+  private void cancel(String pool, PoolScanOperation operation, Map<String, PoolScanOperation> queue) {
     if (operation.task != null) {
       operation.task.cancel("qos admin command");
       operation.task = null;
@@ -914,7 +914,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
       return false;
     }
 
-    PoolOperation operation;
+    PoolScanOperation operation;
 
     if (waiting.containsKey(pool)) {
       LOGGER.debug("Scan of {} is already in waiting state, setting its "
@@ -973,8 +973,8 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
   /**
    *  @return operation, or <code>null</code> if not mapped.
    */
-  private PoolOperation get(String pool) {
-    PoolOperation operation = running.get(pool);
+  private PoolScanOperation get(String pool) {
+    PoolScanOperation operation = running.get(pool);
 
     if (operation == null) {
       operation = waiting.get(pool);
@@ -987,7 +987,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     return operation;
   }
 
-  private void reset(String pool, PoolOperation operation) {
+  private void reset(String pool, PoolScanOperation operation) {
     operation.lastUpdate = System.currentTimeMillis();
     operation.group = null;
     operation.unit = null;
@@ -1018,11 +1018,11 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
       long now = System.currentTimeMillis();
       long expiry = watchdog.getExpiry();
 
-      for (Iterator<Entry<String, PoolOperation>> i
+      for (Iterator<Entry<String, PoolScanOperation>> i
           = idle.entrySet().iterator(); i.hasNext(); ) {
-        Entry<String, PoolOperation> entry = i.next();
+        Entry<String, PoolScanOperation> entry = i.next();
         String pool = entry.getKey();
-        PoolOperation operation = entry.getValue();
+        PoolScanOperation operation = entry.getValue();
 
         if (operation.state == State.EXCLUDED) {
           continue;
@@ -1071,10 +1071,10 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
       long downExpiry = downGracePeriodUnit.toMillis(downGracePeriod);
       long restartExpiry = restartGracePeriodUnit.toMillis(restartGracePeriod);
 
-      for (Iterator<Entry<String, PoolOperation>> i = waiting.entrySet().iterator(); i.hasNext(); ) {
-        Entry<String, PoolOperation> entry = i.next();
+      for (Iterator<Entry<String, PoolScanOperation>> i = waiting.entrySet().iterator(); i.hasNext(); ) {
+        Entry<String, PoolScanOperation> entry = i.next();
         String pool = entry.getKey();
-        PoolOperation operation = entry.getValue();
+        PoolScanOperation operation = entry.getValue();
         long expiry;
 
         switch (operation.currStatus) {
@@ -1106,7 +1106,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     }
   }
 
-  private void submit(String pool, PoolOperation operation) {
+  private void submit(String pool, PoolScanOperation operation) {
     QoSMessageType type = pool.equals(QoSMessageType.CHECK_CUSTODIAL_ONLINE.name()) ?
         QoSMessageType.CHECK_CUSTODIAL_ONLINE : operation.currStatus.toMessageType();
     operation.task = new PoolScanTask(pool, type, operation.group,
@@ -1120,7 +1120,7 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
     operation.task.submit();
   }
 
-  private void terminate(String pool, PoolOperation operation) {
+  private void terminate(String pool, PoolScanOperation operation) {
     LOGGER.debug("terminate, pool {}, {}.", pool, operation);
 
     if (operation.exception != null) {
@@ -1145,12 +1145,12 @@ public class PoolOperationMap extends RunnableModule implements CellInfoProvider
   }
 
   private void update(PoolMatcher filter,
-                      Map<String, PoolOperation> queue,
+                      Map<String, PoolScanOperation> queue,
                       boolean include,
                       Set<String> visited) {
     ImmutableSet.copyOf(queue.keySet()).stream().forEach((k) -> {
       if (!visited.contains(k)) {
-        PoolOperation operation = queue.get(k);
+        PoolScanOperation operation = queue.get(k);
         if (filter.matches(k, operation)) {
           if (!include) {
             if (operation.task != null) {

@@ -57,45 +57,40 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.scanner.util;
+package org.dcache.qos.services.scanner.data;
 
-import java.util.concurrent.ExecutorService;
-import org.dcache.qos.data.QoSMessageType;
-import org.dcache.qos.services.scanner.data.PoolScanSummary;
-import org.dcache.qos.services.scanner.handlers.PoolOpHandler;
+import org.dcache.qos.services.scanner.util.ScanTask;
 
-/**
- *  Executes call to scan a pool and dispatch verification requests.
- */
-public final class PoolScanTask extends ScanTask {
-    private final PoolOpHandler handler;
-    private final PoolScanSummary scan;
+abstract class ScanOperation<T extends ScanTask> {
+  protected enum ScanLabel {
+    STARTED("started"),
+    FINISHED("finished");
 
-    public PoolScanTask(String pool,
-                        QoSMessageType type,
-                        String group,
-                        String storageUnit,
-                        boolean forced,
-                        PoolOpHandler handler) {
-        this.handler = handler;
-        scan = new PoolScanSummary(pool, type, group, storageUnit, forced);
+    private String label;
+
+    ScanLabel(String label) {
+      this.label = label;
     }
 
-    @Override
-    public void run() {
-        if (!scan.isCancelled()) {
-            handler.handlePoolScan(scan);
-        }
+    public String label() {
+      return label;
     }
+  }
 
-    @Override
-    public synchronized void cancel(String explanation) {
-        scan.setCancelled(true);
-        super.cancel(explanation);
-    }
+  protected T task;
+  protected ScanLabel scanLabel;
+  protected long lastUpdate;
+  protected long lastScan;
+  protected long completed;
+  protected long failed;
 
-    @Override
-    protected ExecutorService getService() {
-        return handler.getPoolTaskService();
-    }
+  protected String getFailedMessage() {
+    return failed == 0 ? "" : failed + " operations failed";
+  }
+
+  protected abstract void  incrementCompleted(boolean failed);
+
+  protected abstract String getFormattedPercentDone();
+
+  protected abstract boolean isComplete();
 }

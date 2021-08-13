@@ -68,7 +68,7 @@ public interface PoolMatcher {
      *  @param operation containing status and state information
      *  @return whether the pool, status and state match
      */
-    boolean matches(String pool, PoolOperation operation);
+    boolean matches(String pool, PoolScanOperation operation);
 
     /**
      *  @return true if the matcher should match running operations.

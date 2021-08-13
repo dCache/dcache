@@ -85,7 +85,7 @@ public final class PoolFilter implements PoolMatcher {
                         null == lastScanAfter;
     }
 
-    public boolean matches(String pool, PoolOperation operation) {
+    public boolean matches(String pool, PoolScanOperation operation) {
         if (state != null && !state.contains(operation.state.name())) {
             return false;
         }

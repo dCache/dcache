@@ -60,7 +60,7 @@ documents or software obtained from this server.
 package org.dcache.qos.remote.receivers;
 
 import dmg.cells.nucleus.CellMessageReceiver;
-import org.dcache.qos.services.scanner.handlers.NamespacePoolOpHandler;
+import org.dcache.qos.services.scanner.handlers.NamespaceOpHandler;
 import org.dcache.qos.util.MessageGuard;
 import org.dcache.qos.util.MessageGuard.Status;
 import org.dcache.qos.vehicles.QoSScannerVerificationResponseMessage;
@@ -76,7 +76,7 @@ public final class QoSScannerReceiver implements CellMessageReceiver {
   private static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
 
   private MessageGuard           messageGuard;
-  private NamespacePoolOpHandler handler;
+  private NamespaceOpHandler handler;
 
   public void messageArrived(QoSScannerVerificationResponseMessage message) {
     ACTIVITY_LOGGER.info("Received QoSBatchedVerificationResponseMessage for {}",
@@ -91,7 +91,7 @@ public final class QoSScannerReceiver implements CellMessageReceiver {
                                               message.getFailed());
   }
 
-  public void setHandler(NamespacePoolOpHandler handler) {
+  public void setHandler(NamespaceOpHandler handler) {
     this.handler = handler;
   }
 

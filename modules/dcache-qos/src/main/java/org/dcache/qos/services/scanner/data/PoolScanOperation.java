@@ -67,14 +67,18 @@ import org.dcache.qos.util.ExceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.dcache.qos.services.scanner.data.PoolScanOperation.State.WAITING;
+import static org.dcache.qos.services.scanner.data.ScanOperation.ScanLabel.FINISHED;
+import static org.dcache.qos.services.scanner.data.ScanOperation.ScanLabel.STARTED;
+
 /**
  *  Object stored in the pool operation map.
  */
-public final class PoolOperation {
-    private static final Logger LOGGER    = LoggerFactory.getLogger(PoolOperation.class);
+public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
+    private static final Logger LOGGER    = LoggerFactory.getLogger(PoolScanOperation.class);
 
     private static final String TO_STRING = "(completed: %s / %s : %s%%) – "
-                    + "(updated: %s)(scanned: %s)(prev %s)(curr %s)(%s) %s";
+                    + "(updated: %s)(%s: %s)(prev %s)(curr %s)(%s) %s";
 
     enum State {
         IDLE,       /* NEXT OPERATION READY TO RUN               */
@@ -94,22 +98,17 @@ public final class PoolOperation {
     final long initializationGracePeriod;
 
     boolean                 forceScan;  /* Overrides non-handling of restarts */
-    long                    lastUpdate;
-    long                    lastScan;
     String                  group;      /* Only set when the psuAction != NONE */
     String                  unit;       /* Set when unit has changed, or scan
                                            is periodic or initiated by command */
     State                   state;
     PoolQoSStatus           lastStatus;
     PoolQoSStatus           currStatus;
-    PoolScanTask            task;
     CacheException          exception;
 
-    private int children;
-    private int completed;
-    private int failed;
+    private long children;
 
-    PoolOperation(long initializationGracePeriod) {
+    PoolScanOperation(long initializationGracePeriod) {
         this.initializationGracePeriod = initializationGracePeriod;
         forceScan = false;
         group = null;
@@ -117,19 +116,22 @@ public final class PoolOperation {
         state = State.IDLE;
         lastUpdate = System.currentTimeMillis();
         lastScan = lastUpdate;
+        scanLabel = FINISHED;
         lastStatus = PoolQoSStatus.UNINITIALIZED;
         currStatus = PoolQoSStatus.UNINITIALIZED;
-        children = 0;
-        completed = 0;
-        failed = 0;
+        children = 0L;
+        completed = 0L;
+        failed = 0L;
     }
 
     public String toString() {
+        scanLabel = state == State.RUNNING || state == WAITING ? STARTED : FINISHED;
         return String.format(TO_STRING,
                              completed,
                              children == 0 && completed > 0 ? "?" : children,
                              getFormattedPercentDone(),
                              FileQoSUpdate.getFormattedDateFromMillis(lastUpdate),
+                             scanLabel.label(),
                              FileQoSUpdate.getFormattedDateFromMillis(lastScan),
                              lastStatus, currStatus, state,
                              exception == null ? getFailedMessage() :
@@ -203,7 +205,7 @@ public final class PoolOperation {
         }
     }
 
-    synchronized void incrementCompleted(boolean failed) {
+    protected synchronized void incrementCompleted(boolean failed) {
         LOGGER.trace("entering incrementCompleted, state {}, failed {}, "
                                      + "children {}, completed = {}.",
                      state, failed, children, completed );
@@ -212,35 +214,36 @@ public final class PoolOperation {
             if (failed) {
                 ++this.failed;
             }
+            lastUpdate = System.currentTimeMillis();
         }
         LOGGER.trace("leaving incrementCompleted, state {}, failed {}, "
                                      + "children {}, completed = {}.",
                      state, failed, children, completed );
     }
 
-    synchronized boolean isComplete() {
+    protected synchronized boolean isComplete() {
         boolean isComplete = children > 0 && children == completed;
         LOGGER.trace("isComplete {}, children {}, completed = {}.",
                      isComplete, children, completed );
         return isComplete;
     }
 
-    synchronized int failedChildren() {
+    synchronized long failedChildren() {
         return failed;
     }
 
-    synchronized int getCompleted() { return completed; }
+    synchronized long getCompleted() { return completed; }
 
     synchronized void resetChildren() {
-        children = 0;
-        completed = 0;
+        children = 0L;
+        completed = 0L;
     }
 
     synchronized void resetFailed() {
         failed = 0;
     }
 
-    synchronized void setChildren(int children) {
+    synchronized void setChildren(long children) {
         if (state == State.RUNNING) {
             this.children = children;
         }
@@ -250,11 +253,7 @@ public final class PoolOperation {
         return System.currentTimeMillis() - lastUpdate >= initializationGracePeriod;
     }
 
-    private String getFailedMessage() {
-        return failed == 0 ? "" : failed + " file operations failed";
-    }
-
-    private String getFormattedPercentDone() {
+    protected String getFormattedPercentDone() {
         String percent = children == 0 ?
                         "?" :
                         (children == completed ? "100" :
