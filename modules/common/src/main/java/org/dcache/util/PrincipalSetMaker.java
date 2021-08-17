@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.dcache.auth.DesiredRole;
 import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.ExemptFromNamespaceChecks;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
@@ -178,6 +179,12 @@ public class PrincipalSetMaker
     public PrincipalSetMaker withKerberos(String kerberos)
     {
         _principals.add(new KerberosPrincipal(kerberos));
+        return this;
+    }
+
+    public PrincipalSetMaker withExemptFromNamespaceChecks()
+    {
+        _principals.add(new ExemptFromNamespaceChecks());
         return this;
     }
 
