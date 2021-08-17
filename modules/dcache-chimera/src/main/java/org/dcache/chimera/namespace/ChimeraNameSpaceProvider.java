@@ -228,7 +228,7 @@ public class ChimeraNameSpaceProvider
     private ExtendedInode pathToInode(Subject subject, String path)
         throws ChimeraFsException, CacheException
     {
-        if (Subjects.isRoot(subject)) {
+        if (Subjects.isExemptFromNamespaceChecks(subject)) {
             return new ExtendedInode(_fs, _fs.path2inode(path));
         }
 
@@ -304,7 +304,7 @@ public class ChimeraNameSpaceProvider
             }
             ExtendedInode parent = pathToInode(subject, parentPath);
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 FileAttributes attributes
                         = getFileAttributesForPermissionHandler(parent);
                 if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
@@ -409,7 +409,7 @@ public class ChimeraNameSpaceProvider
             }
             ExtendedInode parent = pathToInode(subject, parentPath);
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 FileAttributes attributes
                         = getFileAttributesForPermissionHandler(parent);
                 if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
@@ -505,7 +505,7 @@ public class ChimeraNameSpaceProvider
 
             checkAllowed(allowed, inode);
 
-            if (!Subjects.isRoot(subject) && !canDelete(subject, inode.getParent(), inode)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject) && !canDelete(subject, inode.getParent(), inode)) {
                 throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
             }
 
@@ -540,7 +540,7 @@ public class ChimeraNameSpaceProvider
             ExtendedInode inode = parent.inodeOf(name, STAT);
             checkAllowed(allowed, inode);
 
-            if (!Subjects.isRoot(subject) && !canDelete(subject, parent, inode)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject) && !canDelete(subject, parent, inode)) {
                 throw new PermissionDeniedCacheException("Access denied: " + path);
             }
 
@@ -579,7 +579,7 @@ public class ChimeraNameSpaceProvider
 
             checkAllowed(allowed, inode);
 
-            if (!Subjects.isRoot(subject) && !canDelete(subject, parent, inode)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject) && !canDelete(subject, parent, inode)) {
                 throw new PermissionDeniedCacheException("Access denied: " + path);
             }
 
@@ -617,7 +617,7 @@ public class ChimeraNameSpaceProvider
             if (pnfsId != null) {
                 inode = new ExtendedInode(_fs, pnfsId, STAT);
             } else {
-                if (!Subjects.isRoot(subject) &&
+                if (!Subjects.isExemptFromNamespaceChecks(subject) &&
                     _permissionHandler.canLookup(subject, sourceDirAttributes) != ACCESS_ALLOWED) {
                     throw new PermissionDeniedCacheException("Access denied: " + sourcePath);
                 }
@@ -659,8 +659,8 @@ public class ChimeraNameSpaceProvider
 
             /* Permission checks.
              */
-            if (!Subjects.isRoot(subject) || !overwrite) {
-                if (!Subjects.isRoot(subject) &&
+            if (!Subjects.isExemptFromNamespaceChecks(subject) || !overwrite) {
+                if (!Subjects.isExemptFromNamespaceChecks(subject) &&
                     _permissionHandler.canRename(subject,
                                                  sourceDirAttributes,
                                                  destDirAttributes,
@@ -1023,7 +1023,7 @@ public class ChimeraNameSpaceProvider
         try {
             ExtendedInode inode = new ExtendedInode(_fs, pnfsId, STAT);
 
-            if (Subjects.isRoot(subject)) {
+            if (Subjects.isExemptFromNamespaceChecks(subject)) {
                 return getFileAttributes(inode, attr);
             }
 
@@ -1060,9 +1060,9 @@ public class ChimeraNameSpaceProvider
         _log.debug("File attributes update: {}", attr.getDefinedAttributes());
 
         try {
-            ExtendedInode inode = new ExtendedInode(_fs, pnfsId, Subjects.isRoot(subject) ? NO_STAT : STAT);
+            ExtendedInode inode = new ExtendedInode(_fs, pnfsId, Subjects.isExemptFromNamespaceChecks(subject) ? NO_STAT : STAT);
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 FileAttributes attributes =
                     getFileAttributesForPermissionHandler(inode);
 
@@ -1210,7 +1210,7 @@ public class ChimeraNameSpaceProvider
                 throw new NotDirCacheException("Not a directory: " + path);
             }
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 FileAttributes attributes =
                     getFileAttributesForPermissionHandler(dir);
                 if (!dir.isDirectory()) {
@@ -1258,7 +1258,7 @@ public class ChimeraNameSpaceProvider
     private ExtendedInode mkdir(Subject subject, ExtendedInode parent, String name, int uid, int gid, int mode)
             throws ChimeraFsException, CacheException
     {
-        if (!Subjects.isRoot(subject)) {
+        if (!Subjects.isExemptFromNamespaceChecks(subject)) {
             FileAttributes attributesOfParent
                     = getFileAttributesForPermissionHandler(parent);
             if (_permissionHandler.canCreateSubDir(subject, attributesOfParent) != ACCESS_ALLOWED) {
@@ -1338,7 +1338,7 @@ public class ChimeraNameSpaceProvider
                             : lookupDirectory(subject, path.parent());
 
             FileAttributes attributesOfParent =
-                    !Subjects.isRoot(subject)
+                    !Subjects.isExemptFromNamespaceChecks(subject)
                             ? getFileAttributesForPermissionHandler(parentOfPath)
                             : null;
 
@@ -1352,7 +1352,7 @@ public class ChimeraNameSpaceProvider
                 }
                 /* User must be authorized to delete existing file.
                  */
-                if (!Subjects.isRoot(subject)) {
+                if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                     FileAttributes attributesOfPath =
                             getFileAttributesForPermissionHandler(inodeOfPath);
                     if (_permissionHandler.canDeleteFile(subject,
@@ -1366,7 +1366,7 @@ public class ChimeraNameSpaceProvider
 
             /* User must be authorized to create file.
              */
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 if (_permissionHandler.canCreateFile(subject, attributesOfParent) != ACCESS_ALLOWED) {
                     throw new PermissionDeniedCacheException("Access denied: " + path);
                 }
@@ -1536,7 +1536,7 @@ public class ChimeraNameSpaceProvider
                 }
                 /* User must be authorized to delete existing file.
                  */
-                if (!Subjects.isRoot(subject)) {
+                if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                     FileAttributes attributesOfParent =
                             getFileAttributesForPermissionHandler(finalDirInode);
                     FileAttributes attributesOfFile =
@@ -1650,7 +1650,7 @@ public class ChimeraNameSpaceProvider
         try {
             ExtendedInode target = pathToInode(subject, path.toString());
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 FileAttributes attributes = getFileAttributesForPermissionHandler(target);
                 if (target.isDirectory()) {
                     if (_permissionHandler.canListDir(subject, attributes) != ACCESS_ALLOWED) {
@@ -1678,7 +1678,7 @@ public class ChimeraNameSpaceProvider
         try {
             ExtendedInode target = pathToInode(subject, path.toString());
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 FileAttributes attributes = getFileAttributesForPermissionHandler(target);
                 if (target.isDirectory()) {
                     if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
@@ -1725,7 +1725,7 @@ public class ChimeraNameSpaceProvider
         try {
             ExtendedInode target = pathToInode(subject, path.toString());
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 FileAttributes attributes = getFileAttributesForPermissionHandler(target);
                 if (target.isDirectory()) {
                     if (_permissionHandler.canListDir(subject, attributes) != ACCESS_ALLOWED) {
@@ -1753,7 +1753,7 @@ public class ChimeraNameSpaceProvider
         try {
             ExtendedInode target = pathToInode(subject, path.toString());
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isExemptFromNamespaceChecks(subject)) {
                 FileAttributes attributes = getFileAttributesForPermissionHandler(target);
                 if (target.isDirectory()) {
                     if (_permissionHandler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
