@@ -3105,7 +3105,7 @@ public class PnfsManagerV3
     private void checkMask(Subject subject, PnfsId pnfsId, Set<AccessMask> mask)
         throws CacheException
     {
-        if (!Subjects.isRoot(subject) && !mask.isEmpty()) {
+        if (!Subjects.isExemptFromNamespaceChecks(subject) && !mask.isEmpty()) {
             Set<FileAttribute> required =
                 _permissionHandler.getRequiredAttributes();
             FileAttributes attributes =
@@ -3122,7 +3122,7 @@ public class PnfsManagerV3
     private void checkMask(Subject subject, String path, Set<AccessMask> mask)
         throws CacheException
     {
-        if (!Subjects.isRoot(subject) && !mask.isEmpty()) {
+        if (!Subjects.isExemptFromNamespaceChecks(subject) && !mask.isEmpty()) {
             Set<FileAttribute> required =
                 _permissionHandler.getRequiredAttributes();
             PnfsId pnfsId = _nameSpaceProvider.pathToPnfsid(ROOT, path, false);

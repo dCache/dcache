@@ -22,6 +22,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.dcache.util.PrincipalSetMaker;
+
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class Subjects
@@ -65,6 +67,21 @@ public class Subjects
     public static boolean isRoot(Subject subject)
     {
         return hasUid(subject, 0);
+    }
+
+    /**
+     * Return true if the subject is root or has the special
+     * ExemptFromNamespaceChecks principal.
+     * @param subject The identity of the user.
+     * @return if the user is except from namespace checks.
+     * @see #isRoot(javax.security.auth.Subject)
+     */
+    public static boolean isExemptFromNamespaceChecks(Subject subject)
+    {
+        return subject.getPrincipals().stream()
+                .anyMatch(p -> p instanceof UidPrincipal && ((UidPrincipal)p).getUid() == 0
+                                ||
+                        p instanceof ExemptFromNamespaceChecks);
     }
 
     /**
@@ -678,7 +695,7 @@ public class Subjects
     // Returned Subject must NOT be readOnly.
     public static Subject of(int uid, int gid, int[] gids)
     {
-        Builder builder = of().uid(uid).gid(gid);
+        Builder builder = Subjects.of().uid(uid).gid(gid);
         for (int g : gids) {
             builder.gid(g);
         }
@@ -688,6 +705,18 @@ public class Subjects
     public static Builder of()
     {
         return new Builder();
+    }
+
+    public static Subject ofPrincipals(Set<Principal> principals)
+    {
+        Subject subject = new Subject();
+        subject.getPrincipals().addAll(principals);
+        return subject;
+    }
+
+    public static Subject of(PrincipalSetMaker maker)
+    {
+        return ofPrincipals(maker.build());
     }
 
     public static class Builder

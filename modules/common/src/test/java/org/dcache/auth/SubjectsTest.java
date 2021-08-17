@@ -12,7 +12,10 @@ import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import org.dcache.util.PrincipalSetMaker;
+
 import static java.util.Arrays.asList;
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.*;
@@ -284,5 +287,36 @@ public class SubjectsTest
         Set<Principal> principals = Subjects.principalsFromArgs(asList("oidc:sub-claim@OP"));
 
         assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim", "OP")));
+    }
+
+    @Test
+    public void normalUserShouldNotBeExceptFromNamespaceChecks()
+    {
+        var subject = Subjects.of(aSetOfPrincipals().withOidc("sub-claim", "OP"));
+
+        assertFalse(Subjects.isExemptFromNamespaceChecks(_subject1));
+        assertFalse(Subjects.isExemptFromNamespaceChecks(_subject2));
+        assertFalse(Subjects.isExemptFromNamespaceChecks(_subject3));
+        assertFalse(Subjects.isExemptFromNamespaceChecks(_subject4));
+        assertFalse(Subjects.isExemptFromNamespaceChecks(subject));
+    }
+
+    @Test
+    public void rootShouldBeExceptFromNamespaceChecks()
+    {
+        var root = Subjects.of(aSetOfPrincipals().withUid(0).withPrimaryGid(0));
+
+        assertTrue(Subjects.isExemptFromNamespaceChecks(root));
+    }
+
+    @Test
+    public void exemptUserShouldBeExceptFromNamespaceChecks()
+    {
+        var root = Subjects.of(aSetOfPrincipals()
+                .withUid(1000)
+                .withPrimaryGid(1000)
+                .withExemptFromNamespaceChecks());
+
+        assertTrue(Subjects.isExemptFromNamespaceChecks(root));
     }
 }
