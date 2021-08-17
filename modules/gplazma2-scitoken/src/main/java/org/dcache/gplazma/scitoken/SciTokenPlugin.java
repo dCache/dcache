@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import diskCacheV111.util.FsPath;
 
 import org.dcache.auth.BearerTokenCredential;
+import org.dcache.auth.ExemptFromNamespaceChecks;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
 import org.dcache.auth.Subjects;
@@ -157,6 +158,7 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin
             Restriction r = buildRestriction(issuer.getPrefix(), scopes);
             LOGGER.debug("Authenticated user with restriction: {}", r);
             restrictions.add(r);
+            identifiedPrincipals.add(new ExemptFromNamespaceChecks());
         } catch (IOException e) {
             throw new AuthenticationException(e.getMessage());
         }
