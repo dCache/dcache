@@ -1149,6 +1149,38 @@ public class PnfsManagerV3
         }
     }
 
+    @Command(name = "remove user quota",
+        hint = "remove user quota",
+        description = "delete user quota from quota system")
+    public class RemoveUserQuotaCommand implements Callable<String> {
+        @Argument(index = 0,
+            valueSpec = "UID",
+            usage = "User uid.")
+        int uid;
+
+        @Override
+        public String call() throws CacheException {
+            quotaSystem.deleteUserQuota(uid);
+            return "Removed user quota for " + uid;
+        }
+    }
+
+    @Command(name = "remove group quota",
+        hint = "remove group quota",
+        description = "delete group quota from quota system")
+    public class RemoveGroupQuotaCommand implements Callable<String> {
+        @Argument(index = 0,
+            valueSpec = "GID",
+            usage = "Group id.")
+        int gid;
+
+        @Override
+        public String call() throws CacheException {
+            quotaSystem.deleteGroupQuota(gid);
+            return "Removed group quota for " + gid;
+        }
+    }
+
     public static final String hh_add_file_cache_location = "<pnfsid> <pool name>";
     public String ac_add_file_cache_location_$_2(Args args) throws Exception {
 

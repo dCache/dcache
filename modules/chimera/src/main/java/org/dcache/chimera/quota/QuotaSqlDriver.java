@@ -225,6 +225,18 @@ public class QuotaSqlDriver {
 		return quotas;
 	}
 
+	private static final String DELETE_USER_QUOTA = "DELETE FROM t_user_quota WHERE iuid = ?";
+
+	public void deleteUserQuota(int uid) {
+		jdbc.update(DELETE_USER_QUOTA, uid);
+	}
+
+	private static final String DELETE_GROUP_QUOTA = "DELETE FROM t_group_quota WHERE igid = ?";
+
+	public void deleteGroupQuota(int gid) {
+		jdbc.update(DELETE_GROUP_QUOTA, gid);
+	}
+
 	private static final String UPDATE_USER_QUOTA_SQL =
 			"UPDATE t_user_quota SET "+
 					"icustodial_limit = ?, ioutput_limit = ?, ireplica_limit=? "+

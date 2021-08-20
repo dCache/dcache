@@ -101,6 +101,16 @@ public interface QuotaHandler {
     void createGroupQuota(Quota quota);
 
     /**
+     * Remove user quota on the backend
+     */
+    void deleteUserQuota(int uid);
+
+    /**
+     * Remove group quota on the backend
+     */
+    void deleteGroupQuota(int gid);
+
+    /**
      * Check if user with UID has exceeded their quotas
      * @return boolean
      */

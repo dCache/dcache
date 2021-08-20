@@ -168,6 +168,12 @@ public class JdbcQuota implements QuotaHandler {
     }
 
     @Override
+    public void deleteUserQuota(int uid) { sqlDriver.deleteUserQuota(uid); }
+
+    @Override
+    public void deleteGroupQuota(int gid) { sqlDriver.deleteGroupQuota(gid); }
+
+    @Override
     public boolean checkUserQuota(int uid, RetentionPolicy rp)
     {
         Quota quota = userQuotas.get(uid);
