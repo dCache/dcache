@@ -8,13 +8,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.Subject;
 
@@ -30,6 +24,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -104,12 +99,23 @@ import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.dcache.chimera.quota.JdbcQuota;
+import org.dcache.chimera.quota.Quota;
+import org.dcache.chimera.quota.QuotaHandler;
+import org.dcache.vehicles.quota.PnfsManagerGetQuotaMessage;
+import org.dcache.vehicles.quota.PnfsManagerQuotaMessage;
+import org.dcache.vehicles.quota.PnfsManagerRemoveQuotaMessage;
+import org.dcache.vehicles.quota.PnfsManagerSetQuotaMessage;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.namespace.PermissionHandler;
+import org.dcache.quota.data.QuotaInfo;
+import org.dcache.quota.data.QuotaRequest;
+import org.dcache.quota.data.QuotaType;
 import org.dcache.util.Args;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.Checksum;
@@ -124,9 +130,11 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
-import org.dcache.chimera.quota.JdbcQuota;
-import org.dcache.chimera.quota.Quota;
-import org.dcache.chimera.quota.QuotaHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.annotation.Transactional;
 
 import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -561,7 +569,7 @@ public class PnfsManagerV3
     public static final String hh_cacheinfoof = "<pnfsid>|<globalPath>" ;
     public String ac_cacheinfoof_$_1( Args args )
     {
-        PnfsId    pnfsId;
+        PnfsId pnfsId;
         StringBuilder sb = new StringBuilder();
         try {
             try{
@@ -2317,6 +2325,208 @@ public class PnfsManagerV3
             }
         }
     }
+
+    /*
+     *  ------------------------------------- QUOTA SYSTEM -------------------------------------
+     */
+    public PnfsManagerQuotaMessage messageArrived(PnfsManagerQuotaMessage message)
+    {
+        try {
+            if (message instanceof PnfsManagerGetQuotaMessage) {
+                processQuotaRequest((PnfsManagerGetQuotaMessage)message);
+            } else if (message instanceof PnfsManagerSetQuotaMessage) {
+                processQuotaUpdate((PnfsManagerSetQuotaMessage)message);
+            } else if (message instanceof PnfsManagerRemoveQuotaMessage) {
+                processQuotaRemoval((PnfsManagerRemoveQuotaMessage)message);
+            }
+            message.setSucceeded();
+        } catch (CacheException e) {
+            message.setFailed(e.getRc(), e.getMessage());
+        }
+        return message;
+    }
+
+    private void processQuotaRequest(PnfsManagerGetQuotaMessage message)
+        throws CacheException
+    {
+        if (!quotaEnabled) {
+            throw new CacheException(CacheException.SERVICE_UNAVAILABLE, "Quota is disabled.");
+        }
+
+        QuotaType type = message.getType();
+        Map<Integer, Quota> quotas;
+
+        switch(type) {
+            case USER:
+                quotaSystem.refreshUserQuotas();
+                quotas = quotaSystem.getUserQuotas();
+                break;
+            case GROUP:
+                quotaSystem.refreshGroupQuotas();
+                quotas = quotaSystem.getGroupQuotas();
+                break;
+            default:
+                // should not occur!
+                throw new RuntimeException("No such quota type " + type
+                    + "; please report to dcache.org");
+        }
+
+        Integer uid = message.getQid();
+        if (uid != null) {
+            Quota quota = quotas.get(uid);
+            if (quota == null) {
+                throw new CacheException(type.name().toLowerCase(Locale.ROOT) + " quota does not exist.");
+            }
+            addQuota(quota, uid, type, message);
+        } else {
+            quotas.entrySet().stream()
+                .forEach(e -> addQuota(e.getValue(), e.getKey(), type, message));
+        }
+    }
+
+    private void processQuotaRemoval(PnfsManagerRemoveQuotaMessage message)
+        throws CacheException
+    {
+        if (!quotaEnabled) {
+            throw new CacheException(CacheException.SERVICE_UNAVAILABLE, "Quota is disabled.");
+        }
+
+        Integer qid = message.getQid();
+        QuotaType type = message.getType();
+        Quota quota = getQuota(qid, type);
+
+        if (quota == null) {
+            throw new CacheException(CacheException.NO_ATTRIBUTE,
+                "quota for " + qid + " does not exist.");
+        }
+
+        switch(type) {
+            case USER:
+                quotaSystem.deleteUserQuota(qid);
+                break;
+            case GROUP:
+                quotaSystem.deleteGroupQuota(qid);
+                break;
+        }
+    }
+
+    private void processQuotaUpdate(PnfsManagerSetQuotaMessage message)
+        throws CacheException
+    {
+        if (!quotaEnabled) {
+            throw new CacheException(CacheException.SERVICE_UNAVAILABLE, "Quota is disabled.");
+        }
+
+        Integer qid = message.getQid();
+        QuotaType type = message.getType();
+        Quota quota = getQuota(qid, type);
+
+        if (message.isNew() && quota != null) {
+            throw new CacheException(CacheException.ATTRIBUTE_EXISTS,
+                "quota for " + qid + " already exists.");
+        }
+
+        if (!message.isNew() && quota == null) {
+            throw new CacheException(CacheException.NO_ATTRIBUTE,
+                "quota for " + qid + " does not exist.");
+        }
+
+        if (quota == null) {
+            quota = new Quota(qid, 0, null,
+                0,null,
+                0, null);
+        }
+
+        QuotaRequest request = message.getRequest();
+
+        if (request == null) {
+            if (!message.isNew()) {
+                throw new CacheException(CacheException.INVALID_ARGS,
+                    "At least one option needs to be specified");
+            }
+        } else {
+            String custodial = request.getCustodialLimit();
+            String replica = request.getReplicaLimit();
+            String output = request.getOutputLimit();
+
+            boolean atLeastOne = false;
+
+            if (custodial != null) {
+                custodial = custodial.replaceAll(QuotaRequest.NONE, "null");
+                atLeastOne = true;
+            }
+
+            if (replica != null) {
+                replica = replica.replaceAll(QuotaRequest.NONE, "null");
+                atLeastOne = true;
+            }
+
+            if (output != null) {
+                output = output.replaceAll(QuotaRequest.NONE, "null");
+                atLeastOne = true;
+            }
+
+            if (!atLeastOne) {
+                throw new CacheException(CacheException.INVALID_ARGS,
+                    "At least one option needs to be specified");
+            }
+
+            Quota.furnishQuota(quota, custodial, output, replica);
+        }
+
+        switch(type) {
+            case USER:
+                if (message.isNew()) {
+                    quotaSystem.createUserQuota(quota);
+                } else {
+                    quotaSystem.setUserQuota(quota);
+                }
+                break;
+            case GROUP:
+                if (message.isNew()) {
+                    quotaSystem.createGroupQuota(quota);
+                } else {
+                    quotaSystem.setGroupQuota(quota);
+                }
+                break;
+        }
+    }
+
+    private static void addQuota(Quota quota,
+        Integer id,
+        QuotaType type,
+        PnfsManagerGetQuotaMessage message)
+    {
+        QuotaInfo info = new QuotaInfo();
+        info.setCustodial(quota.getUsedCustodialSpace());
+        info.setReplica(quota.getUsedReplicaSpace());
+        info.setOutput(quota.getUsedOutputSpace());
+        info.setCustodialLimit(quota.getCustodialSpaceLimit());
+        info.setReplicaLimit(quota.getReplicaSpaceLimit());
+        info.setOutputLimit(quota.getOutputSpaceLimit());
+        info.setId(id);
+        info.setType(type);
+        message.getQuotaInfos().add(info);
+    }
+
+    private Quota getQuota(Integer qid, QuotaType type) {
+        switch(type) {
+            case USER:
+                quotaSystem.refreshUserQuotas();
+                return quotaSystem.getUserQuotas().get(qid);
+            case GROUP:
+                quotaSystem.refreshGroupQuotas();
+                return quotaSystem.getGroupQuotas().get(qid);
+            default:
+                // should not occur!
+                throw new RuntimeException("No such quota type " + type
+                    + "; please report to dcache.org");
+        }
+    }
+
+    /*
+     *  ----------------------------------------------------------------------------------------
+     */
 
     public void messageArrived(CellMessage envelope, PnfsListDirectoryMessage message)
         throws CacheException
