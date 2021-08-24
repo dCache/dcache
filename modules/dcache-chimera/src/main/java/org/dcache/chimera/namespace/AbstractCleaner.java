@@ -42,7 +42,7 @@ import org.dcache.cells.CellStub;
  */
 public abstract class AbstractCleaner implements LeaderLatchListener {
 
-    private static final Logger _log = LoggerFactory.getLogger(DiskCleaner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DiskCleaner.class);
 
     protected ScheduledThreadPoolExecutor _executor;
     private ScheduledFuture<?> _cleanerTask;
@@ -122,11 +122,11 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
             try {
                 AbstractCleaner.this.runDelete();
             } catch (InterruptedException e) {
-                _log.info("Cleaner was interrupted");
+                LOGGER.info("Cleaner was interrupted");
             } catch (DataAccessException e) {
-                _log.error("Database failure: {}", e.getMessage());
+                LOGGER.error("Database failure: {}", e.getMessage());
             } catch (IllegalStateException e) {
-                _log.error("Illegal state: {}", e.getMessage());
+                LOGGER.error("Illegal state: {}", e.getMessage());
             }
 
         }, _refreshInterval, _refreshInterval,
