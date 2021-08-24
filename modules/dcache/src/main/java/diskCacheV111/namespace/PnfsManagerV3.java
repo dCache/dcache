@@ -2375,7 +2375,8 @@ public class PnfsManagerV3
         if (uid != null) {
             Quota quota = quotas.get(uid);
             if (quota == null) {
-                throw new CacheException(type.name().toLowerCase(Locale.ROOT) + " quota does not exist.");
+                throw new CacheException(CacheException.NO_ATTRIBUTE,
+                                         type.name().toLowerCase(Locale.ROOT) + " quota does not exist.");
             }
             addQuota(quota, uid, type, message);
         } else {

@@ -571,6 +571,7 @@
     <bean class="org.dcache.restful.resources.restores.RestoreResources" scope="request">
       <property name="unlimitedOperationVisibility" value="${frontend.authz.unlimited-operation-visibility}"/>
     </bean>
+    <bean class="org.dcache.restful.resources.quota.QuotaResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.LinkResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.UnitResources" scope="request"/>
     <bean class="org.dcache.restful.resources.selection.PartitionResources" scope="request"/>
