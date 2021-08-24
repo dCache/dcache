@@ -18,6 +18,9 @@
  */
 package org.dcache.util;
 
+import java.util.Collections;
+import java.util.Set;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -25,48 +28,65 @@ import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * A fluent class to build a FileAttribute.
+ * A fluent class to build a FileAttributes object.
  */
 public class FileAttributesBuilder
 {
     private final FileAttributes _attributes = new FileAttributes();
 
-    public static FileAttributesBuilder attributes()
+    public static FileAttributesBuilder fileAttributes()
     {
         return new FileAttributesBuilder();
     }
 
-    public FileAttributesBuilder size(long size)
+    public FileAttributesBuilder withSize(long size)
     {
         _attributes.setSize(size);
         return this;
     }
 
-    public FileAttributesBuilder size(long size, ByteUnit units)
+    public FileAttributesBuilder withSize(long size, ByteUnit units)
     {
-        return size(units.toBytes(size));
+        return withSize(units.toBytes(size));
     }
 
-    public FileAttributesBuilder type(FileType type)
+    public FileAttributesBuilder withLabel(String name)
+    {
+        return withLabels(Collections.singleton(name));
+    }
+
+    public FileAttributesBuilder withLabels(Set<String> names)
+    {
+        _attributes.setLabels(names);
+        return this;
+    }
+
+    public FileAttributesBuilder withType(FileType type)
     {
         _attributes.setFileType(type);
         return this;
     }
 
-    public FileAttributesBuilder id(PnfsId id)
+    public FileAttributesBuilder withId(PnfsId id)
     {
         _attributes.setPnfsId(id);
         return this;
     }
 
-    public FileAttributesBuilder storageInfo(StorageInfoBuilder builder)
+    public FileAttributesBuilder withStorageInfo(StorageInfoBuilder builder)
     {
-        return storageInfo(builder.build());
+        return withStorageInfo(builder.build());
     }
 
-    public FileAttributesBuilder storageInfo(StorageInfo info)
+    public FileAttributesBuilder withStorageInfo(StorageInfo info)
     {
         _attributes.setStorageInfo(info);
+        return this;
+    }
+
+    public FileAttributesBuilder withXattr(String name, String value)
+    {
+        _attributes.updateXattr(name, value);
         return this;
     }
 

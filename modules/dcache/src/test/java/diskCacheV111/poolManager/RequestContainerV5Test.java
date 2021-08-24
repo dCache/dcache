@@ -19,6 +19,7 @@
 package diskCacheV111.poolManager;
 
 import com.google.common.util.concurrent.SettableFuture;
+
 import diskCacheV111.poolManager.RequestContainerV5.RequestState;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DestinationCostException;
@@ -38,12 +39,14 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
+
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -57,7 +60,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+
 import javax.security.auth.Subject;
+
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.mock.CacheExceptionBuilder;
@@ -80,6 +85,7 @@ import org.dcache.util.Args;
 import org.dcache.util.ExecutorUtils;
 import org.dcache.util.FileAttributesBuilder;
 import org.dcache.vehicles.FileAttributes;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -104,7 +110,7 @@ import static org.dcache.mock.PoolSelectorBuilder.aPoolSelectorThat;
 import static org.dcache.mock.ProtocolInfoBuilder.aProtocolInfo;
 import static org.dcache.mock.SelectedPoolBuilder.aPool;
 import static org.dcache.util.ByteUnit.KiB;
-import static org.dcache.util.FileAttributesBuilder.attributes;
+import static org.dcache.util.FileAttributesBuilder.fileAttributes;
 import static org.dcache.util.StorageInfoBuilder.aStorageInfo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -179,7 +185,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -205,7 +211,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -231,7 +237,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -262,7 +268,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -301,7 +307,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(protocolInfo));
 
         var info = notificationSentWith(billing, PoolHitInfoMessage.class);
@@ -326,7 +332,7 @@ public class RequestContainerV5Test
         whenReceiving(aReadRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http").withMajorVersion(1)
                         .withIPAddress("192.168.1.1")));
 
@@ -347,7 +353,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -376,7 +382,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -415,7 +421,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(protocolInfo));
 
         var info = notificationSentWith(billing, PoolHitInfoMessage.class);
@@ -445,7 +451,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -484,7 +490,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -511,7 +517,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -524,7 +530,7 @@ public class RequestContainerV5Test
     @Test
     public void shouldSendPoolAPool2PoolRequestForReplicateRequest() throws Exception
     {
-        var fileAttributes = attributes().size(10, KiB).storageInfo(aStorageInfo()).build();
+        var fileAttributes = fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()).build();
         given(aPartitionManager().withDefault(aPartition().withP2pAllowed(false)));
         given(aPoolSelectionUnit().withNetUnit("all-net", "192.168.1.1")
                 .withProtocolUnit("HTTP", "http/1"));
@@ -570,7 +576,7 @@ public class RequestContainerV5Test
         whenReceiving(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -603,7 +609,7 @@ public class RequestContainerV5Test
         whenReceiving(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(protocolInfo));
 
         var info = notificationSentWith(billing, PoolHitInfoMessage.class);
@@ -644,7 +650,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -676,7 +682,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -708,7 +714,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -740,7 +746,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -772,7 +778,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -804,7 +810,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -832,7 +838,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -861,7 +867,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -893,7 +899,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -926,7 +932,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -958,8 +964,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -985,7 +991,7 @@ public class RequestContainerV5Test
         whenReceiving(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1015,8 +1021,8 @@ public class RequestContainerV5Test
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1047,8 +1053,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1087,8 +1093,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1117,8 +1123,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1157,8 +1163,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1186,7 +1192,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1213,8 +1219,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1247,8 +1253,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1279,8 +1285,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1311,8 +1317,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1343,8 +1349,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1372,8 +1378,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1397,8 +1403,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1423,8 +1429,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1452,8 +1458,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1480,8 +1486,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1505,8 +1511,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1530,8 +1536,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1567,8 +1573,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1602,8 +1608,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1634,8 +1640,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1667,8 +1673,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1709,8 +1715,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1737,7 +1743,7 @@ public class RequestContainerV5Test
         whenReceiving(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1769,8 +1775,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1799,8 +1805,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1830,8 +1836,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1865,8 +1871,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1893,7 +1899,7 @@ public class RequestContainerV5Test
         var id = given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1919,7 +1925,7 @@ public class RequestContainerV5Test
         var id = given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1945,7 +1951,7 @@ public class RequestContainerV5Test
         var id = given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1971,7 +1977,7 @@ public class RequestContainerV5Test
         var id = given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -1998,7 +2004,7 @@ public class RequestContainerV5Test
         given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2027,7 +2033,7 @@ public class RequestContainerV5Test
         whenReceiving(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2058,7 +2064,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2102,7 +2108,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2137,8 +2143,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2176,8 +2182,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2205,8 +2211,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2234,8 +2240,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2263,8 +2269,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2296,8 +2302,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2327,7 +2333,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2367,7 +2373,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2407,8 +2413,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2438,8 +2444,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2465,8 +2471,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2494,8 +2500,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2523,8 +2529,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2554,8 +2560,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2583,8 +2589,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2612,8 +2618,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2641,8 +2647,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2674,8 +2680,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2702,7 +2708,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2737,7 +2743,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2774,7 +2780,7 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(storageInfo))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(storageInfo))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2811,8 +2817,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2846,8 +2852,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -2897,8 +2903,8 @@ public class RequestContainerV5Test
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withBillingPath("/public/test")
                 .withTransferPath("/uploads/50/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
         long startTimeUpperBound = System.currentTimeMillis();
@@ -2935,7 +2941,7 @@ public class RequestContainerV5Test
         var id = given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
         long startTimeUpperBound = System.currentTimeMillis();
@@ -2971,7 +2977,7 @@ public class RequestContainerV5Test
         var id = given(aReadRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
         long startTimeUpperBound = System.currentTimeMillis();
@@ -3007,7 +3013,7 @@ public class RequestContainerV5Test
         given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -3033,7 +3039,7 @@ public class RequestContainerV5Test
         given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
         verify(endpoint).sendMessage(any());
@@ -3058,7 +3064,7 @@ public class RequestContainerV5Test
         given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -3084,7 +3090,7 @@ public class RequestContainerV5Test
         given(aReplicateRequest()
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
         verify(endpoint).sendMessage(any());
@@ -3110,8 +3116,8 @@ public class RequestContainerV5Test
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -3137,8 +3143,8 @@ public class RequestContainerV5Test
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
         verify(endpoint).sendMessage(any());
@@ -3164,8 +3170,8 @@ public class RequestContainerV5Test
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -3191,8 +3197,8 @@ public class RequestContainerV5Test
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB)
-                        .storageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
+                .withFileAttributes(fileAttributes().withSize(10, KiB)
+                        .withStorageInfo(aStorageInfo().withLocation("osm://RZ1/bfid1")))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
         verify(endpoint).sendMessage(any());
@@ -3218,7 +3224,7 @@ public class RequestContainerV5Test
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 
@@ -3242,7 +3248,7 @@ public class RequestContainerV5Test
                 .by(ROOT)
                 .forFile("80D1B8B90CED30430608C58002811B3285FC")
                 .withPath("/public/test")
-                .withFileAttributes(attributes().size(10, KiB).storageInfo(aStorageInfo()))
+                .withFileAttributes(fileAttributes().withSize(10, KiB).withStorageInfo(aStorageInfo()))
                 .withProtocolInfo(aProtocolInfo().withProtocol("http")
                         .withMajorVersion(1).withIPAddress("192.168.1.1")));
 

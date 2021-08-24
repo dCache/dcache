@@ -23,7 +23,10 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Optional;
 
+import org.dcache.util.FileAttributesBuilder;
+
 import static org.dcache.namespace.FileAttribute.XATTR;
+import static org.dcache.util.FileAttributesBuilder.fileAttributes;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -91,26 +94,5 @@ public class FileAttributesTest
     private void given(FileAttributesBuilder builder)
     {
         fileAttributes = builder.build();
-    }
-
-    private FileAttributesBuilder fileAttributes()
-    {
-        return new FileAttributesBuilder();
-    }
-
-    private static class FileAttributesBuilder
-    {
-        FileAttributes attributes = new FileAttributes();
-
-        public FileAttributesBuilder withXattr(String name, String value)
-        {
-            attributes.updateXattr(name, value);
-            return this;
-        }
-
-        public FileAttributes build()
-        {
-            return attributes;
-        }
     }
 }

@@ -21,10 +21,12 @@ package org.dcache.vehicles;
 
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.Set;
 
+import org.dcache.util.FileAttributesBuilder;
+
 import static org.dcache.namespace.FileAttribute.LABELS;
+import static org.dcache.util.FileAttributesBuilder.fileAttributes;
 import static org.junit.Assert.*;
 
 public class FileLabelsTest
@@ -67,34 +69,5 @@ public class FileLabelsTest
     private void given(FileAttributesBuilder builder)
     {
         fileAttributes = builder.build();
-    }
-
-
-     private FileAttributesBuilder fileAttributes()
-    {
-        return new FileAttributesBuilder();
-
-    }
-
-    private static class FileAttributesBuilder
-    {
-        FileAttributes attributes = new FileAttributes();
-        public FileAttributesBuilder withLabel(String name)
-        {
-            attributes.setLabels(Collections.singleton(name));
-            return this;
-        }
-
-
-        public FileAttributesBuilder withLabels(Set<String> names)
-        {
-            attributes.setLabels(names);
-            return this;
-        }
-
-        public FileAttributes build()
-        {
-            return attributes;
-        }
     }
 }

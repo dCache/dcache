@@ -24,7 +24,6 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
@@ -35,7 +34,6 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -63,7 +61,7 @@ import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.TYPE;
 import static org.dcache.namespace.FileType.REGULAR;
-import static org.dcache.util.FileAttributesBuilder.attributes;
+import static org.dcache.util.FileAttributesBuilder.fileAttributes;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.BDDMockito.any;
@@ -392,7 +390,7 @@ public class RemoteNameSpaceProviderTests
             throws Exception
     {
         givenSuccessfulResponse((Modifier<PnfsGetFileAttributes>)
-                (r) -> r.setFileAttributes(attributes().size(1234L).type(REGULAR).build()));
+                (r) -> r.setFileAttributes(fileAttributes().withSize(1234L).withType(REGULAR).build()));
 
 
         FileAttributes attributes =
@@ -627,7 +625,7 @@ public class RemoteNameSpaceProviderTests
         givenSuccessfulResponse();
 
         _namespace.setFileAttributes(ROOT, A_PNFSID,
-                attributes().size(1000).build(), EnumSet.noneOf(FileAttribute.class));
+                fileAttributes().withSize(1000).build(), EnumSet.noneOf(FileAttribute.class));
 
         PnfsSetFileAttributes sent =
                 getSingleSendAndWaitMessage(PnfsSetFileAttributes.class);
@@ -646,7 +644,7 @@ public class RemoteNameSpaceProviderTests
         givenFailureResponse(FILE_NOT_FOUND);
 
         _namespace.setFileAttributes(ROOT, A_PNFSID,
-                attributes().size(1000).build(), EnumSet.noneOf(FileAttribute.class));
+                fileAttributes().withSize(1000).build(), EnumSet.noneOf(FileAttribute.class));
     }
 
     /*
@@ -914,69 +912,6 @@ public class RemoteNameSpaceProviderTests
         {
             checkState(_name != null, "need to specify a name");
             return new DirectoryEntry(_name, _attributes);
-        }
-    }
-
-    private StorageInfoBuilder storageInfo()
-    {
-        return new StorageInfoBuilder();
-    }
-
-    /**
-     * Builder for a StorageInfo with fluent interface
-     */
-    private static class StorageInfoBuilder
-    {
-        private StorageInfo _info = new GenericStorageInfo();
-
-        public StorageInfoBuilder at(URI location)
-        {
-            _info.addLocation(location);
-            return this;
-        }
-
-        public StorageInfoBuilder at(String location)
-        {
-            try {
-                return at(new URI(location));
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public StorageInfoBuilder cacheClass(String cacheClass)
-        {
-            _info.setCacheClass(cacheClass);
-            return this;
-        }
-
-        public StorageInfoBuilder hsm(String hsm)
-        {
-            _info.setHsm(hsm);
-            return this;
-        }
-
-        public StorageInfoBuilder isNew(boolean isNew)
-        {
-            _info.setIsNew(isNew);
-            return this;
-        }
-
-        public StorageInfoBuilder key(String key, String value)
-        {
-            _info.setKey(key, value);
-            return this;
-        }
-
-        public StorageInfoBuilder storageClass(String storageClass)
-        {
-            _info.setStorageClass(storageClass);
-            return this;
-        }
-
-        public StorageInfo build()
-        {
-            return _info;
         }
     }
 }
