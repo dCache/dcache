@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2021 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,10 +17,11 @@
  */
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.session.ServerSession;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +32,7 @@ import diskCacheV111.admin.UserAdminShell;
 
 import dmg.cells.nucleus.CDC;
 
-public class ShellCommand implements Command
+public class ShellCommand implements Command, SessionAware
 {
     private final File historyFile;
     private final int historySize;
@@ -78,11 +79,9 @@ public class ShellCommand implements Command
     }
 
     @Override
-    public void start(ChannelSession channelSession, Environment env) throws IOException
+    public void start(Environment env) throws IOException
     {
         try (CDC ignored = new CDC()) {
-            sessionId = Sessions.connectionId(channelSession.getServerSession());
-            shell.setSession(sessionId);
             CDC.setSession(sessionId);
             if (env.getEnv().get(Environment.ENV_TERM) != null) {
                 delegate = new AnsiTerminalCommand(historyFile, historySize, useColor, shell);
@@ -93,15 +92,22 @@ public class ShellCommand implements Command
             delegate.setOutputStream(out);
             delegate.setErrorStream(err);
             delegate.setExitCallback(callback);
-            delegate.start(channelSession, env);
+            delegate.start(env);
         }
     }
 
     @Override
-    public void destroy(ChannelSession channelSession) throws Exception
+    public void destroy() throws Exception
     {
         if (delegate != null) {
-            delegate.destroy(channelSession);
+            delegate.destroy();
         }
+    }
+
+    @Override
+    public void setSession(ServerSession session)
+    {
+        sessionId = Sessions.connectionId(session);
+        shell.setSession(sessionId);
     }
 }
