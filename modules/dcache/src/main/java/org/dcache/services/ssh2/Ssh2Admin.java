@@ -117,7 +117,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     public void setPort(int port) {
-        _log.debug("Ssh2 port set to: {}", String.valueOf(port));
+        _log.debug("Ssh2 port set to: {}", port);
         _port = port;
     }
 
