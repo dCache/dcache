@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 - 2018 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
 import io.milton.http.Request;
@@ -29,7 +30,6 @@ import io.milton.http.Response.Status;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -44,6 +44,7 @@ import java.net.URISyntaxException;
 import java.security.AccessController;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,20 +52,19 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdClientSecret;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
-import org.dcache.cells.CellStub;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
@@ -108,12 +108,14 @@ public class CopyFilter implements Filter
 
     private static final String QUERY_KEY_ASKED_TO_DELEGATE = "asked-to-delegate";
     private static final String REQUEST_HEADER_CREDENTIAL = "Credential";
+    private static final String REQUEST_HEADER_TRANSFER_HEADER_PREFIX = "transferheader";
     private static final String REQUEST_HEADER_VERIFICATION = "RequireChecksumVerification";
     private static final String TPC_ERROR_ATTRIBUTE = "org.dcache.tpc-error";
     private static final String TPC_CREDENTIAL_ATTRIBUTE = "org.dcache.tpc-credential";
     private static final String TPC_REQUIRE_CHECKSUM_VERIFICATION_ATTRIBUTE = "org.dcache.tpc-require-checksum-verify";
     private static final String TPC_SOURCE_ATTRIBUTE = "org.dcache.tpc-source";
     private static final String TPC_DESTINATION_ATTRIBUTE = "org.dcache.tpc-destination";
+
 
     private ImmutableMap<String,String> _clientIds;
     private ImmutableMap<String,String> _clientSecrets;
@@ -361,12 +363,20 @@ public class CopyFilter implements Filter
         Direction direction = getDirection();
         String remote = ServletRequest.getRequest().getHeader(direction.getHeaderName());
 
+        URI uri;
         try {
-            return new URI(remote);
+            uri = new URI(remote);
         } catch (URISyntaxException e) {
             throw new BadRequestException(direction.getHeaderName() +
                     " request header contains an invalid URI: " + e.getMessage());
         }
+
+        if (uri.getPath() == null) {
+            throw new BadRequestException(direction.getHeaderName()
+                    + " header is missing a path");
+        }
+
+        return uri;
     }
 
     private static Optional<String> getWantDigest(HttpServletRequest request)
@@ -380,6 +390,24 @@ public class CopyFilter implements Filter
 
     }
 
+
+    private ImmutableMap<String,String> buildTransferHeaders(Request request)
+    {
+        Map<String,String> requestHeaders = request.getHeaders();
+
+        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
+
+        for (Map.Entry<String,String> header : requestHeaders.entrySet()) {
+            String key = header.getKey();
+            if (key.toLowerCase().startsWith(REQUEST_HEADER_TRANSFER_HEADER_PREFIX)) {
+                builder.put(key.substring(REQUEST_HEADER_TRANSFER_HEADER_PREFIX.length()),
+                        header.getValue());
+            }
+        }
+
+        return builder.build();
+    }
+
     private void processThirdPartyCopy(Request request, Response response)
             throws BadRequestException, InterruptedException, ErrorResponseException
     {
@@ -389,17 +417,6 @@ public class CopyFilter implements Filter
         setRemoteUrlAttribute(direction, remote);
 
         TransferType type = TransferType.fromScheme(remote.getScheme());
-        if (type == null) {
-            throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                    "The " + direction.getHeaderName() + " request header URI " +
-                    "contains unsupported scheme; supported schemes are " +
-                    Joiner.on(", ").join(TransferType.validSchemes()));
-        }
-
-        if (remote.getPath() == null) {
-            throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                    direction.getHeaderName() + " header is missing a path");
-        }
 
         FsPath path = _pathMapper.asDcachePath(ServletRequest.getRequest(),
                 request.getAbsolutePath(), m -> new ErrorResponseException(Status.SC_FORBIDDEN, m));
@@ -419,12 +436,33 @@ public class CopyFilter implements Filter
                 ServletResponse.getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                                    "Error performing OpenId Connect Token Exchange");
             }
-        } else {
-            Optional<String> error =_remoteTransfers.acceptRequest(response,
-                    request.getHeaders(), getSubject(), getRestriction(), path,
-                    remote, credential, direction, isVerificationRequired(),
-                    overwriteAllowed, wantDigest);
-            error.ifPresent(e -> ServletRequest.getRequest().setAttribute(TPC_ERROR_ATTRIBUTE, e));
+            return;
+        }
+
+        var transferHeaders = buildTransferHeaders(request);
+        var transferFlags = buildTransferFlags();
+
+        var transferResult = _remoteTransfers.acceptRequest(response, transferHeaders,
+                getSubject(), getRestriction(), path, remote, credential,
+                direction, transferFlags, overwriteAllowed, wantDigest);
+
+        HttpServletRequest servletRequest = ServletRequest.getRequest();
+        transferResult.addListener(() -> {
+                    try {
+                        var error = transferResult.get();
+                        error.ifPresent(e -> servletRequest.setAttribute(TPC_ERROR_ATTRIBUTE, e));
+                    } catch (InterruptedException | ExecutionException e) {
+                        servletRequest.setAttribute(TPC_ERROR_ATTRIBUTE,
+                                "problem getting result: " + e);
+                    }
+                }, MoreExecutors.directExecutor());
+
+
+        // Wait for transfer to complete.
+        try {
+            transferResult.get();
+        } catch (ExecutionException e) {
+            LOGGER.warn("Problem with remote transfer: " + e);
         }
     }
 
@@ -666,6 +704,14 @@ public class CopyFilter implements Filter
 
     private static <T> Predicate<T> not(Predicate<T> t) {
         return t.negate();
+    }
+
+    private EnumSet<RemoteTransferHandler.TransferFlag> buildTransferFlags()
+            throws ErrorResponseException
+    {
+        return isVerificationRequired()
+                ? EnumSet.of(RemoteTransferHandler.TransferFlag.REQUIRE_VERIFICATION)
+                : EnumSet.noneOf(RemoteTransferHandler.TransferFlag.class);
     }
 
     private boolean isVerificationRequired() throws ErrorResponseException
