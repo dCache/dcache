@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,11 +17,10 @@
  */
 package org.dcache.services.ssh2;
 
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.SessionAware;
-import org.apache.sshd.server.session.ServerSession;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +31,7 @@ import diskCacheV111.admin.UserAdminShell;
 
 import dmg.cells.nucleus.CDC;
 
-public class ShellCommand implements Command, SessionAware
+public class ShellCommand implements Command
 {
     private final File historyFile;
     private final int historySize;
@@ -44,7 +43,6 @@ public class ShellCommand implements Command, SessionAware
     private ExitCallback callback;
 
     private Command delegate;
-    private String sessionId;
 
     public ShellCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell)
     {
@@ -79,9 +77,11 @@ public class ShellCommand implements Command, SessionAware
     }
 
     @Override
-    public void start(Environment env) throws IOException
+    public void start(ChannelSession channelSession, Environment env) throws IOException
     {
         try (CDC ignored = new CDC()) {
+            String sessionId = Sessions.connectionId(channelSession.getServerSession());
+            shell.setSession(sessionId);
             CDC.setSession(sessionId);
             if (env.getEnv().get(Environment.ENV_TERM) != null) {
                 delegate = new AnsiTerminalCommand(historyFile, historySize, useColor, shell);
@@ -92,22 +92,15 @@ public class ShellCommand implements Command, SessionAware
             delegate.setOutputStream(out);
             delegate.setErrorStream(err);
             delegate.setExitCallback(callback);
-            delegate.start(env);
+            delegate.start(channelSession, env);
         }
     }
 
     @Override
-    public void destroy() throws Exception
+    public void destroy(ChannelSession channelSession) throws Exception
     {
         if (delegate != null) {
-            delegate.destroy();
+            delegate.destroy(channelSession);
         }
-    }
-
-    @Override
-    public void setSession(ServerSession session)
-    {
-        sessionId = Sessions.connectionId(session);
-        shell.setSession(sessionId);
     }
 }

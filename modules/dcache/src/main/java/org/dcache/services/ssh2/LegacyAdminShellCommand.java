@@ -5,6 +5,7 @@ import jline.console.ConsoleReader;
 import jline.console.history.FileHistory;
 import jline.console.history.MemoryHistory;
 import jline.console.history.PersistentHistory;
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
@@ -69,7 +70,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
     }
 
     @Override
-    public void destroy() {
+    public void destroy(ChannelSession channelSession) {
         if (_adminShellThread != null) {
             _adminShellThread.interrupt();
         }
@@ -96,7 +97,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
     }
 
     @Override
-    public void start(Environment env) throws IOException {
+    public void start(ChannelSession channelSession, Environment env) throws IOException {
         String user = env.getEnv().get(Environment.ENV_USER);
         _shell = new LegacyAdminShell(user, _endpoint, _prompt);
         _console = new ConsoleReader(_in, _out, new ConsoleReaderTerminal(env)) {
