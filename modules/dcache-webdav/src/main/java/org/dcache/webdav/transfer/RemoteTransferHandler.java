@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,9 +17,11 @@
  */
 package org.dcache.webdav.transfer;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import eu.emi.security.authn.x509.X509Credential;
 import io.milton.http.Response;
 import io.milton.http.Response.Status;
@@ -34,11 +36,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.security.auth.Subject;
 import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -52,7 +55,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,6 +62,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
 import diskCacheV111.services.TransferManagerHandler;
@@ -114,6 +121,7 @@ import static com.google.common.collect.Comparators.emptiesFirst;
 import static com.google.common.collect.Comparators.emptiesLast;
 import static diskCacheV111.services.TransferManagerHandler.INITIAL_STATE;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.ByteUnit.MiB;
@@ -204,8 +212,18 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
 
         public static TransferType fromScheme(String scheme)
+                throws ErrorResponseException
         {
-            return BY_SCHEME.get(scheme.toLowerCase());
+            TransferType type = BY_SCHEME.get(scheme.toLowerCase());
+
+            if (type == null) {
+                throw new ErrorResponseException(Status.SC_BAD_REQUEST,
+                        "URI contains unsupported scheme " + scheme
+                                + ". Supported schemes are "
+                                + Joiner.on(", ").join(validSchemes()));
+            }
+
+            return type;
         }
 
         public static Set<String> validSchemes()
@@ -214,7 +232,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
     }
 
-    private enum TransferFlag {
+    public enum TransferFlag {
         REQUIRE_VERIFICATION
     }
 
@@ -224,14 +242,13 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private static final Logger LOGGER =
             LoggerFactory.getLogger(RemoteTransferHandler.class);
     private static final long DUMMY_LONG = 0;
-    private static final String REQUEST_HEADER_TRANSFER_HEADER_PREFIX =
-            "transferheader";
 
-    private final HashMap<Long,RemoteTransfer> _transfers = new HashMap<>();
+    private final Map<Long,RemoteTransfer> _transfers = new ConcurrentHashMap<>();
 
     private long _performanceMarkerPeriod;
     private CellStub _transferManager;
     private PnfsHandler _pnfs;
+    private final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
 
     @Required
     public void setTransferManagerStub(CellStub stub)
@@ -562,81 +579,43 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
     }
 
+    @PreDestroy
+    public void stop()
+    {
+        _scheduler.shutdown();
+    }
+
     /**
      * Start a transfer and block until that transfer is complete.
      * @return a description of the error, if there was a problem.
      */
-    public Optional<String> acceptRequest(Response response, Map<String,String> requestHeaders,
+    public ListenableFuture<Optional<String>> acceptRequest(Response response,
+            ImmutableMap<String,String> transferHeaders,
             Subject subject, Restriction restriction, FsPath path, URI remote,
-            Object credential, Direction direction, boolean verification,
+            Object credential, Direction direction, EnumSet<TransferFlag> flags,
             boolean overwriteAllowed, Optional<String> wantDigest)
             throws ErrorResponseException, InterruptedException
     {
-        checkArgument(credential == null
-                || credential instanceof X509Credential
-                || credential instanceof OpenIdCredential,
-                "Credential not supported for Third-Party Transfer");
-        EnumSet<TransferFlag> flags = verification
-                ? EnumSet.of(TransferFlag.REQUIRE_VERIFICATION)
-                : EnumSet.noneOf(TransferFlag.class);
-        ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
-        RemoteTransfer transfer = new RemoteTransfer(response.getOutputStream(), subject, restriction,
+        RemoteTransfer transfer = new RemoteTransfer(response, subject, restriction,
                 path, remote, credential, flags, transferHeaders, direction,
                 overwriteAllowed, wantDigest);
 
-        long id;
-
-        synchronized (_transfers) {
-            id = transfer.start();
-            response.setStatus(Status.SC_ACCEPTED);
-            response.setContentTypeHeader("text/perf-marker-stream");
-            _transfers.put(id, transfer);
-        }
-
-        try {
-            transfer.awaitCompletion();
-        } finally {
-            synchronized (_transfers) {
-                _transfers.remove(id);
-            }
-        }
-
-        return Optional.ofNullable(transfer._problem);
+        return transfer.start();
     }
-
-    private ImmutableMap<String,String> buildTransferHeaders(Map<String,String> requestHeaders)
-    {
-        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
-
-        for (Map.Entry<String,String> header : requestHeaders.entrySet()) {
-            String key = header.getKey();
-            if (key.toLowerCase().startsWith(REQUEST_HEADER_TRANSFER_HEADER_PREFIX)) {
-                builder.put(key.substring(REQUEST_HEADER_TRANSFER_HEADER_PREFIX.length()),
-                        header.getValue());
-            }
-        }
-
-        return builder.build();
-    }
-
 
     public void messageArrived(TransferCompleteMessage message)
     {
-        synchronized (_transfers) {
-            RemoteTransfer transfer = _transfers.get(message.getId());
-            if (transfer != null) {
-                transfer.success();
-            }
+        RemoteTransfer transfer = _transfers.get(message.getId());
+        if (transfer != null) {
+            transfer.completed(null);
         }
     }
 
     public void messageArrived(TransferFailedMessage message)
     {
-        synchronized (_transfers) {
-            RemoteTransfer transfer = _transfers.get(message.getId());
-            if (transfer != null) {
-                transfer.failure(String.valueOf(message.getErrorObject()));
-            }
+        RemoteTransfer transfer = _transfers.get(message.getId());
+        if (transfer != null) {
+            transfer.completed(String.valueOf(message.getErrorObject()));
         }
     }
 
@@ -672,7 +651,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private final Optional<String> _wantDigest;
         private final PnfsHandler _pnfs;
         private final Instant _whenSubmitted = Instant.now();
-        private String _problem;
+        private final Response _response;
+        private final SettableFuture<Optional<String>> _transferResult = SettableFuture.create();
         private long _id;
         private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
 
@@ -680,13 +660,13 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private Optional<IoJobInfo> _lastInfo = Optional.empty();
         private Optional<Instant> _transferStarted = Optional.empty();
         private PnfsId _pnfsId;
-        private boolean _finished;
         private Optional<String> _digestValue;
         private Optional<String> _pool = Optional.empty();
         private boolean _transferReportedAsUnknown;
         private long _size;
+        private ScheduledFuture<?> _sendingMarkers;
 
-        public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
+        public RemoteTransfer(Response response, Subject subject, Restriction restriction,
                 FsPath path, URI destination, @Nullable Object credential,
                 EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders,
                 Direction direction, boolean overwriteAllowed, Optional<String> wantDigest)
@@ -708,18 +688,21 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 _certificateChain = null;
                 _source = CredentialSource.OIDC;
                 _oidCredential = (OpenIdCredential) credential;
-            } else {
+            } else if (credential == null) {
                 _privateKey = null;
                 _certificateChain = null;
                 _source = null;
                 _oidCredential = null;
+            } else {
+                throw new IllegalArgumentException("Credential not supported for Third-Party Transfer");
             }
-            _out = new PrintWriter(out);
+            _out = new PrintWriter(response.getOutputStream());
             _flags = flags;
             _transferHeaders = transferHeaders;
             _direction = direction;
             _overwriteAllowed = overwriteAllowed;
             _wantDigest = wantDigest;
+            _response = response;
         }
 
 
@@ -789,24 +772,26 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
 
 
-
-        private long start() throws ErrorResponseException, InterruptedException
+        public synchronized ListenableFuture<Optional<String>> start()
+                throws ErrorResponseException, InterruptedException
         {
+            checkState(_id == 0, "Start already called.");
+
             FileAttributes attributes = resolvePath();
             _pnfsId = attributes.getPnfsId();
 
-            boolean isStore = _direction == Direction.PULL;
             RemoteTransferManagerMessage message =
-                    new RemoteTransferManagerMessage(_destination, _path, isStore,
-                            DUMMY_LONG, buildProtocolInfo());
+                    new RemoteTransferManagerMessage(_destination, _path,
+                            _direction == Direction.PULL, DUMMY_LONG,
+                            buildProtocolInfo());
 
             message.setSubject(_subject);
             message.setRestriction(_restriction);
             message.setPnfsId(_pnfsId);
             try {
                 _id = _transferManager.sendAndWait(message).getId();
+                _transfers.put(_id, this);
                 addDigestResponseHeader(attributes);
-                return _id;
             } catch (NoRouteToCellException | TimeoutCacheException e) {
                 LOGGER.error("Failed to send request to transfer manager: {}", e.getMessage());
                 throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
@@ -816,6 +801,20 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
                         "transfer not accepted: " + e.getMessage());
             }
+
+            _response.setStatus(Status.SC_ACCEPTED);
+            _response.setContentTypeHeader("text/perf-marker-stream");
+
+            if (_direction == Direction.PULL && _wantDigest.isPresent()) {
+                // Ensure this is called before any perf-marker data is sent.
+                addTrailerCallback();
+            }
+
+            _sendingMarkers = _scheduler.scheduleAtFixedRate(this::generateMarker,
+                    _performanceMarkerPeriod,
+                    _performanceMarkerPeriod, MILLISECONDS);
+
+            return _transferResult;
         }
 
         /**
@@ -832,6 +831,11 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 message.setExplanation("client went away");
                 try {
                     _transferManager.sendAndWait(message);
+
+                    /* We don't explicitly finish the transfer, but wait for
+                     * the transfer manager to send a message notifying us that
+                     * the transfer has completed.
+                     */
                 } catch (MissingResourceCacheException e) {
                     /* Tried to cancel a transfer, but the transfer-manager
                      * reported there is no such transfer.  Either the transfer
@@ -839,7 +843,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                      * restarted.  As the client has cancelled the transfer and
                      * there is no transfer, we have nothing further to do.
                      */
-                    failure("client went away, but failed to cancel transfer: "
+                    completed("client went away, but failed to cancel transfer: "
                             + e.getMessage());
                 } catch (NoRouteToCellException | CacheException e) {
                     LOGGER.error("Failed to cancel transfer id={}: {}", _id, e.toString());
@@ -848,7 +852,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                     // performance markers going as they will trigger further
                     // attempts to kill the transfer.
                 } catch (InterruptedException e) {
-                    // Do nothing: this dCache domain is shutting down.
+                    completed("dCache is shutting down");
                 }
             }
         }
@@ -913,16 +917,18 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
         private void fetchChecksums()
         {
-            Optional<String> empty = Optional.empty();
-            _digestValue = _wantDigest.map(h -> {
-                        try {
-                            FileAttributes attributes = _pnfs.getFileAttributes(_path, EnumSet.of(CHECKSUM));
-                            return Checksums.digestHeader(h, attributes);
-                        } catch (CacheException e) {
-                            LOGGER.warn("Failed to acquire checksum of fetched file: {}", e.getMessage());
-                            return empty;
-                        }
-                    }).orElse(empty);
+            if (_direction == Direction.PULL && _wantDigest.isPresent()) {
+                Optional<String> empty = Optional.empty();
+                _digestValue = _wantDigest.map(h -> {
+                            try {
+                                FileAttributes attributes = _pnfs.getFileAttributes(_path, EnumSet.of(CHECKSUM));
+                                return Checksums.digestHeader(h, attributes);
+                            } catch (CacheException e) {
+                                LOGGER.warn("Failed to acquire checksum of fetched file: {}", e.getMessage());
+                                return empty;
+                            }
+                        }).orElse(empty);
+            }
         }
 
         private void addTrailerCallback()
@@ -969,79 +975,77 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             }
         }
 
-        public synchronized void success()
+        private void completed(String transferError)
         {
-            _problem = null;
-            _finished = true;
-            notifyAll();
-        }
-
-        public synchronized void failure(String explanation)
-        {
-            _problem = explanation;
-            _finished = true;
-            notifyAll();
-            if (_direction == Direction.PULL) {
-                try {
-                    /* There is a subtlety here: when pulling a remote file, a
-                     * user may be using a macaroon that allows the UPLOAD
-                     * activity but not the DELETE activity.  This will allow
-                     * the transfer to start, provided the file did not already
-                     * exist.
-                     *
-                     * Failed pull transfers are deleted.  However, if the
-                     * macaroon does not allow the DELETE activity then the user
-                     * cannot delete the incomplete file.
-                     *
-                     * It is better to provide consistent behaviour: that
-                     * incomplete pull transfers are deleted.  Therefore the
-                     * delete operation is make without any restriction.  To
-		     * achieve this, we create a new PnfsHandler with any
-		     * restrictions removed.
-                     */
-                    PnfsHandler pnfs = new PnfsHandler(_pnfs, null);
-                    pnfs.deletePnfsEntry(_pnfsId, _path.toString(),
-                            EnumSet.of(FileType.REGULAR), EnumSet.noneOf(FileAttribute.class));
-                } catch (FileNotFoundCacheException e) {
-                    // This is OK: either a new upload has started or the user
-                    // has deleted the file some other way.
-                    LOGGER.debug("Failed to clear up after failed transfer: {}",
-                            e.getMessage());
-                } catch (CacheException e) {
-                    LOGGER.warn("Failed to clear up after failed transfer: {}",
-                            e.getMessage());
-                    _problem += " (failed to remove badly transferred file)";
-                }
-            }
-        }
-
-        public synchronized void awaitCompletion() throws InterruptedException
-        {
-            if (_direction == Direction.PULL && _wantDigest.isPresent()) {
-                // Ensure this is called before any perf-marker data is sent.
-                addTrailerCallback();
+            if (_transfers.remove(_id) == null) {
+                // Something else called complete, so do nothing.
+                return;
             }
 
-            do {
-                generateMarker();
+            // Note: must be `false` as this method may be called by the task.
+            _sendingMarkers.cancel(false);
 
-                wait(_performanceMarkerPeriod);
-            } while (!_finished);
-
-            if (_problem == null) {
-                _out.println("success: Created");
-
-                if (_direction == Direction.PULL && _wantDigest.isPresent()) {
-                    fetchChecksums();
-                }
-
+            String error = transferError;
+            if (transferError == null) {
+                fetchChecksums();
             } else {
-                _out.println("failure: " + _problem);
+                if (_direction == Direction.PULL) {
+                    error = deleteFile()
+                            .map(e -> transferError + " (" + e + ")")
+                            .orElse(transferError);
+                }
+            }
+
+            sendResult(error);
+            _transferResult.set(Optional.ofNullable(error));
+        }
+
+        private Optional<String> deleteFile()
+        {
+            try {
+                /* There is a subtlety here: when pulling a remote file, a
+                 * user may be using a macaroon that allows the UPLOAD
+                 * activity but not the DELETE activity.  This will allow
+                 * the transfer to start, provided the file did not already
+                 * exist.
+                 *
+                 * Failed pull transfers are deleted.  However, if the
+                 * macaroon does not allow the DELETE activity then the user
+                 * cannot delete the incomplete file.
+                 *
+                 * It is better to provide consistent behaviour: that
+                 * incomplete pull transfers are deleted.  Therefore the
+                 * delete operation is make without any restriction.  To
+                 * achieve this, we create a new PnfsHandler with any
+                 * restrictions removed.
+                 */
+                PnfsHandler pnfs = new PnfsHandler(_pnfs, null);
+                pnfs.deletePnfsEntry(_pnfsId, _path.toString(),
+                        EnumSet.of(FileType.REGULAR), EnumSet.noneOf(FileAttribute.class));
+            } catch (FileNotFoundCacheException e) {
+                // This is OK: either a new upload has started or the user
+                // has deleted the file some other way.
+                LOGGER.debug("Failed to clear up after failed transfer: {}",
+                        e.getMessage());
+            } catch (CacheException e) {
+                LOGGER.warn("Failed to clear up after failed transfer: {}",
+                        e.getMessage());
+                return Optional.of("failed to remove badly transferred file");
+            }
+            return Optional.empty();
+        }
+
+        private void sendResult(@Nullable String error)
+        {
+            if (error == null) {
+                _out.println("success: Created");
+            } else {
+                _out.println("failure: " + error);
             }
             _out.flush();
         }
 
-        private void generateMarker() throws InterruptedException
+        private void generateMarker()
         {
             TransferStatusQueryMessage message =
                     new TransferStatusQueryMessage(_id);
@@ -1070,12 +1074,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                  * progress marker query.
                  */
                 if (_transferReportedAsUnknown) {
-                    failure("RemoteTransferManager restarted");
+                    completed("RemoteTransferManager restarted");
                 }
                 _transferReportedAsUnknown = true;
             } catch (NoRouteToCellException | CacheException e) {
                 LOGGER.warn("Failed to fetch information for progress marker: {}",
                         e.getMessage());
+            } catch (InterruptedException e) {
+                completed("dCache is shutting down");
             }
 
             _lastState = state;
@@ -1108,7 +1114,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
          *     End
          *
          */
-        public void sendMarker(int state, IoJobInfo info)
+        private void sendMarker(int state, IoJobInfo info)
         {
             _out.println("Perf Marker");
             _out.println("    Timestamp: " +
