@@ -32,6 +32,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 
+
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -235,4 +236,10 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider
         delegate().updateFsStat();
     }
 
+    @Override
+    public void removeLabel(Subject subject, FsPath path, String name) throws CacheException
+    {
+        delegate().removeLabel(subject, path, name);
+
+    }
 }

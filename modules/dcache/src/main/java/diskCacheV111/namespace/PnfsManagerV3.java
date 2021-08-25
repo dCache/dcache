@@ -69,6 +69,7 @@ import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRemoveExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
+import diskCacheV111.vehicles.PnfsRemoveLabelsMessage;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -268,6 +269,7 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsReadExtendedAttributesMessage.class);
         _gauges.addGauge(PnfsWriteExtendedAttributesMessage.class);
         _gauges.addGauge(PnfsRemoveExtendedAttributesMessage.class);
+        _gauges.addGauge(PnfsRemoveLabelsMessage.class);
     }
 
     public PnfsManagerV3()
@@ -2644,6 +2646,8 @@ public class PnfsManagerV3
             writeExtendedAttributes((PnfsWriteExtendedAttributesMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsRemoveExtendedAttributesMessage) {
             removeExtendedAttributes((PnfsRemoveExtendedAttributesMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsRemoveLabelsMessage) {
+                removeLabel((PnfsRemoveLabelsMessage) pnfsMessage);
         } else {
             LOGGER.warn("Unexpected message class [{}] from source [{}]",
                       pnfsMessage.getClass(), message.getSourcePath());
@@ -3039,6 +3043,33 @@ public class PnfsManagerV3
         }
     }
 
+    private void removeLabel(PnfsRemoveLabelsMessage message)
+    {
+        try {
+            if (message.getFsPath() == null) {
+                throw new CacheException("PNFS-ID based label removal is not supported");
+            }
+
+            populatePnfsId(message);
+
+            checkMask(message);
+            checkRestriction(message, UPDATE_METADATA);
+            FsPath path = message.getFsPath();
+
+            for (String name : message.getLabels()) {
+                _nameSpaceProvider.removeLabel(message.getSubject(),
+                        path, name);
+
+            }
+            message.clearLabel();
+            message.setSucceeded();
+
+        } catch (CacheException e) {
+            message.clearLabel();
+            message.setFailed(e.getRc(), e);
+        }
+
+    }
     private PnfsId populatePnfsId(PnfsMessage message)
         throws CacheException
     {

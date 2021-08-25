@@ -1133,6 +1133,8 @@ public class ChimeraNameSpaceProvider
                         break;
                     case XATTR:
                         break;
+                    case LABELS:
+                        break;
                     default:
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
@@ -1793,5 +1795,43 @@ public class ChimeraNameSpaceProvider
             throw new CacheException("Failed to list extended attributes: "
                     + Exceptions.messageOrClassName(e), e);
         }
+    }
+
+    /**@param subject The user making the request.
+     * Remove a label from a file.
+     *
+     * @param path The file from which the label  is deleted.
+     * @param label The name of the label to remove.
+     * @throws FileNotFoundCacheException     if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     * remove the label.
+     * @throws CacheException a generic failure in removing the labe.
+     **/
+    public void removeLabel(Subject subject, FsPath path, String label) throws CacheException {
+        try {
+            ExtendedInode target = pathToInode(subject, path.toString());
+
+            if (!Subjects.isRoot(subject)) {
+
+                FileAttributes attributes = getFileAttributesForPermissionHandler(target);
+
+                if (target.isDirectory()) {
+
+                    throw new NotFileCacheException("Directory object cannot have a label.");
+
+                } else {
+                    if (_permissionHandler.canWriteFile(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied");
+                    }
+                }            }
+            _fs.removeLabel(target, label);
+
+        } catch (FileNotFoundChimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file " + path);
+        } catch (ChimeraFsException e) {
+            throw new CacheException("Failed to remove the label: "
+                    + Exceptions.messageOrClassName(e), e);
+        }
+
     }
 }

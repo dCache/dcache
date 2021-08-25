@@ -307,6 +307,15 @@ public class FileResources {
                                              + "corresponding JSON Object's "
                                              + "value is this attribute's value."
                                              + "\n"
+                                             + "If action is 'set-label' then "
+                                             + "a label is added to the"
+                                             + "given file object."
+                                             + "'label' item value is a String."
+                                             + "\n"
+                                             + "If action is 'rm-label' then the corresponding"
+                                             + "label of a file is removed."
+                                             + "The  'label' value is either a string."
+                                             + "\n"
                                              + "If action is 'chgrp' then the "
                                              + "command requests the change of "
                                              + "group-owner of the target file "
@@ -355,6 +364,18 @@ public class FileResources {
                                                          + "        \"attr-1\",\n"
                                                          + "        \"attr-2\"\n"
                                                          + "    ]\n"
+                                                         + "}"),
+
+                                             @ExampleProperty(mediaType = "SET-LABEL",
+                                                         value = "{\n"
+                                                         + "    \"action\" : \"set-label\",\n"
+                                                         + "    \"label\" : : \"label\",\n"
+                                                         + "}"),
+
+                                             @ExampleProperty(mediaType = "RM-LABEL",
+                                                         value = "{\n"
+                                                         + "    \"action\" : \"rm-label\",\n"
+                                                         + "    \"label\" :  \"label\",\n"
                                                          + "}"),
                                              @ExampleProperty(mediaType = "CHGRP",
                                                      value = "{\n"
@@ -420,6 +441,14 @@ public class FileResources {
                         attributes.put(key, value.getBytes(StandardCharsets.UTF_8));
                     }
                     pnfsHandler.writeExtendedAttribute(path, attributes, xattrSetMode);
+                    break;
+                case "set-label":
+                    String label = reqPayload.getString("label");
+                    pnfsHandler.setFileAttributes(path,FileAttributes.ofLabel(label)) ;
+                    break;
+                case "rm-label":
+                    String labelsArgument = reqPayload.getString("label");
+                    pnfsHandler.removeLabel(path, labelsArgument);
                     break;
                 case "chgrp":
                     int gid = reqPayload.getInt("gid");

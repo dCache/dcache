@@ -5,7 +5,6 @@ import com.google.common.collect.Range;
 import javax.security.auth.Subject;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -26,6 +25,7 @@ import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsListExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRemoveExtendedAttributesMessage;
+import diskCacheV111.vehicles.PnfsRemoveLabelsMessage;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
 
 import org.dcache.auth.attributes.Restrictions;
@@ -314,5 +314,24 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
         message.setSubject(subject);
         message.setRestriction(Restrictions.none());
         _pnfs.request(message);
+    }
+
+
+    /**
+     * Remove a label attribute from a file.
+     * @param subject The user making the request.
+     * @param path The file from which the label is deleted.
+     * @param label The name of the label to be remove.
+     * @throws CacheException a generic failure in removing the label.
+     */
+    public void removeLabel(Subject subject, FsPath path, String label) throws CacheException
+    {
+        PnfsRemoveLabelsMessage message =
+                new PnfsRemoveLabelsMessage(path.toString());
+        message.addLabel(label);
+        message.setSubject(subject);
+        message.setRestriction(Restrictions.none());
+        _pnfs.request(message);
+
     }
 }

@@ -28,6 +28,7 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRemoveExtendedAttributesMessage;
+import diskCacheV111.vehicles.PnfsRemoveLabelsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage.Mode;
@@ -759,6 +760,26 @@ public class PnfsHandler implements CellMessageSender
         PnfsRemoveExtendedAttributesMessage message =
                 new PnfsRemoveExtendedAttributesMessage(path.toString());
         names.forEach(message::addName);
+        request(message);
+    }
+
+    /**
+     * Remove a label attribute from a file.
+     * @param path The file from which the label  is deleted.
+     * @param label The name of the label to remove.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     * remove the label.
+     * @throws CacheException if the label does not exist or the object is a directory.
+     * @throws CacheException a generic failure in removing the label.
+     */
+
+    public void removeLabel(FsPath path, String label) throws CacheException
+    {
+
+        PnfsRemoveLabelsMessage message =
+                new PnfsRemoveLabelsMessage(path.toString());
+        message.addLabel(label);
         request(message);
     }
 }

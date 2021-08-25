@@ -883,6 +883,10 @@ public class FileAttributes implements Serializable, Cloneable {
         return of().locations(pools).build();
     }
 
+    public static FileAttributes ofLabel(String label) {
+        return of().label(label).build();
+    }
+
     public static FileAttributes ofHsm(String hsm)
     {
         return of().hsm(hsm).build();
@@ -1085,6 +1089,14 @@ public class FileAttributes implements Serializable, Cloneable {
                 setXattrs(new HashMap());
             }
             getXattrs().putAll(xattrs);
+            return this;
+        }
+
+        public Builder label(String label) {
+            if (!isDefined(LABELS)) {
+                setLabels(new HashSet());
+            }
+            getLabels().add(label);
             return this;
         }
     }

@@ -424,4 +424,17 @@ public interface NameSpaceProvider
      */
     void updateFsStat() throws CacheException;
 
+    /**
+     * Remove a label from a file.
+     * @param subject The user making the request.
+     * @param path The file from which the label is deleted.
+     * @param label The labelto remove.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     * remove the label.
+     * @throws CacheException a generic failure in removing the attribute.
+     */
+    void removeLabel(Subject subject, FsPath path, String label)  throws  CacheException;
+
+
 }
