@@ -1082,9 +1082,28 @@ public class DcacheResourceFactory
                                 EnumSet.of(MODIFICATION_TIME, TYPE, SIZE)));
                     }
 
+                    private FileAttributes entryAttributes(FsPath dir, DirectoryEntry entry)
+                    {
+                        FileAttributes attr = entry.getFileAttributes();
+                        switch (attr.getFileType()) {
+                        case LINK:
+                            String entryPath = dir.child(entry.getName()).toString();
+                            try {
+                                return _pnfs.getFileAttributes(entryPath, getRequiredAttributes());
+                            } catch (CacheException e) {
+                                LOGGER.debug("Symlink lookup of {} failed with {}",
+                                        entryPath, e.getMessage());
+                                return attr;
+                            }
+
+                        default:
+                            return attr;
+                        }
+                    }
+
                     @Override
                     public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
-                        FileAttributes attr = entry.getFileAttributes();
+                        FileAttributes attr = entryAttributes(dir, entry);
                         Date mtime = new Date(attr.getModificationTime());
                         UrlPathWrapper name =
                                 UrlPathWrapper.forPath(entry.getName());
@@ -1093,9 +1112,10 @@ public class DcacheResourceFactory
                          */
                         boolean isUploading = !attr.isDefined(SIZE);
                         FileLocality locality = _poolMonitor.getFileLocality(attr, getRemoteAddr());
-                        t.addAggr("files.{name,isDirectory,mtime,size,isUploading,locality}",
+                        t.addAggr("files.{name,isDirectory,showGhosted,mtime,size,isUploading,locality}",
                                   name,
                                   attr.getFileType() == DIR,
+                                  attr.getFileType() == LINK,
                                   mtime,
                                   attr.getSizeIfPresent().map(SizeWrapper::new).orElse(null),
                                   isUploading,
