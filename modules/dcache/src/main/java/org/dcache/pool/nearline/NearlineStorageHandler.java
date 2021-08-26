@@ -98,6 +98,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.NopCompletionHandler;
+import org.dcache.pool.nearline.HsmSet.HsmDescription;
 import org.dcache.pool.nearline.json.NearlineData;
 import org.dcache.pool.nearline.json.StorageHandlerData;
 import org.dcache.pool.nearline.spi.FlushRequest;
@@ -191,6 +192,7 @@ public class NearlineStorageHandler
     private long flushTimeout = TimeUnit.HOURS.toMillis(4);
     private long removeTimeout = TimeUnit.HOURS.toMillis(4);
     private ScheduledFuture<?> timeoutFuture;
+    private boolean _addFromNearlineStorage;
 
     /**
      * Allocator used to use when space allocation is required.
@@ -219,6 +221,7 @@ public class NearlineStorageHandler
     @Qualifier("hsm")
     public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
         _kafkaSender = kafkaTemplate::sendDefault;
+        _addFromNearlineStorage = true;
     }
 
     @Required
@@ -494,6 +497,17 @@ public class NearlineStorageHandler
     @Override
     public void stickyChanged(StickyChangeEvent event)
     {
+    }
+
+    private void addFromNearlineStorage(StorageInfoMessage message, NearlineStorage storage)
+    {
+        if (_addFromNearlineStorage) {
+            HsmDescription description = hsmSet.describe(storage);
+
+            message.setHsmInstance(description.getInstance());
+            message.setHsmType(description.getType());
+            message.setHsmProvider(description.getProvider());
+        }
     }
 
     /**
@@ -1164,6 +1178,7 @@ public class NearlineStorageHandler
             infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
             infoMsg.setFileSize(getFileAttributes().getSize());
             infoMsg.setTimeQueued(activatedAt - createdAt);
+            addFromNearlineStorage(infoMsg, storage);
 
             billingStub.notify(infoMsg);
 
@@ -1370,6 +1385,8 @@ public class NearlineStorageHandler
                 infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, cause.toString());
             }
             infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
+            addFromNearlineStorage(infoMsg, storage);
+
             billingStub.notify(infoMsg);
 
             _kafkaSender.accept(infoMsg);
