@@ -19,6 +19,8 @@ package dmg.cells.services.login;
 
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -68,6 +70,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class LoginBrokerSubscriber
         implements CellCommandListener, CellMessageReceiver, LoginBrokerSource, CellMessageSender, CellEventListener, CellLifeCycleAware
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoginBrokerSubscriber.class);
+
     public static final double EXPIRATION_FACTOR = 2.5;
 
     /**
@@ -188,9 +192,19 @@ public class LoginBrokerSubscriber
     private void add(Entry entry)
     {
         if (tags.isEmpty() || !Collections.disjoint(tags, entry.getLoginBrokerInfo().getTags())) {
+
+            /* The order here is important!  The LoginBrokerInfo object must be
+             * added to the ByProtocolMap listings (where appropriate) before
+             * being added to doorsByIdentity.  This is to guarantee that any
+             * LoginBrokerInfo object in doorsByIdentity has any corresponding
+             * entries in the ByProtocolMap listings.  Without this guarantee,
+             * the code may leak doors.  The result would be "phantom"
+             * LoginBrokerInfo objects: ones in the ByProtocolMap listings but
+             * not in doorsByIdentity.
+             */
+            addByProtocol(entry.info);
             Entry old = doorsByIdentity.put(entry.info.getIdentifier(), entry);
             queue.add(entry);
-            addByProtocol(entry.info);
             if (old != null) {
                 removeByProtocol(old.info);
             }
@@ -202,6 +216,14 @@ public class LoginBrokerSubscriber
         LoginBrokerInfo info = entry.getLoginBrokerInfo();
         if (doorsByIdentity.remove(info.getIdentifier(), entry)) {
             removeByProtocol(info);
+        } else {
+            /* Note that the code in this else-block should not be needed.  It
+             * is included to catch any "phantom doors": LoginBrokerInfo objects
+             * that have already been removed from doorsByIdentifier (e.g.,
+             * door has sent an update) but are still present in either
+             * ByProtocolMap.
+             */
+            ensureRemovedByProtocol(info);
         }
     }
 
@@ -215,6 +237,12 @@ public class LoginBrokerSubscriber
     {
         info.ifCapableOf(READ, readDoors::remove);
         info.ifCapableOf(WRITE, writeDoors::remove);
+    }
+
+    private void ensureRemovedByProtocol(LoginBrokerInfo info)
+    {
+        info.ifCapableOf(READ, readDoors::ensureRemoved);
+        info.ifCapableOf(WRITE, writeDoors::ensureRemoved);
     }
 
     @Override
@@ -351,6 +379,17 @@ public class LoginBrokerSubscriber
         public boolean remove(LoginBrokerInfo info)
         {
             return get(info.getProtocolFamily()).remove(info);
+        }
+
+        /**
+         * We expect that the LoginBrokerInfo is absent, but we wish to ensure
+         * that it is missing.
+         */
+        public void ensureRemoved(LoginBrokerInfo info)
+        {
+            if (remove(info)) {
+                LOGGER.warn("Removing phantom door {}", info);
+            }
         }
 
         public Set<LoginBrokerInfo> get(String protocol)
