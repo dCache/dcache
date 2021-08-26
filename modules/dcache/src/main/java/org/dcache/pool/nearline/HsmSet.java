@@ -17,7 +17,6 @@
  */
 package org.dcache.pool.nearline;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 
 import javax.annotation.PreDestroy;
@@ -82,6 +81,8 @@ public class HsmSet
 
     private final ConcurrentMap<String, HsmInfo> _newConfig = Maps.newConcurrentMap();
     private final ConcurrentMap<String, HsmInfo> _hsm = Maps.newConcurrentMap();
+    private final ConcurrentMap<NearlineStorage, HsmDescription> _descriptions
+            = Maps.newConcurrentMap();
     private boolean _isReadingSetup;
 
     private NearlineStorageProvider findProvider(String name)
@@ -95,9 +96,47 @@ public class HsmSet
     }
 
     /**
+     * Provide a read-only view of an HsmInfo object.  This allows the safe
+     * export of information about an HSM instance outside of HsmSet.
+     */
+    public class HsmDescription
+    {
+        private final HsmInfo info;
+
+        private HsmDescription(HsmInfo info)
+        {
+            this.info = info;
+        }
+
+        /**
+         * Returns the instance name.
+         */
+        public String getInstance()
+        {
+            return info._instance;
+        }
+
+        /**
+         * Returns the HSM type.
+         */
+        public String getType()
+        {
+            return info._type;
+        }
+
+        /**
+         * Returns the HSM provider name.
+         */
+        public String getProvider()
+        {
+            return info._provider.getName();
+        }
+    }
+
+    /**
      * Information about a particular HSM instance.
      */
-    public class HsmInfo
+    private class HsmInfo
     {
         private final String _type;
         private final String _instance;
@@ -287,6 +326,26 @@ public class HsmSet
         throw new FileNotInCacheException("Pool does not have access to any of the HSM locations " + file.locations());
     }
 
+    public HsmDescription describe(NearlineStorage storage)
+    {
+        HsmDescription description = _descriptions.get(storage);
+
+        if (description == null) {
+            /* This is potentially racy; however, _descriptions is thread-safe
+             * so the worse is creating multiple HsmDescription objects where
+             * all but one will be garbage-collected.
+             */
+            description = _hsm.values().stream()
+                    .filter(i -> i.getNearlineStorage().equals(storage))
+                    .map(HsmDescription::new)
+                    .findFirst()
+                    .orElseThrow();
+            _descriptions.put(storage, description);
+        }
+
+        return description;
+    }
+
     @AffectsSetup
     @Command(name = "hsm create", hint = "create nearline storage",
             description = "Creates a nearline storage. A nearline storage is dCache's interface to external " +
@@ -431,6 +490,7 @@ public class HsmSet
             HsmInfo info = (_isReadingSetup ? _newConfig : _hsm).remove(instance);
             if (info != null) {
                 info.shutdown();
+                _descriptions.remove(info.getNearlineStorage());
             }
             return "";
         }
@@ -498,7 +558,9 @@ public class HsmSet
         Iterator<HsmInfo> iterator =
                 Maps.filterKeys(_hsm, not(in(_newConfig.keySet()))).values().iterator();
         while (iterator.hasNext()) {
-            iterator.next().shutdown();
+            HsmInfo removed = iterator.next();
+            removed.shutdown();
+            _descriptions.remove(removed.getNearlineStorage());
             iterator.remove();
         }
 
