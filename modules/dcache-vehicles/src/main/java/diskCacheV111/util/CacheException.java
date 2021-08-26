@@ -141,6 +141,12 @@ public class CacheException extends Exception
     public static final int NO_ATTRIBUTE = 10030;
 
     /**
+     * An attempt was made to change some recorded information; however, that
+     * change was not acceptable.
+     */
+    public static final int INVALID_UPDATE = 10031;
+
+    /**
      * default error code. <b>It's recommended to use more specific error
      * codes</b>
      */
