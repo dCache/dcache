@@ -442,7 +442,7 @@ public class CopyFilter implements Filter
         var transferHeaders = buildTransferHeaders(request);
         var transferFlags = buildTransferFlags();
 
-        var transferResult = _remoteTransfers.acceptRequest(response, transferHeaders,
+        var transferResult = _remoteTransfers.acceptRequest(transferHeaders,
                 getSubject(), getRestriction(), path, remote, credential,
                 direction, transferFlags, overwriteAllowed, wantDigest);
 
@@ -456,14 +456,6 @@ public class CopyFilter implements Filter
                                 "problem getting result: " + e);
                     }
                 }, MoreExecutors.directExecutor());
-
-
-        // Wait for transfer to complete.
-        try {
-            transferResult.get();
-        } catch (ExecutionException e) {
-            LOGGER.warn("Problem with remote transfer: " + e);
-        }
     }
 
     private void setRemoteUrlAttribute(Direction direction, URI remote)
