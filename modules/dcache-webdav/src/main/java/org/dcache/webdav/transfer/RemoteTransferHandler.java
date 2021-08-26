@@ -39,9 +39,12 @@ import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.security.auth.Subject;
+import javax.servlet.AsyncContext;
 import javax.servlet.ServletResponseWrapper;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -98,6 +101,7 @@ import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
@@ -255,14 +259,14 @@ public class RemoteTransferHandler implements CellMessageReceiver
      * Start a transfer and block until that transfer is complete.
      * @return a description of the error, if there was a problem.
      */
-    public ListenableFuture<Optional<String>> acceptRequest(Response response,
+    public ListenableFuture<Optional<String>> acceptRequest(
             ImmutableMap<String,String> transferHeaders,
             Subject subject, Restriction restriction, FsPath path, URI remote,
             Object credential, Direction direction, EnumSet<TransferFlag> flags,
             boolean overwriteAllowed, Optional<String> wantDigest)
             throws ErrorResponseException, InterruptedException
     {
-        RemoteTransfer transfer = new RemoteTransfer(response, subject, restriction,
+        RemoteTransfer transfer = new RemoteTransfer(subject, restriction,
                 path, remote, credential, flags, transferHeaders, direction,
                 overwriteAllowed, wantDigest);
 
@@ -309,14 +313,12 @@ public class RemoteTransferHandler implements CellMessageReceiver
         @Nullable
         private final OpenIdCredential _oidCredential;
         private final CredentialSource _source;
-        private final PrintWriter _out;
         private final EnumSet<TransferFlag> _flags;
         private final ImmutableMap<String,String> _transferHeaders;
         private final Direction _direction;
         private final boolean _overwriteAllowed;
         private final Optional<String> _wantDigest;
         private final PnfsHandler _pnfs;
-        private final Response _response;
         private final SettableFuture<Optional<String>> _transferResult = SettableFuture.create();
         private long _id;
         private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
@@ -325,8 +327,9 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private Optional<String> _digestValue;
         private boolean _transferReportedAsUnknown;
         private ScheduledFuture<?> _sendingMarkers;
+        private AsyncContext _async;
 
-        public RemoteTransfer(Response response, Subject subject, Restriction restriction,
+        public RemoteTransfer(Subject subject, Restriction restriction,
                 FsPath path, URI destination, @Nullable Object credential,
                 EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders,
                 Direction direction, boolean overwriteAllowed, Optional<String> wantDigest)
@@ -356,13 +359,12 @@ public class RemoteTransferHandler implements CellMessageReceiver
             } else {
                 throw new IllegalArgumentException("Credential not supported for Third-Party Transfer");
             }
-            _out = new PrintWriter(response.getOutputStream());
+
             _flags = flags;
             _transferHeaders = transferHeaders;
             _direction = direction;
             _overwriteAllowed = overwriteAllowed;
             _wantDigest = wantDigest;
-            _response = response;
         }
 
 
@@ -461,8 +463,22 @@ public class RemoteTransferHandler implements CellMessageReceiver
                         "transfer not accepted: " + e.getMessage());
             }
 
-            _response.setStatus(Status.SC_ACCEPTED);
-            _response.setContentTypeHeader("text/perf-marker-stream");
+            HttpServletResponse servletResponse = ServletResponse.getResponse();
+            servletResponse.setStatus(SC_ACCEPTED);
+            servletResponse.setContentType("text/perf-marker-stream");
+            try {
+                // Commit status and response headers now, rather than waiting
+                // for first performance marker or result line.
+                servletResponse.flushBuffer();
+            } catch (IOException e) {
+                LOGGER.warn("Unable to send response status and headers.");
+            }
+
+            /* Start async processing: no more exceptions! */
+
+            HttpServletRequest servletRequest = ServletRequest.getRequest();
+            _async = servletRequest.startAsync();
+            _async.setTimeout(0); // Disable timeout as we don't know how long we'll take.
 
             if (_direction == Direction.PULL && _wantDigest.isPresent()) {
                 // Ensure this is called before any perf-marker data is sent.
@@ -608,7 +624,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                  * Jetty does support trailers but with a prioprietary interface,
                  * requiring the following ugly code.
                  */
-                HttpServletResponse response = ServletResponse.getResponse();
+                HttpServletResponse response = (HttpServletResponse)_async.getResponse();
                 while (response instanceof ServletResponseWrapper) {
                     response = (HttpServletResponse)((ServletResponseWrapper)response).getResponse();
                 }
@@ -657,6 +673,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
             sendResult(error);
             _transferResult.set(Optional.ofNullable(error));
+            _async.complete();
         }
 
         private Optional<String> deleteFile()
@@ -696,12 +713,18 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
         private void sendResult(String result)
         {
-            if (result == null) {
-                _out.println("success: Created");
-            } else {
-                _out.println("failure: " + result);
+            try {
+                var out = _async.getResponse().getWriter();
+
+                if (result == null) {
+                    out.println("success: Created");
+                } else {
+                    out.println("failure: " + result);
+                }
+                out.flush();
+            } catch (IOException e) {
+                LOGGER.warn("Unable to get writer: {}", e.toString());
             }
-            _out.flush();
         }
 
         private void generateMarker()
@@ -761,34 +784,40 @@ public class RemoteTransferHandler implements CellMessageReceiver
          */
         private void sendMarker(int state, IoJobInfo info)
         {
-            _out.println("Perf Marker");
-            _out.println("    Timestamp: " +
-                    MILLISECONDS.toSeconds(System.currentTimeMillis()));
-            _out.println("    State: " + state);
-            _out.println("    State description: " + TransferManagerHandler.describeState(state));
-            _out.println("    Stripe Index: 0");
-            if (info != null) {
-                _out.println("    Stripe Start Time: " +
-                        MILLISECONDS.toSeconds(info.getStartTime()));
-                _out.println("    Stripe Last Transferred: " +
-                        MILLISECONDS.toSeconds(info.getLastTransferred()));
-                _out.println("    Stripe Transfer Time: " +
-                        MILLISECONDS.toSeconds(info.getTransferTime()));
-                _out.println("    Stripe Bytes Transferred: " +
-                        info.getBytesTransferred());
-                _out.println("    Stripe Status: " + info.getStatus());
-            }
-            _out.println("    Total Stripe Count: 1");
-            if (info != null) {
-                List<InetSocketAddress> connections = info.remoteConnections();
-                if (connections != null) {
-                    _out.println("    RemoteConnections: " + connections.stream()
-                            .map(conn -> "tcp:" + InetAddresses.toUriString(conn.getAddress()) + ":" + conn.getPort())
-                            .collect(Collectors.joining(",")));
+            try {
+                var out = _async.getResponse().getWriter();
+
+                out.println("Perf Marker");
+                out.println("    Timestamp: " +
+                        MILLISECONDS.toSeconds(System.currentTimeMillis()));
+                out.println("    State: " + state);
+                out.println("    State description: " + TransferManagerHandler.describeState(state));
+                out.println("    Stripe Index: 0");
+                if (info != null) {
+                    out.println("    Stripe Start Time: " +
+                            MILLISECONDS.toSeconds(info.getStartTime()));
+                    out.println("    Stripe Last Transferred: " +
+                            MILLISECONDS.toSeconds(info.getLastTransferred()));
+                    out.println("    Stripe Transfer Time: " +
+                            MILLISECONDS.toSeconds(info.getTransferTime()));
+                    out.println("    Stripe Bytes Transferred: " +
+                            info.getBytesTransferred());
+                    out.println("    Stripe Status: " + info.getStatus());
                 }
+                out.println("    Total Stripe Count: 1");
+                if (info != null) {
+                    List<InetSocketAddress> connections = info.remoteConnections();
+                    if (connections != null) {
+                        out.println("    RemoteConnections: " + connections.stream()
+                                .map(conn -> "tcp:" + InetAddresses.toUriString(conn.getAddress()) + ":" + conn.getPort())
+                                .collect(Collectors.joining(",")));
+                    }
+                }
+                out.println("End");
+                out.flush();
+            } catch (IOException e) {
+                LOGGER.warn("Unable to get writer for sending performance marker.");
             }
-            _out.println("End");
-            _out.flush();
         }
     }
 }

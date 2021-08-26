@@ -83,8 +83,10 @@ public class MiltonHandler
                 baseRequest.setHandled(true);
                 _httpManager.process(req, resp);
             }
-            response.getOutputStream().flush();
-            response.flushBuffer();
+            if (!request.isAsyncStarted()) {
+                response.getOutputStream().flush();
+                response.flushBuffer();
+            }
         }
     }
 

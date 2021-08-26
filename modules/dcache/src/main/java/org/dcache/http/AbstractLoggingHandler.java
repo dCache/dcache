@@ -27,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -53,8 +55,40 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
     private static final String X509_CERTIFICATE_ATTRIBUTE =
             "javax.servlet.request.X509Certificate";
     private static final String REMOTE_ADDRESS = "org.dcache.remote-address";
+    private static final String PROCESSING_TIME = "org.dcache.processing-time";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLoggingHandler.class);
+
+    private class LogOnComplete implements AsyncListener
+    {
+        @Override
+        public void onComplete(AsyncEvent event)
+        {
+            requestCompleted((HttpServletRequest)event.getSuppliedRequest(),
+                    (HttpServletResponse)event.getSuppliedResponse());
+        }
+
+        @Override
+        public void onTimeout(AsyncEvent event)
+        {
+            LOGGER.warn("Unexpected timeout on async processing of {}",
+                    event.getAsyncContext().getRequest());
+        }
+
+        @Override
+        public void onError(AsyncEvent event)
+        {
+            LOGGER.warn("Unexpected error on async processing of {}",
+                    event.getAsyncContext().getRequest());
+        }
+
+        @Override
+        public void onStartAsync(AsyncEvent event)
+        {
+            LOGGER.warn("Unexpected error on async processing of {}",
+                    event.getAsyncContext().getRequest());
+        }
+    }
 
     /** The SLF4J Logger to which we send access log entries. */
     protected abstract Logger accessLogger();
@@ -74,18 +108,30 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
             // while dCache is processing the request, in which case Jetty
             // "forgets".
             request.setAttribute(REMOTE_ADDRESS, remoteAddress(request).orElse(null));
+            request.setAttribute(PROCESSING_TIME, processingTime);
 
             super.handle(target, baseRequest, request, response);
 
-            processingTime.stop();
-
-            NetLoggerBuilder.Level logLevel = logLevel(request, response);
-            NetLoggerBuilder log = new NetLoggerBuilder(logLevel, requestEventName())
-                    .omitNullValues();
-            describeOperation(log, request, response);
-            log.add("duration", processingTime.elapsed().toMillis());
-            log.toLogger(accessLogger());
+            if (request.isAsyncStarted()) {
+                request.getAsyncContext().addListener(new LogOnComplete());
+            } else {
+                requestCompleted(request, response);
+            }
         }
+    }
+
+    private void requestCompleted(HttpServletRequest request, HttpServletResponse response)
+    {
+        var processingTime = (Stopwatch)request.getAttribute(PROCESSING_TIME);
+
+        processingTime.stop();
+
+        NetLoggerBuilder.Level logLevel = logLevel(request, response);
+        NetLoggerBuilder log = new NetLoggerBuilder(logLevel, requestEventName())
+                .omitNullValues();
+        describeOperation(log, request, response);
+        log.add("duration", processingTime.elapsed().toMillis());
+        log.toLogger(accessLogger());
     }
 
     protected void describeOperation(NetLoggerBuilder log,
