@@ -173,7 +173,7 @@ public class AuthenticationHandler extends HandlerWrapper {
             } catch (PermissionDeniedCacheException e) {
                 LOG.info("Login failed for {} on {}: {}", request.getMethod(),
                         request.getPathInfo(), e.getMessage());
-                servletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED,
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED,
                         e.getMessage());
                 baseRequest.setHandled(true);
             } catch (CacheException e) {
