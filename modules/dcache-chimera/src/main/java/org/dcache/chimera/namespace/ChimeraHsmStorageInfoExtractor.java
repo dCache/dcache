@@ -22,6 +22,8 @@ import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 
+import static diskCacheV111.util.CacheException.INVALID_UPDATE;
+
 public abstract class ChimeraHsmStorageInfoExtractor implements
        ChimeraStorageInfoExtractable {
 
@@ -210,6 +212,8 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
 
         try {
             if(dCacheStorageInfo.isSetAddLocation() ) {
+                checkFlushUpdate(dCacheStorageInfo);
+
                 List<URI> locationURIs = dCacheStorageInfo.locations();
 
                 if( !locationURIs.isEmpty() ) {
@@ -246,5 +250,15 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             }
         }
         return Optional.empty();
+    }
+
+    protected void checkFlushUpdate(StorageInfo info) throws CacheException
+    {
+        List<URI> locations = info.locations();
+
+        if (locations.isEmpty()) {
+            throw new CacheException(INVALID_UPDATE, "Flush was successful but"
+                    + " no extra (tape) locations were reported.");
+        }
     }
 }

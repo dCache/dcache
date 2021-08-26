@@ -82,12 +82,28 @@ public interface StorageInfo
     void addLocation(URI newLocation);
 
     /**
-     *
-     * @return true if new location is added and
-     * have to be stored by PnfsManager
+     * Whether the StorageInfo contains updated information as a result of a
+     * flush operation.  In particular, {@link #locations() } returns any
+     * additional (tape) locations, {@link #getHsm()} contains the HSM
+     * involved, and {@link getKey} contains other information as key-value
+     * pairs.
+     * @return true if this update is the result of flushing a file to tape.
      * @since 1.8
      */
     boolean isSetAddLocation();
+
+    /**
+     * Control whether this StorageInfo contains updated information as a result
+     * of a flush operation.  By default a StorageInfo object is marked as NOT
+     * containing an update from flushing a file to tape.  Calling this method
+     * with {@literal true} marks that the StorageInfo contains information from
+     * a tape flush.  When set to {@literal true}, the caller is responsible for
+     * calling {@link #addLocation(java.net.URI) } for any additional (tape)
+     * locations, {@link #setHsm(java.lang.String) } to describe the HSM
+     * involved, and {@link #setKey(java.lang.String, java.lang.String) } for
+     * any HSM-specific data.
+     * @param isSet whether the information comes from flushing a file to tape.
+     */
     void isSetAddLocation(boolean isSet);
 
 
