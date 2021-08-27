@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 public class ByteRangeList implements RestartData
 {
 
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(ByteRangeList.class);
 
     /**
@@ -108,7 +108,7 @@ public class ByteRangeList implements RestartData
     {
         // always use copies of objects
         ByteRange newRange = new ByteRange(range);
-        logger.debug(this.toFtpCmdArgument() + " + " + newRange.toString());
+        LOGGER.debug(this.toFtpCmdArgument() + " + " + newRange.toString());
         int oldSize = vector.size();
         int index = 0;
         final int NOT_YET = -1;

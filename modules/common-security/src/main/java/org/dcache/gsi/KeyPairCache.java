@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class KeyPairCache
 {
-    private static final Logger LOG = LoggerFactory.getLogger(KeyPairCache.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyPairCache.class);
 
     private static final String DEFAULT_ALGORITHM = "RSA";
     private static final String DEFAULT_PROVIDER = "BC";
@@ -130,7 +130,7 @@ public class KeyPairCache
     private KeyPair generate(int bits) throws NoSuchAlgorithmException,
             NoSuchProviderException
     {
-        LOG.debug("Generating KeyPair for {} bits", bits);
+        LOGGER.debug("Generating KeyPair for {} bits", bits);
 
         KeyPairGenerator generator =
             KeyPairGenerator.getInstance(this.algorithm, this.provider);

@@ -32,7 +32,7 @@ public class EBlockImageDCReader
     boolean eodReceived = false;
     boolean willCloseReceived = false;
 
-    private static final Logger logger =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(EBlockImageDCReader.class);
 
     protected DataInputStream input;
@@ -73,22 +73,22 @@ public class EBlockImageDCReader
         boolean eof = (desc & EOF) != 0;
         boolean eod = (desc & EOD) != 0;
 
-        if (logger.isDebugEnabled()) {
-            logger.debug(desc + " " + size + " " + offset);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(desc + " " + size + " " + offset);
         }
 
         // if closing flag not yet received,
         // check this buffer for closing flag
         willCloseReceived = (desc & WILL_CLOSE) != 0;
         if (willCloseReceived) {
-            logger.debug("Received the CLOSE flag");
+            LOGGER.debug("Received the CLOSE flag");
         }
 
         if (eod) {
             this.eodReceived = true;
             context.eodTransferred();
-            if (logger.isDebugEnabled()) {
-                logger.debug(
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
                         "Received EOD. Still expecting: {}",
                         ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
                            ? "?"
@@ -99,8 +99,8 @@ public class EBlockImageDCReader
 
         if (eof) {
             context.setEodsTotal((int) offset);
-            if (logger.isDebugEnabled()) {
-                logger.debug("Received EODC. Expecting total EODs: {}",
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Received EODC. Expecting total EODs: {}",
                         context.getEodsTotal());
             }
             return null;
