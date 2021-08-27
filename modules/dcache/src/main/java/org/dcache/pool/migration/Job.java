@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -92,7 +91,7 @@ public class Job
     enum State { NEW, INITIALIZING, RUNNING, SLEEPING, PAUSED, SUSPENDED,
             STOPPING, CANCELLING, CANCELLED, FINISHED, FAILED }
 
-    private static final Logger _log = LoggerFactory.getLogger(Job.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Job.class);
 
     private final Set<PnfsId> _queued = new LinkedHashSet<>();
     private final Map<PnfsId,Long> _sizes = new HashMap<>();
@@ -160,7 +159,7 @@ public class Job
                         _lock.unlock();
                     }
                 } catch (InterruptedException e) {
-                    _log.error("Migration job was interrupted");
+                    LOGGER.error("Migration job was interrupted");
                 } finally {
                     _lock.lock();
                     try {
@@ -325,7 +324,7 @@ public class Job
                     // File was removed before we got to it - not a
                     // problem.
                 } catch (CacheException e) {
-                    _log.error("Failed to load entry: {}", e.getMessage());
+                    LOGGER.error("Failed to load entry: {}", e.getMessage());
                 }
             }
         } catch (IllegalStateException e) {
@@ -564,11 +563,11 @@ public class Job
                 } catch (FileNotInCacheException e) {
                     _sizes.remove(pnfsId);
                 } catch (CacheException e) {
-                    _log.error("Migration job failed to read entry: {}", e.getMessage());
+                    LOGGER.error("Migration job failed to read entry: {}", e.getMessage());
                     setState(State.FAILED);
                     break;
                 } catch (InterruptedException e) {
-                    _log.error("Migration job was interrupted: {}", e.getMessage());
+                    LOGGER.error("Migration job was interrupted: {}", e.getMessage());
                     setState(State.FAILED);
                     break;
                 } finally {
@@ -945,10 +944,10 @@ public class Job
         } catch (IllegalTransitionException e) {
             // File is likely about to be removed. TODO: log it
         } catch (CacheException e) {
-            _log.error("Migration job failed to update source mode: {}", e.getMessage());
+            LOGGER.error("Migration job failed to update source mode: {}", e.getMessage());
             setState(State.FAILED);
         } catch (InterruptedException e) {
-            _log.error("Migration job was interrupted");
+            LOGGER.error("Migration job was interrupted");
             setState(State.FAILED);
         }
     }

@@ -43,7 +43,7 @@ import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
  */
 public class UnpinProcessor implements Runnable
 {
-    private static final Logger _logger = LoggerFactory.getLogger(UnpinProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UnpinProcessor.class);
 
     private static final int MAX_RUNNING = 1000;
     private static final int NO_UNPIN_LIMIT_PER_RUN = -1;
@@ -73,14 +73,14 @@ public class UnpinProcessor implements Runnable
             unpin(idle, executor);
             idle.acquire(MAX_RUNNING);
         } catch (InterruptedException e) {
-            _logger.debug(e.toString());
+            LOGGER.debug(e.toString());
         } catch (JDOException | DataAccessException e) {
-            _logger.error("Database failure while unpinning: {}",
+            LOGGER.error("Database failure while unpinning: {}",
                           e.getMessage());
         } catch (RemoteConnectFailureException e) {
-            _logger.error("Remote connection failure while unpinning: {}", e.getMessage());
+            LOGGER.error("Remote connection failure while unpinning: {}", e.getMessage());
         } catch (RuntimeException e) {
-            _logger.error("Unexpected failure while unpinning", e);
+            LOGGER.error("Unexpected failure while unpinning", e);
         } finally {
             executor.shutdown();
             NDC.pop();
@@ -100,10 +100,10 @@ public class UnpinProcessor implements Runnable
     private void upin(Semaphore idle, Executor executor, Pin pin) throws InterruptedException
     {
         if (pin.getPool() == null) {
-            _logger.debug("No pool found for pin {}, pnfsid {}; no sticky flags to clear", pin.getPinId(), pin.getPnfsId());
+            LOGGER.debug("No pool found for pin {}, pnfsid {}; no sticky flags to clear", pin.getPinId(), pin.getPnfsId());
             _dao.delete(pin);
         } else {
-            _logger.debug("Clearing sticky flag for pin {}, pnfsid {} on pool {}", pin.getPinId(), pin.getPnfsId(), pin.getPool());
+            LOGGER.debug("Clearing sticky flag for pin {}, pnfsid {} on pool {}", pin.getPinId(), pin.getPnfsId(), pin.getPool());
             _dao.update(pin, _dao.set().state(UNPINNING));
             clearStickyFlag(idle, pin, executor);
         }
@@ -118,7 +118,7 @@ public class UnpinProcessor implements Runnable
     {
         PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(pin.getPool());
         if (pool == null || !pool.isActive()) {
-            _logger.warn("Unable to clear sticky flag for pin {} on pnfsid {} because pool {} is unavailable", pin.getPinId(), pin.getPnfsId(), pin.getPool());
+            LOGGER.warn("Unable to clear sticky flag for pin {} on pnfsid {} because pool {} is unavailable", pin.getPinId(), pin.getPnfsId(), pin.getPool());
             failedToUnpin(pin);
             return;
         }
@@ -149,7 +149,7 @@ public class UnpinProcessor implements Runnable
                                          _dao.delete(pin);
                                          break;
                                      default:
-                                         _logger.warn("Failed to clear sticky flag: {} [{}]", error, rc);
+                                         LOGGER.warn("Failed to clear sticky flag: {} [{}]", error, rc);
                                          failedToUnpin(pin);
                                          break;
                                      }

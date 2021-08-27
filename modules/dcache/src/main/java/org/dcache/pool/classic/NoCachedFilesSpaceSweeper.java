@@ -27,7 +27,7 @@ public class NoCachedFilesSpaceSweeper
     extends AbstractStateChangeListener
     implements SpaceSweeperPolicy, PoolDataBeanProvider<SweeperData>
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(NoCachedFilesSpaceSweeper.class);
 
     private Repository _repository;
@@ -82,11 +82,11 @@ public class NoCachedFilesSpaceSweeper
                 if (!entry.isSticky()) {
                     _repository.setState(id, ReplicaState.REMOVED,
                             "Replica is now cache-only on pool with no-cache policy");
-                    _log.debug(entry.getPnfsId() + " removed: {}", event.getWhy());
+                    LOGGER.debug(entry.getPnfsId() + " removed: {}", event.getWhy());
                 }
             }
         } catch (InterruptedException | CacheException e) {
-            _log.warn("Failed to remove entry from repository ({}): {}",
+            LOGGER.warn("Failed to remove entry from repository ({}): {}",
                     event.getWhy(), e.getMessage() );
         }
     }

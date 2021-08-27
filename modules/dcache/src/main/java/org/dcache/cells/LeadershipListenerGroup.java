@@ -31,7 +31,7 @@ import java.util.Set;
  */
 public class LeadershipListenerGroup implements LeaderLatchListener {
 
-    private static final Logger log = LoggerFactory.getLogger(LeadershipListenerGroup.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LeadershipListenerGroup.class);
 
     private final Set<LeaderLatchListener> leaderElectionAwareComponents = new HashSet<>();
 
@@ -42,13 +42,13 @@ public class LeadershipListenerGroup implements LeaderLatchListener {
 
     @Override
     public void isLeader() {
-        log.info("HA: Assuming leader role.");
+        LOGGER.info("HA: Assuming leader role.");
         leaderElectionAwareComponents.forEach(LeaderLatchListener::isLeader);
     }
 
     @Override
     public void notLeader() {
-        log.info("HA: Dropping leader role.");
+        LOGGER.info("HA: Dropping leader role.");
         leaderElectionAwareComponents.forEach(LeaderLatchListener::notLeader);
     }
 }

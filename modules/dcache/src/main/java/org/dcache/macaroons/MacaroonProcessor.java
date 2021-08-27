@@ -7,13 +7,11 @@ import com.github.nitram509.jmacaroons.MacaroonsVerifier;
 import com.github.nitram509.jmacaroons.NotDeSerializableException;
 import com.google.common.base.Throwables;
 import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
@@ -30,7 +28,7 @@ import static org.dcache.macaroons.CaveatValues.*;
  */
 public class MacaroonProcessor
 {
-    private static final Logger LOG  = LoggerFactory.getLogger(MacaroonProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MacaroonProcessor.class);
     private static final int SECRET_ID_LENGTH = 8;
     // In Base64, every 3 bytes is represented as 4 characters.
     private static final int SECRET_ID_LENGTH_BYTES = SECRET_ID_LENGTH * 3 / 4;
@@ -145,7 +143,7 @@ public class MacaroonProcessor
     public MacaroonContext expandMacaroon(String serialisedMacaroon, InetAddress clientAddress)
             throws InvalidMacaroonException
     {
-        LOG.trace("Received macaroon validate message");
+        LOGGER.trace("Received macaroon validate message");
 
         Macaroon macaroon = MacaroonsBuilder.deserialize(serialisedMacaroon);
 

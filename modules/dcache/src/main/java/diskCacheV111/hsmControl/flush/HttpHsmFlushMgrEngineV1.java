@@ -35,7 +35,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageSender
 {
-   private static final Logger _log =
+   private static final Logger LOGGER =
        LoggerFactory.getLogger(HttpHsmFlushMgrEngineV1.class);
 
    private CellEndpoint _endpoint;
@@ -50,7 +50,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
    public HttpHsmFlushMgrEngineV1(String [] argsString ){
 
        for( int i = 0 ; i < argsString.length ; i++ ){
-          _log.info("HttpPoolMgrEngineV3 : argument : {} : {}", i, argsString[i]);
+          LOGGER.info("HttpPoolMgrEngineV3 : argument : {} : {}", i, argsString[i]);
           if( argsString[i].startsWith("css=") ){
               decodeCss( argsString[i].substring(4) ) ;
           }else if( argsString[i].startsWith("mgr=") ){
@@ -67,8 +67,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
           _managerList.add("FlushManager");
       }
 
-      _log.info("Using Manager  : {}", _managerList ) ;
-      _log.info("Using CSS file : {}", _cssFile ) ;
+      LOGGER.info("Using Manager  : {}", _managerList ) ;
+      LOGGER.info("Using CSS file : {}", _cssFile ) ;
 
    }
 
@@ -134,7 +134,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
 
              CellStub flushManager = new CellStub(_endpoint, new CellPath(flushManagerName), 20, SECONDS);
 
-             _log.info("MAP -> {}", optionsMap);
+             LOGGER.info("MAP -> {}", optionsMap);
 
              printFlushHeader( pw ,  "Flush Info");
              printDirectory( pw ) ;
@@ -342,7 +342,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
           output.append("Exception in command : ").append(command).append("\n") ;
           output.append("     ").append(e.getClass().getName()).
              append(" -> ").append( e.getMessage() ).append("\n") ;
-          _log.warn(e.toString());
+          LOGGER.warn(e.toString());
       }
    }
 

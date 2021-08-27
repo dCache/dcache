@@ -34,7 +34,7 @@ import java.util.jar.Manifest;
 public class SpringLiquibase
     extends liquibase.integration.spring.SpringLiquibase
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(SpringLiquibase.class);
 
     private boolean _shouldUpdate = true;

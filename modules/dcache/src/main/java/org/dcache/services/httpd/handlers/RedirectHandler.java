@@ -18,7 +18,7 @@ import java.io.IOException;
  */
 public class RedirectHandler extends AbstractHandler {
 
-    private static final Logger logger
+    private static final Logger LOGGER
         = LoggerFactory.getLogger(RedirectHandler.class);
 
     private final String fromContext;
@@ -36,7 +36,7 @@ public class RedirectHandler extends AbstractHandler {
     public void handle(String target, Request baseRequest,
             HttpServletRequest request, HttpServletResponse response) throws
             IOException, ServletException {
-        logger.debug("target: {}", target);
+        LOGGER.debug("target: {}", target);
 
         if (target.contains(fromContext)) {
             StringBuilder targetUrl = new StringBuilder(target);
@@ -45,7 +45,7 @@ public class RedirectHandler extends AbstractHandler {
             = targetUrl.replace(i, i + fromContext.length(),
                                        toContext)
                        .toString();
-            logger.debug("redirected to: {}", newUrl);
+            LOGGER.debug("redirected to: {}", newUrl);
             response.sendRedirect(newUrl);
         }
     }

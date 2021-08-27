@@ -27,13 +27,9 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SpreadAndWait;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
-import diskCacheV111.vehicles.PoolLinkInfo;
-import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
-import diskCacheV111.vehicles.PoolMgrGetPoolLinks;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
@@ -70,7 +66,7 @@ public class LegacyAdminShell
         extends CommandInterpreter
         implements Completer
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(LegacyAdminShell.class);
 
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
@@ -509,7 +505,7 @@ public class LegacyAdminShell
         try {
             spreader.waitForReplies();
         } catch (InterruptedException ex) {
-            _log.info("InterruptedException while waiting for a reply from pools {}", ex.toString());
+            LOGGER.info("InterruptedException while waiting for a reply from pools {}", ex.toString());
         }
 
         return spreader.getReplies();
@@ -1245,7 +1241,7 @@ public class LegacyAdminShell
             throw new IllegalArgumentException("Cannot cd to this cell as it doesn't exist.");
         } catch (CacheException e) {
             // Some other failure, but apparently the cell exists
-            _log.info("Cell probe failed: {}", e.getMessage());
+            LOGGER.info("Cell probe failed: {}", e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -1264,14 +1260,14 @@ public class LegacyAdminShell
             }
             return _completer.complete(buffer, cursor, candidates);
         } catch (Exception e) {
-            _log.info("Completion failed: {}", e.toString());
+            LOGGER.info("Completion failed: {}", e.toString());
             return -1;
         }
     }
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
     {
-        _log.info("String command (super) {}", str);
+        LOGGER.info("String command (super) {}", str);
 
         if (str.trim().isEmpty()) {
             return "";
@@ -1312,7 +1308,7 @@ public class LegacyAdminShell
 
     private Object localCommand(Args args) throws CommandException
     {
-        _log.info("Local command {}", args);
+        LOGGER.info("Local command {}", args);
         Object or = command(args);
         if (or == null) {
             return "";
@@ -1386,7 +1382,7 @@ public class LegacyAdminShell
     public Object executeCommand(CellPath destination, Object str)
             throws InterruptedException, TimeoutCacheException, NoRouteToCellException
     {
-        _log.info("Object command ({}) {}",destination, str);
+        LOGGER.info("Object command ({}) {}",destination, str);
 
         return sendCommand(destination, str.toString());
     }

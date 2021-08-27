@@ -56,7 +56,7 @@ public abstract class TransferManager extends AbstractCellComponent
                                       implements CellCommandListener,
                                                  CellMessageReceiver, CellInfoProvider
 {
-    private static final Logger log = LoggerFactory.getLogger(TransferManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransferManager.class);
     private final Map<Long, TransferManagerHandler> _activeTransfers =
             new ConcurrentHashMap<>();
     private int _maxTransfers;
@@ -183,14 +183,14 @@ public abstract class TransferManager extends AbstractCellComponent
                 TransferManagerHandler handler = e.getValue();
                 Matcher m = p.matcher(String.valueOf(id));
                 if (m.matches()) {
-                    log.debug("pattern: \"{}\" matches id=\"{}\"", args.argv(0), id);
+                    LOGGER.debug("pattern: \"{}\" matches id=\"{}\"", args.argv(0), id);
                     if (pool != null && pool.equals(handler.getPool().getName())) {
                         handlersToKill.add(handler);
                     } else if (pool == null) {
                         handlersToKill.add(handler);
                     }
                 } else {
-                    log.debug("pattern: \"{}\" does not match id=\"{}\"", args.argv(0), id);
+                    LOGGER.debug("pattern: \"{}\" does not match id=\"{}\"", args.argv(0), id);
                 }
             }
             if (handlersToKill.isEmpty()) {
@@ -203,7 +203,7 @@ public abstract class TransferManager extends AbstractCellComponent
             }
             return sb.toString();
         } catch (Exception e) {
-            log.error(e.toString());
+            LOGGER.error(e.toString());
             return e.toString();
         }
     }
@@ -273,20 +273,20 @@ public abstract class TransferManager extends AbstractCellComponent
 
     private synchronized boolean newTransfer()
     {
-        log.debug("newTransfer() num_transfers = {} max_transfers={}",
+        LOGGER.debug("newTransfer() num_transfers = {} max_transfers={}",
                 _numTransfers, _maxTransfers);
         if (_numTransfers == _maxTransfers) {
-            log.debug("newTransfer() returns false");
+            LOGGER.debug("newTransfer() returns false");
             return false;
         }
-        log.debug("newTransfer() INCREMENT and return true");
+        LOGGER.debug("newTransfer() INCREMENT and return true");
         _numTransfers++;
         return true;
     }
 
     synchronized void finishTransfer()
     {
-        log.debug("finishTransfer() num_transfers = {} DECREMENT", _numTransfers);
+        LOGGER.debug("finishTransfer() num_transfers = {} DECREMENT", _numTransfers);
         _numTransfers--;
     }
 
@@ -296,9 +296,9 @@ public abstract class TransferManager extends AbstractCellComponent
             try {
                 nextMessageID = idGenerator.next();
             } catch (Exception e) {
-                log.error("Having trouble getting getNextMessageID from DB");
-                log.error(e.toString());
-                log.error("will nullify requestsPropertyStorage");
+                LOGGER.error("Having trouble getting getNextMessageID from DB");
+                LOGGER.error(e.toString());
+                LOGGER.error("will nullify requestsPropertyStorage");
                 idGenerator = null;
                 getNextMessageID();
             }
@@ -330,13 +330,13 @@ public abstract class TransferManager extends AbstractCellComponent
                 if (task != null) {
                     TransferManagerHandler handler = getHandler(id);
                     if (handler == null) {
-                        log.warn("Transfer {} is (apparently) still ongoing"
+                        LOGGER.warn("Transfer {} is (apparently) still ongoing"
                                 + " after {} {} but unable to find the transfer"
                                 + " to kill it.", id, _moverTimeout,
                                 _moverTimeoutUnit);
                         return;
                     }
-                    log.warn("Killing transfer {}, which is still ongoing after"
+                    LOGGER.warn("Killing transfer {}, which is still ongoing after"
                             + " {} {}.", id, _moverTimeout, _moverTimeoutUnit);
                     handler.timeout();
                 }
@@ -354,7 +354,7 @@ public abstract class TransferManager extends AbstractCellComponent
     {
         TimerTask tt = _moverTimeoutTimerTasks.remove(id);
         if (tt != null) {
-            log.debug("Cancelling the mover timer for handler id {}", id);
+            LOGGER.debug("Cancelling the mover timer for handler id {}", id);
             tt.cancel();
         }
     }
@@ -369,9 +369,9 @@ public abstract class TransferManager extends AbstractCellComponent
                     tx.begin();
                     pm.makePersistent(handler);
                     tx.commit();
-                    log.debug("Recording new handler into database.");
+                    LOGGER.debug("Recording new handler into database.");
                 } catch (Exception e) {
-                    log.error(e.toString());
+                    LOGGER.error(e.toString());
                 } finally {
                         rollbackIfActive(tx);
                 }
@@ -398,9 +398,9 @@ public abstract class TransferManager extends AbstractCellComponent
                     pm.deletePersistent(handler);
                     pm.makePersistent(handlerBackup);
                     tx.commit();
-                    log.debug("handler removed from db");
+                    LOGGER.debug("handler removed from db");
                 } catch (Exception e) {
-                    log.error(e.toString());
+                    LOGGER.error(e.toString());
                 } finally {
                     rollbackIfActive(tx);
                 }
@@ -471,10 +471,10 @@ public abstract class TransferManager extends AbstractCellComponent
                     tx.begin();
                     pm.makePersistent(o);
                     tx.commit();
-                    log.debug("[{}]: Recording new state of handler into database.",
+                    LOGGER.debug("[{}]: Recording new state of handler into database.",
                                 o);
                 } catch (Exception e) {
-                    log.error("[{}]: failed to persist object: {}.",
+                    LOGGER.error("[{}]: failed to persist object: {}.",
                                 o, e.getMessage());
                 } finally {
                     rollbackIfActive(tx);

@@ -29,7 +29,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  */
 
 public class SendData implements CellCommandListener, CellLifeCycleAware {
-    private static final Logger _log = LoggerFactory.getLogger(SendData.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SendData.class);
 
     private ScheduledExecutorService sendDataExecutor;
     private InstanceData instanceData;
@@ -43,7 +43,7 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
         try {
             uri = URI.create(url);
         } catch (IllegalArgumentException iae) {
-            _log.error("Failed to create URL. Reason: ", iae);
+            LOGGER.error("Failed to create URL. Reason: ", iae);
             throw new RuntimeException();
         }
     }
@@ -73,7 +73,7 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
             throw new RuntimeException("Telemetry cell is configured but not enabled. Configure the enable setting " +
                     "to run telemetry cell.");
         }
-        _log.warn("Sending information about dCache-instance to {} is activated.", uri);
+        LOGGER.warn("Sending information about dCache-instance to {} is activated.", uri);
         httpClient = HttpClient.newHttpClient();
         sendDataExecutor.scheduleAtFixedRate(new FireAndForgetTask(this::sendData),
                 0, 1, TimeUnit.HOURS);
@@ -101,12 +101,12 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 201 && response.statusCode() != 200) {
-                _log.error("Error sending data to {}. Response: {}", uri, response);
+                LOGGER.error("Error sending data to {}. Response: {}", uri, response);
             } else {
-                _log.info("Information successfully sent to {}", uri);
+                LOGGER.info("Information successfully sent to {}", uri);
             }
         } catch (InterruptedException | IOException ioe) {
-            _log.error("Sending data to {} failed, caused by: ", uri, ioe);
+            LOGGER.error("Sending data to {} failed, caused by: ", uri, ioe);
         }
     }
 }
