@@ -9,6 +9,8 @@ import diskCacheV111.util.PnfsId;
 
 public class IoJobInfo extends JobInfo  {
 
+   @Nullable
+   private final Long _requestedBytes;
    private final long _bytesTransferred;
    private final long _transferTime;
    private final long _lastTransferred;
@@ -18,7 +20,7 @@ public class IoJobInfo extends JobInfo  {
    private static final long serialVersionUID = -7987228538353684951L;
 
    public IoJobInfo(long submitTime, long startTime, String state, int id, String clientName, long clientId,
-                    PnfsId pnfsId, long bytesTransferred, long transferTime, long lastTransferred,
+                    PnfsId pnfsId, long bytesTransferred, Long requestedBytes, long transferTime, long lastTransferred,
                     @Nullable List<InetSocketAddress> remoteConnections)
    {
       super(submitTime, startTime, state, id, clientName, clientId);
@@ -27,6 +29,7 @@ public class IoJobInfo extends JobInfo  {
       _transferTime     = transferTime;
       _lastTransferred  = lastTransferred;
       _remoteConnections = remoteConnections;
+      _requestedBytes = requestedBytes;
    }
    public long getTransferTime(){ return _transferTime ; }
    public long getBytesTransferred(){ return _bytesTransferred ; }
@@ -48,5 +51,15 @@ public class IoJobInfo extends JobInfo  {
    public List<InetSocketAddress> remoteConnections()
    {
        return _remoteConnections;
+   }
+
+   /**
+    * The expected number of bytes for this transfer, if known.  Returns
+    * null if the value is unknown.
+    */
+   @Nullable
+   public Long requestedBytes()
+   {
+       return _requestedBytes;
    }
 }

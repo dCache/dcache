@@ -1,5 +1,7 @@
 package diskCacheV111.vehicles.transferManager;
 
+import javax.annotation.Nullable;
+
 import diskCacheV111.vehicles.IoJobInfo;
 
 /**
@@ -12,6 +14,7 @@ public class TransferStatusQueryMessage extends TransferManagerMessage
 
     private int _state;
     private IoJobInfo _info;
+    private String pool;
 
     public TransferStatusQueryMessage(long id)
     {
@@ -44,5 +47,19 @@ public class TransferStatusQueryMessage extends TransferManagerMessage
     public int getState()
     {
         return _state;
+    }
+
+    public void setPool(String name)
+    {
+        pool = name;
+    }
+
+    /**
+     * Returns the name of the pool handling this transfer, if known.
+     */
+    @Nullable
+    public String getPool()
+    {
+        return pool;
     }
 }
