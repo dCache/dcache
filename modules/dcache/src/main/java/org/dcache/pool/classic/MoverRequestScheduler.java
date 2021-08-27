@@ -749,6 +749,7 @@ public class MoverRequestScheduler
             return new IoJobInfo(_submitTime, _startTime, _state.toString(), _id,
                                  _mover.getPathToDoor().getDestinationAddress().toString(), _mover.getClientId(),
                                  _mover.getFileAttributes().getPnfsId(), _mover.getBytesTransferred(),
+                                 _mover.getBytesExpected(),
                                  _mover.getTransferTime(), _mover.getLastTransferred(),
                                  _mover.remoteConnections());
         }

@@ -33,6 +33,16 @@ public interface MoverProtocol
     long getBytesTransferred();
 
     /**
+     * Get the number of bytes expected to be transferred, if known.  Returns
+     * null if that value is unknown.
+     */
+    @Nullable
+    default Long getBytesExpected()
+    {
+        return null;
+    }
+
+    /**
      * Get time between transfers begin and end. If Mover is sill
      * active, then current time used as end.
      *

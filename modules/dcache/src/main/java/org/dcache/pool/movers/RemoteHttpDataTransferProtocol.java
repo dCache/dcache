@@ -258,6 +258,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     @GuardedBy("this")
     private HttpClientContext _context;
 
+    private Long _expectedTransferSize;
+
     public RemoteHttpDataTransferProtocol(CellEndpoint cell)
     {
         // constructor needed by Pool mover contract.
@@ -356,6 +358,9 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 long length = entity.getContentLength();
                 if (length > 0) {
                     _channel.truncate(length);
+                }
+                if (response.getStatusLine() != null && response.getStatusLine().getStatusCode() < 300 && length > -1) {
+                    _expectedTransferSize = length;
                 }
                 entity.writeTo(Channels.newOutputStream(_channel));
             } catch (SocketTimeoutException e) {
@@ -632,6 +637,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         addHeadersToRequest(info, put, flags);
         put.setEntity(new RepositoryChannelEntity(_channel));
 
+        long size = put.getEntity().getContentLength();
+        if (size != -1) {
+            _expectedTransferSize = size;
+        }
+
         // FIXME add SO_KEEPALIVE setting
 
         return put;
@@ -902,5 +912,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     public List<InetSocketAddress> remoteConnections()
     {
         return remoteAddress().stream().collect(Collectors.toList());
+    }
+
+    @Override
+    public Long getBytesExpected()
+    {
+        return _expectedTransferSize;
     }
 }

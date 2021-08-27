@@ -377,6 +377,24 @@ public class TimeUtils
      * {@code <number> <space> <units>}, where {@code <number>}
      * is an integer and {@code <units>} is defined by the value of unitFormat.
      */
+    public static StringBuilder appendDuration(StringBuilder sb, Duration duration,
+                    TimeUnitFormat unitFormat)
+    {
+        // FIXME: this method is a wrapper around the overloaded method
+        // with (long,TimeUnit) arguments.  These two methods should be
+        // rewritten so they are the other way around: the method with
+        // (long,TimeUnit) arguments should convert this to a Duration and call
+        // this method, which does the real work.
+        return appendDuration(sb, duration.toMillis(), MILLISECONDS, unitFormat);
+    }
+
+    /**
+     * Provide a short, simple human understandable string describing the
+     * supplied duration.  The duration is a non-negative value.  The output is
+     * appended to the supplied StringBuilder and has the form
+     * {@code <number> <space> <units>}, where {@code <number>}
+     * is an integer and {@code <units>} is defined by the value of unitFormat.
+     */
     public static StringBuilder appendDuration(StringBuilder sb, long duration,
                     TimeUnit units, TimeUnitFormat unitFormat)
     {

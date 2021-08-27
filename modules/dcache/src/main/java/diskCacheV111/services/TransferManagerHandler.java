@@ -800,6 +800,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             return message;
         }
 
+        if (pool != null) {
+            message.setPool(pool.getName());
+        }
+
         final MessageReply<TransferStatusQueryMessage> reply = new MessageReply<>();
 
         final ListenableFuture<IoJobInfo> future = manager.getPoolStub().
