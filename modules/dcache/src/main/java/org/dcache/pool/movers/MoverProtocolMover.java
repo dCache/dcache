@@ -80,4 +80,10 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     {
         return _moverProtocol.remoteConnections();
     }
+
+    @Override
+    public Long getBytesExpected()
+    {
+        return _moverProtocol.getBytesExpected();
+    }
 }

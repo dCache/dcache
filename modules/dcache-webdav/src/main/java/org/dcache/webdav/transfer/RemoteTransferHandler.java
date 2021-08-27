@@ -40,17 +40,26 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.StandardProtocolFamily;
 import java.net.URI;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import diskCacheV111.services.TransferManagerHandler;
@@ -75,8 +84,13 @@ import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.CommandException;
+import dmg.util.CommandSyntaxException;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.OpenIdCredential;
@@ -86,14 +100,26 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
+import org.dcache.util.ColumnWriter;
+import org.dcache.util.ColumnWriter.TabulatedRow;
+import org.dcache.util.Glob;
+import org.dcache.util.NetworkUtils;
+import org.dcache.util.Strings;
 import org.dcache.util.URIs;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Comparators.emptiesFirst;
+import static com.google.common.collect.Comparators.emptiesLast;
+import static diskCacheV111.services.TransferManagerHandler.INITIAL_STATE;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.Strings.*;
+import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
+import static org.dcache.util.TimeUtils.appendDuration;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
 
 /**
@@ -119,7 +145,7 @@ import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
  * documented as supporting 'https' URIs, this implementation supports
  * different transports for the third-party transfer.
  */
-public class RemoteTransferHandler implements CellMessageReceiver
+public class RemoteTransferHandler implements CellMessageReceiver, CellCommandListener
 {
 
     /**
@@ -228,6 +254,312 @@ public class RemoteTransferHandler implements CellMessageReceiver
     public long getPerformanceMarkerPeroid()
     {
         return _performanceMarkerPeriod;
+    }
+
+    private enum IPFamilyMatcher {
+        IPv4 {
+            @Override
+            public boolean matches(InetAddress addr) {
+                return addr instanceof Inet4Address;
+            }
+        },
+
+        IPv6 {
+            @Override
+            public boolean matches(InetAddress addr) {
+                return addr instanceof Inet6Address;
+            }
+        };
+
+        public abstract boolean matches(InetAddress addr);
+    }
+
+    @Command(name = "http-tpc ls", hint = "list current transfers",
+            description = "Provides a summary of all currently HTTP-TPC transfers.")
+    public class HttpTpcLsCommand implements Callable<String>
+    {
+        @Option(name="t", usage="Show timing information.", category="Field options")
+        boolean showTiming;
+
+        @Option(name="n", usage="Show network related information.",
+                category="Field options")
+        boolean showNetwork;
+
+        @Option(name="l", usage="Show the local path of the transfer.",
+                category="Field options")
+        boolean showLocalPath;
+
+        @Option(name="r", usage="Show the remote path for this transfer.",
+                category="Field options")
+        boolean showRemotePath;
+
+        @Option(name="a", usage="Show all available information about"
+                + " transfers.  This is equivalent to specifying \"-t -n -l"
+                + " -r\"", category="Field options")
+        boolean showAll;
+
+        @Option(name="pool", usage="Select transfers involving a pool that"
+                + " matches this glob pattern.", category="Filter options")
+        Glob poolFilter;
+
+        @Option(name="host", usage="Select transfers involving a remote host"
+                + " that matches this glob pattern.", category="Filter options")
+        Glob hostFilter;
+
+        @Option(name="dir", usage="Select transfers with the specified"
+                + " direction.", category="Filter options")
+        Direction direction;
+
+        /*  REVISIT: we can't use an enum directly when definint the 'ip'
+            option because of a hard-coded `String#toUpperCase` on the option's
+            argument/value in AnnotatedCommandExecutor.EnumTypeConverter.  We
+            also can't use "valueSpec" because upper case letters are always
+            converted to place-holder (e.g., "IPv4" is written as "<ip>v4" in
+            the help text).
+         */
+        @Option(name="ip", usage="Select transfers using at least one"
+                + " network connection with the specified IP address family."
+                + "  Valid values are \"IPv4\" or \"IPv6\"",
+                category="Filter options")
+        String ipFamily;
+
+        @Option(name="local-path", usage="Select transfers where the local path"
+                + " matches this pattern.", category="Filter options")
+        Glob localPathFilter;
+
+        @Option(name="remote-path", usage="Select transfers where the remote"
+                + " path matches this pattern.", category="Filter options")
+        Glob remotePathFilter;
+
+        @Option(name="sort-by", usage="How to order the output.  The available"
+                + " options are described below.\n"
+                + "    \"host\" sorts remote host.\n"
+                + "    \"pool\" sorts by pool name, with any transfers not yet"
+                + " assigned to a pool are shown first.\n"
+                + "    \"lifetime\" sorts by the request's lifetime, showing"
+                + " the most recent request first.\n"
+                + "    \"running\" sorts by the time active in increasing"
+                + " order, any queued transfers are shown first.",
+                valueSpec="host|pool|lifetime|running",
+                category="Ordering options")
+        String sort;
+
+        private ColumnWriter output = new ColumnWriter();
+
+        @Override
+        public String call() throws CommandException
+        {
+            if (showAll) {
+                showTiming = true;
+                showNetwork = true;
+                showLocalPath = true;
+                showRemotePath = true;
+            }
+
+            buildHeaders();
+
+            synchronized (_transfers) {
+                _transfers.values().stream()
+                        .filter(buildFilter())
+                        .sorted(buildComparator())
+                        .forEachOrdered(this::printTransfer);
+            }
+
+            return output.toString();
+        }
+
+        private void buildHeaders()
+        {
+            output = output.header("ID").left("id");
+
+            if (showTiming) {
+                output.space().header("Lifetime").left("lifetime")
+                        .space().header("Queued").left("queued")
+                        .space().header("Running").left("running");
+            }
+
+            output.space().header("Dirn").left("direction")
+                    .space().header("Pool").left("pool");
+
+            if (showNetwork) {
+                output.space().header("IP").left("ip")
+                        .space().header("Transferred").left("transferred");
+            }
+
+            if (showLocalPath) {
+                output.space().header("Local path").left("local-path");
+            }
+
+            output.space().header("Remote host").left("host");
+
+            if (showRemotePath) {
+                output.space().header("Remote path").left("remote-path");
+            }
+        }
+
+        private Predicate<RemoteTransfer> buildFilter() throws CommandSyntaxException
+        {
+            Predicate<RemoteTransfer> p = t -> true;
+
+            if (poolFilter != null) {
+                p = p.and(t -> t._pool.map(poolFilter::matches).orElse(Boolean.FALSE));
+            }
+
+            if (hostFilter != null) {
+                p = p.and(t -> hostFilter.matches(t._destination.getHost()));
+            }
+
+            if (direction != null) {
+                p = p.and(t -> t._direction == direction);
+            }
+
+            if (ipFamily != null) {
+                IPFamilyMatcher ipMatcher = asIPFamilyMatcher(ipFamily);
+                p = p.and(t -> t._lastInfo
+                            .map(IoJobInfo::remoteConnections)
+                            .filter(Objects::nonNull)
+                            .map(a -> a.stream()
+                                    .map(InetSocketAddress::getAddress)
+                                    .anyMatch(ipMatcher::matches))
+                            .orElse(Boolean.FALSE));
+            }
+
+            if (localPathFilter != null) {
+                p = p.and(t -> localPathFilter.matches(t._path.toString()));
+            }
+
+            if (remotePathFilter != null) {
+                p = p.and(t -> remotePathFilter.matches(t._destination.getPath()));
+            }
+
+            return p;
+        }
+
+        private IPFamilyMatcher asIPFamilyMatcher(String id)
+                throws CommandSyntaxException
+        {
+            try {
+                return IPFamilyMatcher.valueOf(id);
+            } catch (IllegalArgumentException e) {
+                throw new CommandSyntaxException("Invalid 'ip' option \"" + id
+                        + "\": valid values are \"IPv4\" and \"IPv6\"");
+            }
+        }
+
+        private Comparator<RemoteTransfer> buildComparator()
+                throws CommandSyntaxException
+        {
+            if (sort == null) {
+                return Comparator.comparingLong(t -> t._id);
+            }
+
+            Comparator<RemoteTransfer> primary;
+            switch (sort) {
+            case "pool":
+                primary = Comparator.comparing(t -> t._pool,
+                        emptiesFirst(String::compareTo));
+                break;
+            case "host":
+                primary = Comparator.comparing(t -> t._destination.getHost(),
+                        Comparator.nullsLast(String::compareToIgnoreCase));
+                break;
+            case "lifetime":
+                primary = Comparator.comparing(t -> t._whenSubmitted,
+                        Comparator.reverseOrder());
+                break;
+            case "running":
+                primary = Comparator.comparing(t -> t._transferStarted,
+                        emptiesFirst(Comparator.reverseOrder()));
+                break;
+            default:
+                throw new CommandSyntaxException("Invalid 'sort-by' option"
+                        + " argument \"" + sort + "\"");
+            }
+
+            return primary.thenComparingLong(t -> t._id);
+        }
+
+        /**
+         * Return the (expected) total number of bytes that will be transferred
+         * for this operation.  Returns -1 if the value is unknown.
+         * REVISIT: consider returning OptionalLong.
+         */
+        private long expectedTotalTransferSize(RemoteTransfer transfer)
+        {
+            Long sizeFromPool = transfer._lastInfo
+                    .map(IoJobInfo::requestedBytes)
+                    .orElse(null);
+
+            if (sizeFromPool != null) {
+                return sizeFromPool;
+            }
+
+            return  transfer._direction == Direction.PUSH
+                    ? transfer._size
+                    : -1;
+        }
+
+        private void printTransfer(RemoteTransfer transfer)
+        {
+            TabulatedRow row = output.row();
+
+            row.value("id", transfer._id)
+                    .value("direction", transfer._direction)
+                    .value("host", transfer._destination.getHost())
+                    .value("pool", transfer._pool.orElse("-"));
+
+            if (showLocalPath) {
+                row.value("local-path", transfer._path.toString());
+            }
+
+            if (showRemotePath) {
+                row.value("remote-path", transfer._destination.getPath());
+            }
+
+            if (showTiming) {
+                StringBuilder lifetime = appendDuration(new StringBuilder(),
+                        Duration.between(transfer._whenSubmitted, Instant.now()),
+                        SHORT);
+                row.value("lifetime", lifetime);
+
+
+                Duration queued = Duration.between(transfer._whenSubmitted,
+                        transfer._transferStarted.orElseGet(() -> Instant.now()));
+                StringBuilder queueDescription = appendDuration(new StringBuilder(),
+                        queued, SHORT);
+                row.value("queued", queueDescription);
+
+                Optional<String> running = transfer._transferStarted
+                        .map(i -> Duration.between(i, Instant.now()))
+                        .map(d -> appendDuration(new StringBuilder(), d, SHORT))
+                        .map(Object::toString);
+                row.value("running", running.orElse("-"));
+            }
+
+            if (showNetwork) {
+                Optional<Long> transferred = transfer._lastInfo.map(IoJobInfo::getBytesTransferred);
+
+                long total = expectedTotalTransferSize(transfer);
+                Optional<String> transferDescription = total == -1
+                        ? transferred.map(Strings::humanReadableSize)
+                        : transferred.map(i -> {
+                                    String percent = toThreeSigFig(100 * i / (double)total, 1000);
+                                    return humanReadableSize(i) + " (" + percent + "%" + ")";
+                                });
+                row.value("transferred", transferDescription.orElse("-"));
+
+
+                Optional<String> ipProtocols = transfer._lastInfo
+                        .flatMap(i -> Optional.ofNullable(i.remoteConnections()))
+                        .map(l -> l.stream()
+                                .map(a -> NetworkUtils.getProtocolFamily(a.getAddress()))
+                                .distinct()
+                                .sorted()
+                                .map(f -> f == StandardProtocolFamily.INET ? "IPv4" : "IPv6")
+                                .collect(Collectors.joining(",")));
+                row.value("ip", ipProtocols.orElse("-"));
+            }
+        }
     }
 
     /**
@@ -339,14 +671,20 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private final boolean _overwriteAllowed;
         private final Optional<String> _wantDigest;
         private final PnfsHandler _pnfs;
+        private final Instant _whenSubmitted = Instant.now();
         private String _problem;
         private long _id;
         private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
 
+        private int _lastState = INITIAL_STATE;
+        private Optional<IoJobInfo> _lastInfo = Optional.empty();
+        private Optional<Instant> _transferStarted = Optional.empty();
         private PnfsId _pnfsId;
         private boolean _finished;
         private Optional<String> _digestValue;
+        private Optional<String> _pool = Optional.empty();
         private boolean _transferReportedAsUnknown;
+        private long _size;
 
         public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
                 FsPath path, URI destination, @Nullable Object credential,
@@ -407,6 +745,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                         if (!attributes.isDefined(SIZE)) {
                             throw new ErrorResponseException(Response.Status.SC_CONFLICT, "File upload in progress");
                         }
+                        _size = attributes.getSize();
 
                         return attributes;
                     } catch (FileNotFoundCacheException e) {
@@ -707,8 +1046,9 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
             int state = TransferManagerHandler.UNKNOWN_ID;
             IoJobInfo info = null;
+            TransferStatusQueryMessage reply = null;
             try {
-                TransferStatusQueryMessage reply = CellStub.getMessage(future);
+                reply = CellStub.getMessage(future);
                 state = reply.getState();
                 info = reply.getMoverInfo();
             } catch (MissingResourceCacheException e) {
@@ -732,6 +1072,19 @@ public class RemoteTransferHandler implements CellMessageReceiver
             } catch (NoRouteToCellException | CacheException e) {
                 LOGGER.warn("Failed to fetch information for progress marker: {}",
                         e.getMessage());
+            }
+
+            _lastState = state;
+            _lastInfo = Optional.ofNullable(info);
+            if (info != null) {
+                if (!_transferStarted.isPresent() && info.getTransferTime() > 0) {
+                    Instant started = Instant.now().minus(info.getTransferTime(), MILLIS);
+                    _transferStarted = Optional.of(started);
+                }
+
+                if (!_pool.isPresent() && reply != null && reply.getPool() != null) {
+                    _pool = Optional.of(reply.getPool());
+                }
             }
 
             sendMarker(state, info);
