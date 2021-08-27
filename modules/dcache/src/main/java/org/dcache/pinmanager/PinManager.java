@@ -36,7 +36,7 @@ import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
 
 public class PinManager implements CellMessageReceiver, LeaderLatchListener, CellInfoProvider
 {
-    private static final Logger _log = LoggerFactory.getLogger(PinManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PinManager.class);
     private static final long INITIAL_EXPIRATION_DELAY = SECONDS.toMillis(15);
     private static final long INITIAL_UNPIN_DELAY = SECONDS.toMillis(30);
 
@@ -135,10 +135,10 @@ public class PinManager implements CellMessageReceiver, LeaderLatchListener, Cel
                            dao.set().
                                     state(READY_TO_UNPIN));
             } catch (JDOException | DataAccessException e) {
-                _log.error("Database failure while expiring pins: {}",
+                LOGGER.error("Database failure while expiring pins: {}",
                            e.getMessage());
             } catch (RuntimeException e) {
-                _log.error("Unexpected failure while expiring pins", e);
+                LOGGER.error("Unexpected failure while expiring pins", e);
             } finally {
                 NDC.pop();
             }
@@ -163,10 +163,10 @@ public class PinManager implements CellMessageReceiver, LeaderLatchListener, Cel
                         dao.set().
                                 state(READY_TO_UNPIN));
             } catch (JDOException | DataAccessException e) {
-                _log.error("Database failure while resetting pins that previously failed to be unpinned: {}",
+                LOGGER.error("Database failure while resetting pins that previously failed to be unpinned: {}",
                         e.getMessage());
             } catch (RuntimeException e) {
-                _log.error("Unexpected failure while pins that previously failed to be unpinned", e);
+                LOGGER.error("Unexpected failure while pins that previously failed to be unpinned", e);
             } finally {
                 NDC.pop();
             }
@@ -189,10 +189,10 @@ public class PinManager implements CellMessageReceiver, LeaderLatchListener, Cel
     @Override
     public void isLeader()
     {
-        _log.info("Resetting existing intermediate pin states.");
+        LOGGER.info("Resetting existing intermediate pin states.");
         markAllExpiredPinsReadyToUnpin();
 
-        _log.info("Scheduling Expiration and Unpin tasks.");
+        LOGGER.info("Scheduling Expiration and Unpin tasks.");
         expirationFuture = executor.scheduleWithFixedDelay(
                 new FireAndForgetTask(expirationTask),
                 INITIAL_EXPIRATION_DELAY,
@@ -213,7 +213,7 @@ public class PinManager implements CellMessageReceiver, LeaderLatchListener, Cel
     @Override
     public void notLeader()
     {
-        _log.info("Cancelling Expiration, ResetFailedUnpins and Unpin tasks.");
+        LOGGER.info("Cancelling Expiration, ResetFailedUnpins and Unpin tasks.");
         expirationFuture.cancel(false);
         unpinFuture.cancel(true);
         resetFailedUnpinsFuture.cancel(true);

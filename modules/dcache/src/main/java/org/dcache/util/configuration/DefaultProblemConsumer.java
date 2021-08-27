@@ -29,7 +29,7 @@ import java.io.LineNumberReader;
  */
 public class DefaultProblemConsumer implements ProblemConsumer
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(DefaultProblemConsumer.class);
 
     private String _filename;
@@ -53,13 +53,13 @@ public class DefaultProblemConsumer implements ProblemConsumer
     @Override
     public void warning(String message)
     {
-        _log.warn(addContextTo(message));
+        LOGGER.warn(addContextTo(message));
     }
 
     @Override
     public void info(String message)
     {
-        _log.info(addContextTo(message));
+        LOGGER.info(addContextTo(message));
     }
 
     @Override

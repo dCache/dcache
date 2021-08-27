@@ -60,7 +60,7 @@ public class MigrationModuleServer
     extends AbstractCellComponent
     implements CellMessageReceiver, CellInfoProvider, PoolDataBeanProvider<MigrationData>
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(MigrationModuleServer.class);
 
     private final Map<UUID, Request> _requests = new ConcurrentHashMap<>();

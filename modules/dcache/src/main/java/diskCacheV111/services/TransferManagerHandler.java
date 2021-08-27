@@ -63,7 +63,7 @@ import static org.dcache.namespace.FileAttribute.*;
 
 public class TransferManagerHandler extends AbstractMessageCallback<Message>
 {
-    private static final Logger log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(TransferManagerHandler.class);
 
     private static final int MAXIMUM_POOL_SELECTION_ATTEMPTS = 10;
@@ -191,7 +191,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void handle()
     {
-        log.debug("handling:  {}", toString(true));
+        LOGGER.debug("handling:  {}", toString(true));
         int last_slash_pos = pnfsPath.lastIndexOf('/');
         if (last_slash_pos == -1) {
             transferRequest.setFailed(2,
@@ -247,7 +247,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     createEntryResponseArrived(create_msg);
                     return;
                 }
-                log.error(this.toString() + " got unexpected PnfsCreateEntryMessage "
+                LOGGER.error(this.toString() + " got unexpected PnfsCreateEntryMessage "
                         + " : " + create_msg + " ; Ignoring");
             } else if (message instanceof PnfsGetFileAttributes) {
                 PnfsGetFileAttributes attributesMessage =
@@ -266,7 +266,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     return;
                 }
 
-                log.error(this.toString() + " got unexpected PnfsGetStorageInfoMessage "
+                LOGGER.error(this.toString() + " got unexpected PnfsGetStorageInfoMessage "
                         + " : " + attributesMessage + " ; Ignoring");
             } else if (message instanceof PoolMgrSelectPoolMsg) {
                 PoolMgrSelectPoolMsg select_pool_msg =
@@ -276,7 +276,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     poolInfoArrived(select_pool_msg);
                     return;
                 }
-                log.error(this.toString() + " got unexpected PoolMgrSelectPoolMsg "
+                LOGGER.error(this.toString() + " got unexpected PoolMgrSelectPoolMsg "
                         + " : " + select_pool_msg + " ; Ignoring");
             } else if (message instanceof PoolIoFileMessage) {
                 PoolIoFileMessage first_pool_reply =
@@ -286,20 +286,20 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     poolFirstReplyArrived(first_pool_reply);
                     return;
                 }
-                log.error(this.toString() + " got unexpected PoolIoFileMessage "
+                LOGGER.error(this.toString() + " got unexpected PoolIoFileMessage "
                         + " : " + first_pool_reply + " ; Ignoring");
             } else if (message instanceof PnfsDeleteEntryMessage) {
                 PnfsDeleteEntryMessage deleteReply = (PnfsDeleteEntryMessage) message;
                 if (state == WAITING_FOR_PNFS_ENTRY_DELETE) {
                     setState(RECEIVED_PNFS_ENTRY_DELETE);
-                    log.debug("Received PnfsDeleteEntryMessage, Deleted  : {}",
+                    LOGGER.debug("Received PnfsDeleteEntryMessage, Deleted  : {}",
                             deleteReply.getPnfsPath());
                     sendErrorReply();
                 }
             }
             manager.persist(this);
         } catch (RuntimeException e) {
-            log.error("Bug detected in transfermanager, please report this to <support@dCache.org>", e);
+            LOGGER.error("Bug detected in transfermanager, please report this to <support@dCache.org>", e);
             failure(1, "Bug detected: " + e);
         }
     }
@@ -326,7 +326,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             case CacheException.POOL_DISABLED:
             case CacheException.FILE_NOT_IN_REPOSITORY:
             case CacheException.CANNOT_CREATE_MOVER:
-                log.debug("Pool {} reported rc={}; retrying pool selection",
+                LOGGER.debug("Pool {} reported rc={}; retrying pool selection",
                         pool.getAddress(), rc);
                 retryPoolSelection(rc, error);
                 break;
@@ -346,7 +346,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
             default:
                 if (numberOfMoverStartRetries++ < MAXIMUM_MOVER_START_ATTEMPTS) {
-                    log.debug("Pool {} reported rc={}; scheduling another attempt to start mover",
+                    LOGGER.debug("Pool {} reported rc={}; scheduling another attempt to start mover",
                             pool.getAddress(), rc);
                     executor.execute(() -> {
                                 try {
@@ -359,7 +359,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                                 }
                             });
                 } else {
-                    log.debug("Too many attempts to start mover on pool {},"
+                    LOGGER.debug("Too many attempts to start mover on pool {},"
                             + " retrying pool selection", pool.getAddress());
                     retryPoolSelection(rc, error);
                 }
@@ -380,7 +380,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             break;
 
         case WAITING_FOR_PNFS_ENTRY_DELETE:
-            log.warn("Delete attempt ({} of {}) failed: {}", numberOfRetries + 1,
+            LOGGER.warn("Delete attempt ({} of {}) failed: {}", numberOfRetries + 1,
                     manager.getMaxNumberOfDeleteRetries(), error);
             numberOfRetries++;
             if (numberOfRetries < manager.getMaxNumberOfDeleteRetries()) {
@@ -462,7 +462,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     return;
                 }
                 for (PnfsId pnfsid : manager.justRequestedIDs) {
-                    log.debug("found pnfsid: {}", pnfsid);
+                    LOGGER.debug("found pnfsid: {}", pnfsid);
                 }
                 manager.justRequestedIDs.add(pnfsId);
             }
@@ -473,7 +473,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     msg.getFileAttributes();
         }
 
-        log.debug("storageInfoArrived(uid={} gid={} pnfsid={} fileAttributes={}", info.getUid(), info.getGid(),
+        LOGGER.debug("storageInfoArrived(uid={} gid={} pnfsid={} fileAttributes={}", info.getUid(), info.getGid(),
                   pnfsId, fileAttributes);
         selectPool();
     }
@@ -486,7 +486,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 : new PoolMgrSelectReadPoolMsg(fileAttributes, protocol_info, _readPoolSelectionContext);
         request.setBillingPath(pnfsPath);
         request.setSubject(transferRequest.getSubject());
-        log.debug("PoolMgrSelectPoolMsg: {}", request);
+        LOGGER.debug("PoolMgrSelectPoolMsg: {}", request);
         setState(WAITING_FOR_POOL_INFO_STATE);
         manager.persist(this);
         CellStub.addCallback(manager.getPoolManagerStub().sendAsync(request), this, executor);
@@ -494,7 +494,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void poolInfoArrived(PoolMgrSelectPoolMsg pool_info)
     {
-        log.debug("poolManagerReply = {}", pool_info);
+        LOGGER.debug("poolManagerReply = {}", pool_info);
 
         if (pool_info instanceof PoolMgrSelectReadPoolMsg) {
             _readPoolSelectionContext =
@@ -504,7 +504,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         setPool(pool_info.getPool());
         fileAttributes = pool_info.getFileAttributes();
         manager.persist(this);
-        log.debug("Positive reply from pool {}", pool);
+        LOGGER.debug("Positive reply from pool {}", pool);
         startMoverOnThePool();
     }
 
@@ -537,10 +537,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)
     {
-        log.debug("poolReply = {}", poolMessage);
+        LOGGER.debug("poolReply = {}", poolMessage);
         info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-        log.debug("Pool {} will deliver file {} mover id is {}", pool, pnfsId, poolMessage.getMoverId());
-        log.debug("Starting moverTimeout timer");
+        LOGGER.debug("Pool {} will deliver file {} mover id is {}", pool, pnfsId, poolMessage.getMoverId());
+        LOGGER.debug("Starting moverTimeout timer");
         manager.startTimer(id);
         setMoverId(poolMessage.getMoverId());
         manager.persist(this);
@@ -564,7 +564,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void poolDoorMessageArrived(DoorTransferFinishedMessage doorMessage)
     {
-        log.debug("poolDoorMessageArrived, doorMessage.getReturnCode()={}", doorMessage.getReturnCode());
+        LOGGER.debug("poolDoorMessageArrived, doorMessage.getReturnCode()={}", doorMessage.getReturnCode());
         if (doorMessage.getReturnCode() != 0) {
             sendErrorReply(CacheException.THIRD_PARTY_TRANSFER_FAILED,
                     doorMessage.getErrorObject());
@@ -578,14 +578,14 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         _replyCode = replyCode;
         _errorObject = errorObject;
 
-        if (log.isDebugEnabled()) {
-            log.debug("sending error reply {}:{} for {}", replyCode,
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("sending error reply {}:{} for {}", replyCode,
                     errorObject, toString(true));
         }
 
         if (store && created) {// Timur: I think this check  is not needed, we might not ever get storage info and pnfs id: && pnfsId != null && aMetadata != null && aMetadata.getFileSize() == 0) {
             if (state != WAITING_FOR_PNFS_ENTRY_DELETE && state != RECEIVED_PNFS_ENTRY_DELETE) {
-                log.debug("deleting pnfs entry we created: {}", pnfsPath);
+                LOGGER.debug("deleting pnfs entry we created: {}", pnfsPath);
                 deletePnfsEntry();
                 return;
             }
@@ -616,7 +616,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode, errorObject);
             manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (RuntimeException e) {
-            log.error(e.toString());
+            LOGGER.error(e.toString());
             //can not do much more here!!!
         }
         //this will allow the handler to be garbage collected
@@ -629,8 +629,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         int replyCode = _replyCode;
         Serializable errorObject = _errorObject;
 
-        if (log.isDebugEnabled()) {
-            log.debug("sending error reply {}:{} for {}", replyCode,
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("sending error reply {}:{} for {}", replyCode,
                     errorObject, toString(true));
         }
 
@@ -659,7 +659,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode, errorObject);
             manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (RuntimeException e) {
-            log.error(e.toString());
+            LOGGER.error(e.toString());
             //can not do much more here!!!
         }
         //this will allow the handler to be garbage collected
@@ -669,7 +669,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void sendSuccessReply()
     {
-        log.debug("sendSuccessReply for: {}", toString(true));
+        LOGGER.debug("sendSuccessReply for: {}", toString(true));
         if (info.getTimeQueued() < 0) {
             info.setTimeQueued(info.getTimeQueued() + System
                     .currentTimeMillis());
@@ -693,7 +693,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             TransferCompleteMessage errorReply = new TransferCompleteMessage(transferRequest);
             manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (RuntimeException e) {
-            log.error(e.toString());
+            LOGGER.error(e.toString());
             //can not do much more here!!!
         }
         //this will allow the handler to be garbage collected
@@ -707,7 +707,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     void sendDoorRequestInfo(int code, String msg)
     {
         info.setResult(code, msg);
-        log.debug("Sending info: {}", info);
+        LOGGER.debug("Sending info: {}", info);
         manager.getBillingStub().notify(info);
     }
 
@@ -721,7 +721,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void cancel(String explanation)
     {
-        log.debug("transfer cancelled: {}", explanation);
+        LOGGER.debug("transfer cancelled: {}", explanation);
 
         if (moverId != null) {
             killMover(moverId, explanation);
@@ -843,7 +843,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void killMover(int moverId, String explanation)
     {
-        log.debug("sending mover kill to pool {} for moverId={}", pool, moverId);
+        LOGGER.debug("sending mover kill to pool {} for moverId={}", pool, moverId);
         PoolMoverKillMessage killMessage = new PoolMoverKillMessage(pool.getName(), moverId,
                 "killed by TransferManagerHandler: " + explanation);
         killMessage.setReplyRequired(false);

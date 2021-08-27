@@ -46,7 +46,7 @@ public class AclAdmin
 
     public static final String OPTION_HELP = "h";
 
-    private static final Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(AclAdmin.class);
 
     private NameSpaceProvider _nameSpaceProvider;

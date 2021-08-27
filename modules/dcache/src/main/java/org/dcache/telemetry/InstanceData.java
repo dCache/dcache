@@ -34,7 +34,7 @@ public class InstanceData implements CellLifeCycleAware {
     final private String version = loadVersion();
     private OptionalLong storage;
 
-    private static final Logger _log = LoggerFactory.getLogger(InstanceData.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceData.class);
 
     @Required
     public void setPoolManagerStub(CellStub poolManagerStub) {
@@ -113,7 +113,7 @@ public class InstanceData implements CellLifeCycleAware {
                     .sum());
 
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
-            _log.error("Could not get storage information; set storage to -1.0. This was caused by: ", e);
+            LOGGER.error("Could not get storage information; set storage to -1.0. This was caused by: ", e);
         }
 
         return space;

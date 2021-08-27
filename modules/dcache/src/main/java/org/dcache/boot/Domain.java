@@ -51,7 +51,7 @@ public class Domain
 {
     private static final String SYSTEM_CELL_NAME = "System";
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(SystemCell.class);
 
     private static final Logger EVENT_LOGGER = LoggerFactory.getLogger("org.dcache.zookeeper");
@@ -138,7 +138,7 @@ public class Domain
         SystemCell systemCell = SystemCell.create(domainName,
                 createCuratorFramework(), zone, cellSerializer);
         systemCell.start().get();
-        _log.info("Starting {}", domainName);
+        LOGGER.info("Starting {}", domainName);
 
         executePreload(systemCell);
         for (ConfigurationProperties serviceConfig: _services) {
@@ -146,7 +146,7 @@ public class Domain
         }
 
         if (_services.isEmpty()) {
-            _log.warn("No services found. Domain appears to be empty.");
+            LOGGER.warn("No services found. Domain appears to be empty.");
         }
     }
 

@@ -15,7 +15,7 @@ import diskCacheV111.util.CacheException;
  */
 public class PingMoversTask<T extends Transfer> implements Runnable
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(PingMoversTask.class);
 
     private final Collection<T> _transfers;
@@ -48,14 +48,14 @@ public class PingMoversTask<T extends Transfer> implements Runnable
                 try {
                     if (transfer.hasMover()) {
                         transfer.queryMoverInfo();
-                        _log.debug("Mover {}/{} is alive",
+                        LOGGER.debug("Mover {}/{} is alive",
                                    transfer.getPool(), transfer.getMoverId());
                     }
                 } catch (IllegalStateException e) {
                     // The transfer terminated before we could query it.
-                    _log.debug(e.toString());
+                    LOGGER.debug(e.toString());
                 } catch (CacheException e) {
-                    _log.info("Failed to check status of mover {}/{}: {}", transfer.getPool(), transfer.getMoverId(),
+                    LOGGER.info("Failed to check status of mover {}/{}: {}", transfer.getPool(), transfer.getMoverId(),
                               e.getMessage());
                     if (missingLastTime.contains(transfer)) {
                         transfer.finished(CacheException.TIMEOUT,

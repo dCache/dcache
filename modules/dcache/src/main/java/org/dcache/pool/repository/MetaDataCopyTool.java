@@ -14,7 +14,7 @@ import diskCacheV111.util.PnfsId;
 
 public class MetaDataCopyTool
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(MetaDataCopyTool.class);
 
     static ReplicaStore createStore(Class<? extends ReplicaStore> clazz,
@@ -60,7 +60,7 @@ public class MetaDataCopyTool
             int size = ids.size();
             int count = 1;
             for (PnfsId id : ids) {
-                _log.info("Copying {} ({} of {})", id, count, size);
+                LOGGER.info("Copying {} ({} of {})", id, count, size);
                 ReplicaRecord entry = fromStore.get(id);
                 if (entry == null) {
                     System.err.println("Failed to load " + id);

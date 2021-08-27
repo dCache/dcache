@@ -27,7 +27,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class HsmControlOsm extends CellAdapter implements Runnable {
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(HsmControlOsm.class);
 
     private static final int MAX_QUEUE_SIZE = 100 ;
@@ -80,24 +80,24 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
             error = "Queue size exceeded "+ MAX_QUEUE_SIZE + ", Request rejected";
         }
        _failed ++ ;
-       _log.warn(error);
+       LOGGER.warn(error);
        ((Message)obj).setFailed( 33 , error ) ;
        msg.revertDirection() ;
        try{
           sendMessage( msg ) ;
        }catch(RuntimeException ee ){
-          _log.warn("Problem replying : {}", ee.toString() ) ;
+          LOGGER.warn("Problem replying : {}", ee.toString() ) ;
        }
     }
     @Override
     public void run(){
         // HsmControlGetBfDetailsMsg
-        _log.info("Starting working thread");
+        LOGGER.info("Starting working thread");
         try{
             while( true ){
                 CellMessage msg = _fifo.poll();
                 if( msg == null ){
-                    _log.warn("fifo empty");
+                    LOGGER.warn("fifo empty");
                     break ;
                 }
                 Message request = (Message)msg.getMessageObject() ;
@@ -114,24 +114,24 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
                    try{
                       sendMessage( msg ) ;
                    }catch(RuntimeException ee ){
-                      _log.warn("Problem replying : {}", ee.toString() ) ;
+                      LOGGER.warn("Problem replying : {}", ee.toString() ) ;
                    }
                 }catch(Exception eee ){
                    _failed ++ ;
-                   _log.warn(eee.toString(), eee);
+                   LOGGER.warn(eee.toString(), eee);
                    request.setFailed( 34 , eee.toString() ) ;
                    msg.revertDirection() ;
                    try{
                       sendMessage( msg ) ;
                    }catch(RuntimeException ee ){
-                      _log.warn("Problem replying : {}", ee.toString() ) ;
+                      LOGGER.warn("Problem replying : {}", ee.toString() ) ;
                    }
                 }
             }
         }catch(Exception ee ){
-            _log.warn("Got exception from run while : {}", ee.toString());
+            LOGGER.warn("Got exception from run while : {}", ee.toString());
         }finally{
-            _log.info("Working thread finished");
+            LOGGER.info("Working thread finished");
         }
     }
     private final Map<String, Object[]> _driverMap = new HashMap<>() ;
@@ -201,7 +201,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         }
 
         HsmControllable hc = (HsmControllable)values[1] ;
-        _log.info("Controller found for {}  -> {}", hsm, values[0]);
+        LOGGER.info("Controller found for {}  -> {}", hsm, values[0]);
         hc.getBfDetails( storageInfo );
 
     }

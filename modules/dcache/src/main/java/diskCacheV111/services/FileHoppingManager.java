@@ -40,7 +40,7 @@ import static com.google.common.base.Preconditions.checkArgument;
   */
 public class FileHoppingManager extends CellAdapter {
 
-   private static final Logger _log =
+   private static final Logger LOGGER =
        LoggerFactory.getLogger(FileHoppingManager.class);
 
    private final CellNucleus _nucleus;
@@ -105,13 +105,13 @@ public class FileHoppingManager extends CellAdapter {
                 continue;
             }
             try{
-               _log.info( "Executing : {}", line ) ;
+               LOGGER.info( "Executing : {}", line ) ;
                String answer = command( line ) ;
                if(!answer.isEmpty()) {
-                   _log.info("Answer    : {}", answer);
+                   LOGGER.info("Answer    : {}", answer);
                }
             }catch( Exception ee ){
-               _log.warn("Exception : {}", ee.toString() ) ;
+               LOGGER.warn("Exception : {}", ee.toString() ) ;
             }
          }
       }finally{
@@ -389,18 +389,18 @@ public class FileHoppingManager extends CellAdapter {
    }
     @Override
     public void messageToForward(  CellMessage cellMessage ){
-        _log.info("Message to forward : {}", cellMessage.getMessageObject().getClass().getName());
+        LOGGER.info("Message to forward : {}", cellMessage.getMessageObject().getClass().getName());
         // super.messageToForward(cellMessage);
     }
    public void replicateReplyArrived( CellMessage message , PoolMgrReplicateFileMsg replicate ){
-      _log.info("replicateReplyArrived : {}", message);
+      LOGGER.info("replicateReplyArrived : {}", message);
    }
    @Override
    public void messageArrived( CellMessage message ){
 
       Object   request     = message.getMessageObject() ;
 
-      _log.info("messageArrived : {} : {}", request, message);
+      LOGGER.info("messageArrived : {} : {}", request, message);
       if( request instanceof PoolMgrReplicateFileMsg ){
 
          PoolMgrReplicateFileMsg replicate = (PoolMgrReplicateFileMsg)request ;
@@ -438,7 +438,7 @@ public class FileHoppingManager extends CellAdapter {
 
                  matchCount++;
 
-                 _log.info("Entry found for : SC=<{}> source={} : {}", storageClass, replicationSource, entry);
+                 LOGGER.info("Entry found for : SC=<{}> source={} : {}", storageClass, replicationSource, entry);
                  entry._hit++;
 
                  CellPath path = entry._path == null ? _defaultDestinationPath : entry._path;
@@ -451,7 +451,7 @@ public class FileHoppingManager extends CellAdapter {
                  try {
                      sendMessage(new CellMessage(path.clone(), replicate));
                  } catch (RuntimeException ee) {
-                     _log.warn("Problem : couldn't forward message to : {} : {}", entry._path, ee.toString());
+                     LOGGER.warn("Problem : couldn't forward message to : {} : {}", entry._path, ee.toString());
                  }
 
                  if (!entry._continue) {
@@ -459,7 +459,7 @@ public class FileHoppingManager extends CellAdapter {
                  }
              }
          }
-         _log.info("Total match count for <{}> was {}", storageClass, matchCount ) ;
+         LOGGER.info("Total match count for <{}> was {}", storageClass, matchCount ) ;
 
       }
 

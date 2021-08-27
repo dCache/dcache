@@ -47,7 +47,7 @@ import static org.dcache.util.ByteUnit.BYTES;
 public class TransferObserverV1
     extends CellAdapter
     implements Runnable {
-    private static final Logger _log = LoggerFactory.getLogger(TransferObserverV1.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransferObserverV1.class);
 
     private final CellNucleus _nucleus;
     private final CellStub _cellStub;
@@ -300,7 +300,7 @@ public class TransferObserverV1
                 _update = Long.parseLong(updateString) * 1000L;
             }
         } catch (NumberFormatException e) {
-            _log.warn("Illegal value for -update: {}", updateString);
+            LOGGER.warn("Illegal value for -update: {}", updateString);
         }
 
         useInterpreter(true);
@@ -421,7 +421,7 @@ public class TransferObserverV1
                     collectDataSequentially();
                     _timeUsed = System.currentTimeMillis() - start;
                 } catch (RuntimeException ee) {
-                    _log.error(ee.toString(), ee);
+                    LOGGER.error(ee.toString(), ee);
                 }
 
                 synchronized (this) {
@@ -429,7 +429,7 @@ public class TransferObserverV1
                 }
             }
         } catch (InterruptedException e) {
-            _log.info("Data collector interrupted");
+            LOGGER.info("Data collector interrupted");
         }
     }
 

@@ -73,7 +73,7 @@ import static org.dcache.util.Strings.*;
 public class GFtpProtocol_2_nio implements ConnectionMonitor,
         MoverProtocol, ChecksumMover, CellArgsAware
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(GFtpProtocol_2_nio.class);
     private static final Logger _logSpaceAllocation =
             LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
@@ -247,7 +247,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             _inProgress = true;
             _multiplexer.add(mode);
 
-            _log.trace("Entering event loop");
+            LOGGER.trace("Entering event loop");
             _multiplexer.loop();
         } catch (ClosedByInterruptException e) {
             /* Many NIO operations throw a ClosedByInterruptException
@@ -277,7 +277,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
             /* Close all open channels.
              */
-            _log.trace("Left event loop and closing channels");
+            LOGGER.trace("Left event loop and closing channels");
             _multiplexer.close();
 
             /* Log some useful information about the transfer.
@@ -285,10 +285,10 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             long amount = getBytesTransferred();
             long time = getTransferTime();
             if (time > 0) {
-                _log.info("Transfer finished: {} bytes transferred in {} seconds = {} MB/s",
+                LOGGER.info("Transfer finished: {} bytes transferred in {} seconds = {} MB/s",
                                           amount, time / 1000.0, BYTES.toMiB(1000.0 * amount / time));
             } else {
-                _log.info("Transfer finished: {} bytes transferred in less than 1 ms", amount);
+                LOGGER.info("Transfer finished: {} bytes transferred in less than 1 ms", amount);
             }
         }
 
@@ -308,14 +308,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
 
         if (!ChecksumType.isValid(type)) {
-            _log.error("CRC Algorithm is not supported: {}", type);
+            LOGGER.error("CRC Algorithm is not supported: {}", type);
             return;
         }
 
         Optional<ChecksumChannel> checksumChannel = _fileChannel.optionallyAs(ChecksumChannel.class);
 
         if (!checksumChannel.isPresent()) {
-            _log.warn("Unable to calculate {} checksum as checksum"
+            LOGGER.warn("Unable to calculate {} checksum as checksum"
                     + " calculation is disabled for this transfer.", type);
             return;
         }
@@ -323,7 +323,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         try {
             checksumChannel.get().addType(ChecksumType.getChecksumType(type));
         } catch (IOException e) {
-            _log.error("Unable to add {} checksum calculation: {}",
+            LOGGER.error("Unable to add {} checksum calculation: {}",
                     type, org.dcache.util.Exceptions.messageOrClassName(e));
         }
     }
@@ -357,7 +357,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         ProtocolFamily protocolFamily = gftpProtocolInfo.getProtocolFamily();
         _fileChannel = fileChannel;
 
-        _log.debug("version={}, role={}, mode={}, host={} buffer={}, passive={}, parallelism={}",
+        LOGGER.debug("version={}, role={}, mode={}, host={} buffer={}, passive={}, parallelism={}",
                   version, role, gftpProtocolInfo.getMode(),
                   address, bufferSize, passive, parallelism);
 
@@ -471,18 +471,18 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             long fileSize   = fileChannel.size();
             if (offset < 0) {
                 String err = "prm_offset is " + offset;
-                _log.error(err);
+                LOGGER.error(err);
                 throw new IllegalArgumentException(err);
             }
             if (size < 0) {
                 String err = "prm_offset is " + size;
-                _log.error(err);
+                LOGGER.error(err);
                 throw new IllegalArgumentException(err);
             }
             if (offset + size > fileSize) {
                 String err = "invalid prm_offset=" + offset + " and prm_size "
                         + size + " for file of size " + fileSize;
-                _log.error(err);
+                LOGGER.error(err);
                 throw new IllegalArgumentException(err);
             }
             mode.setPartialRetrieveParameters(offset, size);
@@ -505,7 +505,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 error.ifPresent(msg -> pw.println("Cause: " + msg));
                 getInfo(pw);
                 String info = sw.toString();
-                _log.warn("Incomplete transfer; details follow:\n{}",
+                LOGGER.warn("Incomplete transfer; details follow:\n{}",
                         info.substring(0, info.length()-1)); // Strip final '\n'
             }
 
@@ -582,7 +582,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         checkArgument(position >= 0, "Position must be non-negative");
         checkArgument(size >= 0, "Size must be non-negative");
 
-        _log.trace("received {} {}", position, size);
+        LOGGER.trace("received {} {}", position, size);
 
         _blockLog.addBlock(position, size);
         _bytesTransferred += size;
@@ -597,7 +597,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         checkArgument(position >= 0, "Position must be non-negative");
         checkArgument(size >= 0, "Size must be non-negative");
 
-        _log.trace("send {} {}", position, size);
+        LOGGER.trace("send {} {}", position, size);
 
         _blockLog.addBlock(position, size);
         _bytesTransferred += size;

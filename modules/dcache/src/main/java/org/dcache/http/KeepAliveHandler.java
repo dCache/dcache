@@ -41,7 +41,7 @@ import java.util.Deque;
  */
 public class KeepAliveHandler extends ChannelDuplexHandler
 {
-    private static final Logger LOG = LoggerFactory.getLogger(KeepAliveHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeepAliveHandler.class);
 
     private boolean _hasPreviousRequest;
     private boolean _isLastRequestKeepAlive;
@@ -73,7 +73,7 @@ public class KeepAliveHandler extends ChannelDuplexHandler
                  * reply to any further traffic with a RST, tearing down the
                  * client side of the TCP connection.
                  */
-                LOG.debug("Broken client sent request after previously asking " +
+                LOGGER.debug("Broken client sent request after previously asking " +
                         "the connection be closed.");
                 return;
             }

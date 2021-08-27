@@ -39,7 +39,7 @@ import static org.dcache.util.ChecksumType.*;
  */
 public class Checksums
 {
-    private static final Logger _log = LoggerFactory.getLogger(Checksums.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Checksums.class);
 
     private static final Splitter.MapSplitter RFC3230_SPLITTER =
             Splitter.on(',').omitEmptyStrings().trimResults().
@@ -78,11 +78,11 @@ public class Checksums
                             return Checksum.fromBase64Value(SHA512, value);
 
                         default:
-                            _log.debug("Unsupported checksum type {}", type);
+                            LOGGER.debug("Unsupported checksum type {}", type);
                             return null;
                     }
                 } catch(IllegalArgumentException e) {
-                    _log.debug("Value \"{}\" is invalid for type {}", value,
+                    LOGGER.debug("Value \"{}\" is invalid for type {}", value,
                             type);
                     return null;
                 }
@@ -204,7 +204,7 @@ public class Checksums
 
             return checksums.values().stream().filter(Objects::nonNull).collect(Collectors.toSet());
         } catch (IllegalArgumentException e) {
-            _log.warn("Bad RFC3230 Digest value \"{}\": {}", digest, e.getMessage());
+            LOGGER.warn("Bad RFC3230 Digest value \"{}\": {}", digest, e.getMessage());
             return Collections.emptySet();
         }
     }

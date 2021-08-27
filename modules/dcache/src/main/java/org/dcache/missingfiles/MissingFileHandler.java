@@ -25,7 +25,7 @@ import org.dcache.missingfiles.plugins.Result;
  */
 public class MissingFileHandler implements CellMessageReceiver
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(RemoteMissingFileStrategy.class);
 
     private ExecutorService _executor;
@@ -34,7 +34,7 @@ public class MissingFileHandler implements CellMessageReceiver
 
     public Reply messageArrived(MissingFileMessage message)
     {
-        _log.debug("Received notice {} {}", message.getRequestedPath(),
+        LOGGER.debug("Received notice {} {}", message.getRequestedPath(),
                 message.getInternalPath());
 
         MessageReply<MissingFileMessage> reply =
@@ -126,14 +126,14 @@ public class MissingFileHandler implements CellMessageReceiver
             try {
                 result = future.get();
             } catch (CancellationException e) {
-                _log.debug("Operation was cancelled");
+                LOGGER.debug("Operation was cancelled");
                 return false;
             } catch (InterruptedException e) {
-                _log.debug("Interrupted while waiting for plugin result");
+                LOGGER.debug("Interrupted while waiting for plugin result");
                 return false;
             } catch (ExecutionException e) {
                 Throwable t = e.getCause();
-                _log.error("Plugin bug: {}", t.getMessage(),
+                LOGGER.error("Plugin bug: {}", t.getMessage(),
                         t);
                 return true;
             }

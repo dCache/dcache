@@ -42,7 +42,7 @@ import static org.dcache.pool.repository.ReplicaState.*;
  */
 public class CacheRepositoryEntryImpl implements ReplicaRecord
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
 
     // Reusable list for the common case
@@ -96,7 +96,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
             try {
                 _size = _fileStore.getFileAttributeView(pnfsId).readAttributes().size();
             } catch (IOException e) {
-                _log.error("Failed to read file size: {}", e.toString());
+                LOGGER.error("Failed to read file size: {}", e.toString());
             }
             _state = BROKEN;
 
@@ -112,7 +112,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                         _repository.getStorageInfoMap().put(pnfsId.toString(), storageInfo);
                     }
                 } catch (IOException e) {
-                    _log.error("Failed to set file size: {}", e.toString());
+                    LOGGER.error("Failed to set file size: {}", e.toString());
                 }
 
             } else {
@@ -145,7 +145,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                     accessTimeInfoNew.setCreationTime(_creationTime);
                     _repository.getAccessTimeInfo().put(pnfsId.toString(), accessTimeInfoNew);
                 } catch (IOException e) {
-                    _log.error("Failed to set AccessTime size: {}", e.toString());
+                    LOGGER.error("Failed to set AccessTime size: {}", e.toString());
                 }
             }
         }
@@ -220,7 +220,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                     .size();
 
         } catch (IOException e) {
-            _log.error("Failed to read file size: {}", e.toString());
+            LOGGER.error("Failed to read file size: {}", e.toString());
             return 0;
         }
     }
@@ -399,7 +399,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                 // fallthrough and return broken record
             }
         } catch (ClassCastException e) {
-            _log.warn(e.toString());
+            LOGGER.warn(e.toString());
         } catch (RuntimeExceptionWrapper e) {
             /* BerkeleyDB wraps internal exceptions. We ignore class
              * cast and class not found exceptions, since they are a
@@ -409,7 +409,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                 !(e.getCause() instanceof ClassCastException)) {
                 throw e;
             }
-            _log.warn(e.toString());
+            LOGGER.warn(e.toString());
         }
         return new CacheRepositoryEntryImpl(repository, pnfsId, BROKEN, ImmutableList.of(),  fileStore);
     }
