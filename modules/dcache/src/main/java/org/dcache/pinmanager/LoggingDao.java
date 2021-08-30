@@ -25,7 +25,7 @@ import org.dcache.util.TimeUtils.TimeUnitFormat;
  */
 public class LoggingDao implements PinDao
 {
-    private static final Logger LOG = LoggerFactory.getLogger(LoggingDao.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingDao.class);
 
     /** Base class for wrapping either PinCriterion or PinUpdate. */
     private abstract static class LoggingWrappingBuilder<I,W extends I>
@@ -306,8 +306,8 @@ public class LoggingDao implements PinDao
     public Pin create(PinUpdate update)
     {
         LoggingPinUpdate u = (LoggingPinUpdate)update;
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Creating pin in database that{}.", u.getDescription(true));
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Creating pin in database that{}.", u.getDescription(true));
         }
         return inner.create(u.inner);
     }
@@ -316,8 +316,8 @@ public class LoggingDao implements PinDao
     public List<Pin> get(PinCriterion criterion)
     {
         LoggingPinCriterion c = (LoggingPinCriterion) criterion;
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Obtaining information about {}{}.", c.getTarget(),
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Obtaining information about {}{}.", c.getTarget(),
                     c.getDescription());
         }
         return inner.get(c.inner);
@@ -327,8 +327,8 @@ public class LoggingDao implements PinDao
     public List<Pin> get(PinCriterion criterion, int limit)
     {
         LoggingPinCriterion c = (LoggingPinCriterion) criterion;
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Obtaining information about at most {} pins{}.", limit,
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Obtaining information about at most {} pins{}.", limit,
                     c.getDescription());
         }
         return inner.get(c.inner, limit);
@@ -338,8 +338,8 @@ public class LoggingDao implements PinDao
     public Pin get(UniquePinCriterion criterion)
     {
         LoggingPinCriterion c = (LoggingPinCriterion) criterion;
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Obtaining information about {}{}.", c.getTarget(),
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Obtaining information about {}{}.", c.getTarget(),
                     c.getDescription());
         }
         return inner.get(c.innerUnique);
@@ -349,9 +349,9 @@ public class LoggingDao implements PinDao
     public int count(PinCriterion criterion)
     {
         LoggingPinCriterion c = (LoggingPinCriterion) criterion;
-        if (LOG.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             String operation = c.isUnique() ? "Checking existance of" : "Counting";
-            LOG.debug("{} {}{}.", operation, c.getTarget(), c.getDescription());
+            LOGGER.debug("{} {}{}.", operation, c.getTarget(), c.getDescription());
         }
 
         return inner.count(c.inner);
@@ -377,8 +377,8 @@ public class LoggingDao implements PinDao
 
     private void logUpdate(LoggingPinCriterion criterion, LoggingPinUpdate update)
     {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Updating {}{} so {}{}.", criterion.getTarget(),
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Updating {}{} so {}{}.", criterion.getTarget(),
                     criterion.getDescription(), criterion.getSubjectPronoun(),
                     update.getDescription(criterion.isUnique()));
         }
@@ -388,8 +388,8 @@ public class LoggingDao implements PinDao
     public int delete(PinCriterion criterion)
     {
         LoggingPinCriterion c = (LoggingPinCriterion) criterion;
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Deleting {}{}.", c.getTarget(), c.getDescription());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Deleting {}{}.", c.getTarget(), c.getDescription());
         }
         return inner.delete(c.inner);
     }
@@ -400,9 +400,9 @@ public class LoggingDao implements PinDao
     {
         LoggingPinCriterion c = (LoggingPinCriterion) criterion;
 
-        if (LOG.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             String id = "FOREACH-" + foreachCounter.incrementAndGet();
-            LOG.debug("Operating on {}{} as {}.", c.getTarget(),
+            LOGGER.debug("Operating on {}{} as {}.", c.getTarget(),
                     c.getDescription(), id);
             NDC.push(id);
         }
@@ -410,7 +410,7 @@ public class LoggingDao implements PinDao
         try {
             inner.foreach(c.inner, f);
         } finally {
-            if (LOG.isDebugEnabled()) {
+            if (LOGGER.isDebugEnabled()) {
                 NDC.pop();
             }
         }    }
@@ -421,10 +421,10 @@ public class LoggingDao implements PinDao
     {
         LoggingPinCriterion c = (LoggingPinCriterion) criterion;
 
-        if (LOG.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             String limitString = " (limit: " + limit + ")";
             String id = "FOREACH-" + foreachCounter.incrementAndGet();
-            LOG.debug("Operating on {}{} as {}{}.", c.getTarget(),
+            LOGGER.debug("Operating on {}{} as {}{}.", c.getTarget(),
                     c.getDescription(), id, limitString);
             NDC.push(id);
         }
@@ -432,7 +432,7 @@ public class LoggingDao implements PinDao
         try {
             inner.foreach(c.inner, f, limit);
         } finally {
-            if (LOG.isDebugEnabled()) {
+            if (LOGGER.isDebugEnabled()) {
                 NDC.pop();
             }
         }

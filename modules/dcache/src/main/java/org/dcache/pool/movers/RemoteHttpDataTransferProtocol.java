@@ -160,7 +160,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private static final Set<HeaderFlags> INITIAL_REQUEST
             = EnumSet.noneOf(HeaderFlags.class);
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(RemoteHttpDataTransferProtocol.class);
 
     /** Maximum time to wait when establishing a connection. */
@@ -278,7 +278,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             ProtocolInfo genericInfo, Set<? extends OpenOption> access)
             throws CacheException, IOException, InterruptedException
     {
-        _log.debug("info={}, attributes={},  access={}", genericInfo,
+        LOGGER.debug("info={}, attributes={},  access={}", genericInfo,
                 attributes, access);
         RemoteHttpDataTransferProtocolInfo info =
                 (RemoteHttpDataTransferProtocolInfo) genericInfo;
@@ -289,7 +289,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                                 try {
                                     c.addType(t);
                                 } catch (IOException e) {
-                                    _log.warn("Unable to calculate checksum {}: {}",
+                                    LOGGER.warn("Unable to calculate checksum {}: {}",
                                             t, messageOrClassName(e));
                                 }
                             });
@@ -414,13 +414,13 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     {
         HttpContext context = getContext();
         if (context == null) {
-            _log.debug("No HttpContext value");
+            LOGGER.debug("No HttpContext value");
             return Optional.empty();
         }
 
         Object conn = context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
         if (conn == null) {
-            _log.debug("HTTP_CONNECTION is null");
+            LOGGER.debug("HTTP_CONNECTION is null");
             return Optional.empty();
         }
 
@@ -431,14 +431,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
         HttpInetConnection inetConn = (HttpInetConnection)conn;
         if (!inetConn.isOpen()) {
-            _log.debug("HttpConnection is no longer open");
+            LOGGER.debug("HttpConnection is no longer open");
             return Optional.empty();
         }
 
         try {
             InetAddress addr = inetConn.getRemoteAddress();
             if (addr == null) {
-                _log.debug("HttpInetConnection is not connected.");
+                LOGGER.debug("HttpInetConnection is not connected.");
                 return Optional.empty();
             }
 
@@ -446,7 +446,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             InetSocketAddress sockAddr = new InetSocketAddress(addr, port);
             return Optional.of(sockAddr);
         } catch (ConnectionShutdownException e) {
-            _log.warn("HTTP_CONNECTION is unexpectedly unconnected");
+            LOGGER.warn("HTTP_CONNECTION is unexpectedly unconnected");
             // Perhaps a race condition here?  Hey ho.
             return Optional.empty();
         }
@@ -595,7 +595,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                             String percent = toThreeSigFig(100 * _channel.getBytesTransferred() / (double)_channel.size(), 1000);
                             message.append(" (").append(percent).append("%)");
                         } catch (IOException io) {
-                            _log.warn("failed to discover file size: {}", messageOrClassName(io));
+                            LOGGER.warn("failed to discover file size: {}", messageOrClassName(io));
                         }
                     }
                     throw new ThirdPartyTransferFailedCacheException(message.toString(), e);
@@ -707,7 +707,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                                     "HEAD Content-Length (%d) does not match file size (%d)",
                                     contentLength, fileSize);
                         } else {
-                            _log.debug("HEAD response did not contain Content-Length");
+                            LOGGER.debug("HEAD response did not contain Content-Length");
                         }
 
                         String rfc3230 = headerValue(response, "Digest");

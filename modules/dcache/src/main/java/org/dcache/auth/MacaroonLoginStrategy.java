@@ -52,7 +52,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class MacaroonLoginStrategy implements LoginStrategy
 {
-    private static final Logger LOG = LoggerFactory.getLogger(MacaroonLoginStrategy.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MacaroonLoginStrategy.class);
 
     private final MacaroonProcessor processor;
 
@@ -64,7 +64,7 @@ public class MacaroonLoginStrategy implements LoginStrategy
     @Override
     public LoginReply login(Subject subject) throws CacheException
     {
-        LOG.debug("Login attempted: {}", subject);
+        LOGGER.debug("Login attempted: {}", subject);
         Origin origin = extractClientIP(subject);
         String macaroon = extractCredential(subject);
 
@@ -88,7 +88,7 @@ public class MacaroonLoginStrategy implements LoginStrategy
             principals.add(origin);
             principals.add(new MacaroonPrincipal(context.getId()));
 
-            LOG.debug("Login successful: {}", reply);
+            LOGGER.debug("Login successful: {}", reply);
             return reply;
         } catch (InvalidMacaroonException e) {
             throw new PermissionDeniedCacheException("macaroon login denied: " + e.getMessage());

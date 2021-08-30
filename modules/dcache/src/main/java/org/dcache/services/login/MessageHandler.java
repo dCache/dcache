@@ -22,7 +22,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 public class MessageHandler
     implements CellMessageReceiver
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(MessageHandler.class);
 
     private LoginStrategy _loginStrategy;
@@ -70,7 +70,7 @@ public class MessageHandler
             message.setSubject(login.getSubject());
             message.setLoginAttributes(login.getLoginAttributes());
         } catch(RuntimeException e) {
-            _log.error("Login operation failed", e);
+            LOGGER.error("Login operation failed", e);
             throw new PermissionDeniedCacheException(e.getMessage());
         } finally {
             timeoutTask.cancel(false);
@@ -87,7 +87,7 @@ public class MessageHandler
         try {
             principal = _loginStrategy.map(message.getPrincipal());
         } catch(RuntimeException e) {
-            _log.error("Map operation failed", e);
+            LOGGER.error("Map operation failed", e);
             principal = null;
         }
 
@@ -103,7 +103,7 @@ public class MessageHandler
         try {
             principals = _loginStrategy.reverseMap(message.getPrincipal());
         } catch(RuntimeException e) {
-            _log.error("ReverseMap operation failed", e);
+            LOGGER.error("ReverseMap operation failed", e);
             principals = Collections.emptySet();
         }
 

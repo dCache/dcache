@@ -47,7 +47,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         OPEN, COMMITTED, CLOSED
     }
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private static final Set<OpenOption> OPEN_OPTIONS = ImmutableSet.<OpenOption>builder()
@@ -220,7 +220,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                     registerFileAttributesInNameSpace();
                     namespaceUpdated = true;
                 } catch (TimeoutCacheException e) {
-                    _log.warn("Failed to update namespace: {}. Retrying in 15 s", e.getMessage());
+                    LOGGER.warn("Failed to update namespace: {}. Retrying in 15 s", e.getMessage());
                     TimeUnit.SECONDS.sleep(15);
                 }
             } while (!namespaceUpdated);
@@ -318,7 +318,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                     _targetState = ReplicaState.REMOVED;
                     why = "file no longer exists in namespace";
                 } else {
-                    _log.warn("Failed to register {} after failed replica creation: {}",
+                    LOGGER.warn("Failed to register {} after failed replica creation: {}",
                             _fileAttributes, e.getMessage());
                 }
             }
@@ -329,11 +329,11 @@ class WriteHandleImpl implements ReplicaDescriptor
                 String reason = why == null ? "Transfer failed" : "Transfer failed and " + why;
                 _entry.update(reason, r -> r.setState(ReplicaState.REMOVED));
             } catch (CacheException e) {
-                _log.warn("Failed to remove replica: {}", e.getMessage());
+                LOGGER.warn("Failed to remove replica: {}", e.getMessage());
             }
         } else {
             PnfsId id = _entry.getPnfsId();
-            _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
+            LOGGER.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                                    id.toString(),
                                                    _repository.getPoolName()),
                       "Marking pool entry {} on {} as BROKEN",
@@ -343,7 +343,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                 _entry.update("Transfer failed for " + _initialState + " replica",
                         r -> r.setState(ReplicaState.BROKEN));
             } catch (CacheException e) {
-                _log.warn("Failed to mark replica as broken: {}", e.getMessage());
+                LOGGER.warn("Failed to mark replica as broken: {}", e.getMessage());
             }
         }
     }

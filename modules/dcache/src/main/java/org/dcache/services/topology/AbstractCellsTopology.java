@@ -27,7 +27,7 @@ import org.dcache.cells.CellStub;
 public class AbstractCellsTopology
     implements CellInfoProvider
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(AbstractCellsTopology.class);
 
     private CellStub _stub;
@@ -42,12 +42,12 @@ public class AbstractCellsTopology
     {
         List<CellTunnelInfo> tunnels = new ArrayList<>();
 
-        _log.debug("Sending topology info request to {}", address);
+        LOGGER.debug("Sending topology info request to {}", address);
         CellTunnelInfo[] infos =
             _stub.sendAndWait(new CellPath(address),
                               "getcelltunnelinfos",
                               CellTunnelInfo[].class);
-        _log.debug("Got reply from {}", address);
+        LOGGER.debug("Got reply from {}", address);
 
         for (CellTunnelInfo info: infos) {
             if (info.getRemoteCellDomainInfo() != null) {
@@ -95,7 +95,7 @@ public class AbstractCellsTopology
                     }
                 }
             } catch (NoRouteToCellException | CacheException e) {
-                _log.warn("Failed to fetch topology info from {}: {}",
+                LOGGER.warn("Failed to fetch topology info from {}: {}",
                           node.getAddress(), e.getMessage());
             }
         }

@@ -105,7 +105,7 @@ import static org.dcache.util.Strings.indentLines;
  */
 public class ActiveAdapter implements Runnable, ProxyAdapter
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(ActiveAdapter.class);
 
     /* After the transfer is completed we only expect the key for the
@@ -235,15 +235,15 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     }
 
     protected void say(String s) {
-        _log.info("ActiveAdapter: {}", s);
+        LOGGER.info("ActiveAdapter: {}", s);
     }
 
     protected void esay(String s) {
-        _log.error("ActiveAdapter: {}", s);
+        LOGGER.error("ActiveAdapter: {}", s);
     }
 
     protected void esay(Throwable t) {
-        _log.error(t.getMessage(), t);
+        LOGGER.error(t.getMessage(), t);
     }
 
     /*

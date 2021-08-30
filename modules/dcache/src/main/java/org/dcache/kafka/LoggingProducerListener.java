@@ -24,7 +24,7 @@ import org.springframework.kafka.support.ProducerListener;
 
 public class LoggingProducerListener implements ProducerListener {
 
-    private static final Logger _log = LoggerFactory.getLogger(LoggingProducerListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingProducerListener.class);
 
 
     @Override
@@ -34,7 +34,7 @@ public class LoggingProducerListener implements ProducerListener {
 
     @Override
     public void onError(String topic, Integer partition, Object key, Object value, Exception exception) {
-        _log.error("Unable to send message to topic {} on  partition {}, with key {} and value {} : {}",
+        LOGGER.error("Unable to send message to topic {} on  partition {}, with key {} and value {} : {}",
                 topic, partition, key, value, exception.getMessage());
     }
 

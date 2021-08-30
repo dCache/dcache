@@ -33,7 +33,7 @@ public interface HttpRequest {
 
 public class ContextPictureEngine implements HttpResponseEngine, DomainContextAware
 {
-   private static final Logger _log =
+   private static final Logger LOGGER =
        LoggerFactory.getLogger(ContextPictureEngine.class);
 
     private Map<String, Object> context;
@@ -54,9 +54,9 @@ public class ContextPictureEngine implements HttpResponseEngine, DomainContextAw
       String [] tokens = request.getRequestTokens() ;
       int       offset = request.getRequestTokenOffset() ;
 
-      _log.info("Offset : {}", offset);
+      LOGGER.info("Offset : {}", offset);
       for( int i =0 ; i < tokens.length ;i++ ){
-         _log.info(i + " -> " + tokens[i]);
+         LOGGER.info(i + " -> " + tokens[i]);
       }
       if( tokens.length < 2 ) {
           throw new

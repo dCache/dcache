@@ -113,7 +113,7 @@ import static org.dcache.util.Exceptions.messageOrClassName;
 public class RemoteGsiftpTransferProtocol
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(RemoteGsiftpTransferProtocol.class);
     //timeout after 5 minutes if credentials not delegated
     private static final int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
@@ -182,8 +182,8 @@ public class RemoteGsiftpTransferProtocol
             ServerException, ClientException, KeyStoreException, URISyntaxException
     {
         _pnfsId = fileAttributes.getPnfsId();
-        if (_log.isDebugEnabled()) {
-            _log.debug("runIO()\n\tprotocol={},\n\tStorageInfo={},\n\tPnfsId={},\n\taccess ={}",
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("runIO()\n\tprotocol={},\n\tStorageInfo={},\n\tPnfsId={},\n\taccess ={}",
                     protocol, StorageInfos.extractFrom(fileAttributes), _pnfsId, access );
         }
         if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
@@ -200,7 +200,7 @@ public class RemoteGsiftpTransferProtocol
                                 try {
                                     c.addType(t);
                                 } catch (IOException e) {
-                                    _log.warn("Unable to calculate checksum {}: {}",
+                                    LOGGER.warn("Unable to calculate checksum {}: {}",
                                             t, messageOrClassName(e));
                                 }
                             });
@@ -214,7 +214,7 @@ public class RemoteGsiftpTransferProtocol
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo);
         }
-        _log.debug(" runIO() done");
+        LOGGER.debug(" runIO() done");
     }
 
     @Override
@@ -267,7 +267,7 @@ public class RemoteGsiftpTransferProtocol
     public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo protocolInfo)
         throws CacheException
     {
-        _log.debug("gridFTPWrite started");
+        LOGGER.debug("gridFTPWrite started");
 
         try {
             PnfsHandler pnfs = new PnfsHandler(_cell, PNFS_MANAGER);
@@ -277,10 +277,10 @@ public class RemoteGsiftpTransferProtocol
 
             if (!checksums.isEmpty()){
                 Checksum checksum = checksums.iterator().next();
-                _log.debug("Will use {} for transfer verification of {}", checksum, _pnfsId);
+                LOGGER.debug("Will use {} for transfer verification of {}", checksum, _pnfsId);
                 _client.setChecksum(checksum.getType().getName(), null);
             } else {
-                _log.debug("PnfsId {} does not have checksums", _pnfsId);
+                LOGGER.debug("PnfsId {} does not have checksums", _pnfsId);
             }
 
             URI dst_url =  new URI(protocolInfo.getGsiftpUrl());
@@ -306,15 +306,15 @@ public class RemoteGsiftpTransferProtocol
             GridftpClient.Checksum checksum = _client.negotiateCksm(path);
             return Optional.of(new Checksum(ChecksumType.valueOf(checksum.type), checksum.value));
         } catch (GridftpClient.ChecksumNotSupported e) {
-            _log.error("Checksum algorithm is not supported: {}", e.getMessage());
+            LOGGER.error("Checksum algorithm is not supported: {}", e.getMessage());
         } catch (IOException e) {
-            _log.error("I/O failure talking to FTP server: {}", messageOrClassName(e));
+            LOGGER.error("I/O failure talking to FTP server: {}", messageOrClassName(e));
         } catch (ServerException e) {
-            _log.error("GridFTP server failure: {}", e.getMessage());
+            LOGGER.error("GridFTP server failure: {}", e.getMessage());
         } catch (URISyntaxException e) {
-            _log.error("Invalid GridFTP URL: {}", e.getMessage());
+            LOGGER.error("Invalid GridFTP URL: {}", e.getMessage());
         } catch (ClientException e) {
-            _log.error("GridFTP client failure: {}", e.getMessage());
+            LOGGER.error("GridFTP client failure: {}", e.getMessage());
         }
         return Optional.empty();
     }
@@ -354,7 +354,7 @@ public class RemoteGsiftpTransferProtocol
         {
             if (_source) {
                 String error = "DiskDataSourceSink is source and write is called";
-                _log.error(error);
+                LOGGER.error(error);
                 throw new IllegalStateException(error);
             }
 
@@ -379,7 +379,7 @@ public class RemoteGsiftpTransferProtocol
         @Override
         public synchronized void close()
         {
-            _log.debug("DiskDataSink.close() called");
+            LOGGER.debug("DiskDataSink.close() called");
             _last_transfer_time    = System.currentTimeMillis();
         }
 
@@ -415,7 +415,7 @@ public class RemoteGsiftpTransferProtocol
         {
             if (!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
-                _log.error(error);
+                LOGGER.error(error);
                 throw new IllegalStateException(error);
             }
 
@@ -451,7 +451,7 @@ public class RemoteGsiftpTransferProtocol
                     return checksum.get();
                 }
             } catch (CacheException e) {
-                _log.warn("Failed to fetch checksum information: {}", e.getMessage());
+                LOGGER.warn("Failed to fetch checksum information: {}", e.getMessage());
             }
 
             String value = GridftpClient.getCksmValue(_fileChannel, type);
