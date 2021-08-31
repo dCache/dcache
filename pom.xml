@@ -67,7 +67,7 @@
         <version.aspectj>1.9.2</version.aspectj>
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.12.0</version.xerces>
-        <version.jetty>9.4.41.v20210516</version.jetty>
+        <version.jetty>9.4.43.v20210629</version.jetty>
         <version.xrootd4j>4.2.1</version.xrootd4j>
         <version.jersey>2.28</version.jersey>
         <version.dcache-view>1.6.3</version.dcache-view>
