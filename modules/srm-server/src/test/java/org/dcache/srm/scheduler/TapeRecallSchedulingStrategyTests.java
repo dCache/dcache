@@ -34,7 +34,6 @@ import org.dcache.srm.taperecallscheduling.TapeInformant;
 import org.dcache.srm.taperecallscheduling.spi.TapeInfoProvider;
 import org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker;
 import org.dcache.srm.taperecallscheduling.TapefileInfo;
-import org.dcache.srm.taperecallscheduling.tapeinfoprovider.JsonFileTapeInfoProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

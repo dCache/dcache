@@ -93,7 +93,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
             fetchTapeInfo();
         }
 
-        if (!tapesWithJobs.isEmpty() && activeTapesWithJobs.size() < requirementsChecker.maxActiveTapes()) {
+        if (!tapesWithJobs.isEmpty() && requirementsChecker.getRemainingTapeSlots(activeTapesWithJobs.size()) > 0) {
             LOGGER.info(getTapeJobsInfo());
             refillActiveTapeSlots();
         }
@@ -149,7 +149,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * to receive the next tapes to activate.
      */
     private void refillActiveTapeSlots() {
-        int freeTapeSlots = requirementsChecker.maxActiveTapes() - activeTapesWithJobs.size();
+        int freeTapeSlots = requirementsChecker.getRemainingTapeSlots(activeTapesWithJobs.size());
 
         while (freeTapeSlots > 0) {
             String tape = selectNextTapeToActivate();
@@ -243,7 +243,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
 
         // if configured, finish with checking if a tape has a sufficiently long job queue
 
-        if (requirementsChecker.minNumberOfRequestsForTapeSelection() == requirementsChecker.NO_VALUE) {
+        if (!requirementsChecker.isDefinedMinRequestCount()) {
             LOGGER.trace("No tapes available with sufficient recall volume.");
             return null;
         }
@@ -253,7 +253,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
                 .findFirst()
                 .get();
 
-        boolean queueSufficientlyLong = tapesWithJobs.get(tapeWithLongestQueue).size() >= requirementsChecker.minNumberOfRequestsForTapeSelection();
+        boolean queueSufficientlyLong = requirementsChecker.isRequestCountSufficient(tapesWithJobs.get(tapeWithLongestQueue).size());
         LOGGER.info("Found {}tape with sufficiently long job queue.", (queueSufficientlyLong ? "":"no "));
         return queueSufficientlyLong ? tapeWithLongestQueue : null;
     }

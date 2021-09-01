@@ -109,7 +109,7 @@ public class JsonFileTapeInfoProvider extends FilebasedTapeInfoProvider {
 
     @Override
     public String describe() {
-        return super.describe() + "\n  File type: JSON\n";
+        return super.describe() + "\n  File type: json\n";
     }
 
 }

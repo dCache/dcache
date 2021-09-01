@@ -109,7 +109,7 @@ public class CsvFileTapeInfoProvider extends FilebasedTapeInfoProvider {
 
     @Override
     public String describe() {
-        return super.describe() + "\n  File type: CSV\n";
+        return super.describe() + "\n  File type: csv\n";
     }
 
 }
