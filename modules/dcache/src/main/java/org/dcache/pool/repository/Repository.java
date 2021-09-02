@@ -5,6 +5,7 @@ import java.nio.file.OpenOption;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;
@@ -199,4 +200,13 @@ public interface Repository
      * Removes a fault change listener.
      */
     void removeFaultListener(FaultListener listener);
+
+    /**
+     * Returns a CompletableFuture that is asynchronously completed
+     * when repository {@code #load} completes normally or completes
+     * exceptionally when load fails.
+     *
+     * @return the a CompletableFuture.
+     */
+    CompletableFuture<Void> waitForLoad();
 }

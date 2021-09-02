@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,6 +22,8 @@ import java.util.OptionalLong;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
@@ -956,5 +959,42 @@ public class RepositorySubsystemTest
         r = repository.getSpaceRecord();
         repository.setState(id2, PRECIOUS, "test");
         assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace(), r.getRemovableSpace());
+    }
+
+    @Test
+    public void testWaitforLoad() throws CacheException, InterruptedException
+    {
+
+        AtomicBoolean notifyed = new AtomicBoolean();
+        repository.waitForLoad().thenRun(() -> notifyed.set(true));
+        repository.init();
+        repository.load();
+
+        assertTrue("Repository load complete without propagating the info", notifyed.get());
+    }
+
+    @Test
+    public void testPropagateErrorOnLoad() throws CacheException, InterruptedException, IOException {
+
+        AtomicReference<Throwable> throwableHolder = new AtomicReference<>();
+        repository.waitForLoad().whenComplete((r, t) -> throwableHolder.set(t));
+        repository.init();
+
+        // corrupt pool's repository
+        try {
+            Files.newDirectoryStream(dataDir).forEach(f -> {
+                try {
+                    Files.delete(f);
+                } catch (IOException e) {
+                }
+            });
+            Files.delete(dataDir);
+
+            repository.load();
+            fail("load should fail");
+        } catch (CacheException expected) {
+        }
+
+        assertNotNull("Repository load error not propagated", throwableHolder.get());
     }
 }

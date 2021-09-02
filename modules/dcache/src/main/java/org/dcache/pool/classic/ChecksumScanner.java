@@ -639,10 +639,9 @@ public class ChecksumScanner
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         _csm.addListener(listener);
-        startScrubber();
+        _repository.waitForLoad().thenRun(this::startScrubber);
     }
 
     @Override

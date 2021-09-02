@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -171,6 +172,11 @@ public class ReplicaRepository
 
     @GuardedBy("_stateLock")
     private String _poolName;
+
+    /**
+     * Repository load completition.
+     */
+    private final CompletableFuture<Void> loadComplete = new CompletableFuture<>();
 
     /**
      * Current state of the repository.
@@ -624,10 +630,13 @@ public class ReplicaRepository
             } finally {
                 _stateLock.writeLock().unlock();
             }
-        } finally {
+        } catch (Throwable t) {
+            loadComplete.completeExceptionally(t);
             compareAndSetState(State.LOADING, State.FAILED);
+            throw t;
         }
 
+        loadComplete.complete(null);
         LOGGER.info("Done generating inventory in {}", watch);
     }
 
@@ -1358,5 +1367,10 @@ public class ReplicaRepository
                 account.setTotal(newSize);
             }
         }
+    }
+
+    @Override
+    public CompletableFuture<Void> waitForLoad() {
+        return loadComplete;
     }
 }
