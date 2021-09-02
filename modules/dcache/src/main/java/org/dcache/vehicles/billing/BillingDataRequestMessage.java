@@ -143,4 +143,12 @@ public final class BillingDataRequestMessage extends Message {
     public void setType(SeriesType type) {
         this.type = type;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("requested billing type: ").append(getType().toString().toLowerCase());
+        sb.append(" (").append(getDataType().toString().toLowerCase()).append(")");
+        return sb.toString();
+    }
 }

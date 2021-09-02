@@ -3,6 +3,7 @@ package org.dcache.services.billing.cells;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import org.dcache.vehicles.billing.BillingDataRequestMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -67,8 +68,6 @@ public final class BillingCell
         LoggerFactory.getLogger(BillingCell.class);
     public static final String FORMAT_PREFIX = "billing.text.format.";
 
-    private final SimpleDateFormat _formatter =
-        new SimpleDateFormat ("MM.dd HH:mm:ss");
     private final SimpleDateFormat _fileNameFormat =
         new SimpleDateFormat("yyyy.MM.dd");
     private final SimpleDateFormat _directoryNameFormat =
@@ -188,16 +187,16 @@ public final class BillingCell
         }
     }
 
+    public void messageArrived(BillingDataRequestMessage msg) {
+        LOGGER.trace(msg.toString());
+    }
+
     public void messageArrived(Object msg) {
-        Date now = new Date();
-        String output = _formatter.format(now) + " " + msg.toString();
-
-        LOGGER.info(output);
-
-        /*
-         * Removed writing these to the billing log.  We only
-         * want InfoMessages written there
-         */
+        if (msg.toString().isBlank()) {
+            LOGGER.info("Received message {}", msg.getClass().getSimpleName());
+            return;
+        }
+        LOGGER.info(msg.toString());
     }
 
     private String getFormattedMessage(InfoMessage msg) {
