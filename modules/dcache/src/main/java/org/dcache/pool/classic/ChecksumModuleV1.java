@@ -67,7 +67,6 @@ import org.dcache.pool.classic.json.ChecksumModuleData;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
 import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.*;
@@ -532,7 +531,14 @@ public class ChecksumModuleV1
     private Iterable<Checksum> verifyChecksum(RepositoryChannel channel, Iterable<Checksum> expectedChecksums, double throughputLimit)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
     {
-        checkArgument(!Iterables.isEmpty(expectedChecksums), "No expected checksums");
+        /*
+         * REVISIT:
+         * It makes more sense to populate file's checksum if it's missing. However, currently
+         * the pool can't open an existing file for write to update the checksum.
+         */
+        if (Iterables.isEmpty(expectedChecksums)) {
+            throw new CacheException("file has no checksums");
+        }
 
         List<MessageDigest> digests = StreamSupport.stream(expectedChecksums.spliterator(), false)
                 .map(Checksum::getType)
