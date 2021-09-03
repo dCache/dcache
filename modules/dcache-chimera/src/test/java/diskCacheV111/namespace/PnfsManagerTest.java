@@ -504,6 +504,48 @@ public class PnfsManagerTest
     }
 
     @Test
+    public void testIgnoreFilesizeUpdateOnFlush() throws Exception {
+
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFile",
+                FileAttributes.ofFileType(REGULAR));
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        assertThat("Creating entry failed", pnfsCreateEntryMessage.getReturnCode(), is(0));
+
+        // simulate pool location update
+        PnfsSetFileAttributes setFileAttributesMessage =
+                new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(),
+                        FileAttributes.of()
+                                .location("pool-foo")
+                                .size(17)
+                                .build());
+
+        _pnfsManager.setFileAttributes(setFileAttributesMessage);
+        assertThat("Setting storage info failed", setFileAttributesMessage.getReturnCode(), is(0));
+
+        StorageInfo si = pnfsCreateEntryMessage.getFileAttributes().getStorageInfo();
+        si.addLocation(new URI(OSM_URI_STEM + "?store=tape"));
+        si.isSetAddLocation(true);
+
+        setFileAttributesMessage =
+                new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(),
+                        FileAttributes.of()
+                                .size(1L)
+                                .accessLatency(NEARLINE)
+                                .retentionPolicy(CUSTODIAL)
+                                .storageInfo(si).build());
+
+        _pnfsManager.setFileAttributes(setFileAttributesMessage);
+        assertThat("Setting storage info failed", setFileAttributesMessage.getReturnCode(), is(0));
+
+        PnfsGetFileAttributes message =
+                new PnfsGetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), SOME_ATTRIBUTES);
+        _pnfsManager.getFileAttributes(message);
+
+        assertEquals("failed to get storageInfo for flushed files", 0, message.getReturnCode());
+        assertThat("File size get update", message.getFileAttributes().getSize(), is(17L));
+    }
+
+    @Test
     public void testStorageInfoDup() throws Exception {
 
         PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFileDup",

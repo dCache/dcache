@@ -1109,6 +1109,7 @@ public class NearlineStorageHandler
                     throw new CacheException(2, e.getMessage(), e);
                 }
             }
+            // REVISIT: pool shouldn't update the files size on flush, but this is required due to space manager accounting
             return FileAttributes.of()
                     .accessLatency(fileAttributes.getAccessLatency())
                     .retentionPolicy(fileAttributes.getRetentionPolicy())
