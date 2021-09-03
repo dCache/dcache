@@ -960,7 +960,7 @@ Srm allows to retrieve data from connected tape archival storage via the `bring-
 
 ### Overview and Behaviour Configuration
 
-The bring-online scheduling strategy is for now integrated in the `srmmanager` component within dCache and allows clustering bring-online requests by tape before passing them on to the rest of the system. In its current state it requires two files with information on targeted tapes, their capacity and occupancy as well as the mapping of tape-resident files to tape name.
+The bring-online scheduling strategy is for now integrated in the `srmmanager` component within dCache and allows clustering bring-online requests by tape before passing them on to the rest of the system. It is important to note that the scheduler can only be effective when a dCache instance contains exactly one SrmManager. In its current state it requires two files with information on targeted tapes, their capacity and occupancy as well as the mapping of tape-resident files to tape name.
 
 When requests arrive at the tape recall scheduler, they are collected and regularly attempted to be associated with this tape information. When it is missing for a request, the request will be passed on eventually according to the configured behaviour.
 
