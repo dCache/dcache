@@ -1088,7 +1088,10 @@ public class ChimeraNameSpaceProvider
                         }
                         break;
                     case SIZE:
-                        stat.setSize(attr.getSize());
+                        // REVISIT: pool shouldn't update the files size on flush, but this is required due to space manager accounting
+                        if (!attr.isDefined(STORAGEINFO) || !attr.getStorageInfo().isSetAddLocation()) {
+                            stat.setSize(attr.getSize());
+                        }
                         break;
                     case MODE:
                         stat.setMode(attr.getMode());
