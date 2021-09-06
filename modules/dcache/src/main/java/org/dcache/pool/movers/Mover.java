@@ -18,10 +18,14 @@
 package org.dcache.pool.movers;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -178,4 +182,27 @@ public interface Mover<T extends ProtocolInfo>
      * or failed.
      */
     void close(CompletionHandler<Void, Void> completionHandler);
+
+    /**
+     * Provide a list of the IP address and port number of all currently active
+     * TCP connections.  An empty list indicates that there is current no
+     * established connections.  The mover may order the connections in some
+     * protocol-specific fashion.  A mover that is unable to provide connection
+     * information should return null.
+     */
+    @Nullable
+    default List<InetSocketAddress> remoteConnections()
+    {
+        return null;
+    }
+
+    /**
+     * Provide the expected total number of bytes transferred for this
+     * transfer, if known.  Returns null if this value is unknown.
+     */
+    @Nullable
+    default Long getBytesExpected()
+    {
+        return null;
+    }
 }
