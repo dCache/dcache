@@ -69,7 +69,6 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
@@ -331,13 +330,6 @@ class Companion
 
     private Set<Checksum> copy(String uri, ReplicaDescriptor handle) throws IOException, InterruptedException
     {
-        EnumSet<ChecksumType> knownChecksumTypes = EnumSet.noneOf(ChecksumType.class);
-        try {
-            handle.getChecksums().forEach(c -> knownChecksumTypes.add(c.getType()));
-        } catch (CacheException e) {
-            LOGGER.warn("Failed to fetch checksum information: {}", e.getMessage());
-        }
-
         RepositoryChannel channel = handle.createChannel();
         try {
             HttpGet get = new HttpGet(uri);
