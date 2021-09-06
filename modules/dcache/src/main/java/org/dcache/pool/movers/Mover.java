@@ -199,4 +199,14 @@ public interface Mover<T extends ProtocolInfo>
     {
         return null;
     }
+
+    /**
+     * Provide the expected total number of bytes transferred for this
+     * transfer, if known.  Returns null if this value is unknown.
+     */
+    @Nullable
+    default Long getBytesExpected()
+    {
+        return null;
+    }
 }
