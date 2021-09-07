@@ -1,6 +1,5 @@
 package org.dcache.pool.p2p;
 
-import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import dmg.cells.nucleus.CDC;
@@ -361,7 +360,7 @@ class Companion
                     throw new EOFException("Received file does not match expected file size.");
                 }
 
-                ByteStreams.copy(entity.getContent(), Channels.newOutputStream(channel));
+                entity.getContent().transferTo(Channels.newOutputStream(channel));
 
                 try {
                     channel.sync();

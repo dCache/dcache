@@ -11,7 +11,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
-import com.google.common.io.ByteStreams;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.MediaType;
 import io.milton.http.FileItem;
@@ -1696,7 +1695,7 @@ public class DcacheResourceFactory
                             .getInputStream()) {
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
                                 ": Sending data");
-                        ByteStreams.copy(inputStream, outputStream);
+                        inputStream.transferTo(outputStream);
                         outputStream.flush();
                     }
 
@@ -1834,7 +1833,7 @@ public class DcacheResourceFactory
                         setStatus("Mover " + getPool() + "/" + getMoverId() +
                                 ": Receiving data");
                         try {
-                            ByteStreams.copy(inputStream, outputStream);
+                            inputStream.transferTo(outputStream);
                             outputStream.flush();
                         } catch (IOException e) {
                             // Although we were unable to send all the data,

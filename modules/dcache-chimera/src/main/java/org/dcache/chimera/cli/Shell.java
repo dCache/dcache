@@ -72,7 +72,6 @@ import org.dcache.util.cli.ShellApplication;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.padStart;
-import static com.google.common.io.ByteStreams.toByteArray;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
@@ -789,7 +788,7 @@ public class Shell extends ShellApplication
              * return.
              */
             byte[] bytes = (data == null)
-                    ? toByteArray(console.getInput())
+                    ? console.getInput().readAllBytes()
                     : newLineTerminated(data).getBytes();
             if (bytes.length > 0) {
                 fs.setTag(inode, tag, bytes, 0, bytes.length);
@@ -984,7 +983,7 @@ public class Shell extends ShellApplication
         public Serializable call() throws IOException
         {
             byte[] bytes = data == null
-                    ? toByteArray(System.in)
+                    ? System.in.readAllBytes()
                     : newLineTerminated(data).getBytes();
             writeDataIntoFile(bytes);
             return null;

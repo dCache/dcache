@@ -18,7 +18,6 @@ package org.dcache.chimera;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1060,10 +1059,10 @@ public class FsSqlDriver {
                     },
                     rs -> {
                         try (InputStream in = rs.getBinaryStream("ivalue")) {
-                            byte[] data = new byte[Ints.saturatedCast(rs.getLong("isize"))];
+
                             // we get null if filed id NULL, e.g not set
                             if (in != null) {
-                                ByteStreams.readFully(in, data);
+                                byte[] data = in.readNBytes(Ints.saturatedCast(rs.getLong("isize")));
                                 tags.put(rs.getString("itagname"), data);
                             }
                         } catch (IOException e) {
@@ -1337,7 +1336,7 @@ public class FsSqlDriver {
                                        /* some databases (hsqldb in particular) fill a full record for
                                         * BLOBs and on read reads a full record, which is not what we expect.
                                         */
-                                       return ByteStreams.read(in, data, offset, Math.min(len, (int) rs.getLong("isize")));
+                                       return in.readNBytes(data, offset, Math.min(len, (int) rs.getLong("isize")));
                                    } catch (IOException e) {
                                        throw new LobRetrievalFailureException(e.getMessage(), e);
                                    }
