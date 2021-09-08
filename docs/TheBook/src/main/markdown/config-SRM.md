@@ -1012,6 +1012,19 @@ A small number would ensure that most tapes are activated when no requests targe
 
 Otherwise, requests for a tape will remain in the queue until its oldest request expires according to the `max-time-in-queue` parameter.
 
+All these behavioural properties can be changed at runtime via the admin interface as well. These changes are not persisted on restart, however.
+
+```ini
+(SrmManager) admin > trs set tape selection -active=2 -volume=70 -requests=-1
+maximum active tapes set to 2
+minimum recall percentage set to 70
+minimum number of requests per tape disabled
+
+(SrmManager) admin > trs set request stay -min=30 -max=180 -tapeinfoless=10
+minimum job waiting time set to 30 minutes
+maximum job waiting time set to 180 minutes
+tapeinfoless job waiting time set to 10 minutes
+```
 
 ### Additional Configuration Options
 
@@ -1035,7 +1048,12 @@ Don't forget to adjust request lifetimes on the client side as well.
 
 ### Tape Information Files
 
-In order to make use of the scheduling strategy, tape location information needs to be provided. Their default location is `/etc/dcache/tapeinfo` but may be configured.
+In order to make use of the scheduling strategy, tape location information needs to be provided. Their default location is `/etc/dcache/tapeinfo` but may be configured. When `bring-online` requests first enter the scheduler, tape information is attempted to be loaded from the provided files and cached for further usage. It is possible to clear this cache via admin interface to trigger a reload if the contents of the tape information files have changed:
+
+```ini
+(SrmManager) admin > trs reload tape info
+Tape information will be reloaded during the next run
+```
 
 The tape info provider is pluggable and currently supports two different file types: `CSV` and `JSON`. The provider can be configured and added to.
 
@@ -1043,7 +1061,8 @@ The tape info provider is pluggable and currently supports two different file ty
 srmmanager.boclustering.plugins.tapeinfoprovider = json
 ```
 
-Two different tape info files are needed. The `tapes` file contains an entry per tape which includes its name, capacity and occupancy. The `tapefiles` file includes an entry per file that may be read from tape, which includes a file identifyer, its size and the tape name it is on, which has to match an entry in the `tapes` file. The file identifyer is the full srm request path the file is `bring-online` requested with, which the scheduler uses to match the requested file to entries in the `tapefiles` file.
+Two different tape info files are needed. The `tapes` file contains an entry per tape which includes its name, capacity and occupancy. The `tapefiles` file includes an entry per file that may be read from tape, which includes a file identifier, its size and the tape name it is on, which has to match an entry in the `tapes` file. The file identifi
+	    er is the full srm request path the file is `bring-online` requested with, which the scheduler uses to match the requested file to entries in the `tapefiles` file.
 
 > **NOTE**
 >
